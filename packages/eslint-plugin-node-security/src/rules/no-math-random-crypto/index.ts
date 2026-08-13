@@ -15,6 +15,7 @@
  * @see https://cwe.mitre.org/data/definitions/338.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { makeNameTest } from '../../utils/names';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -31,28 +32,27 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-// Variable names that suggest cryptographic usage
-const CRYPTO_VARIABLE_PATTERNS = [
-  /token/i,
-  /key/i,
-  /secret/i,
-  /password/i,
-  /salt/i,
-  /iv/i,
-  /nonce/i,
-  /random/i,
-  /seed/i,
-  /hash/i,
-  /cipher/i,
-  /encrypt/i,
-  /auth/i,
-  /session/i,
-  /csrf/i,
-  /otp/i,
-  /pin/i,
-  /code/i,
-  /verify/i,
+/**
+ * Words that name a security value. Matched as whole words — see
+ * {@link makeNameTest}.
+ *
+ * `random` is NOT here, and that omission is the measured fix. On the 8-repo
+ * corpus `/random/i` alone produced four of six findings — `const random =
+ * Math.floor(Math.random() * totalWeight)` picking a DNS SRV record by weight
+ * (`redis/ioredis` `lib/cluster/util.ts:139`), `takeRandomFromArray`,
+ * `getRandomDelay`, `generate_random_char` building a DOM id. Naming a variable
+ * after the function that produced it says nothing about what it is FOR, which
+ * is the only question CWE-338 asks.
+ */
+const CRYPTO_WORDS: readonly string[] = [
+  'token', 'tokens', 'key', 'keys', 'secret', 'secrets', 'password', 'passwd',
+  'salt', 'iv', 'nonce', 'seed', 'hash', 'cipher', 'auth', 'session', 'csrf',
+  'otp', 'pin', 'code', 'codes', 'verify', 'signature', 'credential', 'jwt',
+  'encryption', 'apikey',
 ];
+
+/** Does this name suggest the value is a security value? */
+const nameSuggestsCrypto = makeNameTest(CRYPTO_WORDS);
 
 // Function names that suggest cryptographic usage
 const CRYPTO_FUNCTION_PATTERNS = [
@@ -61,8 +61,16 @@ const CRYPTO_FUNCTION_PATTERNS = [
   /generate.*id/i,
   /create.*secret/i,
   /create.*token/i,
+  // A general-purpose random STRING builder is the shape CWE-338 is about:
+  // `okta/okta-auth-js` `lib/util/misc.ts:21` defines `genRandomString`, and
+  // `lib/oidc/util/oauth.ts:18` calls it for the OAuth `state` and `nonce`.
+  // Preserved deliberately — this is a true positive, and narrowing the rule
+  // must not reach it.
   /random.*string/i,
-  /get.*random/i,
+  // `get.*random` used to match `getRandomDelay` — a retry jitter, which is
+  // exactly the "not a security decision" case. The suffix is what makes the
+  // value a credential rather than a coin flip.
+  /get.*random.*(string|bytes|token|key|secret|value|id)/i,
   /make.*salt/i,
   /gen.*password/i,
 ];
@@ -148,7 +156,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         if (current.type === AST_NODE_TYPES.VariableDeclarator) {
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
-            if (CRYPTO_VARIABLE_PATTERNS.some((p) => p.test(varName))) {
+            if (nameSuggestsCrypto(varName)) {
               return true;
             }
           }
@@ -169,7 +177,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             current.left.property.type === AST_NODE_TYPES.Identifier
           ) {
             const propName = current.left.property.name;
-            if (CRYPTO_VARIABLE_PATTERNS.some((p) => p.test(propName))) {
+            if (nameSuggestsCrypto(propName)) {
               return true;
             }
           }
@@ -179,7 +187,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         if (current.type === AST_NODE_TYPES.Property) {
           if (current.key.type === AST_NODE_TYPES.Identifier) {
             const propName = current.key.name;
-            if (CRYPTO_VARIABLE_PATTERNS.some((p) => p.test(propName))) {
+            if (nameSuggestsCrypto(propName)) {
               return true;
             }
           }
@@ -197,7 +205,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
               const funcName = func.id.name;
               if (
                 CRYPTO_FUNCTION_PATTERNS.some((p) => p.test(funcName)) ||
-                CRYPTO_VARIABLE_PATTERNS.some((p) => p.test(funcName))
+                nameSuggestsCrypto(funcName)
               ) {
                 return true;
               }

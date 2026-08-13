@@ -13,20 +13,31 @@
  * @see https://ai.google.dev/gemini-api/docs/safety-settings
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  createModuleEvidence,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'safetyDisabled';
 
-/** The rule only arms in files that import the Google GenAI SDK. */
-const GEMINI_MODULE_PREFIXES = ['@google/genai', '@google/generative-ai'];
+/**
+ * The rule only arms in files that load the Google GenAI SDK.
+ *
+ * Through the devkit probe rather than a pair of visitors: the hand-rolled gate
+ * matched `ImportDeclaration` and a call to something literally named
+ * `require`, so `import genai = require('@google/genai')` and a lazy
+ * `await import('@google/genai')` left the rule silently switched off.
+ */
+const fileUsesGemini = createModuleEvidence({
+  packages: ['@google/genai', '@google/generative-ai'],
+});
 
 const THRESHOLD_PROP = 'threshold';
 /** Values that switch the filter off entirely. */
 const DISABLING_VALUES = new Set(['BLOCK_NONE', 'OFF']);
-
-function isGeminiModule(source: string): boolean {
-  return GEMINI_MODULE_PREFIXES.some((prefix) => source.startsWith(prefix));
-}
 
 /** The disabling constant a threshold value resolves to, if it is readable. */
 function disablingValueOf(value: TSESTree.Node): string | null {
@@ -71,26 +82,11 @@ export const noDisabledSafetySettings = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    let importsGemini = false;
-    const candidates: Array<{ node: TSESTree.Node; value: string }> = [];
+    // Asked once, up front, over the whole AST, so the verdict no longer
+    // depends on the SDK being loaded in one of two spellings.
+    if (!fileUsesGemini(context.sourceCode.ast)) return {};
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (isGeminiModule(node.source.value)) importsGemini = true;
-      },
-
-      CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'require' &&
-          node.arguments[0]?.type === 'Literal' &&
-          typeof node.arguments[0].value === 'string' &&
-          isGeminiModule(node.arguments[0].value)
-        ) {
-          importsGemini = true;
-        }
-      },
-
       Property(node: TSESTree.Property) {
         if (node.computed) return;
         const isThreshold =
@@ -99,12 +95,7 @@ export const noDisabledSafetySettings = createRule<[], MessageIds>({
         if (!isThreshold) return;
 
         const value = disablingValueOf(node.value);
-        if (value !== null) candidates.push({ node, value });
-      },
-
-      'Program:exit'() {
-        if (!importsGemini) return;
-        for (const { node, value } of candidates) {
+        if (value !== null) {
           context.report({ node, messageId: 'safetyDisabled', data: { value } });
         }
       },

@@ -19,6 +19,7 @@ import {
   MessageIcons,
   createRule,
 } from '@interlace/eslint-devkit';
+import { resolveStringKey } from '../../utils/resolve-binding';
 
 type MessageIds = 'sensitiveLocalStorage' | 'useHttpOnlyCookie';
 
@@ -59,7 +60,18 @@ const DEFAULT_SENSITIVE_PATTERNS = [
 ];
 
 /**
- * Check if key matches sensitive patterns
+ * Check if key matches sensitive patterns.
+ *
+ * Applied to the key the code *actually writes*, never to the spelling of the
+ * constant that holds it. All six corpus findings for this rule came from
+ * matching the identifier `STATE_HANDLE_SESSION_STORAGE_KEY` — whose "session"
+ * and "key" come from the name of the storage API, not from anything secret —
+ * when the string it resolves to is `'osw-oie-state-handle'`, which matches
+ * nothing. One of them stored a timestamp; another stored
+ * `window.location.href`.
+ *
+ * Left as a substring test on purpose: the fix here is *what* gets tested, not
+ * how. See resolveStringKey in utils/resolve-binding.ts.
  */
 function isSensitiveKey(key: string, patterns: string[]): boolean {
   const lowerKey = key.toLowerCase();
@@ -170,14 +182,7 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          let keyValue: string | null = null;
-
-          if (keyArg.type === AST_NODE_TYPES.Literal && typeof keyArg.value === 'string') {
-            keyValue = keyArg.value;
-          } else if (keyArg.type === AST_NODE_TYPES.Identifier) {
-            // Variable name might be indicative
-            keyValue = keyArg.name;
-          }
+          const keyValue = resolveStringKey(keyArg, context.sourceCode);
 
           if (keyValue && isSensitiveKey(keyValue, sensitivePatterns)) {
             context.report({
@@ -209,16 +214,11 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        let keyValue: string | null = null;
-
-        if (
-          node.left.property.type === AST_NODE_TYPES.Literal &&
-          typeof node.left.property.value === 'string'
-        ) {
-          keyValue = node.left.property.value;
-        } else if (node.left.property.type === AST_NODE_TYPES.Identifier) {
-          keyValue = node.left.property.name;
-        }
+        // `localStorage.token = v` — the identifier IS the key. `localStorage[K] = v`
+        // — the identifier is a *variable holding* the key, so resolve it.
+        const keyValue = node.left.computed
+          ? resolveStringKey(node.left.property, context.sourceCode)
+          : node.left.property.name;
 
         if (keyValue && isSensitiveKey(keyValue, sensitivePatterns)) {
           context.report({

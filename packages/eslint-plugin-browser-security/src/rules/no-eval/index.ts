@@ -43,6 +43,52 @@ const DANGEROUS_METHODS_WITH_STRING_ARG = new Set([
   'setImmediate',
 ]);
 
+/**
+ * Rule partition — `no-eval` (here) vs `detect-eval-with-expression`
+ * (eslint-plugin-node-security).
+ *
+ * Both matched `eval(x)` and `new Function(x)`, at the identical range, in
+ * `recommended`: every one of the four corpus eval sites was reported twice.
+ * Same doctrine as `no-innerhtml`'s `payloadSource` gate — exactly one rule
+ * owns a site — but the axis here is the PAYLOAD, not the source:
+ *
+ *   dynamic payload → `detect-eval-with-expression`. It classifies the
+ *     expression (json / math / template / object) and prescribes the matching
+ *     safe alternative. That is real attribution, and it is strictly more than
+ *     this rule can say. It already declines a string-literal payload for
+ *     `eval` for exactly this reason.
+ *
+ *   static payload → this rule. Nothing is being injected, so there is nothing
+ *     to attribute; the finding is "this file contains a code-execution sink
+ *     at all", which is the generic claim.
+ *
+ * Two things stay wholly here, static or dynamic:
+ *
+ *   - Sinks that rule does not model: `execScript`, indirect access
+ *     (`window.eval`, `globalThis['eval']`), and
+ *     `setTimeout`/`setInterval`/`setImmediate` with a string body. Its
+ *     `evalFunctions` set is `{eval, Function}` matched on a bare `Identifier`
+ *     callee, so it can never see those.
+ *   - Payloads with a BROWSER source this package can attribute — a Worker
+ *     message, a FileReader result, a `postMessage` event. Those are browser
+ *     sink/source pairs; classifying `event.data` as a "dynamic expression"
+ *     adds nothing, and yielding them would drop them entirely, which is the
+ *     failure `createPayloadResolver` was built to prevent.
+ *
+ * The contract the other half must hold for the split to stay disjoint:
+ * `detect-eval-with-expression` must skip a string-literal payload for
+ * `Function` as it already does for `eval`, and must skip the zero-argument
+ * case. Anything statically known is ours; anything dynamic and unattributed
+ * is theirs.
+ */
+function hasStaticPayload(
+  node: TSESTree.CallExpression | TSESTree.NewExpression,
+): boolean {
+  return node.arguments.every(
+    (arg) => arg.type === 'Literal' && typeof arg.value === 'string',
+  );
+}
+
 export const noEval = createRule<RuleOptions, MessageIds>({
   name: 'no-eval',
   meta: {
@@ -119,6 +165,21 @@ export const noEval = createRule<RuleOptions, MessageIds>({
 
     const payloadSource = createPayloadResolver(context.sourceCode);
 
+    /**
+     * Is this site ours under the partition documented above? See
+     * `hasStaticPayload`.
+     */
+    function ownsPayload(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean {
+      // A browser source we can attribute (worker / filereader / postmessage —
+      // websocket has already returned by the time this runs).
+      if (node.arguments.some((arg) => payloadSource(arg) !== undefined)) {
+        return true;
+      }
+      return hasStaticPayload(node);
+    }
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
@@ -133,6 +194,12 @@ export const noEval = createRule<RuleOptions, MessageIds>({
         // Check for eval(), execScript()
         if (callee.type === 'Identifier') {
           if (DANGEROUS_FUNCTIONS.has(callee.name)) {
+            // A dynamic `eval(…)` payload belongs to
+            // `detect-eval-with-expression` — see the partition note above.
+            // `execScript` is unknown to that rule, so it stays here either way.
+            if (callee.name === 'eval' && !ownsPayload(node)) {
+              return;
+            }
             context.report({
               node,
               messageId: 'dangerousEval',
@@ -218,6 +285,12 @@ export const noEval = createRule<RuleOptions, MessageIds>({
           return;
 
         if (allowFunctionConstructor) {
+          return;
+        }
+
+        // A dynamic `new Function(…)` body belongs to
+        // `detect-eval-with-expression` — see the partition note above.
+        if (!ownsPayload(node)) {
           return;
         }
 

@@ -81,4 +81,58 @@ describe('no-math-random-crypto', () => {
       },
     ],
   });
+
+  // ── The narrowing ──────────────────────────────────────────────────────
+  // Every `valid` case is a verbatim shape from the 8-repo corpus scan and
+  // reported before this change; every `invalid` case is a TRUE POSITIVE the
+  // narrowing had to leave standing.
+  describe('Selection And Jitter Are Not Crypto', () => {
+    ruleTester.run('a security use is required', noMathRandomCrypto, {
+      valid: [
+        // redis/ioredis lib/cluster/util.ts:139 — weighted DNS SRV selection.
+        // Reported only because the local is called `random`.
+        `export function weightSrvRecords(recordsGroup) {
+           const random = Math.floor(Math.random() * (recordsGroup.totalWeight + recordsGroup.records.length));
+           return random;
+         }`,
+        // Shopify/cli packages/cli-kit/src/public/common/array.ts:12.
+        `export function takeRandomFromArray(array) { return array[Math.floor(Math.random() * array.length)]; }`,
+        // okta/okta-signin-widget playground/mocks/server.js:21 — retry jitter.
+        `function getRandomDelay([min, max]) { return Math.floor(Math.random() * (max - min) + min); }`,
+        // okta/okta-signin-widget .../chosen.jquery.js:343 — one character of a
+        // DOM id.
+        `AbstractChosen.prototype.generate_random_char = function () {
+           var chars = '0123456789ABCDEF';
+           var rand = Math.floor(Math.random() * chars.length);
+           return chars.substring(rand, rand + 1);
+         };`,
+        // The substring trap this rule was carrying unfired: `/iv/i` matched
+        // `div`, `/pin/i` matched `spinner`, `/key/i` matched `monkey`.
+        `const div = Math.random();`,
+        `const spinnerFrame = Math.floor(Math.random() * 4);`,
+        `const monkeyIndex = Math.floor(Math.random() * 10);`,
+      ],
+      invalid: [
+        // TRUE POSITIVE, preserved. okta/okta-auth-js lib/util/misc.ts:21 —
+        // `genRandomString` is called by `generateState()` and
+        // `generateNonce()` in lib/oidc/util/oauth.ts:18,22. OAuth state and
+        // nonce built on Math.random is exactly CWE-338.
+        {
+          code: `export function genRandomString(length) {
+                   var randomCharset = 'abcdefABCDEF0123456789';
+                   var random = '';
+                   for (var c = 0, cl = randomCharset.length; c < length; ++c) {
+                     random += randomCharset[Math.floor(Math.random() * cl)];
+                   }
+                   return random;
+                 }`,
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+        // The word-boundary form still matches the real names.
+        { code: 'const iv = Math.random();', errors: [{ messageId: 'mathRandomCrypto' }] },
+        { code: 'const apiKey = Math.random().toString(36);', errors: [{ messageId: 'mathRandomCrypto' }] },
+        { code: 'const encryptionSeed = Math.random();', errors: [{ messageId: 'mathRandomCrypto' }] },
+      ],
+    });
+  });
 });

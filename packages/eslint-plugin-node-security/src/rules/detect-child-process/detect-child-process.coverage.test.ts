@@ -22,6 +22,17 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * The pre-inversion contract: any dynamic argument is a finding.
+ *
+ * Measured on the 8-repo corpus that produced 14 findings and zero command
+ * injections — every one a build script running a command it assembled from
+ * its own literals and paths. The default now requires evidence that an
+ * attacker steers the command; these cases keep pinning the callee resolution,
+ * import/require tracking and message plumbing through the restoring option.
+ */
+const UNRESOLVED = [{ reportUnresolvedCommands: true }];
+
 describe('detect-child-process coverage gaps', () => {
   ruleTester.run('detect-child-process', detectChildProcess, {
     valid: [
@@ -70,6 +81,7 @@ describe('detect-child-process coverage gaps', () => {
           '  }',
           '}',
         ].join('\n'),
+        options: UNRESOLVED,
         errors: [{ messageId: 'childProcessCommandInjection' }],
       },
       // Pattern-2 shaped test whose consequent is NOT a return/throw guard
@@ -82,6 +94,7 @@ describe('detect-child-process coverage gaps', () => {
           "  execFile('cmd', [file]);",
           '}',
         ].join('\n'),
+        options: UNRESOLVED,
         errors: [{ messageId: 'childProcessCommandInjection' }],
       },
     ],

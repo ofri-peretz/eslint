@@ -91,6 +91,42 @@ function isFrameBustingTest(test: TSESTree.Node): boolean {
   );
 }
 
+/**
+ * Every `property: value` pair in a chunk of CSS-bearing text.
+ *
+ * Substring matching over printed source is what put two findings on
+ * Shopify/cli's GraphiQL templates: `styles.includes('opacity: 0')` also
+ * matches `opacity: 0.5`, `includes('top: 0')` also matches `top: 0.5rem`,
+ * and neither is transparent. Splitting into declarations first means a value
+ * is compared whole.
+ *
+ * The boundary is "any character a CSS property name cannot contain", so this
+ * finds declarations inside a stylesheet (`{ opacity: 0; }`), inside an inline
+ * attribute (`style="opacity: 0"`) and inside a bare fragment alike.
+ */
+const DECLARATION = /(?:^|[^a-z-])([a-z-]+)\s*:\s*([^;{}"'`\n]*)/g;
+
+function cssDeclarations(text: string): Array<readonly [string, string]> {
+  const declarations: Array<readonly [string, string]> = [];
+  for (const match of text.toLowerCase().matchAll(DECLARATION)) {
+    const value = match[2]
+      .trim()
+      .replace(/\s*!important$/, '')
+      .replace(/,$/, '')
+      .trim();
+    declarations.push([match[1], value] as const);
+  }
+  return declarations;
+}
+
+function hasDeclaration(
+  declarations: ReadonlyArray<readonly [string, string]>,
+  property: string,
+  matches: (value: string) => boolean,
+): boolean {
+  return declarations.some(([prop, value]) => prop === property && matches(value));
+}
+
 const FUNCTION_TYPES = new Set([
   'FunctionDeclaration',
   'FunctionExpression',
@@ -431,19 +467,32 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
     /**
      * Check for transparent/invisible elements that could hide clickjacking
+     *
+     * `display: none` is deliberately NOT here. It is the OPPOSITE of the
+     * thing this rule is about: a clickjacking overlay must be present in the
+     * hit-test tree and merely invisible, so that it swallows the click meant
+     * for what is underneath. A `display: none` element is removed from
+     * layout and receives no clicks at all — it cannot overlay anything.
+     * Having it in the set meant every hidden UI affordance read as an attack:
+     * both corpus findings for this rule were Shopify/cli's GraphiQL
+     * templates hiding a back button and an error bar —
+     * packages/cli-kit/src/public/node/graphiql/templates/graphiql.tsx:71 and
+     * .../unauthorized.tsx:112.
      */
     // oxlint-disable-next-line consistent-function-scoping
     const hasTransparentStyles = (styleText: string): boolean => {
-      const styles = styleText.toLowerCase();
+      const declarations = cssDeclarations(styleText);
       return (
-        styles.includes('opacity: 0') ||
-        styles.includes('opacity:0') ||
-        styles.includes('visibility: hidden') ||
-        styles.includes('display: none') ||
-        styles.includes('z-index: -1') ||
-        (styles.includes('position: absolute') &&
-          styles.includes('top: 0') &&
-          styles.includes('left: 0'))
+        // Fully transparent — `0`, `0.0`, `0%`. NOT `0.5`, which the old
+        // substring test also matched.
+        hasDeclaration(declarations, 'opacity', (v) => /^0(?:\.0+)?%?$/.test(v)) ||
+        hasDeclaration(declarations, 'visibility', (v) => v === 'hidden') ||
+        // Parked behind the page it covers.
+        hasDeclaration(declarations, 'z-index', (v) => /^-\d+$/.test(v)) ||
+        // Pinned to the viewport corner, i.e. positioned over other content.
+        (hasDeclaration(declarations, 'position', (v) => v === 'absolute') &&
+          hasDeclaration(declarations, 'top', (v) => /^0(?:\.0+)?(?:px|%)?$/.test(v)) &&
+          hasDeclaration(declarations, 'left', (v) => /^0(?:\.0+)?(?:px|%)?$/.test(v)))
       );
     };
 

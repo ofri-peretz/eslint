@@ -31,13 +31,32 @@ type MessageIds =
 // `${}` here are regex metacharacters inside a character class, not a template
 // placeholder — the string is a literal `.replace(...)` snippet inserted by the fixer.
 // eslint-disable-next-line no-template-curly-in-string
+/**
+ * Functions the ecosystem actually uses to escape a regex metacharacter set.
+ *
+ * `escapeRegex` alone was the original default and matched nothing in the
+ * corpus: lodash spells it `escapeRegExp`, and the single most-installed
+ * implementation is the `escape-string-regexp` package, whose export is
+ * `escapeStringRegexp`. A pre-escaped value is inert — reporting it tells the
+ * user to fix code that is already correct, and the only remedy on offer is
+ * the escape they already applied.
+ */
+const DEFAULT_TRUSTED_ESCAPING_FUNCTIONS = [
+  'escapeRegex',
+  'escapeRegExp',
+  'escapeStringRegexp',
+  'regexpEscape',
+  'escape',
+  'sanitize',
+] as const;
+
 const INLINE_ESCAPE_SUFFIX = '.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")';
 
 export interface Options {
   /** Allow literal string patterns. Default: false */
   allowLiterals?: boolean;
 
-  /** Trusted functions that escape input. Default: ['escapeRegex', 'escape', 'sanitize'] */
+  /** Trusted functions that escape input. Default: {@link DEFAULT_TRUSTED_ESCAPING_FUNCTIONS} */
   trustedEscapingFunctions?: string[];
 
   /** Maximum pattern length for dynamic regex. Default: 100 */
@@ -49,36 +68,101 @@ type RuleOptions = [Options?];
 /**
  * Check if a node represents user input (variable, function call, template literal)
  */
-function isUserInput(node: TSESTree.Node): boolean {
-  // Function calls might return user input
-  if (node.type === 'CallExpression') {
-    return true;
-  }
+/**
+ * Where does this pattern come from, if it can be named?
+ *
+ * Returns the source description, or `null` when the pattern's provenance
+ * cannot be attributed.
+ *
+ * This replaces `isUserInput`, which returned `true` for every CallExpression,
+ * MemberExpression and Identifier — it was `isDynamic` under another name, and
+ * its own comment recorded the moment it stopped discriminating:
+ * "Changed from false to true - safer to flag as user input".
+ *
+ * The cost of that was not just noise. This rule ships at `error` while
+ * `detect-non-literal-regexp` ships at `warn`, and measured over an 8-repo
+ * corpus every one of this rule's 41 findings was also reported by that one —
+ * a strict subset, the same code called out twice at two severities. Naming the
+ * source is what makes the two rules disjoint: this one reports what it can
+ * attribute, the generic one reports the rest.
+ */
+function taintSource(node: TSESTree.Node, depth = 0): string | null {
+  if (depth > 6) return null;
 
-  // Template literals with expressions are dynamic
   if (node.type === 'TemplateLiteral') {
-    return node.expressions.length > 0;
-  }
-
-  // Member expressions accessing user properties
-  if (node.type === 'MemberExpression') {
-    return true;
-  }
-
-  // Variables are likely user input unless they are safe literals
-  if (node.type === 'Identifier') {
-    // Exclude common safe patterns, but be more restrictive
-    const safeIdentifiers = ['pattern', 'regex', 'regExp', 'regexp'];
-    if (safeIdentifiers.includes(node.name.toLowerCase())) {
-      // For these identifiers, check if they're assigned user input in scope
-      // For now, we'll be conservative and flag them as potentially unsafe
-      return true; // Changed from false to true - safer to flag as user input
+    for (const expression of node.expressions) {
+      const found = taintSource(expression, depth + 1);
+      if (found !== null) return found;
     }
-    return true;
+    return null;
   }
 
-  return false;
+  if (node.type === 'BinaryExpression' && node.operator === '+') {
+    return (
+      taintSource(node.left as TSESTree.Node, depth + 1) ??
+      taintSource(node.right, depth + 1)
+    );
+  }
+
+  if (node.type === 'AwaitExpression') {
+    return taintSource(node.argument, depth + 1);
+  }
+
+  if (node.type === 'MemberExpression') {
+    // Walk to the root of `req.query.pattern` and judge that.
+    let root: TSESTree.Node = node;
+    const properties: string[] = [];
+    while (root.type === 'MemberExpression') {
+      if (root.property.type === 'Identifier') properties.unshift(root.property.name);
+      root = root.object;
+    }
+    if (root.type === 'Identifier') {
+      if (REQUEST_ROOTS.has(root.name) && properties.some((p) => REQUEST_PROPERTIES.has(p))) {
+        return `${root.name}.${properties.join('.')}`;
+      }
+      if (root.name === 'process' && properties[0] === 'argv') {
+        return 'process.argv';
+      }
+    }
+    return null;
+  }
+
+  if (node.type === 'CallExpression') {
+    const callee = node.callee;
+    if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+      // Reading a file or a response body yields bytes from outside the program.
+      if (READER_METHODS.has(callee.property.name)) {
+        return callee.property.name;
+      }
+    }
+    if (callee.type === 'Identifier' && READER_METHODS.has(callee.name)) {
+      return callee.name;
+    }
+    for (const arg of node.arguments) {
+      if (arg.type === 'SpreadElement') continue;
+      const found = taintSource(arg, depth + 1);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+
+  return null;
 }
+
+/** Identifier roots that denote an inbound request. */
+const REQUEST_ROOTS: ReadonlySet<string> = new Set([
+  'req', 'request', 'ctx', 'event', 'message',
+]);
+
+/** Properties of a request that carry caller-supplied data. */
+const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
+  'query', 'params', 'body', 'headers', 'url', 'path', 'cookies', 'data',
+]);
+
+/** Calls whose result is bytes from outside the program. */
+const READER_METHODS: ReadonlySet<string> = new Set([
+  'readFile', 'readFileSync', 'text', 'json', 'arrayBuffer', 'formData', 'blob',
+]);
 
 /**
  * Check if a node is escaped (wrapped in an escaping function)
@@ -137,7 +221,10 @@ function hasDynamicFlags(
   // Check second argument (flags)
   if (node.arguments.length > 1) {
     const flagsNode = node.arguments[1];
-    return isUserInput(flagsNode);
+    // Flags built at runtime are the concern here regardless of provenance —
+    // `new RegExp(p, item.flags)` can silently add `g`/`y` and change matching
+    // semantics. A string literal is fine.
+    return !(flagsNode.type === 'Literal' && typeof flagsNode.value === 'string');
   }
 
   return false;
@@ -153,21 +240,21 @@ function extractPattern(
 ): {
   patternNode: TSESTree.Node | null;
   isUserInput: boolean;
+  taintedBy: string | null;
   isEscaped: boolean;
 } {
   const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
 
   if (!patternNode) {
-    return { patternNode: null, isUserInput: false, isEscaped: false };
+    return { patternNode: null, isUserInput: false, taintedBy: null, isEscaped: false };
   }
 
-  const isUserInputValue = isUserInput(patternNode);
+  const taintedBy = taintSource(patternNode);
+  const isUserInputValue = taintedBy !== null;
   // Default trusted functions + user configured ones
   const allTrustedFunctions = [
     ...new Set([
-      'escapeRegex',
-      'escape',
-      'sanitize',
+      ...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS,
       'RegExp.escape',
       ...trustedFunctions,
     ]),
@@ -182,6 +269,7 @@ function extractPattern(
   return {
     patternNode,
     isUserInput: isUserInputValue,
+    taintedBy,
     isEscaped: isEscapedValue,
   };
 }
@@ -258,7 +346,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
           trustedEscapingFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['escapeRegex', 'escape', 'sanitize'],
+            default: [...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS],
             description: 'Trusted functions that escape input',
           },
           maxPatternLength: {
@@ -275,7 +363,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowLiterals: true,
-      trustedEscapingFunctions: ['escapeRegex', 'escape', 'sanitize'],
+      trustedEscapingFunctions: [...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS],
       maxPatternLength: 100,
     },
   ],
@@ -289,7 +377,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     const {
       allowLiterals = true,
       maxPatternLength = 100,
-      trustedEscapingFunctions = ['escapeRegex', 'escape', 'sanitize'],
+      trustedEscapingFunctions = [...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS],
     }: Options = options;
 
     const sourceCode = context.sourceCode;

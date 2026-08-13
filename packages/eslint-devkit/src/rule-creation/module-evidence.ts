@@ -263,3 +263,33 @@ export function createModuleEvidence(
     return result;
   };
 }
+
+/**
+ * Build a probe from a flat `modules` list of the kind the SDK rule factories
+ * already take — `['openai']`, `['@anthropic-ai']`, `['@google/generative-ai',
+ * '@google/genai']`.
+ *
+ * The factories predate {@link createModuleEvidence} and each opened its gate
+ * from two visitors: `ImportDeclaration`, and a `CallExpression` whose callee is
+ * named `require`. That pair covers ESM and plain CommonJS and nothing else, so
+ * `import OpenAI = require('openai')` and `await import('openai')` left every
+ * rule in four plugins — anthropic, gemini, mcp-sdk and openai — silently off.
+ * It is the same defect that had `jwt-security` abstaining on CommonJS files,
+ * one layer up: the gate was not wrong about the *library*, it was wrong about
+ * the *spelling*.
+ *
+ * A bare scope (`'@anthropic-ai'`) becomes a scope match and anything else a
+ * package match, which reproduces the old `source === m || source.startsWith(m
+ * + '/')` test exactly while inheriting the import-equals, dynamic-import,
+ * re-export, Deno-specifier and `require`-shadowing handling that only exists
+ * in one place.
+ */
+export function createModuleListEvidence(
+  modules: readonly string[],
+): (ast: TSESTree.Program) => boolean {
+  const isBareScope = (m: string): boolean => m.startsWith('@') && !m.includes('/');
+  return createModuleEvidence({
+    packages: modules.filter((m) => !isBareScope(m)),
+    scopes: modules.filter(isBareScope),
+  });
+}

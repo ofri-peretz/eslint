@@ -36,7 +36,6 @@ type MessageIds =
   | 'dangerousEvalUsage'
   | 'unsafeYamlParsing'
   | 'dangerousFunctionConstructor'
-  | 'untrustedDeserializationInput'
   | 'useSafeDeserializer'
   | 'validateBeforeDeserialization'
   | 'avoidEval'
@@ -126,15 +125,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         severity: 'CRITICAL',
         fix: 'Avoid Function constructor with user input',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function',
-      }),
-      untrustedDeserializationInput: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Untrusted Deserialization Input',
-        cwe: 'CWE-502',
-        description: 'Deserializing untrusted input (incl. LLM/MCP responses) without validation',
-        severity: 'HIGH',
-        fix: 'Schema-validate and size-cap before deserialization; reject unknown fields',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/502.html',
       }),
       useSafeDeserializer: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -308,6 +298,18 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           return isStringValued(node.arguments[0]);
         }
 
+        // Parsers that do not execute their input are never a CWE-502 sink.
+        // `JSON.parse` is the REMEDIATION this rule's own message recommends,
+        // and `yaml.safeLoad` is the safe variant by construction — but `parse`
+        // and `load` both appear on the dangerous lists below, so without this
+        // they would match by method name alone.
+        if (
+          (objectName === 'JSON' && memberName === 'parse') ||
+          (objectName === 'yaml' && memberName === 'safeLoad')
+        ) {
+          return false;
+        }
+
         // Check dangerous methods
         if (dangerousFunctions.includes(memberName)) {
           return true;
@@ -347,6 +349,28 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       }
       if (inputNode.type === 'TemplateLiteral') {
         return inputNode.expressions.some((e: TSESTree.Expression) => isUntrustedInput(e));
+      }
+
+      // `eval(await res.text())` was silent while `eval(param)` reported —
+      // the more obviously dangerous form was the one being missed, because
+      // neither AwaitExpression nor CallExpression was ever unwrapped.
+      if (inputNode.type === 'AwaitExpression') {
+        return isUntrustedInput(inputNode.argument);
+      }
+      if (inputNode.type === 'CallExpression') {
+        const callee = inputNode.callee;
+        if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+          // Reading a response or a request body yields remote bytes.
+          if (['text', 'json', 'arrayBuffer', 'formData', 'blob'].includes(callee.property.name)) {
+            return true;
+          }
+          if (['readFile', 'readFileSync'].includes(callee.property.name)) {
+            return true;
+          }
+        }
+        return inputNode.arguments.some(
+          (arg) => arg.type !== 'SpreadElement' && isUntrustedInput(arg),
+        );
       }
 
       // Check for MemberExpression patterns like req.body, req.query, etc.
@@ -394,46 +418,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    /**
-     * Check if input has been validated
-     */
-    const isInputValidated = (inputNode: TSESTree.Node): boolean => {
-      let current: TSESTree.Node | undefined = inputNode;
 
-      while (current) {
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'Identifier' &&
-            validationFunctions.includes(current.callee.name)) {
-          return true;
-        }
-        current = current.parent as TSESTree.Node;
-      }
-
-      return false;
-    };
-
-    /**
-     * Check if this is a safe deserialization library
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const isSafeLibrary = (node: TSESTree.CallExpression | TSESTree.NewExpression): boolean => {
-      const callee = node.callee;
-
-      if (callee.type === 'MemberExpression') {
-        const objectName = callee.object.type === 'Identifier' ? callee.object.name : '';
-        const memberName = callee.property.type === 'Identifier' ? callee.property.name : '';
-
-        // Check for safe patterns
-        if (objectName === 'JSON' && memberName === 'parse') {
-          return true;
-        }
-        if (objectName === 'yaml' && memberName === 'safeLoad') {
-          return true;
-        }
-      }
-
-      return false;
-    };
     /**
      * True when the call sits inside a function that is itself named
      * `deserialize` / `unserialize` / `fromJSON` — i.e. the file is
@@ -501,15 +486,13 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           }
       }
 
+
       // 2. Check CallExpressions (eval, unserialize, yaml, etc.)
       if (isDangerousDeserialization(node) && !isInsideDeserializerImplementation(node)) {
          const args: TSESTree.CallExpressionArgument[] = node.arguments;
          const hasUntrustedInput = args.some((arg): boolean => isUntrustedInput(arg));
 
-         // Check if explicit validation is present
-         const isSafe = isSafeLibrary(node);
-         
-         if (!isSafe && hasUntrustedInput) {
+         if (hasUntrustedInput) {
             // Basic safety check
             const safe = safetyChecker.isSafe(node, context);
             
@@ -551,44 +534,25 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       }   
 
 
-        // Check for untrusted input in potentially safe functions
-        if (isSafeLibrary(node)) {
-          const args: TSESTree.CallExpressionArgument[] = node.arguments;
-          const hasUntrustedInput = args.some((arg): boolean => {
-            // Check if it's validated
-            if (arg.type === 'Identifier' && validatedVariables.has(arg.name)) {
-              return false;
-            }
-            // SAFE for JSON.parse/schema parsers: if the input came from a
-            // literal-path file read (bundled config), it is not user-controlled.
-            if (arg.type === 'Identifier' && literalPathFileVars.has(arg.name)) {
-              return false;
-            }
-            return isUntrustedInput(arg) && !isInputValidated(arg);
-          });
-
-          if (hasUntrustedInput) {
-            // Even JSON.parse can be unsafe if used on complex objects that get eval'd later
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            context.report({
-              node,
-              messageId: 'untrustedDeserializationInput',
-              data: {
-                filePath: context.filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-              suggest: [
-                {
-                  messageId: 'validateBeforeDeserialization',
-                  fix: () => null
-                },
-              ],
-            });
-          }
-        }
+        // A SAFE deserializer receiving untrusted input is not a finding.
+        //
+        // This branch used to report `JSON.parse(x)` whenever `x` looked
+        // untrusted, under the comment "Even JSON.parse can be unsafe if used
+        // on complex objects that get eval'd later". That is speculation about
+        // a different sink: if something later evals the result, the eval is
+        // the finding, and `dangerousEvalUsage` reports it.
+        //
+        // JSON.parse cannot instantiate objects, invoke constructors or
+        // execute code — it is the REMEDIATION this rule's own message text
+        // recommends ("Use JSON.parse() or safe deserialization libraries").
+        // Reporting it as CWE-502 at CVSS 9.8 told people to replace the fix
+        // with itself. It was 31 of this rule's 33 corpus findings, every one
+        // of them a false positive, most on plain `parseJSON(jsonString)`
+        // utilities.
+        //
+        // The same argument covers the rest of `safeLibraries`: yaml.safeLoad,
+        // protobuf and msgpack are on that list precisely because they do not
+        // execute their input.
     };
 
     return {

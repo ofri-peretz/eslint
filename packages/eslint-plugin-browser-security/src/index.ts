@@ -68,6 +68,7 @@ import { noAllowArbitraryLoads } from './rules/no-allow-arbitrary-loads';
 import { noClickjacking } from './rules/no-clickjacking';
 import { noCredentialsInQueryParams } from './rules/no-credentials-in-query-params';
 import { noHttpUrls } from './rules/no-http-urls';
+import { noIncompleteUrlSanitization } from './rules/no-incomplete-url-sanitization';
 import { noInsecureRedirects } from './rules/no-insecure-redirects';
 import { noInsecureWebsocket } from './rules/no-insecure-websocket';
 import { noMissingCorsCheck } from './rules/no-missing-cors-check';
@@ -140,6 +141,7 @@ export const rules: Record<
   'no-clickjacking': noClickjacking,
   'no-credentials-in-query-params': noCredentialsInQueryParams,
   'no-http-urls': noHttpUrls,
+  'no-incomplete-url-sanitization': noIncompleteUrlSanitization,
   'no-insecure-redirects': noInsecureRedirects,
   'no-insecure-websocket': noInsecureWebsocket,
   'no-missing-cors-check': noMissingCorsCheck,
@@ -216,12 +218,36 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'browser-security/no-unsafe-eval-csp': 'error',
 
   // Migrated Rules
-  'browser-security/detect-mixed-content': 'error',
+  // NOTE: `detect-mixed-content` is intentionally NOT in `recommended`
+  // (removed 2026-08-13). Its entire predicate is "a string Literal starting
+  // with `http://`", which is a strict SUBSET of what `no-http-urls` already
+  // reports at `error` — same corpus sites, same two exemptions (XML namespace
+  // URIs, loopback origins), under a second CWE. Every finding it produced was
+  // therefore a second report of a line another rule had already claimed: one
+  // line, two severities, one underlying fact. That is the duplicate-reporting
+  // FP class the two CSRF rules were separated to avoid.
+  //
+  // `no-http-urls` is strictly more capable: it reads template literals as well
+  // as literals (so `` `http://${host}` `` is judged), and it has `allowedHosts`
+  // / `allowedPorts` for projects with a real dev-server exception. Dropping
+  // this rule from the preset loses no coverage at all.
+  //
+  // Measured over the 8-repo corpus: 1 finding, shared with `no-http-urls` —
+  // `new URL(event.path, 'http://e.c')` in Shopify/cli
+  // `packages/theme/src/cli/utilities/theme-environment/server-utils.ts:4`,
+  // a parsing base whose origin is destructured away. Both rules now share
+  // `isDiscardedUrlBase` and both correctly ignore it, so the count is 0 either
+  // way — the demotion is about the duplication, not that finding.
+  //
+  // Kept exported and opt-in-able: a team that wants CWE-311 reported
+  // separately from CWE-319 can enable it explicitly and accept the doubling.
   'browser-security/no-allow-arbitrary-loads': 'error',
   'browser-security/no-clickjacking': 'error',
   'browser-security/no-credentials-in-query-params': 'error',
   'browser-security/no-http-urls': 'error',
+  'browser-security/no-incomplete-url-sanitization': 'error',
   'browser-security/no-insecure-redirects': 'error',
+  'browser-security/no-disabled-certificate-validation': 'error',
   'browser-security/require-https-only': 'error',
   'browser-security/no-insecure-websocket': 'error',
   'browser-security/no-unvalidated-deeplinks': 'error',

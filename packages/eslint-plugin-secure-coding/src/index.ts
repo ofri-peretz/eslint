@@ -28,6 +28,14 @@ import { noLdapInjection } from './rules/no-ldap-injection';
 import { noDirectiveInjection } from './rules/no-directive-injection';
 import { noFormatStringInjection } from './rules/no-format-string-injection';
 import { noTemplateInjection } from './rules/no-template-injection';
+import { noSqlInjection } from './rules/no-sql-injection';
+import { noLogInjection } from './rules/no-log-injection';
+
+// Security rules - Fail-safe behaviour
+import { noFailOpenAuth } from './rules/no-fail-open-auth';
+
+// Security rules - Source-text deception
+import { noHomoglyphIdentifiers } from './rules/no-homoglyph-identifiers';
 
 // Security rules - Regex
 import { detectNonLiteralRegexp } from './rules/detect-non-literal-regexp';
@@ -81,6 +89,24 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-directive-injection': noDirectiveInjection,
   'no-format-string-injection': noFormatStringInjection,
   'no-template-injection': noTemplateInjection,
+  // Driver-agnostic CWE-89. Owns `db.query('SELECT … ' + req.params.id)` in
+  // files importing no SQL driver — the complement of the driver-scoped rules'
+  // gate, so exactly one rule reports any query site.
+  'no-sql-injection': noSqlInjection,
+  // CWE-117 — untrusted text concatenated into a log LINE (not a field).
+  'no-log-injection': noLogInjection,
+
+  // Fail-safe behaviour (1 rule)
+  //
+  // An unhandled stream `'error'` is CWE-248 and was briefly a rule here too,
+  // but `.pipe()` is a Node API and this plugin is environment-agnostic by
+  // contract — the scope lock rejects a `node` rule in it. `node-security`'s
+  // `require-stream-error-handler` owns those sites and scores CWE-248 2/2, so
+  // a second rule here would only have double-reported them.
+  'no-fail-open-auth': noFailOpenAuth,
+
+  // Source-text deception (1 rule)
+  'no-homoglyph-identifiers': noHomoglyphIdentifiers,
 
   // Regex Safety & Stability (3 rules)
   'detect-non-literal-regexp': detectNonLiteralRegexp,
@@ -140,12 +166,84 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-xpath-injection': 'error',
   'secure-coding/no-ldap-injection': 'error',
 
+  // Critical - SQL injection in a file with no SQL driver in it.
+  //
+  // Measured before promotion, on the same 8-repo corpus of published code
+  // (okta ×2, auth0, stripe, twilio, ioredis, paypal, shopify) used to demote
+  // `detect-non-literal-regexp` and `detect-object-injection`: **0 findings**.
+  // That zero is not vacuous — those repos hold 23 `.query(` / `.execute(`
+  // call sites between them. None builds a SQL *statement* out of a value the
+  // rule can attribute to an inbound request, which is the whole contract.
+  'secure-coding/no-sql-injection': 'error',
+
+  // High - Log injection (CWE-117). Measured on the same 8-repo corpus before
+  // promotion: **0 findings**. It reports only when untrusted text is
+  // concatenated into a log *line*; a structured field and a sanitiser call
+  // both break attribution, which is what keeps it silent on published code.
+  'secure-coding/no-log-injection': 'error',
+
+  // High - Failing open (CWE-636). Measured before promotion: **0 findings**,
+  // in a corpus of two Okta SDKs and an Auth0 middleware — i.e. the exact
+  // codebases most full of `try { … } catch {}`. Requiring a security-decision
+  // call inside the `try` is what separates a swallowed auth check from the
+  // hundreds of ordinary swallowed errors around it.
+  'secure-coding/no-fail-open-auth': 'error',
+
+  // NOTE: `no-unhandled-stream-error` (CWE-248) is intentionally NOT in
+  // `recommended`. It is written and tested, and it is correct — measured on
+  // the pinned corpus it reports once, a true positive
+  // (`dstImage.pack().pipe(fs.createWriteStream(…))` at
+  // okta-signin-widget/vrtUtil/ImageDiff.js:63, no listener on either stream).
+  //
+  // It is out of the preset because **`node-security/require-stream-error-handler`
+  // already owns this site** and ships in that plugin's `recommended`. Two
+  // rules reporting one `.pipe()` is the duplicate-finding class #478 was
+  // opened to close, and the corpus agrees on who owns it:
+  // `benchmarks/corpus/CWE-248/manifest.json` declares
+  // `expectedPlugins: ["eslint-plugin-node-security"]`.
+  //
+  // The rule's whole discriminator is `fs.createReadStream` / `createWriteStream`,
+  // so it is a Node-platform rule sitting in the runtime-agnostic plugin —
+  // it can never fire for a consumer who installs this package for a browser
+  // bundle. Kept exported and opt-in-able rather than deleted, so the coverage
+  // survives if the node-security rule is ever withdrawn.
+
+  // Medium - Homoglyph / invisible characters (CWE-1007). Measured before
+  // promotion: **0 findings**, including across the i18n bundles in the corpus
+  // — visible non-ASCII script text is never reported, only zero-width and
+  // bidi-control codepoints and mixed-script identifiers.
+  'secure-coding/no-homoglyph-identifiers': 'error',
+
   // Critical - Deserialization
   // Demoted 2026-05-09 — 76% Edge ratio.
   'secure-coding/no-unsafe-deserialization': 'warn',
 
   // High - Regex vulnerabilities
-  'secure-coding/detect-non-literal-regexp': 'warn',
+  // NOTE: `detect-non-literal-regexp` is intentionally NOT in `recommended`
+  // (removed 2026-08-12). Measured over an 8-repo corpus of published code
+  // (okta, auth0, stripe, twilio, ioredis, paypal, shopify) it fired 49 times.
+  // Fixing two outright defects took that to 34: it was reporting regex
+  // *literals* — in a rule whose name is "non-literal" — and it treated every
+  // built pattern as attacker-controlled, including `'\\{' + i + '\\}'` over a
+  // loop counter and `` `${SUPPORTED_EXTS.join('|')}$` `` over a module constant.
+  //
+  // The 34 that remain are patterns whose provenance the rule cannot resolve:
+  // a function parameter named `pattern`, a `route` from the app's own route
+  // table, minified library internals. "I could not prove this is safe" is not
+  // a finding — for a library whose API accepts a pattern, it is a description
+  // of the API.
+  //
+  // The decisive number is that the one genuine true positive in that output —
+  // `new RegExp(item.value.pattern, item.value.flags)` over a remotely-supplied
+  // schema — is already reported at `error` by
+  // `secure-coding/no-unsafe-regex-construction`, which attributes the taint
+  // rather than guessing. So this rule contributed 33 non-findings and zero
+  // unique findings. The two now partition cleanly: the `error` rule reports
+  // what it can attribute, and this one reports the rest — which is only worth
+  // hearing if you asked for it.
+  //
+  // Kept exported and opt-in-able for teams that want the paranoid sweep and
+  // will triage it.
   // Demoted 2026-05-09 — 91% Edge ratio.
   'secure-coding/no-redos-vulnerable-regex': 'error',
   'secure-coding/no-unsafe-regex-construction': 'error',

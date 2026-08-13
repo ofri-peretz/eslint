@@ -740,3 +740,83 @@ const xpath = \`//users/..\``,
     });
   });
 });
+
+/**
+ * Wild-corpus sweep (8 repos of published SDK/CLI code): 9 findings, 0 real.
+ * None of the eight repositories contains an XPath API.
+ *
+ * Two defects, both "shape is not meaning":
+ *
+ *  - `//` is the XPath descendant axis AND the separator in every URI. 7 of
+ *    the 9 findings were the `//` in `gid://…`, `https://…` or a URL built
+ *    from `req.protocol + '://' + host`.
+ *  - `..` is the XPath parent axis AND every relative filesystem path, and
+ *    `::` is the XPath axis separator AND a dozen unrelated conventions.
+ */
+describe('corpus regression — URIs, cache keys and file paths are not XPath', () => {
+  ruleTester.run('wild corpus', noXpathInjection, {
+    valid: [
+      // Shopify CLI packages/cli-kit/.../bulk-operations/helpers.ts:21 (×4)
+      // and app-management-client.ts:1235.
+      {
+        name: 'a GID template is not a descendant axis',
+        code: 'function gid(id) { return `gid://shopify/BulkOperation/${id}`; }',
+      },
+      {
+        name: 'a GID template passed to a helper',
+        code: 'function gid(id) { return encodeGid(`gid://organization/ShopifyShop/${id}`); }',
+      },
+      // okta-auth-js samples/.../web-server/routes/login.js:63 (×2) — the
+      // scheme is an interpolation, so the literal text is a bare `://`.
+      {
+        name: 'a URL assembled from req.protocol',
+        code: `const parsedUrl = new URL(req.protocol + '://' + req.get('host') + req.originalUrl);`,
+      },
+      {
+        name: 'a URL template with a dynamic scheme',
+        code: 'function u(req) { return `${req.protocol}://${req.get("host")}${req.originalUrl}`; }',
+      },
+      // Shopify CLI .../validation/app_config_webhook.ts:55 — a cache key.
+      {
+        name: 'a double-colon cache key is not an axis',
+        code: 'function k(topic, uri, filter) { return `${topic}::${uri}::${filter}`; }',
+      },
+      // okta-auth-js samples/gulpfile.js:37 — a relative require path whose
+      // variable name happens to contain "path".
+      {
+        name: 'a relative file path is not a parent axis',
+        code: `const OKTA_ENV_SCRIPT_PATH = '../env/index.js';`,
+      },
+      { name: 'a relative path in a query-named variable', code: `const queryPath = '../../lib';` },
+    ],
+    invalid: [
+      // Real XPath must still report — if any of these go quiet the narrowing
+      // above has become a false negative.
+      {
+        name: 'descendant axis with an interpolation',
+        code: 'function f(userInput) { return `//user[@id="${userInput}"]`; }',
+        errors: [{ messageId: 'unsafeXpathConcatenation' }],
+      },
+      {
+        name: 'a named axis is still an axis',
+        code: 'function f(userInput) { return `/root/child::user[@id="${userInput}"]`; }',
+        errors: [{ messageId: 'unsafeXpathConcatenation' }],
+      },
+      {
+        name: 'ancestor-or-self is an axis',
+        code: 'function f(userInput) { return `ancestor-or-self::user[${userInput}]`; }',
+        errors: [{ messageId: 'unsafeXpathConcatenation' }],
+      },
+      {
+        name: 'concatenated XPath predicate',
+        code: `const xpath = "/users/user[name='" + userInput + "']";`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      {
+        name: 'a parent axis inside a real XPath literal still reports',
+        code: `const xpathQuery = "//users/user/..";`,
+        errors: [{ messageId: 'dangerousXpathExpression' }],
+      },
+    ],
+  });
+});

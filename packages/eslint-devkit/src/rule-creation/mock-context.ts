@@ -32,6 +32,13 @@ export interface MockContextOptions {
    * rules that pre-scan the file at `create()` time need this to exist.
    */
   ast?: unknown;
+  /**
+   * Scope returned by the `sourceCode.getScope()` stub. Defaults to an empty
+   * scope. Rules that ask the scope manager a question — "does this function
+   * bind a credential?" — see nothing without one, so their listeners return
+   * early and the synthetic node under test never reaches `context.report`.
+   */
+  scope?: unknown;
 }
 
 export interface MockContextResult {
@@ -58,7 +65,7 @@ export function createWithMockContext(
     ast: opts.ast ?? { type: 'Program', body: [], tokens: [], comments: [] },
     text: opts.sourceText ?? '',
     getText: () => opts.sourceText ?? '',
-    getScope: () => emptyScope,
+    getScope: () => opts.scope ?? emptyScope,
     getAncestors: () => [],
     getCommentsBefore: () => [],
     getDeclaredVariables: () => [],
@@ -77,7 +84,7 @@ export function createWithMockContext(
     getPhysicalFilename: () => filename,
     getCwd: () => '/',
     getSourceCode: () => sourceCode,
-    getScope: () => emptyScope,
+    getScope: () => opts.scope ?? emptyScope,
     getAncestors: () => [],
     report: (descriptor: TSESLint.ReportDescriptor<string>) => {
       reports.push(descriptor);

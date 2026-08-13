@@ -130,25 +130,87 @@ describe('no-weak-password-recovery', () => {
         // These now pass because they don't have BOTH password AND reset/recover/forgot
         'function processForgot() { reset(); }',  // No password keyword
         'function processPassword() { reset(); }',  // No reset/forgot keyword
+
+        // Corpus false-positive classes: a recovery-shaped NAME on a function
+        // that holds no recovery credential. "Missing token expiration" is a
+        // statement about a token; these have none, so there is nothing to
+        // expire and nothing to rate limit.
+        // okta-auth-js samples/generated/static-spa/public/app.js — a DOM pair.
+        'function hideRecoverPassword() { document.getElementById("x").style.display = "none"; }',
+        'function showRecoverPassword() { document.getElementById("x").style.display = "block"; }',
+        // okta-signin-widget src/v2/client/formatError.ts — an error formatter.
+        'function formatInvalidRecoveryTokenError(error) { log(error); return error.message; }',
+        // okta-auth-js lib/idx/recoverPassword.ts — the server owns the flow.
+        'function recoverPassword(options) { log(options); return client.request(options); }',
+
+        // The `@secure-recovery` annotation suppresses each control
+        // independently. Both functions hold a credential, so they reach the
+        // report branches and are stopped by the annotation rather than by the
+        // credential gate.
+        '/** @secure-recovery */\nfunction handlePasswordReset(resetToken) { applyReset(resetToken); }',
+        '/** @secure-recovery */\nfunction forgotPassword(resetToken) { if (resetToken.expired) return; reset(); }',
+
+        // A computed callee has no name to read, so it is not a generator.
+        'function resetPasswordHelper() { const t = handlers[name](); return t; }',
+        'function resetPasswordDispatch() { const t = handlers["x"](); return t; }',
+        // A credential-named binding with no initialiser holds nothing yet.
+        'function forgotPasswordFlow() { let token; assign(token); }',
+
+        // The deleted `IfStatement` visitor reported any condition whose
+        // PRINTED TEXT mentioned recovery and "email" but not verify/token/
+        // code. This is what it fired on in okta-signin-widget
+        // (playground/main.ts:84): a client reading back the status the server
+        // reported. Pinned so the visitor cannot come back unnoticed.
+        "if (res.status === 'FORGOT_PASSWORD_EMAIL_SENT') { showConfirmation(); }",
+        "if (passwordResetEmail) { doSomething(); }",
       ],
       invalid: [
         // Missing both checks - requires BOTH password AND reset/recovery keywords
+        // Mints a recovery token, then neither expires nor rate-limits it.
         {
-          code: 'function handlePasswordReset(email) { resetPassword(email); }',
+          code: 'function handlePasswordReset(email) { const token = makeToken(); save(email, token); }',
           errors: [
             { messageId: 'missingTokenExpiration' },
             { messageId: 'missingRateLimit' },
           ],
         },
-        // Missing rate limit only - forgotPassword has both keywords
+        // Missing rate limit only — the expiry check is present.
         {
-          code: 'function forgotPassword() { if(token.expired) return; reset(); }',
+          code: 'function forgotPassword() { const token = makeToken(); if(token.expired) return; reset(token); }',
           errors: [{ messageId: 'missingRateLimit' }],
         },
-        // Missing expiration only - resetPassword has both keywords
+        // Missing expiration only — rate limiting is present.
         {
-          code: 'function resetPassword() { checkRateLimit(); sendEmail(); }',
+          code: 'function resetPassword() { const token = makeToken(); checkRateLimit(); sendEmail(token); }',
           errors: [{ messageId: 'missingTokenExpiration' }],
+        },
+        // The credential is minted in a nested closure — the scope walk has to
+        // descend into child scopes to find it.
+        {
+          code: 'function recoverPasswordOuter() { const go = () => { const resetToken = mint(); return resetToken; }; return go; }',
+          errors: [
+            { messageId: 'missingTokenExpiration' },
+            { messageId: 'missingRateLimit' },
+          ],
+        },
+        // A bare generator call is evidence even unassigned to a credential
+        // name — `nanoid` is a scope reference here, `crypto.randomBytes` is
+        // reached through the initialiser instead.
+        {
+          code: 'function resetPasswordFlow() { const v = nanoid(); mail(v); }',
+          errors: [
+            { messageId: 'missingTokenExpiration' },
+            { messageId: 'missingRateLimit' },
+          ],
+        },
+        // A credential arriving as a PARAMETER is one this function is
+        // responsible for validating, even though it did not mint it.
+        {
+          code: 'function resetPasswordWithToken(resetToken) { applyReset(resetToken); }',
+          errors: [
+            { messageId: 'missingTokenExpiration' },
+            { messageId: 'missingRateLimit' },
+          ],
         },
       ],
     });
@@ -220,13 +282,6 @@ describe('no-weak-password-recovery', () => {
           resetPassword();
         }
         `,
-        // Same annotation on the weak-verification IfStatement —
-        // safetyChecker.isSafe() true for the weakRecoveryVerification
-        // branch.
-        `
-        /** @secure-recovery */
-        if (passwordResetEmail) { doSomething(); }
-        `,
       ],
       invalid: [
         // BinaryExpression weak-pattern branch, no annotation — actually
@@ -236,19 +291,6 @@ describe('no-weak-password-recovery', () => {
         {
           code: 'const passwordResetToken = Date.now() + salt;',
           errors: [{ messageId: 'insufficientTokenEntropy' }],
-        },
-        // Weak recovery verification actually firing: the condition text
-        // itself must be recovery-related (password+reset) AND mention
-        // 'email' AND omit verify/token/code/otp/sms. A bare
-        // recovery-named identifier as the whole test satisfies this —
-        // the previous "Weak Recovery Verification" describe block left
-        // its invalid[] empty because its attempted fixtures used
-        // `user.email`, whose condition text ('user.email') isn't itself
-        // recovery-named, so isRecoveryRelated() never returned true and
-        // the check block was skipped entirely.
-        {
-          code: 'if (passwordResetEmail) { doSomething(); }',
-          errors: [{ messageId: 'weakRecoveryVerification' }],
         },
       ],
     });
@@ -265,10 +307,6 @@ describe('no-weak-password-recovery', () => {
         // (Date.now()/Math.random()/timestamp/new Date()) — false branch of
         // `weakPatterns.some(...)`.
         'const passwordResetToken = a + b;',
-        // Recovery-related IfStatement test text that also mentions
-        // 'token' — false branch of the weak-verification condition chain
-        // (the `!testText.includes('token')` arm specifically).
-        'if (passwordResetEmailToken) { doSomething(); }',
       ],
       invalid: [
         // Recovery-related via the 'pwd' + 'reset' keyword pair (not the
@@ -339,6 +377,13 @@ describe('no-weak-password-recovery', () => {
     it('missingTokenExpiration and missingRateLimit reports both fall back to line 0 when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery, {
         sourceText: 'function handlePasswordReset(email) { resetPassword(); }',
+        // The rule only reports a missing control on a function that actually
+        // holds a recovery credential, so the mock scope has to contain one.
+        scope: {
+          variables: [{ name: 'resetToken', defs: [{ type: 'Parameter' }] }],
+          references: [],
+          childScopes: [],
+        },
       });
       const functionDeclaration = listeners.FunctionDeclaration as (node: unknown) => void;
 
@@ -384,20 +429,6 @@ describe('no-weak-password-recovery', () => {
       expect(reports[0].data?.line).toBe('0');
     });
 
-    it('weakRecoveryVerification report falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noWeakPasswordRecovery, {
-        sourceText: 'passwordResetEmail',
-      });
-      const ifStatement = listeners.IfStatement as (node: unknown) => void;
-
-      ifStatement({
-        type: 'IfStatement',
-        test: { type: 'Identifier', name: 'passwordResetEmail' },
-      });
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
-    });
   });
 });
 
@@ -502,7 +533,7 @@ describe('corpus regression — declarations are not recovery flows', () => {
       // A real handler still reports both.
       {
         name: 'handler with no expiry or rate limit',
-        code: `async function forgotPassword(req, res) { const t = await mint(req.body.email); await mail(t); res.end(); }`,
+        code: `async function forgotPassword(req, res) { const t = crypto.randomBytes(32); await mail(t); res.end(); }`,
         errors: [
           { messageId: 'missingTokenExpiration' },
           { messageId: 'missingRateLimit' },

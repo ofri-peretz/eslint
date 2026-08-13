@@ -202,3 +202,65 @@ jwt.verify(token, secret, { algorithm: 'none' });`,
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Module-gate regressions — CommonJS and import-equals
+// ---------------------------------------------------------------------------
+// The file-level gate read `ImportDeclaration` only, so EVERY CommonJS file was
+// exempt from EVERY rule in this plugin: `const jwt = require('jsonwebtoken')`
+// followed by `algorithm: 'none'` reported nothing at all. Both CWE-327
+// fixtures in benchmarks/corpus are written that way
+// (vulnerable/sign-alg-none.js, vulnerable/verify-allows-none.js) and both were
+// silently missed. `require` is not a legacy edge case in Node, and
+// `import x = require('y')` is TypeScript's own interop form.
+ruleTester.run('no-algorithm-none — module gate', noAlgorithmNone, {
+  valid: [
+    // The gate must still hold: a lookalike call in a file with no JWT library.
+    `const x = require('lodash');\nx.sign(payload, '', { algorithm: 'none' });`,
+    `import x from 'lodash';\nx.sign(payload, '', { algorithm: 'none' });`,
+    // require() bound to something that is not a call.
+    `const jwt = notRequire;\njwt.sign(payload, '', { algorithm: 'none' });`,
+    // `import A = B.C` is a namespace alias, not a module load.
+    `import Alias = Some.Namespace;\njwt.sign(payload, '', { algorithm: 'none' });`,
+    // A computed specifier names no package we can check.
+    `const jwt = require(pkgName);\njwt.sign(payload, '', { algorithm: 'none' });`,
+  ],
+  invalid: [
+    // benchmarks/corpus/CWE-327/vulnerable/sign-alg-none.js
+    {
+      code: `const jwt = require('jsonwebtoken');\nfunction issue(payload) {\n  return jwt.sign(payload, '', { algorithm: 'none' });\n}`,
+      errors: [{ messageId: 'algorithmNone' }],
+    },
+    // benchmarks/corpus/CWE-327/vulnerable/verify-allows-none.js — 'none'
+    // hidden inside an otherwise-reasonable allow-list.
+    {
+      code: `const jwt = require('jsonwebtoken');\nfunction check(token, secret) {\n  return jwt.verify(token, secret, { algorithms: ['HS256', 'none'] });\n}`,
+      errors: [{ messageId: 'algorithmNoneInArray' }],
+    },
+    // TypeScript's interop spelling.
+    {
+      code: `import jwt = require('jsonwebtoken');\njwt.sign(payload, '', { algorithm: 'none' });`,
+      errors: [{ messageId: 'algorithmNone' }],
+    },
+    // Destructured require, and a subpath specifier.
+    {
+      code: `const { sign } = require('jsonwebtoken');\nconst jwt = require('jsonwebtoken');\njwt.sign(payload, '', { algorithm: 'none' });`,
+      errors: [{ messageId: 'algorithmNone' }],
+    },
+    // `require('x').default` — the call is the receiver of a member read.
+    {
+      code: `const jwt = require('jsonwebtoken').default;\njwt.sign(payload, '', { algorithm: 'none' });`,
+      errors: [{ messageId: 'algorithmNone' }],
+    },
+    // A scoped package root is `@scope/name`, not `@scope`.
+    {
+      code: `const jwt = require('@nestjs/jwt');\njwt.sign(payload, '', { algorithm: 'none' });`,
+      errors: [{ messageId: 'algorithmNone' }],
+    },
+    // Side-effect require establishes the file as JWT code.
+    {
+      code: `require('jsonwebtoken');\njwt.sign(payload, '', { algorithm: 'none' });`,
+      errors: [{ messageId: 'algorithmNone' }],
+    },
+  ],
+});

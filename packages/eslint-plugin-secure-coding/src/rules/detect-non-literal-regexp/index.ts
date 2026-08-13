@@ -25,7 +25,11 @@ type MessageIds =
   | 'escapeUserInput';
 
 export interface Options {
-  /** Allow literal string regex patterns. Default: false (stricter) */
+  /**
+   * Allow literal string regex patterns — `new RegExp('^[a-z]+$')`.
+   * Default: true. A rule named "non-literal" reporting a literal by default
+   * contradicted its own contract. Set false to prefer `/…/` literal syntax.
+   */
   allowLiterals?: boolean;
   
   /** Additional RegExp creation patterns to check */
@@ -36,11 +40,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
-// Type guard for regex literal nodes
-const isRegExpLiteral = (node: TSESTree.Node): node is TSESTree.Literal & { regex: { pattern: string; flags: string } } => {
-  return node.type === 'Literal' && Object.prototype.hasOwnProperty.call(node, 'regex');
-};
 
 /**
  * RegExp creation patterns and their security implications
@@ -94,6 +93,121 @@ const REGEXP_PATTERNS: RegExpPattern[] = [
     riskLevel: 'critical'
   }
 ];
+
+/**
+ * String/array methods that turn constant inputs into a constant output.
+ *
+ * Deliberately short: every entry has to be a pure transformation whose result
+ * depends on nothing but its receiver and arguments. `map`/`filter` take a
+ * callback and are excluded — the callback could read anything.
+ */
+const CONSTANT_PRESERVING_METHODS: ReadonlySet<string> = new Set([
+  'join',
+  'concat',
+  'toUpperCase',
+  'toLowerCase',
+  'trim',
+  'slice',
+  'repeat',
+]);
+
+/**
+ * Can the program determine this value before any input arrives?
+ *
+ * The rule previously asked only "is this a string literal?", so
+ * `new RegExp('\\{' + i + '\\}')` over a loop counter and
+ * `new RegExp(`${SUPPORTED_EXTS.join('|')}$`)` over a module constant were
+ * both reported as attacker-controlled ReDoS. Neither is: nothing outside the
+ * program can change what those patterns compile to. That single question
+ * accounted for most of this rule's 49 corpus findings.
+ *
+ * Resolution is intentionally conservative — anything it cannot follow to a
+ * literal (a parameter, an import, a property of an unknown object) is NOT
+ * treated as constant, so unknown provenance still reports.
+ */
+function isBuildTimeConstant(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+  depth = 0,
+): boolean {
+  // Bounded walk: a cyclic or absurdly deep expression resolves to "unknown",
+  // which reports. Erring toward a finding is the safe direction here.
+  if (depth > 6) {
+    return false;
+  }
+
+  switch (node.type) {
+    case 'Literal':
+      return true;
+    case 'TemplateLiteral':
+      return node.expressions.every((expression) =>
+        isBuildTimeConstant(expression, sourceCode, depth + 1),
+      );
+    case 'BinaryExpression':
+      return (
+        node.operator === '+' &&
+        isBuildTimeConstant(node.left as TSESTree.Node, sourceCode, depth + 1) &&
+        isBuildTimeConstant(node.right, sourceCode, depth + 1)
+      );
+    case 'ArrayExpression':
+      return node.elements.every(
+        (element) =>
+          element !== null &&
+          element.type !== 'SpreadElement' &&
+          isBuildTimeConstant(element, sourceCode, depth + 1),
+      );
+    case 'CallExpression':
+      return (
+        node.callee.type === 'MemberExpression' &&
+        node.callee.property.type === 'Identifier' &&
+        CONSTANT_PRESERVING_METHODS.has(node.callee.property.name) &&
+        isBuildTimeConstant(node.callee.object, sourceCode, depth + 1) &&
+        node.arguments.every(
+          (argument) =>
+            argument.type !== 'SpreadElement' &&
+            isBuildTimeConstant(argument, sourceCode, depth + 1),
+        )
+      );
+    case 'Identifier':
+      return isConstantBinding(node, sourceCode, depth);
+    default:
+      return false;
+  }
+}
+
+/** Resolve an identifier to its single declaration and judge that. */
+function isConstantBinding(
+  node: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+  depth: number,
+): boolean {
+  let variable: TSESLint.Scope.Variable | null = null;
+  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+  while (scope !== null && variable === null) {
+    variable = scope.variables.find((candidate) => candidate.name === node.name) ?? null;
+    scope = scope.upper;
+  }
+  // Shadowed or re-declared bindings are not worth reasoning about.
+  if (variable === null || variable.defs.length !== 1) {
+    return false;
+  }
+
+  const definition = variable.defs[0]!;
+  if (definition.type !== 'Variable') {
+    return false;
+  }
+
+  // A `for (let i = 0; …)` counter is driven by the loop, not by input.
+  if (definition.parent.parent?.type === 'ForStatement') {
+    return true;
+  }
+  if (definition.parent.kind !== 'const') {
+    return false;
+  }
+
+  const init = definition.node.init;
+  return init !== null && isBuildTimeConstant(init, sourceCode, depth + 1);
+}
 
 export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   name: 'detect-non-literal-regexp',
@@ -187,7 +301,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowLiterals: false,
+      allowLiterals: true,
       additionalPatterns: [],
       maxPatternLength: 100
     },
@@ -197,7 +311,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     // `options` is always an object here (defaulted just above), so a
     // second `|| {}` fallback could never fire — removed as dead code.
     const {
-      allowLiterals = false,
+      allowLiterals = true,
       maxPatternLength = 100,
     }: Options = options;
 
@@ -214,28 +328,6 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       if (node.type === 'TemplateLiteral' && node.expressions.length === 0) {
         return true;
       }
-      return false;
-    };
-
-    /**
-     * Check if a regex pattern contains dangerous ReDoS patterns
-     * Only flag truly dangerous patterns like nested quantifiers: (a+)+, (a*)*
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const hasReDoSPatterns = (pattern: string): boolean => {
-      // Detect truly dangerous nested quantifier patterns that cause exponential backtracking
-      // Pattern like (a+)+, (a*)+, (a+)*, (a*)*, ([a-z]+)+
-      const nestedQuantifierPatterns = [
-        /\([^)]*[+*]\)[+*]/, // (something+)+ or (something*)* patterns
-        /\([^)]*[+*]\)\{[0-9,]+\}/, // (something+){n,m} patterns
-      ];
-      
-      for (const dangerousPattern of nestedQuantifierPatterns) {
-        if (dangerousPattern.test(pattern)) {
-          return true;
-        }
-      }
-      
       return false;
     };
 
@@ -270,7 +362,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     /**
      * Detect the specific vulnerability pattern
      */
-    const detectVulnerability = (pattern: string, isDynamic: boolean): RegExpPattern | null => {
+    const detectVulnerability = (pattern: string, isDynamic: boolean): RegExpPattern => {
       // Check for dynamic construction first (highest risk)
       if (isDynamic) {
         for (const vuln of REGEXP_PATTERNS) {
@@ -293,23 +385,23 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         };
       }
 
-      // Check for ReDoS patterns in literal regex
-      if (hasReDoSPatterns(pattern)) {
-        return {
-          pattern: 'redos-literal',
-          dangerous: true,
-          vulnerability: 'redos',
-          safeAlternative: 'Restructure regex to avoid nested quantifiers',
-          example: {
-            bad: pattern,
-            good: pattern.replace(/(a+)\+/g, '$1') // Simplified example
-          },
-          effort: '20-30 minutes',
-          riskLevel: 'high'
-        };
-      }
-
-      return null;
+      // A literal pattern is not a *non-literal* regexp. It only reaches here
+      // when `allowLiterals` is off, i.e. the user asked to be told about
+      // `new RegExp('…')` in favour of `/…/` syntax. ReDoS inside a literal is
+      // `no-redos-vulnerable-regex`'s remit, which runs a real automaton
+      // analysis instead of the two hand-written regexes that used to live here.
+      return {
+        pattern: 'literal-construction',
+        dangerous: false,
+        vulnerability: 'redos',
+        safeAlternative: 'Regex literal syntax',
+        example: {
+          bad: `new RegExp(${pattern})`,
+          good: '/pattern/',
+        },
+        effort: '2 minutes',
+        riskLevel: 'high',
+      };
     };
 
     /**
@@ -327,13 +419,11 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         ].join('\n');
       }
 
-      if (vulnerability.pattern === 'redos-literal') {
+      if (vulnerability.pattern === 'literal-construction') {
         return [
-          '   1. Identify nested quantifiers (*+, ++, ?+)',
-          '   2. Restructure regex to avoid exponential backtracking',
-          '   3. Use atomic groups if supported: (?>...)',
-          '   4. Test regex performance with long inputs',
-          '   5. Consider alternatives like string methods'
+          '   1. Replace new RegExp(\'…\') with a /…/ literal',
+          '   2. Keep the flags as literal suffixes: /…/gi',
+          '   3. Escaping differs: a literal needs one backslash, not two'
         ].join('\n');
       }
 
@@ -359,8 +449,8 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     // entries, and the two object literals in `detectVulnerability`) sets
     // `riskLevel` to only `'high'` or `'critical'` — never `'medium'` or
     // `'low'` — so those two branches are the only reachable outcomes.
-    const determineRiskLevel = (vulnerability: RegExpPattern, pattern: string): string => {
-      if (vulnerability.riskLevel === 'critical' || hasReDoSPatterns(pattern)) {
+    const determineRiskLevel = (vulnerability: RegExpPattern): string => {
+      if (vulnerability.riskLevel === 'critical') {
         return 'CRITICAL';
       }
 
@@ -381,12 +471,19 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
 
       const { pattern, patternNode, isDynamic, length } = extractPattern(node);
 
-      // Allow literals if configured and pattern is reasonable length
-      if (allowLiterals && patternNode && isLiteralString(patternNode) && length <= maxPatternLength) {
-        // Still check for ReDoS patterns even in literals
-        if (!hasReDoSPatterns(pattern)) {
+      if (!patternNode) {
+        return;
+      }
+
+      if (isDynamic) {
+        // The pattern is built, but the program decides every part of it —
+        // a loop counter, a module constant, `CONST_ARRAY.join('|')`. Nothing
+        // outside the process can change what this compiles to.
+        if (isBuildTimeConstant(patternNode, context.sourceCode)) {
           return;
         }
+      } else if (allowLiterals && length <= maxPatternLength) {
+        return;
       }
 
       const vulnerability = detectVulnerability(pattern, isDynamic);
@@ -395,16 +492,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       // true (either a matched REGEXP_PATTERNS entry or its own generic
       // "dynamic" object), so `vulnerability` can only be null when
       // `isDynamic` is false — meaning a synthetic `isDynamic ? {...} :
-      // null` fallback here could never construct the object literal it
-      // used to; it always reduced to `null`. Removed as dead code.
-      const effectiveVulnerability = vulnerability;
-
-      if (!effectiveVulnerability) {
-        return;
-      }
-
-      const riskLevel = determineRiskLevel(effectiveVulnerability, pattern);
-      const steps = generateRefactoringSteps(effectiveVulnerability);
+      // Both branches of `detectVulnerability` return an object — the dynamic
+      // one and the literal-construction one — so there is no null to guard.
+      const riskLevel = determineRiskLevel(vulnerability);
+      const steps = generateRefactoringSteps(vulnerability);
 
       context.report({
         node,
@@ -412,10 +503,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         data: {
           pattern: pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
           riskLevel,
-          vulnerability: effectiveVulnerability.vulnerability,
-          safeAlternative: effectiveVulnerability.safeAlternative,
+          vulnerability: vulnerability.vulnerability,
+          safeAlternative: vulnerability.safeAlternative,
           steps,
-          effort: effectiveVulnerability.effort
+          effort: vulnerability.effort
         },
         suggest: [
           {
@@ -442,46 +533,9 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       });
     };
 
-    /**
-     * Check literal regex patterns for ReDoS vulnerabilities
-     */
-    const checkLiteralRegExp = (node: TSESTree.Node) => {
-      if (!isRegExpLiteral(node)) {
-        return;
-      }
-
-      const pattern = node.regex.pattern;
-
-      // Check for ReDoS patterns. `detectVulnerability(pattern, false)`
-      // re-tests the identical `hasReDoSPatterns(pattern)` condition just
-      // checked above (see its `isDynamic === false` branch) and always
-      // returns non-null when that's true — so `vulnerability` here can
-      // never be null. No `if (vulnerability)` guard, to avoid an
-      // unreachable false branch.
-      if (hasReDoSPatterns(pattern)) {
-        const vulnerability = detectVulnerability(pattern, false)!;
-        const riskLevel = determineRiskLevel(vulnerability, pattern);
-        const steps = generateRefactoringSteps(vulnerability);
-
-        context.report({
-          node,
-          messageId: 'regexpReDoS',
-          data: {
-            pattern: pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
-            riskLevel,
-            vulnerability: vulnerability.vulnerability,
-            safeAlternative: vulnerability.safeAlternative,
-            steps,
-            effort: vulnerability.effort
-          }
-        });
-      }
-    };
-
     return {
       CallExpression: checkRegExpCall,
-      NewExpression: checkRegExpCall,
-      Literal: checkLiteralRegExp
+      NewExpression: checkRegExpCall
     };
   },
 });

@@ -35,7 +35,7 @@ import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESTree } from '@typescript-eslint/utils';
 import { createRule } from './rule-creator';
 import { formatLLMMessage, MessageIcons } from '../messaging';
-import { matchesModule } from './sdk-api-key-rule';
+import { createModuleListEvidence } from './module-evidence';
 
 /**
  * Configuration for one vendor's instantiation of the CWE-1427 detector.
@@ -163,6 +163,9 @@ export function calleePath(callee: TSESTree.Node): string | undefined {
 export function createSystemPromptInjectionRule(config: SystemPromptInjectionRuleConfig) {
   const promptProps = new Set(config.systemPromptProps);
   const paths = config.requestPaths;
+  // One probe per rule, not per file: it caches by `Program`, so the walk is
+  // paid once however many rules in the plugin ask.
+  const usesSdk = createModuleListEvidence(config.modules);
 
   return createRule<[], MessageIds>({
     name: config.ruleName,
@@ -193,8 +196,10 @@ export function createSystemPromptInjectionRule(config: SystemPromptInjectionRul
     },
     defaultOptions: [],
     create(context) {
-      let importsSdk = false;
-      const candidates: TSESTree.Node[] = [];
+      // Asked once, up front, over the whole AST — so the verdict cannot depend
+      // on whether the import is written above or below the call, which is what
+      // the old two-visitor gate needed a `Program:exit` pass to survive.
+      if (!usesSdk(context.sourceCode.ast)) return {};
 
       /** Report the value of any system-prompt option that is not static. */
       function inspectRequest(options: TSESTree.ObjectExpression): void {
@@ -240,26 +245,13 @@ export function createSystemPromptInjectionRule(config: SystemPromptInjectionRul
           }
           return;
         }
-        if (!isStaticInstruction(value)) candidates.push(value);
+        if (!isStaticInstruction(value)) {
+          context.report({ node: value, messageId: 'untrustedSystemPrompt' });
+        }
       }
 
       return {
-        ImportDeclaration(node: TSESTree.ImportDeclaration) {
-          if (matchesModule(String(node.source.value), config.modules)) importsSdk = true;
-        },
-
         CallExpression(node: TSESTree.CallExpression) {
-          if (
-            node.callee.type === AST_NODE_TYPES.Identifier &&
-            node.callee.name === 'require' &&
-            node.arguments[0]?.type === AST_NODE_TYPES.Literal &&
-            typeof node.arguments[0].value === 'string' &&
-            matchesModule(node.arguments[0].value, config.modules)
-          ) {
-            importsSdk = true;
-            return;
-          }
-
           // A member call whose path ends in one of this SDK's request paths.
           const path = calleePath(node.callee);
           if (path === undefined) return;
@@ -267,14 +259,6 @@ export function createSystemPromptInjectionRule(config: SystemPromptInjectionRul
 
           const request = node.arguments[0];
           if (request?.type === AST_NODE_TYPES.ObjectExpression) inspectRequest(request);
-        },
-
-        // Judged at exit so the gate does not depend on statement order.
-        'Program:exit'() {
-          if (!importsSdk) return;
-          for (const node of candidates) {
-            context.report({ node, messageId: 'untrustedSystemPrompt' });
-          }
         },
       };
     },

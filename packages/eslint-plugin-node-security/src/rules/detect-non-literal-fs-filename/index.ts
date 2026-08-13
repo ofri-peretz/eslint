@@ -25,6 +25,21 @@ type MessageIds =
   | 'whitelistExtensions';
 
 export interface Options {
+  /**
+   * Identifier roots treated as attacker-reachable.
+   * Default: `['req', 'request', 'ctx', 'event', 'process']`.
+   */
+  taintSources?: string[];
+
+  /**
+   * Report paths whose provenance cannot be resolved (a bare parameter, an
+   * opaque helper's return value). Default: `false`.
+   *
+   * `true` restores the pre-inversion behaviour: report unless constancy can
+   * be proved. Measured at 7% precision on a real-code corpus, so it is off.
+   */
+  reportUnresolvedPaths?: boolean;
+
   /** Allow literal strings. Default: false (stricter) */
   allowLiterals?: boolean;
   
@@ -154,7 +169,14 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
  * under a different import path — `readFile(userPath)` there is exactly as
  * exploitable as `fs.readFile(userPath)`.
  */
-const FS_MODULES = new Set(['fs', 'node:fs', 'fs/promises', 'node:fs/promises']);
+// `fs-extra` and `graceful-fs` re-export the entire fs surface under the same
+// method names, so a file using them was invisible to this rule while using
+// identical code. okta-signin-widget reaches fs through `fs-extra` in at least
+// five non-test files.
+const FS_MODULES = new Set([
+  'fs', 'node:fs', 'fs/promises', 'node:fs/promises',
+  'fs-extra', 'graceful-fs',
+]);
 
 export const isFsModule = (source: unknown): boolean =>
   typeof source === 'string' && FS_MODULES.has(source);
@@ -308,6 +330,18 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          taintSources: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process)',
+          },
+          reportUnresolvedPaths: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report paths whose provenance cannot be resolved. Restores the pre-inversion behaviour; measured at 7% precision on real code.',
+          },
           allowLiterals: {
             type: 'boolean',
             default: false,
@@ -345,8 +379,45 @@ allowLiterals = false,
 }: Options = options;
 
     /**
+     * Roots an attacker can actually reach.
+     *
+     * Deliberately `process` ONLY — `argv` and `env`.
+     *
+     * Request-sourced paths (`req`/`request`/`ctx`/`event`) and function
+     * parameters belong to `no-arbitrary-file-access`, which reports them at
+     * `error` and names user input as the cause. Listing them here too would
+     * rebuild the 25-site double-report the two rules were just separated to
+     * avoid: one line, two severities, one underlying fact.
+     *
+     * `process.env` counts: an operator-set variable is not a remote attacker,
+     * but a path named entirely by the environment is externally parameterised
+     * — `twilio-node` `RequestClient.ts:128` reads a CA bundle that way. A
+     * project treating env as trusted can drop it via `taintSources`.
+     */
+    const DEFAULT_TAINT_ROOTS = ['process'];
+    const taintRoots = new Set(options.taintSources ?? DEFAULT_TAINT_ROOTS);
+    const reportUnresolvedPaths = options.reportUnresolvedPaths ?? false;
+
+    /**
      * File system methods that can be dangerous with user input
      */
+    /**
+     * Which ARGUMENTS of each method are paths.
+     *
+     * Only `arguments[0]` was ever examined, so the destination of a copy,
+     * rename, symlink or link was never checked. `Shopify/cli`
+     * `bin/get-graphql-schemas.js:211` does `fs.copyFileSync(sourcePath,
+     * localPath)` and `e2e/setup/auth.ts:51` copies into an env-derived
+     * directory — both were silent.
+     */
+    const PATH_ARGUMENT_INDICES: ReadonlyMap<string, readonly number[]> = new Map([
+      ['copyFile', [0, 1]], ['copyFileSync', [0, 1]],
+      ['cp', [0, 1]], ['cpSync', [0, 1]],
+      ['rename', [0, 1]], ['renameSync', [0, 1]],
+      ['link', [0, 1]], ['linkSync', [0, 1]],
+      ['symlink', [0, 1]], ['symlinkSync', [0, 1]],
+    ]);
+
     const dangerousMethods = new Set([
       'readFile', 'readFileSync',
       'writeFile', 'writeFileSync',
@@ -359,6 +430,22 @@ allowLiterals = false,
       'rmdir', 'rmdirSync',
       'access', 'accessSync',
       'createReadStream', 'createWriteStream',
+      // Destructive methods that were missing entirely. `update-bugsnag.js:36`
+      // does `fs.cpSync(sourceDirectory, …)` with `sourceDirectory` built from
+      // `process.argv[2]` — a recursive copy driven by argv, unreported, while
+      // the harmless `mkdir` of a temp dir two lines above WAS reported. The
+      // rule flagged the safe thing and missed the dangerous one.
+      'cp', 'cpSync',
+      'rm', 'rmSync',
+      'copyFile', 'copyFileSync',
+      'rename', 'renameSync',
+      'truncate', 'truncateSync',
+      'symlink', 'symlinkSync',
+      'link', 'linkSync',
+      'utimes', 'utimesSync',
+      'chmod', 'chmodSync',
+      'open', 'openSync',
+      'opendir', 'opendirSync',
       ...additionalMethods
     ]);
 
@@ -371,126 +458,220 @@ allowLiterals = false,
     };
 
     /**
-     * Extract path argument from fs call.
-     * `method` comes from checkFsCall, which already resolved the callee
-     * shape — re-deriving it here would hide an unreachable defensive branch.
-     */
-    const extractPathArgument = (node: TSESTree.CallExpression, method: string): {
-      path: string;
-      pathNode: TSESTree.Node | null;
-      operation: FSOperation | null;
-    } => {
-      const operation = FS_OPERATIONS.find(op => op.method === method) || null;
-
-      // First argument is usually the path
-      const pathNode = node.arguments.length > 0 ? node.arguments[0] : null;
-      const sourceCode = context.sourceCode;
-      const path = pathNode ? sourceCode.getText(pathNode) : '';
-
-      return { path, pathNode, operation };
-    };
-
-    /**
      * Determine if the path argument is potentially dangerous
      */
-    const isDangerousPath = (pathNode: TSESTree.Node | null, pathStr: string): boolean => {
-      // Allow literals if configured
-      if (allowLiterals && pathNode && isLiteralString(pathNode)) {
-        return false;
-      }
 
-      // Check for obvious traversal patterns in literals
-      if (pathNode && isLiteralString(pathNode) && hasTraversalPatterns(pathStr)) {
-        return true;
-      }
-
-      // SAFE: path.join(__dirname, 'literal', 'path') with all literal args
-      if (pathNode && isSafePathConstruction(pathNode)) {
-        return false;
-      }
-
-      // SAFE: Path variable inside validated if-block with startsWith check
-      if (pathNode && hasPathValidation(pathNode)) {
-        return false;
-      }
-
-      // SAFE: path.join("./base", dynamicVar) where dynamicVar has been validated
-      // Extract dynamic identifiers from path.join/resolve calls and check their validation
-      if (pathNode && pathNode.type === AST_NODE_TYPES.CallExpression) {
-        const callee = pathNode.callee;
-        if (callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            callee.object.name === 'path' &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
-            ['join', 'resolve'].includes(callee.property.name)) {
-          // Find any dynamic (non-literal) identifier args and check if they're validated
-          const dynamicArgs = pathNode.arguments.filter((arg: TSESTree.Node) =>
-            arg.type === AST_NODE_TYPES.Identifier && arg.name !== '__dirname'
-          );
-          if (dynamicArgs.length > 0 && dynamicArgs.every((arg: TSESTree.Node) => hasPathValidation(arg))) {
-            return false;
-          }
+    /** Does this expression read from something outside the program? */
+    const readsTaintSource = (node: TSESTree.Node, depth = 0): boolean => {
+      if (depth > 6) return false;
+      switch (node.type) {
+        case AST_NODE_TYPES.Identifier: {
+          if (taintRoots.has(node.name)) return true;
+          const bound = constBindings.get(node.name);
+          return bound !== undefined && readsTaintSource(bound, depth + 1);
         }
+        case AST_NODE_TYPES.MemberExpression: {
+          // `process.argv[2]`, `req.query.file`, `process.env.X` — walk to the
+          // root of the chain and judge that.
+          return readsTaintSource(node.object, depth + 1);
+        }
+        case AST_NODE_TYPES.TemplateLiteral:
+          return node.expressions.some((e) => readsTaintSource(e, depth + 1));
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            readsTaintSource(node.left as TSESTree.Node, depth + 1) ||
+            readsTaintSource(node.right, depth + 1)
+          );
+        case AST_NODE_TYPES.CallExpression:
+          // `path.join(base, req.query.f)` is tainted through its arguments.
+          return node.arguments.some(
+            (arg) =>
+              arg.type !== AST_NODE_TYPES.SpreadElement &&
+              readsTaintSource(arg, depth + 1),
+          );
+        default:
+          return false;
       }
-
-      // Any non-literal is dangerous
-      return !pathNode || !isLiteralString(pathNode);
     };
 
     /**
-     * Check if path is constructed safely using path.join/__dirname with literal args
-     * 
-     * Safe patterns:
-     * - path.join(__dirname, 'data', 'file.json')
-     * - path.resolve(__dirname, 'uploads')
+     * Is the taint the WHOLE path, rather than a part of one?
+     *
+     * CWE-22 is path TRAVERSAL: an attacker escapes a directory the code chose
+     * by extending or redirecting a path that has other, fixed parts.
+     * `path.join('/uploads', userFile)` is that — `../../etc/passwd` walks out
+     * of `/uploads`. A value used entire is not:
+     *
+     * ```ts
+     * // twilio-node src/base/RequestClient.ts:128
+     * agentOpts.ca = fs.readFileSync(process.env.TWILIO_CA_BUNDLE);
+     * ```
+     *
+     * There is no base directory to escape and nothing to append to. Whoever
+     * sets `TWILIO_CA_BUNDLE` names a file outright — and anyone who can set a
+     * variable in the process environment already chooses which files the
+     * process opens, with or without this line. Reporting it as traversal
+     * describes a mechanism that is not present.
+     *
+     * The composed case still reports, unchanged: `Shopify/cli`
+     * `bin/update-bugsnag.js:36` copies from `path.join(__dirname, '..',
+     * 'packages', packageName)` where `packageName` comes off `process.argv` —
+     * a fixed prefix an argument extends, which is exactly the shape above.
+     *
+     * No depth counter, unlike `readsTaintSource`, and that is deliberate
+     * rather than an omission. This walk is only ever entered on an expression
+     * `readsTaintSource` has ALREADY resolved to a root inside its own six
+     * hops, and it follows a strict subset of that walk — binding, receiver,
+     * single `path.*` argument, all of which move toward the same root. A
+     * binding cycle (`const a = b; const b = a;`) has no root to reach, so
+     * `readsTaintSource` returns false on it and this function is never called.
      */
-    const isSafePathConstruction = (pathNode: TSESTree.Node): boolean => {
-      if (pathNode.type !== AST_NODE_TYPES.CallExpression) {
-        return false;
-      }
-      
-      const callee = pathNode.callee;
-      if (callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.object.type !== AST_NODE_TYPES.Identifier ||
-          callee.object.name !== 'path' ||
-          callee.property.type !== AST_NODE_TYPES.Identifier) {
-        return false;
-      }
-      
-      const method = callee.property.name;
-      if (!['join', 'resolve'].includes(method)) {
-        return false;
-      }
-      
-      const args = pathNode.arguments;
-      if (args.length === 0) {
-        return false;
-      }
-      
-      // First arg should be __dirname or a literal
-      const firstArg = args[0];
-      const isFirstArgSafe = 
-        (firstArg.type === AST_NODE_TYPES.Identifier && firstArg.name === '__dirname') ||
-        (firstArg.type === AST_NODE_TYPES.Literal && typeof firstArg.value === 'string');
-      
-      if (!isFirstArgSafe) {
-        return false;
-      }
-      
-      // All remaining args should be literals
-      for (let i = 1; i < args.length; i++) {
-        const arg = args[i];
-        if (arg.type !== AST_NODE_TYPES.Literal || typeof arg.value !== 'string') {
-          return false;
+    const isWholeTaintValue = (node: TSESTree.Node): boolean => {
+      switch (node.type) {
+        case AST_NODE_TYPES.Identifier: {
+          if (taintRoots.has(node.name)) return true;
+          const bound = constBindings.get(node.name);
+          return bound !== undefined && isWholeTaintValue(bound);
         }
-        // Also check for traversal patterns in literals
-        if (hasTraversalPatterns(String(arg.value))) {
-          return false;
+        // `process.env.X`, `process.argv[2]` — a whole value read off a root.
+        case AST_NODE_TYPES.MemberExpression:
+          return isWholeTaintValue(node.object);
+        case AST_NODE_TYPES.CallExpression: {
+          // `path.resolve(process.env.X)` normalises one value; it does not
+          // give the attacker a second part to escape from. Two or more parts
+          // is a base plus a segment, which is composition.
+          const callee = node.callee;
+          return (
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === 'path' &&
+            node.arguments.length === 1 &&
+            isWholeTaintValue(node.arguments[0])
+          );
         }
+        default:
+          return false;
       }
-      
-      return true;
     };
+
+    /**
+     * Is this path argument worth reporting?
+     *
+     * INVERTED on purpose. This rule used to end in
+     *
+     *     // Any non-literal is dangerous
+     *     return !pathNode || !isLiteralString(pathNode);
+     *
+     * which asked "can I PROVE this is constant?" and reported whenever it
+     * could not. Measured over an 8-repo corpus that produced 113 findings of
+     * which 8 were real — 7% precision. The 105 others were build scripts,
+     * rollup configs, glob enumerations of a repo's own files, and thin fs
+     * facades forwarding their own parameter.
+     *
+     * No amount of extra constant-recognition fixes that: adding seven more
+     * guards was measured to reach ~32% precision, because the question is
+     * backwards. A path is dangerous when an attacker can STEER it, so that is
+     * what is asked now — report on reachable taint, not on unproven constancy.
+     *
+     * The trade, stated plainly: a path whose provenance this rule cannot
+     * resolve is now silent. A parameter forwarded from a caller
+     * (`export function read(p) { readFile(p) }`) is a caller-side decision and
+     * no longer reported here; set `reportUnresolvedPaths` to restore the old
+     * behaviour wholesale.
+     */
+    const isDangerousPath = (pathNode: TSESTree.Node | null, pathStr: string): boolean => {
+      if (!pathNode) return reportUnresolvedPaths;
+
+      // A hardcoded `../etc/passwd` is a finding regardless of taint: nobody
+      // needs to steer a path that already points where it should not.
+      // `allowLiterals` opts out of even that — it is the option's whole
+      // purpose, and after the inversion a literal has no other way to report.
+      if (isLiteralString(pathNode)) {
+        return !allowLiterals && hasTraversalPatterns(pathStr);
+      }
+
+      // Explicitly validated by a startsWith guard — an existing, separate
+      // mechanism this rule already honours.
+      if (hasPathValidation(pathNode)) return false;
+
+      // Taint that has been COMPOSED into a path — a prefix it can escape, a
+      // segment it can redirect. Taint used whole is not traversal; see
+      // `isWholeTaintValue`.
+      if (readsTaintSource(pathNode)) return !isWholeTaintValue(pathNode);
+
+      // Assembled purely from literals, `__dirname`, `const` bindings of the
+      // same: provably not steerable.
+      if (isBuildTimeConstant(pathNode)) return false;
+
+      // Provenance unresolved. Off by default — see the note above.
+      return reportUnresolvedPaths;
+    };
+
+    /**
+     * Is every part of this expression fixed at build time?
+     *
+     * Recurses through the three ways a constant path gets assembled:
+     * a literal, a `const` identifier bound to one, and a template literal
+     * whose every interpolation is itself constant. `__dirname` and
+     * `process.cwd()` are module-location constants, not input.
+     *
+     * `depth` stops `const a = b; const b = a;` from recursing forever.
+     */
+    const isBuildTimeConstant = (node: TSESTree.Node, depth = 0): boolean => {
+      if (depth > 4) return false;
+      if (isLiteralString(node)) {
+        // A path can be fixed at build time and still be an attack:
+        // `path.join(__dirname, '../etc/passwd')` is constant AND traversal.
+        // Constant means "not attacker-steerable", not "harmless".
+        // isLiteralString already proved `value` is a string, so no fallback.
+        return !hasTraversalPatterns((node as TSESTree.Literal).value as string);
+      }
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        if (node.name === '__dirname' || node.name === '__filename') return true;
+        const bound = constBindings.get(node.name);
+        return bound !== undefined && isBuildTimeConstant(bound, depth + 1);
+      }
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        // `raw` is always populated; `cooked` is null only for an invalid
+        // escape in a TAGGED template, which an fs path argument never is.
+        // Traversal detection reads the same `..` either way.
+        const literalText = node.quasis.map((q) => q.value.raw).join('');
+        if (hasTraversalPatterns(literalText)) return false;
+        return node.expressions.every((e) => isBuildTimeConstant(e, depth + 1));
+      }
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = node.callee;
+        // `process.cwd()` — where the build was launched, not user input.
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'process' &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          callee.property.name === 'cwd'
+        ) {
+          return true;
+        }
+        // `path.join`/`path.resolve` is constant exactly when its parts are.
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'path' &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          ['join', 'resolve'].includes(callee.property.name)
+        ) {
+          return (
+            node.arguments.length > 0 &&
+            node.arguments.every((arg) => isBuildTimeConstant(arg, depth + 1))
+          );
+        }
+        return false;
+      }
+      if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+        return isBuildTimeConstant(node.left, depth + 1) && isBuildTimeConstant(node.right, depth + 1);
+      }
+      return false;
+    };
+
 
     /**
      * Check if the path variable has been validated with startsWith()
@@ -628,6 +809,22 @@ allowLiterals = false,
     const fsNamedMethods = new Map<string, string>();
     /** Calls to judge at Program:exit, once every binding in the file is known. */
     const pendingCalls: TSESTree.CallExpression[] = [];
+    /**
+     * `const NAME = <expr>` bindings, so a path passed as a bare identifier can
+     * be traced to what it was built from.
+     *
+     * Without this, `const BUILD_DIR = path.resolve(__dirname, '..', 'build')`
+     * followed by `fs.readFileSync(\`${BUILD_DIR}/package.json\`)` reported —
+     * the safe-construction check existed but only ever saw the *direct*
+     * argument, never one hop back. Measured on the 8-repo corpus, that single
+     * hop is the difference between "flags every build script" and "flags
+     * paths that are actually assembled at runtime".
+     *
+     * `const` only: a `let` can be reassigned to anything after the point we
+     * read it, so proving its initializer safe proves nothing about the value
+     * at the call.
+     */
+    const constBindings = new Map<string, TSESTree.Node>();
 
     /**
      * Record what a destructured / named binding refers to.
@@ -656,13 +853,50 @@ allowLiterals = false,
         return;
       }
 
-      const { path, pathNode, operation } = extractPathArgument(node, methodName);
       const method = methodName;
 
-      // Check if the path argument is dangerous
-      if (!isDangerousPath(pathNode, path)) {
+      // Most methods take one path at argument 0; copy/rename/link/symlink
+      // take a source AND a destination, and only the source was ever checked.
+      const indices = PATH_ARGUMENT_INDICES.get(method) ?? [0];
+      const sourceCode = context.sourceCode;
+      let pathNode: TSESTree.Node | null = null;
+      let path = '';
+      for (const index of indices) {
+        const candidate = node.arguments[index];
+        if (candidate === undefined || candidate.type === AST_NODE_TYPES.SpreadElement) continue;
+        if (isDangerousPath(candidate, sourceCode.getText(candidate))) {
+          pathNode = candidate;
+          path = sourceCode.getText(candidate);
+          break;
+        }
+      }
+      if (pathNode === null) {
+        // No path argument at all (`fs.readFile()`). There is nothing to judge,
+        // so this follows the same unresolved-provenance switch as a path whose
+        // origin cannot be traced.
+        const present = indices.some((index) => node.arguments[index] !== undefined);
+        if (!present && isDangerousPath(null, '')) {
+          context.report({
+            node,
+            messageId: 'fsPathTraversal',
+            data: {
+              method,
+              path: '',
+              riskLevel: 'MEDIUM',
+              vulnerability: 'path traversal',
+              safePattern: 'Use path.resolve() with validation',
+              steps: 'Review file system access patterns',
+            },
+            suggest: [
+              { messageId: 'validatePath', fix: () => null },
+              { messageId: 'usePathResolve', fix: () => null },
+              { messageId: 'whitelistExtensions', fix: () => null },
+            ],
+          });
+        }
         return;
       }
+      const operation = FS_OPERATIONS.find((op) => op.method === method) ?? null;
 
       const riskLevel = determineRiskLevel(operation || FS_OPERATIONS[0], path);
       const steps = operation ? generateRefactoringSteps(operation) : 'Review file system access patterns';
@@ -727,6 +961,14 @@ allowLiterals = false,
       },
 
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          node.init !== null &&
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          node.parent?.type === AST_NODE_TYPES.VariableDeclaration &&
+          node.parent.kind === 'const'
+        ) {
+          constBindings.set(node.id.name, node.init);
+        }
         if (node.init === null || !isFsRequire(node.init)) return;
         if (node.id.type === AST_NODE_TYPES.Identifier) {
           fsNamespaces.add(node.id.name);

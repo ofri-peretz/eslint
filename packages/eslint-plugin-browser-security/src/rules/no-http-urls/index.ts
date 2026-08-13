@@ -11,6 +11,11 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  isXmlNamespaceUri,
+  isTrustworthyLocalUrl,
+  isDiscardedUrlBase,
+} from '../../utils/namespace-uris';
 
 type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 
@@ -110,9 +115,84 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * The attribute or property this string was written under, when there is
+     * one. `xmlns="…"` settles the question on its own.
+     */
+    function declarationName(node: TSESTree.Node): string | undefined {
+      // Every node the visitors hand us is reached from Program, so it always
+      // has a parent — only Program itself does not, and Program is never a
+      // Literal or TemplateElement. Asserting beats an unreachable branch.
+      const parent = node.parent as TSESTree.Node;
+      if (parent.type === 'JSXAttribute') {
+        // JSXAttribute.name is exactly JSXIdentifier | JSXNamespacedName, so
+        // the ternary is exhaustive and needs no unreachable fallback.
+        const name = parent.name;
+        return name.type === 'JSXIdentifier'
+          ? name.name
+          : `${name.namespace.name}:${name.name.name}`;
+      }
+      if (parent.type === 'Property' && parent.value === node && !parent.computed) {
+        if (parent.key.type === 'Identifier') return parent.key.name;
+        if (parent.key.type === 'Literal' && typeof parent.key.value === 'string') {
+          return parent.key.value;
+        }
+      }
+      return undefined;
+    }
+
+    /**
+     * Is the *authority* of this `http://` template chunk supplied by an
+     * interpolation rather than written down?
+     *
+     * ``` `http://${host}:${port}` ``` is not a hardcoded HTTP URL — it is a
+     * configured endpoint, and this rule has no host to judge. Five of the
+     * eight corpus findings were exactly this shape (webpack dev-server proxy
+     * targets and the Shopify CLI's local theme server), each reported with
+     * the message `Hardcoded HTTP URL detected: "http://"`, which is not true
+     * of the code and not actionable.
+     *
+     * Deliberately narrow: only a *fully* interpolated authority is unknowable.
+     * ``` `http://api.${env}.com/x` ``` still reports, because `api.` is
+     * already enough to know the host is not loopback.
+     */
+    function hasInterpolatedAuthority(node: TSESTree.TemplateElement, cooked: string): boolean {
+      const rest = /^http:\/\/(.*)$/is.exec(cooked)?.[1];
+      if (rest === undefined) return false;
+      // The authority runs to the first path / query / fragment delimiter.
+      const authority = rest.split(/[/?#]/)[0];
+      // Something was written down — judge it normally.
+      if (authority !== '') return false;
+      // Nothing written down, and another chunk follows: the next `${…}` IS
+      // the authority.
+      return !node.tail;
+    }
+
     function checkStringValue(node: TSESTree.Node, value: string): void {
       const httpPattern = /^http:\/\//i;
-      
+
+      // An XML namespace URI is an opaque identifier, never fetched. Rewriting
+      // it to https breaks the document, so reporting it is worse than noise.
+      if (isXmlNamespaceUri(value, declarationName(node))) {
+        return;
+      }
+
+      // Loopback origins are potentially trustworthy per the Secure Contexts
+      // spec — no browser treats them as cleartext-transmission risk, and no
+      // packet leaves the machine. Shared with `detect-mixed-content` so the
+      // two rules cannot disagree about what "local" means; it covers `::1`,
+      // `0.0.0.0` and `*.localhost`, which the `allowedHosts` default misses.
+      if (isTrustworthyLocalUrl(value)) {
+        return;
+      }
+
+      // A parsing base whose origin is destructured away transmits nothing —
+      // there is no URL object left to fetch. Shared with `detect-mixed-content`
+      // so the two rules cannot disagree about it.
+      if (isDiscardedUrlBase(node)) {
+        return;
+      }
+
       if (httpPattern.test(value) && !isAllowedException(value)) {
         context.report({
           node,
@@ -131,8 +211,9 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
         }
       },
       TemplateElement(node) {
-        if (node.value.cooked) {
-          checkStringValue(node, node.value.cooked);
+        const cooked = node.value.cooked;
+        if (cooked && !hasInterpolatedAuthority(node, cooked)) {
+          checkStringValue(node, cooked);
         }
       },
     };

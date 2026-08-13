@@ -17,24 +17,52 @@
  * CWE-908: Use of Uninitialized Resource
  * OWASP A01:2021 – Broken Access Control
  *
- * ## Detection method: structural-api
+ * ## Detection method: structural-api plus a covered-before-read check
  *
- * Unconditional by design. The rule fires on the AST shape
- * `<Buffer>.allocUnsafe(...)` / `<Buffer>.allocUnsafeSlow(...)` and performs
- * **no dataflow or taint analysis** — it does not attempt to prove whether the
- * buffer is fully overwritten before it is read. Rename every variable in the
- * file and it reports identically.
+ * The rule fires on the AST shape `<Buffer>.allocUnsafe(...)` /
+ * `<Buffer>.allocUnsafeSlow(...)`. Two structural exemptions apply.
  *
- * The single structural exemption is a same-expression `.fill()`, e.g.
- * `Buffer.allocUnsafe(n).fill(0)`, which zeroes the allocation on the spot and
- * is therefore equivalent to `Buffer.alloc(n)`. That is a parent-node check,
- * not variable tracking.
+ * 1. A same-expression `.fill()` — `Buffer.allocUnsafe(n).fill(0)` — which
+ *    zeroes the allocation on the spot and is equivalent to `Buffer.alloc(n)`.
  *
- * Consequence: a correct `allocUnsafe` immediately overwritten through a
- * variable (`const b = Buffer.allocUnsafe(n); src.copy(b);`) is still reported.
- * That is the documented false-positive profile and the reason the rule ships
- * as `warn` rather than `error` in `recommended`. The complementary CWE-126
- * read-side analysis lives in `no-buffer-overread`.
+ * 2. A local binding whose first non-metadata use is a **covering write**. The
+ *    hazard this rule exists for is a byte that is READ before it is WRITTEN;
+ *    a buffer filled before anything looks at it discloses nothing. `ioredis`
+ *    `lib/Command.ts:667` is the archetype:
+ *
+ *    ```ts
+ *    const result = Buffer.allocUnsafe(this.length);
+ *    let offset = 0;
+ *    for (const item of this.items) {
+ *      const length = Buffer.byteLength(item);
+ *      Buffer.isBuffer(item) ? item.copy(result, offset) : result.write(item, offset, length);
+ *      offset += length;
+ *    }
+ *    return result;
+ *    ```
+ *
+ *    `this.length` is maintained as the exact byte sum of `this.items`, and the
+ *    loop writes every one of those bytes before `result` escapes. Reporting it
+ *    asks the reviewer to re-derive that each time the file is touched, and the
+ *    answer is always the same.
+ *
+ * A *covering* write is deliberately narrower than "any write". Proving full
+ * coverage is undecidable, so the rule recognises the two shapes that cover by
+ * construction — a whole-buffer copy (`src.copy(buf)`, `buf.set(src)`,
+ * `buf.fill(0)`) and a loop that walks the buffer at a moving offset — and
+ * treats a write at a FIXED offset as partial. That keeps the real defect
+ * reporting:
+ *
+ * ```js
+ * const header = Buffer.allocUnsafe(16);
+ * header.writeUInt32BE(len, 0);  // 12 bytes still uninitialized
+ * socket.write(header);          // …and they go out on the wire
+ * ```
+ *
+ * Anything the rule cannot resolve to a local binding — an allocation returned
+ * directly, assigned to a property, or passed straight into a call — still
+ * reports. The complementary CWE-126 read-side analysis lives in
+ * `no-buffer-overread`.
  *
  * @see https://cwe.mitre.org/data/definitions/908.html
  * @see https://nodejs.org/api/buffer.html#static-method-bufferallocunsafesize
@@ -49,10 +77,209 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeAlloc' | 'unsafeAllocSlow' | 'useSafeAlloc';
+type MessageIds =
+  | 'unsafeAlloc'
+  | 'unsafeAllocSlow'
+  | 'useSafeAlloc'
+  | 'unboundedAllocation'
+  | 'clampAllocation';
 
 /** The two uninitialized-memory allocators on `Buffer`. */
 const UNSAFE_ALLOCATORS = new Set(['allocUnsafe', 'allocUnsafeSlow']);
+
+/**
+ * Constructors and factories whose FIRST argument is an allocation size.
+ *
+ * `new Array(n)` belongs here as much as `Buffer.alloc(n)`, but NOT for the
+ * reason this comment used to give ("the length is stored and every subsequent
+ * loop walks it"). Measured on V8 (node 24, `--expose-gc`, heapUsed delta):
+ *
+ * ```text
+ * new Array(1e9)  ->  0.003 ms,    0.0 MB   // dictionary mode — free
+ * new Array(3e7)  -> 20.700 ms,  228.9 MB   // packed elements — 12 wire bytes buy 229 MB
+ * new Array(4e7)  ->  0.007 ms,    0.0 MB   // flips back to dictionary mode
+ * ```
+ *
+ * The cost is a NARROW BAND below V8's packed-elements limit (~33.5M elements),
+ * not a monotonic function of n. That inverts the usual advice: a bounds check
+ * that rejects only implausibly large lengths rejects exactly the values that
+ * cost nothing and admits the ones that cost a quarter of a gigabyte. The typed
+ * allocators below have no such threshold — they commit n bytes at every n.
+ */
+const SIZED_ALLOCATORS: ReadonlySet<string> = new Set([
+  'Array', 'Buffer', 'Uint8Array', 'Uint16Array', 'Uint32Array', 'Int8Array',
+  'Int16Array', 'Int32Array', 'Float32Array', 'Float64Array', 'BigInt64Array',
+  'BigUint64Array', 'ArrayBuffer', 'SharedArrayBuffer',
+]);
+
+/**
+ * Does this expression look like a COUNT rather than a payload?
+ *
+ * `new Uint8Array(n)` allocates n bytes; `new Uint8Array(fileContents)` copies
+ * an existing array and allocates exactly what the caller already holds. Only
+ * the first is an allocation an attacker can inflate, and telling them apart is
+ * what keeps `Shopify/cli`
+ * `packages/cli-kit/src/public/node/api/bulk-operations/stage-file.ts:112` —
+ * `new Blob([new Uint8Array(fileContents)])` — out of the results.
+ *
+ * `Buffer.alloc(x)` needs no such test: its argument is a size by definition.
+ */
+function looksNumeric(node: TSESTree.Node): boolean {
+  switch (node.type) {
+    case AST_NODE_TYPES.Literal:
+      return typeof node.value === 'number';
+    case AST_NODE_TYPES.BinaryExpression:
+      return ['+', '-', '*', '/', '%', '<<', '>>', '>>>'].includes(node.operator);
+    case AST_NODE_TYPES.Identifier:
+      return COUNT_NAMES.has(node.name.toLowerCase());
+    case AST_NODE_TYPES.MemberExpression:
+      return (
+        !node.computed &&
+        node.property.type === AST_NODE_TYPES.Identifier &&
+        COUNT_NAMES.has(node.property.name.toLowerCase())
+      );
+    case AST_NODE_TYPES.CallExpression: {
+      // `Math.min(length, MAX)` is the clamped spelling of a size; it has to
+      // read as numeric here or `isClamped` below is unreachable.
+      if (
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        node.callee.object.type === AST_NODE_TYPES.Identifier &&
+        node.callee.object.name === 'Math'
+      ) {
+        return true;
+      }
+      const name = calleeName(node.callee);
+      return name !== null && /^(read|len|size|count|decode|parse)/i.test(name);
+    }
+    default:
+      return false;
+  }
+}
+
+/** Names that hold a count, not a payload. */
+const COUNT_NAMES: ReadonlySet<string> = new Set([
+  'length', 'len', 'size', 'count', 'n', 'num', 'total', 'capacity', 'bytelength',
+]);
+
+/** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.allocUnsafeSlow`. */
+const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
+  'alloc', 'allocUnsafe', 'allocUnsafeSlow',
+]);
+
+/**
+ * Parameter names that hold bytes straight off a socket or a stream.
+ *
+ * A protocol decoder is the one place where a length field is genuinely
+ * attacker-authored, and it is always spelled as one of these.
+ */
+const WIRE_NAMES: ReadonlySet<string> = new Set([
+  'chunk', 'chunks', 'buffer', 'buf', 'data', 'payload', 'frame', 'packet',
+  'bytes', 'raw', 'message', 'msg',
+]);
+
+/**
+ * Roots that carry an inbound HTTP request.
+ *
+ * The wire names above were derived from protocol decoders, so the rule could
+ * see a RESP length prefix but not `Number(req.body.count)` — and an HTTP
+ * handler is the commonest place a remote peer names an allocation size. Both
+ * CWE-770 fixtures in `benchmarks/corpus/CWE-770/vulnerable/` were silent for
+ * exactly this reason: the length is off the wire either way, and "off the
+ * wire" is the whole predicate.
+ */
+const REQUEST_ROOTS: ReadonlySet<string> = new Set([
+  'req', 'request', 'ctx', 'event',
+]);
+
+/**
+ * Methods that write INTO their receiver: `buf.fill`, `buf.set`,
+ * `buf.write`, and the whole `buf.writeUInt32BE`-style family.
+ */
+function isWriteMethod(name: string): boolean {
+  return name === 'fill' || name === 'set' || name.startsWith('write');
+}
+
+/**
+ * Calls whose FIRST argument is the destination being written.
+ *
+ * `src.copy(dest, …)` and `crypto.randomFillSync(dest, …)` write through an
+ * argument rather than through the receiver, so a buffer that appears only as
+ * `arguments[0]` of one of these is being filled, not read.
+ */
+const DESTINATION_ARGUMENT_CALLS: ReadonlySet<string> = new Set([
+  'copy', 'randomFill', 'randomFillSync',
+]);
+
+/** Properties that report the buffer's shape, not its contents. */
+const METADATA_PROPERTIES: ReadonlySet<string> = new Set([
+  'length', 'byteLength', 'byteOffset', 'buffer',
+]);
+
+/** Is this node inside a loop body? */
+function isInsideLoop(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node | undefined = node.parent;
+  while (current) {
+    if (
+      current.type === AST_NODE_TYPES.ForStatement ||
+      current.type === AST_NODE_TYPES.ForOfStatement ||
+      current.type === AST_NODE_TYPES.ForInStatement ||
+      current.type === AST_NODE_TYPES.WhileStatement ||
+      current.type === AST_NODE_TYPES.DoWhileStatement
+    ) {
+      return true;
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
+/**
+ * How much of the buffer does this write cover?
+ *
+ * `fill` runs to the end of the buffer by definition. A one-argument
+ * `copy`/`set`/`write` starts at offset 0 and runs for the source's whole
+ * length — the "copy the whole thing in" idiom. Everything else carries an
+ * explicit destination offset at `arguments[1]`, and then coverage depends on
+ * whether that offset MOVES: a variable offset inside a loop is a buffer being
+ * walked, a literal offset is one fixed field being stamped and the rest of the
+ * allocation left as the allocator handed it over.
+ */
+function coversWholeBuffer(call: TSESTree.CallExpression, method: string): boolean {
+  if (method === 'fill') return true;
+  if (call.arguments.length === 1) return true;
+  const offset = call.arguments[1];
+  return offset.type !== AST_NODE_TYPES.Literal && isInsideLoop(call);
+}
+
+/** The name a callee resolves to, for `f()`, `o.f()` and `this.#f()`. */
+function calleeName(callee: TSESTree.Node): string | null {
+  if (callee.type === AST_NODE_TYPES.Identifier) return callee.name;
+  if (callee.type === AST_NODE_TYPES.MemberExpression && !callee.computed) {
+    // A non-computed property is an Identifier or a PrivateIdentifier and
+    // nothing else, so both carry a `name` and there is no third case to guard.
+    return callee.property.name;
+  }
+  return null;
+}
+
+/** The declared name of a function-ish node, however it was written. */
+function declaredName(node: TSESTree.Node): string | null {
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration && node.id) return node.id.name;
+  const parent = node.parent;
+  if (parent?.type === AST_NODE_TYPES.VariableDeclarator) {
+    return parent.id.type === AST_NODE_TYPES.Identifier ? parent.id.name : null;
+  }
+  if (
+    (parent?.type === AST_NODE_TYPES.MethodDefinition ||
+      parent?.type === AST_NODE_TYPES.Property) &&
+    !parent.computed
+  ) {
+    // As above: a non-computed key is an Identifier or a PrivateIdentifier.
+    const key = parent.key as TSESTree.Identifier | TSESTree.PrivateIdentifier;
+    return key.name;
+  }
+  return null;
+}
 
 export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
   name: 'no-unsafe-buffer-alloc',
@@ -95,11 +322,356 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
           'https://nodejs.org/api/buffer.html#static-method-bufferallocunsafeslowsize',
       }),
       useSafeAlloc: 'Replace with `Buffer.alloc()` (zero-filled).',
+      unboundedAllocation: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Allocation Sized By Untrusted Input',
+        cwe: 'CWE-789',
+        cvss: 7.5,
+        description:
+          'The allocation size is read off the wire, so the peer picks it. For `new Array(n)` the hazard is a narrow band, not "large n": V8 keeps a packed backing store only up to ~33.5M elements, and a length just under that turns a 12-byte length prefix into a 229MB allocation (measured: `new Array(3e7)` = 228.9MB in 20.7ms). Past the threshold V8 switches the array to dictionary mode and the allocation costs nothing at all (`new Array(4e7)` and `new Array(1e9)` are both 0.0MB in ~0.005ms). A typed allocation — `Buffer.alloc(n)`, `new Uint8Array(n)` — has no such threshold and commits n bytes at any n.',
+        severity: 'HIGH',
+        fix: 'Clamp the length against the maximum the protocol actually permits, before allocating: `if (length > MAX_LENGTH) throw new Error("too long")`, or `new Array(Math.min(length, MAX_LENGTH))`. A guard that only rejects implausibly huge values is not a fix for `new Array` — those are the sizes V8 makes free. The damaging lengths are the plausible ones just below the packed-elements limit.',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/789.html',
+      }),
+      clampAllocation: 'Clamp the size against the maximum the protocol permits.',
     },
     schema: [],
   },
   defaultOptions: [],
   create(context) {
+    // ── CWE-789: allocation sized by a length field off the wire ──────────
+    //
+    // `redis/ioredis` `lib/resp/decoder.ts:669` is the archetype:
+    //
+    // ```ts
+    // #decodeArray(typeMapping, chunk) {
+    //   return this.#decodeArrayWithLength(this.#decodeUnsingedNumber(0, chunk), typeMapping, chunk);
+    // }
+    // #decodeArrayWithLength(length, typeMapping, chunk) {
+    //   return … : this.#decodeArrayItems(new Array(length), 0, typeMapping, chunk);
+    // }
+    // ```
+    //
+    // `length` is a RESP length prefix — a number the peer chose. Nothing in
+    // the file bounds it, and `#decodeArrayItems` then loops to `array.length`.
+    //
+    // Catching it needs one hop between functions: at `new Array(length)` the
+    // size is just a parameter. So call sites are collected first, and a
+    // parameter counts as wire-derived when some call in the same file passes a
+    // wire-derived argument in that position. One hop, not a fixpoint — it is
+    // what this shape needs, and a deeper walk would trade precision for
+    // decoder shapes nobody writes.
+
+    /** Function name → parameter indices fed a wire-derived argument. */
+    const wireParams = new Map<string, Set<number>>();
+    /** Allocations to judge at Program:exit, once every call site is known. */
+    const pendingAllocations: { node: TSESTree.Node; size: TSESTree.Node }[] = [];
+    /** Call sites to record at Program:exit, once every binding is known. */
+    const pendingCallSites: (TSESTree.CallExpression | TSESTree.NewExpression)[] = [];
+    /**
+     * `name = <expr>` bindings.
+     *
+     * A size is almost never used where it is produced: it is parsed into a
+     * local and allocated from the local one line later. Without this hop
+     * `const size = Number(url.searchParams.get('size')); Buffer.alloc(size)`
+     * reads as an unremarkable identifier.
+     */
+    const bindings = new Map<string, TSESTree.Node>();
+
+    /** Does this expression read bytes off the wire? */
+    function readsWire(node: TSESTree.Node, depth = 0): boolean {
+      // Raised from 5: following a size back through a local binding costs
+      // hops the decoder-only version never spent. `Buffer.alloc(size)` where
+      // `size` is `Number(url.searchParams.get('size'))` and `url` is
+      // `new URL(req.url, base)` is eight links from the request, and it is
+      // ordinary handler code — see
+      // benchmarks/corpus/CWE-770/vulnerable/buffer-alloc-user.js.
+      if (depth > 10) return false;
+      switch (node.type) {
+        case AST_NODE_TYPES.Identifier: {
+          const lower = node.name.toLowerCase();
+          if (WIRE_NAMES.has(lower) || REQUEST_ROOTS.has(lower)) return true;
+          const owner = enclosingFunction(node);
+          if (owner !== null) {
+            const name = declaredName(owner);
+            const indices = name === null ? undefined : wireParams.get(name);
+            if (indices !== undefined) {
+              const index = paramIndexOf(node, owner);
+              if (index !== null && indices.has(index)) return true;
+            }
+          }
+          const bound = bindings.get(node.name);
+          return bound !== undefined && readsWire(bound, depth + 1);
+        }
+        case AST_NODE_TYPES.MemberExpression:
+          return readsWire(node.object, depth + 1);
+        // `new URL(req.url, base)` is a request that has been through a
+        // constructor; the searchParams read off it are still the peer's.
+        case AST_NODE_TYPES.NewExpression:
+          return node.arguments.some(
+            (argument) =>
+              argument.type !== AST_NODE_TYPES.SpreadElement &&
+              readsWire(argument, depth + 1),
+          );
+        case AST_NODE_TYPES.CallExpression:
+          // `this.#decodeUnsignedNumber(0, chunk)` — a decode helper handed the
+          // wire buffer returns a number the peer chose. `chunk.readUInt32BE(0)`
+          // is the same fact written as a method ON the buffer, so the receiver
+          // counts as well as the arguments.
+          return (
+            readsWire(node.callee, depth + 1) ||
+            node.arguments.some(
+              (argument) =>
+                argument.type !== AST_NODE_TYPES.SpreadElement &&
+                readsWire(argument, depth + 1),
+            )
+          );
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            readsWire(node.left as TSESTree.Node, depth + 1) ||
+            readsWire(node.right, depth + 1)
+          );
+        default:
+          return false;
+      }
+    }
+
+    /** The nearest enclosing function node, or null at module scope. */
+    function enclosingFunction(node: TSESTree.Node): TSESTree.Node | null {
+      let current: TSESTree.Node | undefined = node.parent;
+      while (current) {
+        if (
+          current.type === AST_NODE_TYPES.FunctionDeclaration ||
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          return current;
+        }
+        current = current.parent;
+      }
+      return null;
+    }
+
+    /** If this identifier is a parameter of `owner`, its index. */
+    // oxlint-disable-next-line consistent-function-scoping
+    function paramIndexOf(node: TSESTree.Identifier, owner: TSESTree.Node): number | null {
+      const params = (owner as TSESTree.FunctionDeclaration).params;
+      const index = params.findIndex(
+        (param) => param.type === AST_NODE_TYPES.Identifier && param.name === node.name,
+      );
+      return index === -1 ? null : index;
+    }
+
+    /**
+     * Is the size already bounded?
+     *
+     * `Math.min(length, MAX)` clamps it outright; an enclosing comparison on
+     * the same identifier is the guard-clause spelling of the same thing.
+     */
+    function isClamped(size: TSESTree.Node): boolean {
+      if (
+        size.type === AST_NODE_TYPES.CallExpression &&
+        size.callee.type === AST_NODE_TYPES.MemberExpression &&
+        size.callee.object.type === AST_NODE_TYPES.Identifier &&
+        size.callee.object.name === 'Math' &&
+        size.callee.property.type === AST_NODE_TYPES.Identifier &&
+        size.callee.property.name === 'min'
+      ) {
+        return true;
+      }
+      if (size.type !== AST_NODE_TYPES.Identifier) return false;
+      const name = size.name;
+      let current: TSESTree.Node | undefined = size.parent;
+      while (current) {
+        if (current.type === AST_NODE_TYPES.IfStatement) {
+          if (mentionsInComparison(current.test, name)) return true;
+        }
+        if (
+          current.type === AST_NODE_TYPES.FunctionDeclaration ||
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          // A guard may also sit as an earlier statement in the same body.
+          const body = current.body;
+          if (body.type === AST_NODE_TYPES.BlockStatement) {
+            for (const statement of body.body) {
+              if (
+                statement.type === AST_NODE_TYPES.IfStatement &&
+                mentionsInComparison(statement.test, name)
+              ) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }
+        current = current.parent;
+      }
+      return false;
+    }
+
+    /** Does this test compare `name` against something? */
+    // oxlint-disable-next-line consistent-function-scoping
+    function mentionsInComparison(test: TSESTree.Node, name: string): boolean {
+      if (test.type === AST_NODE_TYPES.LogicalExpression) {
+        return (
+          mentionsInComparison(test.left, name) || mentionsInComparison(test.right, name)
+        );
+      }
+      if (test.type !== AST_NODE_TYPES.BinaryExpression) return false;
+      if (!['<', '<=', '>', '>=' ].includes(test.operator)) return false;
+      const named = (side: TSESTree.Node): boolean =>
+        side.type === AST_NODE_TYPES.Identifier && side.name === name;
+      return named(test.left as TSESTree.Node) || named(test.right);
+    }
+
+    /** The size argument of an allocation, if this call is one. */
+    function allocationSize(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): TSESTree.Node | null {
+      const size = node.arguments[0];
+      if (size === undefined || size.type === AST_NODE_TYPES.SpreadElement) return null;
+      const callee = node.callee;
+      if (
+        node.type === AST_NODE_TYPES.NewExpression &&
+        callee.type === AST_NODE_TYPES.Identifier &&
+        SIZED_ALLOCATORS.has(callee.name)
+      ) {
+        // `new Uint8Array(bytes)` copies; `new Uint8Array(n)` allocates.
+        return looksNumeric(size) ? size : null;
+      }
+      if (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        !callee.computed &&
+        callee.object.type === AST_NODE_TYPES.Identifier &&
+        callee.object.name === 'Buffer' &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
+        BUFFER_ALLOCATORS.has(callee.property.name)
+      ) {
+        return size;
+      }
+      return null;
+    }
+
+    /** Record which parameters of a local function receive wire data. */
+    function recordCallSite(node: TSESTree.CallExpression | TSESTree.NewExpression): void {
+      const name = calleeName(node.callee);
+      if (name === null) return;
+      node.arguments.forEach((argument, index) => {
+        if (argument.type === AST_NODE_TYPES.SpreadElement) return;
+        if (!readsWire(argument)) return;
+        const indices = wireParams.get(name) ?? new Set<number>();
+        indices.add(index);
+        wireParams.set(name, indices);
+      });
+    }
+
+    function judgeAllocation(node: TSESTree.Node, size: TSESTree.Node): void {
+      if (isClamped(size)) return;
+      if (!readsWire(size)) return;
+      context.report({
+        node,
+        messageId: 'unboundedAllocation',
+        suggest: [{ messageId: 'clampAllocation', fix: () => null }],
+      });
+    }
+
+    /** What one mention of the buffer binding does to it. */
+    type Use = 'covering' | 'partial' | 'read' | 'metadata';
+
+    /**
+     * Classify a single reference to the allocated binding.
+     *
+     * Anything not recognised as a write is a READ, which is the conservative
+     * answer: it ends the scan and reports. The point of the classification is
+     * to find evidence of coverage, never to prove the absence of a read.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function classifyUse(identifier: TSESTree.Identifier): Use {
+      const parent = identifier.parent;
+      if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === identifier) {
+        if (parent.computed) {
+          // `buf[i] = x` writes one byte at one index; `x = buf[i]` reads one.
+          const grandparent = parent.parent;
+          return grandparent.type === AST_NODE_TYPES.AssignmentExpression &&
+            grandparent.left === parent
+            ? 'partial'
+            : 'read';
+        }
+        if (parent.property.type !== AST_NODE_TYPES.Identifier) return 'read';
+        const name = parent.property.name;
+        if (METADATA_PROPERTIES.has(name)) return 'metadata';
+        const grandparent = parent.parent;
+        if (
+          grandparent.type !== AST_NODE_TYPES.CallExpression ||
+          grandparent.callee !== parent ||
+          !isWriteMethod(name)
+        ) {
+          return 'read';
+        }
+        return coversWholeBuffer(grandparent, name) ? 'covering' : 'partial';
+      }
+      // `src.copy(buf, offset)` / `crypto.randomFillSync(buf)`.
+      if (parent.type === AST_NODE_TYPES.CallExpression && parent.arguments[0] === identifier) {
+        const callee = parent.callee;
+        if (
+          callee.type !== AST_NODE_TYPES.MemberExpression ||
+          callee.computed ||
+          callee.property.type !== AST_NODE_TYPES.Identifier ||
+          !DESTINATION_ARGUMENT_CALLS.has(callee.property.name)
+        ) {
+          return 'read';
+        }
+        return coversWholeBuffer(parent, callee.property.name) ? 'covering' : 'partial';
+      }
+      return 'read';
+    }
+
+    /**
+     * Is every byte written before anything reads this allocation?
+     *
+     * Only a `const`/`let` declarator binding an identifier is analysed —
+     * `this.buf = Buffer.allocUnsafe(n)` or `return Buffer.allocUnsafe(n)` puts
+     * the buffer somewhere this file cannot follow, which is unresolved and
+     * therefore still reported.
+     *
+     * References are taken from the scope analyser and walked in SOURCE order.
+     * That is an approximation of execution order and it is stated rather than
+     * hidden: a buffer written in a callback declared above its first read
+     * would be judged on where the text sits, not on when it runs.
+     */
+    function isCoveredBeforeRead(call: TSESTree.CallExpression): boolean {
+      const declarator = call.parent;
+      if (
+        declarator.type !== AST_NODE_TYPES.VariableDeclarator ||
+        declarator.init !== call ||
+        declarator.id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      // A declarator binding a plain identifier declares exactly one variable,
+      // so the lookup cannot come back empty. Casting rather than branching
+      // keeps an impossible case out of the coverage numbers, where an
+      // unreachable guard is indistinguishable from an untested one.
+      const variable = context.sourceCode.getDeclaredVariables(
+        declarator,
+      )[0] as TSESLint.Scope.Variable;
+
+      const uses = variable.references
+        .filter((reference) => reference.identifier !== declarator.id)
+        .sort((a, b) => a.identifier.range[0] - b.identifier.range[0]);
+
+      for (const use of uses) {
+        const kind = classifyUse(use.identifier as TSESTree.Identifier);
+        // Metadata reads disclose nothing, and a partial write is not a read —
+        // neither settles the question, so keep looking for the first one that
+        // does.
+        if (kind === 'metadata' || kind === 'partial') continue;
+        return kind === 'covering';
+      }
+      return false;
+    }
+
     /**
      * True when the call's result is immediately zeroed in the same
      * expression: `Buffer.allocUnsafe(n).fill(0)`. Parent-node shape only.
@@ -125,7 +697,31 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     }
 
     return {
+      // Bindings first: a size parsed on one line and allocated on the next is
+      // the normal spelling, and `readsWire` cannot follow it until the whole
+      // file has been seen.
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (node.init !== null && node.id.type === AST_NODE_TYPES.Identifier) {
+          bindings.set(node.id.name, node.init);
+        }
+      },
+
+      NewExpression(node: TSESTree.NewExpression) {
+        pendingCallSites.push(node);
+        const size = allocationSize(node);
+        if (size !== null) pendingAllocations.push({ node, size });
+      },
+
+      'Program:exit'() {
+        for (const call of pendingCallSites) recordCallSite(call);
+        for (const { node, size } of pendingAllocations) judgeAllocation(node, size);
+      },
+
       CallExpression(node) {
+        pendingCallSites.push(node);
+        const size = allocationSize(node);
+        if (size !== null) pendingAllocations.push({ node, size });
+
         const callee = node.callee;
         if (
           callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -139,6 +735,7 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         }
 
         if (isFilledInPlace(node)) return;
+        if (isCoveredBeforeRead(node)) return;
 
         context.report({
           node,

@@ -268,10 +268,13 @@ describe('no-static-root-exposure', () => {
       // Non-allowlisted directory
       {
         code: `express.static(path.join(__dirname, 'www'));`,
+        // The allowlist is opt-in now; enforcing it needs the option.
+        options: [{ allowedRoots: ['public'] }],
         errors: [{ messageId: 'unknownRoot', data: { root: 'www' } }],
       },
       {
         code: `express.static('secret-files');`,
+        options: [{ allowedRoots: ['public'] }],
         errors: [{ messageId: 'unknownRoot', data: { root: 'secret-files' } }],
       },
       // Custom allowlist replaces the default set
@@ -508,3 +511,38 @@ ruleTester.run(
     ]),
   },
 );
+
+describe('corpus regressions — a scoped subdirectory is not root exposure', () => {
+  ruleTester.run('no-static-root-exposure', noStaticRootExposure, {
+    valid: [
+      // All 5 corpus findings, from okta-signin-widget's prod-server script
+      // (scripts/buildtools/commands/start-prod.js:152). `TARGET` is a build
+      // constant and `'js'` bounds the served tree to a subdirectory of it,
+      // whatever it resolves to. The rule claimed the application root was
+      // published, which is false about this code.
+      `import 'express';\napp.use('/js', express.static(path.join(TARGET, 'js')));`,
+      // An ordinary asset directory that simply is not one of the five names
+      // the old default blessed. A directory's NAME says nothing about whether
+      // serving it exposes anything.
+      `import 'express';\nexpress.static(path.join(__dirname, 'www'));`,
+      `import 'express';\nexpress.static('secret-files');`,
+      `import 'express';\napp.use(express.static('./public'));`,
+    ],
+    invalid: [
+      // Unchanged: the shapes that genuinely publish the application root.
+      // A non-literal with NO literal segment to scope it is still unbounded.
+      {
+        code: `import 'express';\nexpress.static(path.join(TARGET));`,
+        errors: [{ messageId: 'nonLiteralPath' }],
+      },
+      {
+        code: `import 'express';\nexpress.static(__dirname);`,
+        errors: [{ messageId: 'staticRoot', suggestions: 1 }],
+      },
+      {
+        code: `import 'express';\nexpress.static(path.join(__dirname, '..', 'public'));`,
+        errors: [{ messageId: 'traversalSegments' }],
+      },
+    ],
+  });
+});

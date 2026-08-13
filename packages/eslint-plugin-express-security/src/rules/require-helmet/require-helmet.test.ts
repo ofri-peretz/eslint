@@ -23,14 +23,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -50,7 +52,6 @@ const xp = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
 RuleTester.itOnly = vitest.it.only;
@@ -65,6 +66,67 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-helmet', requireHelmet, {
   valid: xp([
+    // -----------------------------------------------------------------
+    // LOCK: helmet's headers are instructions to a *renderer*.
+    //
+    // Four of the six corpus findings were apps that never render a
+    // document — a static asset server and two form-post demos. Reporting
+    // them claimed a browser protection was missing from a response no
+    // browser renders. Each of these reported `missingHelmet` before
+    // 2026-08-12.
+    // -----------------------------------------------------------------
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.use(express.static('./public'));
+        app.listen(8080);
+      `,
+    },
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.use(express.json());
+        app.post('/login', handleLogin);
+      `,
+    },
+    // -----------------------------------------------------------------
+    // LOCK: `module.exports = app` is an escape, not a missing control.
+    //
+    // The other two corpus findings. The app is configured by whoever
+    // imports it, so "no helmet here" says nothing about the application —
+    // the same reasoning the `setAppConfigurations(app)` guard already
+    // encoded for the call form.
+    // -----------------------------------------------------------------
+    {
+      code: `
+        const express = require('express');
+        const app = express();
+        module.exports = app;
+        app.set('view engine', 'mustache');
+        app.use(express.static('./public'));
+      `,
+    },
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.set('view engine', 'pug');
+        export default app;
+      `,
+    },
+    {
+      // A router factory that returns the configured app.
+      code: `
+        import express from 'express';
+        function build() {
+          const app = express();
+          app.engine('html', renderer);
+          return app;
+        }
+      `,
+    },
     {
       // ToniR7/express-typescript-starter: the app is created here and helmet
       // is registered in `utils/appInitialization.ts`. Once the binding is handed
@@ -74,6 +136,7 @@ ruleTester.run('require-helmet', requireHelmet, {
         import express from 'express';
         import { setAppConfigurations, setAppRoutes } from './utils/index.ts';
         const app = express();
+        app.set('view engine', 'pug');
         setAppConfigurations(app);
         setAppRoutes(app);
       `,
@@ -85,6 +148,7 @@ ruleTester.run('require-helmet', requireHelmet, {
       code: `
         import express from 'express';
         const app = express();
+        app.set('view engine', 'pug');
         registerEverything(app);
       `,
     },
@@ -94,6 +158,7 @@ ruleTester.run('require-helmet', requireHelmet, {
         import express from 'express';
         import helmet from 'helmet';
         const app = express();
+        app.set('view engine', 'pug');
         app.use(helmet());
       `,
     },
@@ -103,6 +168,7 @@ ruleTester.run('require-helmet', requireHelmet, {
         const express = require('express');
         const helmet = require('helmet');
         const app = express();
+        app.get('/', (req, res) => res.render('index'));
         app.use(helmet());
       `,
     },
@@ -112,6 +178,7 @@ ruleTester.run('require-helmet', requireHelmet, {
         import express from 'express';
         import helmet from 'helmet';
         const app = express();
+        app.set('view engine', 'pug');
         app.use(helmet.contentSecurityPolicy());
         app.use(helmet.xssFilter());
       `,
@@ -121,6 +188,7 @@ ruleTester.run('require-helmet', requireHelmet, {
       code: `
         import express from 'express';
         const app = express();
+        app.set('view engine', 'pug');
         app.use(secureHeaders());
       `,
       options: [{ alternativeMiddleware: ['secureHeaders'] }],
@@ -130,6 +198,7 @@ ruleTester.run('require-helmet', requireHelmet, {
       code: `
         import fastify from 'fastify';
         const app = fastify();
+        app.get('/', (req, res) => res.render('index'));
       `,
     },
     // Test file with allowInTests
@@ -137,6 +206,7 @@ ruleTester.run('require-helmet', requireHelmet, {
       code: `
         import express from 'express';
         const app = express();
+        app.set('view engine', 'pug');
       `,
       options: [{ allowInTests: true }],
       filename: 'app.test.ts',
@@ -146,9 +216,60 @@ ruleTester.run('require-helmet', requireHelmet, {
       code: `
         import express from 'express';
         const app = express();
+        app.set('view engine', 'pug');
         app.use(express.json());
       `,
       options: [{ assumeHelmetMiddleware: true }],
+    },
+    // `app.set` with a non-view setting is not document evidence
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.set('trust proxy', 1);
+      `,
+    },
+    // `app.set` with a non-literal key
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.set(settingName, 1);
+      `,
+    },
+    // `app.set` with a non-string literal key
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.set(1, 2);
+      `,
+    },
+    // a computed member call — the property is a Literal, not an Identifier
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app['render']('index');
+      `,
+    },
+    // `app.set` with no arguments at all
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.set();
+      `,
+    },
+    // res.send of a hand-built page is deliberately NOT document evidence:
+    // `send` is the generic responder and its payload cannot be classified
+    // without reading it. Documented in servesBrowserDocuments.
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        res.send('<html></html>');
+      `,
     },
   ]),
   invalid: xp([
@@ -158,34 +279,37 @@ ruleTester.run('require-helmet', requireHelmet, {
       // finding. Guards the abstain path against over-reaching.
       code: `
         import express from 'express';
-        express().listen(3000);
+        express().set('view engine', 'pug');
       `,
       errors: [{ messageId: 'missingHelmet' }],
     },
-    // Express without helmet
+    // A rendering app without helmet
     {
       code: `
         import express from 'express';
         const app = express();
+        app.set('view engine', 'pug');
         app.use(express.json());
       `,
-      errors: [
-        {
-          messageId: 'missingHelmet',
-        },
-      ],
+      errors: [{ messageId: 'missingHelmet' }],
     },
-    // CommonJS require without helmet
+    // res.render is document evidence on its own
     {
       code: `
         const express = require('express');
         const app = express();
+        app.get('/', (req, res) => res.render('home'));
       `,
-      errors: [
-        {
-          messageId: 'missingHelmet',
-        },
-      ],
+      errors: [{ messageId: 'missingHelmet' }],
+    },
+    // res.sendFile is document evidence
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.get('/', (req, res) => res.sendFile('index.html'));
+      `,
+      errors: [{ messageId: 'missingHelmet' }],
     },
     // Express with other middleware but not helmet
     {
@@ -193,28 +317,22 @@ ruleTester.run('require-helmet', requireHelmet, {
         import express from 'express';
         import cors from 'cors';
         const app = express();
+        app.set('view engine', 'pug');
         app.use(cors());
         app.use(express.json());
       `,
-      errors: [
-        {
-          messageId: 'missingHelmet',
-        },
-      ],
+      errors: [{ messageId: 'missingHelmet' }],
     },
     // Test file without allowInTests
     {
       code: `
         import express from 'express';
         const app = express();
+        app.set('view engine', 'pug');
       `,
       options: [{ allowInTests: false }],
       filename: 'app.test.ts',
-      errors: [
-        {
-          messageId: 'missingHelmet',
-        },
-      ],
+      errors: [{ messageId: 'missingHelmet' }],
     },
   ]),
 });
@@ -225,35 +343,49 @@ ruleTester.run('require-helmet', requireHelmet, {
 ruleTester.run('require-helmet (coverage wave)', requireHelmet, {
   valid: xp([
     // app.use(helmet) — identifier reference without a call
-    { code: `const app = express(); app.use(helmet);` },
+    {
+      code: `const app = express(); app.set('view engine', 'pug'); app.use(helmet);`,
+    },
     // call-of-a-call that is not require('express')()
-    { code: `f()();` },
+    { code: `f()(); res.render('x');` },
     // require()() with no module argument
-    { code: `require()();` },
+    { code: `require()(); res.render('x');` },
     // require(identifier)()
-    { code: `require(moduleName)();` },
+    { code: `require(moduleName)(); res.render('x');` },
     // require of a different module
-    { code: `require('lodash')();` },
+    { code: `require('lodash')(); res.render('x');` },
     // alternative middleware referenced as an identifier
     {
-      code: `const app = express(); app.use(secureHeaders);`,
+      code: `const app = express(); app.set('view engine', 'pug'); app.use(secureHeaders);`,
       options: [{ alternativeMiddleware: ['secureHeaders'] }],
+    },
+    // assignment whose right-hand side is not the app binding
+    {
+      code: `const app = express(); app.set('view engine', 'pug'); module.exports = router; app.use(helmet());`,
+    },
+    // `return` with no argument, inside a function that also holds the app
+    {
+      code: `function f() { const app = express(); app.set('view engine', 'pug'); if (x) return; app.use(helmet()); }`,
+    },
+    // `export default` of something that is not the app binding
+    {
+      code: `const app = express(); app.set('view engine', 'pug'); app.use(helmet()); export default router;`,
     },
   ]),
   invalid: xp([
     // require('express')() pattern creates an app without helmet
     {
-      code: `const app = require('express')(); app.listen(3000);`,
+      code: `const app = require('express')(); app.set('view engine', 'pug'); app.listen(3000);`,
       errors: [{ messageId: 'missingHelmet' }],
     },
     // identifier middleware that is not helmet
     {
-      code: `const app = express(); app.use(morgan);`,
+      code: `const app = express(); app.set('view engine', 'pug'); app.use(morgan);`,
       errors: [{ messageId: 'missingHelmet' }],
     },
     // literal + identifier middleware args, none of them helmet
     {
-      code: `const app = express(); app.use('/api', apiRouter);`,
+      code: `const app = express(); app.set('view engine', 'pug'); app.use('/api', apiRouter);`,
       errors: [{ messageId: 'missingHelmet' }],
     },
   ]),

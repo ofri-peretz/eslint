@@ -1,0 +1,223 @@
+---
+title: no-fail-open-auth
+description: "Detects authentication and authorization checks whose catch block fails open"
+tags: ['security', 'core']
+category: security
+severity: high
+cwe: CWE-636
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+**CWE:** [CWE-636](https://cwe.mitre.org/data/definitions/636.html)
+**OWASP:** [A10:2025 — Mishandling of Exceptional Conditions](https://owasp.org/Top10/2025/)
+
+Detects authentication and authorization checks whose `catch` block grants access. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+## Quick Summary
+
+| Aspect            | Details                                                                     |
+| ----------------- | --------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-636](https://cwe.mitre.org/data/definitions/636.html) (Not Failing Securely) |
+| **Severity**      | High (CVSS 8.1 — `AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N`)                     |
+| **Auto-Fix**      | ❌ Not auto-fixable                                                          |
+| **Category**      | Security                                                                    |
+
+## Vulnerability and Risk
+
+**Vulnerability:** The failure path of a security decision resolves to *allow*. Either the handler hands back a truthy verdict (`return true`), or it swallows the error and execution falls through to the privileged work as though the check had passed.
+
+**Risk:** An attacker who can make verification **throw** — a malformed token, an expired signing key, an unreachable identity provider — gets the same outcome as one who passes it. The CVSS vector carries `AC:H` because the attacker must find an input that makes verification throw rather than merely return false; everything behind the check is then fully readable and writable.
+
+## Rule Details
+
+The rule reports a `CatchClause` when **both** of the following hold:
+
+1. The `try` block contains a **security-decision call**, and
+2. the `catch` clause **fails open**.
+
+### 1. The security-decision call — the entire precision budget
+
+Auth SDKs are full of `try { … } catch { … }`, and virtually all of it wraps parsing, storage, telemetry and cleanup, where swallowing is correct behaviour. An "empty catch" rule is a formatting rule with a CWE glued on. **If the rule cannot see a security decision in the `try` block, it does not report.**
+
+A name is a security decision when it is:
+
+- a decision verb — `verify`, `validate`, `assert`, `check`, `ensure`, `require` — paired with an **enumerated** security noun: `Access`, `AccessToken`, `Admin`, `ApiKey`, `Auth`, `Authentication`, `Authorization`, `Authorized`, `Authenticated`, `Claim(s)`, `Credential(s)`, `Identity`, `IdToken`, `Jwt`, `Login`, `Password`, `Permission(s)`, `Role(s)`, `Scope(s)`, `Session`, `Signature`, `Token`;
+- a predicate verb — `is`, `has`, `can` — paired with `Access`, `Admin`, `Authenticated`, `Authorized`, `Owner`, `Permission(s)`, `Role(s)`;
+- one of `authenticate`, `authorize`, `introspectToken`, `decodeAndVerify`.
+
+Two deliberate exclusions:
+
+- **Bare verbs are out.** `verify(…)`, `validate(…)`, `check(…)`, `assert(…)` are the most common verbs in any codebase and decide nothing on their own. Admitting them would admit `sinon.verify`, `mock.verify`, `schema.validate` — and `jwt.verify(token, key)`, which is a real miss (see [Known False Negatives](#known-false-negatives)).
+- **The noun list is enumerated, not a `\w*` suffix.** Measured on okta-auth-js: `assertAuthSdkError`, `assertAuthStatusText` and `verifyAuthJSVersion` all match `assert|verify + Auth\w*`, and none of them decides anything about a caller's access. The anchored enumeration matches none of them.
+
+A decision inside a callback declared in the `try` does not count — it does not run in the `try`.
+
+### 2. What counts as failing open
+
+| Catch body | Verdict |
+| ---------- | ------- |
+| `return true` / `return 1` / `return 'ok'` — a truthy **literal** | `failOpenReturn` |
+| no `throw`, no `return`, no `break`/`continue`, no denial call — and code follows the try/catch | `failOpenSwallow` |
+| `return false` / `null` / `0` / `''` / `undefined`, or a bare `return` | not reported |
+| `throw` (rethrow or new error), in the handler or in `finally` | not reported |
+| `res.status(4xx)`, `res.sendStatus(…)`, `next(err)`, `reject(err)`, `process.exit(…)`, `logout()`, `redirect(…)` | not reported |
+
+Object and array literals are **not** treated as grants: in a catch block `return { error: err }` is far more often an error envelope than a grant, and `return { authorized: true }` is the price paid for not reporting every one of those. A non-constant return (`return cached`) says nothing statically.
+
+The swallow case additionally requires **work after the try/catch** in the same block. That is what makes a swallowed error a *fail-open* rather than merely an ignored one: when the try/catch is the tail of a function, nothing downstream was gated on it in that scope — the shape of a fire-and-forget refresh or audit call, which auth SDKs swallow on purpose.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// The catch hands back a grant.
+function isAuthorized(token) {
+  try {
+    return verifyToken(token).valid;
+  } catch (err) {
+    return true; // verification failure ⇒ access granted
+  }
+}
+
+// The catch swallows and the privileged work runs anyway.
+async function handleAdminAction(req, res) {
+  let actor = null;
+  try {
+    actor = await assertAdmin(req.headers.authorization);
+  } catch (err) {
+    // ignore
+  }
+
+  await purgeTable(req.body.table); // runs whether or not the caller is an admin
+  res.json({ ok: true, actor: actor && actor.id });
+}
+```
+
+### ✅ Correct
+
+```javascript
+// Deny on failure, and say why.
+function isAuthorized(token) {
+  try {
+    return verifyToken(token).valid === true;
+  } catch (err) {
+    logger.warn({ event: 'token_verify_failed', reason: err.name });
+    return false;
+  }
+}
+
+// Or rethrow before the guarded work is reached.
+async function handleAdminAction(req, res) {
+  let actor;
+  try {
+    actor = await assertAdmin(req.headers.authorization);
+  } catch (err) {
+    logger.error({ event: 'admin_assert_failed', reason: err.name });
+    throw err;
+  }
+
+  await purgeTable(req.body.table);
+  res.json({ ok: true, actor: actor.id });
+}
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-fail-open-auth': ['error', {
+      securityDecisions: ['gateKeeper', 'mustBeStaff']
+    }]
+  }
+}
+```
+
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `securityDecisions` | `string[]` | `[]` | Additional call names to treat as authentication/authorization decisions |
+
+## Error Message Format
+
+```
+🔒 CWE-636 OWASP:A10-Mishandling CVSS:8.1 | Security check fails open — the catch block returns a truthy verdict, so a verification error grants access | HIGH
+   Fix: Return the deny value from the catch block (return false / null) and log the error | https://cwe.mitre.org/data/definitions/636.html
+
+🔒 CWE-636 OWASP:A10-Mishandling CVSS:8.1 | Security check fails open — the catch block swallows the error and execution continues into the code the check was guarding | HIGH
+   Fix: Rethrow, return a deny value, or send a 401/403 from the catch block before the guarded work runs | https://cwe.mitre.org/data/definitions/636.html
+```
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+Each of these is the cost of the precision gate, and each is deliberate.
+
+### Bare-verb verification APIs
+
+**Why**: `verify`, `validate` and `check` on their own are not security decisions — they are the most common verbs in any codebase.
+
+```javascript
+// ❌ NOT DETECTED
+try { jwt.verify(token, key); } catch (e) {}
+grantAccess();
+```
+
+**Mitigation**: Add the wrapper you actually call to `securityDecisions`, or name it `verifyToken` / `assertAdmin`.
+
+### Grants that are not literals
+
+**Why**: `return ALLOW`, `return cachedVerdict` and `return { authorized: true }` are not statically known to be grants, and object literals in a catch are usually error envelopes.
+
+```javascript
+// ❌ NOT DETECTED
+try { return checkPermission(u); } catch (e) { return ALLOW; }
+```
+
+**Mitigation**: Return a literal deny value from catch blocks and let callers map it.
+
+### Decisions inside callbacks
+
+**Why**: A call inside a function declared in the `try` does not execute in the `try`, so its failure does not reach that `catch`.
+
+```javascript
+// ❌ NOT DETECTED
+try { ids.map((id) => checkPermission(id)); } catch (e) {}
+purge();
+```
+
+**Mitigation**: `await` the decision in the `try` block itself.
+
+### Denial idioms that still fall through
+
+**Why**: `next(err)` and `reject(err)` do not stop the handler either — strictly they still fall through — but they are the idiomatic denial in Express and in a promise executor, and reporting them would be arguing with a convention rather than finding a bug.
+
+```javascript
+// ❌ NOT DETECTED — and usually correct
+try { requireAuth(req); } catch (e) { next(e); }
+purge();
+```
+
+**Mitigation**: `return next(e);`.
+
+## Further Reading
+
+- **[CWE-636: Not Failing Securely ('Failing Open')](https://cwe.mitre.org/data/definitions/636.html)** - Official CWE entry
+- **[OWASP Top 10 2025 — A10 Mishandling of Exceptional Conditions](https://owasp.org/Top10/2025/)** - Category documentation
+
+## Related Rules
+
+- [`no-missing-authentication`](./no-missing-authentication.md) - Endpoints with no authentication at all
+- [`require-backend-authorization`](./require-backend-authorization.md) - Client-side-only authorization checks
+- [`no-unhandled-stream-error`](./no-unhandled-stream-error.md) - Uncaught exceptions from unhandled stream errors

@@ -225,3 +225,5 @@ compare(userToken, validToken);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `secretPatterns` | `string[]` | `["token","secret","key","password","hash","signature","mac","hmac","digest","apiKey","api_key","api-key","auth","credential","bearer","jwt","csrf","nonce","ssn","social_security","social-security","pii","private_key","private-key","privateKey","access_token","access-token","accessToken","refresh_token","refresh-token","refreshToken","session_id","session-id","sessionId","auth_token","auth-token","authToken","encryption_key","encryption-key","encryptionKey"]` | Variable name patterns that indicate secrets |
+| `untrustedSources` | `string[]` | `["req","request","ctx","event"]` | Identifier roots treated as attacker-controlled (default: req, request, ctx, event) |
+| `reportUnverifiedComparisons` | `boolean` | `false` | Report on a secret-looking name alone, without an attacker-controlled operand. Restores the pre-inversion behaviour. |

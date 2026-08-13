@@ -16,6 +16,18 @@ const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
 });
 
+
+/**
+ * The pre-inversion contract: a URL argument reports because its identifier is
+ * NAMED like user input (`url`, `endpoint`, `targetUrl`).
+ *
+ * Measured on the 8-repo corpus that produced 16 findings and no SSRF — every
+ * one an HTTP wrapper whose URL parameter is, unavoidably, called `url`. The
+ * default now requires the value to trace back to a request object, and the
+ * naming logic these cases pin is exercised through the restoring option.
+ */
+const NAME_ONLY = [{ reportUnresolvedUrls: true }];
+
 describe('no-ssrf', () => {
   describe('Valid - Safe Patterns', () => {
     ruleTester.run('valid - safe requests', noSsrf, {
@@ -49,11 +61,13 @@ describe('no-ssrf', () => {
         // fetch with user-controlled URL
         {
           code: 'fetch(userUrl);',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // axios.get with user-controlled endpoint
         {
           code: 'axios.get(endpoint);',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // needle.get with user-controlled endpoint
@@ -64,16 +78,19 @@ describe('no-ssrf', () => {
         // axios.post
         {
           code: 'axios.post(targetUrl, data);',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // http.request
         {
           code: 'http.request(userUrl);',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // got with user URL
         {
           code: 'got(userUrl);',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
       ],
@@ -116,6 +133,7 @@ describe('no-ssrf', () => {
               return response.json();
             }
           `,
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // vuln_ssrf_axios — axios.get with unvalidated endpoint
@@ -125,6 +143,7 @@ describe('no-ssrf', () => {
               return axios.get(endpoint);
             }
           `,
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
       ],
@@ -174,11 +193,13 @@ describe('no-ssrf', () => {
         // Still caught: a url-naming key holding a user-input-named identifier
         {
           code: 'got({ url: targetUrl });',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // Still caught: quoted url key
         {
           code: 'got({ "uri": userEndpoint });',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // Still caught: URL read straight off the request
@@ -189,16 +210,19 @@ describe('no-ssrf', () => {
         // Still caught: template literal interpolating a user-input-named id
         {
           code: 'fetch(`https://${userHost}/data`);',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // Still caught: concatenation onto a fixed base
         {
           code: 'fetch("https://proxy/" + userUrl);',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // Still caught: new URL(...) wrapping user input
         {
           code: 'axios.get(new URL(targetUrl, base));',
+          options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // Still caught: ctx / event roots
@@ -208,6 +232,53 @@ describe('no-ssrf', () => {
         },
         {
           code: 'fetch(event.queryStringParameters.u);',
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+      ],
+    });
+  });
+
+  // ── The inversion ────────────────────────────────────────────────────────
+  // Every `valid` case is a verbatim shape from the 8-repo corpus scan and
+  // reported before this change. They are all the same shape: an HTTP wrapper
+  // whose URL parameter is called `url`.
+  describe('URL-shaped Name Is Not Evidence', () => {
+    ruleTester.run('name alone no longer reports', noSsrf, {
+      valid: [
+        // Shopify/cli .../download-bulk-operation-results.ts:11 and
+        // .../github.ts:48 — a wrapper forwarding its own parameter.
+        `export async function download(url) { const response = await fetch(url); return response.text(); }`,
+        // Shopify/cli .../token-client.ts:55 — same shape, named `endpoint`.
+        `async function post(endpoint, body) { return fetch(endpoint, { method: 'POST', body }); }`,
+        // okta/okta-signin-widget src/v3/src/util/makeRequest.ts:36.
+        `const makeRequest = async (url, init) => fetch(url, init);`,
+        // okta/okta-auth-js .../express/oidc-middleware.js:17 — a template
+        // built from a config constant, not from a request.
+        'const baseUrl = "https://issuer"; const post = https.request(`${baseUrl}/v1/token`, {});',
+        // okta/okta-signin-widget .../generate-phone-codes.js:15 — a
+        // SCREAMING_SNAKE constant holding a fixed URL.
+        `const METADATA_URI = 'https://unicode.org/metadata.json'; axios.get(METADATA_URI);`,
+        // Shopify/cli .../app-management-client.ts:458.
+        `const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/t.json'; const r = await fetch(TEMPLATE_JSON_URL);`,
+      ],
+      invalid: [
+        // FN CLOSED by the same change. The binding hop means the local no
+        // longer has to be *named* like a URL to be caught — provenance is what
+        // matters, and `destination` would have been silent before.
+        {
+          code: `app.get('/proxy', (req, res) => {
+                   const destination = req.query.target;
+                   return fetch(destination);
+                 });`,
+          errors: [{ messageId: 'ssrfVulnerability' }],
+        },
+        // Two hops, still traced.
+        {
+          code: `function proxy(req) {
+                   const raw = req.body;
+                   const next = raw.callbackUrl;
+                   return got(next);
+                 }`,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
       ],

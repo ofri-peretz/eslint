@@ -45,8 +45,40 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.sourceCode;
     const sensitiveParams = ['password=', 'token=', 'apikey=', 'secret=', 'auth='];
+
+    /**
+     * Path segments of the out-of-band verification flows.
+     *
+     * A password-reset link carries its token in the query because there is no
+     * other channel — the recipient is not authenticated yet, so a header or a
+     * cookie is not available, and the link has to survive being pasted from an
+     * email client. The token is single-use and short-lived, which is what makes
+     * the design acceptable; every mainstream framework ships it this way.
+     *
+     * Reporting it says "use the Authorization header instead", which cannot be
+     * done. This is deliberately narrow: it exempts `token=` only, and only when
+     * the path names one of these flows, so `?apikey=`, `?password=` and a bare
+     * `?token=` on an API endpoint all still report.
+     */
+    const OUT_OF_BAND_FLOWS =
+      /\/(reset|reset-password|forgot|verify|verify-email|confirm|activate|unsubscribe|magic-?link)\b/;
+
+    /**
+     * Does this URL carry a credential we should report?
+     *
+     * Every present parameter is considered, not just the first: a reset link
+     * that ALSO carries `&apikey=` is still a finding, and short-circuiting on
+     * the exempt `token=` would have hidden it.
+     */
+    function hasReportableCredential(url: string): boolean {
+      const present = sensitiveParams.filter(
+        (param) => url.includes('?' + param) || url.includes('&' + param),
+      );
+      return present.some(
+        (param) => !(param === 'token=' && OUT_OF_BAND_FLOWS.test(url)),
+      );
+    }
     
     function report(node: TSESTree.Node) {
       context.report({
@@ -60,16 +92,40 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         if (typeof node.value === 'string') {
           const url = node.value.toLowerCase();
           
-          if (sensitiveParams.some(param => url.includes('?' + param) || url.includes('&' + param))) {
+          if (hasReportableCredential(url)) {
             report(node);
           }
         }
       },
       
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const text = sourceCode.getText(node).toLowerCase();
-        
-        if (sensitiveParams.some(param => text.includes(param))) {
+        // Read the STATIC text, not `sourceCode.getText(node)`.
+        //
+        // getText returns the template's source, interpolations included, so
+        // `${maskToken(session.accessToken)}` contributed the characters of its
+        // own source code to the match. Combined with the missing `?`/`&`
+        // prefix below, that made this branch fire on
+        //
+        //   outputDebug(`Loaded session for ${store}: token=${maskToken(t)}`)
+        //
+        // — a debug log, not a URL, whose value is explicitly MASKED. Reporting
+        // it was wrong twice over. (Repo doctrine: match the AST, never printed
+        // source.)
+        //
+        // A placeholder marks each interpolation so `?` + `token=` cannot be
+        // formed by accident across a boundary.
+        const INTERPOLATION = '\u0001';
+        const text = node.quasis
+          // `raw` is always populated; `cooked` is null only for an invalid
+          // escape in a TAGGED template, which a URL string never is.
+          .map((q) => q.value.raw)
+          .join(INTERPOLATION)
+          .toLowerCase();
+
+        // Same test the Literal branch uses. The asymmetry was the bug: a
+        // literal needed `?token=` or `&token=`, a template matched a bare
+        // `token=` anywhere — including the `: token=` of a log line.
+        if (hasReportableCredential(text)) {
           report(node);
         }
       },

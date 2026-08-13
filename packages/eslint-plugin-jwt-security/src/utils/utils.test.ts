@@ -45,7 +45,12 @@ function withProgram<T extends object>(
         : [
             {
               type: 'ImportDeclaration',
-              source: { value: source },
+              // `type: 'Literal'` is not decoration. The file gate is now the
+              // devkit probe, which walks nodes generically and checks the
+              // source node's type before reading its value — a mock that omits
+              // it is not an AST the gate can read, and every case here would
+              // fail for a reason that has nothing to do with what it asserts.
+              source: { type: 'Literal', value: source },
               // Real ImportDeclarations always carry specifiers; the mock does
               // too, so the receiver-origin check is exercised rather than
               // short-circuited.
@@ -179,7 +184,7 @@ describe('JWT Utils', () => {
             { type: 'ExpressionStatement' },
             {
               type: 'ImportDeclaration',
-              source: { value: 42 },
+              source: { type: 'Literal', value: 42 },
               specifiers: [],
             },
           ],
@@ -204,14 +209,14 @@ describe('JWT Utils', () => {
           body: [
             {
               type: 'ImportDeclaration',
-              source: { value: 'jsonwebtoken' },
+              source: { type: 'Literal', value: 'jsonwebtoken' },
               specifiers: [
                 { type: 'ImportDefaultSpecifier', local: { name: 'jwt' } },
               ],
             },
             {
               type: 'ImportDeclaration',
-              source: { value: '@node-rs/argon2' },
+              source: { type: 'Literal', value: '@node-rs/argon2' },
               specifiers: [
                 { type: 'ImportDefaultSpecifier', local: { name: 'argon' } },
               ],
@@ -244,7 +249,7 @@ describe('JWT Utils', () => {
           body: [
             {
               type: 'ImportDeclaration',
-              source: { value: 'jsonwebtoken' },
+              source: { type: 'Literal', value: 'jsonwebtoken' },
               specifiers: [
                 { type: 'ImportDefaultSpecifier', local: { name: 'jwt' } },
               ],
@@ -252,11 +257,11 @@ describe('JWT Utils', () => {
             // no `specifiers` key at all
             {
               type: 'ImportDeclaration',
-              source: { value: 'side-effect-only' },
+              source: { type: 'Literal', value: 'side-effect-only' },
             },
             {
               type: 'ImportDeclaration',
-              source: { value: 123 },
+              source: { type: 'Literal', value: 123 },
               specifiers: [
                 { type: 'ImportDefaultSpecifier', local: { name: 'weird' } },
               ],

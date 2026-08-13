@@ -18,6 +18,7 @@ import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
 import { noSsrf } from './rules/no-ssrf';
 import { noShellInjection } from './rules/no-shell-injection';
 import { noDynamicCommandString } from './rules/no-dynamic-command-string';
+import { noEnvInjection } from './rules/no-env-injection';
 import { noDynamicAlgorithmSelection } from './rules/no-dynamic-algorithm-selection';
 
 // Migrated rules from secure-coding
@@ -45,6 +46,12 @@ import { noTimingUnsafeCompare } from './rules/no-timing-unsafe-compare';
 import { noWeakCipherAlgorithm } from './rules/no-weak-cipher-algorithm';
 import { noWeakHashAlgorithm } from './rules/no-weak-hash-algorithm';
 import { preferNativeCrypto } from './rules/prefer-native-crypto';
+import { requireAeadTagVerification } from './rules/require-aead-tag-verification';
+
+// Protocol-level rules
+import { noUnboundedDecompression } from './rules/no-unbounded-decompression';
+import { noInsecureHttpParser } from './rules/no-insecure-http-parser';
+import { requireStreamErrorHandler } from './rules/require-stream-error-handler';
 
 import { TSESLint } from '@interlace/eslint-devkit';
 
@@ -66,6 +73,7 @@ export const rules: Record<
   'no-ssrf': noSsrf,
   'no-shell-injection': noShellInjection,
   'no-dynamic-command-string': noDynamicCommandString,
+  'no-env-injection': noEnvInjection,
   'no-dynamic-algorithm-selection': noDynamicAlgorithmSelection,
 
   // Migrated rules
@@ -93,6 +101,12 @@ export const rules: Record<
   'no-weak-cipher-algorithm': noWeakCipherAlgorithm,
   'no-weak-hash-algorithm': noWeakHashAlgorithm,
   'prefer-native-crypto': preferNativeCrypto,
+  'require-aead-tag-verification': requireAeadTagVerification,
+
+  // Protocol-level rules
+  'no-unbounded-decompression': noUnboundedDecompression,
+  'no-insecure-http-parser': noInsecureHttpParser,
+  'require-stream-error-handler': requireStreamErrorHandler,
 };
 
 export const plugin: TSESLint.FlatConfig.Plugin = {
@@ -142,6 +156,13 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-ssrf': 'warn',
   'node-security/no-shell-injection': 'error',
   'node-security/no-dynamic-command-string': 'error',
+  // Added 2026-08-12 with the rule. Judges the KEY of a `process.env[…]` write
+  // by tracing it to the request, so the allowlist pattern
+  // (`ALLOWED[req.body.setting]`) — the documented fix — stays silent. Enters
+  // at 'error' because a request-named environment variable is a direct
+  // PATH/NODE_OPTIONS/LD_PRELOAD overwrite, and the shape has no legitimate
+  // form: nothing in a request should choose which env var is written.
+  'node-security/no-env-injection': 'error',
   'node-security/no-dynamic-algorithm-selection': 'error',
   // Added to `recommended` 2026-08-02. `secure-coding/no-insecure-comparison`
   // was removed from every `secure-coding` preset in favour of this rule, but
@@ -155,7 +176,34 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',
-  'node-security/lock-file': 'warn', // filesystem check — not pure AST; CI enforces this better
+
+  // NOTE: `lock-file` is intentionally NOT in `recommended` (removed
+  // 2026-08-12). It is not a statement about any line of code — it asserts one
+  // project-level fact ("this repo commits no lock file"), and ESLint has no
+  // way to say that. Every report therefore lands on line 1 of whichever
+  // source file the linter happened to reach, which is not a place the reader
+  // can act and not a place a suppression comment belongs.
+  //
+  // The dedup that keeps it to one report per project is a module-scope `Set`
+  // that outlives the per-file rule context, so WHICH file carries the finding
+  // depends on traversal order — it moves between runs, between shards, and
+  // under `--cache`. A finding whose location is nondeterministic cannot be
+  // baselined or code-reviewed.
+  //
+  // Measured over the 8-repo corpus it fired 3 times. One
+  // (Shopify/cli `packages/app/src/cli/.../hooks/usePollAppLogs.ts:1`) was an
+  // outright defect: the ancestor walk stopped after ten levels and never
+  // reached the `pnpm-lock.yaml` at the repo root — fixed in this change, so
+  // the rule no longer lies. The other two (auth0/express-openid-connect,
+  // paypal/paypal-checkout-components) are published libraries that
+  // deliberately do not commit a lock file, which is the normal convention for
+  // a library: the lock file governs the app that installs it, not the package.
+  // Reporting that as CWE-829 at HIGH tells a correct project it is wrong.
+  //
+  // The rule stays exported and opt-in-able for teams that DO require a
+  // committed lock file. For most projects the honest enforcement point is CI
+  // (`npm ci` fails without one) or a repo policy check — not a per-file lint
+  // pass, which is what the previous `warn` entry's own comment already said.
   'node-security/require-dependency-integrity': 'error',
 
   // Crypto rules in recommended
@@ -176,12 +224,69 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Measured before promoting, over the 13-repo wild corpus (~1,900 files of
   // real Express and NestJS code): **0 findings**. Pure recall, no FP cost.
   //
-  // `browser-security/no-disabled-certificate-validation` detects the same
-  // thing and was deliberately left out of that plugin's preset: enabling
-  // both would double-report one defect, which is its own FP class (see the
-  // two CSRF rules). `rejectUnauthorized` is a Node TLS option with no
-  // browser equivalent, so node-security owns it.
+  // PARTITION NOTE — updated 2026-08-13, and currently UNRESOLVED.
+  //
+  // This entry used to say that `browser-security/no-disabled-certificate-validation`
+  // was deliberately kept out of that plugin's preset so `rejectUnauthorized:
+  // false` had exactly one owner. That is no longer true: the rule was promoted
+  // into `browser-security`'s `recommended` on 2026-08-13 because it is the
+  // only rule that reads a no-op `checkServerIdentity`, which the CWE-295
+  // corpus fixture needs. A consumer on both presets therefore now gets two
+  // reports for one `rejectUnauthorized: false`.
+  //
+  // Measured cost today is zero: neither rule fires on the 8-repo real-code
+  // corpus, and the CWE corpus scores CWE-295 at TP=2 FP=0. So this is a latent
+  // duplicate rather than an observed one, left in place rather than fixed
+  // blind at the end of a sweep.
+  //
+  // The clean resolution, for whoever picks this up: give
+  // `browser-security/no-disabled-certificate-validation` the
+  // `checkServerIdentity` half only and leave `rejectUnauthorized` /
+  // `strictSSL` / `verify` here, since those are Node TLS options with no
+  // browser equivalent. That costs `rejectUnauthorized` coverage for anyone
+  // installing browser-security alone — the same package-boundary trade already
+  // documented for `no-insecure-comparison` in secure-coding — and it must be
+  // written down in both plugins' READMEs if taken.
   'node-security/no-self-signed-certs': 'error',
+
+  // Added 2026-08-12 with the rules themselves. All three closed a corpus miss
+  // where NO rule in the ecosystem owned the shape (ILB-CWE-Corpus scored
+  // CWE-327 AEAD misuse, CWE-409 and CWE-444 as 0/N for Interlace), and each
+  // predicate is anchored on an API whose only meaning is the defect:
+  //
+  //  - `require-aead-tag-verification` reports a `createDecipheriv` with a
+  //    literal AEAD algorithm whose local never calls `setAuthTag`, or calls it
+  //    and never `final()`. Any escape of the decipher (passed to `pipeline`,
+  //    returned, computed member access) bails rather than guesses.
+  //  - `no-unbounded-decompression` reports zlib's buffer-at-once
+  //    decompressors with no `maxOutputLength`. The streaming factories stay
+  //    with `secure-coding/no-unlimited-resource-allocation` so one site has
+  //    exactly one owner.
+  //  - `no-insecure-http-parser` reports a literal `insecureHTTPParser: true`.
+  //    The option name is Node-specific and has one meaning.
+  //
+  // Measured over the 8-repo false-positive corpus before promotion: 0
+  // findings each.
+  'node-security/require-aead-tag-verification': 'error',
+  'node-security/no-unbounded-decompression': 'error',
+  'node-security/no-insecure-http-parser': 'error',
+
+  // Added 2026-08-13. CWE-248 was scored 2/2 before this sweep, but the
+  // detector was `detect-non-literal-fs-filename` firing on the non-literal
+  // path inside each fixture — it hit all FOUR fixtures, so it also produced
+  // 2 false positives and scored BAS 0. Inverting that rule to a taint model
+  // correctly removed all four, and left a labelled vulnerability class with
+  // no owner. This rule reads what the fixtures are actually about: `.pipe()`
+  // forwards data but not errors, so a stream that emits `'error'` with no
+  // listener is an uncaught exception and the process exits.
+  //
+  // The predicate is provable rather than heuristic — a stream constructed
+  // INLINE in the pipe expression has no name, so no listener can ever have
+  // been attached to it — plus a named stream whose binding is a stream
+  // constructor and which never appears with an `'error'` listener in the
+  // file. `pipeline()` is never reported: it is the recommended fix.
+  // Measured over the 8-repo false-positive corpus before promotion: 0 findings.
+  'node-security/require-stream-error-handler': 'error',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {

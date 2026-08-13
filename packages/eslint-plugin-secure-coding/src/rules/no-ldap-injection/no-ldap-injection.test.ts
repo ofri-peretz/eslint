@@ -23,9 +23,57 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * Every fixture below is run with an `ldapjs` import prepended.
+ *
+ * The rule is gated on an LDAP client being loaded (see `fileImportsLdapClient`
+ * in ./index.ts) — nothing else in a file is evidence that CWE-90 applies. A
+ * fixture without one would go green for the wrong reason: not because the rule
+ * judged the code safe, but because it never looked. The ungated behaviour is
+ * pinned separately, in "the file gate" below.
+ */
+const LDAP_IMPORT = "import ldapjs from 'ldapjs';\n";
+
+type Fixture = string | { code: string; [key: string]: unknown };
+
+const withLdapImport = (fixture: Fixture): Fixture =>
+  typeof fixture === 'string'
+    ? LDAP_IMPORT + fixture
+    : { ...fixture, code: LDAP_IMPORT + fixture.code };
+
+/** `ruleTester.run`, with the LDAP client the gate requires. */
+const runLdap = (
+  name: string,
+  rule: typeof noLdapInjection,
+  tests: { valid: Fixture[]; invalid: Fixture[] },
+): void => {
+  ruleTester.run(name, rule, {
+    valid: tests.valid.map(withLdapImport),
+    invalid: tests.invalid.map(withLdapImport),
+  } as never);
+};
+
+/**
+ * Prime a mock-context harness with the Program the gate reads. The Layer 2
+ * tests call listeners directly, so ESLint's own `Program`-first visit order
+ * has to be reproduced by hand.
+ */
+const primeLdapGate = (listeners: Record<string, unknown>): void => {
+  (listeners['Program'] as (n: unknown) => void)({
+    type: 'Program',
+    body: [
+      {
+        type: 'ImportDeclaration',
+        source: { type: 'Literal', value: 'ldapjs' },
+        specifiers: [],
+      },
+    ],
+  });
+};
+
 describe('no-ldap-injection', () => {
   describe('Valid Code', () => {
-    ruleTester.run('valid - safe LDAP operations', noLdapInjection, {
+    runLdap('valid - safe LDAP operations', noLdapInjection, {
       valid: [
         // Safe LDAP filters with escaping
         {
@@ -53,87 +101,79 @@ describe('no-ldap-injection', () => {
   });
 
   describe('Invalid Code - LDAP Injection', () => {
-    ruleTester.run(
-      'invalid - LDAP injection vulnerabilities',
-      noLdapInjection,
-      {
-        valid: [],
-        invalid: [
-          {
-            code: 'const filter = `(uid=${userInput})`;',
-            errors: [
-              {
-                messageId: 'unsafeLdapFilter',
-              },
-            ],
-          },
-          {
-            code: 'client.search(baseDN, `(cn=${req.query.name})`, options);',
-            errors: [
-              {
-                messageId: 'unescapedLdapInput',
-              },
-            ],
-          },
-          {
-            code: 'const ldapFilter = "(uid=" + userId + ")"; client.search(baseDN, ldapFilter);',
-            errors: [
-              {
-                messageId: 'ldapInjection',
-              },
-            ],
-          },
-        ],
-      },
-    );
+    runLdap('invalid - LDAP injection vulnerabilities', noLdapInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const filter = `(uid=${userInput})`;',
+          errors: [
+            {
+              messageId: 'unsafeLdapFilter',
+            },
+          ],
+        },
+        {
+          code: 'client.search(baseDN, `(cn=${req.query.name})`, options);',
+          errors: [
+            {
+              messageId: 'unescapedLdapInput',
+            },
+          ],
+        },
+        {
+          code: 'const ldapFilter = "(uid=" + userId + ")"; client.search(baseDN, ldapFilter);',
+          errors: [
+            {
+              messageId: 'ldapInjection',
+            },
+          ],
+        },
+      ],
+    });
   });
 
   describe('Invalid Code - Dangerous LDAP Filters', () => {
-    ruleTester.run(
-      'invalid - dangerous LDAP filter patterns',
-      noLdapInjection,
-      {
-        valid: [],
-        invalid: [
-          {
-            code: 'const filter = "(uid=*)";',
-            errors: [
-              {
-                messageId: 'dangerousLdapOperation',
-              },
-            ],
-          },
-          {
-            code: 'const dangerousFilter = "(|(uid=" + input + "))";',
-            errors: [
-              {
-                messageId: 'ldapInjection',
-              },
-            ],
-          },
-          {
-            code: 'const badFilter = "(&(cn=" + userInput + "))";',
-            errors: [
-              {
-                messageId: 'ldapInjection',
-              },
-            ],
-          },
-          {
-            code: 'const notFilter = "(!(uid=" + input + "))";',
-            errors: [
-              {
-                messageId: 'ldapInjection',
-              },
-            ],
-          },
-        ],
-      },
-    );
+    runLdap('invalid - dangerous LDAP filter patterns', noLdapInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const filter = "(uid=*)";',
+          errors: [
+            {
+              messageId: 'dangerousLdapOperation',
+            },
+          ],
+        },
+        {
+          code: 'const dangerousFilter = "(|(uid=" + input + "))";',
+          errors: [
+            {
+              messageId: 'ldapInjection',
+            },
+          ],
+        },
+        {
+          code: 'const badFilter = "(&(cn=" + userInput + "))";',
+          errors: [
+            {
+              messageId: 'ldapInjection',
+            },
+          ],
+        },
+        {
+          code: 'const notFilter = "(!(uid=" + input + "))";',
+          errors: [
+            {
+              messageId: 'ldapInjection',
+            },
+          ],
+        },
+      ],
+    });
   });
 
   describe('Invalid Code - Unescaped LDAP Input', () => {
-    ruleTester.run('invalid - unescaped LDAP input', noLdapInjection, {
+    runLdap('invalid - unescaped LDAP input', noLdapInjection, {
       valid: [],
       invalid: [
         {
@@ -165,58 +205,54 @@ describe('no-ldap-injection', () => {
   });
 
   describe('Invalid Code - LDAP Variable Assignment', () => {
-    ruleTester.run(
-      'invalid - dangerous LDAP variable assignments',
-      noLdapInjection,
-      {
-        valid: [],
-        invalid: [
-          {
-            code: 'const userFilter = `(uid=${userInput})`;',
-            errors: [
-              {
-                messageId: 'unsafeLdapFilter',
-              },
-            ],
-          },
-          {
-            // The variable name alone is not evidence of LDAP — the file has to
-            // actually touch a directory. With `client.search()` present this is a
-            // real CWE-90; see the valid case below for the same assignment in a
-            // file with no LDAP anywhere, which is not.
-            code: 'const ldapQuery = req.query.filter; client.search(baseDN, ldapQuery);',
-            errors: [
-              {
-                messageId: 'ldapInjection',
-              },
-            ],
-          },
-          {
-            code: 'let searchFilter = "(cn=*)" + input;',
-            errors: [
-              {
-                messageId: 'ldapInjection',
-              },
-            ],
-          },
-          {
-            // CommonJS `require('ldapjs')` counts as LDAP evidence too — most LDAP
-            // code in the wild is CJS, so an ESM-only check would have left the
-            // majority of real directory code unprotected.
-            code: "const ldap = require('ldapjs'); const ldapQuery = req.query.filter;",
-            errors: [
-              {
-                messageId: 'ldapInjection',
-              },
-            ],
-          },
-        ],
-      },
-    );
+    runLdap('invalid - dangerous LDAP variable assignments', noLdapInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const userFilter = `(uid=${userInput})`;',
+          errors: [
+            {
+              messageId: 'unsafeLdapFilter',
+            },
+          ],
+        },
+        {
+          // The variable name alone is not evidence of LDAP — the file has to
+          // actually touch a directory. With `client.search()` present this is a
+          // real CWE-90; see the valid case below for the same assignment in a
+          // file with no LDAP anywhere, which is not.
+          code: 'const ldapQuery = req.query.filter; client.search(baseDN, ldapQuery);',
+          errors: [
+            {
+              messageId: 'ldapInjection',
+            },
+          ],
+        },
+        {
+          code: 'let searchFilter = "(cn=*)" + input;',
+          errors: [
+            {
+              messageId: 'ldapInjection',
+            },
+          ],
+        },
+        {
+          // CommonJS `require('ldapjs')` counts as LDAP evidence too — most LDAP
+          // code in the wild is CJS, so an ESM-only check would have left the
+          // majority of real directory code unprotected.
+          code: "const ldap = require('ldapjs'); const ldapQuery = req.query.filter;",
+          errors: [
+            {
+              messageId: 'ldapInjection',
+            },
+          ],
+        },
+      ],
+    });
   });
 
   describe('Valid Code - False Positives Reduced', () => {
-    ruleTester.run('valid - false positives reduced', noLdapInjection, {
+    runLdap('valid - false positives reduced', noLdapInjection, {
       valid: [
         // Safe LDAP construction using builder pattern
         {
@@ -241,7 +277,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('Configuration Options', () => {
-    ruleTester.run('config - custom LDAP functions', noLdapInjection, {
+    runLdap('config - custom LDAP functions', noLdapInjection, {
       valid: [
         {
           code: 'myLdapClient.search(base, filter);',
@@ -251,7 +287,7 @@ describe('no-ldap-injection', () => {
       invalid: [],
     });
 
-    ruleTester.run('config - custom escape functions', noLdapInjection, {
+    runLdap('config - custom escape functions', noLdapInjection, {
       valid: [
         {
           code: 'const escaped = myLdapEscape(userInput); const filter = `(uid=${escaped})`;',
@@ -263,7 +299,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('Safe JSDoc Annotations - safetyChecker.isSafe branches', () => {
-    ruleTester.run(
+    runLdap(
       'valid - @validated suppresses unescapedLdapInput (CallExpression, untrusted arg)',
       noLdapInjection,
       {
@@ -279,7 +315,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - @safe suppresses unescapedLdapInput (CallExpression, template literal)',
       noLdapInjection,
       {
@@ -295,7 +331,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - @sanitized suppresses dangerousLdapOperation (string literal)',
       noLdapInjection,
       {
@@ -311,7 +347,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - @trusted suppresses unsafeLdapFilter (template literal interpolation)',
       noLdapInjection,
       {
@@ -327,7 +363,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - @escaped suppresses dangerousLdapOperation (template literal)',
       noLdapInjection,
       {
@@ -343,7 +379,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - @verified suppresses ldapInjection (string concatenation)',
       noLdapInjection,
       {
@@ -353,31 +389,6 @@ describe('no-ldap-injection', () => {
             /** @verified */
             const ldapFilter = "(uid=" + userId + ")";
           `,
-          },
-          {
-            // expressjs/morgan index.js:373 — an HTTP logger with no LDAP
-            // anywhere. Reported as CWE-90 at CVSS 9.8 because the untrusted-input
-            // check matches any member expression whose printed text contains
-            // `req.`, and the "looks like a filter" guard was satisfied by the
-            // parentheses of `toLowerCase()`.
-            //
-            // CWE-90 needs a directory to inject into. This file has none.
-            code: `
-            morgan.token('req', function getRequestToken (req, res, field) {
-              var header = req.headers[field.toLowerCase()]
-              return Array.isArray(header) ? header.join(', ') : header
-            })
-          `,
-          },
-          {
-            // The same assignment as the invalid case above, minus any LDAP.
-            // A variable called \`ldapQuery\` is a naming guess, not evidence.
-            code: 'const ldapQuery = req.query.filter;',
-          },
-          {
-            // An ESM import of something that is not an LDAP client is not
-            // evidence either — this is the shape most web handlers have.
-            code: "import express from 'express';\nconst ldapQuery = req.query.filter;",
           },
           {
             // A `@clean` annotation still suppresses the branch even when the
@@ -394,7 +405,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - @clean suppresses ldapInjection (direct untrusted assignment)',
       noLdapInjection,
       {
@@ -410,7 +421,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - @safe suppresses dangerousLdapOperation (template literal, trusted interpolation)',
       noLdapInjection,
       {
@@ -458,7 +469,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('isUntrustedLdapInput - MemberExpression prefixes', () => {
-    ruleTester.run('invalid - request. prefix is untrusted', noLdapInjection, {
+    runLdap('invalid - request. prefix is untrusted', noLdapInjection, {
       valid: [],
       invalid: [
         {
@@ -472,7 +483,7 @@ describe('no-ldap-injection', () => {
       ],
     });
 
-    ruleTester.run('invalid - query. prefix is untrusted', noLdapInjection, {
+    runLdap('invalid - query. prefix is untrusted', noLdapInjection, {
       valid: [],
       invalid: [
         {
@@ -486,7 +497,7 @@ describe('no-ldap-injection', () => {
       ],
     });
 
-    ruleTester.run('invalid - params. prefix is untrusted', noLdapInjection, {
+    runLdap('invalid - params. prefix is untrusted', noLdapInjection, {
       valid: [],
       invalid: [
         {
@@ -500,7 +511,7 @@ describe('no-ldap-injection', () => {
       ],
     });
 
-    ruleTester.run('invalid - body. prefix is untrusted', noLdapInjection, {
+    runLdap('invalid - body. prefix is untrusted', noLdapInjection, {
       valid: [],
       invalid: [
         {
@@ -516,7 +527,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('isLdapInputEscaped - validation function call escaping', () => {
-    ruleTester.run(
+    runLdap(
       'valid - default escape.filterValue member call marks input as escaped',
       noLdapInjection,
       {
@@ -579,6 +590,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['VariableDeclarator'] as (n: unknown) => void)(declarator);
 
       // Escaped via the CallExpression ancestor, so no report is produced.
@@ -618,6 +630,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['VariableDeclarator'] as (n: unknown) => void)(declarator);
 
       expect(reports).toHaveLength(0);
@@ -625,7 +638,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('LDAP CallExpression with fewer than 2 arguments', () => {
-    ruleTester.run(
+    runLdap(
       'valid - LDAP call with a single argument is not flagged',
       noLdapInjection,
       {
@@ -642,7 +655,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('VariableDeclarator without an initializer or non-Identifier id', () => {
-    ruleTester.run(
+    runLdap(
       'valid - declaration without an initializer is not flagged',
       noLdapInjection,
       {
@@ -656,7 +669,7 @@ describe('no-ldap-injection', () => {
       },
     );
 
-    ruleTester.run(
+    runLdap(
       'valid - destructuring declarator (non-Identifier id) is not flagged',
       noLdapInjection,
       {
@@ -672,7 +685,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('dangerousLdapOperation reported for a template literal with a trusted interpolation', () => {
-    ruleTester.run(
+    runLdap(
       'invalid - dangerous filter pattern in a template literal whose interpolated value is trusted',
       noLdapInjection,
       {
@@ -696,7 +709,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('String concatenation that does not resemble LDAP filter construction', () => {
-    ruleTester.run(
+    runLdap(
       'valid - concatenation without parentheses is not flagged',
       noLdapInjection,
       {
@@ -741,6 +754,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['CallExpression'] as (n: unknown) => void)(node);
 
       expect(reports).toHaveLength(1);
@@ -772,6 +786,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['CallExpression'] as (n: unknown) => void)(node);
 
       expect(reports).toHaveLength(1);
@@ -793,6 +808,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['VariableDeclarator'] as (n: unknown) => void)(node);
 
       expect(reports).toHaveLength(1);
@@ -820,6 +836,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['VariableDeclarator'] as (n: unknown) => void)(node);
 
       expect(reports).toHaveLength(1);
@@ -846,6 +863,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['VariableDeclarator'] as (n: unknown) => void)(node);
 
       expect(reports).toHaveLength(1);
@@ -873,6 +891,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
+      primeLdapGate(listeners);
       (listeners['VariableDeclarator'] as (n: unknown) => void)(node);
 
       expect(reports).toHaveLength(1);
@@ -899,20 +918,7 @@ describe('no-ldap-injection', () => {
         parent: undefined,
       };
 
-      // This branch now requires the file to touch LDAP at all — a variable
-      // named `ldapQuery` is a naming guess, not evidence. Prime it through the
-      // Program listener the way ESLint would, with an `ldapjs` import present.
-      (listeners['Program'] as (n: unknown) => void)({
-        type: 'Program',
-        body: [
-          {
-            type: 'ImportDeclaration',
-            source: { type: 'Literal', value: 'ldapjs' },
-            specifiers: [],
-          },
-        ],
-      });
-
+      primeLdapGate(listeners);
       (listeners['VariableDeclarator'] as (n: unknown) => void)(node);
 
       expect(reports).toHaveLength(1);
@@ -922,7 +928,7 @@ describe('no-ldap-injection', () => {
   });
 
   describe('Complex LDAP Injection Scenarios', () => {
-    ruleTester.run('complex - real-world LDAP patterns', noLdapInjection, {
+    runLdap('complex - real-world LDAP patterns', noLdapInjection, {
       valid: [],
       invalid: [
         {
@@ -1000,5 +1006,87 @@ describe('no-ldap-injection', () => {
         },
       ],
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// THE FILE GATE. Deliberately NOT run through `runLdap` — the whole point of
+// each fixture is that no LDAP client is loaded, so `fileImportsLdapClient`
+// returns false and the rule abstains.
+//
+// Every fixture here is red on the pre-gate predicates.
+// ---------------------------------------------------------------------------
+describe('no-ldap-injection — the LDAP client gate', () => {
+  ruleTester.run('no LDAP client in the file, no CWE-90', noLdapInjection, {
+    valid: [
+      // Corpus: Shopify/cli packages/app/src/cli/models/extensions/specifications/
+      // type-generation.ts:599. A TypeScript interface built as a template
+      // literal. Predicates at fault: `varName.startsWith('input')`
+      // (`inputTypeName`) plus "the printed text contains `(` and `)`" — which
+      // `JSON.stringify(intent.action)` supplies. There is no LDAP anywhere in
+      // that repository.
+      `const requestType = \`interface \${requestTypeName} {
+  action: \${JSON.stringify(intent.action)};
+  data: \${inputTypeName};
+  value?: \${valueTypeName};
+}\`;`,
+      // Corpus: Shopify/cli packages/theme/src/cli/services/package.ts:28. A zip
+      // glob. `inputDirectory` starts with `input`; the parentheses are the
+      // alternation group of the glob.
+      `const matchFilePattern = \`\${inputDirectory}/(\${themeFilesPattern})\`;`,
+      // The `Set` method that opened the OLD gate. `add`, `search`, `bind` and
+      // `delete` were accepted as "an LDAP sink is present"; `intentKeys.add()`
+      // is on the line above the type-generation finding.
+      `const intentKeys = new Set();
+intentKeys.add(intentKey);
+const inputType = \`(\${intentKey})\`;`,
+      // expressjs/morgan index.js:373 — an HTTP logger. Matched because the
+      // printed text contains `req.` and `toLowerCase()` supplied the
+      // parentheses.
+      `morgan.token('req', function getRequestToken (req, res, field) {
+  var header = req.headers[field.toLowerCase()]
+  return Array.isArray(header) ? header.join(', ') : header
+})`,
+      // A variable called `ldapQuery` is a naming guess, not evidence.
+      'const ldapQuery = req.query.filter;',
+      // An import of something that is not an LDAP client is not evidence —
+      // the shape most web handlers have.
+      "import express from 'express';\nconst ldapQuery = req.query.filter;",
+      // A method call that merely shares a name with an LDAP sink.
+      "import express from 'express';\nrouter.bind(baseDN, `(cn=${req.query.name})`);",
+      // A literal that parses as a dangerous filter, in a file that speaks no
+      // LDAP: this is a regex, a glob, or a comment more often than a filter.
+      'const pattern = "(uid=*)";',
+    ],
+    invalid: [
+      // …and the identical code IS reported once a client is loaded, so the
+      // gate removed a false positive rather than the detection.
+      {
+        code: "import ldapjs from 'ldapjs';\nconst matchFilePattern = `${inputDirectory}/(${themeFilesPattern})`;",
+        errors: [{ messageId: 'unsafeLdapFilter' }],
+      },
+      {
+        code: "import ldapjs from 'ldapjs';\nconst ldapQuery = req.query.filter;",
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+      // Every load spelling opens the gate, through the shared devkit probe:
+      // `require`, dynamic `import()`, `import =`, and Deno's `npm:` prefix.
+      {
+        code: "const ldap = require('ldapts');\nconst ldapQuery = req.query.filter;",
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+      {
+        code: "const ldap = await import('activedirectory2');\nconst ldapQuery = req.query.filter;",
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+      {
+        code: "import ldap = require('@ldapjs/filter');\nconst ldapQuery = req.query.filter;",
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+      {
+        code: "import ldap from 'npm:ldapjs';\nconst ldapQuery = req.query.filter;",
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+    ],
   });
 });

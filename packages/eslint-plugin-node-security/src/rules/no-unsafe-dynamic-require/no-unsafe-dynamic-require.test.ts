@@ -22,6 +22,16 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * The pre-inversion contract: any non-literal specifier is a finding.
+ *
+ * Measured on the 8-repo corpus that produced 14 findings and zero code
+ * injections — all of it build tooling resolving files in its own repo. The
+ * default now requires evidence that an attacker names the module; these cases
+ * keep pinning the callee/argument plumbing through the restoring option.
+ */
+const UNRESOLVED = [{ reportUnresolvedSpecifiers: true }];
+
 describe('no-unsafe-dynamic-require', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - static require', noUnsafeDynamicRequire, {
@@ -61,18 +71,22 @@ describe('no-unsafe-dynamic-require', () => {
       invalid: [
         {
           code: 'const module = require(moduleName);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
         {
           code: 'const mod = require(userInput);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
         {
           code: 'require(`./modules/${moduleName}`);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
         {
           code: 'require(`./${dir}/${file}`);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
         {
@@ -80,10 +94,12 @@ describe('no-unsafe-dynamic-require', () => {
             const moduleName = getUserInput();
             const mod = require(moduleName);
           `,
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
         {
           code: 'const mod = require(config.moduleName);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
       ],
@@ -96,6 +112,7 @@ describe('no-unsafe-dynamic-require', () => {
       invalid: [
         {
           code: 'const mod = require(moduleName);',
+          options: UNRESOLVED,
           errors: [
             {
               messageId: 'unsafeDynamicRequire',
@@ -122,10 +139,12 @@ describe('no-unsafe-dynamic-require', () => {
       invalid: [
         {
           code: '(require)(moduleName);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
         {
           code: 'const req = require; req(moduleName);',
+          options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
       ],
@@ -141,11 +160,59 @@ describe('no-unsafe-dynamic-require', () => {
       invalid: [
         {
           code: 'const mod = require(moduleName);',
-          options: [{ allowDynamicImport: true }],
+          options: [{ allowDynamicImport: true, reportUnresolvedSpecifiers: true }],
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+      ],
+    });
+  });
+
+  // ── The inversion ──────────────────────────────────────────────────────
+  // Every `valid` case is a verbatim shape from the 8-repo corpus scan and
+  // reported before this change.
+  describe('Build-time Specifiers Are Not Code Injection', () => {
+    ruleTester.run('taint required by default', noUnsafeDynamicRequire, {
+      valid: [
+        // okta/okta-signin-widget scripts/find-internal-packages.js:7,11.
+        `const ROOT = '/repo'; const packageJson = require(path.resolve(ROOT, 'package.json'));`,
+        // okta/okta-signin-widget .../generate-language-config.js:6.
+        `const ROOT_DIR = '/repo'; const packageJson = require(ROOT_DIR + '/package.json');`,
+        // auth0/express-openid-connect end-to-end/fixture/helpers.js:23 — the
+        // specifier is a parameter, so its provenance is a caller-side fact.
+        `function load(name) { return require(path.join('..', '..', 'examples', name)); }`,
+        // okta/okta-signin-widget playground/mocks/config/networkFailureHelper.js:115.
+        `function readMock(filePath) { return require(filePath); }`,
+        // okta/okta-auth-js .../express-embedded-sign-in-widget/web-server/server.js:81.
+        `const widgetDir = __dirname; const widgetPackage = require(path.resolve(widgetDir, 'package.json'));`,
+      ],
+      invalid: [
+        // The shape CWE-95 is actually about: the module name is chosen by
+        // whoever is talking to the process.
+        {
+          code: `app.get('/load', (req, res) => { const mod = require(req.query.name); });`,
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // argv names the module.
+        {
+          code: `const plugin = require(process.argv[2]);`,
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // Traced one hop through a binding, and interpolated rather than
+        // passed whole — neither launders the taint.
+        {
+          code: `function boot(req) {
+                   const name = req.body.plugin;
+                   return require(\`./plugins/\${name}\`);
+                 }`,
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // `taintSources` is configurable.
+        {
+          code: `function boot(payload) { return require(payload.mod); }`,
+          options: [{ taintSources: ['payload'] }],
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
       ],
     });
   });
 });
-

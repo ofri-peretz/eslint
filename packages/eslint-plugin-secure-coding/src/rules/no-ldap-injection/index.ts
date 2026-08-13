@@ -23,7 +23,7 @@
  * - Parameterized LDAP query construction
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -90,80 +90,53 @@ export function containsLdapInterpolation(text: string): boolean {
   );
 }
 
-/** Packages that actually speak LDAP. */
-const LDAP_MODULES =
-  /^(ldapjs|ldapts|@ldapjs\/|activedirectory2?$|passport-ldapauth|ldap-authentication|ldap-escape)/;
-
 /**
- * Whether this file touches LDAP at all.
+ * ---------------------------------------------------------------------------
+ * THE GATE: an LDAP client has to be loaded.
+ * ---------------------------------------------------------------------------
+ * CWE-90 requires an LDAP directory to inject into. Nothing this rule looks at
+ * — a parenthesis, a variable whose name begins with `input`, a `${}` — is
+ * evidence of one; every predicate here is a *shape* heuristic that assumes the
+ * LDAP context has already been established. So establish it the way the SQL
+ * rules do, from the driver the file loads.
  *
- * Without this the rule reported `var header = req.headers[field.toLowerCase()]`
- * in **expressjs/morgan** — an HTTP logger with no LDAP anywhere — because the
- * untrusted-input check matches any member expression whose printed text
- * contains `req.`, and the "looks like a filter" guard is satisfied by the
- * parentheses of `toLowerCase()`.
+ * Measured cost of not doing so, on repositories with no LDAP anywhere:
+ *   - Shopify/cli `packages/app/.../type-generation.ts:599` and
+ *     `packages/theme/src/cli/services/package.ts:28` — two TypeScript/zip-glob
+ *     template literals reported as LDAP filters. The predicates at fault:
+ *     `varName.startsWith('input')` (`inputTypeName`, `inputDirectory`) plus
+ *     "the printed text contains `(` and `)`".
+ *   - expressjs/morgan `var header = req.headers[field.toLowerCase()]` — an
+ *     HTTP logger, matched because the text contains `req.` and the parentheses
+ *     of `toLowerCase()` satisfied the filter guard.
  *
- * CWE-90 requires an LDAP directory to inject into. Evidence is either an LDAP
- * client import (`import` and `require()` both count — LDAP code in the wild is
- * very often CommonJS) or a call to one of the LDAP methods this rule already
- * treats as a sink, so a file that builds a filter and calls `client.search()`
- * without a visible import is still covered.
+ * A previous version of this gate also accepted "the file calls a method named
+ * `search`/`bind`/`add`/`delete`". That is not evidence either: `type-generation.ts`
+ * opens it with `intentKeys.add(intentKey)` on a `Set`. Only a module load counts
+ * now, through the shared devkit probe, so `import`, `require()`, dynamic
+ * `import()`, `import =` and Deno specifiers all open it or none do.
+ *
+ * The cost is the FN it admits: a filter-building helper in a file whose LDAP
+ * client is imported elsewhere goes unreported. That is the same trade
+ * `no-sql-injection` makes for its drivers, and it is the right one — the
+ * alternative is a CWE-90 finding on every repository that has never spoken
+ * LDAP in its life.
  */
-function fileUsesLdap(
-  program: TSESTree.Program,
-  ldapFunctions: readonly string[],
-): boolean {
-  let found = false;
-  const visit = (node: TSESTree.Node): void => {
-    if (found) return;
-    if (node.type === 'ImportDeclaration') {
-      // `source` on an ImportDeclaration is always a StringLiteral, so no
-      // typeof guard here would ever take its false branch.
-      if (LDAP_MODULES.test(node.source.value)) {
-        found = true;
-      }
-      return;
-    }
-    if (node.type === 'CallExpression') {
-      const callee = node.callee;
-      if (callee.type === 'Identifier' && callee.name === 'require') {
-        const arg = node.arguments[0];
-        if (
-          arg?.type === 'Literal' &&
-          typeof arg.value === 'string' &&
-          LDAP_MODULES.test(arg.value)
-        ) {
-          found = true;
-          return;
-        }
-      }
-      // `client.search(...)`, `ldap.modify(...)` — the same sink shape the
-      // rule's own LDAP-operation check uses.
-      if (
-        callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier' &&
-        ldapFunctions.includes(callee.property.name)
-      ) {
-        found = true;
-        return;
-      }
-    }
-    for (const key of Object.keys(node) as (keyof typeof node)[]) {
-      if (key === 'parent') continue;
-      const child = node[key] as unknown;
-      if (Array.isArray(child)) {
-        for (const c of child) {
-          if (c && typeof c === 'object' && 'type' in c)
-            visit(c as TSESTree.Node);
-        }
-      } else if (child && typeof child === 'object' && 'type' in child) {
-        visit(child as TSESTree.Node);
-      }
-    }
-  };
-  visit(program);
-  return found;
-}
+const fileImportsLdapClient = createModuleEvidence({
+  packages: [
+    'ldapjs',
+    'ldapts',
+    'ldapauth-fork',
+    'passport-ldapauth',
+    'ldap-authentication',
+    'ldap-escape',
+    'ldap-filter',
+    'activedirectory',
+    'activedirectory2',
+    'node-ldap',
+  ],
+  scopes: ['@ldapjs'],
+});
 
 export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-ldap-injection',
@@ -498,22 +471,25 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Whether this file touches LDAP at all. Set once from Program, which ESLint
-     * visits before any of its children.
+     * Whether this file loads an LDAP client. Set once from Program, which
+     * ESLint visits before any of its children.
      *
-     * Used by exactly one branch below — the direct untrusted-assignment case,
-     * which is the only one with no LDAP evidence of its own.
+     * Gates EVERY branch below, not just one. Each branch used to carry what
+     * looked like its own evidence — an LDAP-shaped method name, a literal that
+     * parses as a filter, a `${}` inside parentheses — and each of those turned
+     * out to be satisfiable by ordinary non-LDAP code. See the note on
+     * `fileImportsLdapClient`.
      */
     let ldapInFile = false;
 
     return {
       Program(program: TSESTree.Program) {
-        ldapInFile = fileUsesLdap(program, ldapFunctions);
+        ldapInFile = fileImportsLdapClient(program);
       },
 
       // Check LDAP function calls
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isLdapOperation(node)) {
+        if (!ldapInFile || !isLdapOperation(node)) {
           return;
         }
 
@@ -578,7 +554,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
 
       // Check variable declarations with LDAP filters
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!node.init || node.id.type !== 'Identifier') {
+        if (!ldapInFile || !node.init || node.id.type !== 'Identifier') {
           return;
         }
 
@@ -718,13 +694,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             }
           }
         } else if (
-          // The only branch with no LDAP evidence of its own: it fires on any
-          // member expression whose printed text contains `req.`, which is how
-          // `var header = req.headers[field.toLowerCase()]` in expressjs/morgan
-          // — an HTTP logger with no LDAP anywhere — was reported as CWE-90.
-          // The other branches each carry their own signal (an LDAP method call,
-          // or a literal that parses as a dangerous filter) and stay ungated.
-          ldapInFile &&
+          // Direct untrusted assignment: `const ldapQuery = req.query.filter`.
+          // The file gate above is the only thing standing between this and
+          // every `req.`-shaped member expression in the ecosystem.
           isUntrustedLdapInput(node.init) &&
           !isLdapInputEscaped(node.init)
         ) {

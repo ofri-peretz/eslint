@@ -13,6 +13,7 @@
     "no-eval",
     "no-filereader-innerhtml",
     "no-http-urls",
+    "no-incomplete-url-sanitization",
     "no-innerhtml",
     "no-insecure-redirects",
     "no-insecure-websocket",

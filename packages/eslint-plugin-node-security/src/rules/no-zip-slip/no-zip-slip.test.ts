@@ -69,31 +69,27 @@ describe('no-zip-slip', () => {
 
   describe('Invalid Code - Path Traversal', () => {
     ruleTester.run('invalid - path traversal in archives', noZipSlip, {
-      valid: [],
+      valid: [
+        // A `../` an author typed into their own source is a relative path, not
+        // an attacker-authored archive entry. These three were the shape behind
+        // five of the eight corpus findings — a glob in a bundler script, a
+        // relative script path in a gulpfile, a minified vendor bundle — none
+        // of which involved an archive at all.
+        'const maliciousPath = "../../../etc/passwd";',
+        'const zipEntry = "../config.json";',
+        'const entry = "subdir/../../../root/.ssh/id_rsa";',
+        // Shopify/cli packages/cli/bin/bundle.js:28, verbatim shape.
+        "const yogafile = glob.sync('../../node_modules/.pnpm/**/yoga.wasm')[0];",
+        // okta/okta-auth-js samples/gulpfile.js:37, verbatim.
+        "const OKTA_ENV_SCRIPT_PATH = '../env/index.js';",
+      ],
       invalid: [
+        // Still a finding: the traversal sequence is the DESTINATION of an
+        // archive extraction, which is the only place a literal `../` means
+        // zip slip.
         {
-          code: 'const maliciousPath = "../../../etc/passwd";',
-          errors: [
-            {
-              messageId: 'pathTraversalInArchive',
-            },
-          ],
-        },
-        {
-          code: 'const zipEntry = "../config.json";',
-          errors: [
-            {
-              messageId: 'pathTraversalInArchive',
-            },
-          ],
-        },
-        {
-          code: 'const entry = "subdir/../../../root/.ssh/id_rsa";',
-          errors: [
-            {
-              messageId: 'pathTraversalInArchive',
-            },
-          ],
+          code: "zip.extractAllTo('../../output');",
+          errors: [{ messageId: 'pathTraversalInArchive' }],
         },
       ],
     });
@@ -101,23 +97,35 @@ describe('no-zip-slip', () => {
 
   describe('Invalid Code - Unvalidated Archive Paths', () => {
     ruleTester.run('invalid - unvalidated archive entry usage', noZipSlip, {
-      valid: [],
+      valid: [
+        // Shopify/cli packages/e2e/setup/app.ts:75,78, verbatim shape. `entry`
+        // here is an fs.readdirSync Dirent — the local filesystem authored that
+        // name, and the file mentions no archive anywhere.
+        `const dirs = fs.readdirSync(parentDir, {withFileTypes: true});
+         const appEntry = dirs.find((entry) => entry.isDirectory() && fs.existsSync(path.join(parentDir, entry.name, 'shopify.app.toml')));
+         const appDir = path.join(parentDir, appEntry.name);`,
+        // Shopify/cli bin/bundling/esbuild-plugin-dedup-cli-kit.js:7.
+        `const plugin = { setup(build) { build.onResolve({filter: /x/}, (args) => ({path: require.resolve(args.path)})); } };`,
+      ],
       invalid: [
+        // The archive makes it zip slip. `require('adm-zip')` is the evidence
+        // the two shapes above lack.
         {
-          code: 'fs.writeFileSync(path.join(dest, entry.name), data);',
-          errors: [
-            {
-              messageId: 'unvalidatedArchivePath',
-            },
-          ],
+          code: `const AdmZip = require('adm-zip');
+                 fs.writeFileSync(path.join(dest, entry.name), data);`,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
         },
+        // An ESM import of an archive module counts the same.
         {
-          code: 'const filePath = path.resolve(destDir, entry.path);',
-          errors: [
-            {
-              messageId: 'unvalidatedArchivePath',
-            },
-          ],
+          code: `import unzipper from 'unzipper';
+                 const filePath = path.resolve(destDir, entry.path);`,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+        // …and so does a `new AdmZip(…)` with no import in view.
+        {
+          code: `const zip = new AdmZip(file);
+                 const filePath = path.resolve(destDir, entry.path);`,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
         },
       ],
     });
@@ -284,6 +292,7 @@ describe('no-zip-slip', () => {
         {
           code: `
             // Windows zip slip
+            const AdmZip = require('adm-zip');
             const entry = {
               fileName: "..\\..\\..\\..\\..\\..\\Windows\\System32\\config\\SAM"
             };

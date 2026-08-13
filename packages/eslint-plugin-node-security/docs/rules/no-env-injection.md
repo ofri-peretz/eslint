@@ -1,0 +1,184 @@
+---
+title: no-env-injection
+description: Detects writes to process.env under a key the caller controls, which can overwrite PATH, NODE_OPTIONS or LD_PRELOAD and change how later processes execute
+tags: ['security', 'node']
+category: security
+severity: high
+cwe: CWE-99
+autofix: false
+---
+
+> **Keywords:** environment injection, resource injection, CWE-99, process.env, PATH, NODE_OPTIONS, LD_PRELOAD, allowlist, ESLint rule, LLM-optimized
+
+<!-- @rule-summary -->
+Detects writes to process.env under a key the caller controls, which can overwrite PATH, NODE_OPTIONS or LD_PRELOAD and change how later processes execute
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-99](https://cwe.mitre.org/data/definitions/99.html) (Improper Control of Resource Identifiers)
+**OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+## Quick Summary
+
+| Aspect            | Details                                                        |
+| ----------------- | -------------------------------------------------------------- |
+| **CWE Reference** | [CWE-99](https://cwe.mitre.org/data/definitions/99.html)        |
+| **Severity**      | High                                                            |
+| **Auto-Fix**      | ❌ None — the safe form needs an allowlist you have to write    |
+| **Detection**     | taint (key expression)                                          |
+| **Recommended**   | `error`                                                         |
+
+## Rule Details
+
+```js
+const { key, value } = req.body;
+process.env[key] = value;
+```
+
+Review usually lands on the **value** here — "is it a string, is it validated?" — and misses that the caller also picked the **name**. The name is the vulnerability:
+
+| Variable the caller can name | What happens next                                                     |
+| ---------------------------- | --------------------------------------------------------------------- |
+| `PATH`                       | every later `spawn`/`exec` resolves its binary somewhere you didn't choose |
+| `NODE_OPTIONS`               | `--require ./payload.js` loads into every child Node process           |
+| `LD_PRELOAD`                 | a shared object is injected into every child process                   |
+
+None of these need a second request to pay off. The next child process the app starts executes attacker-chosen code, with the app's privileges.
+
+This rule therefore judges the **key**, not the value.
+
+### Why a "the key is not a literal" check would be wrong
+
+The documented fix for this defect is a lookup in a closed allowlist:
+
+```js
+const ALLOWED = { locale: 'APP_LOCALE', theme: 'APP_THEME' };
+const target = ALLOWED[req.body.setting];
+if (!target) return res.status(400).end();
+process.env[target] = String(req.body.value);
+```
+
+`target` is not a literal — but it can only ever hold one of the strings written above it. A rule that reported every non-literal key would report the fix, which is how rules get switched off. So the rule traces the key back through its bindings and asks where it *came from*: a member chain rooted at the request reports; a lookup rooted at a local object does not.
+
+### How this differs from the neighbouring rules
+
+| Rule                            | CWE    | Shape                                                             |
+| ------------------------------- | ------ | ----------------------------------------------------------------- |
+| `no-dynamic-command-string`     | CWE-77 | the command string handed to a shell                              |
+| `no-shell-injection`            | CWE-78 | `exec()` with a concatenated command line                         |
+| `detect-child-process`          | CWE-78 | broad net over `child_process` usage                              |
+| **`no-env-injection`**          | **CWE-99** | **the environment those calls inherit — which none of the above look at** |
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// The caller names the variable
+function setConfig(req, res) {
+  const { key, value } = req.body;
+  process.env[key] = value;
+}
+
+// Direct, without a binding in between
+process.env[req.body.key] = req.body.value;
+process.env[request.query.name] = '1';
+process.env[ctx.request.body.name] = '1';
+process.env[event.queryStringParameters.k] = '1';
+
+// Aliased on the way
+const k = req.body.key;
+process.env[k] = '1';
+
+// Bulk: every name and value at once
+Object.assign(process.env, req.body);
+```
+
+### ✅ Correct
+
+```javascript
+// A closed allowlist decides which variable is written
+const ALLOWED = { locale: 'APP_LOCALE', theme: 'APP_THEME' };
+const target = ALLOWED[req.body.setting];
+if (!target) return res.status(400).end();
+process.env[target] = String(req.body.value);
+
+// The source names the variable
+process.env.NODE_ENV = 'production';
+process.env.APP_LOCALE = req.body.locale;
+
+// Keys you copy yourself
+Object.assign(process.env, { NODE_ENV: 'production' });
+```
+
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `extraRequestRoots` | `string[]` | — | Extra identifiers to treat as roots of request-controlled data |
+
+The default roots are `req`, `request`, `ctx` and `event`.
+
+```json
+{
+  "rules": {
+    "node-security/no-env-injection": [
+      "error",
+      { "extraRequestRoots": ["payload"] }
+    ]
+  }
+}
+```
+
+## When Not To Use It
+
+A CLI or build script whose only "caller" is the developer at the keyboard has no attacker in the loop. Prefer an ESLint config override scoped to those directories over disabling the rule repo-wide.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### The Environment Object Is Aliased First
+
+**Why**: the rule matches `process.env` written out in full.
+
+```typescript
+// ❌ NOT DETECTED
+const env = process.env;
+env[req.body.key] = req.body.value;
+```
+
+### The Key Crosses A Function Boundary
+
+**Why**: the trace follows bindings, not call graphs.
+
+```typescript
+// ❌ NOT DETECTED
+function apply(name, value) { process.env[name] = value; }
+apply(req.body.key, req.body.value);
+```
+
+### The Request Is Bound To An Unrecognised Name
+
+**Why**: request roots are matched by name.
+
+```typescript
+// ❌ NOT DETECTED — until added to extraRequestRoots
+process.env[payload.key] = payload.value;
+```
+
+### More Than Three Binding Hops
+
+**Why**: the trace budget stops at three hops to keep the rule linear.
+
+```typescript
+// ❌ NOT DETECTED
+const a = req.body.key; const b = a; const c = b; const d = c;
+process.env[d] = '1';
+```
+
+## Further Reading
+
+- [CWE-99: Improper Control of Resource Identifiers ('Resource Injection')](https://cwe.mitre.org/data/definitions/99.html)
+- [CWE-15: External Control of System or Configuration Setting](https://cwe.mitre.org/data/definitions/15.html)
+- [Node.js: `NODE_OPTIONS` environment variable](https://nodejs.org/api/cli.html#node_optionsoptions)
+- [OWASP: Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Injection_Prevention_Cheat_Sheet.html)

@@ -13,11 +13,11 @@ import * as parser from '@typescript-eslint/parser';
 import type { TSESTree } from '@typescript-eslint/utils';
 import {
   createSdkApiKeyRule,
-  matchesModule,
   readCredential,
   calleeName,
   POSITIONAL_KEY_LABEL,
 } from './sdk-api-key-rule';
+import { createModuleListEvidence } from './module-evidence';
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -35,25 +35,53 @@ const calleeOf = (code: string): TSESTree.Node => {
   return (stmt.expression as TSESTree.NewExpression).callee;
 };
 
-describe('matchesModule', () => {
+/**
+ * The `modules` list is now read by the devkit probe rather than by a private
+ * `matchesModule` helper, so the package-boundary rules are asserted here
+ * against the code that actually opens the gate. The helper they used to be
+ * asserted against was deleted: a unit test on a function no rule calls is a
+ * test that stays green while every rule is off.
+ */
+describe('createModuleListEvidence — the `modules` list', () => {
+  const opens = (modules: readonly string[], code: string): boolean =>
+    createModuleListEvidence(modules)(
+      parser.parse(code, { range: true, sourceType: 'module' }) as TSESTree.Program,
+    );
+
   it('matches the exact specifier', () => {
-    expect(matchesModule('openai', ['openai'])).toBe(true);
+    expect(opens(['openai'], `import OpenAI from 'openai';`)).toBe(true);
   });
 
   it('matches a subpath', () => {
-    expect(matchesModule('openai/resources', ['openai'])).toBe(true);
-    expect(matchesModule('@anthropic-ai/sdk', ['@anthropic-ai'])).toBe(true);
+    expect(opens(['openai'], `import x from 'openai/resources';`)).toBe(true);
+    expect(opens(['@anthropic-ai'], `import x from '@anthropic-ai/sdk';`)).toBe(true);
   });
 
   it('does not match a different package that shares the prefix', () => {
     // The load-bearing case: `openai-edge` is a separate client. A bare
     // startsWith would open the gate on it.
-    expect(matchesModule('openai-edge', ['openai'])).toBe(false);
-    expect(matchesModule('@anthropic-ai-community/x', ['@anthropic-ai'])).toBe(false);
+    expect(opens(['openai'], `import x from 'openai-edge';`)).toBe(false);
+    expect(opens(['@anthropic-ai'], `import x from '@anthropic-ai-community/x';`)).toBe(false);
   });
 
   it('is false when no module is configured to match', () => {
-    expect(matchesModule('cohere-ai', ['openai', '@anthropic-ai'])).toBe(false);
+    expect(opens(['openai', '@anthropic-ai'], `import x from 'cohere-ai';`)).toBe(false);
+  });
+
+  it('reads CommonJS, import-equals and dynamic import, not just ESM', () => {
+    // The gap this replaced: three of the four spellings below opened nothing,
+    // so every rule in anthropic-, gemini-, mcp-sdk- and openai-security was
+    // silently off in any file that used them.
+    expect(opens(['openai'], `const OpenAI = require('openai');`)).toBe(true);
+    expect(opens(['openai'], `import OpenAI = require('openai');`)).toBe(true);
+    expect(
+      opens(['openai'], `async function f() { const m = await import('openai'); return m; }`),
+    ).toBe(true);
+    expect(opens(['openai'], `export { OpenAI } from 'openai';`)).toBe(true);
+  });
+
+  it('does not treat a locally bound `require` parameter as a module load', () => {
+    expect(opens(['openai'], `function wrap(require) { return require('openai'); }`)).toBe(false);
   });
 });
 

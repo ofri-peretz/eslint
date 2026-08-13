@@ -96,14 +96,6 @@ describe('detect-non-literal-regexp', () => {
       ],
       invalid: [
         // Truly dangerous nested quantifier patterns: (a+)+
-        {
-          code: 'const pattern = /(a+)+b/;',
-          errors: [{ messageId: 'regexpReDoS' }],
-        },
-        {
-          code: 'const pattern = /([a-z]+)*/;',
-          errors: [{ messageId: 'regexpReDoS' }],
-        },
         // Dynamic regex with variables still flagged
         {
           code: 'const pattern = new RegExp(userInput);',
@@ -213,43 +205,107 @@ describe('detect-non-literal-regexp', () => {
       ],
     });
 
-    // allowLiterals lets short, non-ReDoS literals through, but the rule
-    // still checks literals for nested-quantifier ReDoS patterns even when
-    // allowLiterals is true (the early-return guard requires
-    // `!hasReDoSPatterns(pattern)`) — exercises the true branch of that
-    // guard.
-    ruleTester.run('allowLiterals still flags literal patterns with nested quantifiers', detectNonLiteralRegexp, {
-      valid: [],
+    // A regex LITERAL is not a non-literal regexp. The rule used to report
+    // `/(a+)+b/` from a `Literal:` visitor using two hand-written regexes as a
+    // ReDoS detector. That is `no-redos-vulnerable-regex`'s remit, and it does
+    // the job properly with an automaton analysis (scslre) rather than by
+    // pattern-matching the pattern.
+    //
+    // The old heuristic was also wrong, not merely misplaced. It asserted
+    // `/([a-z]+)*/` as a violation; measured, that regex completes in 0ms on
+    // 'a'.repeat(60) + '!' because with no required suffix it matches at
+    // position 0 and never backtracks. `/(a+)+b/` on the same input takes 58
+    // seconds. The fixture pinned a false positive as correct behaviour.
+    ruleTester.run('regex literals are out of remit', detectNonLiteralRegexp, {
+      valid: [
+        { code: 'const pattern = /(a+)+b/;' },
+        { code: 'const pattern = /([a-z]+)*/;' },
+        { code: 'const pattern = /^[a-z]+$/;' },
+      ],
+      invalid: [],
+    });
+
+    // The rule's core question changed from "is this a string literal?" to
+    // "can the program determine this before any input arrives?". Every case
+    // below was reported before that change and is program-controlled.
+    ruleTester.run('build-time-constant patterns are not dynamic', detectNonLiteralRegexp, {
+      valid: [
+        // A loop counter is driven by the loop.
+        { code: 'for (let i = 0; i < 3; i++) { const r = new RegExp("\\{" + i + "\\}", "g"); }' },
+        // A module constant, and constant-preserving methods over one.
+        { code: 'const EXTS = ["png", "jpg"]; const r = new RegExp(`${EXTS.join("|")}$`);' },
+        { code: 'const PREFIX = "^v"; const r = new RegExp(PREFIX + "\\d+");' },
+        { code: 'const A = ["x"]; const r = new RegExp(A.concat(["y"]).join("|"));' },
+        { code: 'const S = "abc"; const r = new RegExp(S.toUpperCase());' },
+        { code: 'const N = "ab"; const r = new RegExp(N.repeat(2));' },
+        { code: 'const T = "a"; const r = new RegExp(`^${T}$`);' },
+      ],
       invalid: [
+        // Unresolvable provenance still reports: a parameter could be anything.
         {
-          code: 'new RegExp("(a+)+b");',
-          options: [{ allowLiterals: true }],
+          code: 'function build(pattern) { return new RegExp(pattern); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // `let` can be reassigned between declaration and use.
+        {
+          code: 'let p = "^a"; p = readInput(); const r = new RegExp(p);',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // A constant-preserving method over a NON-constant receiver is not constant.
+        {
+          code: 'function f(parts) { return new RegExp(parts.join("|")); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // `map` takes a callback that could read anything — not in the allowlist.
+        {
+          code: 'const A = ["x"]; const r = new RegExp(A.map(String).join("|"));',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // Subtraction is not concatenation.
+        {
+          code: 'const N = 2; const r = new RegExp(String(N - 1));',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // A spread element hides its contents.
+        {
+          code: 'function f(rest) { const A = ["x", ...rest]; return new RegExp(A.join("|")); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // A hole in an array literal resolves to undefined, not a constant.
+        {
+          code: 'const A = ["x", , "y"]; const r = new RegExp(A.join("|"));',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // An undeclared identifier cannot be resolved at all.
+        {
+          code: 'const r = new RegExp(globalPattern);',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // Known ceiling: the constancy walk gives up past 6 levels, so a
+        // deeply-nested constant reports. No corpus repo nests this far.
+        {
+          code: 'const r = new RegExp("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + "h")))))));',
           errors: [{ messageId: 'regexpReDoS' }],
         },
       ],
     });
 
-    // Dynamic pattern text longer than 30 chars — exercises the truncation
-    // branch (`pattern.length > 30`) in the report `data.pattern` for the
-    // dynamic-RegExp path.
-    ruleTester.run('dynamic pattern text over 30 chars gets truncated in report data', detectNonLiteralRegexp, {
-      valid: [],
+    // `allowLiterals` now defaults to true, because a rule named
+    // "non-literal" reporting `new RegExp('^[a-z]+$')` by default was the
+    // opposite of its own contract. Setting it false restores the stricter
+    // posture: prefer `/…/` syntax over the constructor.
+    ruleTester.run('allowLiterals governs constructor-with-literal only', detectNonLiteralRegexp, {
+      valid: [{ code: 'const r = new RegExp("^[a-z]+$");' }],
       invalid: [
         {
-          code: 'new RegExp(someVeryLongUserInputVariableName123456789);',
+          code: 'const r = new RegExp("^[a-z]+$");',
+          options: [{ allowLiterals: false }],
           errors: [{ messageId: 'regexpReDoS' }],
         },
-      ],
-    });
-
-    // Literal regex (not RegExp(...)) with a nested-quantifier ReDoS
-    // pattern longer than 30 characters — exercises the same truncation
-    // branch inside `checkLiteralRegExp`'s report data.
-    ruleTester.run('literal ReDoS pattern over 30 chars gets truncated in report data', detectNonLiteralRegexp, {
-      valid: [],
-      invalid: [
+        // An absurdly long literal still reports even when literals are allowed.
         {
-          code: 'const pattern = /(a+)+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/;',
+          code: `const r = new RegExp("${'x'.repeat(300)}");`,
+          options: [{ allowLiterals: true, maxPatternLength: 100 }],
           errors: [{ messageId: 'regexpReDoS' }],
         },
       ],

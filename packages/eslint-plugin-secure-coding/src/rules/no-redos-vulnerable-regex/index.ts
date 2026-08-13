@@ -138,7 +138,20 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           { reportTypes: { Move: false } }
         );
 
-        for (const report of result.reports) {
+        // ONE report per regex, not one per ambiguity path.
+        //
+        // scslre returns a report for every distinct path it finds through the
+        // automaton, and each was emitted at the same node — so a single
+        // pattern produced up to three identical-looking messages at one
+        // column. On the 8-repo corpus that was 16 of this rule's 35 findings:
+        // duplicates, not distinct problems.
+        //
+        // The surviving report is the worst one, because exponential and
+        // polynomial backtracking are not the same finding and triaging a
+        // pattern by its least-severe path would understate it.
+        const worst =
+          result.reports.find((r) => r.exponential) ?? result.reports[0];
+        for (const report of worst ? [worst] : []) {
           const isExp = report.exponential;
           context.report({
             node,

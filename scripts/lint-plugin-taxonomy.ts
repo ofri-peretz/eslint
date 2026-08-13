@@ -101,6 +101,29 @@ interface Grandfathered {
 
 const GRANDFATHERED: Grandfathered[] = [
   {
+    file: 'eslint-plugin-secure-coding/src/rules/no-sql-injection/index.ts',
+    tokens: ['better-sqlite3', 'knex', 'mssql', 'mysql', 'mysql2', 'objection', 'oracledb', 'pg', 'postgres', 'prisma', 'sequelize', 'sqlite3', 'typeorm'],
+    reason:
+      'DEBT, not an exemption. The list is inverted — it is what this rule ABSTAINS ' +
+      'on, so it and the driver-scoped rules are exact complements and one rule owns ' +
+      'each query site. But a code-agnostic plugin still cannot carry a hand-maintained ' +
+      'driver registry: a new driver plugin can land without this list learning to ' +
+      'stand down, and every file importing it then reports twice. It cannot move INTO ' +
+      'a driver plugin — it exists for driver-LESS files, which is the dominant Node ' +
+      'layout and where all three CWE-089 corpus fixtures live — so it moves to a ' +
+      'sql-scoped plugin at the next major, alongside the graphql and template rules ' +
+      'above.',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/index.ts',
+    tokens: ['ioredis'],
+    reason:
+      'Comment-only. Both mentions cite the corpus site the CWE-789 arm was written ' +
+      'against (redis/ioredis lib/resp/decoder.ts:669) as provenance for the measurement ' +
+      'in the rule docs. No predicate reads it: the rule gates on a wire-derived length ' +
+      'reaching a sized allocator, which is protocol-agnostic.',
+  },
+  {
     file: 'eslint-plugin-secure-coding/src/rules/no-template-injection/index.ts',
     tokens: ['handlebars', 'ejs', 'pug', 'jade', 'mustache', 'nunjucks', 'swig'],
     reason: 'Detection is fully gated on template-engine identifiers. Moves to a template-engine plugin at the next major.',

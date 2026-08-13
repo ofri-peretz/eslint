@@ -61,6 +61,20 @@ export interface Options extends SecurityRuleOptions {
 
 type RuleOptions = [Options?];
 
+/**
+ * APIs whose whole purpose is to mint an unguessable value. A call to one
+ * inside a recovery function is positive evidence that a credential exists,
+ * however the result is named.
+ */
+const CREDENTIAL_GENERATORS: ReadonlySet<string> = new Set([
+  'randomBytes',
+  'randomUUID',
+  'randomInt',
+  'getRandomValues',
+  'nanoid',
+  'uuidv4',
+]);
+
 export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-password-recovery',
   meta: {
@@ -366,6 +380,81 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Names that mark a value as a recovery CREDENTIAL rather than a label.
+     * A `username` or an `email` is not the thing an attacker forges; a token,
+     * code, OTP or magic link is.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isCredentialName = (name: string): boolean =>
+      /token|otp|code|secret|nonce|magiclink/i.test(name);
+
+    /**
+     * Does this function actually mint or check a recovery credential?
+     *
+     * "Missing token expiration" is a statement about a token. Without one in
+     * the function, the finding is not weak — it is meaningless. Measured over
+     * an 8-repo corpus, matching the function NAME alone produced 17 findings
+     * and 0 true positives: `hideRecoverPassword()` (a DOM show/hide pair),
+     * `formatInvalidRecoveryTokenError()` (an error formatter), and okta's
+     * client-side `recoverPassword()` which delegates the whole flow to the
+     * server and holds no token to expire.
+     *
+     * This is the rule's own stated doctrine — "report evidence of weakness
+     * instead of absence of a known-good name" — applied to the path that was
+     * still doing the opposite.
+     */
+    const handlesRecoveryCredential = (
+      functionNode: TSESTree.FunctionDeclaration,
+    ): boolean => {
+      const walk = (scope: TSESLint.Scope.Scope): boolean => {
+        // A call to a credential generator is evidence regardless of what the
+        // result gets named — `const t = crypto.randomBytes(32)` mints a token
+        // just as much as `const token = ...` does. Scope references cover the
+        // callee identifier of both `nanoid()` and `crypto.randomBytes()`.
+        for (const reference of scope.references) {
+          if (CREDENTIAL_GENERATORS.has(reference.identifier.name)) {
+            return true;
+          }
+        }
+        for (const variable of scope.variables) {
+          for (const definition of variable.defs) {
+            // `const t = crypto.randomBytes(32)` mints a token under a name
+            // that says nothing. The callee does. (A member property is not a
+            // scope reference, so the loop above cannot see it.)
+            if (definition.type === 'Variable' && definition.node.init?.type === 'CallExpression') {
+              const { callee } = definition.node.init;
+              const calleeName =
+                callee.type === 'Identifier'
+                  ? callee.name
+                  : callee.type === 'MemberExpression' && callee.property.type === 'Identifier'
+                    ? callee.property.name
+                    : null;
+              if (calleeName !== null && CREDENTIAL_GENERATORS.has(calleeName)) {
+                return true;
+              }
+            }
+          }
+          if (!isCredentialName(variable.name)) {
+            continue;
+          }
+          // A credential the function BINDS (mints, fetches, destructures) or
+          // RECEIVES as a parameter is one it is responsible for.
+          if (
+            variable.defs.some(
+              (definition) =>
+                definition.type === 'Parameter' ||
+                (definition.type === 'Variable' && definition.node.init !== null),
+            )
+          ) {
+            return true;
+          }
+        }
+        return scope.childScopes.some((child) => walk(child));
+      };
+      return walk(sourceCode.getScope(functionNode.body));
+    };
+
+    /**
      * A function whose whole body is one `return <expression>` produces a
      * value rather than performing a flow — a decorator factory, a selector, a
      * config builder. There is no recovery step in it to secure.
@@ -464,7 +553,11 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         // doc generator to add token expiry and rate limiting. A function whose
         // entire body is a single `return applyDecorators(...)` implements no
         // recovery flow; a real handler has statements that do work.
-        if (isRecoveryRelated(functionName) && !isDeclarationOnly(node)) {
+        if (
+          isRecoveryRelated(functionName) &&
+          !isDeclarationOnly(node) &&
+          handlesRecoveryCredential(node)
+        ) {
           // Check for token expiration
           if (!hasTokenExpiration(node)) {
             if (safetyChecker.isSafe(node, context)) {
@@ -541,33 +634,13 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Check for weak recovery verification
-      IfStatement(node: TSESTree.IfStatement) {
-        const test = node.test;
-        const testText = sourceCode.getText(test).toLowerCase();
-
-        // Check if this is a recovery-related condition
-        if (isRecoveryRelated(testText)) {
-          // Look for weak verification (just checking email exists)
-          if (testText.includes('email') && !testText.includes('verify') &&
-              !testText.includes('token') && !testText.includes('code') &&
-              !testText.includes('otp') && !testText.includes('sms')) {
-
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            context.report({
-              node: test,
-              messageId: 'weakRecoveryVerification',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
-        }
-      }
+      // REMOVED: an `IfStatement` visitor that reported any condition whose
+      // PRINTED TEXT mentioned recovery and "email" but not verify/token/code.
+      // It fired on `res.status === 'FORGOT_PASSWORD_EMAIL_SENT'` — a client
+      // reading back what the server reported — and on nothing genuine across
+      // the corpus. A condition that mentions email is not a verification
+      // mechanism, and no narrowing of a substring match over printed source
+      // turns it into one.
     };
   },
 });

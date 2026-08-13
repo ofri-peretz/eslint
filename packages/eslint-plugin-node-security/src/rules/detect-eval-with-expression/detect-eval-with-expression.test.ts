@@ -414,3 +414,229 @@ describe('detect-eval-with-expression', () => {
     });
   });
 });
+
+// ── vm / vm2: strings turned into running code through a module binding ──
+//
+// Pins corpus/CWE-094/vulnerable/vm-run-user-string.js and
+// corpus/CWE-094/vulnerable/vm2-run-user-code.js, which reported nothing
+// before this pass existed: no rule in the ecosystem looked at the vm module
+// at all. The safe fixtures (corpus/CWE-094/safe/vm-literal-script.js,
+// worker-isolation.js) are pinned as `valid` below.
+describe('vm module code execution (CWE-94)', () => {
+  ruleTester.run('vm sinks', detectEvalWithExpression, {
+    valid: [
+      // corpus/CWE-094/safe/vm-literal-script.js — the script is a hard-coded
+      // constant one hop away; only numbers cross the boundary as data.
+      `const vm = require('vm');
+       const SCRIPT = 'total = price * quantity';
+       function run(price, quantity) {
+         const sandbox = { price, quantity, total: 0 };
+         vm.runInNewContext(SCRIPT, sandbox, { timeout: 50 });
+         return sandbox.total;
+       }`,
+      // Same, written inline and as a zero-expression template.
+      `const vm = require('vm'); vm.runInThisContext('1 + 1');`,
+      `const vm = require('vm'); vm.runInThisContext(\`1 + 1\`);`,
+      // corpus/CWE-094/safe/worker-isolation.js — no vm at all.
+      `const { Worker } = require('worker_threads');
+       const path = require('path');
+       new Worker(path.join(__dirname, 'transform.worker.js'), { workerData: 1 });`,
+      // A method of the same name on something that is not the vm module.
+      `renderer.runInNewContext(userTemplate);`,
+      `const vm = require('vm'); vm['runInNewContext'](userCode);`,
+      // vm is bound, but this export is not a code sink.
+      `const vm = require('vm'); vm.createContext(sandbox);`,
+      // Destructured, but not a sink export.
+      `const { createContext } = require('vm'); createContext(sandbox);`,
+      // A require of something else entirely.
+      `const os = require('os'); os.runInNewContext(userCode);`,
+      // require() with a non-literal / non-string specifier.
+      `const vm = require(name); vm.runInNewContext(userCode);`,
+      `const vm = require(42); vm.runInNewContext(userCode);`,
+      // Not a require call at all.
+      `const vm = getVm(); vm.runInNewContext(userCode);`,
+      `const vm = load('vm'); vm.runInNewContext(userCode);`,
+      // Destructuring shapes that bind nothing resolvable.
+      `const [vm] = require('vm'); vm.runInNewContext(userCode);`,
+      `const { ...rest } = require('vm'); rest.runInNewContext(userCode);`,
+      `const { ['runInNewContext']: run } = require('vm'); run(userCode);`,
+      `const { runInNewContext: { nested } } = require('vm'); nested(userCode);`,
+      // No code argument — nothing to judge.
+      `const vm = require('vm'); vm.runInThisContext();`,
+      // A vm namespace member used as a constructor that is not a code sink.
+      `const vm = require('vm'); new vm.Module(userCode);`,
+      // vm2 imported, but the class constructed is not a sandbox or a script.
+      `const { VMFileSystem } = require('vm2'); const f = new VMFileSystem(opts); f.run(userCode);`,
+      // `.run()` on something that was never a vm2 sandbox.
+      `const job = new Job(opts); job.run(userCode);`,
+      `queue.run(userCode);`,
+      `runner['run'](userCode);`,
+      `new Thing(opts).run(userCode);`,
+      `(getRunner()).run(userCode);`,
+      // vm2 sandbox, but the source is a constant.
+      `const { NodeVM } = require('vm2'); const vm = new NodeVM(); vm.run('return 1');`,
+      // A binding that is reassigned cannot be proven constant... but here it
+      // never resolves to a variable at all (implicit global) → not static, so
+      // this one IS reported; see the invalid block. Instead: a `let` written
+      // twice is not provable and is likewise reported there.
+      // Static string via a const that is only ever written once, in a nested
+      // function scope.
+      `import vm from 'vm';
+       const SCRIPT = 'x = 1';
+       function outer() { function inner() { vm.runInThisContext(SCRIPT); } inner(); }`,
+      // Namespace import of a module we do not track.
+      `import * as util from 'util'; util.runInThisContext(code);`,
+      // String module-export name — the binding is not an identifier we track.
+      `import { 'runInNewContext' as run } from 'vm'; run(userCode);`,
+      // The whole module bound under a sink's name is still the module, not
+      // the sink.
+      `const runInNewContext = require('vm'); runInNewContext(userCode);`,
+      // Private method named `run` — a non-computed member that is not an
+      // Identifier.
+      `class C { #run(code) { return code; } go(code) { return this.#run(code); } }`,
+      // vm2 constructors reached through shapes that resolve to nothing.
+      `new mod['NodeVM']().run(userCode);`,
+      `new (getCtor())().run(userCode);`,
+      `new a.b.NodeVM().run(userCode);`,
+      `const { VMFileSystem } = require('vm2'); new VMFileSystem().run(userCode);`,
+      // Constructor names that only mean something when bound to a module.
+      `new Script(userCode);`,
+      `new VMScript(userCode);`,
+      // Bound to `vm`, but VMScript is not a `vm` export.
+      `const vm = require('vm'); new vm.VMScript(userCode);`,
+      // Type-only-ish specifier shape: default import of vm used as namespace.
+      `import vm from 'node:vm'; vm.runInThisContext('1');`,
+    ],
+    invalid: [
+      // corpus/CWE-094/vulnerable/vm-run-user-string.js
+      {
+        code: `const vm = require('vm');
+               function evaluate(req, res) {
+                 const value = vm.runInNewContext(req.query.expr, { Math });
+                 res.json({ value });
+               }`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // corpus/CWE-094/vulnerable/vm2-run-user-code.js
+      {
+        code: `const { NodeVM } = require('vm2');
+               function runPlugin(req, res) {
+                 const vm = new NodeVM({ console: 'inherit' });
+                 const result = vm.run(req.body.code, 'plugin.js');
+                 res.json({ result });
+               }`,
+        errors: [{ messageId: 'vm2CodeExecution' }],
+      },
+      // Every other vm entry point that takes source at argument 0.
+      {
+        code: `const vm = require('node:vm'); vm.runInThisContext(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `const vm = require('vm'); vm.runInContext(userCode, ctx);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `const vm = require('vm'); vm.compileFunction(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `const vm = require('vm'); new vm.Script(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `const vm = require('vm'); new vm.SourceTextModule(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // Destructured require and named import spellings.
+      {
+        code: `const { runInNewContext } = require('vm'); runInNewContext(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `import { runInNewContext } from 'vm'; runInNewContext(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `import * as vm from 'vm'; vm.runInThisContext(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // Renamed destructure — the *exported* name is what decides.
+      {
+        code: `const { runInNewContext: run } = require('vm'); run(userCode);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // The binding is written below the call: order must not matter.
+      {
+        code: `function go(userCode) { return vm.runInThisContext(userCode); }
+               const vm = require('vm');`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // vm2: direct `new NodeVM().run()`, the VM class, and VMScript.
+      {
+        code: `const { NodeVM } = require('vm2'); new NodeVM().run(userCode);`,
+        errors: [{ messageId: 'vm2CodeExecution' }],
+      },
+      {
+        code: `const vm2 = require('vm2'); const s = new vm2.VM(); s.run(userCode);`,
+        errors: [{ messageId: 'vm2CodeExecution' }],
+      },
+      {
+        code: `import { VMScript } from 'vm2'; new VMScript(userCode);`,
+        errors: [{ messageId: 'vm2CodeExecution' }],
+      },
+      // Renamed vm2 import still resolves through the exported name.
+      {
+        code: `const { NodeVM: Sandbox } = require('vm2'); const s = new Sandbox(); s.run(userCode);`,
+        errors: [{ messageId: 'vm2CodeExecution' }],
+      },
+      // Not statically provable: unresolvable identifier, and a binding that is
+      // written more than once.
+      {
+        code: `const vm = require('vm'); vm.runInThisContext(SCRIPT);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      {
+        code: `const vm = require('vm'); let s = 'x = 1'; s = req.body.code; vm.runInThisContext(s);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // A const bound to something that is not a string literal.
+      {
+        code: `const vm = require('vm'); const s = buildScript(); vm.runInThisContext(s);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // Declared without an initializer, then assigned once.
+      {
+        code: `const vm = require('vm'); let s; s = 'x = 1'; vm.runInThisContext(s);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // A function parameter is a binding whose definition is not a declarator.
+      {
+        code: `const vm = require('vm'); function go(s) { vm.runInThisContext(s); }`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // Written exactly once, but the definition is a parameter, not a
+      // declarator — there is no initializer to prove constant.
+      {
+        code: `const vm = require('vm'); function go(s) { s = 'x = 1'; vm.runInThisContext(s); }`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // A declared global resolves to a variable with no definition at all.
+      {
+        code: `const vm = require('vm'); vm.runInThisContext(SCRIPT);`,
+        languageOptions: { globals: { SCRIPT: 'readonly' } },
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // A non-string literal is not source written out in full.
+      {
+        code: `const vm = require('vm'); vm.runInThisContext(42);`,
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+      // A template literal that interpolates is assembled, not written out.
+      {
+        code: 'const vm = require("vm"); vm.runInThisContext(`total = ${expr}`);',
+        errors: [{ messageId: 'vmCodeExecution' }],
+      },
+    ],
+  });
+});

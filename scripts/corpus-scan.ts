@@ -36,6 +36,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
 
 /** Plugins whose rules apply to server and library code. */
@@ -157,9 +158,9 @@ for (const [name, plugin] of loaded) {
 export default [
   {
     files: ["**/*.js", "**/*.mjs", "**/*.cjs", "**/*.ts", "**/*.tsx"],
-    ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/*.min.js",
-              "**/test/**", "**/tests/**", "**/__tests__/**", "**/*.test.*", "**/*.spec.*",
-              "**/fixtures/**", "**/examples/**", "**/docs/**", "**/.next/**"],
+    // Sourced from scripts/lib/corpus-scan-ignores.ts, which carries the
+    // reason for every entry and is importable by a test without running a scan.
+    ignores: ${JSON.stringify(SCAN_IGNORES)},
     languageOptions: { parser, ecmaVersion: 2022, sourceType: "module" },
     plugins,
     rules,
@@ -299,6 +300,20 @@ function main(): number {
   }
 
   const budget: Budget = JSON.parse(readFileSync(BUDGET_FILE, 'utf-8')) as Budget;
+
+  // A PARTIAL scan must never rewrite the budget. Running `--update` while the
+  // rig was busy once reduced 27 entries to 4: the targets that failed simply
+  // contributed no rules, and every budget they owned was silently dropped —
+  // which reads as "these rules now find nothing" rather than "these rules were
+  // never measured". A budget is only meaningful if it came from a full run.
+  if (update && failed.length > 0) {
+    console.error(
+      `::error::refusing to rewrite the budget from a partial scan — ` +
+        `${failed.length} of ${failed.length + scanned} target(s) failed:`,
+    );
+    for (const line of failed) console.error(`::error::  ${line}`);
+    return 1;
+  }
 
   if (update) {
     const next: Budget = {

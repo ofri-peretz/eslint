@@ -88,6 +88,8 @@ const fs = require("fs");
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowDynamicImport` | `boolean` | `false` | Allow ES6 dynamic `import()` (generally safer than `require()`) |
+| `taintSources` | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process) |
+| `reportUnresolvedSpecifiers` | `boolean` | `false` | Report specifiers whose provenance cannot be resolved. Restores the pre-inversion "any non-literal is dangerous" behaviour. |
 
 ### Allow Dynamic Import
 

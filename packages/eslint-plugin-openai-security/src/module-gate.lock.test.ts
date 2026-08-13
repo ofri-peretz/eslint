@@ -101,4 +101,35 @@ describe('the OpenAI SDK module gate', () => {
       expect(lint(VIOLATION, 'no-hardcoded-api-key')).toHaveLength(0);
     });
   });
+
+  /**
+   * The module system must not decide whether the plugin runs.
+   *
+   * The gate this plugin used to carry was a pair of visitors —
+   * `ImportDeclaration`, and a `CallExpression` whose callee is literally named
+   * `require`. That is ESM and plain CommonJS and nothing else, so a file
+   * written in TypeScript's import-equals form or one that lazily
+   * `await import(...)`s the SDK ran **no rule in this plugin at all** — the
+   * same total, silent failure that was found in `jwt-security`. Each form
+   * below fails on the two-visitor gate and passes on the devkit probe.
+   */
+  describe.each([
+    ['CommonJS require', `const OpenAI = require('openai');`],
+    ['CommonJS destructuring require', `const { OpenAI } = require('openai');`],
+    ["TypeScript's import-equals", `import OpenAINs = require('openai');`],
+    [
+      'a lazy dynamic import',
+      `export async function boot() { const { OpenAI } = await import('openai'); return OpenAI; }`,
+    ],
+    ['a re-export', `export { OpenAI } from 'openai';`],
+  ])('the gate opens on %s', (_form, load) => {
+    it('and the same violation reports', () => {
+      expect(lint(`${load}\n${VIOLATION}`, 'no-hardcoded-api-key').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('but a locally bound `require` parameter is not a module load', () => {
+    const code = `function wrap(require) { return require('openai'); }\n${VIOLATION}`;
+    expect(lint(code, 'no-hardcoded-api-key')).toHaveLength(0);
+  });
 });

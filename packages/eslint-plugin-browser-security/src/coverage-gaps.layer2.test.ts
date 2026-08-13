@@ -144,7 +144,21 @@ describe('no-insecure-redirects (layer 2)', () => {
         object: { type: 'Identifier', name: 'res' },
         property: { type: 'Identifier', name: 'redirect' },
       },
-      arguments: [],
+      // Taint is read off the ARGUMENT now, not the printed call text, so the
+      // synthetic node has to carry a real `req.query.next` member chain.
+      arguments: [
+        {
+          type: 'MemberExpression',
+          computed: false,
+          object: {
+            type: 'MemberExpression',
+            computed: false,
+            object: { type: 'Identifier', name: 'req' },
+            property: { type: 'Identifier', name: 'query' },
+          },
+          property: { type: 'Identifier', name: 'next' },
+        },
+      ],
       parent: null,
       loc,
     };

@@ -15,9 +15,12 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { makeReadsTaintSource } from '../../utils/provenance';
 
 type MessageIds =
   | 'childProcessCommandInjection'
+  | 'argumentInjection'
+  | 'useEndOfOptions'
   | 'useExecFile'
   | 'useSpawn'
   | 'useSaferLibrary'
@@ -39,9 +42,51 @@ export interface Options {
 
   /** Strategy for fixing command injection: 'validate', 'sanitize', 'restrict', or 'auto' */
   strategy?: 'validate' | 'sanitize' | 'restrict' | 'auto';
+
+  /**
+   * Identifier roots treated as attacker-reachable.
+   * Default: `['req', 'request', 'ctx', 'event', 'process']`.
+   */
+  taintSources?: string[];
+
+  /**
+   * Report a command whose provenance cannot be resolved — a bare parameter, a
+   * `let` reassigned across branches, an opaque helper's return value.
+   * Default: `false`.
+   *
+   * `true` restores the pre-inversion behaviour: any dynamic argument is a
+   * finding. Measured on an 8-repo corpus that produced 14 findings, every one
+   * of them a build script running a command it assembled from its own
+   * literals and paths.
+   */
+  reportUnresolvedCommands?: boolean;
 }
 
 type RuleOptions = [Options?];
+
+/** Roots an attacker can actually steer a command through. */
+const DEFAULT_TAINT_SOURCES = ['req', 'request', 'ctx', 'event', 'process'];
+
+/**
+ * Commands that ARE a shell. Spawning one with `-c` re-opens every
+ * metacharacter the argv vector was supposed to close off, so these can never
+ * qualify for the "literal command, no shell" exemption. Matched on the
+ * basename, so `/bin/sh` and `sh` are the same binary.
+ */
+const SHELL_BINARIES: ReadonlySet<string> = new Set([
+  'sh', 'bash', 'zsh', 'dash', 'ksh', 'csh', 'tcsh', 'fish', 'ash', 'busybox',
+  'cmd', 'cmd.exe', 'powershell', 'powershell.exe', 'pwsh', 'pwsh.exe', 'env',
+]);
+
+/**
+ * Flags whose following argument is SOURCE TEXT rather than a filename or a
+ * value: `sh -c`, `node -e`, `cmd /c`, `perl -e`. Any binary invoked with one
+ * of these is an interpreter for that call, so the literal-command exemption
+ * must not apply.
+ */
+const EVAL_FLAGS: ReadonlySet<string> = new Set([
+  '-c', '-e', '--eval', '-e:', '/c', '/k', '-command', '-encodedcommand',
+]);
 
 /**
  * Command execution patterns and their security implications
@@ -282,6 +327,24 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         fix: 'Use execFile/spawn with {shell: false} and array args',
         documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
       }),
+      argumentInjection: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Argument injection',
+        cwe: 'CWE-88',
+        description:
+          'An attacker-steered value sits in the argv vector with no `--` before it. There is no shell here, but the callee still parses a leading `-` as an option — `--upload-pack=` (git), `--to-command=` (tar), `-o ProxyCommand=` (ssh) all execute arbitrary programs.',
+        severity: 'HIGH',
+        fix: "Insert a literal '--' before the first attacker-controlled element, or reject values beginning with '-'.",
+        documentationLink: 'https://cwe.mitre.org/data/definitions/88.html',
+      }),
+      useEndOfOptions: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use end-of-options',
+        description: "Add a literal '--' before user-controlled arguments",
+        severity: 'LOW',
+        fix: "execFile('git', ['ls-remote', '--', remote])",
+        documentationLink: 'https://cwe.mitre.org/data/definitions/88.html',
+      }),
       useExecFile: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use execFile',
@@ -372,6 +435,19 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             enum: ['validate', 'sanitize', 'restrict', 'auto'],
             default: 'auto',
             description: 'Strategy for fixing command injection (auto = smart detection)'
+          },
+          taintSources: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_TAINT_SOURCES,
+            description:
+              'Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process)'
+          },
+          reportUnresolvedCommands: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report a command whose provenance cannot be resolved. Restores the pre-inversion "any dynamic argument is dangerous" behaviour.'
           }
         },
         additionalProperties: false,
@@ -393,6 +469,11 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       allowLiteralSpawn = false,
       additionalMethods = [],
     }: Options = options;
+    const readsTaintSource = makeReadsTaintSource(
+      context.sourceCode,
+      new Set((options.taintSources ?? DEFAULT_TAINT_SOURCES).map((source) => source.toLowerCase())),
+    );
+    const reportUnresolvedCommands = options.reportUnresolvedCommands ?? false;
 
     /**
      * Child process methods that can be dangerous (Set for O(1) lookup)
@@ -470,6 +551,146 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // Options object (arg 2+) is irrelevant for command injection safety
       // It may contain callbacks, cwd, env, etc. which are not injection vectors
       return true;
+    };
+
+    /** Is this argument a plain string literal? */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isLiteralStringNode = (argument: TSESTree.Node | undefined): boolean =>
+      argument !== undefined &&
+      argument.type === AST_NODE_TYPES.Literal &&
+      typeof argument.value === 'string';
+
+    /**
+     * Does this call actually put a shell between the command and the OS?
+     *
+     * `exec`/`execSync` always do — that is what they are. `execFile` family
+     * never does unless asked. `spawn`/`spawnSync` default to no shell.
+     * The options object sits at a different index per method, so both the
+     * `spawn(cmd, args, opts)` and `execFile(cmd, args, opts)` /
+     * `exec(cmd, opts)` shapes are checked.
+     */
+    const usesShell = (node: TSESTree.CallExpression, method: string): boolean => {
+      if (method === 'exec' || method === 'execSync') return true;
+      // `spawn('bash', ['-c', userCommand])` has no `shell` option and needs
+      // none — the command IS a shell, and everything after `-c` is a script.
+      // Without this the literal-command exemption below would turn the single
+      // most direct command injection in Node into a silent pass.
+      const command = node.arguments[0];
+      if (
+        command !== undefined &&
+        command.type === AST_NODE_TYPES.Literal &&
+        typeof command.value === 'string' &&
+        SHELL_BINARIES.has(command.value.replace(/^.*[/\\]/, '').toLowerCase())
+      ) {
+        return true;
+      }
+      // `execFile('node', ['-e', src])`, `spawn('cmd', ['/c', line])` — the
+      // eval flag turns the NEXT argv entry into source text, which is the same
+      // hazard under a different binary. Reading the flag rather than
+      // enumerating interpreters keeps `execFile('node', [scriptPath])` — a
+      // path, not a program — out of it.
+      const argv = node.arguments[1];
+      if (argv?.type === AST_NODE_TYPES.ArrayExpression) {
+        for (const element of argv.elements) {
+          if (
+            element?.type === AST_NODE_TYPES.Literal &&
+            typeof element.value === 'string' &&
+            EVAL_FLAGS.has(element.value.toLowerCase())
+          ) {
+            return true;
+          }
+        }
+      }
+      for (const candidate of [node.arguments[1], node.arguments[2]]) {
+        if (!candidate || candidate.type !== AST_NODE_TYPES.ObjectExpression) continue;
+        for (const property of candidate.properties) {
+          if (
+            property.type !== AST_NODE_TYPES.Property ||
+            property.key.type !== AST_NODE_TYPES.Identifier ||
+            property.key.name !== 'shell'
+          ) {
+            continue;
+          }
+          // `shell: false` is the default restated; anything else — `true`, a
+          // path to a shell, a variable — opts back in.
+          return !(
+            property.value.type === AST_NODE_TYPES.Literal && property.value.value === false
+          );
+        }
+      }
+      return false;
+    };
+
+    /**
+     * Is this value's first character fixed by the code, and not a dash?
+     *
+     * `` `--file=${name}` `` and `'/tmp/' + name` cannot become an option
+     * however the interpolation is steered, because the option position is
+     * already spoken for. That is the same reasoning `--` relies on, applied
+     * one element at a time.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const cannotStartWithDash = (node: TSESTree.Node): boolean => {
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        // `cooked` is null only for an invalid escape in a TAGGED template,
+        // which an argv element never is; `raw` carries the same first byte.
+        const first = node.quasis[0].value.raw;
+        return first.length > 0 && !first.startsWith('-');
+      }
+      if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+        const left = node.left;
+        return (
+          left.type === AST_NODE_TYPES.Literal &&
+          typeof left.value === 'string' &&
+          left.value.length > 0 &&
+          !left.value.startsWith('-')
+        );
+      }
+      return false;
+    };
+
+    /**
+     * CWE-88 — the argv element an attacker can turn into an OPTION.
+     *
+     * With `shell: false` the vector reaches `execve` untouched, so there is no
+     * CWE-78 shell to inject into. There is still the callee's own option
+     * parser: every POSIX-conventional program reads a leading `-` as a flag,
+     * so an attacker-steered positional becomes `--upload-pack=…` (git),
+     * `--to-command=sh` (tar), `-o ProxyCommand=…` (ssh) — arbitrary execution
+     * without a shell anywhere in the picture.
+     *
+     * Binary-independent on purpose. The alternative is a hand-maintained list
+     * of dangerous flags per program, which is a list of the exploits somebody
+     * already published, not of the ones that exist.
+     *
+     * Two things end the hazard, and both are recognised: a literal `--`
+     * earlier in the vector (POSIX end-of-options — everything after it is
+     * positional), and an element whose leading character the code already
+     * fixed to something other than `-`.
+     *
+     * Returns the offending element so the report lands on it rather than on
+     * the whole call.
+     */
+    const argumentInjectionSite = (node: TSESTree.CallExpression): TSESTree.Node | null => {
+      const argv = node.arguments[1];
+      if (argv?.type !== AST_NODE_TYPES.ArrayExpression) return null;
+      for (const element of argv.elements) {
+        if (element === null) continue;
+        if (
+          element.type === AST_NODE_TYPES.Literal &&
+          element.value === '--'
+        ) {
+          return null;
+        }
+        if (!readsTaintSource(element)) continue;
+        // A spread cannot be proven flag-proof: nothing here knows what is in
+        // the array, and `[...userWords]` is precisely the tar fixture.
+        const target =
+          element.type === AST_NODE_TYPES.SpreadElement ? element.argument : element;
+        if (cannotStartWithDash(target)) continue;
+        return element;
+      }
+      return null;
     };
 
     /**
@@ -733,6 +954,64 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // Pattern: if (ALLOWED.includes(arg)) { execFile('cmd', [arg]) }
       const allSafeMethods = ['execFile', 'execFileSync', 'spawn', 'spawnSync'];
       if (allSafeMethods.includes(method) && hasPrecedingAllowlistValidation(node)) {
+        return;
+      }
+
+      // ALWAYS safe: a LITERAL command with no shell.
+      //
+      // `hasOnlyLiteralArgs` demands that the argv array be literal too, which
+      // is a different — and much stronger — claim than command injection
+      // needs. With `shell: false` (the default for spawn/spawnSync, and the
+      // only mode execFile has) the argv vector goes to `execve` untouched:
+      // there is no shell to interpret `;`, `|`, backticks or `$()`, so no
+      // value in the array can start a second process.
+      //
+      // Shopify/cli `packages/cli-kit/src/public/node/tree-kill.ts` is the
+      // archetype — three findings, all of the form
+      // `spawn('pgrep', ['-lfP', parentPid])`, in a file whose comment says
+      // "Use spawn instead of exec to avoid shell injection". The rule was
+      // reporting the mitigation.
+      //
+      // What this does NOT claim: that an attacker-controlled *argument* is
+      // harmless. Argument injection against a specific binary (`--upload-file`,
+      // `-o ProxyCommand=…`) is real, but it is CWE-88 and depends on the
+      // callee, not CWE-78 through a shell. A rule that cannot name the binary
+      // cannot judge it, and it must not keep reporting CWE-78 as a proxy.
+      if (isLiteralStringNode(node.arguments[0]) && !usesShell(node, method)) {
+        // …but the paragraph above says argument injection is real and that a
+        // rule which cannot name the binary cannot judge it. Here the binary IS
+        // named — it is the literal we just matched — so the judgement is
+        // available, and declining to make it was a false negative on the
+        // ecosystem's own labelled corpus:
+        // benchmarks/corpus/CWE-088/vulnerable/git-ls-remote-arg-injection.js
+        // and tar-user-args.js were both silent.
+        const injected = argumentInjectionSite(node);
+        if (injected === null) return;
+        context.report({
+          node: injected,
+          messageId: 'argumentInjection',
+          suggest: [
+            { messageId: 'useEndOfOptions', fix: () => null },
+            { messageId: 'validateInput', fix: () => null },
+          ],
+        });
+        return;
+      }
+
+      // Report only on evidence that an attacker can steer the command.
+      //
+      // INVERTED, following `detect-non-literal-fs-filename`. The gate used to
+      // be `containsDynamicStrings` — an identifier, a `+`, or an interpolating
+      // template was enough. Measured over an 8-repo corpus that produced 14
+      // findings and zero command injections: `execSync(pseudoLocCmd)` where
+      // `pseudoLocCmd` is a template of literals and `process.cwd()`,
+      // `execSync(\`tar -xzf ${filename}\`)` where `filename` is a basename of a
+      // path the installer just wrote.
+      //
+      // The trade: `exec(cmd)` where `cmd` is a bare parameter is now silent —
+      // a caller-side decision this rule cannot see.
+      // `reportUnresolvedCommands` restores the old sweep.
+      if (!reportUnresolvedCommands && !node.arguments.some((argument) => readsTaintSource(argument))) {
         return;
       }
 

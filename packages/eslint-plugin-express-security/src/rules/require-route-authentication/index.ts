@@ -42,7 +42,11 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { readsPrincipal } from '../../utils';
+import { walk } from '../../utils';
+import {
+  isAuthMiddlewareArg,
+  routeIsAuthenticated,
+} from '../../utils/auth-evidence';
 import { fileUsesExpress } from '../../utils/express-evidence';
 
 type MessageIds = 'missingAuthentication';
@@ -107,6 +111,26 @@ const DEFAULT_PUBLIC_PATHS = [
   'reset',
   'confirm',
   'verify',
+  // Credential-recovery and factor-enrolment steps. These are the steps that
+  // *establish* authentication, so requiring authentication on them is a
+  // contradiction — the caller has none yet, by construction.
+  //
+  // All fifteen findings on the 8-repo corpus were this class: okta-auth-js's
+  // IdX sample router registers `/recover-password`, `/unlock-account`,
+  // `/challenge-authenticator/okta_password` and `/enroll-authenticator/*`,
+  // every one of which matched the critical fragment "password" or "otp" while
+  // the vocabulary had no word for the flow they belong to.
+  'recover',
+  'recovery',
+  'unlock',
+  'challenge',
+  'enroll',
+  'enrol',
+  'enrollment',
+  'activate',
+  'activation',
+  'resend',
+  'consent',
   'webhook',
   'hook',
   'health',
@@ -148,9 +172,59 @@ function matchesFragment(path: string, fragment: string): boolean {
   return new RegExp(`(^|[^a-z0-9])${escaped}s?([^a-z0-9]|$)`).test(path);
 }
 
-/** Middleware whose name says "this request is authenticated". */
-const AUTH_MIDDLEWARE =
-  /auth|jwt|passport|token|session|guard|protect|ensure|require|permit|acl|rbac|verify|login|identity|principal/i;
+/** The three function forms a route handler can take. */
+function asFunction(
+  node: TSESTree.Node | undefined,
+): TSESTree.FunctionLike | undefined {
+  return node?.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node?.type === AST_NODE_TYPES.FunctionExpression ||
+    node?.type === AST_NODE_TYPES.ArrowFunctionExpression
+    ? node
+    : undefined;
+}
+
+/**
+ * Does this handler *answer* the request, or hand it on?
+ *
+ * ```js
+ * function redirectToOrigin(req, res, next) { req.url = '/'; next(); }
+ * app.get('/profile', redirectToOrigin);   // …then express.static answers
+ * ```
+ *
+ * okta-auth-js's single-page-app sample writes exactly that: three routes
+ * share one rewriter whose whole job is to point the URL at the SPA shell so
+ * `express.static` can serve it. Nothing is *exposed* at `/profile` — the
+ * route registers a rewrite, and "this critical function has no
+ * authentication" is a claim about a function that is not there.
+ *
+ * The test is deliberately narrow: the body must call `next(…)` **and** never
+ * touch `res`. A handler that conditionally bails with `return next()` but
+ * otherwise answers (`res.json(...)`) is still an endpoint and still reported.
+ */
+function isDelegatingHandler(fn: TSESTree.FunctionLike): boolean {
+  let callsNext = false;
+  let touchesResponse = false;
+  walk(fn.body as TSESTree.Node, (node) => {
+    if (
+      node.type === AST_NODE_TYPES.CallExpression &&
+      node.callee.type === AST_NODE_TYPES.Identifier &&
+      node.callee.name === 'next'
+    ) {
+      callsNext = true;
+      return;
+    }
+    if (
+      node.type === AST_NODE_TYPES.MemberExpression &&
+      node.object.type === AST_NODE_TYPES.Identifier &&
+      RESPONSE_RECEIVER.test(node.object.name)
+    ) {
+      touchesResponse = true;
+    }
+  });
+  return callsNext && !touchesResponse;
+}
+
+const RESPONSE_RECEIVER = /^(res|response)$/i;
 
 export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
   name: 'require-route-authentication',
@@ -218,30 +292,28 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
     );
     const extraAuth = new Set(authMiddleware ?? []);
 
+    /**
+     * Module-level handler declarations, so a route registered with a bare
+     * identifier can be judged on the function it names.
+     */
+    const topLevelFunctions = new Map<string, TSESTree.Node>();
+    for (const stmt of context.sourceCode.ast.body) {
+      if (stmt.type === AST_NODE_TYPES.FunctionDeclaration && stmt.id) {
+        topLevelFunctions.set(stmt.id.name, stmt);
+        continue;
+      }
+      if (stmt.type !== AST_NODE_TYPES.VariableDeclaration) continue;
+      for (const decl of stmt.declarations) {
+        if (decl.id.type === AST_NODE_TYPES.Identifier && decl.init) {
+          topLevelFunctions.set(decl.id.name, decl.init);
+        }
+      }
+    }
+
     /** Deferred so an `app.use(auth)` after the route still suppresses it. */
     const candidates: { node: TSESTree.Node; method: string; path: string }[] =
       [];
     let hasGlobalAuth = false;
-
-    function isAuthMiddlewareArg(arg: TSESTree.Node): boolean {
-      // `require` is in AUTH_MIDDLEWARE for names like `requireRole`, but this
-      // matches PRINTED SOURCE TEXT — so in CommonJS `app.use(require('body-parser'))`
-      // would read as a global auth guard and switch the rule off file-wide.
-      // Rule out the import call itself before the name match.
-      if (
-        arg.type === AST_NODE_TYPES.CallExpression &&
-        arg.callee.type === AST_NODE_TYPES.Identifier &&
-        arg.callee.name === 'require'
-      ) {
-        return false;
-      }
-      const text = context.sourceCode.getText(arg);
-      if (AUTH_MIDDLEWARE.test(text)) return true;
-      for (const name of extraAuth) {
-        if (text.includes(name)) return true;
-      }
-      return false;
-    }
 
     function routeMethodOf(node: TSESTree.CallExpression): string | null {
       const callee = node.callee;
@@ -271,7 +343,7 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
             for (const arg of node.arguments) {
               if (
                 arg.type !== AST_NODE_TYPES.Literal &&
-                isAuthMiddlewareArg(arg)
+                isAuthMiddlewareArg(arg, extraAuth)
               ) {
                 hasGlobalAuth = true;
               }
@@ -298,13 +370,22 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
         if (!critical.some((fragment) => matchesFragment(path, fragment)))
           return;
 
-        // Any middleware before the final handler that reads as auth
-        const chain = rest.slice(0, -1);
-        if (chain.some((arg) => isAuthMiddlewareArg(arg))) return;
-
-        // The handler itself may resolve the principal (req.user, …)
+        // Any middleware before the final handler that reads as auth, or a
+        // handler that resolves the principal itself (req.user, …).
+        // `require-csrf-protection` reports the exact complement of this test,
+        // so the two rules never land on one site.
         const handler = rest[rest.length - 1];
-        if (readsPrincipal(handler)) return;
+        if (routeIsAuthenticated(rest.slice(0, -1), handler, extraAuth)) {
+          return;
+        }
+
+        // A handler that hands the request on is not the exposed function.
+        const fn =
+          asFunction(handler) ??
+          (handler.type === AST_NODE_TYPES.Identifier
+            ? asFunction(topLevelFunctions.get(handler.name))
+            : undefined);
+        if (fn && isDelegatingHandler(fn)) return;
 
         candidates.push({ node: pathArg, method, path: pathArg.value });
       },

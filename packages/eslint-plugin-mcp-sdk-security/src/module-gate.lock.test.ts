@@ -101,4 +101,35 @@ describe('MCP SDK module gate', () => {
       expect(lint(VIOLATION, 'no-command-injection-in-tool')).toHaveLength(0);
     });
   });
+
+  /**
+   * The module system must not decide whether the plugin runs.
+   *
+   * The gate this plugin used to carry was a pair of visitors —
+   * `ImportDeclaration`, and a `CallExpression` whose callee is literally named
+   * `require`. That is ESM and plain CommonJS and nothing else, so a file
+   * written in TypeScript's import-equals form or one that lazily
+   * `await import(...)`s the SDK ran **no rule in this plugin at all** — the
+   * same total, silent failure that was found in `jwt-security`. Each form
+   * below fails on the two-visitor gate and passes on the devkit probe.
+   */
+  describe.each([
+    ['CommonJS require', `const McpServer = require('@modelcontextprotocol/sdk/server/mcp.js');`],
+    ['CommonJS destructuring require', `const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');`],
+    ["TypeScript's import-equals", `import McpServerNs = require('@modelcontextprotocol/sdk/server/mcp.js');`],
+    [
+      'a lazy dynamic import',
+      `export async function boot() { const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js'); return McpServer; }`,
+    ],
+    ['a re-export', `export { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';`],
+  ])('the gate opens on %s', (_form, load) => {
+    it('and the same violation reports', () => {
+      expect(lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('but a locally bound `require` parameter is not a module load', () => {
+    const code = `function wrap(require) { return require('@modelcontextprotocol/sdk/server/mcp.js'); }\n${VIOLATION}`;
+    expect(lint(code, 'no-command-injection-in-tool')).toHaveLength(0);
+  });
 });

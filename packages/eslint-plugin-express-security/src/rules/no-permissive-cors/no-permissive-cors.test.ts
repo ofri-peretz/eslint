@@ -158,17 +158,6 @@ describe('no-permissive-cors', () => {
           `,
           errors: [{ messageId: 'permissiveCors' }],
         },
-        // origin: true with credentials
-        {
-          code: `
-            import cors from 'cors';
-            app.use(cors({
-              origin: true,
-              credentials: true
-            }));
-          `,
-          errors: [{ messageId: 'permissiveCors' }],
-        },
         // Direct cors() call (not wrapped in app.use)
         {
           code: `const corsMiddleware = cors({ origin: '*' });`,
@@ -196,11 +185,59 @@ ruleTester.run('no-permissive-cors (coverage wave)', noPermissiveCors, {
       options: [{ allowOriginTrue: true }],
     },
   ]),
+  invalid: xp([]),
+});
+
+// ---------------------------------------------------------------------------
+// RULE PARTITION with no-cors-credentials-wildcard
+// ---------------------------------------------------------------------------
+// A permissive origin PLUS `credentials: true` is the specific finding, and
+// no-cors-credentials-wildcard owns it: it names the credential leak and
+// prescribes an explicit-origin allowlist, which is strictly more than this
+// rule can say. Both fired on the same two corpus sites — okta-signin-widget
+// playground/mocks/server.js:73 and :79 — so one fix was reported twice at two
+// severities. This rule keeps everything else.
+ruleTester.run('no-permissive-cors (partition)', noPermissiveCors, {
+  valid: xp([
+    // Owned by no-cors-credentials-wildcard. Both corpus shapes.
+    { code: `app.use(cors({ origin: true, credentials: true }));` },
+    { code: `app.options(config.path, cors({ origin: true, credentials: true }));` },
+    { code: `cors({ origin: '*', credentials: true });` },
+    // Quoted keys are the same properties.
+    { code: `cors({ 'origin': true, 'credentials': true });` },
+  ]),
   invalid: xp([
-    // credentials: true + origin: true is still flagged even with allowOriginTrue
+    // Permissive origin with no credentials attached — still this rule's.
     {
-      code: `cors({ origin: true, credentials: true });`,
-      options: [{ allowOriginTrue: true }],
+      code: `app.use(cors({ origin: true }));`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    {
+      code: `app.use(cors({ origin: '*' }));`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // The partition reads the PROPERTY, not the printed text. `credentials:
+    // true` nested inside another object is not this object's credentials, so
+    // the yield must not fire and the permissive origin is still reported.
+    {
+      code: `cors({ origin: true, headers: { credentials: true } });`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // A computed key is not a statically-known property, so the yield cannot
+    // claim this object sets credentials.
+    {
+      code: `cors({ [flag]: true, origin: true });`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // Spread members hide their contents from both predicates.
+    {
+      code: `cors({ ...base, origin: true });`,
+      errors: [{ messageId: 'permissiveCors' }],
+    },
+    // credentials: true with a NON-permissive origin is not the sibling's
+    // case either, so the yield must not fire.
+    {
+      code: `app.use(cors({ origin: '*', credentials: false }));`,
       errors: [{ messageId: 'permissiveCors' }],
     },
   ]),

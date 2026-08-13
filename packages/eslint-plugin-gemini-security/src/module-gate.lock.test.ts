@@ -101,4 +101,35 @@ describe('Gemini module gate', () => {
       expect(lint(VIOLATION, 'no-disabled-safety-settings')).toHaveLength(0);
     });
   });
+
+  /**
+   * The module system must not decide whether the plugin runs.
+   *
+   * The gate this plugin used to carry was a pair of visitors —
+   * `ImportDeclaration`, and a `CallExpression` whose callee is literally named
+   * `require`. That is ESM and plain CommonJS and nothing else, so a file
+   * written in TypeScript's import-equals form or one that lazily
+   * `await import(...)`s the SDK ran **no rule in this plugin at all** — the
+   * same total, silent failure that was found in `jwt-security`. Each form
+   * below fails on the two-visitor gate and passes on the devkit probe.
+   */
+  describe.each([
+    ['CommonJS require', `const GoogleGenerativeAI = require('@google/generative-ai');`],
+    ['CommonJS destructuring require', `const { GoogleGenerativeAI } = require('@google/generative-ai');`],
+    ["TypeScript's import-equals", `import GoogleGenerativeAINs = require('@google/generative-ai');`],
+    [
+      'a lazy dynamic import',
+      `export async function boot() { const { GoogleGenerativeAI } = await import('@google/generative-ai'); return GoogleGenerativeAI; }`,
+    ],
+    ['a re-export', `export { GoogleGenerativeAI } from '@google/generative-ai';`],
+  ])('the gate opens on %s', (_form, load) => {
+    it('and the same violation reports', () => {
+      expect(lint(`${load}\n${VIOLATION}`, 'no-disabled-safety-settings').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('but a locally bound `require` parameter is not a module load', () => {
+    const code = `function wrap(require) { return require('@google/generative-ai'); }\n${VIOLATION}`;
+    expect(lint(code, 'no-disabled-safety-settings')).toHaveLength(0);
+  });
 });

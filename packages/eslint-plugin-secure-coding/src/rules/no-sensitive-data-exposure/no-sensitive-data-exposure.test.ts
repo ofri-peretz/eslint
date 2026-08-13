@@ -603,3 +603,110 @@ describe('corpus regression — mentioning a credential is not leaking it', () =
     ],
   });
 });
+
+/**
+ * Wild-corpus sweep (8 repos of published SDK/CLI code): 12 findings, 2 real.
+ *
+ * Three defects, all "shape is not meaning":
+ *
+ *  - `'completeLogin'.includes('log')` made a login helper a logger. 7 of 12.
+ *  - A 24-character wildcard between the credential word and the `:` let a
+ *    whole clause sit in the gap, so a sentence became a "label: value" pair.
+ *  - A credential-ish NAME was taken as proof the variable holds a
+ *    credential — `apiKeyMsg` holds a sentence about an API key — and a
+ *    credential-ish WORD anywhere in a left-hand literal was taken as a label
+ *    for the value concatenated after it.
+ */
+describe('corpus regression — logger detection and label detection', () => {
+  ruleTester.run('wild corpus', noSensitiveDataExposure, {
+    valid: [
+      // Shopify CLI packages/e2e/scripts/cleanup-apps.ts:156,166 ·
+      // prime-browser-auth.ts:178 · setup/auth.ts:97. `completeLogin` fills in
+      // a login form. It is not a logger, and `.includes('log')` said it was.
+      {
+        name: 'completeLogin is not a logger',
+        code: `await completeLogin(page, 'https://accounts.shopify.com/lookup', email, password)`,
+      },
+      { name: 'login is not a logger', code: `login(email, password)` },
+      { name: 'logout is not a logger', code: `logout(sessionToken)` },
+      { name: 'catalog is not a logger', code: `catalog(apiKey)` },
+      // Shopify CLI bin/github-utils.js:14 — the colon belongs to a sentence,
+      // not to a label. What follows it is an error message.
+      {
+        name: 'a clause between the word and the colon is not a label',
+        code: 'console.warn(`Soft-error fetching password from dev: ${error.message}. Try again.`)',
+      },
+      {
+        name: 'two words of gap is prose',
+        code: `console.log('token was really found: yes');`,
+      },
+      // twilio-node src/base/BaseTwilio.ts:165 — `apiKeyMsg` is the message,
+      // not the key.
+      {
+        name: 'a descriptor-suffixed name holds a description',
+        code: `throw new Error("accountSid must start with AC" + apiKeyMsg);`,
+      },
+      { name: 'passwordError names an error', code: `console.log(passwordError);` },
+      { name: 'tokenLabel names a label', code: `console.log(ui.tokenLabel);` },
+      { name: 'secretRegex names a regex', code: 'console.log(`checking ${secretRegex}`);' },
+      // twilio-node src/jwt/validation/ValidationToken.ts:145 — the literal
+      // names the operation that failed; `err` is an exception.
+      {
+        name: 'prose ending in the word does not label the value',
+        code: `throw new Error("Error generating JWT token " + err);`,
+      },
+      {
+        name: 'same shape in a log call',
+        code: `console.log('Error generating JWT token ' + err);`,
+      },
+    ],
+    invalid: [
+      // The two REAL findings in the corpus: Shopify CLI bin/github-utils.js
+      // lines 37 and 43 print a GitHub token and a password to stdout.
+      {
+        name: 'github-utils.js:37 — token printed to stdout',
+        code: 'console.log(`Using token from ${source}: ${tokenFromEnv}`)',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'github-utils.js:43 — password printed to stdout',
+        code: 'console.log(`Using password from dev: ${password}`)',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // Word boundaries must not cost the genuine logger names.
+      {
+        name: 'logDebug is still a logger',
+        code: `logDebug('password: hunter2')`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'log_error is still a logger',
+        code: `log_error('password: hunter2')`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'appLogger is still a logger',
+        code: `appLogger('token=eyJhbGciOi')`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // One extra short word is a multi-word label and still counts.
+      {
+        name: 'multi-word label',
+        code: `console.log('phone number: 555-0142');`,
+        options: [{ sensitivePatterns: ['phone'] }],
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // A name whose last segment is not a descriptor still names the secret.
+      {
+        name: 'tokenFromEnv holds the token',
+        code: `console.log(tokenFromEnv);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'apiKeyMessenger is not a descriptor suffix',
+        code: `console.log(apiKeyMessenger);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+    ],
+  });
+});

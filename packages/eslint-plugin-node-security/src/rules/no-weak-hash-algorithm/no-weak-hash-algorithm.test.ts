@@ -20,6 +20,17 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * The pre-inversion contract: any MD5/SHA-1/MD4/RIPEMD call is a finding.
+ *
+ * Measured on the 8-repo corpus that produced 6 findings, all content digests —
+ * `fileHash(buff)`, `hashString(str)`, `calculateChecksum`. The default now
+ * requires a visible security use; these cases keep pinning the algorithm
+ * detection, the suggestion fixers and the assignment-target plumbing through
+ * the restoring option.
+ */
+const UNCLASSIFIED = [{ reportUnclassifiedHashes: true }];
+
 describe('no-weak-hash-algorithm', () => {
   ruleTester.run('no-weak-hash-algorithm', noWeakHashAlgorithm, {
     valid: [
@@ -68,6 +79,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: MD5
       {
         code: 'crypto.createHash("md5").update(data);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -80,6 +92,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: SHA-1
       {
         code: 'crypto.createHash("sha1").update(data);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -92,6 +105,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: MD4
       {
         code: 'crypto.createHash("md4").update(data);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -104,6 +118,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: Case insensitive
       {
         code: 'crypto.createHash("MD5").update(data);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -116,6 +131,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: Standalone createHash function
       {
         code: 'createHash("md5");',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -128,6 +144,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: RIPEMD
       {
         code: 'crypto.createHash("ripemd").update(data);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -140,6 +157,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: Direct sha1() function call (lines 205-221)
       {
         code: 'sha1(data);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -150,6 +168,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: Direct md5() function call (lines 83-85, 205-221)
       {
         code: 'md5(password);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -160,6 +179,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: Direct md4() function call
       {
         code: 'md4(data);',
+        options: UNCLASSIFIED,
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -170,7 +190,7 @@ describe('no-weak-hash-algorithm', () => {
       // Invalid: Additional weak algorithms option
       {
         code: 'crypto.createHash("whirlpool").update(data);',
-        options: [{ additionalWeakAlgorithms: ['whirlpool'] }],
+        options: [{ additionalWeakAlgorithms: ['whirlpool'], reportUnclassifiedHashes: true }],
         errors: [{ 
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -190,6 +210,7 @@ describe('no-weak-hash-algorithm', () => {
       // A security-flavoured assignment target is not exempt.
       {
         code: 'const signature = createHash("sha1").update(data).digest("hex");',
+        options: UNCLASSIFIED,
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -202,6 +223,7 @@ describe('no-weak-hash-algorithm', () => {
       // Returned, never stored — the walk finds no assignment target.
       {
         code: 'function f() { return createHash("md5").update(pw).digest("hex"); }',
+        options: UNCLASSIFIED,
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -215,6 +237,7 @@ describe('no-weak-hash-algorithm', () => {
       // so an argument position stops it.
       {
         code: 'verify(createHash("sha1").update(x).digest("hex"));',
+        options: UNCLASSIFIED,
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -227,6 +250,7 @@ describe('no-weak-hash-algorithm', () => {
       // A computed member target hides the name, so it cannot be trusted.
       {
         code: 'obj[key] = createHash("sha1").update(x).digest("hex");',
+        options: UNCLASSIFIED,
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -239,6 +263,7 @@ describe('no-weak-hash-algorithm', () => {
       // Destructuring target: not an Identifier, so no name to check.
       {
         code: 'const [a] = createHash("md5").update(x).digest("hex");',
+        options: UNCLASSIFIED,
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -251,6 +276,7 @@ describe('no-weak-hash-algorithm', () => {
       // A numeric key has no name to match.
       {
         code: 'const meta = { 1: createHash("md5").update(x).digest("hex") };',
+        options: UNCLASSIFIED,
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -263,6 +289,7 @@ describe('no-weak-hash-algorithm', () => {
       // A computed object key is likewise unreadable.
       {
         code: 'const meta = { [k]: createHash("sha1").update(x).digest("hex") };',
+        options: UNCLASSIFIED,
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -276,7 +303,7 @@ describe('no-weak-hash-algorithm', () => {
       // pre-change behaviour on the ioredis shape.
       {
         code: 'this.sha = createHash("sha1").update(lua).digest("hex");',
-        options: [{ nonCryptographicNames: [] }],
+        options: [{ nonCryptographicNames: [], reportUnclassifiedHashes: true }],
         errors: [{
           messageId: 'weakHashAlgorithm',
           suggestions: [
@@ -287,5 +314,139 @@ describe('no-weak-hash-algorithm', () => {
         }],
       },
     ],
+  });
+
+  // ── The inversion ──────────────────────────────────────────────────────
+  // Every `valid` case is a verbatim shape from the 8-repo corpus scan and
+  // reported before this change.
+  describe('Content Digests Are Not CWE-327', () => {
+    ruleTester.run('a visible security use is required', noWeakHashAlgorithm, {
+      valid: [
+        // An arrow bound to a destructuring pattern has no single name.
+        `const [hashIt] = [(body) => md5(body)];`,
+        // An anonymous callback has no name at all.
+        `run(function () { return md5(body); });`,
+        // A computed method key is a variable, so there is no name to read.
+        `const api = { [dynamic](body) { return md5(body); } };`,
+        // A hash at module scope, outside any function.
+        `const out = md5(contents);`,
+        // A non-string algorithm argument is not an algorithm name.
+        `const h = crypto.createHash(5);`,
+        // A declarator whose id is a PATTERN has no single name to read.
+        `const [signIt] = function () { return md5(body); };`,
+        // Shopify/cli packages/cli-kit/src/public/node/crypto.ts:40,50,84.
+        `export function hashString(str) { return crypto.createHash('sha1').update(str).digest('hex'); }`,
+        `export function fileHash(buff) { return crypto.createHash('md5').update(buff).digest('hex'); }`,
+        `export function nonRandomUUID(subject) {
+           return crypto.createHash('sha1').update(subject).digest().toString('hex');
+         }`,
+        // Shopify/cli packages/theme/.../asset-checksum.ts:11,32,42.
+        `function regularFileChecksum(fileKey, fileContent) { return md5(fileContent); }`,
+        `function minifiedJSONFileChecksum(fileContent) { return md5(fileContent); }`,
+        `export function calculateChecksum(fileKey, fileContent) { return md5(fileContent); }`,
+      ],
+      invalid: [
+        // Hashing a password with MD5 is the shape CWE-327 is about, and it is
+        // visible from the argument alone.
+        {
+          code: `const digest = crypto.createHash('md5').update(password).digest('hex');`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const digest = crypto.createHash("sha256").update(password).digest('hex');` },
+              { messageId: 'useSha512', output: `const digest = crypto.createHash("sha512").update(password).digest('hex');` },
+              { messageId: 'useSha3', output: `const digest = crypto.createHash("sha3-256").update(password).digest('hex');` },
+            ],
+          }],
+        },
+        // Visible from what the digest is STORED as.
+        {
+          code: `const signature = crypto.createHash('sha1').update(body).digest('hex');`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const signature = crypto.createHash("sha256").update(body).digest('hex');` },
+              { messageId: 'useSha512', output: `const signature = crypto.createHash("sha512").update(body).digest('hex');` },
+              { messageId: 'useSha3', output: `const signature = crypto.createHash("sha3-256").update(body).digest('hex');` },
+            ],
+          }],
+        },
+        // Visible from the enclosing function, including an arrow bound to a
+        // const and a class method.
+        {
+          code: `const signRequest = (body) => md5(body);`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const signRequest = (body) => sha256(body);` },
+            ],
+          }],
+        },
+        {
+          code: `class Signer { authToken(body) { return sha1(body); } }`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `class Signer { authToken(body) { return sha256(body); } }` },
+            ],
+          }],
+        },
+        // The boundary guard: `certPath` is a security use, `certainty` is not.
+        {
+          code: `const certFingerprint = createHash('sha1').update(pem).digest('hex');`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const certFingerprint = createHash("sha256").update(pem).digest('hex');` },
+              { messageId: 'useSha512', output: `const certFingerprint = createHash("sha512").update(pem).digest('hex');` },
+              { messageId: 'useSha3', output: `const certFingerprint = createHash("sha3-256").update(pem).digest('hex');` },
+            ],
+          }],
+        },
+        // The hashed input read as a MEMBER rather than a bare identifier.
+        {
+          code: `const d = md5(user.password);`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [{ messageId: 'useSha256', output: `const d = sha256(user.password);` }],
+          }],
+        },
+        // The enclosing function is an object-literal method.
+        {
+          code: `const api = { signPayload(body) { return md5(body); } };`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [{ messageId: 'useSha256', output: `const api = { signPayload(body) { return sha256(body); } };` }],
+          }],
+        },
+        // checkHashArgument: a non-literal and a non-string algorithm argument
+        // are not algorithm names, so nothing is reported for them — but the
+        // security-use gate is passed, so the loop runs.
+        {
+          code: `const signature = crypto.createHash(algo).update(body).digest('hex');
+                 const other = crypto.createHash(5);
+                 const digest = crypto.createHash('md5').update(token).digest('hex');`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha256").update(token).digest('hex');` },
+              { messageId: 'useSha512', output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha512").update(token).digest('hex');` },
+              { messageId: 'useSha3', output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha3-256").update(token).digest('hex');` },
+            ],
+          }],
+        },
+        // `securityUseNames` is configurable.
+        {
+          code: `const licence = md5(payload);`,
+          options: [{ securityUseNames: ['licence'] }],
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const licence = sha256(payload);` },
+            ],
+          }],
+        },
+      ],
+    });
   });
 });

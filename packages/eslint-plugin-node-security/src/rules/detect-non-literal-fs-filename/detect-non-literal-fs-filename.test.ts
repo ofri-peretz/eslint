@@ -71,24 +71,153 @@ describe('detect-non-literal-fs-filename', () => {
     });
   });
 
+  // A path assembled entirely from literals, `__dirname` and `const` bindings
+  // of the same cannot be steered by an attacker. The safe-construction check
+  // already knew this shape but only ever saw the DIRECT argument — one hop
+  // through a `const` was enough to lose it, which is why every build script,
+  // rollup config and gulpfile in the corpus reported.
+  describe('Valid Code - paths fixed at build time', () => {
+    ruleTester.run('valid - build-time constant paths', detectNonLiteralFsFilename, {
+      valid: [
+        // The okta/okta-auth-js build.js shape, minus the `..` segments — the
+        // rule's pre-existing doctrine treats ANY hardcoded `..` as traversal
+        // (see the invalid cases below), so `path.resolve(__dirname, '../..')`
+        // still reports. That is a separate, older judgement call about
+        // relative navigation; this change is only about not losing the
+        // safe-construction verdict across a `const` hop.
+        "const BUILD_DIR = path.resolve(__dirname, 'build');\nfs.readFileSync(`${BUILD_DIR}/package.json`);",
+        "const OUT = path.join(__dirname, 'dist');\nfs.writeFileSync(OUT, data);",
+        // A const chain, not just one hop.
+        "const ROOT = path.resolve(__dirname, '..');\nconst SRC = path.join(ROOT, 'src');\nfs.readFileSync(SRC);",
+        // process.cwd() is where the build was launched, not user input.
+        "const HERE = process.cwd();\nfs.readFileSync(path.join(HERE, 'package.json'));",
+        "fs.readFileSync(__filename);",
+        // String concatenation of constants is the same thing spelled longhand.
+        "const DIR = path.join(__dirname, 'data');\nfs.readFileSync(DIR + '/config.json');",
+      ],
+      invalid: [
+        // Constant does NOT mean harmless: this one is fixed at build time and
+        // is still a traversal. "Not attacker-steerable" and "safe" are
+        // different claims.
+        { options: [{ reportUnresolvedPaths: true }],           code: "const ESCAPE = path.join(__dirname, '../../etc/passwd');\nfs.readFileSync(ESCAPE);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        { options: [{ reportUnresolvedPaths: true }],           code: "const DIR = path.join(__dirname, 'x');\nfs.readFileSync(`${DIR}/../../../etc/passwd`);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // `let` can be reassigned between the binding and the call, so proving
+        // its initializer constant proves nothing about the value read.
+        { options: [{ reportUnresolvedPaths: true }],           code: "let DIR = path.join(__dirname, 'data');\nDIR = req.query.dir;\nfs.readFileSync(DIR);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // A const bound to a call we cannot see through is not constant.
+        { options: [{ reportUnresolvedPaths: true }],           code: "const P = getPath(name);\nfs.readFileSync(P);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // Mutually-referential consts must terminate, not hang.
+        { options: [{ reportUnresolvedPaths: true }],           code: "const A = B;\nconst B = A;\nfs.readFileSync(A);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+  });
+
+  // The validation escapes only matter once a path is TAINTED — an untainted
+  // path is already silent, so these must be written with a real source to
+  // exercise them at all.
+  describe('Valid Code - tainted but validated', () => {
+    ruleTester.run('validated taint', detectNonLiteralFsFilename, {
+      valid: [
+        "const p = process.argv[2];\nif (ALLOWED.includes(p)) { fs.readFile(p); }",
+        "const p = process.argv[2];\nif (/^[a-z]+$/.test(p)) { fs.readFile(p); }",
+        "const p = process.env.OUT;\nif (p.startsWith('/safe')) { fs.readFile(p); }",
+      ],
+      invalid: [
+        // The same taint without the guard, COMPOSED into a path: `p` extends
+        // a base directory the code chose, which is what traversal means.
+        {
+          code: "const p = process.argv[2];\nfs.readFile(path.join('/uploads', p));",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+
+    // ── FP lock: taint used WHOLE is not traversal ────────────────────────
+    //
+    // Corpus: twilio/twilio-node `src/base/RequestClient.ts:128`
+    //   agentOpts.ca = fs.readFileSync(process.env.TWILIO_CA_BUNDLE);
+    //
+    // Reported at HIGH as path traversal. There is no base directory to escape
+    // and nothing to append to: whoever sets the variable names a file
+    // outright, which is a capability they already have over the process.
+    //
+    // Fails on the old predicate, which was `if (readsTaintSource(pathNode))
+    // return true` with no composition test — every one of these was a report.
+    ruleTester.run('whole taint value is not traversal', detectNonLiteralFsFilename, {
+      valid: [
+        // The corpus line itself.
+        'fs.readFileSync(process.env.TWILIO_CA_BUNDLE);',
+        // Through a binding, the way the same idiom is usually written.
+        'const ca = process.env.TWILIO_CA_BUNDLE;\nfs.readFileSync(ca);',
+        // argv, used entire.
+        'const p = process.argv[2];\nfs.readFile(p);',
+        // `path.resolve` of one whole value normalises it; it adds no part.
+        'fs.readFileSync(path.resolve(process.env.CONFIG));',
+      ],
+      invalid: [
+        // A prefix the value can walk out of — still a finding.
+        {
+          code: "fs.readFileSync('/etc/app/' + process.env.NAME);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        {
+          code: 'fs.readFileSync(`${BASE}/${process.env.NAME}`);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // Corpus: Shopify/cli `bin/update-bugsnag.js:36` — a two-part join
+        // whose tail comes off argv. This one must keep reporting.
+        {
+          code:
+            "const sourceDirectory = path.join(__dirname, '..', 'packages', process.argv[2]);\n" +
+            'fs.cpSync(sourceDirectory, dest, {recursive: true});',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+
+    // After the inversion a literal path can only report via traversal, so
+    // `allowLiterals` now gates exactly that — without this its only use site
+    // was gone and the option silently did nothing.
+    ruleTester.run('allowLiterals gates hardcoded traversal', detectNonLiteralFsFilename, {
+      valid: [
+        {
+          code: "fs.readFile('../../etc/passwd');",
+          options: [{ allowLiterals: true }],
+        },
+      ],
+      invalid: [
+        {
+          code: "fs.readFile('../../etc/passwd');",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - readFile', () => {
     ruleTester.run('invalid - dynamic filename in readFile', detectNonLiteralFsFilename, {
       valid: [],
       invalid: [
-        {
-          code: 'fs.readFile(userPath, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile(userPath, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.readFile(`./uploads/${filename}`, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile(`./uploads/${filename}`, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.readFileSync(userInput, "utf8");',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFileSync(userInput, "utf8");',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: `
+        { options: [{ reportUnresolvedPaths: true }],           code: `
             const filePath = getUserInput();
             fs.readFile(filePath, callback);
           `,
@@ -102,16 +231,13 @@ describe('detect-non-literal-fs-filename', () => {
     ruleTester.run('invalid - dynamic filename in writeFile', detectNonLiteralFsFilename, {
       valid: [],
       invalid: [
-        {
-          code: 'fs.writeFile(userPath, data, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.writeFile(userPath, data, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.writeFileSync(`./output/${filename}`, data);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.writeFileSync(`./output/${filename}`, data);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.writeFile(config.outputPath, data, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.writeFile(config.outputPath, data, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
       ],
@@ -122,12 +248,10 @@ describe('detect-non-literal-fs-filename', () => {
     ruleTester.run('invalid - dynamic filename in stat', detectNonLiteralFsFilename, {
       valid: [],
       invalid: [
-        {
-          code: 'fs.stat(userPath, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.stat(userPath, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.statSync(`./files/${filename}`);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.statSync(`./files/${filename}`);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
       ],
@@ -138,12 +262,10 @@ describe('detect-non-literal-fs-filename', () => {
     ruleTester.run('invalid - dynamic directory in readdir', detectNonLiteralFsFilename, {
       valid: [],
       invalid: [
-        {
-          code: 'fs.readdir(userDir, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readdir(userDir, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.readdirSync(`./directories/${dirName}`);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readdirSync(`./directories/${dirName}`);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
       ],
@@ -154,8 +276,7 @@ describe('detect-non-literal-fs-filename', () => {
     ruleTester.run('suggestions for fixes', detectNonLiteralFsFilename, {
       valid: [],
       invalid: [
-        {
-          code: 'fs.readFile(userPath, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile(userPath, callback);',
           errors: [
             {
               messageId: 'fsPathTraversal',
@@ -178,12 +299,10 @@ describe('detect-non-literal-fs-filename', () => {
       ],
       invalid: [
         // Path traversal patterns in literals should still be flagged as CRITICAL
-        {
-          code: 'fs.readFile("../../../etc/passwd", callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile("../../../etc/passwd", callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.readFile("../config.json", callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile("../config.json", callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
         // Note: Rule only checks fs.method() directly, not imported/aliased calls
@@ -203,7 +322,7 @@ describe('detect-non-literal-fs-filename', () => {
       invalid: [
         {
           code: 'fs.readFile(userPath, callback);',
-          options: [{ allowLiterals: true }],
+          options: [{ allowLiterals: true, reportUnresolvedPaths: true }],
           errors: [
             {
               messageId: 'fsPathTraversal',
@@ -221,16 +340,13 @@ describe('detect-non-literal-fs-filename', () => {
     ruleTester.run('line 297 - default case in generateRefactoringSteps', detectNonLiteralFsFilename, {
       valid: [],
       invalid: [
-        {
-          code: 'fs.unlink(userPath);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.unlink(userPath);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.mkdir(userDir, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.mkdir(userDir, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.rmdir(userDir);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.rmdir(userDir);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
       ],
@@ -240,12 +356,10 @@ describe('detect-non-literal-fs-filename', () => {
     ruleTester.run('line 319 - default case in determineRiskLevel', detectNonLiteralFsFilename, {
       valid: [],
       invalid: [
-        {
-          code: 'fs.access(userPath, callback);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.access(userPath, callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
-        {
-          code: 'fs.appendFile(userPath, data);',
+        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.appendFile(userPath, data);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
       ],
@@ -338,15 +452,13 @@ describe('detect-non-literal-fs-filename', () => {
       valid: [],
       invalid: [
         // No validation - should still be flagged
-        {
-          code: `
+        { options: [{ reportUnresolvedPaths: true }],           code: `
             fs.readFile(userPath, callback);
           `,
           errors: [{ messageId: 'fsPathTraversal' }],
         },
         // Validation on wrong path - should still be flagged
-        {
-          code: `
+        { options: [{ reportUnresolvedPaths: true }],           code: `
             if (otherPath.startsWith(baseDir)) {
               fs.readFile(userPath, callback);
             }
@@ -354,8 +466,7 @@ describe('detect-non-literal-fs-filename', () => {
           errors: [{ messageId: 'fsPathTraversal' }],
         },
         // Dynamic segments in path.join
-        {
-          code: `
+        { options: [{ reportUnresolvedPaths: true }],           code: `
             fs.readFile(path.join(__dirname, userInput, 'file.txt'), callback);
           `,
           errors: [{ messageId: 'fsPathTraversal' }],

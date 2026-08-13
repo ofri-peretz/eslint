@@ -101,18 +101,100 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
     /**
      * Check if payload contains exp claim
      */
-    // oxlint-disable-next-line consistent-function-scoping
+    /**
+     * jose builds a JWT fluently: `new SignJWT(claims).setExpirationTime('2h')
+     * .setProtectedHeader({alg}).sign(key)`. The finding lands on the trailing
+     * `.sign(key)`, which has no options object and no payload — the expiry was
+     * set several links earlier in the chain. auth0's express-openid-connect
+     * writes it exactly this way in `lib/client.js`.
+     *
+     * `FlattenedSign` / `CompactSign` / `GeneralSign` are JWS signers. They sign
+     * arbitrary bytes and have no claim set at all, so "missing exp" is not a
+     * statement that can be true of them.
+     */
     const payloadHasExp = (payloadNode: TSESTree.Node): boolean => {
-      if (payloadNode.type !== 'ObjectExpression') {
+      // `jwt.sign(payload, secret)` where the payload was built a few lines
+      // up is the ordinary way to write this — twilio's ClientCapability does
+      // exactly that, setting `exp: Math.floor(Date.now()/1000) + this.ttl`
+      // before signing. Looking only at an inline object literal reported a
+      // token whose expiration was right there, spelled the other legal way.
+      const resolved =
+        payloadNode.type === 'Identifier'
+          ? resolveObjectLiteral(payloadNode)
+          : payloadNode;
+
+      if (resolved === null || resolved.type !== 'ObjectExpression') {
         return false;
       }
 
-      return payloadNode.properties.some(
+      return resolved.properties.some(
         (prop) =>
           prop.type === 'Property' &&
-          prop.key.type === 'Identifier' &&
-          prop.key.name === 'exp',
+          !prop.computed &&
+          ((prop.key.type === 'Identifier' && prop.key.name === 'exp') ||
+            (prop.key.type === 'Literal' && prop.key.value === 'exp')),
       );
+    };
+
+    /** Follow an identifier to the object literal it was initialised with. */
+    const resolveObjectLiteral = (
+      node: TSESTree.Identifier,
+    ): TSESTree.Node | null => {
+      let variable: TSESLint.Scope.Variable | null = null;
+      let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+      while (scope !== null && variable === null) {
+        variable =
+          scope.variables.find((candidate) => candidate.name === node.name) ??
+          null;
+        scope = scope.upper;
+      }
+      // One declaration only: a re-declared or shadowed binding is not worth
+      // reasoning about, and an unresolved one stays a finding.
+      if (variable === null || variable.defs.length !== 1) {
+        return null;
+      }
+      const definition = variable.defs[0]!;
+      return definition.type === 'Variable'
+        ? (definition.node.init ?? null)
+        : null;
+    };
+
+    const JWS_ONLY_BUILDERS = new Set(['FlattenedSign', 'CompactSign', 'GeneralSign']);
+
+    const chainSetsExpiration = (node: TSESTree.CallExpression): boolean => {
+      let current: TSESTree.Node = node;
+      while (current.type === 'CallExpression' || current.type === 'MemberExpression') {
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'MemberExpression' &&
+          current.callee.property.type === 'Identifier' &&
+          current.callee.property.name === 'setExpirationTime'
+        ) {
+          return true;
+        }
+        current =
+          current.type === 'CallExpression' ? current.callee : current.object;
+      }
+      // Reached the root of the chain.
+      if (current.type !== 'NewExpression') {
+        return false;
+      }
+      const ctor =
+        current.callee.type === 'Identifier'
+          ? current.callee.name
+          : current.callee.type === 'MemberExpression' &&
+              current.callee.property.type === 'Identifier'
+            ? current.callee.property.name
+            : null;
+      // A JWS builder signs arbitrary bytes and carries no claim set, so
+      // "missing exp" cannot be true of it.
+      if (ctor !== null && JWS_ONLY_BUILDERS.has(ctor)) {
+        return true;
+      }
+      // `new SignJWT(payload)` holds the claims the trailing `.sign(key)` does
+      // not — auth0 declares `exp: now + 60` on that object two lines above.
+      const claims = current.arguments[0];
+      return claims !== undefined && payloadHasExp(claims);
     };
 
     return {
@@ -132,6 +214,11 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
 
         // Check if payload has exp claim
         if (payloadHasExp(payloadArg)) {
+          return;
+        }
+
+        // jose's fluent builder sets expiry earlier in the chain.
+        if (chainSetsExpiration(node)) {
           return;
         }
 

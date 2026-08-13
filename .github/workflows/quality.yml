@@ -119,6 +119,32 @@ jobs:
           turbo-cache: "false"
       - run: npm run lint:taxonomy
 
+  recall:
+    name: Detection Recall (CWE corpus)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      - uses: ./.github/actions/setup
+      # Guards the half a precision number cannot see. A sweep in August 2026
+      # cut false positives from 10 to 3 on this corpus and took recall from
+      # 73.9% to 50.7% at the same time — 16 labelled vulnerabilities silently
+      # stopped being detected across 67 commits, because every narrowing looked
+      # like an improvement on its own and nothing measured the other side.
+      #
+      # Fixtures are local and small, so unlike the network-heavy ILB-Wild run
+      # this is cheap enough to block a PR. The 8-repo precision scan
+      # (scripts/corpus-scan.ts) stays out of CI for that reason.
+      # The corpus config imports each plugin's `dist/`, so an unbuilt tree makes
+      # it unresolvable. The benchmark refuses to score in that state rather than
+      # reporting zero findings — which is why this job failed in 18s on its first
+      # run instead of silently passing with a perfect record.
+      - name: Build the plugins the corpus config imports
+        run: npx turbo build --filter='./packages/*'
+
+      - name: Every CWE must still detect what it used to
+        run: npx tsx scripts/recall-gate.ts
+
   lockfile:
     name: Lockfile Sync
     runs-on: ubuntu-latest
@@ -201,7 +227,7 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [oxlint, markdown, changelog, workflows, taxonomy, publish-metadata, lockfile, supply-chain]
+    needs: [oxlint, markdown, changelog, workflows, taxonomy, publish-metadata, lockfile, supply-chain, recall]
     if: always()
     steps:
       - name: Render gate report
@@ -214,6 +240,7 @@ jobs:
           R_PUBLISH: ${{ needs.publish-metadata.result }}
           R_LOCKFILE: ${{ needs.lockfile.result }}
           R_SUPPLY: ${{ needs.supply-chain.result }}
+          R_RECALL: ${{ needs.recall.result }}
         run: |
           set -euo pipefail
           icon() {
@@ -227,7 +254,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY"; do
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -249,6 +276,7 @@ jobs:
             echo "| Publish metadata    | $(icon "$R_PUBLISH") $R_PUBLISH         | no package publishes with an npm warning |"
             echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
             echo "| Supply-chain floor  | $(icon "$R_SUPPLY") $R_SUPPLY          | OSV clean + Scorecard checks above floor |"
+            echo "| Detection recall    | $(icon "$R_RECALL") $R_RECALL          | no CWE detects less than it used to |"
             echo ""
             echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"
             if ! $all_pass; then

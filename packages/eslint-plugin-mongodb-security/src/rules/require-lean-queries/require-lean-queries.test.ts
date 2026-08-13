@@ -127,6 +127,69 @@ describe('require-lean-queries', () => {
       ]),
     });
   });
+  /**
+   * Labelled-corpus regression, deliberately **not** wrapped in `xmo()`.
+   *
+   * Opening the gate for the native driver made this rule fire on both CWE-943
+   * safe fixtures — a false positive whose suggestion appends `.lean()` to a
+   * native-driver cursor, which has no such method and throws at runtime.
+   * `.lean()` is Mongoose-only, so a native collection handle is a hard stop.
+   */
+  describe('CWE-943 corpus — native driver, no import', () => {
+    ruleTester.run('native-driver collection handles', requireLeanQueries, {
+      valid: [
+        {
+          // benchmarks/corpus/CWE-943/safe/explicit-eq.js
+          name: 'a native-driver findOne is not asked for .lean()',
+          code: [
+            `async function login(req, res) {`,
+            `  const user = await db.collection('users').findOne({`,
+            `    username: { $eq: String(req.body.username) },`,
+            `    password: { $eq: String(req.body.password) },`,
+            `  }, { projection: { _id: 1, username: 1, role: 1 } });`,
+            `  return user;`,
+            `}`,
+          ].join('\n'),
+        },
+        {
+          // benchmarks/corpus/CWE-943/safe/static-filter.js
+          name: 'a native-driver find().toArray() is not asked for .lean()',
+          code: [
+            `async function fetchActiveAdmins() {`,
+            `  return db.collection('users').find({`,
+            `    role: 'superuser',`,
+            `    status: 'active',`,
+            `  }, { limit: 100, projection: { _id: 1, username: 1, role: 1 } }).toArray();`,
+            `}`,
+          ].join('\n'),
+        },
+        {
+          name: 'a native handle reached through a longer chain is exempt too',
+          code: `client.db('app').collection('users').findOne({ _id: id });\nclient.db('app').collection('users').find({}).toArray();`,
+        },
+      ],
+      invalid: [
+        {
+          // The exemption is receiver-scoped: a Mongoose model in the same
+          // native-driver file is still reported.
+          name: 'a Mongoose model in a native-driver file is still reported',
+          code: `db.collection('users').findOne({ _id: id });\nconst docs = await User.find({ active: true });`,
+          errors: [
+            {
+              messageId: 'useLean' as const,
+              suggestions: [
+                {
+                  messageId: 'suggestionAddLean' as const,
+                  output: `db.collection('users').findOne({ _id: id });\nconst docs = await User.find({ active: true }).lean();`,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
 describe('Suggestions', () => {
     ruleTester.run('suggestion - appends .lean()', requireLeanQueries, {
       valid: [],

@@ -13,6 +13,27 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
+/**
+ * Is this operand a presence/flag constant rather than a credential?
+ *
+ * `if (ionFormField.secret === true)` is a *rendering* decision — okta's
+ * `src/v2/ion/ui-schema/ion-string-handler.js:79` is asking whether to draw
+ * the field as a password input — not an authentication decision. Nothing is
+ * being authorised, and moving it to the server would be meaningless.
+ *
+ * The predicate was `does either side read .password/.secret/.token`, which
+ * asks only what the property is NAMED. A credential comparison compares a
+ * secret against a *value*; comparing one against `true`, `false`, `null` or
+ * `undefined` tests whether the field exists or how it is flagged. The
+ * genuine shape — `user.password === input` — is untouched.
+ */
+function isFlagComparand(node: TSESTree.Node): boolean {
+  if (node.type === 'Literal') {
+    return typeof node.value === 'boolean' || node.value === null;
+  }
+  return node.type === 'Identifier' && node.name === 'undefined';
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
 export interface Options {}
 
@@ -80,9 +101,17 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
             return false;
           };
           
-          if (checkMember(node.test.left as TSESTree.Expression) || 
-              checkMember(node.test.right as TSESTree.Expression)) {
-            report(node);
+          const left = node.test.left as TSESTree.Expression;
+          const right = node.test.right as TSESTree.Expression;
+          const leftIsCredential = checkMember(left);
+
+          if (leftIsCredential || checkMember(right)) {
+            // The value the credential is measured against. When both sides
+            // read a credential, either one answers.
+            const comparand = leftIsCredential ? right : left;
+            if (!isFlagComparand(comparand)) {
+              report(node);
+            }
           }
         }
       },

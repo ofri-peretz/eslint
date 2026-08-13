@@ -143,6 +143,29 @@ jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
     },
     // css keyword without transparent styles
     { code: `const css = 'css position: absolute';`, filename: 'lib.ts' },
+    // --- `display: none` is not a clickjacking overlay ---------------------
+    // This fixture used to live in `invalid`, pinning the defect. A hidden
+    // element is removed from layout and receives no clicks — it is the
+    // OPPOSITE of a transparent element that swallows them. Both corpus
+    // findings for this rule were this shape:
+    // Shopify/cli packages/cli-kit/src/public/node/graphiql/templates/
+    //   graphiql.tsx:71 and .../unauthorized.tsx:112.
+    { code: `const css = 'css display: none';`, filename: 'lib.ts' },
+    {
+      code: `const t = \`<style> #top-error-bar button { display: none; } </style>\`;`,
+      filename: 'lib.ts',
+    },
+    // Whole-value comparison: `opacity: 0.5` is not transparent, and neither
+    // is `top: 0.5rem`. The substring matcher reported both.
+    { code: `const css = 'css opacity: 0.5';`, filename: 'lib.ts' },
+    {
+      code: `const css = 'css position: absolute; top: 0.5rem; left: 0.5rem';`,
+      filename: 'lib.ts',
+    },
+    // A positive z-index is not a hidden layer.
+    { code: `const css = 'css z-index: 10';`, filename: 'lib.ts' },
+    // `position: absolute` alone does not make an overlay.
+    { code: `const css = 'css position: absolute; top: 40px; left: 0';`, filename: 'lib.ts' },
     // template with style but no transparent styles
     { code: `const t = \`style color: red\`;`, filename: 'lib.ts' },
     // window.self member access (property not location/top)
@@ -203,17 +226,15 @@ jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
       errors: [{ messageId: 'transparentFrameOverlay' }],
     },
     {
-      code: `const css = 'css display: none';`,
-      filename: 'lib.ts',
-      errors: [{ messageId: 'transparentFrameOverlay' }],
-    },
-    {
       code: `const css = 'css z-index: -1';`,
       filename: 'lib.ts',
       errors: [{ messageId: 'transparentFrameOverlay' }],
     },
     {
-      code: `const css = 'css position: absolute top: 0 left: 0';`,
+      // Declarations are separated by `;` — the previous spelling of this
+      // fixture ran them together, which only ever parsed under the substring
+      // matcher this rule no longer uses.
+      code: `const css = 'css position: absolute; top: 0; left: 0';`,
       filename: 'lib.ts',
       errors: [{ messageId: 'transparentFrameOverlay' }],
     },

@@ -64,38 +64,77 @@ jwt.verify(token, publicKey, { ...baseOpts, ['audit']: true, algorithms: ['HS256
 });
 
 // ---------------------------------------------------------------------------
-// Layer 1 — no-algorithm-none: the isDecodeCall() detector.
+// Layer 1 — PARTITION LOCK: `no-algorithm-none` owns an explicitly declared
+// `none`; `no-decode-without-verify` owns a bare `decode()`. Exactly one rule
+// reports any given call site.
+//
+// Fails on the pre-split predicate, where `no-algorithm-none` reported EVERY
+// `jwt.decode()` unconditionally and so re-reported the very sites its sibling
+// had exempted — both rules ship in the same `recommended` preset.
 // ---------------------------------------------------------------------------
-describe('coverage: no-algorithm-none decode detection', () => {
-  ruleTester.run('isDecodeCall branches', noAlgorithmNone, {
-    valid: [
-      // object name is neither `jwt` nor `jsonwebtoken` -> not a decode call
-      {
-        code: `import jwt from 'jsonwebtoken';
-myParser.decode(data);`,
-      },
-      // callee object is itself a MemberExpression -> returns false
-      {
-        code: `import jwt from 'jsonwebtoken';
-api.jwt.decode(token);`,
-      },
-      // computed property (Literal, not Identifier) -> returns false
-      {
-        code: `import jwt from 'jsonwebtoken';
-jwt["decode"](token);`,
-      },
-    ],
-    invalid: [
-      // jwt.decode() is flagged as equivalent to algorithm:"none"
-      {
-        code: `import jwt from 'jsonwebtoken';
-jwt.decode(token);`,
-        errors: [{ messageId: 'decodeWithoutVerify' }],
-      },
-      // jsonwebtoken.decode() — second operand of the name check
-      {
-        code: `import jwt from 'jsonwebtoken';
+describe('partition: no-algorithm-none does not own a bare decode()', () => {
+  ruleTester.run(
+    'bare decode() belongs to no-decode-without-verify',
+    noAlgorithmNone,
+    {
+      valid: [
+        // Corpus: twilio/twilio-node src/auth_strategy/TokenAuthStrategy.ts:49.
+        // `no-decode-without-verify` exempts this via readsOnlyTimeClaims — its
+        // own comment says it decodes only to read `exp`. This rule used to
+        // report it anyway, at the identical range, defeating the exemption from
+        // inside the same preset.
+        {
+          code: `import jwt, { JwtPayload } from 'jsonwebtoken';
+function isTokenExpired(token) {
+  // Decode the token without verifying the signature, as we only want to read the expiration
+  const decoded = jwt.decode(token);
+  if (!decoded || !decoded.exp) return true;
+  return Date.now() >= decoded.exp * 1000;
+}`,
+        },
+        // A plain, unexempted decode is still not this rule's business.
+        {
+          code: `import jwt from 'jsonwebtoken';
+const payload = jwt.decode(token);
+grantAccess(payload.role);`,
+        },
+        {
+          code: `import jwt from 'jsonwebtoken';
 jsonwebtoken.decode(token);`,
+        },
+        // Computed member — `isJwtLibraryCall` falls through to its final
+        // `return false` (utils/index.ts) because the property is a Literal.
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt["decode"](token);`,
+        },
+        // Neither MemberExpression nor Identifier callee — same terminal branch.
+        {
+          code: `import jwt from 'jsonwebtoken';
+(cond ? jwt.verify : jwt.decode)(token);`,
+        },
+      ],
+      invalid: [
+        // …while an EXPLICIT `none` still reports here, so the split removed a
+        // duplicate rather than a detection.
+        {
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['none'] });`,
+          errors: [{ messageId: 'algorithmNoneInArray' }],
+        },
+      ],
+    },
+  );
+
+  // The complement: the same bare decode IS reported, once, by the rule that
+  // owns it. Without this the partition could be satisfied by nobody reporting.
+  ruleTester.run('the sibling rule reports it', noDecodeWithoutVerify, {
+    valid: [],
+    invalid: [
+      {
+        code: `import jwt from 'jsonwebtoken';
+const payload = jwt.decode(token);
+grantAccess(payload.role);`,
         errors: [{ messageId: 'decodeWithoutVerify' }],
       },
     ],

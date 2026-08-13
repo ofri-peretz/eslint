@@ -105,6 +105,7 @@ if (index >= 0 && index < buffer.length) { const byte = buffer[index]; }
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as buffer index validators |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| `reportUnvalidatedIndices` | `boolean` | `false` | Report every index that cannot be proven validated. Restores the pre-inversion behaviour. |
 
 ## Error Message Format
 

@@ -63,6 +63,21 @@ ruleTester.run('no-eval', noEval, {
     {
       code: `const result = evaluate(expression);`,
     },
+
+    // ---- Rule partition: owned by node-security's
+    // `detect-eval-with-expression`, which classifies the expression and
+    // prescribes the matching alternative. See the note above
+    // `hasStaticPayload` in index.ts. All four fail on the old code, which
+    // reported them here as well, at the identical range.
+
+    // okta-signin-widget generate-phone-codes.js:20 — remote metadata evalled.
+    // A TRUE positive, now reported once instead of twice.
+    { code: `eval(data);` },
+    // The generic dynamic case.
+    { code: `eval(userInput);` },
+    // underscore-min.js:1033 / speedscope demangle-cpp — dynamic Function body.
+    { code: `const o = new Function(a, '_', i);` },
+    { code: `const fn = new Function('return ' + userInput);` },
   ],
   invalid: [
     {
@@ -84,11 +99,24 @@ ruleTester.run('no-eval', noEval, {
       errors: 1,
     },
 
-    // Direct eval
+    // ---- Ours under the partition: a statically known payload. Nothing is
+    // being injected, so there is nothing for the specific rule to attribute.
     {
-      code: `eval(userInput);`,
+      code: `eval('alert(1)');`,
       errors: [{ messageId: 'dangerousEval' }],
     },
+    {
+      code: `const fn = new Function('a', 'return a * 2');`,
+      errors: [{ messageId: 'dangerousEval' }],
+    },
+    // Zero arguments is also "nothing dynamic".
+    {
+      code: `eval();`,
+      errors: [{ messageId: 'dangerousEval' }],
+    },
+    // ---- Ours outright: sinks `detect-eval-with-expression` cannot see. Its
+    // `evalFunctions` set is `{eval, Function}` matched on a bare Identifier
+    // callee, so indirect access and `execScript` are invisible to it.
     // window.eval
     {
       code: `window.eval(code);`,
@@ -99,9 +127,12 @@ ruleTester.run('no-eval', noEval, {
       code: `global.eval(code);`,
       errors: [{ messageId: 'dangerousEval' }],
     },
-    // new Function
     {
-      code: `const fn = new Function('return ' + userInput);`,
+      code: `globalThis['eval'](code);`,
+      errors: [{ messageId: 'dangerousEval' }],
+    },
+    {
+      code: `execScript(code);`,
       errors: [{ messageId: 'dangerousEval' }],
     },
     // setTimeout with string

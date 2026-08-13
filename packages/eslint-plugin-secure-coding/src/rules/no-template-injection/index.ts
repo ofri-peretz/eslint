@@ -11,9 +11,11 @@
  * dynamic (not a string literal). An attacker who controls the template
  * string can execute arbitrary server-side code.
  *
- * Detection: structural-api.
- *   Handlebars.compile(userInput)  — fires (dynamic first arg)
+ * Detection: structural-api + a NAMED untrusted source.
+ *   Handlebars.compile(req.body.tpl)      — fires (request data)
+ *   Handlebars.compile(userTemplate)      — fires (the name states provenance)
  *   Handlebars.compile('<h1>{{t}}</h1>')  — silent (string literal)
+ *   Handlebars.compile(content)           — silent (nothing says where it came from)
  *
  * Covered engines: Handlebars, EJS, Pug/Jade, Mustache, Nunjucks, Swig,
  *   Dust, doT, and their common aliases.
@@ -53,6 +55,138 @@ const TEMPLATE_ENGINE_OBJECTS = new Set([
   'doT',
   'consolidate',
 ]);
+
+/** Identifier roots that denote an inbound request. */
+const REQUEST_ROOTS: ReadonlySet<string> = new Set([
+  'req', 'request', 'ctx', 'event', 'message',
+]);
+
+/** Properties of a request that carry caller-supplied data. */
+const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
+  'query', 'params', 'body', 'headers', 'url', 'path', 'cookies', 'data',
+]);
+
+/** Calls whose result is bytes from outside the program. */
+const READER_METHODS: ReadonlySet<string> = new Set([
+  'readFile', 'readFileSync', 'text', 'json', 'arrayBuffer', 'formData', 'blob',
+]);
+
+/**
+ * Words with which an author states that a value came from outside.
+ *
+ * A name is weak evidence in general — `no-hardcoded-credentials` treats a
+ * credential-ish name as necessary but not sufficient. Here it is the ONLY
+ * evidence available at a call site, and these particular words are not
+ * descriptions of a template's role (`content`, `template`, `tpl`, `source`)
+ * but claims about its provenance.
+ */
+const UNTRUSTED_NAME_WORDS: ReadonlySet<string> = new Set([
+  'user', 'untrusted', 'attacker', 'external', 'remote', 'client', 'payload',
+  'input',
+]);
+
+/** Does this identifier or property name state that the value came from outside? */
+function nameStatesUntrusted(name: string): boolean {
+  const words = name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/);
+  return words.some((word) => UNTRUSTED_NAME_WORDS.has(word));
+}
+
+/**
+ * Name the untrusted source reaching this expression, or return null.
+ *
+ * The rule used to report every first argument that was not a string literal.
+ * That is the shape of a dynamic template, not the meaning of an injectable
+ * one, and it asserted an impact — "an attacker who controls the template can
+ * execute arbitrary server-side code" — about an attacker it never located.
+ * All three wild-corpus findings were build tooling compiling its own files:
+ *
+ *   tpl = Handlebars.compile(content)        okta-signin-widget Gruntfile.js:135, :202
+ *   Handlebars.precompile(template)          …/babel-plugin-handlebars-inline-precompile/hbs.js:29
+ *
+ * `content` is a grunt file-processing callback parameter and `template` is a
+ * babel-plugin argument. Neither is reachable by any attacker, and neither
+ * could be resolved by any edit short of inlining the template.
+ *
+ * Same shape as `no-unsafe-regex-construction`'s `taintSource`: return the
+ * NAME of the source found, so the report can say what it found.
+ */
+function untrustedSource(node: TSESTree.Node, depth = 0): string | null {
+  if (depth > 6) return null;
+
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    return nameStatesUntrusted(node.name) ? node.name : null;
+  }
+
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+    for (const expression of node.expressions) {
+      const found = untrustedSource(expression, depth + 1);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+
+  if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+    return (
+      untrustedSource(node.left as TSESTree.Node, depth + 1) ??
+      untrustedSource(node.right, depth + 1)
+    );
+  }
+
+  if (node.type === AST_NODE_TYPES.AwaitExpression) {
+    return untrustedSource(node.argument, depth + 1);
+  }
+
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    // Walk to the root of `req.body.template` and judge the whole chain.
+    let root: TSESTree.Node = node;
+    const properties: string[] = [];
+    while (root.type === AST_NODE_TYPES.MemberExpression) {
+      if (root.property.type === AST_NODE_TYPES.Identifier) {
+        properties.unshift(root.property.name);
+      }
+      root = root.object;
+    }
+    if (root.type !== AST_NODE_TYPES.Identifier) return null;
+    const chain = [root.name, ...properties].join('.');
+    if (
+      REQUEST_ROOTS.has(root.name) &&
+      properties.some((property) => REQUEST_PROPERTIES.has(property))
+    ) {
+      return chain;
+    }
+    if (root.name === 'process' && properties[0] === 'argv') return 'process.argv';
+    return [root.name, ...properties].some(nameStatesUntrusted) ? chain : null;
+  }
+
+  if (node.type === AST_NODE_TYPES.CallExpression) {
+    const callee = node.callee;
+    // Reading a file or a response body yields bytes from outside the program.
+    if (
+      callee.type === AST_NODE_TYPES.MemberExpression &&
+      callee.property.type === AST_NODE_TYPES.Identifier &&
+      READER_METHODS.has(callee.property.name)
+    ) {
+      return callee.property.name;
+    }
+    if (
+      callee.type === AST_NODE_TYPES.Identifier &&
+      READER_METHODS.has(callee.name)
+    ) {
+      return callee.name;
+    }
+    for (const argument of node.arguments) {
+      if (argument.type === AST_NODE_TYPES.SpreadElement) continue;
+      const found = untrustedSource(argument, depth + 1);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+
+  return null;
+}
 
 export const noTemplateInjection = createRule<[], MessageIds>({
   name: 'no-template-injection',
@@ -100,7 +234,9 @@ export const noTemplateInjection = createRule<[], MessageIds>({
         const firstArg = args[0];
         if (!firstArg) return;
 
-        // String literal → safe (static template, no injection surface)
+        // A literal and a zero-expression template are both static text, so
+        // `untrustedSource` returns null for them anyway — but stopping here
+        // keeps the common case out of the walk entirely.
         if (
           firstArg.type === AST_NODE_TYPES.Literal &&
           typeof (firstArg as TSESTree.Literal).value === 'string'
@@ -111,6 +247,9 @@ export const noTemplateInjection = createRule<[], MessageIds>({
           firstArg.type === AST_NODE_TYPES.TemplateLiteral &&
           (firstArg as TSESTree.TemplateLiteral).expressions.length === 0
         ) return;
+
+        // Being dynamic is not being attacker-controlled. See untrustedSource.
+        if (untrustedSource(firstArg) === null) return;
 
         context.report({
           node: firstArg,

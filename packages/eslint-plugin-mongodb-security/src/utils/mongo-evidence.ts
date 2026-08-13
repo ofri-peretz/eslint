@@ -237,6 +237,120 @@ function isImportEquals(node: TSESTree.Node): boolean {
   );
 }
 
+/**
+ * Methods the native driver's `Collection` (or the cursor it returns) has and
+ * Firebase Firestore's `CollectionReference` does **not**.
+ *
+ * This set is the entire discriminator for the native-driver arm below, so it
+ * was picked against a specific competitor rather than against nothing:
+ * `db.collection('users')` is Firestore's spelling too, and Firestore code must
+ * not open a MongoDB gate. Firestore's collection surface is
+ * `doc` / `add` / `where` / `orderBy` / `limit` / `select` / `get` / `count` /
+ * `onSnapshot` / `listDocuments` — none of which appear here.
+ *
+ * Two MongoDB methods were deliberately **rejected** despite being idiomatic:
+ *
+ *   - **`find`.** Firestore has no `find`, but `Array.prototype.find` does, and
+ *     the receiver test below is structural, not typed: a generic wrapper that
+ *     happens to expose `.collection('name')` returning an array would match.
+ *     `find` is the most overloaded method name in JavaScript and the rest of
+ *     this plugin already treats it as evidence of nothing (see `receiver.ts`,
+ *     which pays for a whole scope analysis to make `find` mean something).
+ *     `db.collection('items').find({...}).toArray()` is still caught — through
+ *     `toArray`, the cursor terminal, which is what makes the chain unambiguous.
+ *   - **`aggregate`.** Firestore's `Query.aggregate()` exists (firebase-admin
+ *     ≥11.4) and a `CollectionReference` *is* a `Query`, so
+ *     `db.collection('x').aggregate(...)` is valid Firestore. It discriminates
+ *     nothing.
+ */
+const NATIVE_COLLECTION_METHODS: ReadonlySet<string> = new Set([
+  'findOne',
+  'findOneAndUpdate',
+  'findOneAndDelete',
+  'findOneAndReplace',
+  'insertOne',
+  'insertMany',
+  'updateOne',
+  'updateMany',
+  'deleteOne',
+  'deleteMany',
+  'replaceOne',
+  'countDocuments',
+  'estimatedDocumentCount',
+  'distinct',
+  'bulkWrite',
+  'toArray',
+]);
+
+/** `<anything>.collection('users')` — a collection named by a string literal. */
+function isCollectionHandleCall(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+  if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+  if (node.callee.property.type !== AST_NODE_TYPES.Identifier) return false;
+  if (node.callee.property.name !== 'collection') return false;
+  const [name] = node.arguments;
+  return (
+    name?.type === AST_NODE_TYPES.Literal && typeof name.value === 'string'
+  );
+}
+
+/**
+ * Whether an expression is — or is a chain rooted at — a `.collection('name')`
+ * handle: `db.collection('users')`, `db.collection('items').find(filter)`.
+ *
+ * Walks **down** the chain rather than up through `parent`: the evidence scan
+ * runs over a bare parsed Program, where parent links are not guaranteed, and a
+ * downward walk is bounded by the expression itself.
+ *
+ * Exported because the handle is also a *negative* signal for one rule.
+ * `.lean()` is Mongoose's own query modifier and does not exist on the native
+ * driver, so `require-lean-queries` must stay silent on a native collection or
+ * it emits a suggestion that produces code which throws.
+ */
+export function isNativeCollectionHandle(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node = node;
+  for (;;) {
+    if (isCollectionHandleCall(current)) return true;
+    if (current.type === AST_NODE_TYPES.CallExpression) {
+      current = current.callee;
+      continue;
+    }
+    if (current.type === AST_NODE_TYPES.MemberExpression) {
+      current = current.object;
+      continue;
+    }
+    return false;
+  }
+}
+
+/**
+ * `db.collection('users').findOne({...})` — the native MongoDB driver.
+ *
+ * The gate's other arms all key off an import, a Mongoose-specific construct,
+ * or a DSN. None of them see the native driver used through an already-open
+ * handle: a request handler that receives `db` from app state calls
+ * `db.collection('users').findOne(...)` with no `mongodb` import anywhere in
+ * the file. Two labelled CWE-943 corpus fixtures are exactly this shape, and
+ * the plugin abstained on both — a false negative on a critical NoSQL-injection
+ * class, which is worse than the false positives the gate was built to stop.
+ *
+ * `.collection('x')` **alone is deliberately not enough**. Firestore spells its
+ * handle the same way (`db.collection('users').doc(id).get()`), and calling
+ * Firestore code MongoDB would re-open the false-positive class on a different
+ * vendor. The chained method is the discriminator — see
+ * `NATIVE_COLLECTION_METHODS` for the set and for the two methods rejected from
+ * it.
+ */
+function isNativeCollectionCall(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.MemberExpression &&
+    node.callee.property.type === AST_NODE_TYPES.Identifier &&
+    NATIVE_COLLECTION_METHODS.has(node.callee.property.name) &&
+    isNativeCollectionHandle(node.callee.object)
+  );
+}
+
 const cache = new WeakMap<TSESTree.Program, boolean>();
 
 /**
@@ -265,6 +379,9 @@ const cache = new WeakMap<TSESTree.Program, boolean>();
  *   - a bare `ObjectId` identifier is a type name in unrelated libraries, so
  *     only the qualified `Types.ObjectId` and constructed `new ObjectId()`
  *     forms count.
+ *   - a bare `.collection('name')` call is Firebase Firestore's spelling as
+ *     much as MongoDB's, so the native-driver arm requires a *chained method*
+ *     that Firestore's `CollectionReference` does not have.
  *
  * Everything accepted is local to the file: nothing is read from
  * `package.json`, nothing is resolved across files, so there is no project
@@ -300,6 +417,7 @@ function computeUsesMongo(ast: TSESTree.Program): boolean {
       isSchemaConstruction(node) ||
       isObjectIdEvidence(node) ||
       isLeanCall(node) ||
+      isNativeCollectionCall(node) ||
       isConnectionString(node)
     ) {
       found = true;

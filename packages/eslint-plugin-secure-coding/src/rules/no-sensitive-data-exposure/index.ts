@@ -68,13 +68,89 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
     const escaped = pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
-    // Word, then a ':' or '=' within a short label, then something non-empty.
-    // The gap allows multi-word labels — 'secret key: sk_live', 'phone
-    // number: 555-0142', 'credit card: 4111...' — while still requiring a
-    // separator and a value, so 'Token not found' and 'Password must contain
-    // at least one letter and one number' stay silent.
-    return new RegExp(`\\b${flexPattern}\\b[^:=\\n]{0,24}[:=]\\s*\\S`, 'i').test(normalized);
+    // Word, then a ':' or '=', then something non-empty.
+    //
+    // The gap between the word and the separator is at most ONE further short
+    // word, which is what a multi-word label looks like ('phone number: ',
+    // 'secret key: '). It used to be `[^:=\n]{0,24}` — 24 characters of
+    // anything — and that is wide enough to swallow a clause. Shopify CLI
+    // bin/github-utils.js:14 is the case:
+    //
+    //   console.warn(`Soft-error fetching password from dev: ${error.message}…`)
+    //
+    // "password" … "from dev" … ":" … an interpolation. The rule read that as
+    // "label, separator, value" and reported a credential leak on a line that
+    // logs an error message. A label sits against its separator; a sentence
+    // that happens to contain a colon later does not become one.
+    return new RegExp(
+      `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=]\\s*\\S`,
+      'i',
+    ).test(normalized);
   });
+}
+
+/**
+ * Does a literal on the LEFT of a `+` label the value on its right?
+ *
+ * `'password: ' + password` and `'token=' + refreshToken` do: the literal ends
+ * at the separator and the value follows. Prose that merely ends with the word
+ * does not:
+ *
+ *   throw new Error('Error generating JWT token ' + err)
+ *       twilio-node src/jwt/validation/ValidationToken.ts:145
+ *
+ * `err` is an exception, not a token; the sentence names the operation that
+ * failed. The left-literal paths used the bare word match, which cannot tell
+ * "here comes the secret" from "the word appeared in a sentence", so requiring
+ * the separator is the whole distinction.
+ */
+function literalLabelsValue(text: string, patterns: string[]): string | null {
+  const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+  for (const pattern of patterns) {
+    const escaped = pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
+    if (new RegExp(`\\b${flexPattern}\\b\\s*[:=]\\s*$`, 'i').test(normalized)) {
+      return pattern;
+    }
+  }
+  return null;
+}
+
+/**
+ * The trailing segment of these names describes the concept rather than
+ * holding it. `apiKeyMsg` is a sentence about an API key; `passwordError` is
+ * an error, not a password.
+ *
+ *   throw new Error("accountSid must start with AC" + apiKeyMsg)
+ *       twilio-node src/base/BaseTwilio.ts:165
+ *
+ * `apiKeyMsg` holds ". The given SID indicates an API Key which requires …".
+ * A credential-ish name is necessary but not sufficient — the same reasoning
+ * `no-hardcoded-credentials` applies to values, applied to names.
+ */
+const DESCRIPTOR_SEGMENTS = new Set([
+  'msg', 'message', 'error', 'err', 'label', 'prompt', 'hint',
+  'description', 'desc', 'regex', 'pattern', 'placeholder',
+  'warning', 'notice',
+]);
+
+/**
+ * Does an IDENTIFIER (or property name) name a secret it actually holds?
+ *
+ * Only for names — never for prose. A string literal's words are checked by
+ * `literalCarriesSecret`, which asks a different question.
+ */
+function identifierNamesSecret(name: string, patterns: string[]): string | null {
+  const matched = containsSensitiveData(name, patterns);
+  if (!matched) return null;
+  const last = name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .slice(-1)
+    .join('');
+  return DESCRIPTOR_SEGMENTS.has(last) ? null : matched;
 }
 
 /**
@@ -101,10 +177,10 @@ function memberCarriesSecret(
     : prop.type === AST_NODE_TYPES.Identifier
       ? prop.name
       : null;
-  const fromProp = propName ? containsSensitiveData(propName, patterns) : null;
+  const fromProp = propName ? identifierNamesSecret(propName, patterns) : null;
   if (fromProp) return fromProp;
   return node.object.type === AST_NODE_TYPES.Identifier
-    ? containsSensitiveData(node.object.name, patterns)
+    ? identifierNamesSecret(node.object.name, patterns)
     : null;
 }
 
@@ -254,9 +330,22 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
             }
           }
         } else if (node.callee.type === 'Identifier') {
-          // Check for logger.info() pattern
-          const calleeName = node.callee.name.toLowerCase();
-          if (calleeName.includes('log') || calleeName.includes('logger')) {
+          // `log(…)`, `customLogger(…)`, `logDebug(…)` — a bare function whose
+          // NAME says it logs.
+          //
+          // Word boundaries, not substrings. `'completeLogin'.includes('log')`
+          // is true, so Shopify CLI's `completeLogin(page, url, email,
+          // password)` was read as a logging call and its `password` argument
+          // reported — 7 of this rule's 12 wild-corpus findings, on a function
+          // that submits a login form and logs nothing.
+          //
+          // `login`, `logout`, `dialog`, `catalog`, `blog` all contain "log"
+          // and none of them is a logger.
+          const words = node.callee.name
+            .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+            .toLowerCase()
+            .split(/[^a-z0-9]+/);
+          if (words.includes('log') || words.includes('logger')) {
             return true;
           }
         }
@@ -294,12 +383,12 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
             const side =
               (arg.left?.type === 'Literal' &&
               typeof arg.left.value === 'string' &&
-              containsSensitiveData(arg.left.value, sensitivePatterns)
-                ? { node: arg.left, pattern: containsSensitiveData(arg.left.value, sensitivePatterns) }
+              literalLabelsValue(arg.left.value, sensitivePatterns)
+                ? { node: arg.left, pattern: literalLabelsValue(arg.left.value, sensitivePatterns) }
                 : undefined) ??
               (arg.right?.type === 'Identifier' &&
-              containsSensitiveData(arg.right.name, sensitivePatterns)
-                ? { node: arg.right, pattern: containsSensitiveData(arg.right.name, sensitivePatterns) }
+              identifierNamesSecret(arg.right.name, sensitivePatterns)
+                ? { node: arg.right, pattern: identifierNamesSecret(arg.right.name, sensitivePatterns) }
                 : undefined);
 
             if (side?.pattern) {
@@ -342,7 +431,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
             const fromExpression = arg.expressions
               .map((e) =>
                 e.type === AST_NODE_TYPES.Identifier
-                  ? containsSensitiveData(e.name, sensitivePatterns)
+                  ? identifierNamesSecret(e.name, sensitivePatterns)
                   : e.type === AST_NODE_TYPES.MemberExpression
                     ? memberCarriesSecret(e, sensitivePatterns)
                     : null,
@@ -381,7 +470,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
               return; // Only report once per call
             }
           } else if (arg.type === AST_NODE_TYPES.Identifier && arg.name) {
-            const matchedPattern2 = containsSensitiveData(arg.name, sensitivePatterns);
+            const matchedPattern2 = identifierNamesSecret(arg.name, sensitivePatterns);
             if (matchedPattern2) {
               context.report({
                 node: arg,
@@ -433,8 +522,9 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
               const leftText = arg.left.value;
               // Not `literalCarriesSecret` here: in `'password: ' + password`
               // the label is on the left and the value on the right, so the
-              // left literal legitimately ends at the separator.
-              const leftMatchedPattern = containsSensitiveData(leftText, sensitivePatterns);
+              // left literal legitimately ends at the separator — and it must
+              // END there. See literalLabelsValue.
+              const leftMatchedPattern = literalLabelsValue(leftText, sensitivePatterns);
               if (leftMatchedPattern) {
                 context.report({
                   node: arg.left,
@@ -450,7 +540,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
             }
             // Check right side if it's an identifier
             if (arg.right && arg.right.type === 'Identifier' && arg.right.name) {
-              const rightMatchedPattern = containsSensitiveData(arg.right.name, sensitivePatterns);
+              const rightMatchedPattern = identifierNamesSecret(arg.right.name, sensitivePatterns);
               if (rightMatchedPattern) {
                 context.report({
                   node: arg.right,

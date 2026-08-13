@@ -13,6 +13,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { makeNameTest } from '../../utils/names';
 
 type MessageIds =
   | 'weakHashAlgorithm'
@@ -31,6 +32,22 @@ export interface Options {
    * case-insensitively with `_` and `-` stripped.
    */
   nonCryptographicNames?: string[];
+
+  /**
+   * Names that mark a hash as a security control, matched as whole words of
+   * the identifier. Default: see DEFAULT_SECURITY_USE_NAMES.
+   */
+  securityUseNames?: string[];
+
+  /**
+   * Report a weak hash whose purpose cannot be determined from the surrounding
+   * names. Default: `false`.
+   *
+   * `true` restores the pre-inversion behaviour: every MD5/SHA-1 call is a
+   * CRITICAL CWE-327. Measured on an 8-repo corpus that produced 6 findings,
+   * all of them content digests.
+   */
+  reportUnclassifiedHashes?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -98,6 +115,30 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
  */
 const DEFAULT_NON_CRYPTOGRAPHIC_NAMES = ['sha', 'etag', 'cachekey', 'cachebuster'];
 
+/**
+ * Words that make a hash a SECURITY control rather than an identifier.
+ *
+ * The deny-list above could only ever chase names one at a time, and the corpus
+ * showed why that loses: the six remaining findings were `fileHash(buff)`,
+ * `hashString(str)`, `nonRandomUUID(subject)` and three `md5(content)` calls
+ * inside `calculateChecksum` — content digests, every one. None is named
+ * `etag` or `cacheKey`, and no list of "not a security use" names would have
+ * caught them, because there is no bound on the ways to spell "checksum".
+ *
+ * So the question is asked the other way round. MD5 over a file to detect a
+ * change is not CWE-327; MD5 over a password, a signature or a token is. The
+ * rule now reports when it can SEE the security use, and
+ * `reportUnclassifiedHashes` restores the sweep for projects that want every
+ * weak-hash call listed.
+ */
+const DEFAULT_SECURITY_USE_NAMES = [
+  'password', 'passwd', 'secret', 'secrets', 'token', 'tokens', 'signature',
+  'signing', 'signed', 'sign', 'hmac', 'credential', 'credentials',
+  'certificate', 'cert', 'certs', 'apikey', 'privatekey', 'secretkey',
+  'signingkey', 'encryptionkey', 'session', 'csrf', 'salt', 'jwt', 'nonce',
+  'integrity', 'auth', 'authorization', 'authenticate',
+];
+
 /** Strip separators and case so `cache_key`, `cache-key` and `cacheKey` unify. */
 function normalizeName(name: string): string {
   return name.replaceAll(/[_-]/g, '').toLowerCase();
@@ -164,6 +205,87 @@ function assignedName(node: TSESTree.Node): string | null {
     return null;
   }
 
+  return null;
+}
+
+/** The readable name of an expression, for name-based judgements. */
+function expressionName(node: TSESTree.Node): string | null {
+  if (node.type === AST_NODE_TYPES.Identifier) return node.name;
+  if (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    !node.computed &&
+    node.property.type === AST_NODE_TYPES.Identifier
+  ) {
+    return node.property.name;
+  }
+  return null;
+}
+
+/**
+ * Every name fed into this hash: the call's own arguments plus the arguments of
+ * every `.update(…)` in the chain hanging off it.
+ *
+ * `createHash('md5').update(password).digest()` puts the interesting value two
+ * calls away from the node being judged, so a check that only read the direct
+ * arguments would see `'md5'` and nothing else.
+ */
+function hashInputNames(node: TSESTree.CallExpression): string[] {
+  const names: string[] = [];
+  for (const argument of node.arguments) {
+    const name = expressionName(argument);
+    if (name !== null) names.push(name);
+  }
+
+  let current: TSESTree.Node = node;
+  let parent = current.parent;
+  while (parent) {
+    if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === current) {
+      current = parent;
+      parent = current.parent;
+      continue;
+    }
+    if (parent.type === AST_NODE_TYPES.CallExpression && parent.callee === current) {
+      for (const argument of parent.arguments) {
+        const name = expressionName(argument);
+        if (name !== null) names.push(name);
+      }
+      current = parent;
+      parent = current.parent;
+      continue;
+    }
+    break;
+  }
+  return names;
+}
+
+/** The name of the nearest enclosing function, however it was declared. */
+function enclosingFunctionName(node: TSESTree.Node): string | null {
+  let current: TSESTree.Node | undefined = node.parent;
+  while (current) {
+    if (
+      current.type === AST_NODE_TYPES.FunctionDeclaration ||
+      current.type === AST_NODE_TYPES.FunctionExpression ||
+      current.type === AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      if (current.type !== AST_NODE_TYPES.ArrowFunctionExpression && current.id) {
+        return current.id.name;
+      }
+      // `const signRequest = () => …`, `{ signRequest() {} }`, `class … { sign() {} }`
+      const owner = current.parent;
+      if (owner?.type === AST_NODE_TYPES.VariableDeclarator) {
+        return owner.id.type === AST_NODE_TYPES.Identifier ? owner.id.name : null;
+      }
+      if (
+        (owner?.type === AST_NODE_TYPES.Property ||
+          owner?.type === AST_NODE_TYPES.MethodDefinition) &&
+        !owner.computed
+      ) {
+        return expressionName(owner.key);
+      }
+      return null;
+    }
+    current = current.parent;
+  }
   return null;
 }
 
@@ -265,6 +387,19 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
             description:
               'Assignment target names that mark a hash as an identifier rather than a security control',
           },
+          securityUseNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_SECURITY_USE_NAMES,
+            description:
+              'Names that mark a hash as a security control (whole-word matched)',
+          },
+          reportUnclassifiedHashes: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report weak hashes whose purpose cannot be determined. Restores the pre-inversion behaviour.',
+          },
         },
         additionalProperties: false,
       },
@@ -285,7 +420,10 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       additionalWeakAlgorithms = [],
       allowInTests = false,
       nonCryptographicNames = DEFAULT_NON_CRYPTOGRAPHIC_NAMES,
+      securityUseNames = DEFAULT_SECURITY_USE_NAMES,
+      reportUnclassifiedHashes = false,
     } = options as Options;
+    const isSecurityUse = makeNameTest(securityUseNames);
 
     const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
@@ -298,11 +436,36 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Can this call be SEEN to feed a security decision?
+     *
+     * Three places carry the evidence, and any one of them is enough:
+     *
+     *   1. what the digest is stored as — `const signature = md5(body)`;
+     *   2. what is being hashed — `createHash('md5').update(password)`, read
+     *      off every `.update(…)` in the chain as well as the call's own
+     *      arguments, so both the `md5(x)` and `createHash(…)` spellings work;
+     *   3. what function it lives in — `function signRequest() { … }`.
+     */
+    function hasSecurityUse(node: TSESTree.CallExpression): boolean {
+      const stored = assignedName(node);
+      if (stored !== null && isSecurityUse(stored)) return true;
+
+      for (const argument of hashInputNames(node)) {
+        if (isSecurityUse(argument)) return true;
+      }
+
+      const enclosing = enclosingFunctionName(node);
+      return enclosing !== null && isSecurityUse(enclosing);
+    }
+
+    /**
      * Check if a call expression uses a weak hash
      */
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
       if (isNonCryptographicUse(node)) return;
+      // Report on a visible security use, not on the algorithm alone.
+      if (!reportUnclassifiedHashes && !hasSecurityUse(node)) return;
 
       // Check for crypto.createHash() pattern
       if (

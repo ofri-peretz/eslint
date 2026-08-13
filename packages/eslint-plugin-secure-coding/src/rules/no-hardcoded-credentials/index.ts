@@ -13,7 +13,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'useEnvironmentVariable' | 'useSecretManager' | 'strategyEnv' | 'strategyConfig' | 'strategyVault' | 'strategyAuto';
 
@@ -196,11 +196,25 @@ function isPronounceable(token: string): boolean {
  * `incorrectPassword` → true   (the corpus false positive)
  * `SessionCacheProvider` → true
  * `experimental_onToolExecutionStart` → true
- * `aaAA@123` → false  (symbols + digits)
- * `qbp7LmCxYUTHFwKvHnxGW1aTyjSNU6ytN21etK89MaP2Dj2KZP` → false (digits)
+ * `authorizedRepresentative1FirstName` → true  (numbered form field)
+ * `aaAA@123` → false  (symbols)
+ * `qbp7LmCxYUTHFwKvHnxGW1aTyjSNU6ytN21etK89MaP2Dj2KZP` → false
+ *
+ * Digits used to disqualify a string outright, which cost 18 of this rule's
+ * 21 corpus findings: twilio's compliance API declares form fields like
+ * `authorizedRepresentative1FirstName`, and the ordinal that distinguishes
+ * representative 1 from representative 2 pushed a 34-character English
+ * identifier into the high-entropy tier — reported at CVSS 9.8 as a
+ * hardcoded credential. Identifiers are numbered (`address2`, `sha256Hash`,
+ * `oauth2Token`); secrets are not numbered, they are dense. So digits are
+ * allowed but kept sparse, and every alphabetic token must still read as a
+ * word — which is what rejects the random blob above (`qbp` has no vowel).
  */
 export function isNaturalWordString(value: string): boolean {
-  if (!/^[A-Za-z][A-Za-z_\-. ]*$/.test(value)) return false;
+  if (!/^[A-Za-z][A-Za-z0-9_\-. ]*$/.test(value)) return false;
+  const digits = value.replace(/[^0-9]/g, '').length;
+  // Sparse: an ordinal or a well-known numeric suffix, not encoded entropy.
+  if (digits > 0 && (digits / value.length > 0.2 || /[0-9]{4,}/.test(value))) return false;
   const tokens = value
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .split(/[^A-Za-z]+/)
@@ -245,6 +259,13 @@ export function looksRandom(value: string): boolean {
   const classes = charClasses(value);
   if (!classes.lower || !classes.upper || !classes.digit) return false;
   if (hasSequentialRun(value)) return false;
+  // A string made of English words is not random, whatever its entropy.
+  // camelCase identifiers clear every test above — mixed case by construction,
+  // alphanumeric, no ascending run — and a long one clears the entropy bar too.
+  // `authorizedRepresentative1FirstName` (34 chars, twilio's compliance API)
+  // scored as a random blob and was reported at CVSS 9.8: 18 of this rule's 21
+  // corpus findings, all one field name.
+  if (isNaturalWordString(value)) return false;
   return shannonEntropy(value) >= 3.5;
 }
 
@@ -318,6 +339,177 @@ export function isPlaceholderValue(value: string): boolean {
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
   return tokens.some(token => PLACEHOLDER_WORDS.has(token));
+}
+
+/**
+ * ---------------------------------------------------------------------------
+ * PUBLISHABLE KEYS — a key that must ship to a browser to work is not a secret
+ * ---------------------------------------------------------------------------
+ * Some vendor keys are *designed* to be public. A Bugsnag notifier API key, a
+ * Sentry DSN, a Stripe `pk_live_`, a PostHog project key: each is compiled into
+ * the client bundle of every application that uses it, is served to every
+ * visitor, and is documented by its vendor as client-side. They are addresses
+ * with write-only, rate-limited ingest behind them — not credentials. Rotating
+ * one changes nothing about who can read your data, because nobody could.
+ *
+ * The pair that made this concrete, both the same 32-hex Bugsnag notifier key:
+ *   - Shopify/cli `bin/update-bugsnag.js:15`      (`const apiKey = '…'`)
+ *   - Shopify/cli `packages/cli-kit/src/private/node/constants.ts:83`
+ *     (`export const bugsnagApiKey = '…'`)
+ * The predicate at fault is `CREDENTIAL_PATTERNS.secretKey` — 32+ hex chars —
+ * promoted to a finding by the identifier `apiKey`. Both signals are correct;
+ * the conclusion is not. That key ships in every published copy of the Shopify
+ * CLI, on npm, right now.
+ *
+ * THE LINE THIS DRAWS, and it is not "keys named apiKey are fine":
+ *   - Publishable by VALUE — the prefix is registered to the publishable half
+ *     of a key pair (`pk_`, `phc_`, a Sentry DSN). No context needed.
+ *   - Publishable by VENDOR + SLOT — the file loads the vendor's SDK, or the
+ *     slot names the vendor, AND the slot is the one that holds that vendor's
+ *     *publishable* key. `bugsnagApiKey` qualifies; `bugsnagAuthToken` does not.
+ *
+ * Nothing on the secret side is weakened. `sk_live_`, `rk_live_`, `ghp_`,
+ * AWS `AKIA…`, PEM private keys, JWTs and DB connection strings are vetoed by
+ * value before either path is consulted, and any slot naming a secret
+ * (`…secret`, `…private…`, `…password`) is vetoed by name. A vendor whose
+ * publishable key is `apiKey` does not thereby make its `apiSecret` publishable.
+ */
+
+/** Value shapes that are publishable by construction — the prefix says so. */
+export function isPublishableKeyValue(value: string): boolean {
+  // Stripe publishable key. `sk_` (secret) and `rk_` (restricted) are NOT here:
+  // https://docs.stripe.com/keys — "Publishable keys ... can be publicly
+  // accessible in your web or mobile app's client-side code."
+  if (/^pk_(?:live|test)_[A-Za-z0-9_-]{8,}$/.test(value)) return true;
+  // PostHog project API key: written into every page that loads posthog-js.
+  // `phx_` (personal) and `phs_` (secret) are NOT here.
+  if (/^phc_[A-Za-z0-9]{20,}$/.test(value)) return true;
+  // A Sentry DSN. The pair used to have a secret half; Sentry removed it in
+  // 2016 precisely because the DSN has to reach the browser.
+  if (/^https?:\/\/[A-Za-z0-9]+@[A-Za-z0-9.-]+(?::\d+)?\/\d+$/.test(value)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Values that are secret whatever slot they sit in. Checked before any
+ * allowlist path, so no vendor context can ever exempt one.
+ */
+const SECRET_SIDE_VALUE =
+  /^(?:sk|rk)_(?:live|test)_|^sk-[A-Za-z0-9]|^gh[pousr]_|^ph[xs]_|^sntry[su]_|^xox[baprs]-|^AKIA[0-9A-Z]{16}$|^ey[A-Za-z0-9_-]+\.ey|-----BEGIN|^(?:mysql|postgres|mongodb|redis):\/\//;
+
+/** Slot names that name the secret half, and can never be allowlisted. */
+const SECRET_SIDE_SLOT =
+  /secret|private|signing|password|passwd|serviceaccount|serverkey|adminkey|masterkey/;
+
+/**
+ * Vendors whose primary key is designed to ship to a client.
+ *
+ * `slots` deliberately lists only the *publishable* slot for each vendor. Every
+ * one of these vendors also issues a server-side credential — Bugsnag has a
+ * personal auth token, Sentry an auth token, PostHog a personal API key — and
+ * those live in differently-named slots that these patterns do not match.
+ */
+const PUBLISHABLE_VENDORS: ReadonlyArray<{
+  vendor: string;
+  packages?: readonly string[];
+  scopes?: readonly string[];
+  /** The vendor's name as it appears inside an identifier. */
+  named: RegExp;
+  /** Slot names that hold this vendor's publishable key. */
+  slots: RegExp;
+}> = [
+  {
+    vendor: 'Bugsnag',
+    packages: [
+      'bugsnag',
+      'bugsnag-js',
+      'bugsnag-build-reporter',
+      'bugsnag-sourcemaps',
+    ],
+    scopes: ['@bugsnag'],
+    named: /bugsnag/,
+    slots: /^(?:bugsnag)?(?:notifier)?(?:api)?key$/,
+  },
+  {
+    vendor: 'Sentry',
+    scopes: ['@sentry'],
+    named: /sentry/,
+    slots: /^(?:sentry)?dsn$/,
+  },
+  {
+    vendor: 'PostHog',
+    packages: ['posthog-js', 'posthog-node'],
+    named: /posthog/,
+    slots: /^(?:posthog)?(?:project)?(?:api)?key$/,
+  },
+  {
+    vendor: 'Segment',
+    packages: ['analytics-node'],
+    scopes: ['@segment'],
+    named: /segment/,
+    slots: /^(?:segment)?write(?:key|token)$/,
+  },
+  {
+    vendor: 'Amplitude',
+    packages: ['amplitude-js'],
+    scopes: ['@amplitude'],
+    named: /amplitude/,
+    slots: /^(?:amplitude)?(?:api)?key$/,
+  },
+  {
+    vendor: 'Mixpanel',
+    packages: ['mixpanel', 'mixpanel-browser'],
+    named: /mixpanel/,
+    slots: /^(?:mixpanel)?(?:project)?token$/,
+  },
+  {
+    vendor: 'Firebase',
+    packages: ['firebase'],
+    scopes: ['@firebase'],
+    named: /firebase/,
+    slots: /^(?:firebase)?(?:web)?apikey$/,
+  },
+];
+
+/** One module probe per vendor, built once at module load. */
+const VENDOR_PROBES = PUBLISHABLE_VENDORS.map((entry) => ({
+  entry,
+  loadsSdk: createModuleEvidence({
+    packages: entry.packages,
+    scopes: entry.scopes,
+  }),
+}));
+
+/**
+ * The identifier a literal is being assigned to, lowercased.
+ *
+ * Shared by the credential-type inference and the publishable-key allowlist so
+ * the two can never disagree about which name they are reading.
+ */
+function slotNameOf(parent: TSESTree.Node): string {
+  if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+    return parent.id.name.toLowerCase();
+  }
+  if (parent.type === 'Property') {
+    const key = parent.key;
+    if (key.type === 'Identifier') return key.name.toLowerCase();
+    // isCredentialContext's own Property check only returns true for an
+    // Identifier key (handled above) or a string-Literal key, so whatever
+    // remains here is always the latter.
+    return String((key as TSESTree.Literal).value).toLowerCase();
+  }
+  if (parent.type === 'AssignmentExpression') {
+    const left = parent.left;
+    if (
+      left.type === 'MemberExpression' &&
+      left.property.type === 'Identifier'
+    ) {
+      return left.property.name.toLowerCase();
+    }
+  }
+  return '';
 }
 
 /**
@@ -707,6 +899,23 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // { type: 'password', name: 'foo' } — direct property key is label-typed
       if (parent.type === 'Property' && (parent as TSESTree.Property).value === node) {
         const key = (parent as TSESTree.Property).key;
+        // `RECOVERY_TYPE_PASSWORD: 'PASSWORD'` — an enum whose value restates a
+        // word of its own key is a label for a kind of thing, not an instance
+        // of one. A real secret never spells out the name of its slot.
+        const keyText =
+          key.type === 'Identifier'
+            ? key.name
+            : key.type === 'Literal' && typeof key.value === 'string'
+              ? key.value
+              : null;
+        if (keyText !== null && node.type === 'Literal' && typeof node.value === 'string') {
+          const keyTokens = keyText
+            .replace(/([a-z])([A-Z])/g, '$1_$2')
+            .toUpperCase()
+            .split(/[^A-Z0-9]+/)
+            .filter(Boolean);
+          if (keyTokens.includes(node.value.toUpperCase())) return true;
+        }
         if (key.type === 'Identifier' && LABEL_CONTEXT_NAMES.has((key as TSESTree.Identifier).name)) return true;
         if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
           if (LABEL_CONTEXT_NAMES.has((key as TSESTree.Literal).value as string)) return true;
@@ -758,26 +967,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // requires a truthy parent.
       parent: TSESTree.Node,
     ): 'password' | 'token' | 'database' | 'apikey' | 'other' {
-      const name = (() => {
-        if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
-          return (parent.id as TSESTree.Identifier).name.toLowerCase();
-        }
-        if (parent.type === 'Property') {
-          const key = (parent as TSESTree.Property).key;
-          if (key.type === 'Identifier') return (key as TSESTree.Identifier).name.toLowerCase();
-          // isCredentialContext's own Property check only returns true for
-          // an Identifier key (handled above) or a string-Literal key, so
-          // whatever remains here is always the latter.
-          return String((key as TSESTree.Literal).value).toLowerCase();
-        }
-        if (parent.type === 'AssignmentExpression') {
-          const left = (parent as TSESTree.AssignmentExpression).left;
-          if (left.type === 'MemberExpression' && left.property.type === 'Identifier') {
-            return (left.property as TSESTree.Identifier).name.toLowerCase();
-          }
-        }
-        return '';
-      })();
+      const name = slotNameOf(parent);
       if (/(?:^|[_-])(password|passwd|pass|pwd)$/.test(name)) return 'password';
       if (/(?:^|[_-])(token|authtoken|auth_token|accesstoken|access_token|refreshtoken|refresh_token|idtoken|id_token)$/.test(name)) return 'token';
       if (/(?:^|[_-])(dburl|db_url|databaseurl|database_url|connectionstring|connection_string|connectionuri)$/.test(name)) return 'database';
@@ -861,6 +1051,51 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         }
       }
 
+      return false;
+    }
+
+    /**
+     * The publishable-key vendors this file loads an SDK for. Computed at most
+     * once per file, and only if something already looked like a credential —
+     * seven tree walks are not worth doing for a file with no findings.
+     */
+    let loadedVendors: ReadonlySet<string> | null = null;
+    function vendorsInFile(): ReadonlySet<string> {
+      if (loadedVendors === null) {
+        const found = new Set<string>();
+        for (const { entry, loadsSdk } of VENDOR_PROBES) {
+          if (loadsSdk(context.sourceCode.ast)) found.add(entry.vendor);
+        }
+        loadedVendors = found;
+      }
+      return loadedVendors;
+    }
+
+    /**
+     * Is this value a key its vendor intends to publish?
+     *
+     * Two independent paths, and a veto in front of both — see the PUBLISHABLE
+     * KEYS note at the top of this file.
+     */
+    function isPublishableKey(value: string, parent: TSESTree.Node): boolean {
+      // Secret-side by value: no vendor context can exempt these.
+      if (SECRET_SIDE_VALUE.test(value)) return false;
+      if (isPublishableKeyValue(value)) return true;
+
+      const slot = slotNameOf(parent);
+      // Secret-side by name: `stripeSecretKey`, `bugsnagPrivateToken`.
+      if (slot === '' || SECRET_SIDE_SLOT.test(slot)) return false;
+
+      for (const { entry } of VENDOR_PROBES) {
+        // The vendor is identified either by the slot naming it
+        // (`bugsnagApiKey`, constants.ts:83) or by the file loading its SDK
+        // (`const apiKey = …` in bin/update-bugsnag.js, which imports
+        // `@bugsnag/source-maps` and `bugsnag-build-reporter`).
+        if (!entry.named.test(slot) && !vendorsInFile().has(entry.vendor)) {
+          continue;
+        }
+        if (entry.slots.test(slot)) return true;
+      }
       return false;
     }
 
@@ -970,6 +1205,18 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       }
 
       if (!finalIsCredential) {
+        return;
+      }
+
+      // A key that must ship to a browser to work is not a secret. See the
+      // PUBLISHABLE KEYS note above — this runs last, so the value has already
+      // been judged credential-shaped and credential-named, and all this can
+      // do is say "…and that is by design for this vendor".
+      //
+      // `parent` is optional on this signature but ESLint always sets it on a
+      // Literal, so the assertion is honest and an unreachable guard would not
+      // be — see the same call shape on `inferCredentialTypeFromContext`.
+      if (isPublishableKey(value, parent!)) {
         return;
       }
 

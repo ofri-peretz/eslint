@@ -13,7 +13,10 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isTestFile } from '../../utils/paths';
 import { analyzeMongoScope } from '../../utils/receiver';
-import { fileUsesMongo } from '../../utils/mongo-evidence';
+import {
+  fileUsesMongo,
+  isNativeCollectionHandle,
+} from '../../utils/mongo-evidence';
 
 type MessageIds = 'useLean' | 'suggestionAddLean';
 export interface Options { allowInTests?: boolean; }
@@ -109,6 +112,17 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
           : null;
 
         if (!methodName || !READ_METHODS.has(methodName)) {
+          return;
+        }
+
+        // `.lean()` is a *Mongoose* query modifier. The native driver's
+        // `db.collection('users').findOne(...)` returns a plain object already
+        // and has no `.lean()` at all, so reporting here would be a false
+        // positive whose suggestion produces code that throws.
+        // `receiver.ts` cannot make this call: its `MONGO_HANDLE_NAME` matches
+        // `db` and `collection` precisely *because* they are Mongo handles —
+        // it just can't tell which driver's.
+        if (isNativeCollectionHandle(node.callee.object)) {
           return;
         }
 

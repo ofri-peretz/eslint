@@ -23,26 +23,54 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 > Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
 
-| Dimension | Value |
-| :--- | :--- |
-| **CWE** | [CWE-693](https://cwe.mitre.org/data/definitions/693.html) — Protection Mechanism Failure (missing security headers) |
-| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| Dimension                    | Value                                                                                                                                                                                                                               |
+| :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE**                      | [CWE-693](https://cwe.mitre.org/data/definitions/693.html) — Protection Mechanism Failure (missing security headers)                                                                                                                |
+| **Feedback-loop tier**       | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment)           |
 | **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
-| **Niche relevance** | **Critical:** B2B SaaS, B2C (any browser-facing surface) · **High:** fintech, healthtech, marketplaces · **Medium:** infra/devtools |
-| **Investor-frame impact** | Missing Helmet → no CSP, X-Frame-Options, HSTS, etc. Defense-in-depth gap that **SOC2 Common Criteria CC6.6 explicitly addresses**. Lint-time enforcement = audit-grade evidence. |
+| **Niche relevance**          | **Critical:** B2B SaaS, B2C (any browser-facing surface) · **High:** fintech, healthtech, marketplaces · **Medium:** infra/devtools                                                                                                 |
+| **Investor-frame impact**    | Missing Helmet → no CSP, X-Frame-Options, HSTS, etc. Defense-in-depth gap that **SOC2 Common Criteria CC6.6 explicitly addresses**. Lint-time enforcement = audit-grade evidence.                                                   |
 
 **Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
 
 ## Rule Details
 
-This rule detects Express.js applications that are missing the helmet middleware. Helmet sets various HTTP headers to help protect your app from well-known web vulnerabilities.
+This rule detects an Express application that **renders documents to a
+browser** without mounting helmet.
 
-Missing security headers can expose your application to:
+Missing security headers can expose a rendered page to:
 
 - Clickjacking attacks (X-Frame-Options)
 - XSS attacks (X-XSS-Protection, Content-Security-Policy)
-- MIME-type sniffing attacks (X-Content-Type-Options)
-- Man-in-the-middle attacks (Strict-Transport-Security)
+
+### The document precondition
+
+Helmet's distinctive headers are instructions to a _renderer_ — they are inert
+on a response nothing renders. The rule therefore requires evidence that this
+app returns documents: `res.render(…)`, `res.sendFile(…)`, or a configured view
+engine (`app.set('view engine', …)` / `app.engine(…)`).
+
+`res.send(…)` is deliberately not evidence: it is the generic responder for
+JSON, text and buffers, and a linter cannot tell a document from a payload
+without reading it.
+
+The two headers that do apply to a machine client are owned elsewhere in this
+plugin — `require-strict-transport-security` (HSTS) and
+`no-disabled-helmet-protections` (`X-Content-Type-Options`) — so the
+precondition removes a duplicate finding rather than a unique one.
+
+### The escape hatch
+
+If the app binding leaves the file — `module.exports = app`,
+`export default app`, `return app`, or `setAppConfigurations(app)` — the
+middleware stack is assembled somewhere this rule cannot see, and it abstains.
+Absence of evidence is not evidence of absence.
+
+### Partition with `require-rate-limiting`
+
+Both rules used to report the identical `express()` node. `require-rate-limiting`
+now reports the specific unthrottled credential endpoint instead, so the two are
+disjoint by construction.
 
 ## Examples
 
@@ -52,8 +80,9 @@ Missing security headers can expose your application to:
 import express from 'express';
 const app = express();
 
-// Missing helmet middleware - VULNERABLE
-app.get('/', (req, res) => res.send('Hello'));
+// Renders documents, no helmet - VULNERABLE
+app.set('view engine', 'pug');
+app.get('/', (req, res) => res.render('home'));
 
 app.listen(3000);
 ```
@@ -69,18 +98,30 @@ const app = express();
 // Helmet adds security headers
 app.use(helmet());
 
-app.get('/', (req, res) => res.send('Hello'));
+app.set('view engine', 'pug');
+app.get('/', (req, res) => res.render('home'));
 
 app.listen(3000);
 ```
 
+```javascript
+// A static asset server renders nothing itself. Not reported.
+const app = express();
+app.use(express.static('./public'));
+app.listen(8080);
+
+// The app is configured by its importer. Not reported.
+const app2 = express();
+module.exports = app2;
+```
+
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow missing helmet in test files |
-| `alternativeMiddleware` | `string[]` | `[]` | Alternative security headers middleware names to accept |
-| `assumeHelmetMiddleware` | `boolean` | `false` | Skip rule if security headers are provided elsewhere (e.g., reverse proxy) |
+| Option                   | Type       | Default | Description                                                                |
+| ------------------------ | ---------- | ------- | -------------------------------------------------------------------------- |
+| `allowInTests`           | `boolean`  | `false` | Allow missing helmet in test files                                         |
+| `alternativeMiddleware`  | `string[]` | `[]`    | Alternative security headers middleware names to accept                    |
+| `assumeHelmetMiddleware` | `boolean`  | `false` | Skip rule if security headers are provided elsewhere (e.g., reverse proxy) |
 
 ```json
 {

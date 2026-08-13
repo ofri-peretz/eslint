@@ -5,6 +5,8 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import { createWithMockContext } from '@interlace/eslint-devkit';
+import { expect } from 'vitest';
 import { noUnlimitedResourceAllocation } from './index';
 
 // Configure RuleTester for Vitest
@@ -621,29 +623,14 @@ describe('no-unlimited-resource-allocation', () => {
             },
           ],
         },
-        {
-          code: `
-            // Memory exhaustion through recursive data structures
-            function processUserData(data) {
-              // DANGEROUS: Creates arrays based on user input depth
-              if (Array.isArray(data)) {
-                return data.map(item => {
-                  if (typeof item === 'object') {
-                    // Creates new arrays for nested objects
-                    return Object.keys(item).map(key => [key, item[key]]);
-                  }
-                  return item;
-                });
-              }
-              return data;
-            }
-          `,
-          errors: [
-            {
-              messageId: 'unlimitedMemoryAllocation',
-            },
-          ],
-        },
+        // The "recursive data structure processing" case that used to live
+        // here asserted that `arr.map(cb)` is an unbounded allocation when the
+        // printed text of `cb` contains 'Object.keys' and 'map'. It is now
+        // valid — see the removal note in index.ts. Nothing in the shape says
+        // where `data` came from or that anything unbounded is allocated, and
+        // `arr.map(cb)` is the most common expression in JavaScript. It was
+        // 2 of this rule's 4 wild-corpus findings, on ordinary array
+        // iteration in okta-auth-js and the Shopify CLI.
         {
           code: `
             // File upload without size limits
@@ -758,6 +745,21 @@ describe('no-unlimited-resource-allocation', () => {
   describe('Loop Allocation Exceptions', () => {
     ruleTester.run('valid - loop allocation exceptions', noUnlimitedResourceAllocation, {
       valid: [
+        // The allocation is in the for-INIT, so it runs once however dynamic
+        // its size is. `isInsideLoop` alone cannot tell init from body — this
+        // is `underscore-min.js`'s `for (var e = Array(t), u = 0; u < t; u++)`,
+        // which reported 7 times across the corpus.
+        'for (var e = Array(t), u = 0; u < t; u++) { e[u] = u; }',
+        // A read-only size probe allocates nothing; it matched only because
+        // the printed callee text contained 'Buffer'.
+        'for (const x of xs) { Buffer.byteLength(x); }',
+        // Zero-arg constructors allocate a constant, so the numeric-literal
+        // escape could never apply to them — every `new Set()` in any loop
+        // used to report.
+        'for (const x of xs) { const s = new Set(); }',
+        // Not an allocation at all.
+        'for (let i = 0; i < 10; i++) { if (Array.isArray(v)) { use(v); } }',
+
         // Assignment to array element in loop (pre-allocated pattern)
         {
           code: `
@@ -952,6 +954,143 @@ describe('corpus regression — ZIP bomb detection', () => {
         name: 'tar.extract still reports',
         code: `const tar = require('tar');\ntar.extract({ cwd: 'out' });`,
         errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+    ],
+  });
+});
+
+/**
+ * Layer 2 — the `node.loc?.start.line ?? 0` fallbacks on both
+ * resourceAllocationInLoop reports. A real parser always attaches `loc`, so
+ * these arms need a synthetic node.
+ */
+describe('resourceAllocationInLoop line fallback', () => {
+  const loopedCall = (type: 'CallExpression' | 'NewExpression') => ({
+    type,
+    callee: { type: 'Identifier', name: 'Array' },
+    arguments: [{ type: 'Identifier', name: 'n' }],
+    parent: {
+      type: 'WhileStatement',
+      parent: undefined,
+    },
+  });
+
+  it('CallExpression falls back to line 0 when loc is missing', () => {
+    const { listeners, reports } = createWithMockContext(noUnlimitedResourceAllocation, {
+      sourceText: 'while (c) { Array(n); }',
+    });
+    (listeners.CallExpression as (n: unknown) => void)(loopedCall('CallExpression'));
+    const inLoop = reports.filter((r) => r.messageId === 'resourceAllocationInLoop');
+    expect(inLoop).toHaveLength(1);
+    expect(inLoop[0].data?.line).toBe('0');
+  });
+
+  it('NewExpression falls back to line 0 when loc is missing', () => {
+    const { listeners, reports } = createWithMockContext(noUnlimitedResourceAllocation, {
+      sourceText: 'while (c) { new Array(n); }',
+    });
+    (listeners.NewExpression as (n: unknown) => void)(loopedCall('NewExpression'));
+    const inLoop = reports.filter((r) => r.messageId === 'resourceAllocationInLoop');
+    expect(inLoop).toHaveLength(1);
+    expect(inLoop[0].data?.line).toBe('0');
+  });
+});
+
+/**
+ * Wild-corpus sweep (8 repos of published SDK/CLI code): 4 findings, 1 real.
+ *
+ * Two defects, both substring matching over printed callee text:
+ *
+ *  - `calleeText.includes('parseString')` matched `parseStringArgument(…)`, a
+ *    Redis command-token reader.
+ *  - `calleeText.includes('map') || calleeText.includes('forEach')` matched
+ *    ordinary array iteration. That check is gone — see index.ts.
+ */
+describe('corpus regression — XML parsing and array iteration', () => {
+  ruleTester.run('wild corpus', noUnlimitedResourceAllocation, {
+    valid: [
+      // redis/ioredis lib/utils/argumentParsers.ts:77 — reads one Redis token.
+      {
+        name: 'parseStringArgument is not an XML parser',
+        code: `const token = parseStringArgument(args[i]);`,
+      },
+      { name: 'a member call merely containing the substring', code: `helpers.parseStringList(args);` },
+      // okta-auth-js .../Base/Remediator.ts:170 and Shopify CLI
+      // .../node/json-schema.ts:136 — ordinary iteration.
+      {
+        name: 'forEach over a local array',
+        code: `inputsFromRemediation.forEach((input) => { return Object.keys(input).map((k) => k); });`,
+      },
+      {
+        name: 'map over a local array',
+        code: `const out = errors.map((error) => Object.keys(error).map((k) => k));`,
+      },
+      // The decompression report asks for maxOutputLength, so a call that
+      // already passes one must stop asking.
+      {
+        name: 'gunzip with an output limit',
+        code: `const zlib = require('zlib'); const g = zlib.createGunzip({maxOutputLength: 1000});`,
+      },
+      {
+        name: 'gunzip with a maxSize limit',
+        code: `const zlib = require('zlib'); const g = zlib.createGunzip({maxSize: 1000});`,
+      },
+      // A receiver that is not a plain identifier resolves to no binding.
+      {
+        name: 'a nested receiver',
+        code: `const zlib = require('zlib'); const g = zlib.streams.createGunzip();`,
+      },
+      // Not an XML module, so `new` does not bind a parser.
+      { name: 'an unrelated constructor', code: `const d = new Date(); d.parseString(x);` },
+    ],
+    invalid: [
+      // Shopify CLI .../services/function/binaries.ts:315 — the one real
+      // finding: a decompression stream with no output bound.
+      {
+        name: 'binaries.ts:315 — gunzip with no output limit',
+        code: `const gzip = require('zlib'); const gunzip = gzip.createGunzip();`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'options without a limit still reports',
+        code: `const zlib = require('zlib'); const g = zlib.createGunzip({level: 9});`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'a spread options object establishes no limit',
+        code: `const zlib = require('zlib'); const g = zlib.createGunzip({...opts});`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'a computed option key establishes no limit',
+        code: `const zlib = require('zlib'); const g = zlib.createGunzip({['maxOutputLength']: 1});`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'a non-object options argument establishes no limit',
+        code: `const zlib = require('zlib'); const g = zlib.createGunzip(opts);`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      // Real XML entity-expansion sinks must still report.
+      {
+        name: 'xml2js.parseString via the module',
+        code: `const xml2js = require('xml2js'); xml2js.parseString(xmlString, cb);`,
+        errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+      },
+      {
+        name: 'parseStringPromise via the module',
+        code: `const xml2js = require('xml2js'); xml2js.parseStringPromise(xmlString);`,
+        errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+      },
+      {
+        name: 'a bare named import',
+        code: `import {parseString} from 'xml2js'; parseString(xmlString, cb);`,
+        errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+      },
+      {
+        name: 'an instance constructed from a bare named import',
+        code: `import {Parser} from 'xml2js'; const p = new Parser(); p.parseString(xmlString, cb);`,
+        errors: [{ messageId: 'unlimitedMemoryAllocation' }],
       },
     ],
   });

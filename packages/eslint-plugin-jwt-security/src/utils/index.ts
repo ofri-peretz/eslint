@@ -10,7 +10,7 @@
  * Library detection, pattern matching, and common helpers.
  */
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createModuleEvidence } from '@interlace/eslint-devkit';
 
 /**
  * Supported JWT libraries
@@ -163,32 +163,95 @@ const JWT_LIBRARY_ROOTS: ReadonlySet<string> = new Set(
 );
 
 /**
- * Whether this file imports a JWT library at all.
+ * `import argon = require('argon2')` -> `'argon2'`.
  *
- * Cached per Program: the answer is a property of the file, and recomputing it
- * for every call in a large module is wasted work.
+ * TypeScript's grammar only admits a string literal in an external module
+ * reference, so the value is read straight through and the caller's
+ * `typeof === 'string'` check is the only guard needed. A namespace alias
+ * (`import A = B.C`) loads nothing and yields `null`.
  */
-const importsJwtLibrary = new WeakMap<TSESTree.Program, boolean>();
+function importEqualsSpecifierOf(
+  stmt: TSESTree.TSImportEqualsDeclaration,
+): string | null {
+  const ref = stmt.moduleReference;
+  if (ref.type !== AST_NODE_TYPES.TSExternalModuleReference) return null;
+  // TypeScript's grammar only admits a string literal in an external module
+  // reference, so a `typeof !== 'string'` arm here is a branch no parser can
+  // reach — and an unreachable branch is a permanently red coverage gate.
+  return String((ref.expression as TSESTree.Literal).value);
+}
+
+/**
+ * `require('x')` -> `'x'`, including when member-accessed.
+ *
+ * `const { sign } = require('jose').default` and
+ * `const jwt = require('jsonwebtoken')` are the same load; anything that is not
+ * a call to `require` with a string literal is not one at all.
+ */
+function requireSpecifierOf(node: TSESTree.Node | null | undefined): string | null {
+  if (node == null) return null;
+  // `require('jose').jwtVerify` — the call is the receiver.
+  const call =
+    node.type === AST_NODE_TYPES.MemberExpression ? node.object : node;
+  if (
+    call.type !== AST_NODE_TYPES.CallExpression ||
+    call.callee.type !== AST_NODE_TYPES.Identifier ||
+    call.callee.name !== 'require'
+  ) {
+    return null;
+  }
+  const [arg] = call.arguments;
+  return arg?.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string'
+    ? arg.value
+    : null;
+}
+
+/**
+ * `jose/jwt/verify` -> `jose`; `@nestjs/jwt/dist/x` -> `@nestjs/jwt`.
+ *
+ * Deno's prefixes are stripped first, matching the devkit probe that now opens
+ * the file gate. Without that the two disagree: `import jwt from
+ * 'npm:jsonwebtoken'` opens the gate and is then rejected as a *foreign*
+ * receiver, which is the worst of both — the file is judged to use JWT and
+ * every call in it is judged not to.
+ *
+ * `String.split` always returns at least one element, so index 0 needs no
+ * fallback — a `?? ''` there is a branch no test could ever reach.
+ */
+function packageRootOf(rawSource: string): string {
+  const source = denormalizeDenoSpecifier(rawSource);
+  const parts = source.split('/');
+  return source.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]!;
+}
+
+/** `npm:jose` -> `jose`; `https://deno.land/x/jose@v5.0.0/index.ts` -> `jose`. */
+function denormalizeDenoSpecifier(source: string): string {
+  if (source.startsWith('npm:')) return source.slice(4);
+  const deno = /^https?:\/\/deno\.land\/x\/([^@/]+)/.exec(source);
+  return deno ? deno[1]! : source;
+}
+
+/**
+ * Whether this file loads a JWT library at all.
+ *
+ * Through the devkit probe, not a private scanner. The private one read
+ * `Program.body` — top-level statements only — which is a narrower gate than it
+ * looks: `function handler() { const jwt = require('jsonwebtoken'); … }` is
+ * ordinary lazy-loading CommonJS and was exempt from every rule, as were
+ * `await import('jsonwebtoken')`, `export { sign } from 'jose'` and Deno's
+ * `npm:jsonwebtoken`. `createModuleEvidence` walks the whole tree, covers all
+ * of those, and knows that `function f(require) { require('jose') }` is a
+ * parameter call rather than a module load.
+ */
+const fileUsesJwtLibrary = createModuleEvidence({
+  packages: Object.values(JWT_LIBRARIES),
+});
 
 function fileImportsJwtLibrary(node: TSESTree.Node): boolean {
   let root: TSESTree.Node = node;
   while (root.parent) root = root.parent;
   if (root.type !== 'Program') return false;
-  const cached = importsJwtLibrary.get(root);
-  if (cached !== undefined) return cached;
-
-  const found = root.body.some((stmt) => {
-    if (stmt.type !== 'ImportDeclaration') return false;
-    const source = stmt.source.value;
-    if (typeof source !== 'string') return false;
-    // Compare on the package root so subpaths count: `jose/jwt/verify` -> `jose`,
-    // `@nestjs/jwt/dist/...` -> `@nestjs/jwt`.
-    const parts = source.split('/');
-    const pkg = source.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
-    return JWT_LIBRARY_ROOTS.has(pkg);
-  });
-  importsJwtLibrary.set(root, found);
-  return found;
+  return fileUsesJwtLibrary(root);
 }
 
 /**
@@ -204,6 +267,16 @@ function fileImportsJwtLibrary(node: TSESTree.Node): boolean {
  * alone, because a JWT client is very often injected rather than imported, and
  * demanding a resolvable import would trade this false-positive class for a
  * false-negative one.
+ *
+ * It reads every load spelling, not just `ImportDeclaration`, and that is not a
+ * nicety. Opening the file gate to CommonJS without opening this check too is
+ * strictly worse than leaving both shut: the file passes the gate, the receiver
+ * resolves to nothing, and the foreign call is reported. Measured on the exact
+ * `argon2` + `jsonwebtoken` pair above, written CommonJS, four rules —
+ * `require-algorithm-whitelist`, `require-issuer-validation`,
+ * `require-audience-validation`, `require-max-age` — fired on
+ * `argon.verify(user.hash, dto.password)` while the identical ESM file was
+ * correctly silent.
  */
 function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
   if (node.callee.type !== 'MemberExpression') return false;
@@ -221,17 +294,52 @@ function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
   while (root.parent) root = root.parent;
 
   for (const stmt of (root as TSESTree.Program).body) {
-    if (stmt.type !== 'ImportDeclaration') continue;
-    const bindsReceiver = (stmt.specifiers ?? []).some(
-      (spec) => spec.local?.name === object.name,
-    );
-    if (!bindsReceiver) continue;
-    const source = stmt.source.value;
-    if (typeof source !== 'string') return false;
-    const parts = source.split('/');
-    const pkg = source.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
+    const source = bindingSourceOf(stmt, object.name);
+    if (source === null) continue;
     // Found where this receiver came from: foreign package -> not a JWT call.
-    return !JWT_LIBRARY_ROOTS.has(pkg);
+    return !JWT_LIBRARY_ROOTS.has(packageRootOf(source));
+  }
+  return false;
+}
+
+/**
+ * The specifier a top-level statement binds `name` to, in any load spelling.
+ *
+ * A relative specifier is returned as-is: `packageRootOf('./crypto')` is
+ * `'.'`, which is not a JWT root, so a local wrapper reads as foreign — the
+ * same verdict `import x from './crypto'` already produced.
+ */
+function bindingSourceOf(stmt: TSESTree.Node, name: string): string | null {
+  // import argon from 'argon2'  /  import { hash } from 'argon2'
+  if (stmt.type === AST_NODE_TYPES.ImportDeclaration) {
+    const binds = (stmt.specifiers ?? []).some((spec) => spec.local?.name === name);
+    return binds && typeof stmt.source.value === 'string' ? stmt.source.value : null;
+  }
+  // import argon = require('argon2')
+  if (stmt.type === AST_NODE_TYPES.TSImportEqualsDeclaration) {
+    return stmt.id.name === name ? importEqualsSpecifierOf(stmt) : null;
+  }
+  // const argon = require('argon2')  /  const { verify } = require('argon2')
+  if (stmt.type === AST_NODE_TYPES.VariableDeclaration) {
+    for (const declarator of stmt.declarations) {
+      if (!patternBinds(declarator.id, name)) continue;
+      const source = requireSpecifierOf(declarator.init);
+      if (source !== null) return source;
+    }
+  }
+  return null;
+}
+
+/** Whether a declarator's target binds `name`, directly or by destructuring. */
+function patternBinds(id: TSESTree.Node, name: string): boolean {
+  if (id.type === AST_NODE_TYPES.Identifier) return id.name === name;
+  if (id.type === AST_NODE_TYPES.ObjectPattern) {
+    return id.properties.some(
+      (prop) =>
+        prop.type === AST_NODE_TYPES.Property &&
+        prop.value.type === AST_NODE_TYPES.Identifier &&
+        prop.value.name === name,
+    );
   }
   return false;
 }
@@ -262,6 +370,34 @@ function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
  * rather than constructed from one. Requiring that would trade this
  * false-positive class for a false-negative one.
  */
+/**
+ * Built-ins whose instances answer to a JWT method name by coincidence.
+ *
+ * `decode` is the obvious collision — every `TextDecoder` has one — but the
+ * general rule is that a receiver built from a platform constructor was never
+ * a JWT client, whatever the file imports elsewhere.
+ */
+const NON_JWT_CONSTRUCTORS: ReadonlySet<string> = new Set([
+  'TextDecoder',
+  'TextEncoder',
+  'URL',
+  'URLSearchParams',
+  'Buffer',
+  'Uint8Array',
+  'Response',
+  'Request',
+  'Headers',
+]);
+
+/** `new TextDecoder()` as the receiver of a call. */
+function receiverIsForeignConstruction(receiver: TSESTree.Node): boolean {
+  return (
+    receiver.type === AST_NODE_TYPES.NewExpression &&
+    receiver.callee.type === AST_NODE_TYPES.Identifier &&
+    NON_JWT_CONSTRUCTORS.has(receiver.callee.name)
+  );
+}
+
 export function isJwtLibraryCall(
   node: TSESTree.CallExpression,
   targetMethods: Set<string>,
@@ -275,6 +411,13 @@ export function isJwtLibraryCall(
 
   // Check member expression: jwt.verify(), jose.jwtVerify()
   if (node.callee.type === 'MemberExpression') {
+    // `new TextDecoder().decode(bytes)` shares a method name with JWT decoding
+    // and nothing else. A receiver constructed from a global built-in is not a
+    // JWT client, and auth0's express-openid-connect has exactly this line in
+    // `lib/appSession.js` — reported as decoding a token without verifying it.
+    if (receiverIsForeignConstruction(node.callee.object)) {
+      return false;
+    }
     const property = node.callee.property;
     if (property.type === 'Identifier') {
       return targetMethods.has(property.name);

@@ -394,6 +394,20 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     const isStandaloneSelectionSet = (text: string): boolean => {
       const trimmed = text.trim();
       if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return false;
+      // A GraphQL selection set contains field names, never a quoted key
+      // followed by `:` (that is JSON) and never a doubled brace (that is
+      // Liquid / Handlebars / Jinja). Shopify CLI's Liquid REPL builds three
+      // of these and every one read as a selection set:
+      //
+      //   `{ "type": "display", "value": {{ ${config.snippet} | json }} }`
+      //   `{ "type": "context", "value": "{% ${…} %}" }`
+      //   `{{ ${config.snippet} }}`
+      //       theme/src/cli/utilities/repl/evaluator.ts:32, 42, 66
+      //
+      // In GraphQL an argument is `name: "value"` — the NAME is bare. A
+      // quoted string on the left of a colon cannot occur.
+      if (/\{\{|\}\}/.test(trimmed)) return false;
+      if (/"[^"]*"\s*:/.test(trimmed)) return false;
       let braceDepth = 0;
       for (const ch of trimmed) {
         if (ch === '{') {
@@ -432,6 +446,63 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         if (beforeOk && afterOk) return idx;
         pos = idx + 1;
       }
+    };
+
+    /**
+     * Is this string attributed to GraphQL by something other than its own
+     * words?
+     *
+     * `type`, `interface`, `enum`, `scalar` and `input` are GraphQL schema
+     * keywords AND TypeScript/Flow keywords, with the same `keyword Name {`
+     * shape in both languages. Nothing in the text can separate them:
+     *
+     *   return `${types…}\ninterface ShopifyTools {\n${toolRegistrations}\n}\n`
+     *       Shopify CLI .../specifications/type-generation.ts:680
+     *
+     * That is a .d.ts generator, and it was reported as CVSS 9.8 GraphQL
+     * injection. So the schema-keyword path asks for corroboration: a `gql` /
+     * `graphql` tag, a `typeDefs` / `schema` / `sdl` binding, or a call into a
+     * GraphQL library. Operation keywords (`query Name {`), `fragment X on Y`
+     * and standalone selection sets are unambiguous and need none of this.
+     */
+    const GRAPHQL_TAG_NAMES = new Set(['gql', 'graphql']);
+    const GRAPHQL_SCHEMA_BINDING = /typedef|schema|sdl/i;
+
+    const hasGraphqlAttribution = (node: TSESTree.Node): boolean => {
+      // `'type User {' + fields + '}'` — climb to the whole concatenation
+      // before asking what consumes it.
+      let current: TSESTree.Node = node;
+      while (current.parent?.type === AST_NODE_TYPES.BinaryExpression) {
+        current = current.parent;
+      }
+      const parent = current.parent;
+      if (parent?.type === AST_NODE_TYPES.TaggedTemplateExpression) {
+        const tag = parent.tag;
+        const tagName =
+          tag.type === AST_NODE_TYPES.Identifier
+            ? tag.name
+            : tag.type === AST_NODE_TYPES.MemberExpression &&
+                tag.property.type === AST_NODE_TYPES.Identifier
+              ? tag.property.name
+              : '';
+        return GRAPHQL_TAG_NAMES.has(tagName.toLowerCase());
+      }
+      if (
+        parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.Identifier
+      ) {
+        return GRAPHQL_SCHEMA_BINDING.test(parent.id.name);
+      }
+      if (
+        parent?.type === AST_NODE_TYPES.Property &&
+        parent.key.type === AST_NODE_TYPES.Identifier
+      ) {
+        return GRAPHQL_SCHEMA_BINDING.test(parent.key.name);
+      }
+      if (parent?.type === AST_NODE_TYPES.CallExpression) {
+        return isGraphqlRelated(parent);
+      }
+      return false;
     };
 
     /**
@@ -491,7 +562,9 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       // brace. Without this, `enum value with ',' delimiter. Available values:
       // ${...}` (ack-nestjs-boilerplate's Swagger docs) reads as an `enum`
       // definition named `value`.
-      if (staticText.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+      // …and the string must be attributed to GraphQL — see
+      // hasGraphqlAttribution. `interface Name {` is TypeScript too.
+      if (hasGraphqlAttribution(node) && staticText.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
         let pos = 0;
         while (pos < staticText.length) {
           const idx = findKeywordAtBoundary(staticText, keyword, pos);
@@ -518,11 +591,18 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      * AST-based: scans quasis directly.
      */
     // oxlint-disable-next-line consistent-function-scoping
+    const hasIntrospectionField = (text: string): boolean => {
+      const lower = text.toLowerCase();
+      return (
+        findKeywordAtBoundary(lower, '__schema') !== -1 ||
+        findKeywordAtBoundary(lower, '__type') !== -1
+      );
+    };
+
     const templateHasIntrospection = (node: TSESTree.TemplateLiteral): boolean => {
-      return node.quasis.some(q => {
-        const text = (q.value.cooked ?? q.value.raw).toLowerCase();
-        return text.includes('__schema') || text.includes('__type');
-      });
+      return node.quasis.some((q) =>
+        hasIntrospectionField(q.value.cooked ?? q.value.raw),
+      );
     };
 
     /**
@@ -546,7 +626,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      * Text-based GraphQL detection for string Literals and BinaryExpressions.
      * Uses simple string methods — only regex is for fragment pattern.
      */
-    const containsGraphqlText = (text: string): boolean => {
+    const containsGraphqlText = (text: string, attributed: boolean): boolean => {
       const lower = text.toLowerCase();
 
       // Check operation keywords
@@ -574,8 +654,9 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Check schema keywords — a schema definition always has a body.
-      if (lower.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+      // Check schema keywords — a schema definition always has a body, and
+      // the string must be attributed to GraphQL (see hasGraphqlAttribution).
+      if (attributed && lower.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
         const idx = findKeywordAtBoundary(lower, keyword);
         if (idx === -1) continue;
         if (!isAtLineStart(lower, idx)) continue;
@@ -708,13 +789,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
         const queryText = node.value;
 
-        if (!containsGraphqlText(queryText)) {
+        if (!containsGraphqlText(queryText, hasGraphqlAttribution(node))) {
           return;
         }
 
         // Check for introspection queries
-        const lowerQuery = queryText.toLowerCase();
-        if (!allowIntrospection && (lowerQuery.includes('__schema') || lowerQuery.includes('__type'))) {
+        if (!allowIntrospection && hasIntrospectionField(queryText)) {
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
@@ -761,7 +841,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         // keeps ordinary message strings from being read as GraphQL.
         const fullText = concatenatedStaticText(node);
 
-        if (!containsGraphqlText(fullText)) {
+        if (!containsGraphqlText(fullText, hasGraphqlAttribution(node))) {
           return;
         }
 

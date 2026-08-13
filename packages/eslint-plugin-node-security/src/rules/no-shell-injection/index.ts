@@ -13,10 +13,35 @@
  *   - exec('literal command') — static string, no injection surface
  *   - spawn('cmd', [args]) — args array is the safe parameterization form
  *   - exec(variable) — indirect; data-flow analysis required, out of scope
+ *   - a concatenation whose every interpolated value folds to a literal
+ *     written in the same file (see below)
+ *
+ * ## The constant-folding exemption
+ *
+ * "The shape is the signal" is right up to the point where the shape is the
+ * only thing looked at. `Shopify/cli` `bin/get-graphql-schemas.js:207`:
+ *
+ * ```js
+ * const localDir = schema.repo === 'world' ? '//' : schema.repo
+ * const localRepoDirectory = execSync(`/opt/dev/bin/dev cd --no-chdir ${localDir}`)
+ * ```
+ *
+ * `schema` iterates a module-level table whose seven rows all hardcode
+ * `repo: 'world'`, so both arms of the ternary are the literal `'//'` and the
+ * command has exactly one possible spelling. There is no attacker and no
+ * injected value — the interpolation is a `const` written six lines up.
+ *
+ * The rule now folds the interpolated expressions through `const` bindings,
+ * ternaries, `+` concatenation and `for…of` table rows (`utils/constant-folding`),
+ * and stays silent only when EVERY one of them resolves to a literal in this
+ * file. Anything unresolved — a parameter, a call result, an import — still
+ * reports, because unresolved is not the same as safe.
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+import { makeIsLiteralConstant } from '../../utils/constant-folding';
 
 type MessageIds = 'shellInjection';
 type RuleOptions = [];
@@ -67,6 +92,7 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const isLiteralConstant = makeIsLiteralConstant(context.sourceCode);
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
@@ -89,9 +115,13 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
         const firstArg = node.arguments[0];
         if (!firstArg || firstArg.type === AST_NODE_TYPES.SpreadElement) return;
 
-        if (isStringConcatOrTemplate(firstArg)) {
-          context.report({ node: firstArg, messageId: 'shellInjection' });
-        }
+        if (!isStringConcatOrTemplate(firstArg)) return;
+
+        // Every interpolated part folds to a literal written in this file:
+        // there is nothing for an attacker to supply. See the header note.
+        if (isLiteralConstant(firstArg)) return;
+
+        context.report({ node: firstArg, messageId: 'shellInjection' });
       },
     };
   },

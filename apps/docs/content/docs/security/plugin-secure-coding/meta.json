@@ -1,10 +1,10 @@
 {
-    "title": "Plugin: secure-coding",
-    "icon": "Shield",
-    "defaultOpen": false,
-    "pages": [
-        "index",
-        "changelog",
-        "rules"
-    ]
+  "title": "Plugin: secure-coding",
+  "icon": "Shield",
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "changelog",
+    "rules"
+  ]
 }

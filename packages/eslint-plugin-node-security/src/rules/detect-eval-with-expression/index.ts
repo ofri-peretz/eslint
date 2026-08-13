@@ -17,6 +17,8 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
+  | 'vmCodeExecution'
+  | 'vm2CodeExecution'
   | 'evalWithExpression'
   | 'useJsonParse'
   | 'useObjectAccess'
@@ -96,6 +98,87 @@ const EVAL_PATTERNS: EvalPattern[] = [
 ];
 
 /**
+ * The `vm` module turns a string into running code exactly the way `eval` does.
+ *
+ * `vm.runInNewContext` is routinely mistaken for a sandbox because it takes a
+ * context object — but the objects handed into that context carry their own
+ * constructor chain, and `this.constructor.constructor('return process')()` is
+ * the one-liner that walks back out. Node's own docs say it is not a security
+ * mechanism. All four entry points take the code as argument 0.
+ *
+ * @see https://nodejs.org/api/vm.html#vm-executing-javascript
+ */
+const VM_CODE_SINK_METHODS = new Set([
+  'runInNewContext',
+  'runInThisContext',
+  'runInContext',
+  'compileFunction',
+]);
+
+/** `new vm.Script(code)` — compiles now, runs later; same string→code step. */
+const VM_CODE_CONSTRUCTORS = new Set(['Script', 'SourceTextModule']);
+
+/** vm2 classes that wrap a sandbox; their `.run()` takes the source. */
+const VM2_SANDBOX_CONSTRUCTORS = new Set(['VM', 'NodeVM']);
+
+/** `new VMScript(code)` — vm2's precompiled-source class. */
+const VM2_CODE_CONSTRUCTORS = new Set(['VMScript']);
+
+const VM_MODULES = new Set(['vm', 'node:vm']);
+const VM2_MODULES = new Set(['vm2']);
+
+/** Marks a local bound to a whole module rather than one of its exports. */
+const NAMESPACE = '*';
+
+/** The module specifier of `require('x')`, or null for anything else. */
+function requiredModule(node: TSESTree.Node | null | undefined): string | null {
+  if (!node || node.type !== 'CallExpression') return null;
+  if (node.callee.type !== 'Identifier' || node.callee.name !== 'require') {
+    return null;
+  }
+  const [source] = node.arguments;
+  if (!source || source.type !== 'Literal') return null;
+  return typeof source.value === 'string' ? source.value : null;
+}
+
+/**
+ * Which export of a tracked module this callee refers to.
+ *
+ * Handles both spellings a file can use: the member form off a namespace
+ * (`vm.runInNewContext`, `vm2.NodeVM`) and the destructured/named form
+ * (`const { NodeVM } = require('vm2')`), including renames — the map stores the
+ * *exported* name, so `const { NodeVM: Sandbox }` still resolves to 'NodeVM'.
+ */
+function resolveModuleMember(
+  callee: TSESTree.Node,
+  bindings: ReadonlyMap<string, string>,
+): string | null {
+  const name = calleeTrailingName(callee);
+  if (name === null) return null;
+  if (callee.type === 'Identifier') {
+    const bound = bindings.get(name);
+    return bound !== undefined && bound !== NAMESPACE ? bound : null;
+  }
+  const { object } = callee as TSESTree.MemberExpression;
+  if (object.type !== 'Identifier') return null;
+  return bindings.get(object.name) === NAMESPACE ? name : null;
+}
+
+/** The trailing name of a callee: `vm.Script` → 'Script', `VMScript` → same. */
+function calleeTrailingName(callee: TSESTree.Node): string | null {
+  if (callee.type === 'Identifier') return callee.name;
+  if (callee.type !== 'MemberExpression' || callee.computed) return null;
+  return callee.property.type === 'Identifier' ? callee.property.name : null;
+}
+
+/** A string written out in full — no runtime assembly, nothing to steer. */
+function isStaticStringNode(node: TSESTree.Node): boolean {
+  if (node.type === 'Literal') return typeof node.value === 'string';
+  if (node.type === 'TemplateLiteral') return node.expressions.length === 0;
+  return false;
+}
+
+/**
  * Generate refactoring steps based on pattern.
  * Module-scope so it is directly unit-testable (Layer-2).
  */
@@ -161,13 +244,36 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
-      description: 'Detects eval(variable) which can allow an attacker to run arbitrary code',
+      description:
+        'Detects strings turned into running code — eval(variable), the Function constructor, and the vm / vm2 sinks that are mistaken for sandboxes',
       cwe: 'CWE-95',
       cvss: 9.8,
       confidence: 'high',
     },
     hasSuggestions: true,
     messages: {
+      vmCodeExecution: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Code Execution Through the vm Module (CWE-94)',
+        cwe: 'CWE-94',
+        cvss: 9.8,
+        description:
+          'vm.{{api}}() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — because any object reachable from the context carries a constructor chain back out: `this.constructor.constructor("return process")()`. A string that is not a constant is a string an attacker may be able to steer.',
+        severity: 'CRITICAL',
+        fix: 'Do not evaluate the value as code. Parse it (JSON.parse, an expression parser) or dispatch through a fixed map of allowed operations; if untrusted code genuinely has to run, isolate it in a separate process with its own privileges — not in vm.',
+        documentationLink: 'https://nodejs.org/api/vm.html#vm-executing-javascript',
+      }),
+      vm2CodeExecution: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Code Execution Through vm2 (CWE-94)',
+        cwe: 'CWE-94',
+        cvss: 9.8,
+        description:
+          'vm2 is abandoned and was retired by its maintainer after sandbox escapes that it could not fix (CVE-2023-37903, CVE-2023-37466). Running source that is not a constant inside it is arbitrary code execution on the host, not sandboxed execution.',
+        severity: 'CRITICAL',
+        fix: 'Stop using vm2. Run untrusted code out-of-process under an OS-level boundary (a separate process with dropped privileges, a container, or isolated-vm), or remove the need to execute caller-supplied source.',
+        documentationLink: 'https://github.com/patriksimek/vm2/issues/533',
+      }),
       // 🎯 Token optimization: 38% reduction (47→29 tokens) - compact format saves LLM processing
       evalWithExpression: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -473,9 +579,198 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       }
     };
 
+    // ── vm / vm2 code-execution sinks ────────────────────────────────────
+    //
+    // Same class of defect as `eval(expr)`: a string becomes running code. The
+    // only reason it needs its own pass is that the sink is reached through a
+    // module binding, so nothing can be judged until every binding in the file
+    // is known — hence the collect-then-judge shape, mirroring
+    // `detect-non-literal-fs-filename`. A `const vm = require('vm')` written
+    // *below* the call would otherwise leave the call silently unchecked.
+
+    /** Local name → export of `vm` it is bound to ('*' = the module itself). */
+    const vmBindings = new Map<string, string>();
+    /** Local name → export of `vm2` it is bound to ('*' = the module itself). */
+    const vm2Bindings = new Map<string, string>();
+    /** `const s = new NodeVM()` — locals holding a vm2 sandbox. */
+    const vm2SandboxCandidates: Array<{
+      local: string;
+      init: TSESTree.NewExpression;
+    }> = [];
+    const pendingVmCalls: TSESTree.CallExpression[] = [];
+    const pendingVmNews: TSESTree.NewExpression[] = [];
+
+    /** The nearest binding for an identifier, walking outward through scopes. */
+    const findVariable = (node: TSESTree.Identifier) => {
+      let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+      while (scope) {
+        const found = scope.variables.find((v) => v.name === node.name);
+        if (found) return found;
+        scope = scope.upper;
+      }
+      return null;
+    };
+
+    /**
+     * Is this argument a string the author wrote out, rather than one the
+     * program assembled?
+     *
+     * One hop of constant resolution is deliberate and is what separates the
+     * two corpus fixtures: `vm.runInNewContext(SCRIPT, …)` where
+     * `const SCRIPT = 'total = price * quantity'` is a hard-coded program and
+     * must stay silent, while `vm.runInNewContext(req.query.expr, …)` is not.
+     * The single-write requirement is the load-bearing part — a binding that is
+     * written more than once could hold anything by the time the call runs, so
+     * proving its initializer constant proves nothing.
+     */
+    const isStaticCode = (node: TSESTree.Node | undefined): boolean => {
+      // No code argument at all — there is no string to judge.
+      if (!node) return true;
+      if (isStaticStringNode(node)) return true;
+      if (node.type !== 'Identifier') return false;
+      const variable = findVariable(node);
+      if (!variable) return false;
+      if (variable.references.filter((ref) => ref.isWrite()).length !== 1) {
+        return false;
+      }
+      const [def] = variable.defs;
+      if (!def || def.node.type !== 'VariableDeclarator') return false;
+      const init = def.node.init;
+      return init != null && isStaticStringNode(init);
+    };
+
+    /** Record `local` as bound to `imported` from a tracked module. */
+    const bindModuleName = (
+      moduleName: string,
+      local: string,
+      imported: string,
+    ): void => {
+      if (VM_MODULES.has(moduleName)) vmBindings.set(local, imported);
+      else if (VM2_MODULES.has(moduleName)) vm2Bindings.set(local, imported);
+    };
+
+    /** `const { NodeVM } = require('vm2')` / `const vm = require('vm')`. */
+    const bindRequire = (node: TSESTree.VariableDeclarator): void => {
+      const moduleName = requiredModule(node.init);
+      if (moduleName === null) return;
+      if (node.id.type === 'Identifier') {
+        bindModuleName(moduleName, node.id.name, NAMESPACE);
+        return;
+      }
+      if (node.id.type !== 'ObjectPattern') return;
+      for (const property of node.id.properties) {
+        if (property.type !== 'Property') continue;
+        if (property.key.type !== 'Identifier') continue;
+        if (property.value.type !== 'Identifier') continue;
+        bindModuleName(moduleName, property.value.name, property.key.name);
+      }
+    };
+
+    const reportVmSite = (
+      node: TSESTree.Node,
+      code: TSESTree.Node | undefined,
+      messageId: 'vmCodeExecution' | 'vm2CodeExecution',
+      api: string,
+    ): void => {
+      if (isStaticCode(code)) return;
+      context.report({ node, messageId, data: { api } });
+    };
+
+    /** `<sandbox>.run(source)` — the vm2 execution entry point. */
+    const isVm2Run = (
+      node: TSESTree.CallExpression,
+      sandboxes: ReadonlySet<string>,
+    ): boolean => {
+      const { callee } = node;
+      if (callee.type !== 'MemberExpression') return false;
+      if (calleeTrailingName(callee) !== 'run') return false;
+      if (callee.object.type === 'Identifier') {
+        return sandboxes.has(callee.object.name);
+      }
+      if (callee.object.type !== 'NewExpression') return false;
+      const constructed = resolveModuleMember(callee.object.callee, vm2Bindings);
+      return constructed !== null && VM2_SANDBOX_CONSTRUCTORS.has(constructed);
+    };
+
+    const judgeVmSites = (): void => {
+      const sandboxes = new Set<string>();
+      for (const candidate of vm2SandboxCandidates) {
+        const constructed = resolveModuleMember(
+          candidate.init.callee,
+          vm2Bindings,
+        );
+        if (constructed !== null && VM2_SANDBOX_CONSTRUCTORS.has(constructed)) {
+          sandboxes.add(candidate.local);
+        }
+      }
+
+      for (const node of pendingVmCalls) {
+        const vmApi = resolveModuleMember(node.callee, vmBindings);
+        if (vmApi !== null && VM_CODE_SINK_METHODS.has(vmApi)) {
+          reportVmSite(node, node.arguments[0], 'vmCodeExecution', vmApi);
+          continue;
+        }
+        if (isVm2Run(node, sandboxes)) {
+          reportVmSite(node, node.arguments[0], 'vm2CodeExecution', 'run');
+        }
+      }
+
+      for (const node of pendingVmNews) {
+        const vmCtor = resolveModuleMember(node.callee, vmBindings);
+        if (vmCtor !== null && VM_CODE_CONSTRUCTORS.has(vmCtor)) {
+          reportVmSite(node, node.arguments[0], 'vmCodeExecution', vmCtor);
+          continue;
+        }
+        const vm2Ctor = resolveModuleMember(node.callee, vm2Bindings);
+        if (vm2Ctor !== null && VM2_CODE_CONSTRUCTORS.has(vm2Ctor)) {
+          reportVmSite(node, node.arguments[0], 'vm2CodeExecution', vm2Ctor);
+        }
+      }
+    };
+
     return {
-      CallExpression: checkCallExpression,
-      NewExpression: checkNewExpression
+      CallExpression(node: TSESTree.CallExpression) {
+        checkCallExpression(node);
+        // Cheap name filter first: only calls that could name a vm sink are
+        // worth carrying to Program:exit.
+        const name = calleeTrailingName(node.callee);
+        if (name !== null && (VM_CODE_SINK_METHODS.has(name) || name === 'run')) {
+          pendingVmCalls.push(node);
+        }
+      },
+      NewExpression(node: TSESTree.NewExpression) {
+        checkNewExpression(node);
+        const name = calleeTrailingName(node.callee);
+        if (
+          name !== null &&
+          (VM_CODE_CONSTRUCTORS.has(name) || VM2_CODE_CONSTRUCTORS.has(name))
+        ) {
+          pendingVmNews.push(node);
+        }
+      },
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        const moduleName = node.source.value;
+        for (const specifier of node.specifiers) {
+          if (specifier.type === 'ImportSpecifier') {
+            if (specifier.imported.type !== 'Identifier') continue;
+            bindModuleName(
+              moduleName,
+              specifier.local.name,
+              specifier.imported.name,
+            );
+            continue;
+          }
+          // Default and namespace imports both stand for the module object.
+          bindModuleName(moduleName, specifier.local.name, NAMESPACE);
+        }
+      },
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        bindRequire(node);
+        if (node.id.type === 'Identifier' && node.init?.type === 'NewExpression') {
+          vm2SandboxCandidates.push({ local: node.id.name, init: node.init });
+        }
+      },
+      'Program:exit': judgeVmSites,
     };
   },
 });
