@@ -52,7 +52,7 @@ The rule reports one thing, and abstains from everything else.
 
 **Attribution.** The embedded expression must be traceable to an inbound request: a member expression rooted at `req` / `request` / `ctx` / `event` / `message` reading `body`, `query`, `params`, `headers`, `url`, `path`, `cookies` or `data` — reached directly, or through **one hop** of a local binding in the same function. Scope analysis resolves the hop; nothing is matched by name.
 
-**What makes it abstain.** Anything that is not *direct*. `sanitizeForLog(req.body.username)` wraps the value in a call, so the rule can no longer say what reaches the line, so it says nothing. This is not a special case for functions named "sanitize" — any call, any operator, any indirection has the same effect. The consequence is deliberate: a log line with no request provenance (`console.log(\`processed ${count} items\`)`) can never be reported, which is the shape almost every log statement in a published library takes.
+**What makes it abstain.** Anything that is not *direct*. `sanitizeForLog(req.body.username)` wraps the value in a call, so the rule can no longer say what reaches the line, so it says nothing. This is not a special case for functions named "sanitize" — any call, any operator, any indirection has the same effect. The consequence is deliberate: a log line with no request provenance (`console.log('processed ' + count + ' items')`) can never be reported, which is the shape almost every log statement in a published library takes.
 
 **One report per logging call.** A template can interpolate four request fields; they are one defect with one fix, and four squiggles on one line would only make that fix harder to see.
 
