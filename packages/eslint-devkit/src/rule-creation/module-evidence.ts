@@ -293,3 +293,20 @@ export function createModuleListEvidence(
     scopes: modules.filter(isBareScope),
   });
 }
+
+/**
+ * Does a module specifier name a package, or something inside one?
+ *
+ * @deprecated Prefer {@link createModuleListEvidence}. This answers only
+ * *"which package is this string in?"* and knows nothing about how the module
+ * was brought into the file, which is where the four AI plugins went silent on
+ * CommonJS.
+ *
+ * Kept because it was public API: it used to be exported from
+ * `sdk-api-key-rule` and re-exported from the package root, so removing it
+ * would make devkit a major and strand every plugin on a `^1` range — the
+ * opposite of shipping these fixes.
+ */
+export function matchesModule(source: string, modules: readonly string[]): boolean {
+  return modules.some((m) => source === m || source.startsWith(`${m}/`));
+}
