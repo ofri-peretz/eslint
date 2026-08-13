@@ -19,7 +19,32 @@
  */
 import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
+
+/**
+ * Whether this file loads an AST-manipulation library.
+ *
+ * Through the devkit probe, not a scan of `Program.body` for
+ * `ImportDeclaration`. This is a *suppression* gate, so missing a spelling
+ * fails in the false-positive direction: a jscodeshift codemod written
+ * `const j = require('jscodeshift')` was not recognised as a codemod, and every
+ * `node[name]` traversal in it reported CWE-1321. Measured: the ESM spelling of
+ * the identical file was silent.
+ */
+const fileUsesAstTooling = createModuleEvidence({
+  packages: [
+    '@babel/types',
+    '@babel/traverse',
+    'recast',
+    'jscodeshift',
+    'eslint',
+    'estree-walker',
+    'ast-types',
+    'esrap',
+    'unist-util-visit',
+  ],
+  scopes: ['@typescript-eslint'],
+});
 
 type MessageIds =
   | 'objectInjection'
@@ -260,25 +285,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const filename = context.filename;
       if (/\/codemod[s]?\//i.test(filename)) return true;
       if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
-      const imports = sourceCode.ast.body.filter(
-        (n): n is TSESTree.ImportDeclaration =>
-          n.type === AST_NODE_TYPES.ImportDeclaration,
-      );
-      return imports.some((i) => {
-        const src = String((i as TSESTree.ImportDeclaration).source.value);
-        return (
-          src === '@babel/types' ||
-          src === '@babel/traverse' ||
-          src === 'recast' ||
-          src === 'jscodeshift' ||
-          src === 'eslint' ||
-          src === 'estree-walker' ||
-          src === 'ast-types' ||
-          src === 'esrap' ||
-          src === 'unist-util-visit' ||
-          src.startsWith('@typescript-eslint/')
-        );
-      });
+      return fileUsesAstTooling(sourceCode.ast);
     })();
 
     // Test-file skip — bracket access in tests is universally safe (fixture data,

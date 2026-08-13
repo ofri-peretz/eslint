@@ -42,26 +42,83 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
+ * The name a property key spells, lower-cased, or `undefined` for a key we
+ * cannot read (a computed expression, a spread).
+ *
+ * Case-insensitive because the regex it replaces was, and nothing is gained by
+ * newly reporting `{ httponly: true }`.
+ */
+function propertyName(
+  property: TSESTree.ObjectLiteralElement,
+): string | undefined {
+  if (property.type !== 'Property') return undefined;
+  if (property.key.type === 'Identifier' && !property.computed) {
+    return property.key.name.toLowerCase();
+  }
+  if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
+    return property.key.value.toLowerCase();
+  }
+  return undefined;
+}
+
+/**
+ * How a boolean cookie flag is set, read from the AST.
+ *
+ * `absent`   — no such property, and no spread that could carry one.
+ * `off`      — written, and written to a literal that is not `true`.
+ * `on`       — written to `true`.
+ * `unknown`  — written to something whose value this file does not decide
+ *              (`secure` shorthand, `secure: isProd`), or possibly supplied by
+ *              a spread. Not an issue: the rule cannot show it is insecure.
+ *
+ * The `unknown` verdict is the fix for auth0/express-openid-connect
+ * `middleware/attemptSilentLogin.js:15`, where every flag IS set —
+ * `res.cookie(COOKIE_NAME, true, {httpOnly: true, secure, domain, path,
+ * sameSite})` — in ES6 shorthand, from the app's own session config. The old
+ * predicate ran `/\bsecure\s*:\s*true\b/` over `sourceCode.getText()`, and
+ * printed source has no shorthand property in it to match: the values were
+ * invisible to the rule by construction. Reading the ObjectExpression's
+ * properties is the repo's standing answer to this (AGENTS.md, "AST, not
+ * printed source").
+ */
+type FlagState = 'absent' | 'off' | 'on' | 'unknown';
+
+function flagState(
+  node: TSESTree.ObjectExpression,
+  name: string,
+  hasSpread: boolean,
+): FlagState {
+  // Last write wins, exactly as the object literal itself evaluates.
+  const property = [...node.properties]
+    .reverse()
+    .find((p) => propertyName(p) === name);
+  if (property === undefined) return hasSpread ? 'unknown' : 'absent';
+  const value = (property as TSESTree.Property).value;
+  if (value.type !== 'Literal') return 'unknown';
+  return value.value === true ? 'on' : 'off';
+}
+
+/**
  * Check cookie options object for security flags
  */
 export function checkCookieOptions(
   node: TSESTree.ObjectExpression,
-  sourceCode: TSESLint.SourceCode,
   options: Options,
 ): { issues: string[]; hasSuggestions: boolean } {
-  const text = sourceCode.getText(node);
   const issues: string[] = [];
+  // A spread can carry any of these flags, and nothing here can see inside it.
+  const hasSpread = node.properties.some((p) => p.type === 'SpreadElement');
 
   if (options.requireHttpOnly !== false) {
-    const hasHttpOnly = /\bhttpOnly\s*:\s*true\b/i.test(text);
-    if (!hasHttpOnly) {
+    const state = flagState(node, 'httponly', hasSpread);
+    if (state === 'absent' || state === 'off') {
       issues.push('missing httpOnly flag (prevents XSS access to cookie)');
     }
   }
 
   if (options.requireSecure !== false) {
-    const hasSecure = /\bsecure\s*:\s*true\b/i.test(text);
-    if (!hasSecure) {
+    const state = flagState(node, 'secure', hasSpread);
+    if (state === 'absent' || state === 'off') {
       issues.push('missing secure flag (cookie sent over HTTPS only)');
     }
   }
@@ -71,14 +128,25 @@ export function checkCookieOptions(
       'strict',
       'lax',
     ];
-    const sameSiteMatch = text.match(/\bsameSite\s*:\s*['"](\w+)['"]/i);
-    if (!sameSiteMatch) {
-      issues.push('missing sameSite flag (prevents CSRF)');
-    } else if (!acceptableValues.includes(sameSiteMatch[1].toLowerCase())) {
-      issues.push(
-        `sameSite should be 'strict' or 'lax', not '${sameSiteMatch[1]}'`,
-      );
+    const property = [...node.properties]
+      .reverse()
+      .find((p) => propertyName(p) === 'samesite') as
+      | TSESTree.Property
+      | undefined;
+    if (property === undefined) {
+      // Same shorthand/spread reasoning as the boolean flags above.
+      if (!hasSpread) issues.push('missing sameSite flag (prevents CSRF)');
+    } else if (
+      property.value.type === 'Literal' &&
+      typeof property.value.value === 'string'
+    ) {
+      const value = property.value.value;
+      if (!acceptableValues.includes(value.toLowerCase())) {
+        issues.push(`sameSite should be 'strict' or 'lax', not '${value}'`);
+      }
     }
+    // Any other value — a shorthand, a variable, a conditional — is decided
+    // elsewhere and cannot be judged from here.
   }
 
   return { issues, hasSuggestions: issues.length > 0 };
@@ -173,8 +241,6 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const sourceCode = context.sourceCode;
-
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
@@ -217,7 +283,6 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
           if (optionsArg.type === 'ObjectExpression') {
             const { issues } = checkCookieOptions(
               optionsArg,
-              sourceCode,
               options as Options,
             );
 

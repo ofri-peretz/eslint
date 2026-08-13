@@ -76,6 +76,30 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     {
       code: `element.className = userInput;`,
     },
+
+    // --- Compiled constant templates ---------------------------------------
+    // Corpus: okta/okta-signin-widget
+    // src/v2/view-builder/views/captcha/CaptchaView.js:294 — reported as
+    // "function call result" purely because the payload was a CallExpression.
+    // The template text is a string literal in that same file and the call
+    // passes it nothing, so no dynamic data exists anywhere in the expression.
+    {
+      code: `
+        const template = hbs('<div class="captcha-footer"><span class="footer-text">hCaptcha</span></div>');
+        footerContainer[0].insertAdjacentHTML('beforeend', template());
+      `,
+    },
+    // Same shape, template literal with no interpolation.
+    {
+      code: [
+        'const template = _.template(`<div class="row"></div>`);',
+        'element.innerHTML = template();',
+      ].join('\n'),
+    },
+    // Compiled and invoked in one expression.
+    {
+      code: `element.innerHTML = hbs('<p>static</p>')();`,
+    },
   ],
   invalid: [
     // A document receiver is the real sink, in each spelling.
@@ -165,6 +189,68 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
           messageId: 'dangerousInnerHTML',
         },
       ],
+    },
+
+    // --- The constant-template narrowing must not become an FN -------------
+    // Data baked in at construction: the template is not constant.
+    {
+      code: `
+        const template = hbs(userTemplate);
+        element.innerHTML = template();
+      `,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // Interpolation at construction.
+    {
+      code: [
+        'const template = hbs(`<div>${userInput}</div>`);',
+        'element.innerHTML = template();',
+      ].join('\n'),
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // Nothing to be constant about.
+    {
+      code: `
+        const template = hbs();
+        element.innerHTML = template();
+      `,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // Data flowing in at the call site.
+    {
+      code: `
+        const template = hbs('<div>{{name}}</div>');
+        element.innerHTML = template(user);
+      `,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // The binding holds something that is not a compile call at all.
+    {
+      code: `
+        const render = () => buildMarkup();
+        element.innerHTML = render();
+      `,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // A method call names no binding we can resolve.
+    {
+      code: `element.innerHTML = renderer.render();`,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // Compiled inline from a non-constant argument.
+    {
+      code: `element.innerHTML = hbs(userTemplate)();`,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // `allowLiteralStrings: false` means "report constant HTML too", and a
+    // compiled constant template rides the same switch as a literal.
+    {
+      code: `
+        const template = hbs('<p>static</p>');
+        element.innerHTML = template();
+      `,
+      options: [{ allowLiteralStrings: false }],
+      errors: [{ messageId: 'dangerousInnerHTML' }],
     },
   ],
 });

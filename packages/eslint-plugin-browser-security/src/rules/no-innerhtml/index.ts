@@ -19,6 +19,7 @@ import {
   MessageIcons,
   createRule,
 } from '@interlace/eslint-devkit';
+import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds = 'dangerousInnerHTML' | 'useSanitizer';
 
@@ -66,6 +67,60 @@ function isLiteralString(node: TSESTree.Node): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Are these arguments all string constants, and is there at least one?
+ *
+ * "At least one" matters: `make()()` tells us nothing about what `make`
+ * closed over, so an empty argument list is not evidence of constness.
+ */
+function isConstantArgumentList(args: readonly TSESTree.Node[]): boolean {
+  return args.length > 0 && args.every((arg) => isLiteralString(arg));
+}
+
+/**
+ * Is this payload a **compiled constant template**, invoked with no arguments?
+ *
+ * `const template = hbs('<div class="captcha-footer">…</div>'); …
+ * container.insertAdjacentHTML('beforeend', template())` is the shape in
+ * okta-signin-widget `src/v2/view-builder/views/captcha/CaptchaView.js:294`.
+ * The template text is a string literal written in that file, and the call
+ * passes it nothing: there is no dynamic data anywhere in the expression, so
+ * the rendered HTML is fixed at authoring time exactly as a literal is.
+ *
+ * The rule reported it because `reportSink` treated *every* CallExpression
+ * payload as "function call result" — the predicate asked what SHAPE the
+ * payload had, never whether any value could flow through it.
+ *
+ * The two conditions are what keep this from swallowing real findings.
+ * Arguments at the call site (`template(user)`) are data flowing in;
+ * a non-constant argument at construction (`hbs(userTemplate)`) is data
+ * baked in. Either one and the payload is reported as before — which is why
+ * okta's `getFallbackMessage(fallback)` / `getMessage(fallback)` sinks and
+ * every `loc()`/`sprintf()` payload still report.
+ */
+function isConstantTemplateInvocation(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (node.type !== 'CallExpression') return false;
+  // Anything passed at the call site is dynamic data by default.
+  if (node.arguments.length > 0) return false;
+
+  const callee = node.callee;
+  // `hbs('<div/>')()` — compiled and invoked in one expression.
+  if (callee.type === 'CallExpression') {
+    return isConstantArgumentList(callee.arguments);
+  }
+  if (callee.type !== 'Identifier') return false;
+
+  // Resolved through scope, not by scanning nearby text: a same-named binding
+  // from an unrelated block must not answer for this one. `resolveInitializer`
+  // also refuses any binding that is written more than once.
+  const init = resolveInitializer(callee, sourceCode);
+  if (init === undefined || init.type !== 'CallExpression') return false;
+  return isConstantArgumentList(init.arguments);
 }
 
 export const noInnerhtml = createRule<RuleOptions, MessageIds>({
@@ -195,8 +250,17 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       // report only what it cannot — so exactly one rule reports any value.
       // Before this, both did, at the identical range, in `recommended`.
       if (payloadSource(taintedNode) !== undefined) return;
-      // Allow literal strings if configured.
-      if (allowLiteralStrings && isLiteralString(taintedNode)) return;
+      // Allow constant HTML if configured. A no-argument call on a template
+      // compiled from constant strings emits a fixed document, so it belongs
+      // to the same category as a literal and rides the same switch — see
+      // isConstantTemplateInvocation.
+      if (
+        allowLiteralStrings &&
+        (isLiteralString(taintedNode) ||
+          isConstantTemplateInvocation(taintedNode, sourceCode))
+      ) {
+        return;
+      }
       // Allow if sanitized via a trusted sanitiser call.
       if (isSanitized(taintedNode, sourceCode, trustedSanitizers)) return;
       // Determine source type for the diagnostic message.

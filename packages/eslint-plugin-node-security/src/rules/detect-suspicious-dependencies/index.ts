@@ -10,7 +10,7 @@
  * @see https://cwe.mitre.org/data/definitions/506.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -100,24 +100,63 @@ export const detectSuspiciousDependencies = createRule<RuleOptions, MessageIds>(
       return matrix[b.length][a.length];
     }
     
+    /**
+     * Judge one loaded specifier, whatever syntax loaded it.
+     *
+     * Extracted because this rule used to register `ImportDeclaration` and
+     * nothing else — its only visitor. A typosquatted dependency pulled in the
+     * way most Node packages pull in dependencies, `require('reqeust')`, was
+     * not merely under-reported: the rule had no path that could ever see it.
+     */
+    const checkSpecifier = (node: TSESTree.Node, source: unknown): void => {
+      if (typeof source !== 'string') return;
+      // Relative paths are not packages, and a scoped name is namespaced by its
+      // owner — neither can be a registry typosquat of a bare package name.
+      if (source.startsWith('.') || source.startsWith('@')) return;
+      for (const popular of popularPackages) {
+        const distance = levenshtein(source, popular);
+        // Distance 2 sweeps in too much genuine code — `recast` is two
+        // edits from `react`. A real typosquat is a single slip:
+        // transposition, doubling, or one wrong key.
+        if (distance === 1 && !KNOWN_LEGITIMATE.has(source)) {
+          context.report({
+            node,
+            messageId: 'violationDetected',
+            data: { name: source, similar: popular },
+          });
+        }
+      }
+    };
+
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const source = node.source.value;
-        if (typeof source === 'string' && !source.startsWith('.') && !source.startsWith('@')) {
-          for (const popular of popularPackages) {
-            const distance = levenshtein(source, popular);
-            // Distance 2 sweeps in too much genuine code — `recast` is two
-            // edits from `react`. A real typosquat is a single slip:
-            // transposition, doubling, or one wrong key.
-            if (distance === 1 && !KNOWN_LEGITIMATE.has(source)) {
-              context.report({
-                node,
-                messageId: 'violationDetected',
-                data: { name: source, similar: popular },
-              });
-            }
-          }
-        }
+        checkSpecifier(node, node.source.value);
+      },
+
+      // import reqeust = require('reqeust')
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        const ref = node.moduleReference;
+        // `import A = B.C` aliases a namespace and loads nothing.
+        if (ref.type !== AST_NODE_TYPES.TSExternalModuleReference) return;
+        // TypeScript's grammar only admits a string literal here, so the value
+        // is read straight through and `checkSpecifier` does the type guard —
+        // a `type !== Literal` branch here is one no parser can reach.
+        checkSpecifier(node, (ref.expression as TSESTree.Literal).value);
+      },
+
+      // await import('reqeust')
+      ImportExpression(node: TSESTree.ImportExpression) {
+        if (node.source.type !== AST_NODE_TYPES.Literal) return;
+        checkSpecifier(node, node.source.value);
+      },
+
+      // require('reqeust')
+      CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== AST_NODE_TYPES.Identifier) return;
+        if (node.callee.name !== 'require') return;
+        const [arg] = node.arguments;
+        if (arg?.type !== AST_NODE_TYPES.Literal) return;
+        checkSpecifier(node, arg.value);
       },
     };
   },

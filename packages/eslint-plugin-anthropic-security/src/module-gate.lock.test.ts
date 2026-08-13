@@ -101,4 +101,35 @@ describe('the Anthropic SDK module gate', () => {
       expect(lint(VIOLATION, 'no-hardcoded-api-key')).toHaveLength(0);
     });
   });
+
+  /**
+   * The module system must not decide whether the plugin runs.
+   *
+   * The gate this plugin used to carry was a pair of visitors —
+   * `ImportDeclaration`, and a `CallExpression` whose callee is literally named
+   * `require`. That is ESM and plain CommonJS and nothing else, so a file
+   * written in TypeScript's import-equals form or one that lazily
+   * `await import(...)`s the SDK ran **no rule in this plugin at all** — the
+   * same total, silent failure that was found in `jwt-security`. Each form
+   * below fails on the two-visitor gate and passes on the devkit probe.
+   */
+  describe.each([
+    ['CommonJS require', `const Anthropic = require('@anthropic-ai/sdk');`],
+    ['CommonJS destructuring require', `const { Anthropic } = require('@anthropic-ai/sdk');`],
+    ["TypeScript's import-equals", `import AnthropicNs = require('@anthropic-ai/sdk');`],
+    [
+      'a lazy dynamic import',
+      `export async function boot() { const { Anthropic } = await import('@anthropic-ai/sdk'); return Anthropic; }`,
+    ],
+    ['a re-export', `export { Anthropic } from '@anthropic-ai/sdk';`],
+  ])('the gate opens on %s', (_form, load) => {
+    it('and the same violation reports', () => {
+      expect(lint(`${load}\n${VIOLATION}`, 'no-hardcoded-api-key').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('but a locally bound `require` parameter is not a module load', () => {
+    const code = `function wrap(require) { return require('@anthropic-ai/sdk'); }\n${VIOLATION}`;
+    expect(lint(code, 'no-hardcoded-api-key')).toHaveLength(0);
+  });
 });

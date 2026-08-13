@@ -33,6 +33,73 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
+ * Receivers whose `message` event carries no origin to validate.
+ *
+ * CWE-346 here is about `window.postMessage`: a frame can be addressed by any
+ * other frame, so the receiver must ask *who sent this*. A `MessageEvent`
+ * delivered by a WebSocket, an EventSource, a Worker or a BroadcastChannel has
+ * no `origin` to ask about — the channel itself is the peer identity, fixed at
+ * construction by the URL or the channel name. Demanding `event.origin` there
+ * is a category error, not a missed check, and there is no code that would
+ * satisfy it.
+ *
+ * Shopify/cli
+ * `packages/ui-extensions-server-kit/src/ExtensionServerClient/ExtensionServerClient.ts:163`
+ * is exactly this: `this.connection?.addEventListener('message', …)` where
+ * `connection` is declared `WebSocket` and assigned `new WebSocket(url)`.
+ *
+ * `no-innerhtml` gates `write`/`writeln` on a document receiver for the same
+ * reason — the method name alone does not identify the sink.
+ */
+const NON_WINDOW_RECEIVERS = new Set([
+  'WebSocket',
+  'EventSource',
+  'Worker',
+  'SharedWorker',
+  'BroadcastChannel',
+  'MessagePort',
+  'MessageChannel',
+]);
+
+/**
+ * A stable name for a receiver expression, or `undefined` when it has none.
+ *
+ * `ws`, `this.connection` and `client.socket` are nameable; `sockets[i]` and
+ * `getSocket()` are not, and an unnameable receiver is simply left to the
+ * default (report), since we can prove nothing about it.
+ */
+function receiverKey(node: TSESTree.Node): string | undefined {
+  if (node.type === 'Identifier') return node.name;
+  if (
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property.type === 'Identifier'
+  ) {
+    if (node.object.type === 'ThisExpression') {
+      return `this.${node.property.name}`;
+    }
+    if (node.object.type === 'Identifier') {
+      return `${node.object.name}.${node.property.name}`;
+    }
+  }
+  return undefined;
+}
+
+/** The constructor name a type annotation names, if it names one directly. */
+function annotatedTypeName(
+  annotation: TSESTree.TSTypeAnnotation | undefined,
+): string | undefined {
+  const type = annotation?.typeAnnotation;
+  if (
+    type?.type === 'TSTypeReference' &&
+    type.typeName.type === 'Identifier'
+  ) {
+    return type.typeName.name;
+  }
+  return undefined;
+}
+
+/**
  * Check if a function body contains origin validation
  */
 function hasOriginCheck(
@@ -143,7 +210,24 @@ export const requirePostmessageOriginCheck = createRule<
      * check may also be written after the point ESLint visits the listener, so
      * the verdict has to wait until the whole program has been walked.
      */
-    const unverified: TSESTree.Node[] = [];
+    const unverified: Array<{
+      handler: TSESTree.Node;
+      /** Name of the object `addEventListener` was called on, when nameable. */
+      receiver: string | undefined;
+    }> = [];
+
+    /**
+     * Receiver names this file proves are not a window — see
+     * NON_WINDOW_RECEIVERS. Collected across the whole program because the
+     * `new WebSocket(…)` that answers for `this.connection` sits 39 lines
+     * BELOW the listener in Shopify's ExtensionServerClient.
+     */
+    const nonWindowReceivers = new Set<string>();
+
+    function rememberIfNonWindow(key: string | undefined, typeName?: string) {
+      if (key === undefined || typeName === undefined) return;
+      if (NON_WINDOW_RECEIVERS.has(typeName)) nonWindowReceivers.add(key);
+    }
 
     /** Ranges of `ALLOWED.test(x.origin)` calls with a fully anchored pattern. */
     const anchoredOriginTests: Array<readonly [number, number]> = [];
@@ -159,6 +243,38 @@ export const requirePostmessageOriginCheck = createRule<
     }
 
     return {
+      // `class C { connection!: WebSocket }` — the declared type names the
+      // receiver even when the assignment is out of reach.
+      PropertyDefinition(node: TSESTree.PropertyDefinition) {
+        if (node.key.type !== 'Identifier') return;
+        rememberIfNonWindow(
+          `this.${node.key.name}`,
+          annotatedTypeName(node.typeAnnotation),
+        );
+      },
+
+      // `const ws: WebSocket = …`
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (node.id.type !== 'Identifier') return;
+        rememberIfNonWindow(node.id.name, annotatedTypeName(node.id.typeAnnotation));
+      },
+
+      // `const ws = new WebSocket(url)` / `this.connection = new WebSocket(url)`
+      NewExpression(node: TSESTree.NewExpression) {
+        if (node.callee.type !== 'Identifier') return;
+        const typeName = node.callee.name;
+        const parent = node.parent as TSESTree.Node | undefined;
+        if (parent?.type === 'VariableDeclarator' && parent.init === node) {
+          // A destructuring pattern names no receiver, and `receiverKey`
+          // answers `undefined` for it.
+          rememberIfNonWindow(receiverKey(parent.id), typeName);
+          return;
+        }
+        if (parent?.type === 'AssignmentExpression' && parent.right === node) {
+          rememberIfNonWindow(receiverKey(parent.left), typeName);
+        }
+      },
+
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
@@ -172,6 +288,8 @@ export const requirePostmessageOriginCheck = createRule<
 
         // Check for addEventListener('message', handler) or window.addEventListener('message', handler)
         let isMessageListener = false;
+        /** The object the listener was attached to, when it has a name. */
+        let receiver: string | undefined;
 
         // window.addEventListener('message', ...) or this.addEventListener('message', ...)
         if (
@@ -186,6 +304,16 @@ export const requirePostmessageOriginCheck = createRule<
             eventArg.value === 'message'
           ) {
             isMessageListener = true;
+            receiver = receiverKey(callee.object);
+            // `new WebSocket(url).addEventListener('message', …)` — the
+            // receiver names its own type and needs no binding to resolve.
+            if (
+              callee.object.type === 'NewExpression' &&
+              callee.object.callee.type === 'Identifier' &&
+              NON_WINDOW_RECEIVERS.has(callee.object.callee.name)
+            ) {
+              return;
+            }
           }
         }
 
@@ -220,7 +348,7 @@ export const requirePostmessageOriginCheck = createRule<
           handlerArg.type === 'ArrowFunctionExpression'
         ) {
           if (!hasOriginCheck(handlerArg, sourceCode)) {
-            unverified.push(handlerArg);
+            unverified.push({ handler: handlerArg, receiver });
           }
         }
 
@@ -232,7 +360,12 @@ export const requirePostmessageOriginCheck = createRule<
       },
 
       'Program:exit'() {
-        for (const handler of unverified) {
+        for (const { handler, receiver } of unverified) {
+          // A WebSocket / EventSource / Worker / BroadcastChannel message has
+          // no origin to check — see NON_WINDOW_RECEIVERS.
+          if (receiver !== undefined && nonWindowReceivers.has(receiver)) {
+            continue;
+          }
           const guarded = anchoredOriginTests.some(
             ([start, end]) =>
               start >= handler.range[0] && end <= handler.range[1],

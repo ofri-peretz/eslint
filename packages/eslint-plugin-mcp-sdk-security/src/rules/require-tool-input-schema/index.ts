@@ -14,16 +14,10 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
 type MessageIds = 'missingInputSchema';
 
-/**
- * The rule only fires in files that actually import the MCP SDK. Gating on the
- * SDK — rather than on a receiver name like `server` — is what keeps this rule
- * inside its package's scope promise: it cannot fire on code that does not use
- * `@modelcontextprotocol/sdk`.
- */
-const MCP_MODULE_PREFIX = '@modelcontextprotocol/sdk';
 
 const REGISTER_TOOL = 'registerTool';
 const LEGACY_TOOL = 'tool';
@@ -83,7 +77,10 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    let importsMcpSdk = false;
+    // Asked once, up front, over the whole AST. The two-visitor gate this
+    // replaces saw ESM and `require()` only, so import-equals and dynamic
+    // `import()` files ran no rule at all.
+    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
     // Registrations are collected and judged at Program:exit so the rule does
     // not depend on the import appearing above them.
     const candidates: Array<{ node: TSESTree.CallExpression; tool: string }> = [];
@@ -95,23 +92,7 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
     }
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.source.value.startsWith(MCP_MODULE_PREFIX)) importsMcpSdk = true;
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
-        // require('@modelcontextprotocol/sdk/...')
-        if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'require' &&
-          node.arguments[0]?.type === 'Literal' &&
-          typeof node.arguments[0].value === 'string' &&
-          node.arguments[0].value.startsWith(MCP_MODULE_PREFIX)
-        ) {
-          importsMcpSdk = true;
-          return;
-        }
-
         if (node.callee.type !== 'MemberExpression' || node.callee.computed) return;
         if (node.callee.property.type !== 'Identifier') return;
 
@@ -140,7 +121,6 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
       },
 
       'Program:exit'() {
-        if (!importsMcpSdk) return;
         for (const { node, tool } of candidates) {
           context.report({ node, messageId: 'missingInputSchema', data: { tool } });
         }

@@ -34,13 +34,26 @@ Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persis
 
 Temporary directories (`/tmp`, `/var/tmp`, `temp/`) are often world-readable or persist longer than expected. Writing sensitive data (credentials, PII, session tokens) to these locations exposes it to other processes on the system.
 
+Two things have to be true before there is a finding, and **both** are checked:
+
+1. **The path names the temp directory on a segment boundary.** The match is
+   over `/`- and `\`-separated segments, not a substring test. `/temp` matches
+   `/temp` and `/temp/cache`; it does not match `/templates.json`,
+   `attempted`, or `temporary-holder`. That substring test is what filed
+   `https://cdn.shopify.com/static/cli/extensions/templates.json` as sensitive
+   data in temp storage (Shopify/cli `app-management-client.ts:155`).
+2. **Something writes through it.** CWE-312 is about data *at rest* in a
+   world-readable place. A string that merely mentions a temp directory stores
+   nothing, so the path has to reach `fs.writeFile` / `fs.writeFileSync` —
+   either directly, or through the name it is bound to.
+
 ```mermaid
 graph TD
-    A[Data Write Operation] --> B{Path starts with /tmp or /var/tmp?}
-    B -- Yes --> C[🚨 HIGH: Insecure Temp Storage]
-    B -- No --> D{Path is in temp/ subfolder?}
-    D -- Yes --> C
-    D -- No --> E[✅ Secure Path]
+    A[String literal] --> B{Temp dir as whole path segments?}
+    B -- No --> E[✅ Not a temp path]
+    B -- Yes --> C{Reaches an fs write as the path argument?}
+    C -- No --> F[✅ Names a path, stores nothing]
+    C -- Yes --> D[🚨 HIGH: Insecure Temp Storage]
 ```
 
 ## ❌ Incorrect
@@ -85,6 +98,13 @@ fs.writeFileSync(path.join(dir, 'export.json'), JSON.stringify(records));
 
 // ✅ A randomised segment is the mitigation
 const file = path.join(os.tmpdir(), crypto.randomUUID() + '.tmp');
+
+// ✅ Not a temp path at all — `/temp` is matched on segment boundaries
+const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/static/cli/extensions/templates.json';
+
+// ✅ Names a temp path but writes nothing through it
+const cacheDir = '/tmp/build-cache';
+console.log(`cache lives in ${cacheDir}`);
 ```
 
 ## ⚙️ Configuration
@@ -122,6 +142,11 @@ const file = path.join(os.tmpdir(), crypto.randomUUID() + '.tmp');
 - `path.join()` reached through a renamed import (`const { join } = require('path')`).
 - Stream-based writes using `createWriteStream`.
 - Paths stored in environment variables.
+- A temp path written through a destructured or member binding
+  (`obj.p = '/tmp/x'; fs.writeFileSync(obj.p, data)`) — the write-sink check
+  follows a plain `const`/`let` name only.
+- A temp path written through an fs facade or a renamed import — the sink is
+  `fs.writeFile` / `fs.writeFileSync` spelled on the `fs` receiver.
 
 > **Not a false negative:** `path.join(os.tmpdir(), 'constant-name')` reports as
 > `predictableTempPath` (CWE-377). A segment that is not a string literal —

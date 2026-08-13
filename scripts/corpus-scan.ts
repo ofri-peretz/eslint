@@ -36,6 +36,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
 
 /** Plugins whose rules apply to server and library code. */
@@ -157,25 +158,9 @@ for (const [name, plugin] of loaded) {
 export default [
   {
     files: ["**/*.js", "**/*.mjs", "**/*.cjs", "**/*.ts", "**/*.tsx"],
-    ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/*.min.js",
-              "**/test/**", "**/tests/**", "**/__tests__/**", "**/*.test.*", "**/*.spec.*",
-              "**/fixtures/**", "**/examples/**", "**/docs/**", "**/.next/**",
-              // Checked-in third-party bundles. Not \`*.min.js\` and not under
-              // \`dist/\`, so the globs above miss them, but nobody edits them and
-              // no real project lints them: okta ships \`@okta/courage-dist/\`,
-              // Shopify ships a speedscope build under \`assets/\`, and both
-              // vendor libraries wholesale. Counting findings there measures the
-              // corpus's vendoring habits, not our precision.
-              "**/vendor/**", "**/*-dist/**", "**/assets/**",
-              // Same category as the \`test/\`, \`examples/\` and \`fixtures/\`
-              // entries above, under the names these repos actually use:
-              // \`e2e/\` is test infrastructure, \`playground/\` is a dev server,
-              // and \`samples/\` is \`examples/\` (okta ships its demo apps as
-              // \`samples/generated/\`). Precision is measured on code people
-              // ship. Findings here are still real — okta's sample app really
-              // does assign server data to innerHTML — they are just not a
-              // measure of whether the rules are right.
-              "**/e2e/**", "**/playground/**", "**/samples/**"],
+    // Sourced from scripts/lib/corpus-scan-ignores.ts, which carries the
+    // reason for every entry and is importable by a test without running a scan.
+    ignores: ${JSON.stringify(SCAN_IGNORES)},
     languageOptions: { parser, ecmaVersion: 2022, sourceType: "module" },
     plugins,
     rules,

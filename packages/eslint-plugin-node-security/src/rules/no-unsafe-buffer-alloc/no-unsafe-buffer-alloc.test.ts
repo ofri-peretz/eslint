@@ -32,6 +32,52 @@ describe('no-unsafe-buffer-alloc', () => {
       // Unrelated Buffer members.
       { code: 'Buffer.byteLength("hi")' },
       { code: 'Buffer.isBuffer(x)' },
+
+      // ── FP lock: covered before it is ever read ──────────────────────────
+      //
+      // Corpus: redis/ioredis `lib/Command.ts:667`
+      //   const result = Buffer.allocUnsafe(this.length);
+      //   let offset = 0;
+      //   for (const item of this.items) { … item.copy(result, offset) … }
+      //   return result;
+      //
+      // `this.length` is maintained as the exact byte sum of `this.items`, so
+      // the loop writes every byte before `result` escapes. On the OLD
+      // predicate — which had no variable tracking at all and exempted only a
+      // same-expression `.fill()` — every case below reported.
+      {
+        code: `
+          class MixedBuffers {
+            toBuffer() {
+              const result = Buffer.allocUnsafe(this.length);
+              let offset = 0;
+              for (const item of this.items) {
+                const length = Buffer.byteLength(item);
+                Buffer.isBuffer(item)
+                  ? item.copy(result, offset)
+                  : result.write(item, offset, length);
+                offset += length;
+              }
+              return result;
+            }
+          }
+        `,
+      },
+      // The whole-buffer copy idiom, with and without a receiver form.
+      { code: 'const b = Buffer.allocUnsafe(src.length); src.copy(b); send(b);' },
+      { code: 'const b = Buffer.allocUnsafe(n); b.set(src); send(b);' },
+      { code: 'const b = Buffer.allocUnsafe(n); b.fill(0); send(b);' },
+      { code: 'const b = Buffer.allocUnsafe(n); crypto.randomFillSync(b); send(b);' },
+      // A moving offset inside a `while` covers the buffer just as a `for` does.
+      {
+        code: 'const b = Buffer.allocUnsafe(n); let o = 0; while (o < n) { b.write(s, o); o += 1; } send(b);',
+      },
+      // Metadata reads disclose nothing, so they do not end the scan.
+      { code: 'const b = Buffer.allocUnsafe(n); log(b.length); src.copy(b); send(b);' },
+      // A partial write is not a read either — it keeps the scan going until a
+      // covering write settles it.
+      { code: 'const b = Buffer.allocUnsafe(n); b.writeUInt8(1, 0); src.copy(b); send(b);' },
+      { code: 'const b = Buffer.allocUnsafe(n); b[0] = 1; src.copy(b); send(b);' },
     ],
     invalid: [
       {
@@ -68,21 +114,6 @@ describe('no-unsafe-buffer-alloc', () => {
               {
                 messageId: 'useSafeAlloc',
                 output: 'const buf = Buffer.alloc(64);',
-              },
-            ],
-          },
-        ],
-      },
-      // `.fill` on a *different* expression is not the in-place exemption.
-      {
-        code: 'const buf = Buffer.allocUnsafe(64); buf.fill(0);',
-        errors: [
-          {
-            messageId: 'unsafeAlloc',
-            suggestions: [
-              {
-                messageId: 'useSafeAlloc',
-                output: 'const buf = Buffer.alloc(64); buf.fill(0);',
               },
             ],
           },
@@ -176,6 +207,63 @@ describe('no-unsafe-buffer-alloc', () => {
         ],
       },
     ],
+  });
+
+  // ── The covered-before-read exemption must not become a blanket pass ───
+  //
+  // Every case here has a write in it. None of them proves coverage, so all of
+  // them still report — this is the FN guard on the FP fix above, and it is
+  // the difference between "some byte is written" and "every byte is".
+  describe('Covered Before Read — the cases that are NOT covered', () => {
+    /** One `unsafeAlloc` report whose suggestion swaps in the safe allocator. */
+    const stillReports = (code: string) => ({
+      code,
+      errors: [
+        {
+          messageId: 'unsafeAlloc' as const,
+          suggestions: [
+            {
+              messageId: 'useSafeAlloc' as const,
+              output: code.replace('allocUnsafe', 'alloc'),
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('partial and unresolved writes', noUnsafeBufferAlloc, {
+      valid: [],
+      invalid: [
+        // The docs' own ❌ example: 4 of 16 bytes written at a FIXED offset,
+        // then the whole thing goes out on the wire.
+        stillReports('const header = Buffer.allocUnsafe(16); header.writeUInt32BE(len, 0); socket.write(header);'),
+        // A moving offset, but not in a loop — one write, one place.
+        stillReports('const b = Buffer.allocUnsafe(n); b.write(s, off); send(b);'),
+        // Read first, written after: the disclosure has already happened.
+        stillReports('const b = Buffer.allocUnsafe(n); send(b); src.copy(b);'),
+        // Allocated and never touched again.
+        stillReports('const b = Buffer.allocUnsafe(n);'),
+        // Not a local binding at all — the buffer leaves this file's view.
+        stillReports('this.buf = Buffer.allocUnsafe(n);'),
+        stillReports('function f() { return Buffer.allocUnsafe(n); }'),
+        stillReports('const [b] = [Buffer.allocUnsafe(n)]; src.copy(b);'),
+        // A method call that is not a write, and a computed read.
+        stillReports('const b = Buffer.allocUnsafe(n); b.toString("hex");'),
+        stillReports('const b = Buffer.allocUnsafe(n); send(b[0]);'),
+        // A write METHOD referenced without being invoked.
+        stillReports('const b = Buffer.allocUnsafe(n); schedule(b.fill);'),
+        // A private-name member, which is not an Identifier property.
+        stillReports('class C { #x; m() { const b = Buffer.allocUnsafe(n); return b.#x; } }'),
+        // First argument of a call that does not write through it.
+        stillReports('const b = Buffer.allocUnsafe(n); hash.update(b);'),
+        stillReports('const b = Buffer.allocUnsafe(n); send(b);'),
+        stillReports('const b = Buffer.allocUnsafe(n); obj[m](b);'),
+        // Not the first argument, so not the destination of a copy either.
+        stillReports('const b = Buffer.allocUnsafe(n); send(x, b);'),
+        // `copy` at a fixed destination offset covers one fixed slice.
+        stillReports('const b = Buffer.allocUnsafe(n); src.copy(b, 0, 0, 4); send(b);'),
+      ],
+    });
   });
 
   // ── FALSE NEGATIVE CLOSED: CWE-789 ─────────────────────────────────────

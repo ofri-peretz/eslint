@@ -7,7 +7,7 @@ import { describe, it, afterAll, expect } from 'vitest';
 import { Linter, type Rule } from 'eslint';
 import parser from '@typescript-eslint/parser';
 import { createWithMockContext } from '@interlace/eslint-devkit';
-import { noHardcodedCredentials } from './index';
+import { isPublishableKeyValue, noHardcodedCredentials } from './index';
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;
@@ -1567,5 +1567,140 @@ describe('Corpus false positives — word-shaped identifiers and enum labels', (
         errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
       },
     ],
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PUBLISHABLE KEYS — a key that must ship to a browser to work is not a secret.
+// Every `valid` fixture below is red on the pre-allowlist rule.
+// ---------------------------------------------------------------------------
+describe('no-hardcoded-credentials — publishable keys', () => {
+  ruleTester.run('publishable by vendor and slot', noHardcodedCredentials, {
+    valid: [
+      // Corpus: Shopify/cli packages/cli-kit/src/private/node/constants.ts:83.
+      // The Bugsnag NOTIFIER key: write-only crash ingestion, shipped in every
+      // published copy of the CLI. Identified by the slot naming the vendor.
+      // Predicate at fault: 32 hex chars + an identifier ending `apiKey`.
+      "export const bugsnagApiKey = '9e1e6889176fd0c795d5c659225e0fae';",
+      // Corpus: Shopify/cli bin/update-bugsnag.js:15. The SAME key, in a slot
+      // that names no vendor — identified instead by the SDKs the file loads.
+      `import { node } from '@bugsnag/source-maps';
+import reportBuild from 'bugsnag-build-reporter';
+const apiKey = '9e1e6889176fd0c795d5c659225e0fae';`,
+      // Publishable by VALUE — no vendor context needed, the prefix says so.
+      "const stripeKey = 'pk_live_51H8xQwGkLmNoPqRsTuVwXyZ0123456789';",
+      "const stripeKey = 'pk_test_51H8xQwGkLmNoPqRsTuVwXyZ0123456789';",
+      "const posthogApiKey = 'phc_YHtQ8fLmNvRw2XkPzB4dGjSaUeCiMoTr9';",
+      // Vendor SDK loaded, vendor's publishable slot.
+      `import posthog from 'posthog-js';
+const projectApiKey = 'K7mQx2LpVbNrZs4TyWdHgJc9FaEuXoRi';`,
+      `import { AnalyticsBrowser } from '@segment/analytics-next';
+const writeKey = 'Xk92LmQpTv4RbZa7NwHc3FdYeUgJsXoP';`,
+      `import mixpanel from 'mixpanel-browser';
+const projectToken = 'Qw8ZrTm2LxNb5VcYa9KpHdFj3GeUsXoI';`,
+      `import * as amp from '@amplitude/analytics-browser';
+const amplitudeApiKey = 'Rt7YbQm3LzXv9NcKa2PwHdFj5GeUsXoM';`,
+      // Firebase's web API key is restricted by domain, not kept secret — it is
+      // in every `firebaseConfig` object shipped to a browser. (A canonical
+      // `AIza…` value does not reach this rule at all: it reads as a natural
+      // word string. The slot-named form below is the one that does.)
+      "const firebaseApiKey = 'K7mQx2LpVbNrZs4TyWdHgJc9FaEuXoRi';",
+    ],
+    invalid: [
+      // THE SECRET SIDE IS UNTOUCHED. A vendor whose publishable key is
+      // `apiKey` does not make its secret one publishable.
+      {
+        code: `import Stripe from 'stripe';
+const stripeSecretKey = 'sk_live_EXAMPLE_NOT_A_REAL_KEY';`,
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      {
+        code: `import Bugsnag from '@bugsnag/js';
+const bugsnagApiSecret = '9e1e6889176fd0c795d5c659225e0fae';`,
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // A secret-side VALUE in a publishable-named slot is still a secret —
+      // the value veto runs before either allowlist path.
+      {
+        code: `import Bugsnag from '@bugsnag/js';
+const bugsnagApiKey = 'ghp_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8';`,
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      {
+        code: `import posthog from 'posthog-js';
+const apiKey = 'AKIAIOSFODNN7EXAMPLE';`,
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // Vendor named, but a slot that is not the vendor's publishable one.
+      {
+        code: "const bugsnagAuthToken = '9e1e6889176fd0c795d5c659225e0fae';",
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // Publishable slot name, but no vendor anywhere: the whole point of the
+      // corpus finding is that `apiKey` alone proves nothing either way.
+      {
+        code: "const apiKey = '9e1e6889176fd0c795d5c659225e0fae';",
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // A vendor's SDK in the file does not license an unrelated slot.
+      {
+        code: `import Bugsnag from '@bugsnag/js';
+const databaseUrl = 'postgres://admin:hunter2@db.internal:5432/app';`,
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // A credential in an anonymous slot — no name to read at all.
+      {
+        code: `import Bugsnag from '@bugsnag/js';
+send(['9e1e6889176fd0c795d5c659225e0fae']);
+const secrets = ['9e1e6889176fd0c795d5c659225e0fae'];`,
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // PostHog's PERSONAL api key shares the vendor and the slot with its
+      // project key and is a real secret. The value veto is what separates
+      // them: `phc_` is publishable, `phx_` / `phs_` are not.
+      {
+        code: "const posthogApiKey = 'phx_YHtQ8fLmNvRw2XkPzB4dGjSaUeCiMoTr9';",
+        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+      },
+      // Two credential-named slots that name no vendor, in one file: the
+      // second consults the memoised vendor set rather than re-walking.
+      {
+        code: `import Bugsnag from '@bugsnag/js';
+const authToken = 'Rt7YbQm3LzXv9NcKa2PwHdFj5GeUsXoM';
+const sessionToken = 'Qw8ZrTm2LxNb5VcYa9KpHdFj3GeUsXoI';`,
+        errors: [
+          { messageId: 'useEnvironmentVariable', suggestions: 2 },
+          { messageId: 'useEnvironmentVariable', suggestions: 2 },
+        ],
+      },
+    ],
+  });
+});
+
+// Layer 2 — `isPublishableKeyValue` as a plain function. A Sentry DSN never
+// reaches the report path through the rule (no slot name the rule treats as
+// credential context holds one), so the branch is exercised directly rather
+// than through a fixture that would pass for the wrong reason.
+describe('isPublishableKeyValue', () => {
+  it('accepts a Sentry DSN — the public half of a pair whose secret half Sentry removed in 2016', () => {
+    expect(
+      isPublishableKeyValue(
+        'https://a1b2c3d4e5f60718293a4b5c6d7e8f90@o447951.ingest.sentry.io/5428537',
+      ),
+    ).toBe(true);
+    // With an explicit port, as a self-hosted Sentry writes it.
+    expect(
+      isPublishableKeyValue(
+        'http://a1b2c3d4e5f60718293a4b5c6d7e8f90@sentry.internal:9000/2',
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects a URL that is not a DSN — no numeric project id', () => {
+    expect(
+      isPublishableKeyValue(
+        'https://a1b2c3d4e5f60718293a4b5c6d7e8f90@o447951.ingest.sentry.io/notaproject',
+      ),
+    ).toBe(false);
   });
 });

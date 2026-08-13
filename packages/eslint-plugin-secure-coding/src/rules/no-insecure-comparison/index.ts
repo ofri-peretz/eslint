@@ -14,7 +14,34 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
+
+/**
+ * Whether this file loads an AST-manipulation library.
+ *
+ * Through the devkit probe, not a `Program.body` scan for `ImportDeclaration`.
+ * This is a *suppression* gate, so a spelling it cannot read fails in the
+ * false-positive direction: `const ts = require('typescript')` in a CommonJS
+ * codemod lost the exemption and every `node.key === 'foo'` in it reported a
+ * hardcoded-secret comparison, while the identical ESM file was silent.
+ */
+const fileUsesAstTooling = createModuleEvidence({
+  packages: [
+    '@babel/types',
+    '@babel/traverse',
+    '@babel/generator',
+    '@babel/parser',
+    'recast',
+    'jscodeshift',
+    'estree-walker',
+    'unist-util-visit',
+    '@typescript-eslint/utils',
+    '@typescript-eslint/typescript-estree',
+    'typescript',
+    'ts-morph',
+    'eslint',
+  ],
+});
 
 type MessageIds = 'insecureComparison' | 'useStrictEquality' | 'timingUnsafeComparison';
 
@@ -115,26 +142,10 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     // (`node.key === 'foo'`, `node.name === 'bar'`) — those keys aren't
     // secrets, they're AST property names that happen to share the word
     // "key". Detect codemod context once per file.
-    const AST_TOOL_PACKAGES = [
-      '@babel/types', '@babel/traverse', '@babel/generator', '@babel/parser',
-      'recast', 'jscodeshift', 'estree-walker', 'unist-util-visit',
-      '@typescript-eslint/utils', '@typescript-eslint/typescript-estree',
-      'typescript', 'ts-morph', 'eslint',
-    ];
     const isCodemodFile = (() => {
       if (/\/codemod[s]?\//i.test(filename)) return true;
       if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
-      // Look for AST-tool imports at the top of the file
-      const program = sourceCode.ast;
-      for (const stmt of program.body) {
-        if (stmt.type === 'ImportDeclaration') {
-          const source = (stmt.source as TSESTree.Literal).value;
-          if (typeof source === 'string' && AST_TOOL_PACKAGES.some((p) => source === p || source.startsWith(p + '/'))) {
-            return true;
-          }
-        }
-      }
-      return false;
+      return fileUsesAstTooling(sourceCode.ast);
     })();
 
     /**

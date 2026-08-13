@@ -38,7 +38,7 @@
 import type { TSESTree } from '@typescript-eslint/utils';
 import { createRule } from './rule-creator';
 import { formatLLMMessage, MessageIcons } from '../messaging';
-import { matchesModule } from './sdk-api-key-rule';
+import { createModuleListEvidence } from './module-evidence';
 
 /** The opt-in both SDKs spell identically. */
 export const BROWSER_ESCAPE_FLAG = 'dangerouslyAllowBrowser';
@@ -110,6 +110,10 @@ export function readFlag(options: TSESTree.ObjectExpression): FlagVerdict {
 }
 
 export function createBrowserEscapeHatchRule(config: BrowserEscapeHatchRuleConfig) {
+  // One probe per rule, not per file: it caches by `Program`, so the walk is
+  // paid once however many rules in the plugin ask.
+  const usesSdk = createModuleListEvidence(config.modules);
+
   return createRule<[], MessageIds>({
     name: config.ruleName,
     meta: {
@@ -139,44 +143,26 @@ export function createBrowserEscapeHatchRule(config: BrowserEscapeHatchRuleConfi
     },
     defaultOptions: [],
     create(context) {
-      let importsSdk = false;
-      const candidates: TSESTree.Node[] = [];
+      // Asked once, up front, over the whole AST — so the verdict cannot depend
+      // on whether the import is written above or below the client, which is
+      // what the old two-visitor gate needed a `Program:exit` pass to survive.
+      if (!usesSdk(context.sourceCode.ast)) return {};
 
       function inspect(node: TSESTree.Node, args: readonly TSESTree.Node[]): void {
         const options = args[0];
         if (options?.type !== 'ObjectExpression') return;
-        if (readFlag(options) === 'enabled') candidates.push(node);
+        if (readFlag(options) === 'enabled') {
+          context.report({ node, messageId: 'browserKeyExposure' });
+        }
       }
 
       return {
-        ImportDeclaration(node: TSESTree.ImportDeclaration) {
-          if (matchesModule(String(node.source.value), config.modules)) importsSdk = true;
-        },
-
         NewExpression(node: TSESTree.NewExpression) {
           inspect(node, node.arguments);
         },
 
         CallExpression(node: TSESTree.CallExpression) {
-          if (
-            node.callee.type === 'Identifier' &&
-            node.callee.name === 'require' &&
-            node.arguments[0]?.type === 'Literal' &&
-            typeof node.arguments[0].value === 'string' &&
-            matchesModule(node.arguments[0].value, config.modules)
-          ) {
-            importsSdk = true;
-            return;
-          }
           inspect(node, node.arguments);
-        },
-
-        // Judged at exit so the gate does not depend on statement order.
-        'Program:exit'() {
-          if (!importsSdk) return;
-          for (const node of candidates) {
-            context.report({ node, messageId: 'browserKeyExposure' });
-          }
         },
       };
     },

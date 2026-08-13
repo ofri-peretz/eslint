@@ -264,3 +264,40 @@ ruleTester.run('require-expiration — jose builder', requireExpiration, {
     },
   ],
 });
+
+// The corpus path is now ignored by scripts/corpus-scan.ts (`end-to-end/` and
+// `fixture/` are test infrastructure — see scripts/lib/corpus-scan-ignores.ts),
+// so the scan will never exercise this shape again. The RULE behaviour is
+// unchanged and stays pinned here: a jose builder chain that sets an issuer, an
+// audience, an issued-at and a JTI but never an expiry is still a finding.
+//
+// Corpus: auth0/express-openid-connect end-to-end/fixture/helpers.js:116.
+ruleTester.run(
+  'require-expiration — the auth0 logout-token builder',
+  requireExpiration,
+  {
+    valid: [
+      `import * as jose from 'jose';
+const logoutToken = await new jose.SignJWT(claims)
+  .setProtectedHeader({ alg: 'RS256', typ: 'logout+jwt' })
+  .setIssuer(issuer)
+  .setAudience(clientId)
+  .setIssuedAt()
+  .setExpirationTime('5m')
+  .sign(privateKey);`,
+    ],
+    invalid: [
+      {
+        code: `import * as jose from 'jose';
+const logoutToken = await new jose.SignJWT(claims)
+  .setProtectedHeader({ alg: 'RS256', typ: 'logout+jwt' })
+  .setIssuer(issuer)
+  .setAudience(clientId)
+  .setIssuedAt()
+  .setJti(jti)
+  .sign(privateKey);`,
+        errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+      },
+    ],
+  },
+);

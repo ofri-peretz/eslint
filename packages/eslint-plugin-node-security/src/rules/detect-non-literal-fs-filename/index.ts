@@ -495,6 +495,66 @@ allowLiterals = false,
     };
 
     /**
+     * Is the taint the WHOLE path, rather than a part of one?
+     *
+     * CWE-22 is path TRAVERSAL: an attacker escapes a directory the code chose
+     * by extending or redirecting a path that has other, fixed parts.
+     * `path.join('/uploads', userFile)` is that — `../../etc/passwd` walks out
+     * of `/uploads`. A value used entire is not:
+     *
+     * ```ts
+     * // twilio-node src/base/RequestClient.ts:128
+     * agentOpts.ca = fs.readFileSync(process.env.TWILIO_CA_BUNDLE);
+     * ```
+     *
+     * There is no base directory to escape and nothing to append to. Whoever
+     * sets `TWILIO_CA_BUNDLE` names a file outright — and anyone who can set a
+     * variable in the process environment already chooses which files the
+     * process opens, with or without this line. Reporting it as traversal
+     * describes a mechanism that is not present.
+     *
+     * The composed case still reports, unchanged: `Shopify/cli`
+     * `bin/update-bugsnag.js:36` copies from `path.join(__dirname, '..',
+     * 'packages', packageName)` where `packageName` comes off `process.argv` —
+     * a fixed prefix an argument extends, which is exactly the shape above.
+     *
+     * No depth counter, unlike `readsTaintSource`, and that is deliberate
+     * rather than an omission. This walk is only ever entered on an expression
+     * `readsTaintSource` has ALREADY resolved to a root inside its own six
+     * hops, and it follows a strict subset of that walk — binding, receiver,
+     * single `path.*` argument, all of which move toward the same root. A
+     * binding cycle (`const a = b; const b = a;`) has no root to reach, so
+     * `readsTaintSource` returns false on it and this function is never called.
+     */
+    const isWholeTaintValue = (node: TSESTree.Node): boolean => {
+      switch (node.type) {
+        case AST_NODE_TYPES.Identifier: {
+          if (taintRoots.has(node.name)) return true;
+          const bound = constBindings.get(node.name);
+          return bound !== undefined && isWholeTaintValue(bound);
+        }
+        // `process.env.X`, `process.argv[2]` — a whole value read off a root.
+        case AST_NODE_TYPES.MemberExpression:
+          return isWholeTaintValue(node.object);
+        case AST_NODE_TYPES.CallExpression: {
+          // `path.resolve(process.env.X)` normalises one value; it does not
+          // give the attacker a second part to escape from. Two or more parts
+          // is a base plus a segment, which is composition.
+          const callee = node.callee;
+          return (
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === 'path' &&
+            node.arguments.length === 1 &&
+            isWholeTaintValue(node.arguments[0])
+          );
+        }
+        default:
+          return false;
+      }
+    };
+
+    /**
      * Is this path argument worth reporting?
      *
      * INVERTED on purpose. This rule used to end in
@@ -534,7 +594,10 @@ allowLiterals = false,
       // mechanism this rule already honours.
       if (hasPathValidation(pathNode)) return false;
 
-      if (readsTaintSource(pathNode)) return true;
+      // Taint that has been COMPOSED into a path — a prefix it can escape, a
+      // segment it can redirect. Taint used whole is not traversal; see
+      // `isWholeTaintValue`.
+      if (readsTaintSource(pathNode)) return !isWholeTaintValue(pathNode);
 
       // Assembled purely from literals, `__dirname`, `const` bindings of the
       // same: provably not steerable.

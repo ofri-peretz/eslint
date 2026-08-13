@@ -41,10 +41,10 @@
  */
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
 type MessageIds = 'toolArgToShell';
 
-const MCP_MODULE_PREFIX = '@modelcontextprotocol/sdk';
 
 const REGISTER_TOOL = 'registerTool';
 const LEGACY_TOOL = 'tool';
@@ -177,7 +177,10 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    let importsMcpSdk = false;
+    // Asked once, up front, over the whole AST. The two-visitor gate this
+    // replaces saw ESM and `require()` only, so import-equals and dynamic
+    // `import()` files ran no rule at all.
+    if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
     /** Handler bodies, with the argument names each one binds. */
     const handlers: Array<{
       range: readonly [number, number];
@@ -208,22 +211,7 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     }
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.source.value.startsWith(MCP_MODULE_PREFIX)) importsMcpSdk = true;
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'require' &&
-          node.arguments[0]?.type === 'Literal' &&
-          typeof node.arguments[0].value === 'string' &&
-          node.arguments[0].value.startsWith(MCP_MODULE_PREFIX)
-        ) {
-          importsMcpSdk = true;
-          return;
-        }
-
         // Collect tool handlers.
         if (
           node.callee.type === 'MemberExpression' &&
@@ -263,7 +251,6 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
       },
 
       'Program:exit'() {
-        if (!importsMcpSdk) return;
         for (const candidate of candidates) {
           const handler = enclosingHandler(candidate.node);
           if (handler === undefined) continue;

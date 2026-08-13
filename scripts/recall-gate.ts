@@ -112,6 +112,26 @@ function main(): number {
     }),
     { tp: 0, fp: 0, fn: 0 },
   );
+  // A broken harness and a perfect score must not look alike.
+  //
+  // The scan rig installs the plugins with `file:`, so `_rig/node_modules/
+  // eslint-plugin-*` are symlinks into `packages/*`. A concurrent `turbo build`
+  // that wipes `dist/` mid-run makes the config unresolvable, the per-fixture
+  // lint throws, and the error is swallowed into a missing `findings` field —
+  // which scores as zero. One run during this sweep reported `TP=0 FP=0 FN=69`
+  // and another lost 4 of 8 targets, both silently.
+  //
+  // The corpus has a known floor: every CWE ships at least one `vulnerable`
+  // fixture, so a run where NOTHING was detected anywhere has measured nothing.
+  if (totals.tp === 0) {
+    console.error(
+      '::error::0 detections across the entire corpus — the harness did not ' +
+        'run, it did not find a clean codebase. Check that every plugin has a ' +
+        'built `dist/` and that no `turbo build` ran concurrently.',
+    );
+    return 2;
+  }
+
   const recall =
     totals.tp + totals.fn === 0 ? 0 : (100 * totals.tp) / (totals.tp + totals.fn);
 

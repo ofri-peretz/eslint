@@ -13,6 +13,41 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
+/**
+ * The `<script …>` / `<link …>` opening tags in a chunk of HTML-bearing text.
+ *
+ * `[^>]*` crosses newlines on purpose: the tags this rule cares about are
+ * routinely written one attribute per line.
+ */
+const RESOURCE_TAG = /<(script|link)\b[^>]*>/gi;
+
+/** Host fragments that mark a URL as third-party-delivered. */
+const CDN_HOSTS = ['cdn.', 'cdnjs.', 'unpkg.', 'jsdelivr.'] as const;
+
+/**
+ * Does this text contain a CDN-served resource tag with no integrity hash?
+ *
+ * The check is PER TAG. Asking whether `integrity=` appears anywhere in the
+ * template made one protected tag vouch for every other tag beside it, which
+ * is a suppression, not a check — and it was concealing exactly the class of
+ * defect this rule exists to catch. In Shopify/cli
+ * `packages/cli-kit/src/public/node/graphiql/templates/graphiql.tsx` the two
+ * React bundles carry `integrity="sha512-…"`, and their presence silenced the
+ * unprotected `graphiql.min.js`, `graphiql.min.css` and Polaris `styles.css`
+ * tags in the same template. The rule reported nothing on that file.
+ */
+function hasUnprotectedCdnTag(text: string): boolean {
+  for (const match of text.matchAll(RESOURCE_TAG)) {
+    const tag = match[0].toLowerCase();
+    const urlAttribute = match[1].toLowerCase() === 'script' ? 'src=' : 'href=';
+    if (!tag.includes(urlAttribute)) continue;
+    if (!CDN_HOSTS.some((host) => tag.includes(host))) continue;
+    if (tag.includes('integrity=')) continue;
+    return true;
+  }
+  return false;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
 export interface Options {}
 
@@ -49,38 +84,14 @@ export const requireDependencyIntegrity = createRule<RuleOptions, MessageIds>({
     
     return {
       Literal(node: TSESTree.Literal) {
+        // The unescaped value, not the printed source: `'\x3Cscript …'` is a
+        // script tag to the browser and must be to us too.
         if (typeof node.value !== 'string') return;
-        
-        // Check for script/link tags without integrity
-        const value = node.value.toLowerCase();
-        if ((value.includes('<script') && value.includes('src=')) ||
-            (value.includes('<link') && value.includes('href='))) {
-          
-          // Check if CDN source
-          if (value.includes('cdn.') || value.includes('cdnjs.') || 
-              value.includes('unpkg.') || value.includes('jsdelivr.')) {
-            
-            if (!value.includes('integrity=')) {
-              report(node);
-            }
-          }
-        }
+        if (hasUnprotectedCdnTag(node.value)) report(node);
       },
-      
+
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const text = context.sourceCode.getText(node).toLowerCase();
-        
-        if ((text.includes('<script') && text.includes('src=')) ||
-            (text.includes('<link') && text.includes('href='))) {
-          
-          if (text.includes('cdn.') || text.includes('cdnjs.') || 
-              text.includes('unpkg.') || text.includes('jsdelivr.')) {
-            
-            if (!text.includes('integrity=')) {
-              report(node);
-            }
-          }
-        }
+        if (hasUnprotectedCdnTag(context.sourceCode.getText(node))) report(node);
       },
     };
   },

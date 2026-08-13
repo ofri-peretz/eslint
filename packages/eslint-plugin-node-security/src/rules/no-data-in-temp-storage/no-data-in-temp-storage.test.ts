@@ -68,15 +68,60 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     {
       code: "fs.readFileSync(path.join(os.tmpdir(), 'report-cache.tmp'));",
     },
+
+    // ── FP lock: `/temp` is not a substring test ──────────────────────────
+    //
+    // Corpus: Shopify/cli
+    // `packages/app/src/cli/utilities/developer-platform-client/app-management-client.ts:155`
+    //   const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/static/cli/extensions/templates.json'
+    //
+    // Reported at HIGH as sensitive data in temp storage. `templates.json`
+    // contains the characters `/temp`, and DEFAULT_TEMP_PATHS was matched with
+    // `String.includes` against every string literal bound to a name, with no
+    // write sink required. Both halves of that were wrong and both are fixed:
+    // the match is now segment-anchored AND the name has to be written through.
+    //
+    // Each of these reports on the old predicate.
+    { code: "const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/static/cli/extensions/templates.json'" },
+    { code: "const dir = '/templates/partials'" },
+    { code: "const label = 'attempted'" },
+    { code: "const tpl = 'temporary-holder'" },
+    // Segment-anchored and genuinely a temp path — but nothing writes it, so
+    // there is no data at rest to disclose.
+    { code: "const p = '/tmp/sensitive.txt'" },
+    { code: "let file = '/var/tmp/data.json'" },
+    { code: "const p = '/tmp/x'; fs.readFileSync(p);" },
+    // Written, but as the CONTENT rather than the path.
+    { code: "const p = '/tmp/x'; fs.writeFileSync(target, p);" },
+    // A temp path that is never bound to a name at all.
+    { code: "log('/tmp/x')" },
+    // Destructuring and member assignment produce no plain binding to follow.
+    { code: "const { a = '/tmp/x' } = opts;" },
+    { code: "obj.p = '/tmp/x'; fs.writeFileSync(obj.p, data);" },
+    // A non-string literal reaching the same visitor.
+    { code: 'const n = 42;' },
   ],
 
   invalid: [
     // Temp path writes
     { code: "fs.writeFileSync('/tmp/secrets.json', data)", errors: [{ messageId: 'violationDetected' }] },
     { code: "fs.writeFile('/var/tmp/auth.txt', data, cb)", errors: [{ messageId: 'violationDetected' }] },
-    // Temp path variables
-    { code: "const path = '/tmp/sensitive.txt'", errors: [{ messageId: 'violationDetected' }] },
-    { code: "let file = '/var/tmp/data.json'", errors: [{ messageId: 'violationDetected' }] },
+    // Temp path bound to a name and then written through — this is
+    // corpus/CWE-377/vulnerable/static-tmp-write.js, and it is what the write
+    // sink above must not cost us.
+    {
+      code: "const file = '/tmp/sensitive.txt';\nfs.writeFileSync(file, JSON.stringify(records));",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "let file = '/var/tmp/data.json';\nfs.writeFile(file, data, cb);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // Reassignment reaches the same sink through the other binding shape.
+    {
+      code: "let file; file = '/tmp/data';\nfs.writeFileSync(file, data);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
 
     // ── CWE-377 predictable temp path ──
     // Pins corpus/CWE-377/vulnerable/tmpdir-static-name.js, which reported

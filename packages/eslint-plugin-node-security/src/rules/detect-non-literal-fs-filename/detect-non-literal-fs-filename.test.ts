@@ -133,9 +133,53 @@ describe('detect-non-literal-fs-filename', () => {
         "const p = process.env.OUT;\nif (p.startsWith('/safe')) { fs.readFile(p); }",
       ],
       invalid: [
-        // The same taint without the guard.
+        // The same taint without the guard, COMPOSED into a path: `p` extends
+        // a base directory the code chose, which is what traversal means.
         {
-          code: "const p = process.argv[2];\nfs.readFile(p);",
+          code: "const p = process.argv[2];\nfs.readFile(path.join('/uploads', p));",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+
+    // ── FP lock: taint used WHOLE is not traversal ────────────────────────
+    //
+    // Corpus: twilio/twilio-node `src/base/RequestClient.ts:128`
+    //   agentOpts.ca = fs.readFileSync(process.env.TWILIO_CA_BUNDLE);
+    //
+    // Reported at HIGH as path traversal. There is no base directory to escape
+    // and nothing to append to: whoever sets the variable names a file
+    // outright, which is a capability they already have over the process.
+    //
+    // Fails on the old predicate, which was `if (readsTaintSource(pathNode))
+    // return true` with no composition test — every one of these was a report.
+    ruleTester.run('whole taint value is not traversal', detectNonLiteralFsFilename, {
+      valid: [
+        // The corpus line itself.
+        'fs.readFileSync(process.env.TWILIO_CA_BUNDLE);',
+        // Through a binding, the way the same idiom is usually written.
+        'const ca = process.env.TWILIO_CA_BUNDLE;\nfs.readFileSync(ca);',
+        // argv, used entire.
+        'const p = process.argv[2];\nfs.readFile(p);',
+        // `path.resolve` of one whole value normalises it; it adds no part.
+        'fs.readFileSync(path.resolve(process.env.CONFIG));',
+      ],
+      invalid: [
+        // A prefix the value can walk out of — still a finding.
+        {
+          code: "fs.readFileSync('/etc/app/' + process.env.NAME);",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        {
+          code: 'fs.readFileSync(`${BASE}/${process.env.NAME}`);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // Corpus: Shopify/cli `bin/update-bugsnag.js:36` — a two-part join
+        // whose tail comes off argv. This one must keep reporting.
+        {
+          code:
+            "const sourceDirectory = path.join(__dirname, '..', 'packages', process.argv[2]);\n" +
+            'fs.cpSync(sourceDirectory, dest, {recursive: true});',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
       ],

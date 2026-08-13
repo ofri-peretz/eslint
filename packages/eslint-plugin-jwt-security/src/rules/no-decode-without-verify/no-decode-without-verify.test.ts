@@ -214,3 +214,194 @@ ruleTester.run('no-decode-without-verify — built-in receivers', noDecodeWithou
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// PROVENANCE — a token read off a token-endpoint grant response is not
+// attacker-supplied. Every fixture below is red on the pre-provenance rule,
+// which had no source model at all and reported any `decode()` it could see.
+// ---------------------------------------------------------------------------
+ruleTester.run(
+  'no-decode-without-verify — grant-response provenance',
+  noDecodeWithoutVerify,
+  {
+    valid: [
+      // Corpus: auth0/express-openid-connect lib/context.js:184
+      // (`extractActClaim`). The token is a field of the response openid-client
+      // just got back from the token endpoint.
+      `import { decodeJwt } from 'jose';
+function extractActClaim(exchanged) {
+  if (exchanged.access_token) {
+    const decoded = decodeJwt(exchanged.access_token);
+    if (decoded.act) return decoded.act;
+  }
+  return undefined;
+}`,
+      // Corpus: Shopify/cli packages/cli-kit/src/private/node/session/exchange.ts:291
+      // (`buildIdentityToken`) — the decoded `sub` becomes a local cache key.
+      `import * as jose from 'jose';
+function buildIdentityToken(result) {
+  return { userId: result.id_token ? jose.decodeJwt(result.id_token).sub! : undefined };
+}`,
+      // Corpus: auth0/express-openid-connect lib/context.js:221
+      // (`warnIfNotCertificateBound`). The grant response is TWO frames up: the
+      // parameter hop is what makes this one work, and a strictly same-function
+      // model would still report it.
+      `import { decodeJwt } from 'jose';
+function warnIfNotCertificateBound(config, accessToken) {
+  const decoded = decodeJwt(accessToken);
+  if (!decoded.cnf) console.warn('not certificate-bound');
+}
+function onCallback(config, session) {
+  warnIfNotCertificateBound(config, session.access_token);
+}
+function onRefresh(config, session) {
+  warnIfNotCertificateBound(config, session.access_token);
+}`,
+      // Corpus: auth0/express-openid-connect lib/tokenset.js:63 (`claims()`).
+      // DISPUTED upstream; exempted here for the same reason as the rest —
+      // `id_token` is a grant-response field name, and `this` is the TokenSet
+      // that response was parsed into. (It is also verified at issuance and
+      // stored in an A256GCM-encrypted cookie, so the value never round-trips
+      // through anything the attacker can write.)
+      `const { decodeJwt } = require('jose');
+class TokenSet {
+  claims() {
+    if (!this.id_token) return undefined;
+    return decodeJwt(this.id_token);
+  }
+}`,
+      // One `const` hop, and the `as` wrapper TypeScript adds.
+      `import { decodeJwt } from 'jose';
+function f(grant) {
+  const raw = grant.refresh_token as string;
+  return decodeJwt(raw);
+}`,
+    ],
+    invalid: [
+      // THE FRONT CHANNEL. `response_mode=form_post` posts `id_token` into the
+      // request body and openid-client hands callback `params` with the same
+      // keys — identical member name, opposite trust. Verifying these is the
+      // whole point of the callback, so the exemption must not reach them.
+      {
+        code: `import { decodeJwt } from 'jose';
+const claims = decodeJwt(req.body.id_token);
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        code: `import { decodeJwt } from 'jose';
+const claims = decodeJwt(params.access_token);
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // A member name that is not a grant-response field.
+      {
+        code: `import { decodeJwt } from 'jose';
+const claims = decodeJwt(session.bearer);
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // Computed member — nothing to read the field name from.
+      {
+        code: `import { decodeJwt } from 'jose';
+const claims = decodeJwt(grant[field]);
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // Private field: non-computed, but the property is a PrivateIdentifier.
+      {
+        code: `import { decodeJwt } from 'jose';
+class S { #id_token = t; read() { return decodeJwt(this.#id_token); } }`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // Neither a member nor an identifier.
+      {
+        code: `import { decodeJwt } from 'jose';
+const claims = decodeJwt('a.b.c');
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // An unresolvable (global / injected) binding proves nothing.
+      {
+        code: `import { decodeJwt } from 'jose';
+const claims = decodeJwt(globalToken);
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // A declared-but-uninitialised local proves nothing.
+      {
+        code: `import { decodeJwt } from 'jose';
+let token;
+const claims = decodeJwt(token);
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // An imported binding is not traceable from this file.
+      {
+        code: `import { decodeJwt } from 'jose';
+import { token } from './token';
+const claims = decodeJwt(token);
+grant(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // A destructured parameter: the binding is not one of `params`.
+      {
+        code: `import { decodeJwt } from 'jose';
+function read({ id_token }) { return decodeJwt(id_token); }
+read(grant);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // An arrow function has no name to find call sites by.
+      {
+        code: `import { decodeJwt } from 'jose';
+const read = (t) => decodeJwt(t);
+read(grant.id_token);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // A named function nobody calls in this file — an exported helper is
+      // never exempted, because its callers are somewhere else.
+      {
+        code: `import { decodeJwt } from 'jose';
+export function read(t) { return decodeJwt(t); }`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // Referenced, but not called — passing the function as a value says
+      // nothing about its arguments.
+      {
+        code: `import { decodeJwt } from 'jose';
+function read(t) { return decodeJwt(t); }
+register(read);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // Called with the parameter slot empty.
+      {
+        code: `import { decodeJwt } from 'jose';
+function read(t) { return decodeJwt(t); }
+read();`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // ONE bad call site is enough: the second caller hands it the raw
+      // Authorization header.
+      {
+        code: `import { decodeJwt } from 'jose';
+function read(t) { return decodeJwt(t); }
+read(grant.id_token);
+read(req.headers.authorization);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      // Past the depth limit — provenance, not a solver.
+      {
+        code: `import { decodeJwt } from 'jose';
+function f(grant) {
+  const a = grant.id_token;
+  const b = a;
+  const c = b;
+  const d = c;
+  const e = d;
+  return decodeJwt(e);
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+    ],
+  },
+);

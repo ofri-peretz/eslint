@@ -25,6 +25,7 @@
 
 import type { TSESTree } from '@typescript-eslint/utils';
 import { createRule } from './rule-creator';
+import { createModuleListEvidence } from './module-evidence';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 
 export interface SdkApiKeyRuleConfig {
@@ -73,16 +74,6 @@ type MessageIds = 'hardcodedApiKey';
  * description renders, without duplicating the literal.
  */
 export const POSITIONAL_KEY_LABEL = 'The first argument';
-
-/**
- * Does this import specifier belong to one of the configured modules?
- *
- * Exact match or a subpath, never a prefix match on the bare name — `openai`
- * must not open the gate for `openai-edge`.
- */
-export function matchesModule(source: string, modules: readonly string[]): boolean {
-  return modules.some((m) => source === m || source.startsWith(`${m}/`));
-}
 
 /**
  * `literal` carries the property name that actually held the credential.
@@ -144,6 +135,9 @@ export function calleeName(node: TSESTree.Node): string | undefined {
 export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
   const keyProps = new Set(config.keyProps);
   const positional = new Set(config.positionalKeyConstructors ?? []);
+  // One probe per rule, not per file: it caches by `Program`, so the walk is
+  // paid once however many rules in the plugin ask.
+  const usesSdk = createModuleListEvidence(config.modules);
 
   return createRule<[], MessageIds>({
     name: config.ruleName,
@@ -174,8 +168,10 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
     },
     defaultOptions: [],
     create(context) {
-      let importsSdk = false;
-      const candidates: Array<{ node: TSESTree.Node; prop: string }> = [];
+      // Asked once, up front, over the whole AST — so the verdict cannot depend
+      // on whether the import is written above or below the client, which is
+      // what the old two-visitor gate needed a `Program:exit` pass to survive.
+      if (!usesSdk(context.sourceCode.ast)) return {};
 
       function inspect(node: TSESTree.Node, args: readonly TSESTree.Node[]): void {
         const first = args[0];
@@ -192,46 +188,25 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
             typeof first.value === 'string' &&
             first.value.length > 0
           ) {
-            candidates.push({ node, prop: POSITIONAL_KEY_LABEL });
+            context.report({ node, messageId: 'hardcodedApiKey', data: { prop: POSITIONAL_KEY_LABEL } });
           }
           return;
         }
 
         if (first.type !== 'ObjectExpression') return;
         const verdict = readCredential(first, keyProps);
-        if (verdict.kind === 'literal') candidates.push({ node, prop: verdict.prop });
+        if (verdict.kind === 'literal') {
+          context.report({ node, messageId: 'hardcodedApiKey', data: { prop: verdict.prop } });
+        }
       }
 
       return {
-        ImportDeclaration(node: TSESTree.ImportDeclaration) {
-          if (matchesModule(String(node.source.value), config.modules)) importsSdk = true;
-        },
-
         NewExpression(node: TSESTree.NewExpression) {
           inspect(node, node.arguments);
         },
 
         CallExpression(node: TSESTree.CallExpression) {
-          if (
-            node.callee.type === 'Identifier' &&
-            node.callee.name === 'require' &&
-            node.arguments[0]?.type === 'Literal' &&
-            typeof node.arguments[0].value === 'string' &&
-            matchesModule(node.arguments[0].value, config.modules)
-          ) {
-            importsSdk = true;
-            return;
-          }
           inspect(node, node.arguments);
-        },
-
-        // Judged at exit: a client can be constructed above the import in a
-        // file that hoists, and the gate must not depend on statement order.
-        'Program:exit'() {
-          if (!importsSdk) return;
-          for (const { node, prop } of candidates) {
-            context.report({ node, messageId: 'hardcodedApiKey', data: { prop } });
-          }
         },
       };
     },

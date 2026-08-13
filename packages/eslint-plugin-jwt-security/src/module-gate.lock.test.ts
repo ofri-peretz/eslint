@@ -102,4 +102,127 @@ describe('a JWT library module gate', () => {
       expect(lint(VIOLATION, 'no-hardcoded-secret')).toHaveLength(0);
     });
   });
+
+  /**
+   * The gate reads the whole tree, not `Program.body`.
+   *
+   * The CommonJS fix that started this audit replaced an `ImportDeclaration`-only
+   * check with a scanner over top-level statements. That is still a narrower
+   * gate than it looks: lazily requiring the library inside the function that
+   * uses it is ordinary Node, and it left every rule off. Each form below fails
+   * on the top-level scanner and passes on the devkit probe.
+   */
+  describe.each([
+    ['a top-level require', `const jwt = require('jsonwebtoken');`],
+    [
+      'a require nested inside a function',
+      `function issue(payload) { const jwt = require('jsonwebtoken'); return jwt; }`,
+    ],
+    ["TypeScript's import-equals", `import jwtNs = require('jsonwebtoken');`],
+    [
+      'a lazy dynamic import',
+      `export async function boot() { const m = await import('jsonwebtoken'); return m; }`,
+    ],
+    ['a re-export', `export { sign } from 'jsonwebtoken';`],
+    ["Deno's npm: specifier", `import jwtDeno from 'npm:jsonwebtoken';`],
+  ])('the gate opens on %s', (_form, load) => {
+    it('and the same violation reports', () => {
+      expect(lint(`${load}\n${VIOLATION}`, 'no-hardcoded-secret').length).toBeGreaterThan(0);
+    });
+  });
+
+  /**
+   * Precision half of the same defect, and the reason opening the gate is not
+   * free.
+   *
+   * `receiverIsForeignImport` is what stops `argon.verify(hash, pw)` in a JWT
+   * tutorial being read as a JWT verification. It read `ImportDeclaration` only,
+   * so once the file gate accepted CommonJS the two halves disagreed: the file
+   * counted as JWT code and the `argon2` receiver resolved to nothing, which is
+   * the "leave it alone" branch. Measured before the fix, the CommonJS spelling
+   * below reported from four rules while the ESM spelling was silent.
+   */
+  describe('a foreign receiver is foreign in every module system', () => {
+    const call = `export async function check(u, p) { return argon.verify(u.hash, p); }`;
+    const FOREIGN: ReadonlyArray<readonly [string, string]> = [
+      ['ESM', `import argon from 'argon2';\nimport jwt from 'jsonwebtoken';`],
+      [
+        'CommonJS',
+        `const argon = require('argon2');\nconst jwt = require('jsonwebtoken');`,
+      ],
+      [
+        'CommonJS destructuring',
+        `const { verify: argon } = require('argon2');\nconst jwt = require('jsonwebtoken');`,
+      ],
+      [
+        'import-equals',
+        `import argon = require('argon2');\nimport jwt = require('jsonwebtoken');`,
+      ],
+    ];
+
+    describe.each(FOREIGN)('%s', (_form, loads) => {
+      it.each(RULES)('%s does not report on argon.verify', (rule) => {
+        expect(lint(`${loads}\n${call}`, rule)).toHaveLength(0);
+      });
+    });
+
+    /**
+     * Receiver spellings that still resolve to a foreign package.
+     *
+     * `require('argon2').default` is the interop spelling CommonJS code uses
+     * for an ESM-authored dependency, and the two Deno forms are the same
+     * package with a resolver prefix — all three must reject exactly as the
+     * bare names above do.
+     */
+    describe.each([
+      [
+        'a member-accessed require',
+        `const argon = require('argon2').default;\nconst jwt = require('jsonwebtoken');`,
+      ],
+      [
+        "Deno's npm: specifier",
+        `import argon from 'npm:argon2';\nimport jwt from 'jsonwebtoken';`,
+      ],
+      [
+        'a deno.land/x URL',
+        `import argon from 'https://deno.land/x/argon2@v1.0.0/mod.ts';\nimport jwt from 'jsonwebtoken';`,
+      ],
+    ])('%s', (_form, loads) => {
+      it('is still foreign', () => {
+        expect(lint(`${loads}\n${call}`, 'require-issuer-validation')).toHaveLength(0);
+      });
+    });
+
+    /**
+     * The deliberate other side of the trade, pinned so it stays deliberate.
+     *
+     * Only an import we can *read* and can see is foreign rejects. A receiver
+     * that resolves to nothing is left alone, because a JWT client is very
+     * often injected or built rather than imported, and demanding a resolvable
+     * import would trade this false-positive class for a false-negative one.
+     * Each shape below is unresolvable, so each is still judged a JWT call.
+     */
+    describe.each([
+      ['a namespace alias', `import argon = ns.Thing;\nimport jwt from 'jsonwebtoken';`],
+      ['a declarator with no initialiser', `let argon;\nimport jwt from 'jsonwebtoken';`],
+      [
+        'a value built by a factory',
+        `const argon = buildHasher();\nimport jwt from 'jsonwebtoken';`,
+      ],
+      [
+        'a computed require specifier',
+        `const argon = require(pkgName);\nimport jwt from 'jsonwebtoken';`,
+      ],
+      [
+        'an array-destructured binding',
+        `const [argon] = require('argon2');\nimport jwt from 'jsonwebtoken';`,
+      ],
+    ])('%s is unresolvable, not foreign', (_form, loads) => {
+      it('so the call is still judged a JWT call', () => {
+        expect(
+          lint(`${loads}\n${call}`, 'require-issuer-validation').length,
+        ).toBeGreaterThan(0);
+      });
+    });
+  });
 });

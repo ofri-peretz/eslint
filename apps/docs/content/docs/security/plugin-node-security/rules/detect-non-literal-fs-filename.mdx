@@ -56,6 +56,35 @@ Detects variable in filename argument of fs calls, which might allow an attacker
 
 This rule detects dangerous use of Node.js fs methods with dynamic paths that can lead to path traversal attacks (also known as directory traversal).
 
+### Traversal needs a path to traverse *out of*
+
+CWE-22 is about escaping a directory the code chose, by extending or
+redirecting a path that has other, fixed parts. `path.join('/uploads',
+userFile)` is that shape: `../../etc/passwd` walks out of `/uploads`. A tainted
+value used **entire** is not:
+
+```ts
+// Not reported — twilio-node src/base/RequestClient.ts:128
+agentOpts.ca = fs.readFileSync(process.env.TWILIO_CA_BUNDLE);
+```
+
+There is no base directory to escape and nothing to append to. Whoever sets
+`TWILIO_CA_BUNDLE` names a file outright — and anyone who can set a variable in
+the process environment already chooses which files the process opens, with or
+without this line. Reporting it as traversal describes a mechanism that is not
+present.
+
+So a taint source reaching an fs path reports only when it has been **composed
+into** a path: a template with literal text around it, a `+` concatenation, or
+a `path.join` / `path.resolve` with more than one argument.
+
+```ts
+fs.readFileSync(process.env.CA);                       // silent — whole value
+fs.readFileSync(path.resolve(process.env.CA));         // silent — normalised, still whole
+fs.readFileSync('/etc/app/' + process.env.NAME);       // reported — a prefix to escape
+fs.cpSync(path.join(__dirname, 'packages', argv[2]));  // reported — a base plus a segment
+```
+
 ```mermaid
 %%{init: {
   'theme': 'base',
@@ -331,6 +360,14 @@ for (const attack of attacks) {
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
+
+### A whole tainted value used as the entire path
+
+`fs.readFileSync(process.env.X)` is silent by design — see *Traversal needs a
+path to traverse out of* above. If your threat model treats the environment or
+`process.argv` as attacker-controlled *and* you want every fs call driven by
+them flagged regardless of shape, that is `no-arbitrary-file-access`'s
+question, not this rule's.
 
 ### Path from Variable
 
