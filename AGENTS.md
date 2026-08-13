@@ -223,6 +223,44 @@ Enforced by `npm run lint:taxonomy` (`scripts/lint-plugin-taxonomy.ts`, gated in
 the fast quality job). Violations predating the guard are listed in its
 `GRANDFATHERED` array with the reason and the migration target.
 
+### A name is not a type
+
+The sibling of the AST-not-printed-source doctrine, and the systemic cause
+behind #504, #505, #506 and four already-fixed rules:
+
+| rule                             | inferred from            | reality                |
+| -------------------------------- | ------------------------ | ---------------------- |
+| `no-timing-unsafe-compare`       | a variable named `token` | compared to a literal  |
+| `jwt/no-decode-without-verify`   | a method named `decode`  | a TOML parser          |
+| `no-sensitive-data-exposure`     | the word `password`      | English prose          |
+| `detect-suspicious-dependencies` | a name near `react`      | preact, a real package |
+| `no-xpath-injection`             | `//` in printed text     | a PEM certificate      |
+
+**Do not report — or suppress — based on a SUBSTRING of an identifier's
+spelling.** `propName.includes('phone')` matches `phoneBookLength`;
+`objectName.includes('app')` matches `appleCount`; `name.includes('react')`
+matches `preact`. Resolve the identifier to an import, a call target, or a
+value first.
+
+Two things that are explicitly *not* this, because the distinction is the
+whole point:
+
+- **Exact membership.** `REQUEST_ROOTS.has(node.name)` matching `req`/`request`
+  is a naming convention, not an inference. It stays.
+- **Whole-word matching after tokenising.** Split the name on camelCase and
+  separators, then match words — `login`, `dialog`, `catalog` and `blog` all
+  contain "log" and none is a logger. This is the *fix*, not the defect.
+
+Suppression counts too, and is the quieter half: withholding a finding because
+a callee name contains `encrypt` means `decrypt` reads as safe, and a wrong
+guess there is a false negative nobody sees.
+
+Enforced by `npm run lint:name-inference` (`scripts/lint-name-inference.ts`,
+same quality job). The 25 existing sites are listed in its `REGISTERED` array
+with the direction (`report` / `suppress`) and the reason — as debt, not as an
+exemption. A rule that leaves the list must be deleted from it; a stale entry
+fails the gate.
+
 | If the rule...                                                  | It belongs in...                   |
 | --------------------------------------------------------------- | ---------------------------------- |
 | Fires with no dependency installed — pure language semantics    | `eslint-plugin-secure-coding`      |
@@ -238,13 +276,76 @@ the fast quality job). Violations predating the guard are listed in its
 Before approving any new ESLint rule:
 
 1. **Conceptual Fit**: Is it in the right plugin?
-2. **Coverage**: ≥90% line coverage
+2. **Coverage**: ≥90% line coverage — a floor, never evidence of correctness (see below)
 3. **Performance**: O(n) complexity, single AST pass
 4. **Documentation**: Rule docs with OWASP mapping
 5. **Messages**: Clear, actionable error messages
 6. **ESLint Peer Dep**: Package declares `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"` — see [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)
 
 See **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** for the full checklist.
+
+### Coverage is a floor, not a correctness signal
+
+Coverage measures which lines ran. It says nothing about whether the assertion
+attached to them was right. Every defect fixed on 2026-08-10 ran inside a
+passing test, in a package at 100% coverage.
+
+The failure mode is specific and it has a shape. From `no-xpath-injection`
+before #490:
+
+```js
+describe('Coverage - branch gaps', () => {
+  // id 55 false arm + id 62 false arm: no interpolation, dangerous XPath template
+  { code: 'const xpath = `//users/..`', errors: [{ messageId: 'dangerousXpathExpression' }] },
+```
+
+A block named for branch coverage, a comment naming branch IDs, and a fixture
+asserting that a hardcoded string never passed to any evaluator is a
+vulnerability. It was written to make a branch execute, and to do that it
+declared the bug correct. When the rule was fixed, the test failed — it was
+pinning the defect. Four fixtures in that block were of this kind.
+
+A 100% *gate* is what produces that: it pressures you to write tests that
+reach branches instead of tests that challenge behaviour.
+
+So:
+
+- **Keep coverage as a floor.** Do not cite it as evidence a rule is correct,
+  in a PR description, a changeset, or a claim in `CLAIMS.md`.
+- **A fixture added to reach a branch must still assert behaviour someone
+  would defend out loud.** If you cannot say why the expected outcome is right
+  without referring to the branch it covers, the fixture is pinning
+  implementation, not behaviour.
+- **Pair it with evidence coverage cannot give.** Mutation-verify — revert the
+  rule and confirm named fixtures turn red — and run the corpus scan, which
+  answers the question coverage cannot: *is this true about code we did not
+  write?* Both are the convention in #546 and should stay the convention.
+
+### Reporting posture: report the finding, let the consumer scope it
+
+Some rules are correct detections whose advice is arguably wrong in a
+particular context. `express-security/require-helmet` and
+`require-rate-limiting` firing on single-purpose demo apps in
+`express/examples/*` is the canonical case — 92 findings across four rules
+that are not false positives at all (#517).
+
+**We report them, at their normal severity.** We do not silently exclude
+`examples/`, `demo/` or `fixtures/` paths, and we do not lower severity to
+`warn` to make the number smaller. The consumer knows their repo; we do not.
+Someone who genuinely does not want Helmet in a demo directory disables the
+rule *there, explicitly* — an ESLint override or a disable comment — and that
+decision is visible in their config, where it belongs.
+
+Two things follow, and both are the point:
+
+- A path exclusion we ship is a decision made silently on behalf of every
+  consumer, including the ones whose `examples/` directory is production code.
+- Driving these findings to zero would mean deleting real detections. "0
+  findings" is not the goal and has repeatedly been misread as "0 false
+  positives" in this campaign. It is not the same measurement.
+
+When a rule's finding count is dominated by this class, say so in the audit
+rather than tuning the rule.
 
 ---
 

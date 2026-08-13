@@ -164,7 +164,7 @@ Ship the badge into the README trust row once earned.
 (105 first-party + 16 third-party) and both container images are already pinned by
 hash, so this is the last mile: pin the loose `npm install <pkg>` calls in
 `eslint-version-matrix.yml`, `deploy.yml`, `release.yml`, `quality.yml`,
-`sdk-compatibility.yml`, `daily-impact-ingest.yml`, `supply-chain-attestation.yml`
+`sdk-compatibility.yml`, `supply-chain-attestation.yml`
 and the `Dockerfile`, and pin the `pip` install in `codecov.yml`.
 
 **Status — done except one, which is deliberately left open.**
@@ -176,17 +176,45 @@ and by the image's own in-container selftest), and `codecov.yml` (`pip3 install
 codecov-cli` → `--require-hashes -r .github/requirements/codecov-cli.txt`, verified
 to install and run `codecovcli 11.3.1` under Python 3.12).
 
-**Open and won't-fix: `npm install -g @lhci/cli@0.14.0` in `lighthouse.yml`.**
-Pinning it means committing a lockfile, and OSV reads committed lockfiles whether
-the tree is dev or prod. Measured: `@lhci/cli@0.14.0` resolves 9 advisories —
-`tmp` (high), `uuid` and `@lhci/cli` (moderate), plus 6 low. They are inherent to
-the current release, so there is no version that avoids them.
+**Closed 2026-08-13: `@cyclonedx/cyclonedx-npm` in `supply-chain-attestation.yml`**
+(Scorecard alert #1326). Installed globally at `@4.2.1` — a version tag, not a
+pin, since the transitive tree still resolved at install time. Now `npm ci`
+against a committed lockfile in `.github/deps/cyclonedx/`, in its own directory
+so it cannot touch the root lockfile and so a CI-only tool stays out of the
+published graph.
 
-That trades one **medium** Pinned-Dependencies alert for 9 findings on
-**Vulnerabilities**, a higher-weighted check we just took from 0 → clean. The
-exposure is identical either way — the global install runs the same code — so
-pinning would move vulnerabilities into view without removing any. Revisit when
-lighthouse-ci ships a release that resolves them.
+Bumped `4.2.1 → 6.0.1` in the same change, because the lockfile is the point —
+committing 4.2.1's would have published its transitive advisory into
+Vulnerabilities. Measured: **4.2.1 → 1 high, 6.0.1 → 0**. Flags are unchanged
+across the major and lowercase `json` is still accepted despite the help text
+listing `JSON`; verified by generating a valid CycloneDX 1.6 document first.
+
+**Open and won't-fix: `npm install -g @lhci/cli@0.14.0` in `lighthouse.yml`**
+(Scorecard alert #1304). Pinning it means committing a lockfile, and OSV reads
+committed lockfiles whether the tree is dev or prod.
+
+Re-measured 2026-08-13, and the conclusion holds — the numbers have only got
+worse with age:
+
+| version | advisories | high |
+| --- | ---: | ---: |
+| `@lhci/cli@0.14.0` (current) | 12 | 5 |
+| `@lhci/cli@0.15.1` (latest) | 10 | 7 |
+
+There is still no release that avoids them, so this trades one **medium**
+Pinned-Dependencies alert for ten findings on **Vulnerabilities**, a
+higher-weighted check. The exposure is identical either way — the global install
+runs the same code — so pinning moves vulnerabilities into view without removing
+any.
+
+The one route that would close it without that cost is replacing the global
+install with a SHA-pinned `treosh/lighthouse-ci-action`: Scorecard counts a
+hash-pinned action as pinned, and the action's transitive tree never enters our
+lockfiles. Not done here because it is an unverifiable-in-review rewrite of a
+working job — the report step reads `apps/docs/.lighthouseci` and the
+issue-filing step depends on `lhci`'s outcome, and neither can be exercised
+without a built docs site and Chrome. Worth doing deliberately, with a run to
+prove it, rather than as a drive-by.
 
 ### 7. SAST: 9 → 10 · **+0.06** · a judgement call
 

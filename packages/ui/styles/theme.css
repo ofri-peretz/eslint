@@ -96,6 +96,26 @@
 }
 
 .dark {
+  /* `--destructive` is the one semantic hue that was given a single value in
+     `:root` and never re-checked here, so dark mode painted the light-mode
+     red — hsl(0,72%,38%), chosen to pass on white — onto a near-black
+     surface. Measured on eslint.interlace.tools/articles?tag=jwt: the
+     "Clear filters" button rendered rgb(167,27,27) on rgb(25,25,25) at
+     **2.36:1**, against the 4.5:1 the audit requires (#527).
+     hsl(0,91%,71%) measures 6.4:1 on that surface.
+
+     It escaped the axe suite because the only place it is currently painted
+     as text is a control that renders when a filter is active — no story and
+     no default route puts it on screen. That is the shape of gap to look for:
+     not an unchecked component, an unchecked *state*.
+
+     The foregrounds stay light. The solid-fill variants (button, badge)
+     already carry `dark:bg-destructive/60`, which composites this red to
+     rgb(159,78,78) — 5.7:1 under white text — so lifting the base hue does
+     not break them. */
+  --destructive: hsl(0, 91%, 71%);
+  --color-destructive: hsl(0, 91%, 71%);
+
   /* Dark-mode chart palette — lifted lightness so each series stays
      ≥4.5:1 on `bg-card` (near-black). */
   --chart-1: oklch(0.78 0.14 41);

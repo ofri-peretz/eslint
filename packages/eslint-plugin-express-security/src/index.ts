@@ -149,7 +149,19 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'express-security/no-insecure-cookie-options': 'error',
 
   // High - DDoS Protection
-  'express-security/require-rate-limiting': 'warn',
+  //
+  // 'error' as of #517. Its 30 corpus findings are concentrated in
+  // single-purpose demo apps (`express/examples/*`) where rate limiting
+  // genuinely is not wanted — but those are correct detections, not false
+  // positives, and the reporting posture in AGENTS.md is that we report and
+  // the consumer scopes. A demo directory that does not want this disables it
+  // there, explicitly, where the decision is visible in their config.
+  //
+  // Unlike `require-route-authentication` below and
+  // `node-security/detect-non-literal-fs-filename`, nothing measured argues
+  // against 'error' here: it gates on app composition, not on an identifier's
+  // spelling.
+  'express-security/require-rate-limiting': 'error',
 
   // Medium - GraphQL
   'express-security/no-graphql-introspection-production': 'warn',
@@ -198,6 +210,13 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // Access control — path/property vocabularies drive detection, so these
   // ship as review-prompt severity per scope audit I3 (naming-heuristic).
+  //
+  // Held at 'warn' under #517 on purpose. The reporting posture says report
+  // rather than hide, but that assumes the finding is evidence; this rule
+  // reports on an identifier's SPELLING, which is exactly the class #508 is
+  // being written to forbid. Promoting it would make a name-inference verdict
+  // break builds. The fix is to give the rule real resolution, then promote —
+  // not to promote and let consumers absorb the guesses.
   'express-security/require-route-authentication': 'warn',
   'express-security/no-client-controlled-authorization': 'warn',
   'express-security/no-idor-resource-access': 'warn',

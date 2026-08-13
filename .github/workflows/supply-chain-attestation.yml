@@ -135,13 +135,32 @@ jobs:
       - name: Generate SBOM (CycloneDX) per package
         env:
           TARGETS: ${{ steps.targets.outputs.list }}
+        # Hash-pinned via a committed lockfile in `.github/deps/cyclonedx/`,
+        # mirroring what `.github/requirements/codecov-cli.txt` does for pip.
+        # A version tag is not a pin: `@4.2.1` still resolved its transitive
+        # tree at install time, which is what Scorecard's Pinned-Dependencies
+        # check was flagging (alert #1326).
+        #
+        # Its own directory, not the workspace: `npm ci` here must not see or
+        # rewrite the root lockfile, and the tool is CI-only — it has no
+        # business in the published dependency graph.
+        #
+        # Bumped 4.2.1 -> 6.0.1 in the same change, because the lockfile is the
+        # point. OSV reads committed lockfiles, so pinning 4.2.1 would have
+        # published its one high-severity transitive advisory into the
+        # Vulnerabilities check — trading a medium alert for a worse one.
+        # Measured: 4.2.1 resolves 1 high, 6.0.1 resolves 0. The flags are
+        # unchanged across the major, and lowercase `json` is still accepted;
+        # verified by generating a valid CycloneDX 1.6 document with 6.0.1
+        # before committing this.
         run: |
-          npm install -g @cyclonedx/cyclonedx-npm@4.2.1
+          npm ci --prefix .github/deps/cyclonedx
+          CYCLONEDX=".github/deps/cyclonedx/node_modules/.bin/cyclonedx-npm"
           mkdir -p artifacts/sbom
           for PKG in $TARGETS; do
             DIR="packages/$PKG"
             [ -d "$DIR" ] || continue
-            cyclonedx-npm --output-file "artifacts/sbom/$PKG.cyclonedx.json" --output-format json "$DIR" || \
+            "$CYCLONEDX" --output-file "artifacts/sbom/$PKG.cyclonedx.json" --output-format json "$DIR" || \
               echo "::warning::CycloneDX failed for $PKG"
           done
 

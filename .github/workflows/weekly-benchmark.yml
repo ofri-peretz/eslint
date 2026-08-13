@@ -24,7 +24,7 @@ name: Weekly Benchmark (public, transparent)
 # Schedule: Mondays 09:00 UTC (early morning US — off-peak for runners, and
 # fresh numbers land before the US work week starts).
 #
-# Repo secrets (already present; same ones daily-impact-ingest.yml uses):
+# Repo secrets (already present; same ones ofri-peretz/impact-ingest uses):
 #   SUPABASE_URL              — https://<project-ref>.supabase.co
 #   SUPABASE_SERVICE_ROLE_KEY — full-access JWT. WRITE step only.
 #   SUPABASE_ANON_KEY         — public read key. Badge READ step only.
