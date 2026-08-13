@@ -179,6 +179,23 @@ jobs:
             echo "::warning::PR changes packages/ source but has no changeset."
           fi
 
+      # Presence is not validity. The check above greps for a `.changeset/*.md`
+      # file and stops there, so a changeset that `changeset version` refuses
+      # passed this job green and failed on `main` after merge — where it
+      # blocks the release PR and every publish behind it.
+      #
+      # That happened on #549: a changeset listing `eslint-plugin-express-security`
+      # (published) alongside `@interlace/ui` (`private: true`, so changesets
+      # treats it as ignored). Mixing ignored and non-ignored packages in one
+      # changeset is rejected, and nothing said so until it was already merged.
+      #
+      # `changeset status` builds the same release plan `version` does and exits
+      # 1 on exactly this class. Verified both directions before wiring it up:
+      # exit 1 on the mixed changeset, exit 0 once split.
+      - name: Changeset is versionable
+        if: steps.check.outputs.status == 'present'
+        run: npx changeset status
+
       - name: Summarize
         if: always()
         env:
