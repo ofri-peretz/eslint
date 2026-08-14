@@ -255,7 +255,21 @@ jobs:
       # exit 1 on the mixed changeset, exit 0 once split.
       - name: Changeset is versionable
         if: steps.check.outputs.status == 'present'
-        run: npx changeset status
+        run: |
+          set -euo pipefail
+          # `changeset status` resolves `baseBranch` ("main") as a LOCAL ref and
+          # dies with "Failed to find where HEAD diverged from main" without one.
+          # `fetch-depth: 0` fetches every commit but still checks out only the
+          # PR branch, so `main` exists as `origin/main` and nothing else.
+          #
+          # This step shipped green because it is conditional: a PR with no
+          # changeset skips it entirely, and every PR merged between it landing
+          # and this one happened to be in that class. The first PR that
+          # actually carried a changeset — this one — was also the first to run
+          # it, and it failed on the missing ref rather than on anything about
+          # the changeset.
+          git branch --force main origin/main
+          npx changeset status
 
       - name: Summarize
         if: always()

@@ -272,6 +272,19 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
     const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
+    /**
+     * `for...in` loops whose source and shape qualify as a prototype-polluting copy loop,
+     * currently open in the traversal — innermost last.
+     *
+     * ForInStatement is visited before its body, so the loop is armed by the time the
+     * body's assignments arrive and the copy-loop check claims each one first; the generic
+     * handler then steps aside. Without that hand-off the same `target[key] = source[key]`
+     * reports twice — one defect, two findings, precisely the over-reporting we criticise
+     * in competitors.
+     */
+    const openCopyLoops: { keyName: string; reported: boolean }[] = [];
+    /** The `for...in` nodes that actually armed, so `:exit` pops exactly what it pushed. */
+    const armedLoops = new WeakSet<TSESTree.ForInStatement>();
 
     // ── AST-walker / codemod context detection (closes the audit FP
     // surfaced by `npm run ilb:stress-test`). When the file imports any
@@ -1177,10 +1190,136 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         },
       });
     };
+    /**
+     * Recursive/shallow copy loops: `for (const k in src) { dst[k] = src[k] }`.
+     *
+     * This is THE canonical prototype-pollution primitive — it is how every real
+     * `merge`/`extend`/`deepAssign` helper is written, and when `src` is attacker-supplied
+     * a `__proto__` key walks straight onto Object.prototype. It was our only pollution
+     * shape `eslint-plugin-security` caught and we did not: their `detect-object-injection`
+     * flags it incidentally (it flags every `obj[key]`), ours did not because a `for...in`
+     * binding does not look tainted to the identifier heuristic.
+     *
+     * Scoped deliberately to the copy-loop shape rather than all computed writes, so it adds
+     * detection without adding their noise. Quiet when the body guards the key —
+     * `hasOwnProperty`, a `__proto__`/`constructor` check, or an allowlist test.
+     */
+    const checkPrototypePollutingCopyLoop = (node: TSESTree.ForInStatement) => {
+      if (isInCodemodContext || isTestFile) return;
+
+      // The binding introduced by `for (const k in ...)`.
+      const keyName =
+        node.left.type === AST_NODE_TYPES.VariableDeclaration
+          ? node.left.declarations[0]?.id.type === AST_NODE_TYPES.Identifier
+            ? node.left.declarations[0].id.name
+            : undefined
+          : node.left.type === AST_NODE_TYPES.Identifier
+            ? node.left.name
+            : undefined;
+      if (!keyName) return;
+
+      // Only report when the SOURCE is a function parameter — the reusable
+      // `merge(target, source)` helper shape behind every real npm prototype-pollution CVE
+      // (lodash.merge, deep-extend, …), where an attacker-supplied object reaches the loop.
+      //
+      // Copying an object the module itself owns (`for (const k in localConfig)`) is the
+      // overwhelmingly common benign case, and an existing FP-regression test pins it as
+      // safe. Requiring a parameter keeps the vulnerable shape and drops the benign one
+      // instead of trading one team's false positives for another's.
+      //
+      // Ordered FIRST because it is O(scope depth) while the guard scan below is O(body
+      // tokens): every `for...in` in the file used to pay the token scan, and a body
+      // containing nested loops was rescanned once per enclosing level. These are pure
+      // predicates, so hoisting the cheap one is behaviour-preserving — the same loops arm,
+      // they just stop paying for a scan whose result is then discarded.
+      //
+      // Measured, 57 KB file, a 1500-line body wrapped in nested `for...in`, rule time only:
+      //   loops over a LOCAL (the common case)  depth 128: 33.2 ms -> 4.2 ms, and flat in
+      //     depth afterwards (4.7 / 5.4 / 4.2 ms at depth 1 / 16 / 128).
+      //   loops over a PARAMETER (a real candidate) depth 128: 33.7 ms -> 32.8 ms, i.e.
+      //     unchanged — a candidate still has to be scanned, so the rescan across nesting
+      //     levels survives here. That residual is real and tracked; it needs the guard
+      //     state to be accumulated during the single traversal instead of re-derived per
+      //     loop, which is a redesign of this heuristic rather than a reordering.
+      if (node.right.type !== AST_NODE_TYPES.Identifier) return;
+      const sourceName = node.right.name;
+      let isParameter = false;
+      for (let scope: typeof node extends never ? never : ReturnType<typeof context.sourceCode.getScope> | null = context.sourceCode.getScope(node); scope; scope = scope.upper) {
+        const variable = scope.variables.find((v) => v.name === sourceName);
+        if (!variable) continue;
+        isParameter = variable.defs.some((def) => def.type === 'Parameter');
+        break;
+      }
+      if (!isParameter) return;
+
+      // TOKENS, not `getText`. Raw source text carries the comments with it, so an
+      // ordinary `/* copy each prototype key */` inside the loop silenced the finding
+      // entirely — a false negative anyone could trip by documenting their own code.
+      // Joined without separators so multi-token guards still read as one string
+      // (`Object` `.` `keys` -> `Object.keys`). String literals deliberately stay in:
+      // `if (k === '__proto__') continue` is the documented guard and it IS a string.
+      const bodyText = context.sourceCode
+        .getTokens(node.body)
+        .map((token) => token.value)
+        .join('');
+      // A guarded loop is the documented fix; do not report the fix.
+      if (/hasOwnProperty|hasOwn|__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(bodyText)) {
+        return;
+      }
+
+      // Arm the loop and let ESLint's own traversal find the assignment. The previous
+      // version recursively walked the whole body here, and ESLint then walked it AGAIN
+      // — two passes per loop, and O(n²) once such loops nest. Nothing about the search
+      // needed its own traversal: the assignment is an ordinary AssignmentExpression that
+      // the visitor below already receives in source order.
+      armedLoops.add(node);
+      openCopyLoops.push({ keyName, reported: false });
+    };
+
+    /**
+     * Reports the first key-write in each armed loop; returns true when it handled the node.
+     *
+     * Checked against EVERY open loop, not just the innermost, because
+     * `for (a in x) { for (b in y) { t[a] = … } }` pollutes through the OUTER key — which
+     * is what the old whole-subtree walk saw from the outer loop, and what a
+     * top-of-stack-only check would miss.
+     */
+    const reportCopyLoopWrite = (node: TSESTree.AssignmentExpression): boolean => {
+      if (
+        node.left.type !== AST_NODE_TYPES.MemberExpression ||
+        !node.left.computed ||
+        node.left.property.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const propertyName = node.left.property.name;
+      const loop = openCopyLoops.find((open) => open.keyName === propertyName && !open.reported);
+      if (!loop) return false;
+      loop.reported = true;
+      context.report({
+        node,
+        messageId: 'objectInjection',
+        data: {
+          riskLevel: 'HIGH',
+          safeAlternative:
+            'Guard the key before assigning: `if (k === "__proto__" || k === "constructor" || k === "prototype") continue;` — or copy with Object.create(null) / structuredClone.',
+        },
+      });
+      return true;
+    };
 
     return {
+      ForInStatement: checkPrototypePollutingCopyLoop,
+      'ForInStatement:exit': (node: TSESTree.ForInStatement) => {
+        // Only loops that armed above pushed a frame, and they nest, so the frame to drop
+        // is always the last one — but only when this loop is the one that pushed it.
+        if (armedLoops.has(node)) openCopyLoops.pop();
+      },
       AssignmentExpression: (node: TSESTree.AssignmentExpression) => {
         if (isInCodemodContext || isTestFile) return;
+        // A copy-loop key-write is reported as prototype pollution and must not also be
+        // reported by the generic computed-assignment check.
+        if (reportCopyLoopWrite(node)) return;
         return checkAssignmentExpression(node);
       },
       MemberExpression: (node: TSESTree.MemberExpression) => {

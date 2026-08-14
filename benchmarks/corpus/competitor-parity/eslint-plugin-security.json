@@ -1,0 +1,1342 @@
+{
+ "$schema": "./competitor-parity.schema.json",
+ "source": {
+  "package": "eslint-plugin-security",
+  "version": "4.0.1",
+  "license": "Apache-2.0",
+  "upstream": "https://github.com/eslint-community/eslint-plugin-security",
+  "extractedFrom": "test/rules/*.js via RuleTester capture",
+  "extractedOn": "2026-08-11"
+ },
+ "notice": "Test cases below are derived from eslint-plugin-security (Apache-2.0). Retained for interoperability/parity benchmarking under Apache-2.0 s.4 attribution. Do not relicense.",
+ "counts": {
+  "total": 189,
+  "invalid": 84,
+  "valid": 105
+ },
+ "cases": [
+  {
+   "rule": "detect-bidi-characters",
+   "kind": "valid",
+   "i": 0,
+   "code": "\n  var accessLevel = \"user\";\n  if (accessLevel != \"user\") { // Check if admin\n    console.log(\"You are an admin.\");\n  }\n  ",
+   "filename": null
+  },
+  {
+   "rule": "detect-bidi-characters",
+   "kind": "invalid",
+   "i": 0,
+   "code": "\n      var accessLevel = \"user\";\n      if (accessLevel != \"user‮ ⁦// Check if admin⁩ ⁦\") {\n          console.log(\"You are an admin.\");\n      }\n      ",
+   "filename": null
+  },
+  {
+   "rule": "detect-bidi-characters in comment-line",
+   "kind": "valid",
+   "i": 0,
+   "code": "\n  var isAdmin = false;\n  /* begin admins only */ if (isAdmin) {\n    console.log(\"You are an admin.\");\n  /* end admins only */ }\n  ",
+   "filename": null
+  },
+  {
+   "rule": "detect-bidi-characters in comment-line",
+   "kind": "invalid",
+   "i": 0,
+   "code": "\n      var isAdmin = false;\n      /*‮ } ⁦if (isAdmin)⁩ ⁦ begin admins only */\n          console.log(\"You are an admin.\");\n      /* end admins only ‮\n⁦*/\n      /* end admins only ‮\n { ⁦*/\n        ",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 0,
+   "code": "a.readUInt8(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 1,
+   "code": "a.readUInt16LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 2,
+   "code": "a.readUInt16BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 3,
+   "code": "a.readUInt32LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 4,
+   "code": "a.readUInt32BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 5,
+   "code": "a.readInt8(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 6,
+   "code": "a.readInt16LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 7,
+   "code": "a.readInt16BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 8,
+   "code": "a.readInt32LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 9,
+   "code": "a.readInt32BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 10,
+   "code": "a.readFloatLE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 11,
+   "code": "a.readFloatBE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 12,
+   "code": "a.readDoubleLE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 13,
+   "code": "a.readDoubleBE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 14,
+   "code": "a.writeUInt8(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 15,
+   "code": "a.writeUInt16LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 16,
+   "code": "a.writeUInt16BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 17,
+   "code": "a.writeUInt32LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 18,
+   "code": "a.writeUInt32BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 19,
+   "code": "a.writeInt8(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 20,
+   "code": "a.writeInt16LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 21,
+   "code": "a.writeInt16BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 22,
+   "code": "a.writeInt32LE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 23,
+   "code": "a.writeInt32BE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 24,
+   "code": "a.writeFloatLE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 25,
+   "code": "a.writeFloatBE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 26,
+   "code": "a.writeDoubleLE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 27,
+   "code": "a.writeDoubleBE(0)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 28,
+   "code": "a.readUInt8(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 29,
+   "code": "a.readUInt16LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 30,
+   "code": "a.readUInt16BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 31,
+   "code": "a.readUInt32LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 32,
+   "code": "a.readUInt32BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 33,
+   "code": "a.readInt8(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 34,
+   "code": "a.readInt16LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 35,
+   "code": "a.readInt16BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 36,
+   "code": "a.readInt32LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 37,
+   "code": "a.readInt32BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 38,
+   "code": "a.readFloatLE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 39,
+   "code": "a.readFloatBE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 40,
+   "code": "a.readDoubleLE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 41,
+   "code": "a.readDoubleBE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 42,
+   "code": "a.writeUInt8(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 43,
+   "code": "a.writeUInt16LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 44,
+   "code": "a.writeUInt16BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 45,
+   "code": "a.writeUInt32LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 46,
+   "code": "a.writeUInt32BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 47,
+   "code": "a.writeInt8(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 48,
+   "code": "a.writeInt16LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 49,
+   "code": "a.writeInt16BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 50,
+   "code": "a.writeInt32LE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 51,
+   "code": "a.writeInt32BE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 52,
+   "code": "a.writeFloatLE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 53,
+   "code": "a.writeFloatBE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 54,
+   "code": "a.writeDoubleLE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "valid",
+   "i": 55,
+   "code": "a.writeDoubleBE(0, false)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 0,
+   "code": "a.readUInt8(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 1,
+   "code": "a.readUInt16LE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 2,
+   "code": "a.readUInt16BE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 3,
+   "code": "a.readUInt32LE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 4,
+   "code": "a.readUInt32BE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 5,
+   "code": "a.readInt8(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 6,
+   "code": "a.readInt16LE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 7,
+   "code": "a.readInt16BE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 8,
+   "code": "a.readInt32LE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 9,
+   "code": "a.readInt32BE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 10,
+   "code": "a.readFloatLE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 11,
+   "code": "a.readFloatBE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 12,
+   "code": "a.readDoubleLE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 13,
+   "code": "a.readDoubleBE(0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 14,
+   "code": "a.writeUInt8(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 15,
+   "code": "a.writeUInt16LE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 16,
+   "code": "a.writeUInt16BE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 17,
+   "code": "a.writeUInt32LE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 18,
+   "code": "a.writeUInt32BE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 19,
+   "code": "a.writeInt8(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 20,
+   "code": "a.writeInt16LE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 21,
+   "code": "a.writeInt16BE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 22,
+   "code": "a.writeInt32LE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 23,
+   "code": "a.writeInt32BE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 24,
+   "code": "a.writeFloatLE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 25,
+   "code": "a.writeFloatBE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 26,
+   "code": "a.writeDoubleLE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 27,
+   "code": "a.writeDoubleBE(0, 0, true)",
+   "filename": null
+  },
+  {
+   "rule": "detect-buffer-noassert",
+   "kind": "invalid",
+   "i": 28,
+   "code": "a.readDoubleLE(0, true);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 0,
+   "code": "child_process.exec('ls')",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 1,
+   "code": "\n    var {} = require('child_process');\n    var result = /hello/.exec(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 2,
+   "code": "\n    var {} = require('node:child_process');\n    var result = /hello/.exec(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 3,
+   "code": "\n    import {} from 'child_process';\n    var result = /hello/.exec(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 4,
+   "code": "\n    import {} from 'node:child_process';\n    var result = /hello/.exec(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 5,
+   "code": "var { spawn } = require('child_process'); spawn(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 6,
+   "code": "var { spawn } = require('node:child_process'); spawn(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 7,
+   "code": "import { spawn } from 'child_process'; spawn(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 8,
+   "code": "import { spawn } from 'node:child_process'; spawn(str);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 9,
+   "code": "\n    var foo = require('child_process');\n    function fn () {\n      var foo = /hello/;\n      var result = foo.exec(str);\n    }",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 10,
+   "code": "var child = require('child_process'); child.spawn(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 11,
+   "code": "var child = require('node:child_process'); child.spawn(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 12,
+   "code": "import child from 'child_process'; child.spawn(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 13,
+   "code": "import child from 'node:child_process'; child.spawn(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 14,
+   "code": "\n    var foo = require('child_process');\n    function fn () {\n      var result = foo.spawn(str);\n    }",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 15,
+   "code": "require('child_process').spawn(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 16,
+   "code": "\n    function fn () {\n      require('child_process').spawn(str)\n    }",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 17,
+   "code": "\n    var child_process = require('child_process');\n    var FOO = 'ls';\n    child_process.exec(FOO);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "valid",
+   "i": 18,
+   "code": "\n    import child_process from 'child_process';\n    const FOO = 'ls';\n    child_process.exec(FOO);",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 0,
+   "code": "require('child_process')",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 1,
+   "code": "require('node:child_process')",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 2,
+   "code": "var child = require('child_process'); child.exec(com)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 3,
+   "code": "var child = require('node:child_process'); child.exec(com)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 4,
+   "code": "import child from 'child_process'; child.exec(com)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 5,
+   "code": "import child from 'node:child_process'; child.exec(com)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 6,
+   "code": "var child = sinon.stub(require('child_process')); child.exec.returns({});",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 7,
+   "code": "var child = sinon.stub(require('node:child_process')); child.exec.returns({});",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 8,
+   "code": "\n      var foo = require('child_process');\n      function fn () {\n        var result = foo.exec(str);\n      }",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 9,
+   "code": "\n      import foo from 'child_process';\n      function fn () {\n        var result = foo.exec(str);\n      }",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 10,
+   "code": "\n      import foo from 'node:child_process';\n      function fn () {\n        var result = foo.exec(str);\n      }",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 11,
+   "code": "\n      require('child_process').exec(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 12,
+   "code": "\n      function fn () {\n        require('child_process').exec(str)\n      }",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 13,
+   "code": "\n      const {exec} = require('child_process');\n      exec(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-child-process",
+   "kind": "invalid",
+   "i": 14,
+   "code": "\n      const {exec} = require('node:child_process');\n      exec(str)",
+   "filename": null
+  },
+  {
+   "rule": "detect-disable-mustache-escape",
+   "kind": "valid",
+   "i": 0,
+   "code": "escapeMarkup = false",
+   "filename": null
+  },
+  {
+   "rule": "detect-disable-mustache-escape",
+   "kind": "invalid",
+   "i": 0,
+   "code": "a.escapeMarkup = false",
+   "filename": null
+  },
+  {
+   "rule": "detect-eval-with-expression",
+   "kind": "valid",
+   "i": 0,
+   "code": "eval('alert()')",
+   "filename": null
+  },
+  {
+   "rule": "detect-eval-with-expression",
+   "kind": "valid",
+   "i": 1,
+   "code": "eval(\"some nefarious code\");",
+   "filename": null
+  },
+  {
+   "rule": "detect-eval-with-expression",
+   "kind": "valid",
+   "i": 2,
+   "code": "eval()",
+   "filename": null
+  },
+  {
+   "rule": "detect-eval-with-expression",
+   "kind": "invalid",
+   "i": 0,
+   "code": "eval(a);",
+   "filename": null
+  },
+  {
+   "rule": "detect-new-buffer",
+   "kind": "valid",
+   "i": 0,
+   "code": "var a = new Buffer('test')",
+   "filename": null
+  },
+  {
+   "rule": "detect-new-buffer",
+   "kind": "invalid",
+   "i": 0,
+   "code": "var a = new Buffer(c)",
+   "filename": null
+  },
+  {
+   "rule": "detect-no-csrf-before-method-override",
+   "kind": "valid",
+   "i": 0,
+   "code": "express.methodOverride();express.csrf()",
+   "filename": null
+  },
+  {
+   "rule": "detect-no-csrf-before-method-override",
+   "kind": "invalid",
+   "i": 0,
+   "code": "express.csrf();express.methodOverride()",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 0,
+   "code": "var fs = require('fs');\n             var a = fs.open('test')",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 1,
+   "code": "var something = require('some');\n             var a = something.readFile(c);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 2,
+   "code": "var something = require('fs').readFile, readFile = require('foo').readFile;\n             readFile(c);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 3,
+   "code": "\n            import { promises as fsp } from 'fs';\n            import fs from 'fs';\n            import path from 'path';\n\n            const index = await fsp.readFile(path.resolve(__dirname, './index.html'), 'utf-8');\n            const key = fs.readFileSync(path.join(__dirname, './ssl.key'));\n            await fsp.writeFile(path.resolve(__dirname, './sitemap.xml'), sitemap);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 4,
+   "code": "\n            import fs from 'fs';\n            import path from 'path';\n            const dirname = path.dirname(__filename)\n            const key = fs.readFileSync(path.resolve(dirname, './index.html'));",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 5,
+   "code": "\n            import fs from 'fs';\n            const key = fs.readFileSync(`${process.cwd()}/path/to/foo.json`);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 6,
+   "code": "\n    import fs from 'fs';\n    import path from 'path';\n    import url from 'url';\n    const dirname = path.dirname(url.fileURLToPath(import.meta.url));\n    const html = fs.readFileSync(path.resolve(dirname, './index.html'), 'utf-8');",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 7,
+   "code": "\n    import fs from 'fs';\n    import path from 'path';\n    const html = fs.readFileSync(path.resolve(import.meta.dirname, './index.html'), 'utf-8');",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 8,
+   "code": "\n    import fs from 'fs';\n    const pkg = fs.readFileSync(import.meta.filename, 'utf-8');",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "valid",
+   "i": 9,
+   "code": "\n      import fs from 'fs';\n      const pkg = fs.readFileSync(require.resolve('eslint/package.json'), 'utf-8');",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 0,
+   "code": "var something = require('fs');\n             var a = something.open(c);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 1,
+   "code": "var one = require('fs').readFile;\n             one(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 2,
+   "code": "var one = require('node:fs').readFile;\n             one(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 3,
+   "code": "var one = require('fs/promises').readFile;\n             one(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 4,
+   "code": "var something = require('fs/promises');\n             something.readFile(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 5,
+   "code": "var something = require('node:fs/promises');\n             something.readFile(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 6,
+   "code": "var something = require('fs-extra');\n             something.readFile(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 7,
+   "code": "var { readFile: something } = require('fs');\n             something(filename)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 8,
+   "code": "import { readFile as something } from 'fs';\n             something(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 9,
+   "code": "import { readFile as something } from 'node:fs';\n             something(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 10,
+   "code": "import { readFile as something } from 'fs-extra';\n             something(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 11,
+   "code": "import { readFile as something } from 'fs/promises'\n             something(filename)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 12,
+   "code": "import { readFile as something } from 'node:fs/promises'\n             something(filename)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 13,
+   "code": "import * as something from 'fs';\n             something.readFile(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 14,
+   "code": "import * as something from 'node:fs';\n             something.readFile(filename);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 15,
+   "code": "var something = require('fs').promises;\n             something.readFile(filename)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 16,
+   "code": "var something = require('node:fs').promises;\n             something.readFile(filename)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 17,
+   "code": "var something = require('fs');\n             something.promises.readFile(filename)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 18,
+   "code": "var something = require('node:fs');\n             something.promises.readFile(filename)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 19,
+   "code": "var fs = require('fs');\nfs.readFile(`template with ${filename}`);",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 20,
+   "code": "function foo () {\nvar fs = require('fs');\nfs.readFile(filename);\n}",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 21,
+   "code": "function foo () {\nvar { readFile: something } = require('fs');\nsomething(filename);\n}",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 22,
+   "code": "var fs = require('fs');\nfunction foo () {\nvar { readFile: something } = fs.promises;\nsomething(filename);\n}",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 23,
+   "code": "\n            import fs from 'fs';\n            import path from 'path';\n            const key = fs.readFileSync(path.resolve(__dirname, foo));",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-fs-filename",
+   "kind": "invalid",
+   "i": 24,
+   "code": "\n            import fs from 'fs';\n            import path from 'path';\n            const key = fs.readFileSync(path.resolve(import.meta[prop], './index.html'));",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-regexp",
+   "kind": "valid",
+   "i": 0,
+   "code": "var a = new RegExp('ab+c', 'i')",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-regexp",
+   "kind": "valid",
+   "i": 1,
+   "code": "\n            var source = 'ab+c'\n            var a = new RegExp(source, 'i')",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-regexp",
+   "kind": "invalid",
+   "i": 0,
+   "code": "var a = new RegExp(c, 'i')",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-require",
+   "kind": "valid",
+   "i": 0,
+   "code": "var a = require('b')",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-require",
+   "kind": "valid",
+   "i": 1,
+   "code": "var a = require(`b`)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-require",
+   "kind": "valid",
+   "i": 2,
+   "code": "\n  const d = 'debounce'\n  var a = require(`lodash/${d}`)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-require",
+   "kind": "valid",
+   "i": 3,
+   "code": "const utils = require(__dirname + '/utils');",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-require",
+   "kind": "invalid",
+   "i": 0,
+   "code": "var a = require(c)",
+   "filename": null
+  },
+  {
+   "rule": "detect-non-literal-require",
+   "kind": "invalid",
+   "i": 1,
+   "code": "var a = require(`${c}`)",
+   "filename": null
+  },
+  {
+   "rule": "detect-object-injection (Generic)",
+   "kind": "valid",
+   "i": 0,
+   "code": "var a = {};",
+   "filename": null
+  },
+  {
+   "rule": "detect-object-injection (Generic)",
+   "kind": "invalid",
+   "i": 0,
+   "code": "var a = {}; a[b] = 4",
+   "filename": null
+  },
+  {
+   "rule": "detect-possible-timing-attacks (left side)",
+   "kind": "valid",
+   "i": 0,
+   "code": "if (age === 5) {}",
+   "filename": null
+  },
+  {
+   "rule": "detect-possible-timing-attacks (left side)",
+   "kind": "invalid",
+   "i": 0,
+   "code": "if (password === 'mypass') {}",
+   "filename": null
+  },
+  {
+   "rule": "detect-possible-timing-attacks (right side)",
+   "kind": "valid",
+   "i": 0,
+   "code": "if (age === 5) {}",
+   "filename": null
+  },
+  {
+   "rule": "detect-possible-timing-attacks (right side)",
+   "kind": "invalid",
+   "i": 0,
+   "code": "if ('mypass' === password) {}",
+   "filename": null
+  },
+  {
+   "rule": "detect-pseudoRandomBytes",
+   "kind": "valid",
+   "i": 0,
+   "code": "crypto.randomBytes",
+   "filename": null
+  },
+  {
+   "rule": "detect-pseudoRandomBytes",
+   "kind": "invalid",
+   "i": 0,
+   "code": "crypto.pseudoRandomBytes",
+   "filename": null
+  },
+  {
+   "rule": "detect-unsafe-regex",
+   "kind": "valid",
+   "i": 0,
+   "code": "/^d+1337d+$/",
+   "filename": null
+  },
+  {
+   "rule": "detect-unsafe-regex",
+   "kind": "invalid",
+   "i": 0,
+   "code": "/(x+x+)+y/",
+   "filename": null
+  },
+  {
+   "rule": "detect-unsafe-regex (new RegExp)",
+   "kind": "valid",
+   "i": 0,
+   "code": "new RegExp('^d+1337d+$')",
+   "filename": null
+  },
+  {
+   "rule": "detect-unsafe-regex (new RegExp)",
+   "kind": "invalid",
+   "i": 0,
+   "code": "new RegExp('x+x+)+y')",
+   "filename": null
+  }
+ ]
+}

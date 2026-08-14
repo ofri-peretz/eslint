@@ -248,3 +248,32 @@ export const createRule = RuleCreator(
 export const ESLintUtils = { RuleCreator, applyDefault };
 
 export type { TSESLint };
+
+/**
+ * Canonical documentation URL for a rule on eslint.interlace.tools.
+ *
+ * The docs slug MUST equal the package suffix — `eslint-plugin-node-security`
+ * documents at `plugin-node-security`. Verified live: any other shape 404s.
+ */
+export const docsUrlFor = (pluginSlug: string, ruleName: string): string =>
+  `https://eslint.interlace.tools/docs/security/${pluginSlug}/rules/${ruleName}`;
+
+/**
+ * Stamp the canonical docs URL onto every rule in a plugin's export map.
+ *
+ * Rules built with the default {@link createRule} inherit a placeholder URL that does not
+ * resolve — every "see docs" link in every IDE, CI report and SARIF file 404s. Rather than
+ * rewrite the import in ~110 rule files, plugins pass their rule map through this on export.
+ *
+ * @param pluginSlug - docs slug, equal to the package suffix (e.g. `plugin-node-security`)
+ * @param rules - the plugin's rule map, returned with `meta.docs.url` corrected
+ */
+export function withCanonicalDocsUrls<
+  T extends Record<string, TSESLint.RuleModule<string, readonly unknown[]>>,
+>(pluginSlug: string, rules: T): T {
+  for (const [name, rule] of Object.entries(rules)) {
+    const docs = rule?.meta?.docs as { url?: string } | undefined;
+    if (docs) docs.url = docsUrlFor(pluginSlug, name);
+  }
+  return rules;
+}

@@ -53,7 +53,7 @@ import { noUnboundedDecompression } from './rules/no-unbounded-decompression';
 import { noInsecureHttpParser } from './rules/no-insecure-http-parser';
 import { requireStreamErrorHandler } from './rules/require-stream-error-handler';
 
-import { TSESLint } from '@interlace/eslint-devkit';
+import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 export const rules: Record<
   string,
@@ -108,6 +108,16 @@ export const rules: Record<
   'no-insecure-http-parser': noInsecureHttpParser,
   'require-stream-error-handler': requireStreamErrorHandler,
 };
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-node-security', rules);
 
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {

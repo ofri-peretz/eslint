@@ -30,6 +30,8 @@ export * from './rule-creation';
 
 // AST utilities
 export * from './ast/ast-utils';
+export * from './ast/module-binding';
+export * from './ast/static-expression';
 
 // Type utilities
 export * from './types/type-utils';

@@ -631,6 +631,45 @@ describe('detect-child-process — coverage completion', () => {
         // file's.
         `import {spawn} from 'child_process';
          export function runCommand(command, args) { return spawn(command, args, {stdio: 'inherit'}); }`,
+        // ── The operator is not a remote attacker ──────────────────────────
+        // Shopify/cli packages/plugin-cloudflare/src/install-cloudflared.ts:85,
+        // verbatim down to the default parameters. `binTarget` really does
+        // trace to `process.env` — `getBinPathTarget(env, …)` ← `install(env =
+        // process.env)` — so the binding analysis was right and the verdict was
+        // wrong. `SHOPIFY_CLI_CLOUDFLARED_PATH` is the documented override for
+        // where the CLI finds its own binary; whoever can set it is already at
+        // a shell and can run that binary directly. No shell, literal argv,
+        // nothing crossed a boundary.
+        //
+        // Reverting `readsRemoteTaintSource` to `readsTaintSource` in
+        // `commandIsSteerable` puts `childProcessCommandInjection` back here.
+        `const { execFileSync } = require('child_process');
+         function getBinPathTarget(env = process.env, platform = process.platform) {
+           if (env.SHOPIFY_CLI_CLOUDFLARED_PATH) return env.SHOPIFY_CLI_CLOUDFLARED_PATH;
+           return platform === 'win32' ? 'bin/cloudflared.exe' : 'bin/cloudflared';
+         }
+         export function install(env = process.env, platform = process.platform) {
+           const binTarget = getBinPathTarget(env, platform);
+           return execFileSync(binTarget, ['--version'], { encoding: 'utf8' }).split(' ');
+         }`,
+        // The same claim without the indirection, so the case survives any
+        // change to how far the reader walks.
+        `const { execFileSync } = require('child_process');
+         execFileSync(process.env.CLOUDFLARED_PATH, ['--version']);`,
+        // Shopify/cli bin/changeset.js:17 — a Node program re-invoking itself
+        // and forwarding its own command line. `process.execPath` is the
+        // interpreter already running this code, and `...args` is
+        // `process.argv.slice(2)`: the operator's own words, handed to a
+        // subprocess they could have called themselves. Argument injection
+        // (CWE-88) needs a lever the caller does not already hold.
+        //
+        // Reverting `argumentInjectionSite` to `readsTaintSource` puts
+        // `argumentInjection` back on the spread.
+        `import {spawn} from 'node:child_process';
+         import {fileURLToPath} from 'node:url';
+         const args = process.argv.slice(2);
+         const changesetBinPath = fileURLToPath(new URL('../bin.js', import.meta.url));
+         spawn(process.execPath, [changesetBinPath, ...args], {stdio: 'inherit'});`,
       ],
       invalid: [
         // The shape CWE-78 is actually about: a shell, and a request steering
@@ -690,9 +729,23 @@ describe('detect-child-process — coverage completion', () => {
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         // argv is attacker-namable input for a CLI.
+        //
+        // FN GUARD for the narrowing above: `process` is dropped ONLY on the
+        // no-shell path, where the question is "can someone else pick the
+        // binary / smuggle a flag". Spliced into a shell string it is code, and
+        // `execSync` is always a shell. If the reader is swapped here too, this
+        // goes quiet.
         {
           code: `const { execSync } = require('child_process');
                  execSync('rm -rf ' + process.argv[2]);`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // FN GUARD: argv[0] is the program itself. No shell does not save a
+        // call whose binary a REQUEST names — the half of `commandIsSteerable`
+        // that the `process.env` exemption above must not swallow.
+        {
+          code: `const { spawn } = require('child_process');
+                 app.post('/run', (req) => spawn(req.body.cmd, ['--version']));`,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],

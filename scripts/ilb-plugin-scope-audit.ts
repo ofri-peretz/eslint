@@ -24,9 +24,13 @@
  *   structural-pattern    AST shape (e.g. + concat in .query() arg)
  *   naming-heuristic      Variable/property name as proxy for data flow
  *   data-flow-lightweight Lightweight variable tracking (Set of bound names)
+ *   source-text           Raw source characters, no AST (e.g. no-bidi-characters, which
+ *                         must see bytes the parser normalises away). Exact character
+ *                         match, so it is the most precise method here, not the loosest —
+ *                         nothing is inferred.
  *
  * Axis 3 — Confidence (severity the flagship config ships)
- *   enforcement    'error' — structural-api or structural-pattern only
+ *   enforcement    'error' — any detection method except naming-heuristic
  *   review-prompt  'warn'  — any detection method
  *   opt-in         'off'   — experimental / noisy / controversial
  *
@@ -34,7 +38,10 @@
  *   I1  Every plugin rule has a manifest entry.
  *   I2  Environment tag matches the plugin's allowed environments.
  *   I3  naming-heuristic → confidence must be review-prompt or opt-in (never enforcement).
- *   I4  enforcement → detection must be structural-api or structural-pattern.
+ *   I4  enforcement → detection must not be naming-heuristic. Stated as an exclusion
+ *       rather than an allowlist because that is what the check below has always done:
+ *       what disqualifies a rule from 'error' is inferring data from a NAME, not the
+ *       absence of an AST. data-flow-lightweight and source-text both qualify.
  *   I5  No manifest entry tagged violation (explicit known-bad marker).
  *
  * ## Usage

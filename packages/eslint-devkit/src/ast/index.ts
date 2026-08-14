@@ -6,3 +6,5 @@
 
 // AST utilities for ESLint rule development
 export * from '../ast/ast-utils';
+export * from './static-expression';
+export * from './module-binding';
