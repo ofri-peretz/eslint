@@ -417,13 +417,32 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     const isXpathOperation = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
-      // Check for XPath method calls
+      // Check for XPath method calls.
+      //
+      // `select` is the odd one out. It is xpath-npm's API (`xpath.select(expr, doc)`) and
+      // also Mongoose's projection method, Knex's column picker, and jQuery's. Matching it
+      // on the property name alone made `mq.select(projection)` and
+      // `builder().select(field)` XPath sinks — the largest remaining false-positive shape
+      // for this rule. For that name only, the receiver has to look like an XPath API.
+      //
+      // The others are unambiguous: `evaluate`, `selectSingleNode` and `selectNodes` name
+      // nothing else in common use.
       if (
         callee.type === 'MemberExpression' &&
         callee.property.type === 'Identifier' &&
         xpathFunctions.includes(callee.property.name)
       ) {
-        return true;
+        if (callee.property.name !== 'select') {
+          return true;
+        }
+        const receiver = callee.object;
+        return (
+          (receiver.type === AST_NODE_TYPES.Identifier &&
+            /xpath|xpth/i.test(receiver.name)) ||
+          (receiver.type === AST_NODE_TYPES.MemberExpression &&
+            receiver.property.type === AST_NODE_TYPES.Identifier &&
+            /xpath/i.test(receiver.property.name))
+        );
       }
 
       // Check for XPath library calls

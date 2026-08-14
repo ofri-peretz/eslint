@@ -854,3 +854,28 @@ ruleTester.run('lock: evidence, not names', noXpathInjection, {
     { code: 'const { xpathQuery } = opts; doc.evaluate(xpathQuery, doc);', errors: 1 },
   ],
 });
+
+/**
+ * Regression lock — `select` needs an XPath receiver.
+ *
+ * `select` is xpath-npm's API and also Mongoose's projection method, Knex's column picker
+ * and jQuery's. Matching it on the property name alone made `mq.select(projection)` and
+ * `builder().select(field)` XPath sinks — the largest remaining false-positive shape for
+ * this rule after the name-matching fix. `evaluate`, `selectSingleNode` and `selectNodes`
+ * name nothing else in common use and stay unconditional.
+ */
+ruleTester.run('lock: the select sink needs an xpath receiver', noXpathInjection, {
+  valid: [
+    { code: 'mq.select(projection);' },
+    { code: 'builder().select(field);' },
+    { code: 'knex("users").select(col);' },
+    // A member receiver that is not xpath-shaped.
+    { code: 'db.query.select(userInput);' },
+  ],
+  invalid: [
+    { code: 'xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
+    // Namespaced receiver: `lib.xpath.select(...)`.
+    { code: 'lib.xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
+    { code: 'xml.selectNodes(userQuery);', errors: 1 },
+  ],
+});
