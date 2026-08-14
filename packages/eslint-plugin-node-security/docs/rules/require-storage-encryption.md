@@ -129,3 +129,20 @@ The following patterns are **not detected** due to static analysis limitations:
 
 - [CWE-312: Cleartext Storage of Sensitive Information](https://cwe.mitre.org/data/definitions/312.html)
 - [OWASP Secure Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Storage_Cheat_Sheet.html)
+
+## Not a finding
+
+This rule owns the **filesystem**. Client storage — `localStorage`, `sessionStorage`,
+`AsyncStorage` — belongs to
+[`require-secure-credential-storage`](./require-secure-credential-storage.md). Both
+require evidence that what is being stored is a credential:
+
+| Code | Why it is silent |
+| --- | --- |
+| `fs.writeFile(sitemapPath, sitemap)` | A write, but nothing says a credential is in it. |
+| `fs.writeFileSync('creds.json', encrypt(password))` | Encrypted on the way out. |
+| `const key = fs.readFileSync(path.join(__dirname, './ssl.key'))` | A read, not a write — and reading a TLS key at startup is how TLS works. `key` on its own is deliberately not treated as evidence. |
+
+**If it fires**, either the filename or the value named a credential. If that name is
+misleading — a variable called `tokenizer`, say — renaming it is the better fix than a
+disable comment, because the next reader will make the same mistake the rule did.

@@ -292,3 +292,19 @@ obj[method](userInput);
 | `allowLiterals` | `boolean` | `false` | Allow literal string regex patterns |
 | `additionalPatterns` | `string[]` | `[]` | Additional RegExp creation patterns to check |
 | `maxPatternLength` | `number` | `100` | Maximum allowed pattern length for dynamic regex |
+
+## Not a finding
+
+"Dynamic" means an attacker can change the pattern — not that it is spelled as something
+other than a literal.
+
+| Code | Why it is silent |
+| --- | --- |
+| `const source = 'ab+c'; new RegExp(source)` | Resolves to a constant. |
+| `const EXTS = ['png','jpg']; new RegExp(EXTS.join('\|'))` | Constant-preserving methods over a constant array. |
+| `const P = '^v'; new RegExp(P + '\\d+')` | Concatenation of constants. |
+| `for (let i = 0; i < 3; i++) new RegExp('{' + i + '}')` | The loop drives the counter. |
+
+**If it fires**, the pattern reaches a name this file cannot resolve, or a
+constant-preserving chain deeper than the walk follows. A parameter could be anything,
+which is the case the rule exists for.

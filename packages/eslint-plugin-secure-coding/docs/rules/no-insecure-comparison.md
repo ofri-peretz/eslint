@@ -226,3 +226,20 @@ obj[method](userInput);
 - [CWE-697: Incorrect Comparison](https://cwe.mitre.org/data/definitions/697.html)
 - [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness)
 - [JavaScript Equality Table](https://dorey.github.io/JavaScript-Equality-Table/)
+
+## Not a finding
+
+This rule's subject is **type coercion**, and coercion needs two types. When both
+operands are provably the same type, `==` and `===` do the same thing and there is
+nothing to report:
+
+| Code | Why it is silent |
+| --- | --- |
+| `var role = 'user'; if (role != 'user')` | Both operands are provably strings. |
+| `` const r = `admin`; if (r == `admin`) `` | A template literal is a string by construction. |
+| `if (x == null)` | The idiomatic nullish check — it matches `null` *and* `undefined`, which is why it is written that way. Core `eqeqeq` exempts it for the same reason. |
+
+**If it fires**, at least one operand's type is not provable here: a parameter, a member
+expression, a name written more than once. A variable reassigned between its declaration
+and the comparison can hold anything by the time the comparison runs, so it stays a
+finding.

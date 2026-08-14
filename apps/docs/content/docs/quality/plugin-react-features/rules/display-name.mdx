@@ -248,3 +248,19 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+
+## Not a finding
+
+React reads a component's display name off `Function.name` or `Class.name`. A component
+with a name is already named — there is nothing to fix and nothing to report.
+
+| Code | Why it is silent |
+| --- | --- |
+| `function Profile() { ... }` | Named by the function. |
+| `const Profile = () => ...` | Named by the binding. |
+| `class Profile extends Component { ... }` | Named by the class; `static displayName` is optional. |
+| `const Row = memo(() => <div />)` | The binding names the component through the wrapper. |
+
+**If it fires**, React genuinely cannot name it: an anonymous `export default`, an
+anonymous class component, or `memo`/`forwardRef` with no binding to take a name from.
+Those render as `Anonymous` in DevTools and in every component stack trace.

@@ -75,3 +75,20 @@ The rule covers every element that conveys non-text content to sighted users:
 - Image-like usage via background CSS (`<div style={{ backgroundImage }} />`) is not flagged — CSS-painted images are outside the rule's scope and should use an explicit `<img>` when they carry meaning.
 - Dynamically composed alt text (e.g. `alt={maybeUndefined}`) is accepted; the rule cannot prove the runtime value will not be empty. Pair with TypeScript narrowing to make the `alt` prop required at the type level.
 - Custom image wrappers that re-export `<img>` via a generic prop spread are tracked only when the component name follows the `Image`/`Img`/`Picture` heuristic.
+
+## Not a finding
+
+The image component is resolved from its **import**, so a same-named component from an
+unrelated package is out of scope.
+
+| Code | Why it is silent |
+| --- | --- |
+| `import Image from 'next/image';`<br />`<Image src={s} alt="hero" />` | It has alt text. |
+| `import Image from 'some-chart-lib';`<br />`<Image src={s} />` | Not an image component — the module is what counts, not the name. |
+| `<img src={s} alt="" />` | An explicitly empty alt marks the image decorative, which is the correct annotation. |
+| `<img src={s} alt={caption} />` | A dynamic alt is trusted, per the standard `jsx-a11y/alt-text` contract. |
+
+**If it fires** on `next/image`, `next/legacy/image` or `next/future/image`, that is
+deliberate: it is the dominant image component in every Next.js app and was previously
+invisible unless you set `{ img: ['Image'] }` — a default nobody sets, on the framework
+most likely to need it.

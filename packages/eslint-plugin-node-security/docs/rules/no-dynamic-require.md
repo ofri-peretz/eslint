@@ -136,3 +136,19 @@ processValue(getValue()); // Cross-file not tracked
 | ------ | ---- | ------- | ----------- |
 | `allowContexts` | `string[]` | `[]` | Allow dynamic requires in specific contexts. |
 | `allowPatterns` | `string[]` | `[]` | Regex patterns for allowed dynamic require paths. |
+
+## Not a finding
+
+The question is whether a specifier can *change*, not whether it is spelled as a literal.
+Resolution runs through ESLint's scope analysis, so all of these are silent:
+
+| Code | Why it is silent |
+| --- | --- |
+| `` require(`b`) `` | A template with no interpolation is a literal. |
+| `` const d = 'debounce'; require(`lodash/${d}`) `` | Every interpolated part resolves to a constant. |
+| `require(__dirname + '/utils')` | `__dirname` is where the module sits on disk, fixed at load. |
+| `require.resolve('eslint/package.json')` | A lookup against the dependency tree. |
+
+**If it fires**, the specifier reaches a name this file cannot resolve — a parameter, an
+import, a variable written more than once. That is genuinely unknowable here, which is
+exactly the case the rule exists for.
