@@ -20,7 +20,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error', incidentId });
 });
 
-app.get('/reports/:id', async (req, res, next) => {
+app.get('/reports/:id', requireAuth, async (req, res, next) => {
   try {
     res.json(await loadReport(req.params.id));
   } catch (err) {

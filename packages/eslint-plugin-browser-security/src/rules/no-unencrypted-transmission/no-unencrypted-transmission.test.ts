@@ -50,7 +50,7 @@ describe('no-unencrypted-transmission', () => {
         },
         // WSS
         {
-          code: 'const ws = new WebSocket("wss://example.com");',
+          code: 'const ws = new WebSocket("wss://acmecorp.io");',
         },
         // Secure database connections
         {
@@ -141,7 +141,7 @@ describe('no-unencrypted-transmission', () => {
       valid: [],
       invalid: [
         {
-          code: 'const ws = new WebSocket("ws://example.com");',
+          code: 'const ws = new WebSocket("ws://acmecorp.io");',
           errors: [
             {
               messageId: 'unencryptedTransmission',
@@ -156,7 +156,7 @@ describe('no-unencrypted-transmission', () => {
                     protocol: 'ws://',
                     secureProtocol: 'wss://',
                   },
-                  output: 'const ws = new WebSocket("wss://example.com");',
+                  output: 'const ws = new WebSocket("wss://acmecorp.io");',
                 },
               ],
             },

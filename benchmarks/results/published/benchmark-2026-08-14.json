@@ -1,0 +1,547 @@
+{
+  "$schema": "https://eslint.interlace.tools/schemas/benchmark-v1.json",
+  "benchmark": "Interlace ESLint security benchmark",
+  "generated": "2026-08-14",
+  "environment": {
+    "eslint": "10.8.1",
+    "node": "24",
+    "os": "darwin"
+  },
+  "subjects": {
+    "interlace": {
+      "eslint-plugin-secure-coding": "4.1.0",
+      "eslint-plugin-browser-security": "1.3.2",
+      "eslint-plugin-node-security": "4.12.0"
+    },
+    "competitors": {
+      "eslint-plugin-security": "4.0.1"
+    }
+  },
+  "configuration": {
+    "ruleSet": "recommended vs recommended (80 Interlace rules vs 14)",
+    "severity": "error",
+    "optionsPassed": "none — all rules on documented defaults",
+    "typeAware": false,
+    "overrideConfigFile": true,
+    "excluded": [
+      "node_modules",
+      "dist",
+      "build",
+      ".next",
+      ".nuxt",
+      "coverage",
+      "vendor",
+      "public",
+      "fixtures",
+      "__fixtures__",
+      "test",
+      "tests",
+      "__tests__",
+      "spec",
+      "specs",
+      "e2e",
+      "benchmark",
+      "benchmarks",
+      "example",
+      "examples",
+      "doc",
+      "docs",
+      "*.min.js",
+      "*.bundle.js",
+      "*.chunk.js",
+      "*.d.ts",
+      "avg line length > 500 chars"
+    ],
+    "excludedFromTotals": "2132 identical \"rule definition not found\" messages on BOTH sides, from the scanned repos own eslint-disable comments"
+  },
+  "realSource": {
+    "totalFiles": 23682,
+    "findings": {
+      "note": "Cleaned: counts only rules belonging to the plugins under test.",
+      "interlace": 1375,
+      "competitor": 23325
+    },
+    "per1kFiles": {
+      "interlace": 58.1,
+      "competitor": 984.9
+    },
+    "byRule": {
+      "interlace": {
+        "browser-security/no-http-urls": 245,
+        "secure-coding/no-hardcoded-credentials": 182,
+        "secure-coding/no-unlimited-resource-allocation": 179,
+        "secure-coding/no-redos-vulnerable-regex": 124,
+        "secure-coding/no-xpath-injection": 66,
+        "browser-security/no-credentials-in-query-params": 42,
+        "node-security/no-zip-slip": 41,
+        "node-security/detect-non-literal-fs-filename": 41,
+        "node-security/no-shell-injection": 41,
+        "secure-coding/no-unsafe-deserialization": 35,
+        "secure-coding/no-unsafe-regex-construction": 29,
+        "secure-coding/no-improper-sanitization": 24,
+        "node-security/no-timing-unsafe-compare": 24,
+        "browser-security/no-eval": 22,
+        "secure-coding/no-homoglyph-identifiers": 21,
+        "node-security/no-buffer-overread": 19,
+        "node-security/no-unsafe-buffer-alloc": 18,
+        "node-security/detect-eval-with-expression": 18,
+        "secure-coding/no-log-injection": 13,
+        "node-security/require-stream-error-handler": 13,
+        "secure-coding/no-sensitive-data-exposure": 12,
+        "browser-security/no-disabled-certificate-validation": 11,
+        "node-security/no-self-signed-certs": 11,
+        "browser-security/no-innerhtml": 11,
+        "browser-security/no-incomplete-url-sanitization": 10,
+        "node-security/no-weak-hash-algorithm": 9,
+        "node-security/no-toctou-vulnerability": 9,
+        "browser-security/no-postmessage-wildcard-origin": 9,
+        "node-security/no-math-random-crypto": 8,
+        "secure-coding/no-xxe-injection": 8,
+        "node-security/detect-child-process": 7,
+        "node-security/no-unbounded-decompression": 6,
+        "node-security/no-unsafe-dynamic-require": 6,
+        "browser-security/no-client-side-auth-logic": 6,
+        "node-security/no-dynamic-algorithm-selection": 6,
+        "browser-security/no-sensitive-localstorage": 5,
+        "secure-coding/no-graphql-injection": 5,
+        "secure-coding/no-fail-open-auth": 4,
+        "node-security/require-dependency-integrity": 4,
+        "secure-coding/no-privilege-escalation": 4,
+        "node-security/no-deprecated-buffer": 4,
+        "browser-security/no-clickjacking": 4,
+        "browser-security/require-cookie-secure-attrs": 4,
+        "browser-security/no-insecure-websocket": 3,
+        "node-security/no-dynamic-command-string": 2,
+        "secure-coding/no-ldap-injection": 2,
+        "browser-security/require-postmessage-origin-check": 2,
+        "secure-coding/no-weak-password-recovery": 2,
+        "node-security/no-weak-cipher-algorithm": 1,
+        "node-security/no-ecb-mode": 1,
+        "browser-security/require-blob-url-revocation": 1,
+        "browser-security/no-unsafe-eval-csp": 1
+      },
+      "competitor": {
+        "security/detect-object-injection": 20334,
+        "security/detect-non-literal-fs-filename": 2275,
+        "security/detect-unsafe-regex": 308,
+        "security/detect-non-literal-regexp": 266,
+        "security/detect-non-literal-require": 85,
+        "security/detect-possible-timing-attacks": 45,
+        "security/detect-child-process": 7,
+        "security/detect-new-buffer": 3,
+        "security/detect-bidi-characters": 2
+      }
+    },
+    "repositories": [
+      {
+        "repo": "n8n-io/n8n",
+        "url": "https://github.com/n8n-io/n8n",
+        "stars": 200538,
+        "surface": "subprocess, http, credentials, code eval",
+        "commit": "bbd1022ad30b3ac54711e245d82527e959b94e1e",
+        "commitDate": "2026-08-14T00:20:30Z",
+        "filesLinted": 12826,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 2581,
+            "competitor": 11207
+          }
+        }
+      },
+      {
+        "repo": "axios/axios",
+        "url": "https://github.com/axios/axios",
+        "stars": 109234,
+        "surface": "http client, url handling, redirects",
+        "commit": "e6824eec5fcf9da467a9792724396badc490c469",
+        "commitDate": "2026-08-13T20:14:45+02:00",
+        "filesLinted": 78,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 7,
+            "competitor": 165
+          }
+        }
+      },
+      {
+        "repo": "louislam/uptime-kuma",
+        "url": "https://github.com/louislam/uptime-kuma",
+        "stars": 90156,
+        "surface": "http probing, subprocess, auth, sqlite",
+        "commit": "b980621689b2e3b978dcdd3a99a3ad8cf81c9b9b",
+        "commitDate": "2026-08-13T18:53:02+08:00",
+        "filesLinted": 316,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 55,
+            "competitor": 243
+          }
+        }
+      },
+      {
+        "repo": "nestjs/nest",
+        "url": "https://github.com/nestjs/nest",
+        "stars": 76371,
+        "surface": "http framework, di, guards",
+        "commit": "674ac31d4f02d399fca9c491f352f5066d57b62d",
+        "commitDate": "2026-08-11T10:27:01+02:00",
+        "filesLinted": 1341,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 35,
+            "competitor": 261
+          }
+        }
+      },
+      {
+        "repo": "strapi/strapi",
+        "url": "https://github.com/strapi/strapi",
+        "stars": 72873,
+        "surface": "auth, uploads, fs paths, db",
+        "commit": "20a44e5427a1768453cca0db578f8b683b10e538",
+        "commitDate": "2026-08-13T09:52:40Z",
+        "filesLinted": 3214,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 256,
+            "competitor": 2337
+          }
+        }
+      },
+      {
+        "repo": "expressjs/express",
+        "url": "https://github.com/expressjs/express",
+        "stars": 69356,
+        "surface": "http server, routing, static files",
+        "commit": "a3714473feb3d2908add734d340e7755fd85e0a3",
+        "commitDate": "2026-07-27T16:54:23-05:00",
+        "filesLinted": 7,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 0,
+            "competitor": 33
+          }
+        }
+      },
+      {
+        "repo": "webpack/webpack",
+        "url": "https://github.com/webpack/webpack",
+        "stars": 65984,
+        "surface": "fs paths, dynamic require, code gen",
+        "commit": "f02461706eaed0b076d6958d855efaa5dba9faaa",
+        "commitDate": "2026-08-14T03:42:14+03:00",
+        "filesLinted": 721,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 167,
+            "competitor": 2199
+          }
+        }
+      },
+      {
+        "repo": "serverless/serverless",
+        "url": "https://github.com/serverless/serverless",
+        "stars": 46921,
+        "surface": "subprocess, fs, cloud credentials",
+        "commit": "b9d7ea51c8cce57cff1207964b9b71123673081f",
+        "commitDate": "2026-08-12T16:28:19+01:00",
+        "filesLinted": 639,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 56,
+            "competitor": 1286
+          }
+        }
+      },
+      {
+        "repo": "directus/directus",
+        "url": "https://github.com/directus/directus",
+        "stars": 37367,
+        "surface": "auth, file storage, db queries",
+        "commit": "234bac2f9f66524b27613ff08bef1d957dce15d3",
+        "commitDate": "2026-08-13T22:24:03+01:00",
+        "filesLinted": 2936,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 137,
+            "competitor": 1381
+          }
+        }
+      },
+      {
+        "repo": "fastify/fastify",
+        "url": "https://github.com/fastify/fastify",
+        "stars": 36984,
+        "surface": "http server, serialization",
+        "commit": "b7de40faa21e3cff3a214921223dff2203944902",
+        "commitDate": "2026-08-13T19:04:24+02:00",
+        "filesLinted": 35,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 2,
+            "competitor": 645
+          }
+        }
+      },
+      {
+        "repo": "sequelize/sequelize",
+        "url": "https://github.com/sequelize/sequelize",
+        "stars": 30377,
+        "surface": "sql construction",
+        "commit": "2c2dbafee58a48482f4c789190384f03a1b838b1",
+        "commitDate": "2026-08-14T03:14:08Z",
+        "filesLinted": 362,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 59,
+            "competitor": 767
+          }
+        }
+      },
+      {
+        "repo": "Automattic/mongoose",
+        "url": "https://github.com/Automattic/mongoose",
+        "stars": 27472,
+        "surface": "nosql query construction",
+        "commit": "e81cd53d092ad89a8a908fbbe583318d389bc960",
+        "commitDate": "2026-08-10T16:20:11-04:00",
+        "filesLinted": 279,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 21,
+            "competitor": 2101
+          }
+        }
+      },
+      {
+        "repo": "parse-community/parse-server",
+        "url": "https://github.com/parse-community/parse-server",
+        "stars": 21413,
+        "surface": "auth, sessions, db, file upload",
+        "commit": "315e157637d902d85f465563b2863a9e19bf1ff4",
+        "commitDate": "2026-07-26T00:55:49Z",
+        "filesLinted": 206,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 26,
+            "competitor": 558
+          }
+        }
+      },
+      {
+        "repo": "knex/knex",
+        "url": "https://github.com/knex/knex",
+        "stars": 20338,
+        "surface": "sql construction, raw queries",
+        "commit": "e25d54bcb707714a17f5a5744eba5c4246bb4d1d",
+        "commitDate": "2026-06-26T14:59:48Z",
+        "filesLinted": 183,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 10,
+            "competitor": 234
+          }
+        }
+      },
+      {
+        "repo": "auth0/node-jsonwebtoken",
+        "url": "https://github.com/auth0/node-jsonwebtoken",
+        "stars": 18191,
+        "surface": "jwt signing/verification, crypto",
+        "commit": "b924272f29192e12926b5414546f7c5bfcc9579d",
+        "commitDate": "2026-06-25T11:22:50-04:00",
+        "filesLinted": 12,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 0,
+            "competitor": 10
+          }
+        }
+      },
+      {
+        "repo": "nodemailer/nodemailer",
+        "url": "https://github.com/nodemailer/nodemailer",
+        "stars": 17649,
+        "surface": "smtp, tls, credentials",
+        "commit": "34bc3d88f3432aa1d697cef102a734215ead80ff",
+        "commitDate": "2026-08-12T10:25:24+03:00",
+        "filesLinted": 39,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 9,
+            "competitor": 177
+          }
+        }
+      },
+      {
+        "repo": "Unitech/pm2",
+        "url": "https://github.com/Unitech/pm2",
+        "stars": 17000,
+        "surface": "subprocess spawning, fs, ipc",
+        "commit": "31adee8048dbbc1ee36a7df7cdbcaca2559708df",
+        "commitDate": "2026-07-02T10:19:58+02:00",
+        "filesLinted": 176,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 42,
+            "competitor": 898
+          }
+        }
+      },
+      {
+        "repo": "helmetjs/helmet",
+        "url": "https://github.com/helmetjs/helmet",
+        "stars": 10716,
+        "surface": "security headers — the reference implementation",
+        "commit": "9315aac37eb69d8dd3fe81c67febcebe60d7e97e",
+        "commitDate": "2026-07-27T23:16:21-05:00",
+        "filesLinted": 17,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 1,
+            "competitor": 4
+          }
+        }
+      },
+      {
+        "repo": "npm/cli",
+        "url": "https://github.com/npm/cli",
+        "stars": 10031,
+        "surface": "subprocess, fs, registry auth, tarballs",
+        "commit": "51c2bf81fa2c31547d0fec44fff2aaac3d9a9862",
+        "commitDate": "2026-08-12T14:15:55-07:00",
+        "filesLinted": 289,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 42,
+            "competitor": 927
+          }
+        }
+      },
+      {
+        "repo": "motdotla/dotenv",
+        "url": "https://github.com/motdotla/dotenv",
+        "stars": 9500,
+        "surface": "secret loading, fs",
+        "commit": "2fc7eac8ad77cbd5f7814355c7fa352dbcf3c358",
+        "commitDate": "2026-08-04T05:48:39-07:00",
+        "filesLinted": 6,
+        "findings": {
+          "note": "Raw per-repo counts INCLUDE ESLint \"rule definition not found\" messages emitted by the repo own eslint-disable comments. 2132 of these occurred on EACH side across the corpus and are excluded from realSource.findings totals. They are not decomposed per repo.",
+          "rawIncludingUnresolvedRuleIds": {
+            "interlace": 1,
+            "competitor": 24
+          }
+        }
+      }
+    ]
+  },
+  "labelledCorpus": {
+    "description": "benchmarks/corpus — 34 CWE classes, 76 vulnerable + 67 safe fixtures, authored by Interlace",
+    "leaderboard": [
+      {
+        "plugin": "interlace",
+        "displayName": "Interlace ESLint Ecosystem",
+        "TP": 69,
+        "FP": 0,
+        "FN": 0,
+        "TN": 60,
+        "precision": 100,
+        "recall": 100,
+        "f1": 100,
+        "bas": 100
+      },
+      {
+        "plugin": "eslint-plugin-security",
+        "displayName": "eslint-plugin-security",
+        "TP": 10,
+        "FP": 7,
+        "FN": 59,
+        "TN": 53,
+        "precision": 58.8,
+        "recall": 14.5,
+        "f1": 23.3,
+        "bas": 2.8
+      },
+      {
+        "plugin": "security-node",
+        "displayName": "eslint-plugin-security-node",
+        "TP": 4,
+        "FP": 3,
+        "FN": 65,
+        "TN": 57,
+        "precision": 57.1,
+        "recall": 5.8,
+        "f1": 10.5,
+        "bas": 0.8
+      },
+      {
+        "plugin": "sonarjs",
+        "displayName": "eslint-plugin-sonarjs",
+        "TP": 27,
+        "FP": 9,
+        "FN": 42,
+        "TN": 51,
+        "precision": 75,
+        "recall": 39.1,
+        "f1": 51.4,
+        "bas": 24.1
+      },
+      {
+        "plugin": "microsoft-sdl",
+        "displayName": "@microsoft/eslint-plugin-sdl",
+        "TP": 6,
+        "FP": 2,
+        "FN": 63,
+        "TN": 58,
+        "precision": 75,
+        "recall": 8.7,
+        "f1": 15.6,
+        "bas": 5.4
+      },
+      {
+        "plugin": "no-unsanitized",
+        "displayName": "eslint-plugin-no-unsanitized",
+        "TP": 4,
+        "FP": 1,
+        "FN": 65,
+        "TN": 59,
+        "precision": 80,
+        "recall": 5.8,
+        "f1": 10.8,
+        "bas": 4.1
+      }
+    ]
+  },
+  "caveats": [
+    "realSource findings are VOLUME, not correctness. Measured precision on a stratified sample is approximately 45 percent (see BENCHMARK-RESULTS.md B2).",
+    "labelledCorpus fixtures were authored by Interlace. A high score there is a regression gate, not an independent claim.",
+    "False negatives on real source are not measurable without ground truth and are not reported.",
+    "Quieter is measured against eslint-plugin-security only. Against eslint-plugin-no-unsanitized, Interlace reports MORE (184 vs 127 per 1k files)."
+  ],
+  "reproduce": {
+    "realSource": "node benchmarks/suites/ilb-real-source/run.mjs --corpus=popular",
+    "labelledCorpus": "npx tsx benchmarks/suites/ilb-juliet/run.ts",
+    "parity": "node benchmarks/suites/ilb-competitor-parity/run.mjs",
+    "anyCompetitor": "node benchmarks/suites/ilb-real-source/run.mjs --competitor=<npm-package>"
+  }
+}

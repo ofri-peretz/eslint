@@ -96,3 +96,25 @@ describe('no-missing-security-headers', () => {
   });
 });
 
+
+/**
+ * Regression lock — CSP / X-Frame-Options / X-Content-Type-Options protect a RENDERED
+ * DOCUMENT. A scope whose only headers are transport or caching concerns has no document to
+ * frame or inject into, so demanding them there is noise: the rule fired on a plain
+ * `res.setHeader('Set-Cookie', …)` helper that renders nothing.
+ *
+ * Deliberately narrow. An EARLIER attempt required proof of a `res.send`/`render` call in
+ * scope and broke 9 tests — a RuleTester snippet sets a header without sending anything
+ * because the snippet is truncated, not because the handler serves no document.
+ */
+ruleTester.run('lock: transport-only headers are not a document response', noMissingSecurityHeaders, {
+  valid: [
+    { code: "function setSession(res, id) { res.setHeader('Set-Cookie', 'sid=' + id); }" },
+    { code: "function noStore(res) { res.setHeader('Cache-Control', 'no-store'); }" },
+    { code: "function redirect(res, to) { res.setHeader('Location', to); }" },
+  ],
+  invalid: [
+    // A security header in the mix means this IS a document response — the others are missing.
+    { code: "function h(res) { res.setHeader('X-Frame-Options', 'DENY'); }", errors: 1 },
+  ],
+});

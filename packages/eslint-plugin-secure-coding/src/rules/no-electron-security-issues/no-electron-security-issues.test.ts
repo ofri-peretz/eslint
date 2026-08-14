@@ -146,8 +146,13 @@ describe('no-electron-security-issues', () => {
           ],
         },
         {
+          // Was `view.js`. A bare `view.js` / `ui.js` basename is generic — a Vue view, an
+          // MVC view — so matching it is the same over-matching that made this rule fire on
+          // any path containing the letters "ui". `renderer.*` and `preload.*` remain
+          // matched as basenames because those ARE unambiguous Electron conventions; `view`
+          // and `ui` are only matched as directory segments.
           code: 'const { exec } = require("child_process");',
-          filename: 'view.js',
+          filename: 'src/views/detail.js',
           errors: [
             {
               messageId: 'directNodeAccess',
@@ -642,4 +647,34 @@ describe('no-electron-security-issues', () => {
       expect(reports).toHaveLength(0);
     });
   });
+});
+
+/**
+ * Regression lock — renderer detection matches path SEGMENTS, not substrings.
+ *
+ * `isRendererFile` was `filename.includes('ui')` against the absolute path, so the rule
+ * fired based on whether any ancestor directory happened to contain the letters "ui" —
+ * `suites`, `build`, `guide`, `require`. Linting the same file from two different working
+ * directories produced two different verdicts (found while auditing the benchmark corpus:
+ * 0/67 false positives from the repo root, 18/67 from `benchmarks/suites/...`), and any
+ * project with a `ui/` folder had every Node API call in every file reported.
+ */
+ruleTester.run('lock: renderer detection is segment-based', noElectronSecurityIssues, {
+  valid: [
+    { code: "const fs = require('fs');", filename: 'src/suites/case.js' },
+    { code: "const fs = require('fs');", filename: 'src/build/case.js' },
+    { code: "const fs = require('fs');", filename: 'src/guide/case.js' },
+    { code: "const fs = require('fs');", filename: 'src/requirements/case.js' },
+    { code: "const fs = require('fs');", filename: 'case.js' },
+    // A path that yields no segments at all — the guard against indexing an empty array.
+    { code: "const fs = require('fs');", filename: '/' },
+  ],
+  invalid: [
+    // Real Electron conventions still report.
+    { code: "const fs = require('fs');", filename: 'src/ui/panel.js', errors: 1 },
+    { code: "const fs = require('fs');", filename: 'src/renderer/index.js', errors: 1 },
+    { code: "const fs = require('fs');", filename: 'renderer.js', errors: 1 },
+    { code: "const fs = require('fs');", filename: 'preload.js', errors: 1 },
+    { code: "const fs = require('fs');", filename: 'src/views/main.js', errors: 1 },
+  ],
 });

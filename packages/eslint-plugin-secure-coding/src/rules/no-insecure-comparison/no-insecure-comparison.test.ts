@@ -601,3 +601,20 @@ describe('no-insecure-comparison — word-level secret matching', () => {
     ],
   });
 });
+
+
+/**
+ * Regression lock — a timing attack needs a secret on BOTH sides. You cannot learn a secret
+ * by discovering how many characters of `true`, `null` or `undefined` matched, so a
+ * comparison against one of those literals is not CWE-208 — it is a state check that happens
+ * to sit on an identifier the secret-name heuristic likes.
+ */
+ruleTester.run('lock: comparison against a non-secret literal', noInsecureComparison, {
+  valid: [
+    { code: 'function f(token) { return verifyToken(token).valid === true; }' },
+    { code: 'function f(token) { return token.password === null; }' },
+    { code: 'function f(token) { return token.secret === undefined; }' },
+    { code: 'function f(token) { return undefined === token.apiKey; }' },
+  ],
+  invalid: [],
+});

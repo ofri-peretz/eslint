@@ -215,6 +215,31 @@ function isEscaped(
 /**
  * Check if regex flags are dynamic
  */
+/**
+ * Is this argument the `.source` of an existing RegExp — i.e. a clone rather than a new
+ * pattern?
+ *
+ * `new RegExp(re.source, re.flags)` and `new RegExp(re.source + '$', re.flags)` re-compile a
+ * pattern the engine already accepted. There is no new attacker surface: whoever controlled
+ * the original controls the copy, and nothing else changed. Reported as "dynamic flags" it
+ * was a false positive on Mongoose's `cloneRegExp` and Fastify's route normaliser.
+ */
+function isRegexClone(node: TSESTree.Node): boolean {
+  if (
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property.type === 'Identifier' &&
+    node.property.name === 'source'
+  ) {
+    return true;
+  }
+  // `re.source + '$'` — anchoring a cloned pattern is still a clone.
+  if (node.type === 'BinaryExpression' && node.operator === '+') {
+    return isRegexClone(node.left) || isRegexClone(node.right);
+  }
+  return false;
+}
+
 function hasDynamicFlags(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
 ): boolean {
@@ -497,7 +522,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       }
 
       // Check for dynamic flags
-      if (hasDynamicFlags(node)) {
+      if (hasDynamicFlags(node) && !isRegexClone(patternNode)) {
         context.report({
           node,
           messageId: 'unsafeRegexConstruction',

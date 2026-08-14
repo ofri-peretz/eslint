@@ -5,6 +5,13 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { detectMixedContent } from './index';
 
+/*
+ * Fixture hosts deliberately avoid `example.com`. RFC 2606 reserves it precisely so that
+ * nothing treats it as a real endpoint, and these rules now exempt it — a placeholder
+ * domain cannot be a cleartext-transmission risk. Using it as a stand-in for "some remote
+ * host" would test the exemption, not the rule.
+ */
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -20,8 +27,8 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
         'const items = [];',
         'const obj = {};',
     // HTTPS URLs are safe
-    { code: "const url = 'https://example.com/api'" },
-    { code: "fetch('https://cdn.example.com/lib.js')" },
+    { code: "const url = 'https://acmecorp.io/api'" },
+    { code: "fetch('https://cdn.acmecorp.io/lib.js')" },
     // Non-URL code
     { code: "const x = 1" },
 
@@ -50,7 +57,7 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     // The allowlist is by HOST, not substring: a real request to a host whose
     // PATH mentions w3.org is still a request.
     {
-      code: "fetch('http://cdn.example.com/w3.org/lib.js')",
+      code: "fetch('http://cdn.acmecorp.io/w3.org/lib.js')",
       errors: [{ messageId: 'violationDetected' }],
     },
     // A loopback-looking hostname that is not loopback.
@@ -65,7 +72,7 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
       errors: [{ messageId: 'violationDetected' }],
     },
     // HTTP URLs in HTTPS context
-    { code: "const url = 'http://example.com/image.png'", errors: [{ messageId: 'violationDetected' }] },
+    { code: "const url = 'http://acmecorp.io/image.png'", errors: [{ messageId: 'violationDetected' }] },
   ],
 });
 
@@ -83,7 +90,7 @@ jsxRuleTester.run('detect-mixed-content (jsx)', detectMixedContent, {
   ],
   invalid: [
     {
-      code: '<img src="http://cdn.example.com/logo.png" />',
+      code: '<img src="http://cdn.acmecorp.io/logo.png" />',
       errors: [{ messageId: 'violationDetected' }],
     },
   ],
@@ -102,12 +109,12 @@ ruleTester.run('detect-mixed-content (URL parsing base)', detectMixedContent, {
   invalid: [
     // A base whose origin survives is a real cleartext endpoint.
     {
-      code: "const {origin} = new URL(p, 'http://prod.example.com');",
+      code: "const {origin} = new URL(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'violationDetected' }],
     },
     // FN GUARD: the URL object is kept and can be fetched.
     {
-      code: "fetch(new URL('/api', 'http://prod.example.com'));",
+      code: "fetch(new URL('/api', 'http://prod.acmecorp.io'));",
       errors: [{ messageId: 'violationDetected' }],
     },
   ],

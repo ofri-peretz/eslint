@@ -543,3 +543,93 @@ describe('module-binding fallback', () => {
     ],
   });
 });
+
+/**
+ * Regression lock — composed free variables.
+ *
+ * `isFreeVariable` inspects a bare Identifier only, so a path ASSEMBLED around an
+ * unresolvable name — a template interpolation, a `path.resolve` argument, a `+`
+ * concatenation — fell through to `reportUnresolvedPaths` (default false) and stayed
+ * silent. These were the last two open cases on eslint-plugin-security's own corpus;
+ * closing them took weighted parity from 96.1% to 100%.
+ *
+ * Both invalid cases below PASS (i.e. report nothing) on the unfixed rule.
+ */
+ruleTester.run('lock: a path composed from a free variable is reported', detectNonLiteralFsFilename, {
+  valid: [
+    // Everything provably constant must stay silent — the guard against over-firing.
+    { code: "const fs = require('fs'); fs.readFile('./config.json');" },
+    { code: "const fs = require('fs'); const NAME = 'a.txt'; fs.readFile(`./data/${NAME}`);" },
+    { code: "const fs = require('fs'); const path = require('path'); fs.readFileSync(path.join(__dirname, 'x.txt'));" },
+  ],
+  invalid: [
+    {
+      // Free variable inside a template interpolation.
+      code: "const fs = require('fs'); fs.readFile(`template with ${filename}`);",
+      errors: 1,
+    },
+    {
+      // Free variable as a call argument.
+      code: "import fs from 'fs'; import path from 'path'; const key = fs.readFileSync(path.resolve(__dirname, foo));",
+      errors: 1,
+    },
+  ],
+});
+
+/**
+ * Regression lock — build-time constants must survive the free-variable walk.
+ *
+ * ESLint resolves no Node globals by default, so a bare `__dirname` reads as an
+ * unresolved free variable. Without an isBuildTimeConstant short-circuit inside
+ * containsFreeVariable, `path.join(__dirname, '../templates')` — a path fixed at build
+ * time — was reported. Found by hand-reading a sample of real-source findings; it was a
+ * false positive introduced by the fix that closed the last two parity cases.
+ */
+ruleTester.run('lock: __dirname-rooted constant paths stay silent', detectNonLiteralFsFilename, {
+  valid: [
+    { code: "const fs = require('fs'); const path = require('path'); fs.readdir(path.join(__dirname, '../templates'), cb);" },
+    { code: "const fs = require('fs'); const path = require('path'); fs.readFileSync(path.resolve(__dirname, 'x.txt'));" },
+    { code: "const fs = require('fs'); fs.readFile(`./config/app.json`);" },
+  ],
+  invalid: [
+    {
+      // The free variable is still caught when it is genuinely free.
+      code: "const fs = require('fs'); const path = require('path'); fs.readFileSync(path.resolve(__dirname, foo));",
+      errors: 1,
+    },
+  ],
+});
+
+/**
+ * Regression lock — concatenation is a composition path too.
+ *
+ * containsFreeVariable recurses through template interpolations, call arguments AND `+`
+ * concatenation. The concatenation arm closes `readFile('./' + filename)`, which is the same
+ * unknowable path as the template and call forms.
+ */
+ruleTester.run('lock: a free variable reached through concatenation', detectNonLiteralFsFilename, {
+  valid: [
+    { code: "const fs = require('fs'); fs.readFile('./data/' + 'app.json');" },
+  ],
+  invalid: [
+    { code: "const fs = require('fs'); fs.readFile('./data/' + filename);", errors: 1 },
+    { code: "const fs = require('fs'); fs.readFile(filename + '.json');", errors: 1 },
+  ],
+});
+
+/**
+ * Regression lock — the recursion depth guard.
+ *
+ * containsFreeVariable stops at depth 4, mirroring isBuildTimeConstant. A path nested more
+ * deeply than that is not walked, so an unresolvable name buried six calls down does not
+ * report — a deliberate bound on how far provenance is chased, not an oversight.
+ */
+ruleTester.run('lock: composition depth is bounded', detectNonLiteralFsFilename, {
+  valid: [
+    { code: "const fs = require('fs'); fs.readFile(a(b(c(d(e(f(deepName)))))));" },
+  ],
+  invalid: [
+    // Within the bound, the free name is still found.
+    { code: "const fs = require('fs'); fs.readFile(a(b(shallowName)));", errors: 1 },
+  ],
+});

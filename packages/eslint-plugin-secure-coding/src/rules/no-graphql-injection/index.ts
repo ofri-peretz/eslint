@@ -530,8 +530,22 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
           while (scan < staticText.length && isWordChar(staticText[scan])) scan++;
           while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
-          if (scan < staticText.length && (staticText[scan] === '{' || staticText[scan] === '(')) {
+          if (scan < staticText.length && staticText[scan] === '(') {
             return true;
+          }
+          if (scan < staticText.length && staticText[scan] === '{') {
+            // A GraphQL selection set names at least one field. Joining the quasis drops
+            // the interpolations, so a real query still shows its field names
+            // (`query { user(id: "") }`) while a string that merely READS like one does
+            // not: Mongoose's `Query.prototype[Symbol.toStringTag]` returns
+            // `` `Query { ${this.op} }` `` -> `Query {  }`, which was reported as a
+            // GraphQL injection in a file that has never seen GraphQL.
+            let probe = scan + 1;
+            while (probe < staticText.length && isWhitespace(staticText[probe])) probe++;
+            if (probe < staticText.length && isWordChar(staticText[probe])) {
+              return true;
+            }
+            continue;
           }
         }
       }
@@ -638,7 +652,19 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         while (scan < lower.length && isWhitespace(lower[scan])) scan++;
         while (scan < lower.length && isWordChar(lower[scan])) scan++;
         while (scan < lower.length && isWhitespace(lower[scan])) scan++;
-        if (scan < lower.length && (lower[scan] === '{' || lower[scan] === '(')) return true;
+        if (scan < lower.length && lower[scan] === '(') return true;
+        if (scan < lower.length && lower[scan] === '{') {
+          // A GraphQL selection set names at least one field. Requiring that separates a
+          // real document from any string that happens to read `Word {`:
+          // Mongoose's `Query.prototype[Symbol.toStringTag]` returns
+          // `` `Query { ${this.op} }` `` — an interpolation and nothing else — and was
+          // reported as a GraphQL injection. Attribution (a gql tag, a graphql client)
+          // still short-circuits this via `attributed`.
+          if (attributed) return true;
+          let probe = scan + 1;
+          while (probe < lower.length && isWhitespace(lower[probe])) probe++;
+          if (probe < lower.length && isWordChar(lower[probe])) return true;
+        }
       }
 
       // Check fragment

@@ -1283,3 +1283,72 @@ describe('prototype-polluting copy loop', () => {
     ],
   });
 });
+
+/**
+ * Regression lock — closed const allowlists.
+ *
+ * A computed READ off a `const` object literal cannot be prototype pollution: the shape is
+ * fixed at parse time and nothing is written. `ALLOWED[req.body.setting]` and
+ * `MESSAGES[locale]` are the closed-allowlist pattern that IS the documented fix for this
+ * CWE — flagging it is precisely the defect we measure in competitors, where 27% of
+ * eslint-plugin-security's findings are constant-key accesses that cannot pollute.
+ *
+ * The write case covers the key-provenance walk: `const t = ALLOWED[x]; process.env[t] = v`
+ * — `t` provably belongs to a closed set of string literals.
+ */
+ruleTester.run('lock: reads and writes keyed off a const allowlist', detectObjectInjection, {
+  valid: [
+    { code: "const ALLOWED = { a: 'A', b: 'B' }; function f(req) { return ALLOWED[req.body.k]; }" },
+    { code: "const MESSAGES = { en: 'hi', he: 'shalom' }; function f(locale) { return MESSAGES[locale]; }" },
+    {
+      code: "const ALLOWED = { locale: 'APP_LOCALE' }; function f(req) { const t = ALLOWED[req.body.s]; if (!t) return; process.env[t] = String(req.body.v); }",
+    },
+  ],
+  invalid: [
+    // `let` can be reassigned, so the closed-set guarantee does not hold.
+    {
+      code: "let ALLOWED = { a: 'A' }; function f(req) { return ALLOWED[req.body.k]; }",
+      errors: 1,
+    },
+    // Non-literal values break the "closed set of known strings" claim for the write case.
+    {
+      code: "const M = { a: someValue }; function f(req) { const t = M[req.body.s]; process.env[t] = req.body.v; }",
+      errors: 1,
+    },
+    // A later write to the map breaks the closed-set guarantee for the READ path.
+    {
+      code: "const A = { a: 'A' }; A = other; function f(req) { return A[req.body.k]; }",
+      errors: 1,
+    },
+    // …and for the WRITE path, where the key's own source map is reassigned.
+    {
+      // Both the read (`A[...]`) and the write (`process.env[t]`) report once the map is
+      // no longer a closed set.
+      code: "const A = { a: 'A' }; A = other; function f(req) { const t = A[req.body.s]; process.env[t] = req.body.v; }",
+      errors: 2,
+    },
+    // The KEY variable itself reassigned: its provenance is no longer a single const read,
+    // so the closed-set claim fails on the write path too.
+    {
+      code: "const A = { a: 'A' }; function f(req) { let t = A[req.body.s]; t = req.body.raw; process.env[t] = req.body.v; }",
+      errors: 1,
+    },
+    // Same guard, reached through a `const` binding that is nonetheless written to. Invalid
+    // at runtime, but scope analysis records the write and the closed-set claim must fail
+    // rather than silently trusting the declaration.
+    {
+      code: "const A = { a: 'A' }; function f(req) { const t = A[req.body.s]; t = req.body.raw; process.env[t] = req.body.v; }",
+      errors: 1,
+    },
+    // A redeclared binding has more than one definition, so its provenance is not a single
+    // const literal — neither for the map (read path) nor the key (write path).
+    {
+      code: "var A = { a: 'A' }; var A = other; function f(req) { return A[req.body.k]; }",
+      errors: 1,
+    },
+    {
+      code: "function f(req) { var t = M[req.body.s]; var t = req.body.raw; process.env[t] = req.body.v; }",
+      errors: 2,
+    },
+  ],
+});

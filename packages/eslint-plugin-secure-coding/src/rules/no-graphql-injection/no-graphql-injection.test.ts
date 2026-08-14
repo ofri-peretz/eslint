@@ -1375,3 +1375,54 @@ describe('coverage — attribution and schema-keyword scanning', () => {
     invalid: [],
   });
 });
+
+/**
+ * Regression lock — a GraphQL selection set names at least one field.
+ *
+ * `isGraphqlTemplate` joined the quasis and accepted any `Word {` shape, so Mongoose's
+ * `Query.prototype[Symbol.toStringTag]` — which returns `` `Query { ${this.op} }` ``,
+ * joining to `Query {  }` — was reported as a GraphQL injection in a file that has never
+ * imported GraphQL. Found by hand-labelling a sample of real-source findings.
+ *
+ * Joining the quasis drops interpolations, so a real query still shows its field names
+ * while a string that merely reads like one does not.
+ */
+ruleTester.run('lock: a selection set must name a field', noGraphqlInjection, {
+  valid: [
+    { code: 'const s = `Query { ${this.op} }`;' },
+    { code: 'const s = `Mutation { ${op} }`;' },
+    // Static document, GraphQL variables rather than JS interpolation — nothing injected.
+    { code: 'const q = `query GetUser($id: ID!) { user(id: $id) { name } }`;' },
+  ],
+  invalid: [
+    { code: 'const q = `query { user(id: "${id}") }`;', errors: 1 },
+    { code: 'const q = `query GetUser { user(id: "${id}") { name } }`;', errors: 1 },
+    { code: 'const q = `mutation Add { createUser(name: "${n}") }`;', errors: 1 },
+    { code: 'const q = `subscription S { onEvent(f: "${f}") { id } }`;', errors: 1 },
+  ],
+});
+
+
+/**
+ * Regression lock — the field probe skips whitespace then requires a word character.
+ * `query { { }` has a nested brace where a field name should be, so it is not a document.
+ */
+ruleTester.run('lock: selection-set field probe', noGraphqlInjection, {
+  valid: [
+    { code: 'const s = `query {   }`;' },
+    { code: 'const s = `query { { ${x} } }`;' },
+    // Template ends right after the brace: the field probe runs off the end.
+    { code: 'const s = `query {`;' },
+    { code: 'const s = `query {   `;' },
+    // Same probe on the STRING-LITERAL path (containsGraphqlText), both arms:
+    // runs off the end, and lands on a non-word character.
+    { code: "const s = 'query {';" },
+    { code: "const s = 'query {   ';" },
+    { code: "const s = 'query { }';" },
+  ],
+  invalid: [
+    { code: 'const q = `query {   user(id: "${id}") }`;', errors: 1 },
+    // Concatenation reaches containsGraphqlText with a real field name present.
+    { code: 'const q = \'query { user(id: "\' + req.body.id + \'") }\';', errors: 2 },
+  ],
+});
