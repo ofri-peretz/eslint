@@ -27,7 +27,7 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unvalidated-deeplinks.md',
       description: 'Require validation of deep link URLs',
       cwe: 'CWE-939',
-      cvss: 7.5,
+      cvss: 6.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

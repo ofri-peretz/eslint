@@ -51,7 +51,7 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-disabled-certificate-validation.md',
       description: 'Prevent disabled SSL/TLS certificate validation',
       cwe: 'CWE-295',
-      cvss: 9.5,
+      cvss: 7.4,
     },
     messages: {
       violationDetected: formatLLMMessage({

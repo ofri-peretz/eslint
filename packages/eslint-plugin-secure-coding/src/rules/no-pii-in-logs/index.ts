@@ -28,7 +28,7 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-pii-in-logs.md',
       description: 'Prevent PII (email, SSN, credit cards) in console logs',
       cwe: 'CWE-359',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     messages: {
       violationDetected: formatLLMMessage({

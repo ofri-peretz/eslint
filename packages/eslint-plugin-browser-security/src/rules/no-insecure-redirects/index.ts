@@ -172,7 +172,7 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-insecure-redirects.md',
       description: 'Detects open redirect vulnerabilities',
       cwe: 'CWE-601',
-      cvss: 7.5,
+      cvss: 6.1,
     },
     hasSuggestions: true,
     messages: {

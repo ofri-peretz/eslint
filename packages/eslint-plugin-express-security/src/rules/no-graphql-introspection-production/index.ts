@@ -82,7 +82,7 @@ export const noGraphqlIntrospectionProduction = createRule<
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-graphql-introspection-production.md',
       description: 'Disallow GraphQL introspection in production environments',
       cwe: 'CWE-200',
-      cvss: 5,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {

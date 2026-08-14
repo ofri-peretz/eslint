@@ -87,7 +87,7 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow storing sensitive data like tokens and passwords in localStorage',
       cwe: 'CWE-922',
-      cvss: 7.5,
+      cvss: 5.5,
     },
     hasSuggestions: true,
     messages: {

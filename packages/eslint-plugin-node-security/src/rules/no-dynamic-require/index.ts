@@ -40,6 +40,10 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
       dynamicRequire: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Dynamic Require',
+        // `meta.docs.cwe` is documentation; the formatter enriches CVSS and the OWASP
+        // category from the cwe passed HERE. Declaring it in one place and not the other
+        // left this the only rule of 121 quoting no CVSS.
+        cwe: 'CWE-94',
         description: 'Require call uses dynamic expression',
         severity: 'HIGH',
         fix: 'Use static string literals for require() calls',

@@ -21,10 +21,10 @@ import type {
   SARIFResult,
 } from './types';
 import {
-  CWE_MAPPING,
   CWE_COMPLIANCE_MAPPING,
   OWASP_DETAILS,
   severityToCVSS,
+  lookupCwe,
 } from './constants';
 
 // ============================================================================
@@ -39,7 +39,7 @@ function enrichFromCWE(
 ): EnterpriseMessageOptions {
   if (!options.cwe) return options;
 
-  const cweData = CWE_MAPPING[options.cwe];
+  const cweData = lookupCwe(options.cwe);
   if (!cweData) return options;
 
   return {
@@ -144,7 +144,7 @@ export function getSecurityBenchmarks(cwe: string):
       compliance: ComplianceFramework[];
     }
   | undefined {
-  const cweData = CWE_MAPPING[cwe];
+  const cweData = lookupCwe(cwe);
   if (!cweData) return undefined;
 
   const owaspDetails = OWASP_DETAILS[cweData.owasp];

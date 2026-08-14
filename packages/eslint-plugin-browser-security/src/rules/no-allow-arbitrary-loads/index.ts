@@ -28,7 +28,7 @@ export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-allow-arbitrary-loads.md',
       description: 'Prevent configuration allowing insecure loads',
       cwe: 'CWE-295',
-      cvss: 7.5,
+      cvss: 7.4,
     },
     messages: {
       violationDetected: formatLLMMessage({

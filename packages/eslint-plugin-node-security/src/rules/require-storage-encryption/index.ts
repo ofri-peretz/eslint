@@ -28,7 +28,7 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-storage-encryption.md',
       description: 'Require encryption for persistent storage',
       cwe: 'CWE-312',
-      cvss: 7.5,
+      cvss: 5.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

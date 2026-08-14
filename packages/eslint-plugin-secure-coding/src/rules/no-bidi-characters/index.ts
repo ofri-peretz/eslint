@@ -89,7 +89,7 @@ export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
       description:
         'Disallows Unicode bidirectional control characters, which let source render differently than it compiles (Trojan Source, CWE-1007)',
       cwe: 'CWE-1007',
-      cvss: 8.8,
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {
