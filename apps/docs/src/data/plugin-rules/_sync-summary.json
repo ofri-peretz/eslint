@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-08-13T06:26:08.275Z",
+  "lastSynced": "2026-08-14T07:33:49.529Z",
   "plugins": 9,
   "success": 9,
   "errors": 0,
@@ -12,7 +12,7 @@
       "mongodb-security: 16 rules",
       "nestjs-security: 10 rules",
       "postgresql-security: 13 rules",
-      "secure-coding: 31 rules",
+      "secure-coding: 33 rules",
       "vercel-ai-security: 19 rules"
     ],
     "errors": []

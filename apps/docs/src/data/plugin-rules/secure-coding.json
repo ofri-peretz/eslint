@@ -48,6 +48,21 @@
       "href": "/docs/secure-coding/rules/detect-weak-password-validation"
     },
     {
+      "name": "no-bidi-characters",
+      "cwe": "CWE-1007",
+      "owasp": "",
+      "cvss": "",
+      "description": "Disallows Unicode bidirectional control characters, which let source render differently than it compiles (T…",
+      "typeStatus": "unaware",
+      "recommended": false,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/secure-coding/rules/no-bidi-characters"
+    },
+    {
       "name": "no-directive-injection",
       "cwe": "CWE-94",
       "owasp": "",
@@ -333,6 +348,21 @@
       "href": "/docs/secure-coding/rules/no-sql-injection"
     },
     {
+      "name": "no-template-injection",
+      "cwe": "CWE-94",
+      "owasp": "A03:2021",
+      "cvss": "",
+      "description": "Disallow dynamic strings as template arguments to server-side template engines (CWE-94)",
+      "typeStatus": "unaware",
+      "recommended": true,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/secure-coding/rules/no-template-injection"
+    },
+    {
       "name": "no-unchecked-loop-condition",
       "cwe": "CWE-400",
       "owasp": "",
@@ -468,6 +498,6 @@
       "href": "/docs/secure-coding/rules/require-secure-defaults"
     }
   ],
-  "totalRules": 31,
-  "lastSynced": "2026-08-13T06:26:08.274Z"
+  "totalRules": 33,
+  "lastSynced": "2026-08-14T07:33:49.528Z"
 }
