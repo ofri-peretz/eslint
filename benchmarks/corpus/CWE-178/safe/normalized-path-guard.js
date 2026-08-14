@@ -25,7 +25,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get(/^\/admin\/users$/i, async (req, res) => {
+app.get(/^\/admin\/users$/i, requireAuth, async (req, res) => {
   res.json(await listAllUsers());
 });
 

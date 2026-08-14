@@ -638,6 +638,19 @@ allowLiterals = false,
       // eslint-plugin-security reports it, and on this shape they are right.
       if (isFreeVariable(pathNode)) return true;
 
+      // The same reasoning, applied to a path that is COMPOSED from a free
+      // variable rather than being one. `readFile(`template with ${filename}`)`
+      // and `readFileSync(path.resolve(__dirname, foo))` are exactly as
+      // unknowable as `readFile(filename)` — the free name is simply one node
+      // deeper — but the check above only ever saw a bare Identifier, so both
+      // fell through to silence.
+      //
+      // These were the last two open cases on eslint-plugin-security's own
+      // corpus. Everything provably constant has already returned false at
+      // `isBuildTimeConstant`, so reaching here means at least one part of the
+      // path resolves nowhere in this file.
+      if (containsFreeVariable(pathNode)) return true;
+
       // Provenance unresolved. Off by default — see the note above.
       return reportUnresolvedPaths;
     };
@@ -653,6 +666,48 @@ allowLiterals = false,
       const through = context.sourceCode.getScope(node).through;
       return through.some((ref) => ref.identifier === node && ref.resolved === null);
     }
+
+    /**
+     * Is any PART of this expression a free variable?
+     *
+     * `isFreeVariable` only inspects a bare Identifier, so a path assembled
+     * around an unresolvable name — a template interpolation, a `path.resolve`
+     * argument, a concatenation operand — reached the default and stayed
+     * silent. Recurses only through the node types that actually compose a
+     * path string; anything else is left to the checks above.
+     *
+     * `depth` mirrors isBuildTimeConstant and guards against pathological AST.
+     */
+    const containsFreeVariable = (node: TSESTree.Node, depth = 0): boolean => {
+      if (depth > 4) return false;
+
+      // Anything already provable at build time is not "unknowable", however deep it sits.
+      // `__dirname` is the case that matters: ESLint resolves no Node globals by default,
+      // so a bare `__dirname` looks like a free variable, and without this check
+      // `path.join(__dirname, '../templates')` — a fully constant path — was reported.
+      if (isBuildTimeConstant(node, depth)) return false;
+
+      if (isFreeVariable(node)) return true;
+
+      switch (node.type) {
+        case AST_NODE_TYPES.TemplateLiteral:
+          return node.expressions.some((e) => containsFreeVariable(e, depth + 1));
+        case AST_NODE_TYPES.CallExpression:
+          // `path.resolve(__dirname, foo)` — the callee is irrelevant, the
+          // arguments are what end up in the path.
+          return node.arguments.some(
+            (a) => a.type !== AST_NODE_TYPES.SpreadElement && containsFreeVariable(a, depth + 1),
+          );
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            node.operator === '+' &&
+            (containsFreeVariable(node.left, depth + 1) ||
+              containsFreeVariable(node.right, depth + 1))
+          );
+        default:
+          return false;
+      }
+    };
 
     /**
      * Is every part of this expression fixed at build time?

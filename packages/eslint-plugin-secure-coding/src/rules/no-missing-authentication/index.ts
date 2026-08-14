@@ -53,6 +53,41 @@ const DEFAULT_AUTH_MIDDLEWARE_PATTERNS = [
   'session',
 ];
 
+
+/**
+ * Routes that are public *by definition*. Requiring authentication on a login or
+ * password-reset endpoint is a contradiction — you cannot be authenticated before you
+ * authenticate — and a health/metrics probe is called by infrastructure that holds no
+ * session. With an empty default every consumer inherited a finding on every one of these.
+ *
+ * Overridable: passing `ignorePatterns` replaces this list entirely.
+ */
+const DEFAULT_PUBLIC_ROUTE_PATTERNS = [
+  'login',
+  'logout',
+  'signin',
+  'sign-in',
+  'signup',
+  'sign-up',
+  'register',
+  'forgot-password',
+  'reset-password',
+  'password-reset',
+  'verify-email',
+  'health',
+  'healthz',
+  'readyz',
+  'livez',
+  'status',
+  'metrics',
+  'ping',
+  'favicon',
+  'webhook',
+  '/public/',
+  'oauth',
+  'callback',
+];
+
 /**
  * Common route handler patterns
  */
@@ -216,7 +251,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       testFilePattern: '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
       authMiddlewarePatterns: DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns: DEFAULT_ROUTE_HANDLER_PATTERNS,
-      ignorePatterns: [],
+      ignorePatterns: DEFAULT_PUBLIC_ROUTE_PATTERNS,
     },
   ],
   create(
@@ -228,7 +263,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       testFilePattern = '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
       authMiddlewarePatterns = DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns = DEFAULT_ROUTE_HANDLER_PATTERNS,
-      ignorePatterns = [],
+      ignorePatterns = DEFAULT_PUBLIC_ROUTE_PATTERNS,
     } = options as Options;
 
     const filename = context.filename;
@@ -324,6 +359,23 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
           const methodName = property.name.toLowerCase();
           
           if (routeHandlerPatterns.includes(methodName)) {
+            // `app.use(middleware)` with no path mounts GLOBAL middleware — it is not a
+            // route handler, so "missing authentication" is meaningless there. Flagging it
+            // produced 24 findings across 8 clean fixtures (`app.use(helmet())`,
+            // `app.use(rateLimit(...))`, `app.use(express.json())`), the single largest
+            // false-positive source in the plugin. Only a PATH-MOUNTED `use` —
+            // `app.use('/api', handler)` — addresses a route and can be missing auth.
+            if (methodName === 'use') {
+              const first = node.arguments[0];
+              const mountsAPath =
+                first !== undefined &&
+                first.type === 'Literal' &&
+                typeof first.value === 'string';
+              if (!mountsAPath) {
+                return;
+              }
+            }
+
             // Extract route path if available
             let routePath = 'unknown';
             if (node.arguments.length > 0 && node.arguments[0].type === 'Literal') {
@@ -334,14 +386,14 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             }
 
             const text = sourceCode.getText(node);
-            const pathIgnored = matchesIgnorePattern(routePath, ignorePatterns);
-            if (pathIgnored) {
-               console.log('DEBUG MSG: Ignored path:', routePath);
-               return;
+            // These were `console.log('DEBUG MSG: ...')` in shipped code. Any consumer who
+            // set `ignorePatterns` got debug lines on stdout, which corrupts the JSON and
+            // SARIF formatters. A rule must never write to stdout.
+            if (matchesIgnorePattern(routePath, ignorePatterns)) {
+              return;
             }
             if (matchesIgnorePattern(text, ignorePatterns)) {
-               console.log('DEBUG MSG: Ignored text:', text);
-               return;
+              return;
             }
 
             // Check if authentication middleware is present in arguments

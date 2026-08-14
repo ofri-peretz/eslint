@@ -182,7 +182,9 @@ describe('no-format-string-injection', () => {
       valid: [],
       invalid: [
         {
-          code: 'const userFormat = `Template: ${req.query.template}`;',
+          // The specifier is what makes this CWE-134: `%s` consumes an argument, so
+          // attacker-controlled text placed here can read beyond what was passed.
+          code: 'const userFormat = `Template: %s ${req.query.template}`;',
           errors: [
             {
               messageId: 'formatStringInjection',
@@ -439,15 +441,18 @@ describe('no-format-string-injection', () => {
         },
         {
           code: `
-            // Template literal injection
-            const userTemplate = req.body.template; // Could be "Hello ${process.env['SECRET_KEY']}"
+            // Format-string injection through console's util.format semantics.
+            // A single-argument console.log(message) is SAFE — there is no following
+            // argument for a '%s' in userTemplate to consume. The second argument is
+            // what makes this exploitable: '%s' now reads sessionToken.
+            const userTemplate = req.body.template; // Could be "%s"
             const message = \`User said: \${userTemplate}\`;
 
-            console.log(message); // Could leak secrets through template injection
+            console.log(message, sessionToken);
           `,
           errors: [
             {
-              messageId: 'formatStringInjection',
+              messageId: 'userControlledFormatString',
             },
           ],
         },
@@ -782,20 +787,24 @@ describe('no-format-string-injection', () => {
       invalid: [],
     });
 
-    // id 117 arm[1]: TemplateLiteral has user input but NO format specifiers → VarDecl handler silent
-    // (TemplateLiteral visitor still reports because hasUserInput=TRUE & isAssignedToVariable=TRUE)
-    ruleTester.run('coverage - VarDecl TemplateLiteral: user input but no specifiers', noFormatStringInjection, {
+    // id 117 arm[1]: TemplateLiteral assigned to a variable, carrying a format specifier.
+    // This previously asserted that a template with NO specifier reports — it does not, and
+    // should not: with no `%s`/`%d` there is nothing a format-string injection could consume.
+    // That assertion fired on every `const x = `…${req.foo}…`` in existence.
+    ruleTester.run('coverage - VarDecl TemplateLiteral: user input with a specifier', noFormatStringInjection, {
       valid: [],
-      invalid: [{ code: 'const formatStr = `${req.body.value}`', errors: [{ messageId: 'formatStringInjection' }] }],
+      invalid: [{ code: 'const formatStr = `%s ${req.body.value}`', errors: [{ messageId: 'formatStringInjection' }] }],
     });
 
-    // id 118 arm[0]: VarDecl TemplateLiteral with specifiers + user input → both visitors report
-    ruleTester.run('coverage - VarDecl TemplateLiteral: specifiers + user input → both visitors report', noFormatStringInjection, {
+    // id 118 arm[0]: VarDecl TemplateLiteral with specifiers + user input.
+    // Reported ONCE. Both the VariableDeclarator handler and the TemplateLiteral visitor
+    // match this shape; the declarator claims the node so the visitor defers.
+    ruleTester.run('coverage - VarDecl TemplateLiteral: specifiers + user input reported once', noFormatStringInjection, {
       valid: [],
       invalid: [
         {
           code: 'const formatStr = `%s: ${req.body.value}`',
-          errors: [{ messageId: 'formatStringInjection' }, { messageId: 'formatStringInjection' }],
+          errors: [{ messageId: 'formatStringInjection' }],
         },
       ],
     });
@@ -1065,7 +1074,8 @@ describe('no-format-string-injection', () => {
       const templateLit: Record<string, unknown> = {
         type: 'TemplateLiteral',
         expressions: [{ type: 'Identifier', name: 'userInput' }],
-        quasis: [],
+        // The reporting branch now requires a specifier in a static quasi.
+        quasis: [{ value: { raw: '%s ' } }],
       };
       const varDecl: Record<string, unknown> = {
         type: 'VariableDeclarator',
@@ -1111,4 +1121,23 @@ describe('no-format-string-injection', () => {
       expect(reports[0].data?.line).toBe('0');
     });
   });
+});
+
+
+/**
+ * Regression lock — the specifier scan reads the AST quasis, not printed source.
+ *
+ * A specifier can only live in a STATIC quasi: an interpolated `%s` is a value being
+ * formatted, not a format directive. Reading `sourceCode.getText` here also broke under the
+ * mock contexts the coverage suite uses.
+ */
+ruleTester.run('lock: specifier detected from quasis', noFormatStringInjection, {
+  valid: [
+    // Interpolating a value that happens to contain '%s' is not a format directive.
+    { code: 'const formatStr = `${req.body.value}`;' },
+    { code: 'const formatStr = ``;' },
+  ],
+  invalid: [
+    { code: 'const formatStr = `%d ${req.body.value}`;', errors: 1 },
+  ],
 });

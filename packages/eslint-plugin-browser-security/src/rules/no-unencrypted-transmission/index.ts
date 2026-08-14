@@ -13,6 +13,7 @@
  * @see https://owasp.org/www-community/vulnerabilities/Insecure_Transport
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { isNonTransmittingUrl } from '../../utils/loopback-hosts';
 import {
   AST_NODE_TYPES,
   formatLLMMessage,
@@ -132,6 +133,7 @@ const NAMESPACE_URI_PREFIXES = [
 function isNamespaceUri(value: string): boolean {
   return NAMESPACE_URI_PREFIXES.some((prefix) => value.startsWith(prefix));
 }
+
 
 /**
  * String methods that *inspect* a value rather than transmit it.
@@ -320,19 +322,22 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // Nor a loopback address (nothing leaves the machine) or an RFC 2606 reserved
+      // domain (guaranteed never to resolve to a real service). Shared with no-http-urls
+      // and no-insecure-websocket so the three cannot disagree about what "local" means.
+      if (isNonTransmittingUrl(value)) {
+        return;
+      }
+
       // Check if it matches any ignore pattern
       if (matchesIgnorePattern(text, ignorePatterns)) {
         return;
       }
 
-      // Skip test files (allow localhost in test files)
-      if (isTestFile) {
-        // Only allow localhost URLs in test files
-        if (text.includes('localhost')) {
-          return;
-        }
-        // For other URLs in test files, still check them
-      }
+      // NOTE: a test-file carve-out for `localhost` used to sit here. It is now unreachable:
+      // `isNonTransmittingUrl` above returns for every loopback host in every file, test or
+      // not, so the carve-out could never be the thing that returned. Removed rather than
+      // covered — a test for an unreachable branch documents nothing.
 
       const { isInsecure, protocol } = containsInsecureProtocol(
         value,

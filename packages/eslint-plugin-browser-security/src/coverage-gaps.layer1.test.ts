@@ -411,7 +411,7 @@ ruleTester.run('no-http-urls (coverage)', noHttpUrls, {
     },
     // allowed port
     {
-      code: `const u = 'http://example.com:8080/a';`,
+      code: `const u = 'http://acmecorp.io:8080/a';`,
       options: [{ allowedPorts: [8080] }],
     },
   ],
@@ -423,7 +423,7 @@ ruleTester.run('no-http-urls (coverage)', noHttpUrls, {
     },
     // port not in the allowed list
     {
-      code: `const u = 'http://example.com:9999/a';`,
+      code: `const u = 'http://acmecorp.io:9999/a';`,
       options: [{ allowedPorts: [8080] }],
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
@@ -518,12 +518,12 @@ ruleTester.run('no-insecure-websocket (coverage)', noInsecureWebsocket, {
   invalid: [
     // non-WebSocket constructor: only the Literal visitor reports
     {
-      code: `new Foo('ws://example.com');`,
+      code: `new Foo('ws://acmecorp.io');`,
       errors: [{ messageId: 'violationDetected' }],
     },
     // member-expression callee: only the Literal visitor reports
     {
-      code: `new a.WebSocket('ws://example.com');`,
+      code: `new a.WebSocket('ws://acmecorp.io');`,
       errors: [{ messageId: 'violationDetected' }],
     },
     // template literal WebSocket URL (NewExpression check only)

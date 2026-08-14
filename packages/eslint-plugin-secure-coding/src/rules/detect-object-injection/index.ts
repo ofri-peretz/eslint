@@ -1040,6 +1040,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // `const t = ALLOWED[x]; process.env[t] = v` — the key is provably one of the closed
+      // set of literals in ALLOWED, so no attacker-chosen property is reachable.
+      if (
+        node.left.type === AST_NODE_TYPES.MemberExpression &&
+        node.left.computed &&
+        keyComesFromConstAllowlist(node.left.property, node)
+      ) {
+        return;
+      }
+
       // Mark the entire left-side MemberExpression chain as handled.
       // For chained access like `a[b][c] = val`, the rule reports on the
       // AssignmentExpression (outer), then the MemberExpression visitor
@@ -1096,8 +1106,92 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Check member expressions for object injection
      */
+    /**
+     * Resolve an identifier to the ObjectExpression of a `const` declaration that is never
+     * written to after initialisation. Returns null if anything about that is not provable.
+     */
+    const constObjectLiteralOf = (
+      name: string,
+      from: TSESTree.Node,
+    ): TSESTree.ObjectExpression | null => {
+      for (
+        let scope: ReturnType<typeof sourceCode.getScope> | null = sourceCode.getScope(from);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === name);
+        if (!variable) continue;
+        if (variable.defs.length !== 1) return null;
+        const def = variable.defs[0];
+        if (def.type !== 'Variable' || def.parent?.kind !== 'const') return null;
+        // A later write (`ALLOWED = something`) would break the closed-set guarantee.
+        if (variable.references.some((ref) => ref.isWrite() && ref.identifier !== def.name)) {
+          return null;
+        }
+        const init = def.node.init;
+        return init?.type === AST_NODE_TYPES.ObjectExpression ? init : null;
+      }
+      return null;
+    };
+
+    /**
+     * A computed READ off a `const` object literal cannot be prototype pollution: the shape
+     * is fixed at parse time and nothing is written. `ALLOWED[req.body.setting]` and
+     * `MESSAGES[locale]` are the closed-allowlist pattern that IS the documented fix for
+     * this CWE — flagging it is precisely the defect we measure in competitors, where 27%
+     * of eslint-plugin-security's findings are constant-key accesses that cannot pollute.
+     */
+    const isReadFromConstObjectLiteral = (node: TSESTree.MemberExpression): boolean =>
+      node.object.type === AST_NODE_TYPES.Identifier &&
+      constObjectLiteralOf(node.object.name, node) !== null;
+
+    /**
+     * The written key is an identifier whose sole initialiser is a computed read off a
+     * `const` object literal whose values are all literals — so the key provably belongs to
+     * a closed set, e.g. `const t = ALLOWED[x]; process.env[t] = v`.
+     */
+    const keyComesFromConstAllowlist = (property: TSESTree.Node, from: TSESTree.Node): boolean => {
+      if (property.type !== AST_NODE_TYPES.Identifier) return false;
+      for (
+        let scope: ReturnType<typeof sourceCode.getScope> | null = sourceCode.getScope(from);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === property.name);
+        if (!variable) continue;
+        if (variable.defs.length !== 1) return false;
+        const def = variable.defs[0];
+        if (def.type !== 'Variable' || def.parent?.kind !== 'const') return false;
+        if (variable.references.some((ref) => ref.isWrite() && ref.identifier !== def.name)) {
+          return false;
+        }
+        const init = def.node.init;
+        if (
+          init?.type !== AST_NODE_TYPES.MemberExpression ||
+          !init.computed ||
+          init.object.type !== AST_NODE_TYPES.Identifier
+        ) {
+          return false;
+        }
+        const source = constObjectLiteralOf(init.object.name, init);
+        if (!source) return false;
+        // Every value must be a literal, or the "closed set of known strings" claim fails.
+        return source.properties.every(
+          (p) =>
+            p.type === AST_NODE_TYPES.Property &&
+            p.value.type === AST_NODE_TYPES.Literal &&
+            typeof p.value.value === 'string',
+        );
+      }
+      return false;
+    };
+
     const checkMemberExpression = (node: TSESTree.MemberExpression) => {
       if (!isHighRiskMemberAccess(node)) {
+        return;
+      }
+
+      if (isReadFromConstObjectLiteral(node)) {
         return;
       }
 

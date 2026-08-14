@@ -254,3 +254,32 @@ describe('no-unsafe-regex-construction', () => {
     });
   });
 });
+
+
+/**
+ * Regression lock — cloning an existing RegExp adds no attack surface.
+ *
+ * `new RegExp(re.source, re.flags)` re-compiles a pattern the engine already accepted;
+ * whoever controlled the original controls the copy and nothing else changed. Reported as
+ * "dynamic flags" it was a false positive on Mongoose's cloneRegExp and Fastify's route
+ * normaliser. Anchoring a clone (`re.source + '$'`) is still a clone.
+ */
+ruleTester.run('lock: a RegExp clone is not a new pattern', noUnsafeRegexConstruction, {
+  valid: [
+    { code: 'function clone(re) { return new RegExp(re.source, re.flags); }' },
+    { code: "function anchor(re) { return new RegExp(re.source + '$', re.flags); }" },
+    { code: "function anchor(re) { return new RegExp('^' + re.source, re.flags); }" },
+  ],
+  invalid: [
+    // Not a clone: dynamic flags on a pattern that is not `.source`.
+    {
+      code: 'function f(p, item) { return new RegExp(p, item.flags); }',
+      errors: 1,
+    },
+    // No pattern argument at all — the clone check must handle an absent node.
+    {
+      code: 'function f(item) { return new RegExp(undefined, item.flags); }',
+      errors: 1,
+    },
+  ],
+});

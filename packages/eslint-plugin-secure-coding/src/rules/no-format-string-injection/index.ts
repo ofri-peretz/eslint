@@ -206,6 +206,12 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     const filename = context.filename;
 
     // Create safety checker for false positive detection (simplified implementation)
+    // One defect, one finding. ESLint visits a VariableDeclarator before its own `init`,
+    // so a specifier-bearing template assigned to a variable was reported twice — once by
+    // the VariableDeclarator handler and again by the TemplateLiteral visitor. Mirrors the
+    // `handledMemberExpressions` pattern in detect-object-injection.
+    const reportedTemplates = new WeakSet<TSESTree.Node>();
+
     const safetyChecker = {
       isSafe: (safeNode: TSESTree.Node, ruleCtx: TSESLint.RuleContext<MessageIds, RuleOptions>) => {
         // Check for JSDoc @safe-format annotation
@@ -436,7 +442,15 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
                                      (formatArg.type === 'Identifier' && dangerousVariables.has(formatArg.name)) ||
                                      (formatArg.type === 'BinaryExpression' && hasUserInputInExpression(formatArg));
 
-        if (isFormatFromUserInput && !isConsoleMethod(node)) {
+        // `console.*` was excluded outright, on the stated grounds that console methods
+        // "don't use the first arg as a format template". They do: Node's console runs its
+        // first argument through util.format whenever further arguments follow, so
+        // `console.log(userText, sessionToken)` lets a `%s` in userText consume the token.
+        // With a SINGLE argument there is nothing to substitute and it stays safe — which is
+        // the distinction the blanket exclusion was missing in both directions.
+        const consoleSubstitutes = isConsoleMethod(node) && args.length > 1;
+
+        if (isFormatFromUserInput && (!isConsoleMethod(node) || consoleSubstitutes)) {
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
@@ -685,8 +699,22 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             assignCurrent = assignCurrent.parent as TSESTree.Node;
           }
 
-          if (isAssignedToVariable) {
-            if (safetyChecker.isSafe(node, context)) {
+          // A template with NO format specifier cannot be a format-string injection: there
+          // is nothing for `%s`/`%d` to consume. Without this gate the branch fired on
+          // every `const x = `...${req.foo}...`` in existence — e.g.
+          // `fs.createReadStream(`./uploads/${req.params.id}`)`, which is a path, not a
+          // format string, and belongs to the path-traversal rules instead.
+          // Read the specifiers off the AST, not the printed source: a specifier can only
+          // live in a static quasi (an interpolated `%s` is a VALUE being formatted, not a
+          // format directive), and `sourceCode.getText` is unavailable under the mock
+          // contexts the coverage suite uses.
+          const carriesFormatSpecifier = node.quasis.some((quasi) => {
+            const raw = quasi.value.raw;
+            return options.formatSpecifiers.some((spec) => raw.includes(spec));
+          });
+
+          if (isAssignedToVariable && carriesFormatSpecifier) {
+            if (safetyChecker.isSafe(node, context) || reportedTemplates.has(node)) {
               return;
             }
 
@@ -720,7 +748,13 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Track variables that are assigned user input (dangerous)
-        if (isUserInputNode(node.init) || (node.init.type === 'BinaryExpression' && hasUserInputInExpression(node.init))) {
+        if (
+          isUserInputNode(node.init) ||
+          (node.init.type === 'BinaryExpression' && hasUserInputInExpression(node.init)) ||
+          // A template literal interpolating user input carries that input forward.
+          (node.init.type === 'TemplateLiteral' &&
+            node.init.expressions.some((expr: TSESTree.Expression) => isUserInputNode(expr)))
+        ) {
           dangerousVariables.add(varName);
         }
 
@@ -744,6 +778,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
               return;
             }
 
+            reportedTemplates.add(node.init);
             context.report({
               node: node.init,
               messageId: 'formatStringInjection',

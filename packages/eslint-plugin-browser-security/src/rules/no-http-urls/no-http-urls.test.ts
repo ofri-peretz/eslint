@@ -5,6 +5,13 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noHttpUrls } from './index';
 
+/*
+ * Fixture hosts deliberately avoid `example.com`. RFC 2606 reserves it precisely so that
+ * nothing treats it as a real endpoint, and these rules now exempt it — a placeholder
+ * domain cannot be a cleartext-transmission risk. Using it as a stand-in for "some remote
+ * host" would test the exemption, not the rule.
+ */
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -25,12 +32,12 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // Recognised by the ATTRIBUTE name too, whatever the host — `xmlns` is the
     // XML spec's own declaration syntax, so the value is an identifier by
     // position rather than by who minted it.
-    { code: "const el = { xmlns: 'http://example.com/ns' }" },
-    { code: "const el = { 'xmlns:custom': 'http://example.com/ns' }" },
+    { code: "const el = { xmlns: 'http://acmecorp.io/ns' }" },
+    { code: "const el = { 'xmlns:custom': 'http://acmecorp.io/ns' }" },
 
     // HTTPS URLs
-    { code: "const apiUrl = 'https://api.example.com/data'" },
-    { code: "fetch('https://secure.example.com/api')" },
+    { code: "const apiUrl = 'https://api.acmecorp.io/data'" },
+    { code: "fetch('https://secure.acmecorp.io/api')" },
     // Allowed localhost
     { code: "const devUrl = 'http://localhost:3000'" },
     { code: "const localApi = 'http://127.0.0.1:8080/api'" },
@@ -75,13 +82,13 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // A host that IS written down is still judged, however much of the rest of
     // the URL is interpolated.
     {
-      code: 'const u = `http://api.example.com/${path}`;',
+      code: 'const u = `http://api.acmecorp.io/${path}`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // Only a FULLY interpolated authority is unknowable — `api.` already
     // proves the host is not loopback.
     {
-      code: 'const u = `http://api.${env}.example.com/x`;',
+      code: 'const u = `http://api.${env}.acmecorp.io/x`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A lone `http://` with no chunk after it is not an interpolation.
@@ -92,34 +99,34 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // A trailing chunk that merely *contains* an interpolation before the path
     // delimiter is still the authority — the exemption is not contagious.
     {
-      code: 'const u = `http://evil.example.com?next=${target}`;',
+      code: 'const u = `http://evil.acmecorp.io?next=${target}`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
 
     // The namespace allowlist is by HOST, not substring: a real request to a
     // host whose PATH mentions w3.org is still a request.
     {
-      code: "fetch('http://cdn.example.com/w3.org/lib.js')",
+      code: "fetch('http://cdn.acmecorp.io/w3.org/lib.js')",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A non-namespace property key does not confer the exemption.
     {
-      code: "const el = { href: 'http://example.com/ns' }",
+      code: "const el = { href: 'http://acmecorp.io/ns' }",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A numeric key is not a name at all, so nothing is conferred.
     {
-      code: "const el = { 1: 'http://example.com/ns' }",
+      code: "const el = { 1: 'http://acmecorp.io/ns' }",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
 
     // Insecure http URLs
     { 
-      code: "const apiUrl = 'http://api.example.com/data'", 
+      code: "const apiUrl = 'http://api.acmecorp.io/data'", 
       errors: [{ messageId: 'insecureHttpWithException' }] 
     },
     { 
-      code: "fetch('http://insecure.example.com/api')", 
+      code: "fetch('http://insecure.acmecorp.io/api')", 
       errors: [{ messageId: 'insecureHttpWithException' }] 
     },
     // Template literals
@@ -129,7 +136,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     },
     // Without allowed hosts (uses insecureHttp message)
     { 
-      code: "const url = 'http://prod.example.com/api'",
+      code: "const url = 'http://prod.acmecorp.io/api'",
       options: [{ allowedHosts: [] }],
       errors: [{ messageId: 'insecureHttp' }] 
     },
@@ -152,19 +159,19 @@ jsxRuleTester.run('no-http-urls (jsx)', noHttpUrls, {
     // okta/okta-signin-widget src/v3/src/components/Icon/*.tsx — 29 of these.
     { code: '<svg xmlns="http://www.w3.org/2000/svg" />' },
     // The namespaced spelling of the same declaration.
-    { code: '<svg xmlns:xlink="http://example.com/ns" />' },
+    { code: '<svg xmlns:xlink="http://acmecorp.io/ns" />' },
     // JSX spells the XLink namespace this way.
-    { code: '<svg xmlnsXlink="http://example.com/ns" />' },
+    { code: '<svg xmlnsXlink="http://acmecorp.io/ns" />' },
   ],
   invalid: [
     // A non-namespace JSX attribute is an ordinary URL and still reports.
     {
-      code: '<img src="http://cdn.example.com/logo.png" />',
+      code: '<img src="http://cdn.acmecorp.io/logo.png" />',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A spread attribute has no name to read, so no exemption is conferred.
     {
-      code: '<img {...{ src: "http://cdn.example.com/a.png" }} />',
+      code: '<img {...{ src: "http://cdn.acmecorp.io/a.png" }} />',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
   ],
@@ -188,53 +195,75 @@ ruleTester.run('no-http-urls (URL parsing base)', noHttpUrls, {
     // A base whose origin SURVIVES is a real cleartext endpoint. Reading
     // `origin` keeps the scheme, so the exemption must not apply.
     {
-      code: "const {origin, pathname} = new URL(p, 'http://prod.example.com');",
+      code: "const {origin, pathname} = new URL(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     {
-      code: "const {href} = new URL(p, 'http://prod.example.com');",
+      code: "const {href} = new URL(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A rest element captures whatever is left, including the origin.
     {
-      code: "const {pathname, ...rest} = new URL(p, 'http://prod.example.com');",
+      code: "const {pathname, ...rest} = new URL(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A computed key cannot be read, so nothing is proven.
     {
-      code: "const {[k]: v} = new URL(p, 'http://prod.example.com');",
+      code: "const {[k]: v} = new URL(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // FN GUARD: the whole URL object is kept and can be fetched. This is the
     // case a position-only exemption would have silenced.
     {
-      code: "const u = new URL('/api', 'http://prod.example.com'); fetch(u);",
+      code: "const u = new URL('/api', 'http://prod.acmecorp.io'); fetch(u);",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // FN GUARD: passed straight to fetch, never bound at all.
     {
-      code: "fetch(new URL('/api', 'http://prod.example.com'));",
+      code: "fetch(new URL('/api', 'http://prod.acmecorp.io'));",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // The literal is the URL itself (argument 0), not the base.
     {
-      code: "const {pathname} = new URL('http://prod.example.com/a');",
+      code: "const {pathname} = new URL('http://prod.acmecorp.io/a');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A different constructor confers nothing.
     {
-      code: "const {pathname} = new Request(p, 'http://prod.example.com');",
+      code: "const {pathname} = new Request(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A member-expression callee is not the bare `URL` identifier.
     {
-      code: "const {pathname} = new global.URL(p, 'http://prod.example.com');",
+      code: "const {pathname} = new global.URL(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // Destructured into an array pattern, not an object pattern.
     {
-      code: "const [a] = new URL(p, 'http://prod.example.com');",
+      code: "const [a] = new URL(p, 'http://prod.acmecorp.io');",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
+  ],
+});
+
+/**
+ * Regression lock — RFC 2606 reserved domains.
+ *
+ * `example.com` exists precisely so that nothing treats it as a real endpoint, and it was the
+ * largest single false-positive shape for this rule across the real-source corpus (found in
+ * parse-server auth fixtures). Matched on the AUTHORITY only, so a lookalike host that really
+ * does resolve is still reported.
+ */
+ruleTester.run('lock: reserved example domains are not endpoints', noHttpUrls, {
+  valid: [
+    { code: "const redirectUri = 'http://example.com';" },
+    { code: "const u = 'http://example.org/callback';" },
+    { code: "const u = 'http://service.test/health';" },
+    { code: "const u = 'http://thing.invalid';" },
+  ],
+  invalid: [
+    // A lookalike subdomain is a real remote host.
+    { code: "const u = 'http://example.com.attacker.io';", errors: 1 },
+    { code: "const u = 'http://notexample.com';", errors: 1 },
   ],
 });
