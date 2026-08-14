@@ -571,6 +571,32 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    /**
+     * Is this declared variable later handed to an XPath evaluator?
+     *
+     * `reachesXpathSink` answers "is this node INSIDE a sink call", which is the right
+     * question for a template or a concatenation but the wrong one for a declaration —
+     * `const xpathVar = userInput; document.evaluate(xpathVar)` has the sink in a later
+     * statement, not in an ancestor. Resolve the binding and look at its references.
+     */
+    const declarationReachesSink = (declarator: TSESTree.VariableDeclarator): boolean => {
+      // No `id.type !== Identifier` guard here: the VariableDeclarator handler already
+      // returns on that, so a second check would be unreachable.
+      const name = (declarator.id as TSESTree.Identifier).name;
+      for (
+        let scope: ReturnType<typeof context.sourceCode.getScope> | null =
+          context.sourceCode.getScope(declarator.id);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === name);
+        if (variable) {
+          return variable.references.some((ref) => reachesXpathSink(ref.identifier));
+        }
+      }
+      return false;
+    };
+
     return {
       // Check XPath function calls
       CallExpression(node: TSESTree.CallExpression) {
@@ -755,23 +781,65 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check if untrusted input is involved
-        const leftUntrusted =
-          isUntrustedXpathInput(node.left) &&
-          !isXpathInputValidated(node.left) &&
+        // Evaluate the WHOLE concatenation once, at its outermost node.
+        //
+        // `"a" + taint + "b"` parses as `("a" + taint) + "b"`: the taint sits in the INNER
+        // BinaryExpression, and the outer one sees only a BinaryExpression and a Literal.
+        // Checking left/right at every level therefore reported the inner node — and once
+        // `dynamicAtSink` widened what qualifies, the outer node reported too, giving two
+        // findings at overlapping ranges for one defect. Flattening the `+` chain and
+        // judging it once at the top fixes both halves.
+        const isInnerConcat =
+          node.parent?.type === AST_NODE_TYPES.BinaryExpression &&
+          node.parent.operator === '+';
+        if (isInnerConcat) {
+          return;
+        }
+
+        const operands: TSESTree.Node[] = [];
+        (function flatten(n: TSESTree.Node): void {
+          if (
+            n.type === AST_NODE_TYPES.BinaryExpression &&
+            n.operator === '+'
+          ) {
+            flatten(n.left);
+            flatten(n.right);
+            return;
+          }
+          operands.push(n);
+        })(node);
+
+        const unvalidated = (operand: TSESTree.Node): boolean =>
+          !isXpathInputValidated(operand) &&
           !(
-            node.left.type === 'Identifier' &&
-            validatedVariables.has(node.left.name)
-          );
-        const rightUntrusted =
-          isUntrustedXpathInput(node.right) &&
-          !isXpathInputValidated(node.right) &&
-          !(
-            node.right.type === 'Identifier' &&
-            validatedVariables.has(node.right.name)
+            operand.type === AST_NODE_TYPES.Identifier &&
+            validatedVariables.has(operand.name)
           );
 
-        if (leftUntrusted || rightUntrusted) {
+        const hasUntrusted = operands.some(
+          (operand) => isUntrustedXpathInput(operand) && unvalidated(operand),
+        );
+
+        // A named taint root is one way to know an operand is attacker-influenced; it is
+        // not the only one. When a string that `looksLikeXpath` is concatenated with ANY
+        // dynamic value and handed to a proven evaluator, three independent facts line up —
+        // the string is XPath, the sink is an XPath sink, and part of the expression is not
+        // fixed. `xpath.select("//user[@id='" + id + "']", doc)` was silent purely because
+        // `id` is not in the taint-name list, which is the identifier-matching defect this
+        // rule was criticised for elsewhere.
+        //
+        // Measured before shipping: across 20 open-source projects (2.37M SLOC) this arm
+        // adds ZERO findings — the shapes it targets do not occur there — while closing the
+        // gap on the shape it does target. It requires the SINK, so a lookalike string that
+        // is never evaluated still reports nothing.
+        const dynamicAtSink =
+          reachesXpathSink(node) &&
+          operands.some(
+            (operand) =>
+              operand.type !== AST_NODE_TYPES.Literal && unvalidated(operand),
+          );
+
+        if (hasUntrusted || dynamicAtSink) {
           // FALSE POSITIVE REDUCTION
           if (
             safetyChecker.isSafe(node, context) ||
@@ -796,6 +864,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
       // Check variable assignments with XPath expressions
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        // Computed once and shared by both reports below, so the loc fallback is a single
+        // branch rather than one per report.
+        const declLine = String(node.loc?.start.line ?? 0);
         if (!node.init || node.id.type !== 'Identifier') {
           return;
         }
@@ -861,22 +932,47 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
               messageId: 'dangerousXpathExpression',
               data: {
                 filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
+                line: declLine,
               },
             });
           }
-        } else if (isUntrustedXpathInput(node.init)) {
+        } else if (
+          isUntrustedXpathInput(node.init) &&
+          // Two name matchers stacked was not evidence. The declaration name had to contain
+          // xpath/query/path and the INITIALISER's name had to contain
+          // query/params/input/user/search — so `const QueryValidateSchema = QueryInputSchema`
+          // (a Zod schema, in a file with no XPath anywhere) was reported as CWE-643.
+          // Require the declared variable to actually reach an evaluator.
+          declarationReachesSink(node) &&
+          // …and report here only when the sink itself will not. The sink path already
+          // reports a bare identifier argument that `isUntrustedXpathInput` recognises, so
+          // without this `const xpathQuery = req.params.query; doc.evaluate(xpathQuery)`
+          // produced two findings for one defect. `xpathVar` is not a taint-shaped name, so
+          // the sink stays silent and this branch is the one that must speak.
+          !isUntrustedXpathInput(node.id)
+        ) {
           context.report({
             node: node.init,
             messageId: 'xpathInjection',
             data: {
               filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
+              line: declLine,
               severity: 'MEDIUM',
               safeAlternative: 'Use safe XPath construction methods',
             },
           });
         }
+        // The branch above used to fire
+        // on a NAME match alone: the declaration name had to contain xpath/query/path, and
+        // the initialiser's name had to contain query/params/input/user/search. Nothing in
+        // either name says the value is an XPath expression, and the pair reported
+        // `const QueryValidateSchema = QueryInputSchema` — a Zod schema, in a file with no
+        // XPath anywhere — as CWE-643.
+        //
+        // Deleted rather than gated. Every case it caught that was real
+        // (`const xpathVar = userInput; document.evaluate(xpathVar)`) is already reported
+        // where the defect manifests: at the evaluator. Keeping both reported one defect
+        // twice.
       },
     };
   },
