@@ -379,11 +379,33 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
      * Check for direct Node.js API access in renderer-like files
      */
     const isRendererFile = (): boolean => {
-      const fileName = filename.toLowerCase();
-      return fileName.includes('renderer') ||
-             fileName.includes('preload') ||
-             fileName.includes('ui') ||
-             fileName.includes('view');
+      // Match path SEGMENTS, never substrings of the whole path.
+      //
+      // This was `fileName.includes('ui')` against the absolute path, so the rule fired or
+      // stayed silent depending on whether any ancestor directory happened to contain the
+      // letters "ui" — `suites`, `build`, `guide`, `require`, `quick`. Linting the same file
+      // from two different working directories gave two different answers, and any project
+      // with a `ui/` folder had every Node API call in every file reported.
+      //
+      // `renderer` and `preload` still match as a prefix of the basename
+      // (`renderer.ts`, `preload.js`), which is the real Electron convention. `ui` and
+      // `view` are only ever whole directory segments.
+      const segments = filename.toLowerCase().split(/[\\/]/).filter(Boolean);
+      if (segments.length === 0) return false;
+      const base = segments[segments.length - 1].replace(/\.[cm]?[jt]sx?$/, '');
+      const dirs = segments.slice(0, -1);
+
+      return (
+        base === 'renderer' ||
+        base === 'preload' ||
+        base.startsWith('renderer.') ||
+        base.startsWith('preload.') ||
+        dirs.includes('renderer') ||
+        dirs.includes('preload') ||
+        dirs.includes('ui') ||
+        dirs.includes('view') ||
+        dirs.includes('views')
+      );
     };
 
     /**
