@@ -1,51 +1,38 @@
-// Local-source FP audit: which safe/ fixtures still fire, and from which rule.
-// Run: node fp-audit.mjs
-import { ESLint } from 'eslint';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CORPUS = path.resolve(HERE, '../../corpus');
-const PKGS = path.resolve(HERE, '../../../packages');
+/**
+ * False positives on the labelled corpus: which `safe/` fixtures fire, and from
+ * which rule. A fixture under `safe/` carries a "This MUST NOT fire" comment —
+ * anything reported here is noise by construction.
+ *
+ * Reported under both presets, because the two answer different questions:
+ * `recommended` is what a consumer installs, `all` is the maximal
+ * configuration. See harness.mjs.
+ *
+ * Run: node fp-audit.mjs
+ */
+import { fixtures, lint, makeEslint, ruleCount } from './harness.mjs';
 
+const safe = fixtures('safe');
 
+for (const preset of ['recommended', 'all']) {
+  const eslint = makeEslint(preset);
+  const byRule = {};
+  let dirty = 0;
 
+  console.log(`\n══ ${preset}  (${ruleCount(preset)} rules)\n`);
 
-const load = async (p) => (await import(`${PKGS}/${p}/dist/src/index.js`)).default;
-const sc = await load('eslint-plugin-secure-coding');
-const bs = await load('eslint-plugin-browser-security');
-const ns = await load('eslint-plugin-node-security');
-const tsp = (await import('@typescript-eslint/parser')).default;
-
-const all = (p, pre) => Object.fromEntries(Object.keys(p.rules).map((r) => [`${pre}/${r}`, 'error']));
-const eslint = new ESLint({
-  overrideConfigFile: true,
-  overrideConfig: [
-    { files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
-      languageOptions: { ecmaVersion: 'latest', sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } },
-      plugins: { 'secure-coding': sc, 'browser-security': bs, 'node-security': ns },
-      rules: { ...all(sc, 'secure-coding'), ...all(bs, 'browser-security'), ...all(ns, 'node-security') } },
-    { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tsp } },
-  ],
-});
-
-const byRule = {};
-let files = 0, safe = 0;
-for (const dir of fs.readdirSync(CORPUS).sort()) {
-  const d = path.join(CORPUS, dir, 'safe');
-  if (!fs.existsSync(d)) continue;
-  for (const f of fs.readdirSync(d).filter((x) => /\.[jt]sx?$/.test(x))) {
-    safe++;
-    const res = await eslint.lintText(fs.readFileSync(path.join(d, f), 'utf8'), { filePath: `case${path.extname(f)}` });
-    const msgs = (res[0]?.messages ?? []).filter((m) => m.ruleId);
+  for (const fixture of safe) {
+    const msgs = await lint(eslint, fixture);
     if (!msgs.length) continue;
-    files++;
-    console.log(`${dir}/safe/${f}`);
-    msgs.forEach((m) => {
+    dirty++;
+    console.log(`${fixture.dir}/safe/${fixture.file}`);
+    for (const m of msgs) {
       byRule[m.ruleId] = (byRule[m.ruleId] ?? 0) + 1;
       console.log(`    ${m.ruleId}  L${m.line}`);
-    });
+    }
   }
+
+  console.log(`\nFP ${dirty}/${safe.length} (${((dirty / safe.length) * 100).toFixed(1)}%)`);
+  Object.entries(byRule)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([r, c]) => console.log(`  ${String(c).padStart(3)}  ${r}`));
 }
-console.log(`\nFP ${files}/${safe} (${((files / safe) * 100).toFixed(1)}%)\n`);
-Object.entries(byRule).sort((a, b) => b[1] - a[1]).forEach(([r, c]) => console.log(`  ${String(c).padStart(3)}  ${r}`));
