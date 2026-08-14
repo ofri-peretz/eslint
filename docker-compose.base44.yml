@@ -1,0 +1,49 @@
+# Base44 dev runbook for the Interlace monorepo docs site.
+#
+# The web entry point is `apps/docs` (Next.js 16, served on host port 3000).
+# It is part of an npm-workspaces monorepo and imports two workspace deps:
+#   - @interlace/ui      → needs a `tsc` build (exports from dist/) before dev
+#   - @interlace/benchmarks → exports .ts sources directly, no build needed
+#
+# Dev-oriented: node:24-slim with the repo bind-mounted, deps installed at
+# startup and cached on the mount, and `next dev --hostname 0.0.0.0` so edits
+# hot-reload without an image rebuild.
+
+services:
+  web:
+    image: node:24-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      # Skip lefthook git-hook install during npm install (the root `prepare`
+      # script); all other postinstalls (e.g. fumadocs-mdx) still run.
+      - LEFTHOOK=0
+      - PORT=3000
+      # Lets Next.js allow the preview's external dev origin (see allowedDevOrigins
+      # in apps/docs/next.config.mjs). The suffix changes per environment, so it
+      # is never hardcoded.
+      - BASE44_PUBLIC_HOST_SUFFIX=${BASE44_PUBLIC_HOST_SUFFIX}
+      # Optional analytics keys — left blank; the app renders identically without them.
+      - NEXT_PUBLIC_POSTHOG_KEY=
+    command: >-
+      bash -lc '
+      set -e;
+      [ -d node_modules ] || npm install --no-audit --no-fund;
+      [ -d packages/ui/dist ] || npm run build --workspace @interlace/ui;
+      cd apps/docs;
+      [ -f src/data/plugin-stats.json ] || npx tsx scripts/sync-plugin-stats.ts;
+      exec npx next dev --port 3000 --hostname 0.0.0.0;
+      '
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 300s
