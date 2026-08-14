@@ -12,10 +12,10 @@ const PKGS = path.resolve(HERE, '../../../packages');
 
 const SIDE = process.argv[2] ?? 'us';
 const PER_RULE = Number(process.argv[3] ?? 3);
-const CACHE = 'benchmarks/.real-source-cache';
+const CACHE = path.resolve(HERE, '../../.real-source-cache');
 
 
-const load = async (p) => (await import(`./${R}/${p}/dist/src/index.js`)).default;
+const load = async (p) => (await import(`${PKGS}/${p}/dist/src/index.js`)).default;
 const sc = await load('eslint-plugin-secure-coding');
 const bs = await load('eslint-plugin-browser-security');
 const ns = await load('eslint-plugin-node-security');
