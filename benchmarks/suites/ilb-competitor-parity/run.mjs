@@ -44,6 +44,14 @@ for (const name of ['eslint-plugin-secure-coding', 'eslint-plugin-browser-securi
   const local = dir.includes(`${path.sep}packages${path.sep}`);
   console.log(`  resolved ${name}@${version}${local ? '  [LOCAL dist — run `npm run build` or numbers are stale]' : ''}`);
 }
+// Same reason the versions are printed: cwd is a hidden input that silently moves the
+// score. ESLint takes `cwd` from `process.cwd()`, and the rules that resolve modules read
+// it, so WHERE you stand changes what is detected. Measured on one unchanged dist:
+// from this suite directory 50/84 detected and 28/105 fires-on-valid; from the repo root
+// 49/84 and 23/105 — a 1.2-point swing in raw parity with nothing else different. Neither
+// is pinned here on purpose: the canonical cwd is a call for the owner, not a silent
+// default, and picking one would restate the number this file exists to publish.
+console.log(`  cwd ${process.cwd()}  [parity is cwd-sensitive — compare only like with like]`);
 
 const eslint = new ESLint({
   overrideConfigFile: true,
@@ -179,8 +187,22 @@ if (fs.existsSync(BASELINE)) {
     ([k, v]) => prev.summary[k] && v.firedOnValid > prev.summary[k].firedOnValid,
   );
   const totalNoisier = prev.totals && totals.firedOnValid > prev.totals.firedOnValid;
-  if (regressed.length || noisier.length || totalNoisier) {
+  // Per-class recall is keyed off the CURRENT summary, so a class that disappears from the
+  // corpus is not iterated and cannot regress — it simply stops being checked. Same hole,
+  // one level up: the totals only gated `firedOnValid`, so deleting covered cases dropped
+  // `detected` and still printed "no regression". Both are the loss-blind failure this
+  // project has already paid for once; a ratchet that can only see one direction is not a
+  // ratchet. Detection is now pinned in absolute terms as well as per class.
+  const vanished = Object.keys(prev.summary).filter((k) => !summary[k]);
+  const totalRegressed = prev.totals && totals.detected < prev.totals.detected;
+  if (regressed.length || noisier.length || totalNoisier || totalRegressed || vanished.length) {
     console.error('\nREGRESSION vs baseline:');
+    if (totalRegressed) {
+      console.error(`  recall  TOTAL: ${prev.totals.detected} -> ${totals.detected} detected`);
+    }
+    vanished.forEach((k) =>
+      console.error(`  gone    ${k}: in baseline (${prev.summary[k].detected}/${prev.summary[k].invalid}), absent from this run`),
+    );
     regressed.forEach(([k, v]) =>
       console.error(`  recall  ${k}: ${prev.summary[k].detected} -> ${v.detected}`),
     );
@@ -193,6 +215,11 @@ if (fs.existsSync(BASELINE)) {
     process.exit(1);
   }
   console.log('\nno regression vs baseline (recall held, false positives did not grow).');
+} else {
+  // No baseline on disk means every check above is skipped, and the suite exits 0 having
+  // compared nothing. Silence there reads exactly like success, so say it out loud —
+  // ilb-corpus-truth prints the same warning for the same reason.
+  console.log('\n⚠️  No baseline — nothing was ratcheted. Record one with --update-baseline.');
 }
 
 if (process.argv.includes('--update-baseline')) {
