@@ -49,6 +49,10 @@
   "ignores": [
     "node_modules",
     "**/node_modules",
+    // Third-party source cloned by benchmarks/suites/ilb-real-source. Not ours to lint,
+    // and gitignored — but markdownlint walks the working tree, not the index.
+    "benchmarks/.real-source-cache",
+    "**/.real-source-cache/**",
     "dist",
     "**/dist",
     "coverage",

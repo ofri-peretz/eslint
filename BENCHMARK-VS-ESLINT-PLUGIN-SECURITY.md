@@ -11,7 +11,7 @@ Runner: `benchmarks/suites/ilb-competitor-parity/`. ESLint 10.8.1, Node 24.
 > **22.4% of our own `safe/` fixtures**, `detect-non-literal-fs-filename` has a live
 > false-negative on member-expression arguments, and they out-download us **418×**. Nothing
 > in this file is a marketing claim until the caveat attached to it is repeated with it.
-
+>
 > **Provenance.** §§1–5 were re-measured on 2026-08-13. §§6–8 are **carried over from
 > 2026-08-11 and NOT re-measured** — they are marked, and their numbers predate three
 > releases on our side. Do not quote them as current without re-running.

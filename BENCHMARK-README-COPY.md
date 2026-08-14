@@ -17,10 +17,12 @@ the prose between them.
 
 ### Headline
 
-> # The security layer for ESLint
->
-> **121 rules across 75 CWEs. Free, offline, zero-config.**
-> 100% drop-in parity with `eslint-plugin-security` — measured against its own test suite.
+```markdown
+# The security layer for ESLint
+
+**121 rules across 75 CWEs. Free, offline, zero-config.**
+100% drop-in parity with `eslint-plugin-security` — measured against its own test suite.
+```
 
 ```bash
 npm i -D eslint-plugin-secure-coding eslint-plugin-browser-security eslint-plugin-node-security
@@ -109,10 +111,12 @@ measured numbers.
 
 ### Headline
 
-> # eslint-plugin-node-security
->
-> **42 security rules for Node.js.** Subprocesses, filesystem paths, crypto, dependencies.
-> Free, offline, zero-config.
+```markdown
+# eslint-plugin-node-security
+
+**42 security rules for Node.js.** Subprocesses, filesystem paths, crypto, dependencies.
+Free, offline, zero-config.
+```
 
 ### Why — one paragraph, plugin-specific
 
