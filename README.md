@@ -9,7 +9,7 @@
 <p align="center">
   <strong>The Interlace ESLint Ecosystem</strong> — security and code-quality rules that explain themselves,<br />
   to your team and to the AI writing half your code.<br />
-  Every finding ships with a CWE, a CVSS score, an OWASP mapping, and the fix.
+  Every finding ships with a CWE, an OWASP mapping, and the fix.
 </p>
 
 <!-- Trust signals — every badge here is computed from a live source, not hand-set. -->
@@ -215,16 +215,59 @@ Every finding is one of four things, and we track all four — per rule, per CWE
 - **Recall** = TP / (TP + FN) — of what we should flag, how much did we catch?
 - **F1** — the harmonic mean, so neither can be gamed alone.
 
-**Recall first, precision second.** A missed CWE is worse than a noisy rule, and we
-don't regress recall to chase FPs.
+**Signal over noise.** A rule that fires two thousand times to be right four hundred of
+them does not make a codebase safer — it teaches the team to skip the category, and an
+ignored tool has zero recall regardless of what it detects.
 
-On the [ILB-Arena](./benchmarks/README.md) corpus (40 vulnerable / 38 safe fixtures,
-18 plugins scored, 17 security-relevant) Interlace ranks **1st**; the next-best
-plugin scores **66.1% F1**. We publish the _ordinal_ result and not the absolute
-one on purpose — a perfect score on a self-authored 40-fixture corpus is a
-regression test wearing a benchmark's clothes, and we
-[withdrew our own headline number](./CLAIMS.md) when an audit found it unsupported
-by its own evidence file.
+This is a constraint we hold against ourselves. `no-unsafe-regex-construction` has a real
+~300-file recall gap: competitors catch `new RegExp(userSuppliedName)` and we do not. We
+built the fix and measured it before shipping — findings went **29 → 2,243** on the same
+corpus, and a hand-read of the new ones put precision at **~25%**. We reverted it, and
+[documented the gap](./BENCHMARK-RESULTS.md) rather than closing it badly.
+
+### The same corpus, six plugins, one command
+
+Every community ESLint security plugin, scored on identical labelled fixtures from
+`benchmarks/corpus/` — **our own CWE corpus, not NIST Juliet**; the suite that scores it was
+[renamed for exactly that reason](./CLAIMS.md):
+
+| Plugin | TP | FP | FN | F1 |
+| :----- | -: | -: | -: | -: |
+| **Interlace** | **69** | **0** | **0** | **100%** |
+| eslint-plugin-sonarjs | 27 | 9 | 42 | 51.4% |
+| eslint-plugin-security | 10 | 7 | 59 | 23.3% |
+| @microsoft/eslint-plugin-sdl | 6 | 2 | 63 | 15.6% |
+| eslint-plugin-no-unsanitized | 4 | 1 | 65 | 10.8% |
+| eslint-plugin-security-node | 4 | 3 | 65 | 10.5% |
+
+Read that with the caveat attached: **the fixtures are ours**, so a perfect score there is
+a regression gate wearing a benchmark's clothes. The number that survives contact with code
+we did not write is the away-turf one — **51/51 live cases on `eslint-plugin-security`'s own
+RuleTester suite**, which they wrote to define their own true positives.
+
+And on 20 open-source projects (23,682 files, 2.37M SLOC), sampled and hand-labelled on both
+sides:
+
+| | Interlace | eslint-plugin-security |
+| :-- | --: | --: |
+| Findings | 981 | 21,557 |
+| Measured precision | **47%** | 20% |
+| False positives per 1k SLOC | **0.22** | 7.27 |
+| Findings you read per real issue | **2.1** | 5.0 |
+
+They find more real issues in absolute terms — 4,311 to our 461 — because they fire 22× more
+often. 47% is not a good number; it is ours, and the failure modes behind it are named in
+[BENCHMARK-RESULTS.md](./BENCHMARK-RESULTS.md).
+
+### What this is not
+
+- **Not SAST.** No inter-procedural dataflow, no cross-file taint, no build integration, no
+  SBOM, no secret-history scanning. That is a different product at a different price.
+- **75 CWEs**, of roughly 900 — the ones an AST can see.
+- **"Quieter" is measured against `eslint-plugin-security`.** Against a narrow
+  single-purpose plugin such as `eslint-plugin-no-unsanitized` we report *more*, and we say so.
+
+[Full results](./BENCHMARK-RESULTS.md) · [Criteria](./BENCHMARK-CRITERIA.md) · [Methodology and exact rule lists](./BENCHMARK-METHODOLOGY.md) · [Raw data](./benchmarks/results/published/benchmark-2026-08-14.json)
 
 That is what [**CLAIMS.md**](./CLAIMS.md) is for: every marketing claim in this repo
 maps to the evidence file that produced it, carries a verification date, goes
