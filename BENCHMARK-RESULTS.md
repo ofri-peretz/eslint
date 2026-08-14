@@ -43,10 +43,10 @@ author · `INT` internal — committed runner, our own fixtures; a regression ga
 | # | Criterion | Interlace | eslint-plugin-security | Winner | Tier |
 |---|---|---|---|---|---|
 | B1 | **False positives**, 67 clean labelled fixtures | **0/67 — 0.0%** | 7/67 — 10.4% | **Interlace** | INT |
-| B2 | **Measured precision**, rule-level classification weighted by volume | **≈45%** across 1,106 of 1,375 findings | not classified | — | PUB |
-| B2a | — hand-labelled sample, 20 findings | ≈47% (8 TP / 9 FP / 3 undecidable) | not sampled | — | PUB |
+| B2 | **Measured precision**, hand-labelled stratified sample | **≈67%** (12 TP / 6 FP / 4 undecidable of 22) | ≈20% (3 TP / 12 FP / 1 undecidable of 16) | **Interlace** | PUB |
+| B2a | — same sample before the 2026-08-14 precision work | ≈47% (8 TP / 9 FP / 3 undecidable of 20) | — | — | PUB |
 | B2b | **TP / FP / FN, labelled corpus** (`ilb-juliet`) | **69 / 0 / 0 — F1 100%** | 10 / 7 / 59 — F1 23.3% | **Interlace** | INT |
-| B3 | Findings per 1,000 files, 20 OSS projects | **58** | 985 | **Interlace** | VOL |
+| B3 | Findings per 1,000 files, 20 OSS projects | **54** | 985 | **Interlace** | VOL |
 | B4 | Louder on N of 20 projects | **0 of 20** | 20 of 20 | **Interlace** | VOL |
 | B5 | Output concentrated in a single rule | 18% (`no-http-urls`) | **87%** (`detect-object-injection`) | **Interlace** | PUB |
 | B6 | Fires on the other side's `valid` cases | 23/105 | 0/105 | eslint-plugin-security | PUB |
@@ -161,11 +161,20 @@ The eleven we lose group into four honest categories:
 
 **Volume is not precision.** B3 measures how much each plugin says, not how much is right.
 
-**Measured precision is ≈47%** (B2) — 8 true positives, 9 false positives, 3 undecidable in a
-hand-labelled sample of 20 findings across repos and rules. That is honest and it is not good.
-The dominant failure mode is name-matching rather than analysis: `no-xpath-injection` fires on
-a variable called `path`, `no-graphql-injection` on the string `Query {`. Fixing those two
-rules alone would take precision to roughly 60%.
+**Measured precision is ≈67%** (B2) — 12 true positives, 6 false positives, 4 undecidable in a
+hand-labelled sample of 22 findings across repos and rules. It was 47% before the 2026-08-14
+precision work; the same sampling method on the competitor puts them at ≈20%.
+
+Every point of that move came from removing name-matching rather than adding analysis:
+
+| Rule | Defect | Findings |
+|---|---|---|
+| `no-xpath-injection` | declaration name + initialiser name, no XPath anywhere; `select` matched Mongoose's projection API | 66 → 29 |
+| `no-improper-sanitization` | shell metacharacters (`\| ; ( ) $`) in an HTML-escaping character list | 24 → 9 |
+| `no-http-urls` | reported `indexOf('http://')` — the guard that checks for http | 245 → 229 |
+
+Total across 20 projects: **1,351 → 1,283 findings**. Corpus false positives stayed at 0/67,
+parity at 51/51 and detection at 73/76 throughout — the reductions are noise, not coverage.
 
 For calibration, the incumbent's `detect-object-injection` is **87% of its entire output**
 (B5), and a prior analysis found 27% of that rule's findings to be *mechanically provable*
