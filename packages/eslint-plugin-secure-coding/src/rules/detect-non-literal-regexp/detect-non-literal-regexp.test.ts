@@ -239,6 +239,10 @@ describe('detect-non-literal-regexp', () => {
         { code: 'const S = "abc"; const r = new RegExp(S.toUpperCase());' },
         { code: 'const N = "ab"; const r = new RegExp(N.repeat(2));' },
         { code: 'const T = "a"; const r = new RegExp(`^${T}$`);' },
+        // Previously a documented ceiling: the old walk gave up past 6 levels, so a
+        // deeply-nested constant reported. Routing through devkit's isStaticExpression
+        // removed the cutoff — nesting depth was never evidence of attacker control.
+        { code: 'const r = new RegExp("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + "h")))))));' },
       ],
       invalid: [
         // Unresolvable provenance still reports: a parameter could be anything.
@@ -281,10 +285,14 @@ describe('detect-non-literal-regexp', () => {
           code: 'const r = new RegExp(globalPattern);',
           errors: [{ messageId: 'regexpReDoS' }],
         },
-        // Known ceiling: the constancy walk gives up past 6 levels, so a
-        // deeply-nested constant reports. No corpus repo nests this far.
+        // Known ceiling on the LOCAL constancy walk — the one that understands
+        // `.join()` / `.concat()` / `.toUpperCase()`, which devkit's
+        // isStaticExpression does not model. It gives up past 6 levels, so a
+        // deeply-chained constant reports. No corpus repo chains this far.
         {
-          code: 'const r = new RegExp("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + "h")))))));',
+          code:
+            'const A = ["a"]; const r = new RegExp(' +
+            'A.concat(A).concat(A).concat(A).concat(A).concat(A).concat(A).join("|"));',
           errors: [{ messageId: 'regexpReDoS' }],
         },
       ],

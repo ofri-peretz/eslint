@@ -751,4 +751,93 @@ describe('detect-child-process — coverage completion', () => {
       ],
     });
   });
+
+  /**
+   * Regression lock — the module binding is resolved, not name-matched.
+   *
+   * `moduleAliases` / `importedMethods` were flat name sets, so an inner binding that
+   * reused the name kept the alias alive: `var foo = require('child_process')` at module
+   * scope made a local `var foo = /hello/; foo.exec(str)` a child_process finding. That
+   * is a case eslint-plugin-security's own corpus marks valid.
+   *
+   * The first attempt at this treated only an ImportBinding as legitimate, which broke
+   * `const { execFile } = require('child_process')` — a Variable def — and silently
+   * dropped both CWE-088 argument-injection fixtures. Both forms are covered here.
+   */
+  describe('binding resolution', () => {
+    ruleTester.run('shadowing and binding forms', detectChildProcess, {
+      valid: [
+        // A RegExp shadowing the module alias.
+        {
+          code: `var foo = require('child_process');
+                 app.get('/x', (req) => { var foo = /hello/; return foo.exec(req.query.q); });`,
+        },
+        // A local shadowing a directly-imported method.
+        {
+          code: `import { exec } from 'child_process';
+                 app.get('/x', (req) => { const exec = /re/.exec; return exec(req.query.q); });`,
+        },
+        // A parameter of the same name is not the module.
+        {
+          code: `var cp = require('child_process');
+                 function run (cp, req) { return cp.exec(req.query.q); }`,
+        },
+        // An import from an unrelated module that happens to export `exec`.
+        {
+          code: `import cp from 'some-runner';
+                 app.get('/x', (req) => cp.exec(req.query.q));`,
+        },
+        // A `const` bound to something that is not a require call.
+        {
+          code: `const cp = getRunner();
+                 app.get('/x', (req) => cp.exec(req.query.q));`,
+        },
+      ],
+      invalid: [
+        // require alias
+        {
+          code: `var cp = require('child_process');
+                 app.get('/x', (req) => cp.exec(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // destructured require — the shape the first attempt broke, and the one both
+        // CWE-088 corpus fixtures are written in.
+        {
+          code: `const { execFile } = require('child_process');
+                 app.get('/x', (req) => execFile('git', ['ls-remote', req.query.remote]));`,
+          errors: [{ messageId: 'argumentInjection' }],
+        },
+        // default import
+        {
+          code: `import cp from 'child_process';
+                 app.get('/x', (req) => cp.exec(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // named import
+        {
+          code: `import { exec } from 'child_process';
+                 app.get('/x', (req) => exec(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // chained straight off the require — no name to resolve
+        {
+          code: `app.get('/x', (req) => require('child_process').exec(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // node: prefix
+        {
+          code: `const cp = require('node:child_process');
+                 app.get('/x', (req) => cp.exec(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // An implicit global: the scope analyser creates the variable with no
+        // definition, so resolution falls through to the recorded alias set.
+        {
+          code: `cp = require('child_process');
+                 app.get('/x', (req) => cp.exec(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
+    });
+  });
 });

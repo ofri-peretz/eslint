@@ -618,3 +618,88 @@ ruleTester.run('lock: comparison against a non-secret literal', noInsecureCompar
   ],
   invalid: [],
 });
+
+/**
+ * Regression lock — `==` between two provable strings is not a coercion weakness.
+ *
+ * `var accessLevel = 'user'; if (accessLevel != 'user')` is a case
+ * eslint-plugin-security's own corpus marks valid, and we reported it on the operator
+ * alone. This rule's subject is type coercion, and coercion needs two types: when both
+ * operands are provably strings, `==` and `===` do the same thing.
+ *
+ * The proof is the single-write check — a name written twice can hold anything by the
+ * time the comparison runs, so it stays a finding.
+ */
+ruleTester.run('no-insecure-comparison: coercion needs two types', noInsecureComparison, {
+  valid: [
+    { code: `var accessLevel = "user"; if (accessLevel != "user") { admin(); }` },
+    { code: `const role = 'admin'; if (role == 'admin') { go(); }` },
+    { code: `if ('a' == 'b') { go(); }` },
+    // A template literal is a string by construction.
+    { code: 'const role = `admin`; if (role == `admin`) { go(); }' },
+    // Resolved through a chain of constants.
+    { code: `const A = 'x'; const B = A; if (B == 'x') { go(); }` },
+  ],
+  invalid: [
+    // Reassigned: the value at the comparison is not provable.
+    {
+      code: `let role = 'admin'; role = readInput(); if (role == 'admin') { go(); }`,
+      errors: [
+        {
+          messageId: 'insecureComparison',
+          suggestions: [{ messageId: 'useStrictEquality', output: `let role = 'admin'; role = readInput(); if (role === 'admin') { go(); }` }],
+        },
+      ],
+    },
+    // A parameter could be anything, including a number that coerces.
+    {
+      code: `function check(role) { return role == 'admin'; }`,
+      errors: [
+        {
+          messageId: 'insecureComparison',
+          suggestions: [{ messageId: 'useStrictEquality', output: `function check(role) { return role === 'admin'; }` }],
+        },
+      ],
+    },
+    // Different types is exactly the case this rule exists for.
+    {
+      code: `const n = 1; if (n == '1') { go(); }`,
+      errors: [
+        {
+          messageId: 'insecureComparison',
+          suggestions: [{ messageId: 'useStrictEquality', output: `const n = 1; if (n === '1') { go(); }` }],
+        },
+      ],
+    },
+    // Declared nowhere in the file.
+    {
+      code: `if (globalRole == 'admin') { go(); }`,
+      errors: [
+        {
+          messageId: 'insecureComparison',
+          suggestions: [{ messageId: 'useStrictEquality', output: `if (globalRole === 'admin') { go(); }` }],
+        },
+      ],
+    },
+    // A member expression carries no provable type here.
+    {
+      code: `if (user.role == 'admin') { go(); }`,
+      errors: [
+        {
+          messageId: 'insecureComparison',
+          suggestions: [{ messageId: 'useStrictEquality', output: `if (user.role === 'admin') { go(); }` }],
+        },
+      ],
+    },
+    // Declared without an initializer.
+    {
+      code: `let role; role = input; if (role == 'admin') { go(); }`,
+      errors: [
+        {
+          messageId: 'insecureComparison',
+          suggestions: [{ messageId: 'useStrictEquality', output: `let role; role = input; if (role === 'admin') { go(); }` }],
+        },
+      ],
+    },
+  ],
+});

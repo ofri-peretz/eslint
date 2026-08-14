@@ -10,7 +10,13 @@
  * @see https://cwe.mitre.org/data/definitions/494.html
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  isStaticExpression,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -45,21 +51,35 @@ export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    /**
+     * "Not a string literal" is not the same question as "can an attacker steer it".
+     * `require(`b`)`, `require(`lodash/${d}`)` with `const d = 'debounce'`, and
+     * `require(__dirname + '/utils')` are all fixed at build time and all three are
+     * cases eslint-plugin-security's own corpus marks valid — we reported every one.
+     * `isStaticExpression` resolves const bindings, template parts and concatenation
+     * through ESLint's scope analysis, so the module specifier is judged by whether it
+     * can change, not by its node type.
+     */
+    const isSteerable = (node: TSESTree.Node): boolean =>
+      !isStaticExpression({ node, scope: context.sourceCode.getScope(node) });
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Dynamic require
+        const specifier = node.arguments[0];
         if (
           node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === 'require' &&
-          node.arguments[0]?.type !== AST_NODE_TYPES.Literal
+          specifier !== undefined &&
+          isSteerable(specifier)
         ) {
           context.report({ node, messageId: 'violationDetected' });
         }
       },
-      
+
       ImportExpression(node: TSESTree.ImportExpression) {
         // Dynamic import()
-        if (node.source.type !== 'Literal') {
+        if (isSteerable(node.source)) {
           context.report({ node, messageId: 'violationDetected' });
         }
       },

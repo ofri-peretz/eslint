@@ -174,6 +174,33 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     /**
      * Check BinaryExpression for insecure comparison operators
      */
+    /**
+     * Is this operand provably a string at the comparison?
+     *
+     * A string literal, a template literal, or a name bound once to either. The
+     * single-write check is what makes the binding provable — a variable written
+     * twice can hold anything by the time the comparison runs.
+     */
+    function isStringTyped(node: TSESTree.Node): boolean {
+      if (node.type === AST_NODE_TYPES.Literal) return typeof node.value === 'string';
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) return true;
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (!variable) continue;
+        if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return false;
+        const [def] = variable.defs;
+        if (!def || def.type !== 'Variable' || !def.node.init) return false;
+        return isStringTyped(def.node.init);
+      }
+      return false;
+    }
+
     function checkBinaryExpression(node: TSESTree.BinaryExpression) {
       if (isTestFile) {
         return;
@@ -335,6 +362,15 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // reason. Measured on express/axios/sequelize: 73 of 161 reports from
         // this rule were this pattern.
         if (isNullLiteral(node.left) || isNullLiteral(node.right)) {
+          return;
+        }
+
+        // Both operands provably strings — `==` and `===` behave identically, so
+        // there is no coercion to warn about. `var accessLevel = 'user'; if
+        // (accessLevel != 'user')` is a case eslint-plugin-security's own corpus
+        // marks valid; we reported it, on the operator alone. The rule's subject is
+        // type coercion, and coercion needs two types.
+        if (isStringTyped(node.left) && isStringTyped(node.right)) {
           return;
         }
 

@@ -964,6 +964,70 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       node.arguments[0]?.type === AST_NODE_TYPES.Literal &&
       isChildProcessSpecifier(node.arguments[0].value);
 
+    /**
+     * Does this name still refer to child_process HERE?
+     *
+     * `moduleAliases` / `importedMethods` are flat name sets, so an inner binding that
+     * reuses the name kept the alias alive:
+     *
+     * ```js
+     * var foo = require('child_process');
+     * function fn () { var foo = /hello/; foo.exec(str); }   // a RegExp, reported
+     * ```
+     *
+     * That is a shape eslint-plugin-security's own corpus marks valid, and one their
+     * rule gets right by resolving the binding. Scope analysis answers the question the
+     * name sets only approximated.
+     *
+     * Both binding forms have to count, which is what the first attempt at this got
+     * wrong: `import { execFile } from 'child_process'` is an ImportBinding, but
+     * `const { execFile } = require('child_process')` is a Variable whose initializer is
+     * the require call. Treating only the first as legitimate silently suppressed the
+     * CWE-088 argument-injection fixtures, both written with the destructured require.
+     *
+     * @param fallback names recorded from shapes scope analysis does not model — reached
+     *   only when the identifier resolves to no declaration in this file.
+     */
+    const resolvesToChildProcess = (
+      node: TSESTree.Node,
+      fallback: ReadonlySet<string>,
+    ): boolean => {
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+
+      for (
+        let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (!variable) continue;
+
+        // A variable with no definition is one the environment declared, not this
+        // file — never the module. `?.` rather than a separate guard: an undefined
+        // def falls to the same `return false` as a parameter or a class.
+        const [def] = variable.defs;
+        if (def?.type === 'ImportBinding') {
+          const declaration = def.parent;
+          return (
+            declaration?.type === AST_NODE_TYPES.ImportDeclaration &&
+            isChildProcessSpecifier(declaration.source.value)
+          );
+        }
+        // `const cp = require('child_process')` and `const { exec } = require(...)`
+        // share this shape — the initializer is the require call in both.
+        if (def?.type === 'Variable') {
+          return def.node.init != null && isChildProcessRequire(def.node.init);
+        }
+        // A parameter, a function, a class, or a binding the environment owns:
+        // whatever it is, it is not the module.
+        return false;
+      }
+
+      // Declared nowhere in this file: the bare `child_process` global name, or an
+      // alias recorded from a shape scope analysis does not model.
+      return fallback.has(node.name);
+    };
+
     const getChildProcessCall = (
       node: TSESTree.CallExpression
     ): { method: string; calleeNode: TSESTree.Node } | null => {
@@ -978,10 +1042,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         }
 
         // child_process.exec(...) or alias.exec(...)
-        if (
-          node.callee.object.type === 'Identifier' &&
-          moduleAliases.has(node.callee.object.name)
-        ) {
+        if (resolvesToChildProcess(node.callee.object, moduleAliases)) {
           return { method: methodName, calleeNode: node.callee };
         }
 
@@ -994,7 +1055,9 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
 
       // exec(...) when imported directly from child_process
       if (node.callee.type === 'Identifier' && dangerousMethodsSet.has(node.callee.name)) {
-        if (importedMethods.has(node.callee.name)) {
+        // Same shadowing question for a directly-imported method: an inner
+        // `const exec = /re/.exec` must not inherit the import's meaning.
+        if (resolvesToChildProcess(node.callee, importedMethods)) {
           return { method: node.callee.name, calleeNode: node.callee };
         }
       }

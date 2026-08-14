@@ -104,6 +104,25 @@ function resolveConstInit(
   return undefined;
 }
 
+/** CommonJS module-location globals — fixed at load time, and not user input. */
+const MODULE_LOCATION_GLOBALS = new Set(['__dirname', '__filename']);
+
+/**
+ * Is this `__dirname`/`__filename` as CommonJS defines it, rather than a local of the
+ * same name? `function render(__dirname) { require(__dirname) }` is a parameter and
+ * genuinely attacker-steerable, so the name alone is not enough — it counts only when
+ * nothing in scope declares it.
+ */
+function isModuleLocationGlobal(name: string, scope: TSESLint.Scope.Scope): boolean {
+  if (!MODULE_LOCATION_GLOBALS.has(name)) return false;
+  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+    const variable = current.variables.find((v) => v.name === name);
+    // A global-scope entry with no definition is the environment's, not the author's.
+    if (variable) return variable.defs.length === 0;
+  }
+  return true;
+}
+
 /** Is this a `path.<method>()` call, or a `path.sep`-style constant, on a real `path` import? */
 function isPathModuleReference(object: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
   if (object.type !== AST_NODE_TYPES.Identifier) return false;
@@ -224,6 +243,14 @@ function evaluateNode(
       return evaluate(node.expression, scope, treatConstAsStatic, seen);
 
     case AST_NODE_TYPES.Identifier: {
+      // `__dirname` / `__filename` are where the module sits on disk — the CommonJS
+      // counterpart of `import.meta.dirname`, which this file already treats as static.
+      // They are not `const` bindings, so they fell through to `resolveConstInit`, found
+      // nothing, and every rule consuming this read `require(__dirname + '/utils')` and
+      // `path.join(__dirname, './ssl.key')` as attacker-steerable. Checked before the
+      // `treatConstAsStatic` gate because that option is about const bindings being
+      // build-time inlined, which says nothing about the module's own location.
+      if (isModuleLocationGlobal(node.name, scope)) return true;
       if (!treatConstAsStatic) return false;
       const resolved = resolveConstInit(node.name, scope);
       if (!resolved) return false;
@@ -251,6 +278,23 @@ function evaluateNode(
       const { callee } = node;
       if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed) return false;
       if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
+
+      // `require.resolve('eslint/package.json')` — a module lookup against the
+      // dependency tree, fixed once the tree is. Not a value a caller supplies.
+      // `fs.readFileSync(require.resolve('eslint/package.json'))` is a case
+      // eslint-plugin-security's own corpus marks valid, and we reported it.
+      if (
+        callee.object.type === AST_NODE_TYPES.Identifier &&
+        callee.object.name === 'require' &&
+        callee.property.name === 'resolve'
+      ) {
+        return node.arguments.every(
+          (argument) =>
+            argument.type !== AST_NODE_TYPES.SpreadElement &&
+            evaluate(argument, scope, treatConstAsStatic, seen),
+        );
+      }
+
       if (!PATH_METHODS.has(callee.property.name)) return false;
       if (!isPathModuleReference(callee.object, scope)) return false;
       return node.arguments.every(

@@ -9,7 +9,7 @@
  * Forbid `require()` calls with expressions (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'dynamicRequire';
@@ -105,9 +105,14 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
-    // oxlint-disable-next-line consistent-function-scoping
-    function isStaticLiteral(node: TSESTree.Node): boolean {
-      return node.type === 'Literal' && typeof node.value === 'string';
+    /**
+     * A specifier is safe when nothing can change it, not when it is spelled as a
+     * literal. `require(`b`)`, `require(`lodash/${d}`)` with `const d = 'debounce'`
+     * and `require(__dirname + '/utils')` are all fixed at build time — and all three
+     * are cases eslint-plugin-security's own corpus marks valid, which we reported.
+     */
+    function isFixedSpecifier(node: TSESTree.Node): boolean {
+      return isStaticExpression({ node, scope: context.sourceCode.getScope(node) });
     }
 
     return {
@@ -123,9 +128,8 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          // Check if it's a static literal
-          if (isStaticLiteral(requireArg)) {
-            // Static requires are allowed
+          // Nothing an attacker can steer — a literal, a const chain, `__dirname`.
+          if (isFixedSpecifier(requireArg)) {
             return;
           }
 

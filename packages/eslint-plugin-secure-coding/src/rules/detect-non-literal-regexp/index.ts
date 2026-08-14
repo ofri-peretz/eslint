@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/400.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -352,7 +352,17 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       // First argument is the pattern
       const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
       const pattern = patternNode ? sourceCode.getText(patternNode) : '';
-      const isDynamic = patternNode ? !isLiteralString(patternNode) : false;
+      // "Dynamic" means an attacker can change the pattern, not that it is spelled
+      // as something other than a literal. `const source = 'ab+c'; new RegExp(source)`
+      // is fixed at build time — a case eslint-plugin-security's own corpus marks
+      // valid, and one we reported. `isStaticExpression` follows const bindings,
+      // template parts and concatenation through ESLint's scope analysis.
+      //
+      // `isLiteralString` still gates the LENGTH below: that path reads
+      // `patternNode.value` directly, which only exists on an actual literal node.
+      const isDynamic = patternNode
+        ? !isStaticExpression({ node: patternNode, scope: context.sourceCode.getScope(patternNode) })
+        : false;
       const length = patternNode && isLiteralString(patternNode) ?
                      String((patternNode as TSESTree.Literal).value).length : pattern.length;
 
