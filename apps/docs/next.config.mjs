@@ -16,6 +16,12 @@ const config = {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
   },
   reactStrictMode: true,
+  // Allow the Base44 preview's external dev origin. The preview is served
+  // through a hostname derived from BASE44_PUBLIC_HOST_SUFFIX (e.g.
+  // `3000-<suffix>`), which Next dev would otherwise block as an unknown host.
+  allowedDevOrigins: process.env.BASE44_PUBLIC_HOST_SUFFIX
+    ? [`3000-${process.env.BASE44_PUBLIC_HOST_SUFFIX}`]
+    : [],
   // No `output: 'standalone'`. Nothing consumes .next/standalone (the repo's
   // Dockerfile ships the ESLint CLI, not this app), and under Vercel's
   // current builder a standalone build never emits

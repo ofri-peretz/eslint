@@ -475,3 +475,36 @@ it. Drop the label or mark the PR ready-for-review when you're confident.
 | `TURBO_TEAM`        | var    | Vercel team slug, paired with `TURBO_TOKEN`                            | optional |
 
 All are optional — workflows fall back gracefully when unset.
+
+---
+
+## Base44 sandbox (local preview)
+
+The web entry point is `apps/docs` — a Next.js 16 app served on port 3000.
+Run it with `docker compose -f docker-compose.base44.yml up -d` (see
+`docker-compose.base44.yml`). No external secrets are required to boot; the
+PostHog / dev.to keys are optional and left blank.
+
+Non-obvious setup facts the compose handles automatically:
+
+- **npm workspaces, single install.** `npm install` at the repo root hoists
+  every workspace's deps. `tsx` is a devDep of `@interlace/benchmarks` only but
+  resolves globally once hoisted — the docs `dev` script relies on that.
+- **`@interlace/ui` must be built before dev.** It exports from `dist/`, so
+  `npm run build --workspace @interlace/ui` (`tsc -b tsconfig.lib.json` +
+  `preserve-use-client.mjs`) must run once before `next dev`. `@interlace/benchmarks`
+  exports `.ts` sources directly and needs no build.
+- **Skip lefthook during install.** The root `prepare` runs `lefthook install`;
+  set `LEFTHOOK=0` so it no-ops while other postinstalls (e.g. `fumadocs-mdx`)
+  still run.
+- **Next.js `allowedDevOrigins`.** `apps/docs/next.config.mjs` adds
+  `3000-${BASE44_PUBLIC_HOST_SUFFIX}` to `allowedDevOrigins` so the preview's
+  external hostname is not blocked by the dev server. Don't hardcode the suffix —
+  it changes per environment.
+- **`sync-plugin-stats.ts` is local-only.** It reads plugin `src/index.ts` files
+  and writes `src/data/plugin-stats.json`; no network. The docs homepage reads
+  that file, so the compose generates it on first boot if absent.
+
+Verify: `docker compose -f docker-compose.base44.yml ps` should show `web`
+healthy, and `curl -sf -H "Host: 3000-$BASE44_PUBLIC_HOST_SUFFIX"
+http://localhost:3000/` should return the homepage HTML.
