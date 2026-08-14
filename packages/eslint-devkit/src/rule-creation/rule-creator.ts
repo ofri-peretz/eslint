@@ -271,9 +271,49 @@ export const docsUrlFor = (pluginSlug: string, ruleName: string): string =>
 export function withCanonicalDocsUrls<
   T extends Record<string, TSESLint.RuleModule<string, readonly unknown[]>>,
 >(pluginSlug: string, rules: T): T {
-  for (const [name, rule] of Object.entries(rules)) {
-    const docs = rule?.meta?.docs as { url?: string } | undefined;
-    if (docs) docs.url = docsUrlFor(pluginSlug, name);
+  // `Object.entries` READS every property, and a plugin barrel's properties are
+  // getters: the build defers each rule module behind one so `require('the-plugin')`
+  // does not load 42 rule files a consumer never enables. Reading them all here undid
+  // that completely — the build printed "deferred 42 rules behind getters" while every
+  // one of the 42 still loaded at require time, which is what
+  // `scripts/__tests__/lazy-rules-artifact.test.ts` measures and why it failed.
+  //
+  // Accessors are therefore WRAPPED, not invoked: the URL is stamped the first time the
+  // rule is actually read. `require` memoises, so repeated reads return the same object
+  // and re-stamping is idempotent. Plain-value properties (plugins that re-export their
+  // rules and cannot be deferred) are handled exactly as before.
+  for (const name of Object.keys(rules)) {
+    // `Object.keys` yields own enumerable properties only, so a descriptor always
+    // exists. The cast records that rather than adding a branch no input can reach.
+    const descriptor = Object.getOwnPropertyDescriptor(rules, name) as PropertyDescriptor;
+
+    const { get } = descriptor;
+    if (get) {
+      Object.defineProperty(rules, name, {
+        ...descriptor,
+        get(this: T) {
+          const rule = get.call(this) as TSESLint.RuleModule<string, readonly unknown[]>;
+          stampDocsUrl(pluginSlug, name, rule);
+          return rule;
+        },
+      });
+      continue;
+    }
+
+    stampDocsUrl(
+      pluginSlug,
+      name,
+      descriptor.value as TSESLint.RuleModule<string, readonly unknown[]> | undefined,
+    );
   }
   return rules;
+}
+
+function stampDocsUrl(
+  pluginSlug: string,
+  name: string,
+  rule: TSESLint.RuleModule<string, readonly unknown[]> | undefined,
+): void {
+  const docs = rule?.meta?.docs as { url?: string } | undefined;
+  if (docs) docs.url = docsUrlFor(pluginSlug, name);
 }

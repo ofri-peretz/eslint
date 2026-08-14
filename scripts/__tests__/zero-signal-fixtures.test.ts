@@ -70,14 +70,13 @@ const CASES: Case[] = [
   { cwe: 'CWE-521', plugin: 'browser-security', rule: 'no-password-in-url', vulnerable: 'credentials-in-url.js', safe: 'credentials-in-header.js' },
   { cwe: 'CWE-312', plugin: 'node-security', rule: 'require-secure-credential-storage', vulnerable: 'asyncstorage-api-key.js', safe: 'keychain-api-key.js' },
   {
+    // require-storage-encryption owns the FILESYSTEM; client storage (localStorage,
+    // sessionStorage, AsyncStorage) belongs to require-secure-credential-storage above.
+    // Both rules used to carry byte-identical implementations firing on any `.setItem`
+    // or `.writeFile`, so this corpus had them sharing a receiver and every real finding
+    // was reported twice under two rule ids and the same CWE.
     cwe: 'CWE-312', plugin: 'node-security', rule: 'require-storage-encryption',
-    vulnerable: 'asyncstorage-password.js', safe: 'encrypted-storage-password.js',
-    safeFixtureStillReports:
-      'The rule accepts exactly two remediations — `SecureStore.setItemAsync` and a call to ' +
-      '`encrypt(...)`. It does not recognise `EncryptedStorage.setItem` from ' +
-      'react-native-encrypted-storage, which is the most widely used encrypted store on the ' +
-      'platform this rule targets. The fixture keeps the real remediation rather than being ' +
-      'rewritten to whatever the rule happens to accept, because rewriting it would pin the gap.',
+    vulnerable: 'fs-writefile-password.js', safe: 'fs-writefile-encrypted-password.js',
   },
   { cwe: 'CWE-338', plugin: 'node-security', rule: 'no-cryptojs-weak-random', vulnerable: 'cryptojs-wordarray-random.js', safe: 'node-crypto-random-bytes.js' },
   { cwe: 'CWE-327', plugin: 'node-security', rule: 'no-deprecated-cipher-method', vulnerable: 'create-cipher-deprecated.js', safe: 'create-cipheriv-explicit.js' },

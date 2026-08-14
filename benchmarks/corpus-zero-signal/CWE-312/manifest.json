@@ -14,8 +14,8 @@
         "rule": "node-security/require-secure-credential-storage"
       },
       {
-        "file": "asyncstorage-password.js",
-        "description": "password written to AsyncStorage in cleartext",
+        "file": "fs-writefile-password.js",
+        "description": "password written to disk in cleartext",
         "rule": "node-security/require-storage-encryption"
       }
     ],
@@ -26,8 +26,8 @@
         "rule": "node-security/require-secure-credential-storage"
       },
       {
-        "file": "encrypted-storage-password.js",
-        "description": "password written through an encrypted store",
+        "file": "fs-writefile-encrypted-password.js",
+        "description": "password written to disk through an encryption call",
         "rule": "node-security/require-storage-encryption"
       }
     ]

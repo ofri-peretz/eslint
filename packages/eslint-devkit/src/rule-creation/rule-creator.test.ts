@@ -97,3 +97,50 @@ describe('canonical documentation URLs', () => {
     expect(() => withCanonicalDocsUrls('plugin-browser-security', rules)).not.toThrow();
   });
 });
+
+/**
+ * Regression lock — the docs-url pass must not read the properties it stamps.
+ *
+ * A plugin barrel's rules are getters: the build defers each rule module behind one so
+ * `require('the-plugin')` does not load rules the consumer never enables. This function
+ * used `Object.entries`, which reads every property — so the build printed "deferred 42
+ * rules behind getters" while all 42 still loaded at require time. The saving was
+ * reported and not delivered.
+ */
+describe('withCanonicalDocsUrls does not invoke getters', () => {
+  it('leaves a lazy property unread until it is accessed', () => {
+    let reads = 0;
+    const rules = {} as Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+    Object.defineProperty(rules, 'my-rule', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        reads++;
+        return { meta: { docs: {} } } as unknown as TSESLint.RuleModule<string, readonly unknown[]>;
+      },
+    });
+
+    withCanonicalDocsUrls('plugin-node-security', rules);
+    expect(reads).toBe(0);
+
+    const rule = rules['my-rule'];
+    expect(reads).toBe(1);
+    expect((rule.meta.docs as { url?: string }).url).toContain('plugin-node-security/rules/my-rule');
+  });
+
+  it('still stamps a plain-value property, which cannot be deferred', () => {
+    const rules = {
+      'my-rule': { meta: { docs: {} } },
+    } as unknown as Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+    withCanonicalDocsUrls('plugin-node-security', rules);
+    expect((rules['my-rule'].meta.docs as { url?: string }).url).toContain('rules/my-rule');
+  });
+
+  it('tolerates a property with no docs block', () => {
+    const rules = {
+      'my-rule': { meta: {} },
+    } as unknown as Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+    expect(() => withCanonicalDocsUrls('plugin-node-security', rules)).not.toThrow();
+  });
+});

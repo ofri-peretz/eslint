@@ -31,7 +31,8 @@ author · `INT` internal — committed runner, our own fixtures; a regression ga
 |---|---|---|---|---|---|
 | A1 | **Drop-in parity**, their test suite, live cases | **51/51 — 100%** | — | **Interlace** | PUB |
 | A2 | Raw parity incl. declared won't-fix | 51/84 — 60.7% | — | — | PUB |
-| A3 | CWE detection, labelled corpus (76 files) | **73/76** | 11/76 | **Interlace** | INT |
+| A3 | CWE detection, labelled corpus (76 files) | **76/76 — 100%** | 11/76 | **Interlace** | INT |
+| A3a | — under `recommended` alone (177 rules, not all 276) | **76/76** | — | — | INT |
 | A4 | CWE classes detected (of 34) | **30** | 7 | **Interlace** | INT |
 | A5 | Classes only this side detects | **23** | 0 | **Interlace** | INT |
 | A6 | Distinct CWE identifiers in rule metadata | **75** | 0 | **Interlace** | PUB |
@@ -42,16 +43,17 @@ author · `INT` internal — committed runner, our own fixtures; a regression ga
 
 | # | Criterion | Interlace | eslint-plugin-security | Winner | Tier |
 |---|---|---|---|---|---|
-| B1 | **False positives**, 67 clean labelled fixtures | **0/67 — 0.0%** | 7/67 — 10.4% | **Interlace** | INT |
+| B1 | **False positives**, 67 clean labelled fixtures, `recommended` | **0/67 — 0.0%** | 7/67 — 10.4% | **Interlace** | INT |
+| B1a | — same fixtures with **every** rule at `error` (276) | 1/67 — 1.5% | — | — | INT |
 | B2 | **Measured precision**, hand-labelled stratified sample | **≈67%** (12 TP / 6 FP / 4 undecidable of 22) | ≈20% (3 TP / 12 FP / 1 undecidable of 16) | **Interlace** | PUB |
 | B2a | — same sample before the 2026-08-14 precision work | ≈47% (8 TP / 9 FP / 3 undecidable of 20) | — | — | PUB |
 | B2b | **TP / FP / FN, labelled corpus** (`ilb-juliet`) | **69 / 0 / 0 — F1 100%** | 10 / 7 / 59 — F1 23.3% | **Interlace** | INT |
 | B3 | Findings per 1,000 files, 20 OSS projects | **54** | 985 | **Interlace** | VOL |
 | B4 | Louder on N of 20 projects | **0 of 20** | 20 of 20 | **Interlace** | VOL |
 | B5 | Output concentrated in a single rule | 18% (`no-http-urls`) | **87%** (`detect-object-injection`) | **Interlace** | PUB |
-| B6 | Fires on the other side's `valid` cases | 23/105 | 0/105 | eslint-plugin-security | PUB |
-| B6a | — of which a **defensible scope difference** | **19** (12 shell-free `spawn`, 3 literal `eval`, 4 dynamic `require`/`import`) | — | — | PUB |
-| B6b | — of which **genuine noise to fix** | **4** | — | — | PUB |
+| B6 | Fires on the other side's `valid` cases | 15/105 (was 23) | 0/105 | eslint-plugin-security | PUB |
+| B6a | — of which a **defensible scope difference** | **15** (11 shell-free `spawn`, 3 literal `eval`, 1 `new Buffer`) | — | — | PUB |
+| B6b | — of which **genuine noise**, now fixed | **0** (was 8) | — | — | PUB |
 
 ### C · Rule surface and configurability
 
@@ -175,6 +177,22 @@ Every point of that move came from removing name-matching rather than adding ana
 
 Total across 20 projects: **1,351 → 1,283 findings**. Corpus false positives stayed at 0/67,
 parity at 51/51 and detection at 73/76 throughout — the reductions are noise, not coverage.
+
+A second pass read all 23 of the cases where our rules fire on `eslint-plugin-security`'s
+own `valid` corpus. Eight were genuine false positives and are fixed; the rest are scope
+differences where our finding stands. **Fires-on-valid 23 → 15, recall unchanged.**
+
+| Rule | Defect | |
+|---|---|---|
+| `no-dynamic-require`, `no-dynamic-dependency-loading`, `detect-non-literal-regexp`, `no-unlimited-resource-allocation` | asked "is this a `Literal` node" instead of "can this change" — `` require(`b`) ``, `require(__dirname + '/utils')`, `new RegExp(source)` with `const source = 'ab+c'` | 4 |
+| `require-secure-credential-storage` + `require-storage-encryption` | byte-identical implementations firing on any `.setItem`/`.writeFile` — `writeFile(sitemapPath, sitemap)` was two unencrypted-credential findings | 2 |
+| `no-insecure-comparison` | `var a = 'user'; if (a != 'user')` — both operands provably strings, so there is no coercion to warn about | 1 |
+| `detect-child-process` | tracked the module by name, so a local `var foo = /hello/` inherited the alias from a module-scope `require('child_process')` | 1 |
+
+The first attempt at the last one accepted only ES `import` bindings as legitimate, which
+broke `const { execFile } = require('child_process')` and silently dropped both CWE-088
+fixtures — detection 76 → 74, parity 51 → 49. It was caught by re-running the suites, not
+by reading the diff. That is the whole argument for [BENCHMARK-CRITERIA.md](./BENCHMARK-CRITERIA.md) §0.1.
 
 For calibration, the incumbent's `detect-object-injection` is **87% of its entire output**
 (B5), and a prior analysis found 27% of that rule's findings to be *mechanically provable*
