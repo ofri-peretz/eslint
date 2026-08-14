@@ -187,10 +187,49 @@ export const altText = createRule<RuleOptions, MessageIds>({
      * classification — without this we miss every framework-specific image
      * component (next/image's <Image>, Chakra <Image>, MUI <Avatar>, etc.).
      */
+    /**
+     * Local names imported from a module whose specifier names an image component.
+     *
+     * `next/image` is the dominant image component in every Next.js app, and until now it
+     * was invisible unless the consumer happened to configure `{ img: ['Image'] }` — a
+     * default nobody sets, on the framework most likely to need it. Resolving the IMPORT
+     * rather than trusting the local name means `import Pic from 'next/image'` is caught
+     * too, while an unrelated `<Image>` from a charting library is not.
+     */
+    const importedImageComponents = new Set<string>();
+
+    const IMAGE_MODULE = /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
+
+    const collectImageImports = (program: TSESTree.Program): void => {
+      for (const statement of program.body) {
+        if (
+          statement.type !== 'ImportDeclaration' ||
+          typeof statement.source.value !== 'string' ||
+          !IMAGE_MODULE.test(statement.source.value)
+        ) {
+          continue;
+        }
+        for (const specifier of statement.specifiers) {
+          if (
+            specifier.type === 'ImportDefaultSpecifier' ||
+            specifier.type === 'ImportSpecifier'
+          ) {
+            importedImageComponents.add(specifier.local.name);
+          }
+        }
+      }
+    };
+
     const classify = (node: TSESTree.JSXOpeningElement): Kind | null => {
       if (node.name.type !== 'JSXIdentifier') return null;
       const name = node.name.name;
-      if (name === 'img' || imgComponents.includes(name)) return 'img';
+      if (
+        name === 'img' ||
+        imgComponents.includes(name) ||
+        importedImageComponents.has(name)
+      ) {
+        return 'img';
+      }
       if (name === 'object' || objectComponents.includes(name)) return 'object';
       if (name === 'area' || areaComponents.includes(name)) return 'area';
       // <input type="image"> needs the type attribute check
@@ -328,6 +367,10 @@ export const altText = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      Program(node: TSESTree.Program) {
+        importedImageComponents.clear();
+        collectImageImports(node);
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const kind = classify(node);
         if (!kind) return;
