@@ -17,6 +17,7 @@ import {
   isDiscardedUrlBase,
 } from '../../utils/namespace-uris';
 import { isReservedExampleUrl } from '../../utils/loopback-hosts';
+import { isProtocolInspection } from '../../utils/protocol-inspection';
 
 type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 
@@ -185,6 +186,17 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // `0.0.0.0` and `*.localhost`, which the `allowedHosts` default misses.
       if (isTrustworthyLocalUrl(value)) {
         return;
+      }
+
+      // A literal being EXAMINED is a guard, not a destination.
+      // `canonic_module_name.indexOf('http://') !== -1` is pm2 deciding whether a module
+      // spec is a remote URL; reporting it flags the check as the vulnerability. Shared
+      // with no-unencrypted-transmission so the two cannot disagree.
+      {
+        const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        if (parent !== undefined && isProtocolInspection(node, parent)) {
+          return;
+        }
       }
 
       // RFC 2606 reserved domains exist so that nothing treats them as a real endpoint.
