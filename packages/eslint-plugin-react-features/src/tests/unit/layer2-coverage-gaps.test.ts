@@ -23,7 +23,6 @@ import { hooksExhaustiveDeps } from '../../rules/react/hooks-exhaustive-deps';
 import { jsxNoBind } from '../../rules/react/jsx-no-bind';
 import { jsxNoDuplicateProps } from '../../rules/react/jsx-no-duplicate-props';
 import { jsxKey } from '../../rules/react/jsx-key';
-import { displayName } from '../../rules/react/display-name';
 import { noAccessStateInSetState } from '../../rules/react/no-access-state-in-setstate';
 import { noMultiComp } from '../../rules/react/no-multi-comp';
 import { noUnsafe } from '../../rules/react/no-unsafe';
@@ -161,44 +160,6 @@ describe('no-unsafe (layer 2)', () => {
     });
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({ messageId: 'noUnsafe' });
-  });
-});
-
-describe('display-name (layer 2)', () => {
-  it('null arrow body is not a component', () => {
-    const { listeners, reports } = createWithMockContext(displayName);
-    listener(listeners, 'VariableDeclarator, FunctionDeclaration')({
-      type: 'VariableDeclarator',
-      id: { type: 'Identifier', name: 'Foo' },
-      init: { type: 'ArrowFunctionExpression', body: null },
-    });
-    expect(reports).toHaveLength(0);
-  });
-
-  it('duplicated node references short-circuit JSX search', () => {
-    const { listeners, reports } = createWithMockContext(displayName);
-    const shared = { type: 'Identifier', name: 'x' };
-    listener(listeners, 'VariableDeclarator, FunctionDeclaration')({
-      type: 'FunctionDeclaration',
-      id: { type: 'Identifier', name: 'Foo' },
-      body: { type: 'BlockStatement', body: [shared, shared] },
-    });
-    expect(reports).toHaveLength(0);
-  });
-
-  it('reports on the declarator itself when id is missing', () => {
-    const { listeners, reports } = createWithMockContext(displayName);
-    const decl = {
-      type: 'VariableDeclarator',
-      id: null,
-      init: {
-        type: 'ArrowFunctionExpression',
-        body: { type: 'JSXElement', openingElement: { attributes: [] }, children: [] },
-      },
-    };
-    listener(listeners, 'VariableDeclarator, FunctionDeclaration')(decl);
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'displayName', node: decl });
   });
 });
 

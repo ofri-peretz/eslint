@@ -19,6 +19,9 @@ const jwt = await load('eslint-plugin-jwt-security');
 const mongo = await load('eslint-plugin-mongodb-security');
 const a11y = await load('eslint-plugin-react-a11y');
 const exp = await load('eslint-plugin-express-security');
+// react-features owns hooks-exhaustive-deps and the react/* family; without it the
+// react-hooks fixtures read as undetected when the rule that covers them exists.
+const rf = await load('eslint-plugin-react-features');
 const tsp = (await import('@typescript-eslint/parser')).default;
 
 const all = (p, pre) => Object.fromEntries(Object.keys(p.rules).map((r) => [`${pre}/${r}`, 'error']));
@@ -27,8 +30,9 @@ const eslint = new ESLint({
   overrideConfig: [
     { files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
       languageOptions: { ecmaVersion: 'latest', sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } },
-      plugins: { 'secure-coding': sc, 'browser-security': bs, 'node-security': ns, 'jwt-security': jwt, 'mongodb-security': mongo, 'react-a11y': a11y, 'express-security': exp },
-      rules: { ...all(sc, 'secure-coding'), ...all(bs, 'browser-security'), ...all(ns, 'node-security'), ...all(jwt, 'jwt-security'), ...all(mongo, 'mongodb-security'), ...all(a11y, 'react-a11y'), ...all(exp, 'express-security') } },
+      plugins: { 'secure-coding': sc, 'browser-security': bs, 'node-security': ns, 'jwt-security': jwt, 'mongodb-security': mongo, 'react-a11y': a11y, 'express-security': exp, 'react-features': rf },
+      rules: { ...all(sc, 'secure-coding'), ...all(bs, 'browser-security'), ...all(ns, 'node-security'), ...all(jwt, 'jwt-security'), ...all(mongo, 'mongodb-security'), ...all(a11y, 'react-a11y'), ...all(exp, 'express-security'),
+        ...Object.fromEntries(Object.keys(rf.rules).filter((r) => r.includes('/')).map((r) => [`react-features/${r}`, 'error'])) } },
     { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tsp } },
   ],
 });

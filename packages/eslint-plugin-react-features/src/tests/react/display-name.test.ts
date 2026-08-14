@@ -1,6 +1,9 @@
 /**
  * Tests for display-name rule
- * Enforce component display names
+ *
+ * The rule reports components React cannot name — not every component that
+ * lacks an explicit `displayName`. See the note on the "named components"
+ * block below: the previous suite asserted the opposite, and passed.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
@@ -28,401 +31,130 @@ const ruleTester = new RuleTester({
 });
 
 describe('display-name', () => {
-  describe('Class Components with displayName', () => {
-    ruleTester.run('class components with displayName are valid', displayName, {
+  /**
+   * Regression lock — a named component is already named.
+   *
+   * Every case here was previously reported, and the old suite asserted each
+   * one as an error. React reads the display name off `Function.name` /
+   * `Class.name`, so `function Profile()` and `const Profile = () =>` show up
+   * in DevTools as `Profile` with no `displayName` anywhere. Reporting them
+   * means firing on essentially every component in every React codebase —
+   * measured at 4 of 67 files on the benchmark's safe corpus, all of them
+   * this defect.
+   */
+  describe('named components are not reported', () => {
+    ruleTester.run('named components', displayName, {
       valid: [
-        // Class component with static displayName
-        {
-          code: `
-            class MyComponent extends Component {
-              static displayName = 'MyComponent';
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
-        },
-        // React.Component with displayName
-        {
-          code: `
-            class MyComponent extends React.Component {
-              static displayName = 'MyComponent';
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
-        },
-        // PureComponent with displayName
-        {
-          code: `
-            class MyComponent extends PureComponent {
-              static displayName = 'MyComponent';
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
-        },
-        // React.PureComponent with displayName
-        {
-          code: `
-            class MyComponent extends React.PureComponent {
-              static displayName = 'MyComponent';
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
-        },
-        // Non-React class (no superClass)
-        {
-          code: `
-            class Helper {
-              doSomething() {
-                return 'hello';
-              }
-            }
-          `,
-        },
-        // Non-React class (different superClass)
-        {
-          code: `
-            class Service extends BaseService {
-              fetch() {
-                return 'data';
-              }
-            }
-          `,
-        },
-        // Empty file
-        {
-          code: ``,
-        },
+        { code: `function Profile() { return <div>Hello</div>; }` },
+        { code: `const Profile = () => { return <div>Hello</div>; };` },
+        { code: `const Profile = () => <div>Hello</div>;` },
+        { code: `const Profile = function() { return <div>Hello</div>; };` },
+        { code: `export default function Profile() { return <div>Hello</div>; }` },
+        // A named class takes its name from Class.name; displayName is optional.
+        { code: `class Profile extends Component { render() { return <div>A</div>; } }` },
+        { code: `class Profile extends React.Component { render() { return <div>A</div>; } }` },
+        { code: `class Profile extends PureComponent { render() { return <div>A</div>; } }` },
+        { code: `class Profile extends React.PureComponent { render() { return <div>A</div>; } }` },
+        // The binding names the component through the wrapper.
+        { code: `const Row = memo(() => <div>Hello</div>);` },
+        { code: `const Row = React.memo(() => <div>Hello</div>);` },
+        { code: `const Row = forwardRef((props, ref) => <div ref={ref} />);` },
+        { code: `const Row = React.forwardRef((props, ref) => <div ref={ref} />);` },
+        // Nested wrappers still resolve to the outer binding.
+        { code: `const Row = memo(forwardRef((props, ref) => <div ref={ref} />));` },
+        // Assignment and property positions carry a name too.
+        { code: `Table.Row = memo(() => <div>Hello</div>);` },
+        { code: `const parts = { Row: memo(() => <div>Hello</div>) };` },
+        { code: `class Table { static Row = memo(() => <div>Hello</div>); }` },
+        { code: `const Row = class extends Component { render() { return <div>A</div>; } };` },
       ],
       invalid: [],
     });
   });
 
-  describe('Class Components without displayName', () => {
-    ruleTester.run('class components without displayName trigger errors', displayName, {
+  describe('anonymous components are reported', () => {
+    ruleTester.run('anonymous components', displayName, {
       valid: [],
       invalid: [
-        // Class component without displayName
         {
-          code: `
-            class MyComponent extends Component {
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
+          code: `export default () => <div>Hello</div>;`,
           errors: [{ messageId: 'displayName' }],
         },
-        // React.Component without displayName
         {
-          code: `
-            class MyComponent extends React.Component {
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
+          code: `export default function() { return <div>Hello</div>; }`,
           errors: [{ messageId: 'displayName' }],
         },
-        // PureComponent without displayName
         {
-          code: `
-            class MyComponent extends PureComponent {
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
+          code: `export default class extends Component { render() { return <div>A</div>; } }`,
           errors: [{ messageId: 'displayName' }],
         },
-        // React.PureComponent without displayName
         {
-          code: `
-            class MyComponent extends React.PureComponent {
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
+          code: `export default class extends React.PureComponent { render() { return <div>A</div>; } }`,
+          errors: [{ messageId: 'displayName' }],
+        },
+        // A wrapper call with nothing to take a name from — passed inline.
+        {
+          code: `render(memo(() => <div>Hello</div>));`,
+          errors: [{ messageId: 'displayName' }],
+        },
+        {
+          code: `render(React.forwardRef((props, ref) => <div ref={ref} />));`,
           errors: [{ messageId: 'displayName' }],
         },
       ],
     });
   });
 
-  describe('Function Components', () => {
-    ruleTester.run('function components handling', displayName, {
+  describe('non-components are out of scope', () => {
+    ruleTester.run('non-components', displayName, {
       valid: [
-        // Non-component function (no JSX)
+        // No JSX — not a component, regardless of anonymity.
+        { code: `export default () => 'hello';` },
+        { code: `export default function() { return 42; }` },
+        { code: `export default { key: 'value' };` },
+        { code: `render(memo(() => 42));` },
+        // A wrapper call whose argument is not a function at all.
+        { code: `render(memo(Existing));` },
+        { code: `render(memo());` },
+        // Not a React wrapper.
+        { code: `render(compute(() => <div>Hello</div>));` },
+        { code: `render(lib.compute(() => <div>Hello</div>));` },
+        { code: `render(memo[key](() => <div>Hello</div>));` },
+        // A class that does not extend a React base.
+        { code: `export default class extends BaseService { fetch() { return 'd'; } }` },
+        { code: `export default class extends Utils.BaseService { fetch() { return 'd'; } }` },
+        { code: `export default class extends Other.Component { render() { return 'd'; } }` },
+        { code: `export default class {}` },
+        // An anonymous class component that names itself explicitly.
         {
-          code: `
-            function helper() {
-              return 'hello';
-            }
-          `,
+          code: `export default class extends Component { static displayName = 'Row'; render() { return <div>A</div>; } }`,
         },
-        // Arrow function without JSX
-        {
-          code: `
-            const helper = () => 'hello';
-          `,
-        },
-        // Function expression without JSX
-        {
-          code: `
-            const helper = function() {
-              return 42;
-            };
-          `,
-        },
-      ],
-      invalid: [
-        // Function component without displayName
-        {
-          code: `
-            function MyComponent() {
-              return <div>Hello</div>;
-            }
-          `,
-          errors: [{ messageId: 'displayName' }],
-        },
-        // Arrow function component without displayName
-        {
-          code: `
-            const MyComponent = () => {
-              return <div>Hello</div>;
-            };
-          `,
-          errors: [{ messageId: 'displayName' }],
-        },
-        // Function expression component without displayName
-        {
-          code: `
-            const MyComponent = function() {
-              return <div>Hello</div>;
-            };
-          `,
-          errors: [{ messageId: 'displayName' }],
-        },
-        // Arrow function with implicit return (JSX)
-        {
-          code: `
-            const MyComponent = () => <div>Hello</div>;
-          `,
-          errors: [{ messageId: 'displayName' }],
-        },
-      ],
-    });
-  });
-
-  describe('Component Detection', () => {
-    ruleTester.run('component detection variations', displayName, {
-      valid: [
-        // Variable declarator with non-function value
-        {
-          code: `
-            const config = { key: 'value' };
-          `,
-        },
-        // Variable without init
-        {
-          code: `
-            let myVar;
-          `,
-        },
-        // Non-React MemberExpression superClass
-        {
-          code: `
-            class MyService extends Utils.BaseService {
-              fetch() { return 'data'; }
-            }
-          `,
-        },
-        // Wrong object in MemberExpression
-        {
-          code: `
-            class MyClass extends Other.Component {
-              render() { return 'string'; }
-            }
-          `,
-        },
+        // A named function expression keeps its own name.
+        { code: `render(memo(function Row() { return <div>Hello</div>; }));` },
+        { code: `export default function Row() { return <div>Hello</div>; }` },
+        { code: `` },
       ],
       invalid: [],
     });
   });
 
-  describe('JSX Detection', () => {
-    ruleTester.run('JSX detection in components', displayName, {
+  describe('JSX detection', () => {
+    ruleTester.run('jsx shapes', displayName, {
       valid: [],
       invalid: [
-        // Component with nested JSX
         {
-          code: `
-            function MyComponent() {
-              return (
-                <div>
-                  <header>
-                    <h1>Title</h1>
-                  </header>
-                  <main>
-                    <p>Content</p>
-                  </main>
-                </div>
-              );
-            }
-          `,
+          code: `export default () => (<div><header><h1>Title</h1></header></div>);`,
           errors: [{ messageId: 'displayName' }],
         },
-        // Component with JSX fragment
         {
-          code: `
-            function MyComponent() {
-              return (
-                <>
-                  <div>A</div>
-                  <div>B</div>
-                </>
-              );
-            }
-          `,
+          code: `export default () => (<><div>A</div><div>B</div></>);`,
           errors: [{ messageId: 'displayName' }],
         },
-        // Component with conditional JSX
         {
-          code: `
-            function MyComponent({ show }) {
-              return show ? <div>Visible</div> : null;
-            }
-          `,
-          errors: [{ messageId: 'displayName' }],
-        },
-      ],
-    });
-  });
-
-  describe('Multiple Components', () => {
-    ruleTester.run('multiple components handling', displayName, {
-      valid: [
-        // All components have displayName
-        {
-          code: `
-            class ComponentA extends Component {
-              static displayName = 'ComponentA';
-              render() { return <div>A</div>; }
-            }
-            class ComponentB extends Component {
-              static displayName = 'ComponentB';
-              render() { return <div>B</div>; }
-            }
-          `,
-        },
-      ],
-      invalid: [
-        // One component missing displayName
-        {
-          code: `
-            class ComponentA extends Component {
-              static displayName = 'ComponentA';
-              render() { return <div>A</div>; }
-            }
-            class ComponentB extends Component {
-              render() { return <div>B</div>; }
-            }
-          `,
-          errors: [{ messageId: 'displayName' }],
-        },
-        // Both components missing displayName
-        {
-          code: `
-            class ComponentA extends Component {
-              render() { return <div>A</div>; }
-            }
-            class ComponentB extends Component {
-              render() { return <div>B</div>; }
-            }
-          `,
-          errors: [{ messageId: 'displayName' }, { messageId: 'displayName' }],
-        },
-        // Mix of class and function components
-        {
-          code: `
-            class ComponentA extends Component {
-              render() { return <div>A</div>; }
-            }
-            function ComponentB() {
-              return <div>B</div>;
-            }
-          `,
-          errors: [{ messageId: 'displayName' }, { messageId: 'displayName' }],
-        },
-      ],
-    });
-  });
-
-  describe('Edge Cases', () => {
-    ruleTester.run('edge cases', displayName, {
-      valid: [
-        // Class without superClass
-        {
-          code: `
-            class Helper {
-              static displayName = 'Helper';
-              doSomething() { return 'value'; }
-            }
-          `,
-        },
-        // displayName at any position in class body
-        {
-          code: `
-            class MyComponent extends Component {
-              state = { count: 0 };
-              static displayName = 'MyComponent';
-              render() {
-                return <div>{this.state.count}</div>;
-              }
-            }
-          `,
-        },
-      ],
-      invalid: [
-        // Non-static displayName doesn't count
-        {
-          code: `
-            class MyComponent extends Component {
-              displayName = 'MyComponent';
-              render() {
-                return <div>Hello</div>;
-              }
-            }
-          `,
-          errors: [{ messageId: 'displayName' }],
-        },
-      ],
-    });
-  });
-
-  describe('Anonymous Components', () => {
-    ruleTester.run('anonymous component handling', displayName, {
-      valid: [],
-      invalid: [
-        // Anonymous class component (exports without id)
-        {
-          code: `
-            export default class extends Component {
-              render() { return <div>Hello</div>; }
-            }
-          `,
+          code: `export default ({ show }) => show ? <div>Visible</div> : null;`,
           errors: [{ messageId: 'displayName' }],
         },
       ],
     });
   });
 });
-
-
