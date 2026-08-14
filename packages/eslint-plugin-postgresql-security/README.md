@@ -35,6 +35,44 @@ A generic SQL injection linter can flag string concatenation wherever it appears
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+## Why these rules are quiet
+
+**Noise creates apathy, and apathy is not a security posture.** A linter that reports
+a thousand things a week gets switched off in a month, and the real finding goes with
+it. So every rule here is built to be worth reading: we would rather miss a finding
+than spend your attention on one that was never real.
+
+That is a trade, and it is made deliberately. It costs recall, and we measure what it
+costs rather than assuming it is free.
+
+## How the rules decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — not on an identifier that happens to contain
+`query`, a method called `setItem`, or a file whose path contains `key`. Every one of
+those was a real false positive in this ecosystem, found by reading our own output on
+open-source projects and fixed with a test that fails on the unfixed rule.
+
+Where a rule has known false-positive shapes, its page carries a **Not a finding**
+section: what it deliberately stays quiet on, and what to check first when it fires
+and you disagree.
+
+## What you get
+
+The rules below, with a CWE mapping, a CVSS score and a fix on every message — in
+prose for a human and as structured JSON for an agent. Install it, enable
+`recommended`, and read the findings. If one of them is wrong,
+[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
+bug here, not a tuning exercise for you.
+
+How that is measured, on which projects, and where it falls short:
+[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
+
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
@@ -116,19 +154,19 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-89 |  |  | Ensures the number of placeholders in SQL queries matches the provided parameters. | 🟢 |  | ⚠️ |  |  |  |
-| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-400 |  |  | Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern). | 🟢 |  | ⚠️ |  |  |  |
-| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-252 |  |  | Ensures query promises are awaited or handled. | 🟢 | 💼 |  |  |  |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-798 |  |  | Prevents hardcoded passwords and connection strings in PostgreSQL client initialization. | 🟢 | 💼 |  |  |  |  |
-| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-295 |  |  | Prevents disabling SSL certificate validation in PostgreSQL connections. | 🟢 | 💼 |  |  |  |  |
-| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-772 |  |  | Ensures acquired pool clients are released back to the pool. | 🟢 | 💼 |  |  |  |  |
-| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-693 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
-| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-362 |  |  | Prevents running transaction commands directly on pool (must use dedicated client). | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-73 | A03:2021 |  | Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading). | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-89 |  |  | SQL injection is one of the most critical security vulnerabilities | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-426 |  |  | Prevents dynamic SET searchpath queries that could enable schema hijacking. | 🟢 | 💼 |  |  |  |  |
-| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-693 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
-| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-415 |  |  | Prevents calling client.release() multiple times on the same client. | 🟢 | 💼 |  |  |  |  |
+| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/check-query-params?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-89 |  |  | Ensures the number of placeholders in SQL queries matches the provided parameters. | 🟢 |  | ⚠️ |  |  |  |
+| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-batch-insert-loop?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-400 |  |  | Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern). | 🟢 |  | ⚠️ |  |  |  |
+| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-floating-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-252 |  |  | Ensures query promises are awaited or handled. | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-hardcoded-credentials?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-798 |  |  | Prevents hardcoded passwords and connection strings in PostgreSQL client initialization. | 🟢 | 💼 |  |  |  |  |
+| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-insecure-ssl?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-295 |  |  | Prevents disabling SSL certificate validation in PostgreSQL connections. | 🟢 | 💼 |  |  |  |  |
+| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-missing-client-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-772 |  |  | Ensures acquired pool clients are released back to the pool. | 🟢 | 💼 |  |  |  |  |
+| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-select-all?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-693 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
+| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-transaction-on-pool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-362 |  |  | Prevents running transaction commands directly on pool (must use dedicated client). | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-unsafe-copy-from?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-73 | A03:2021 |  | Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading). | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-89 |  |  | SQL injection is one of the most critical security vulnerabilities | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-unsafe-search-path?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-426 |  |  | Prevents dynamic SET searchpath queries that could enable schema hijacking. | 🟢 | 💼 |  |  |  |  |
+| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/prefer-pool-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-693 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
+| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/prevent-double-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-415 |  |  | Prevents calling client.release() multiple times on the same client. | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 

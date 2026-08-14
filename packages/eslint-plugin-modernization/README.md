@@ -29,6 +29,44 @@ This plugin provides Modernization rules — prefer modern ES idioms over legacy
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+## Why these rules are quiet
+
+**Noise creates apathy, and apathy is not a security posture.** A linter that reports
+a thousand things a week gets switched off in a month, and the real finding goes with
+it. So every rule here is built to be worth reading: we would rather miss a finding
+than spend your attention on one that was never real.
+
+That is a trade, and it is made deliberately. It costs recall, and we measure what it
+costs rather than assuming it is free.
+
+## How the rules decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — not on an identifier that happens to contain
+`query`, a method called `setItem`, or a file whose path contains `key`. Every one of
+those was a real false positive in this ecosystem, found by reading our own output on
+open-source projects and fixed with a test that fails on the unfixed rule.
+
+Where a rule has known false-positive shapes, its page carries a **Not a finding**
+section: what it deliberately stays quiet on, and what to check first when it fires
+and you disagree.
+
+## What you get
+
+The rules below, with a CWE mapping, a CVSS score and a fix on every message — in
+prose for a human and as structured JSON for an agent. Install it, enable
+`recommended`, and read the findings. If one of them is wrong,
+[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
+bug here, not a tuning exercise for you.
+
+How that is measured, on which projects, and where it falls short:
+[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
+
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modernization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization). 📚
@@ -132,10 +170,10 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms… | 🟢 |  |  |  | 💡 |  |
-| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer using Array.at() for accessing elements, especially with negative indices | 🟢 |  |  |  | 💡 |  |
-| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer EventTarget over EventEmitter for isomorphic code | 🟢 |  |  |  | 💡 |  |
-| [prefer-template-literal](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-template-literal?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer template literals over string concatenation with runtime values | 🟢 |  |  |  |  |  |
+| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms… | 🟢 | 💼 |  |  | 💡 |  |
+| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer using Array.at() for accessing elements, especially with negative indices | 🟢 |  | ⚠️ |  | 💡 |  |
+| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer EventTarget over EventEmitter for isomorphic code | 🟢 |  | ⚠️ |  | 💡 |  |
+| [prefer-template-literal](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-template-literal?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modernization) |  |  |  | Prefer template literals over string concatenation with runtime values | 🟢 |  | ⚠️ |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
