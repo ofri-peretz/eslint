@@ -510,6 +510,12 @@ describe('alt-text', () => {
         {
           code: "import * as NS from 'next/image';\nconst H = () => <NS src={s} />;",
         },
+        // DEFAULT import only. `next/image` also exports `getImageProps`, a helper that
+        // returns props rather than rendering — aliasing it to `Image` does not make it
+        // an image component.
+        {
+          code: "import { getImageProps as Image } from 'next/image';\nconst H = () => <Image src={s} />;",
+        },
       ],
       invalid: [
         {
@@ -526,11 +532,7 @@ describe('alt-text', () => {
           code: "import Image from 'next/legacy/image';\nconst H = () => <Image src={s} />;",
           errors: 1,
         },
-        // A named import from the same module binds a component too.
-        {
-          code: "import { Image } from 'next/image';\nconst H = () => <Image src={s} />;",
-          errors: 1,
-        },
+
       ],
     });
   });

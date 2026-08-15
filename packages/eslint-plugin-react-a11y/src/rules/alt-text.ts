@@ -210,10 +210,11 @@ export const altText = createRule<RuleOptions, MessageIds>({
           continue;
         }
         for (const specifier of statement.specifiers) {
-          if (
-            specifier.type === 'ImportDefaultSpecifier' ||
-            specifier.type === 'ImportSpecifier'
-          ) {
+          // DEFAULT import only. `next/image` also exports `getImageProps`, a helper
+          // that returns props — not a JSX component. Accepting named specifiers made
+          // `import { getImageProps as Image }` an image component and reported alt-text
+          // on a call that never renders anything.
+          if (specifier.type === 'ImportDefaultSpecifier') {
             importedImageComponents.add(specifier.local.name);
           }
         }

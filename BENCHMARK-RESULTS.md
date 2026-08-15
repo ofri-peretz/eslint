@@ -46,7 +46,7 @@ author · `INT` internal — committed runner, our own fixtures; a regression ga
 | B1 | **False positives**, 67 clean labelled fixtures, `recommended` | **0/67 — 0.0%** | 7/67 — 10.4% | **Interlace** | INT |
 | B1a | — same fixtures with **every** rule at `error` (276) | 1/67 — 1.5% | — | — | INT |
 | B2 | **Measured precision**, hand-labelled stratified sample | **≈67%** (12 TP / 6 FP / 4 undecidable of 22) | ≈20% (3 TP / 12 FP / 1 undecidable of 16) | **Interlace** | PUB |
-| B2a | — same sample before the 2026-08-14 precision work | ≈47% (8 TP / 9 FP / 3 undecidable of 20) | — | — | PUB |
+| B2a | — **prior** sample (20 findings), same sampling method, before the 2026-08-14 precision work | ≈47% (8 TP / 9 FP / 3 undecidable of 20) | — | — | PUB |
 | B2b | **TP / FP / FN, labelled corpus** (`ilb-juliet`) | **69 / 0 / 0 — F1 100%** | 10 / 7 / 59 — F1 23.3% | **Interlace** | INT |
 | B3 | Findings per 1,000 files, 20 OSS projects | **54** | 985 | **Interlace** | VOL |
 | B4 | Louder on N of 20 projects | **0 of 20** | 20 of 20 | **Interlace** | VOL |

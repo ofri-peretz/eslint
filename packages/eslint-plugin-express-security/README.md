@@ -57,8 +57,9 @@ and you disagree.
 
 ## What you get
 
-The rules below, with a CWE mapping, a CVSS score and a fix on every message — in
-prose for a human and as structured JSON for an agent. Install it, enable
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
 `recommended`, and read the findings. If one of them is wrong,
 [open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
 bug here, not a tuning exercise for you.
@@ -150,7 +151,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-400 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  | ⚠️ |  |  |  |
 | [require-helmet](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-helmet?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-693 |  |  | This rule detects Express.js applications that are missing the helmet middleware | 🟢 | 💼 |  |  |  |  |
 | [require-query-type-guard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-query-type-guard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-843 | A03:2021 |  | This rule detects string methods called on req.query values without a type guard — Express query values can… | 🟢 |  | ⚠️ |  |  |  |
-| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-770 |  |  | This rule detects Express.js applications missing rate limiting middleware | 🟢 | 💼 |  |  |  |  |
+| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-770 |  |  | This rule detects Express.js applications missing rate-limiting middleware | 🟢 | 💼 |  |  |  |  |
 | [require-route-authentication](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-route-authentication?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-306 | A07:2021 |  | This rule detects routes that expose a critical function — credentials, accounts, payments, configuration —… | 🟢 |  | ⚠️ |  |  |  |
 | [require-strict-transport-security](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-strict-transport-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-319 | A02:2021 |  | This rule detects HSTS configurations that leave a downgrade window open — the header disabled, a max-age b… | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->

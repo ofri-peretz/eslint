@@ -63,8 +63,9 @@ and you disagree.
 
 ## What you get
 
-The rules below, with a CWE mapping, a CVSS score and a fix on every message — in
-prose for a human and as structured JSON for an agent. Install it, enable
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
 `recommended`, and read the findings. If one of them is wrong,
 [open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
 bug here, not a tuning exercise for you.

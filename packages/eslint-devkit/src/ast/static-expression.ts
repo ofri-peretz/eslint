@@ -107,14 +107,21 @@ function resolveConstInit(
 /** CommonJS module-location globals — fixed at load time, and not user input. */
 const MODULE_LOCATION_GLOBALS = new Set(['__dirname', '__filename']);
 
+/** The module loader itself, checked the same way and for the same reason. */
+const MODULE_LOADER_GLOBALS = new Set(['require']);
+
 /**
  * Is this `__dirname`/`__filename` as CommonJS defines it, rather than a local of the
  * same name? `function render(__dirname) { require(__dirname) }` is a parameter and
  * genuinely attacker-steerable, so the name alone is not enough — it counts only when
  * nothing in scope declares it.
  */
-function isModuleLocationGlobal(name: string, scope: TSESLint.Scope.Scope): boolean {
-  if (!MODULE_LOCATION_GLOBALS.has(name)) return false;
+function isModuleLocationGlobal(
+  name: string,
+  scope: TSESLint.Scope.Scope,
+  allowed: ReadonlySet<string> = MODULE_LOCATION_GLOBALS,
+): boolean {
+  if (!allowed.has(name)) return false;
   for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
     const variable = current.variables.find((v) => v.name === name);
     // A global-scope entry with no definition is the environment's, not the author's.
@@ -286,7 +293,11 @@ function evaluateNode(
       if (
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'require' &&
-        callee.property.name === 'resolve'
+        callee.property.name === 'resolve' &&
+        // `function f(require) { sink(require.resolve('pkg')) }` — a parameter can return
+        // anything. Same reasoning as `__dirname`: the name counts as the environment's
+        // exactly when nothing in scope claims it.
+        isModuleLocationGlobal('require', scope, MODULE_LOADER_GLOBALS)
       ) {
         return node.arguments.every(
           (argument) =>

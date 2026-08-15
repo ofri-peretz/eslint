@@ -57,8 +57,9 @@ and you disagree.
 
 ## What you get
 
-The rules below, with a CWE mapping, a CVSS score and a fix on every message — in
-prose for a human and as structured JSON for an agent. Install it, enable
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
 `recommended`, and read the findings. If one of them is wrong,
 [open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
 bug here, not a tuning exercise for you.
@@ -162,7 +163,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [prefer-native-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/prefer-native-crypto?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-1104 | A06:2021 |  | Prefer native crypto over third-party libraries | 🟢 |  |  |  |  |  |
 | [require-aead-tag-verification](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-aead-tag-verification?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-327 | A02:2021 |  | Require AEAD decryption to verify the authentication tag (setAuthTag + final) | 🟢 | 💼 |  |  |  |  |
 | [require-dependency-integrity](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-dependency-integrity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-494 |  |  | CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html) | 🟢 | 💼 |  |  |  |  |
-| [require-secure-credential-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-credential-storage?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-312 |  |  | This rule detects when credentials are stored using localStorage.setItem() or fs.writeFile() without encryp… | 🟢 |  |  |  |  |  |
+| [require-secure-credential-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-credential-storage?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-312 |  |  | This rule detects a credential written to localStorage, sessionStorage or AsyncStorage without encryption | 🟢 |  |  |  |  |  |
 | [require-secure-deletion](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-deletion?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-459 |  |  | CWE: [CWE-459](https://cwe.mitre.org/data/definitions/459.html) | 🟢 |  |  |  |  |  |
 | [require-storage-encryption](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-storage-encryption?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-312 |  |  | CWE: [CWE-312](https://cwe.mitre.org/data/definitions/312.html) | 🟢 |  |  |  |  |  |
 | [require-stream-error-handler](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-stream-error-handler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-node-security) | CWE-248 | A04:2021 |  | Require an error listener on streams passed to pipe, which does not forward errors | 🟢 | 💼 |  |  |  |  |

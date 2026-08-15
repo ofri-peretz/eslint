@@ -181,10 +181,15 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
      * single-write check is what makes the binding provable — a variable written
      * twice can hold anything by the time the comparison runs.
      */
-    function isStringTyped(node: TSESTree.Node): boolean {
+    function isStringTyped(node: TSESTree.Node, seen = new Set<string>()): boolean {
       if (node.type === AST_NODE_TYPES.Literal) return typeof node.value === 'string';
       if (node.type === AST_NODE_TYPES.TemplateLiteral) return true;
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      // `var a = b; var b = a;` resolves forever without this — a stack overflow that
+      // takes the whole ESLint run down, not just the rule. A cycle proves nothing about
+      // the type, so it answers "not provably a string".
+      if (seen.has(node.name)) return false;
+      seen.add(node.name);
 
       for (
         let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
@@ -196,7 +201,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return false;
         const [def] = variable.defs;
         if (!def || def.type !== 'Variable' || !def.node.init) return false;
-        return isStringTyped(def.node.init);
+        return isStringTyped(def.node.init, seen);
       }
       return false;
     }

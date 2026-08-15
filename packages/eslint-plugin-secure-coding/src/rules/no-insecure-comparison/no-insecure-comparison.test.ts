@@ -691,6 +691,18 @@ ruleTester.run('no-insecure-comparison: coercion needs two types', noInsecureCom
         },
       ],
     },
+    // A cyclic initializer pair resolved forever and overflowed the stack — which takes
+    // the whole ESLint run down, not just this rule. A cycle proves nothing about the
+    // type, so it answers "not provably a string" and the comparison still reports.
+    {
+      code: `var a = b; var b = a; if (a == y) { go(); }`,
+      errors: [
+        {
+          messageId: 'insecureComparison',
+          suggestions: [{ messageId: 'useStrictEquality', output: `var a = b; var b = a; if (a === y) { go(); }` }],
+        },
+      ],
+    },
     // Declared without an initializer.
     {
       code: `let role; role = input; if (role == 'admin') { go(); }`,

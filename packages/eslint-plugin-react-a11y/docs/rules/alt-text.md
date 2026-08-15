@@ -88,6 +88,12 @@ unrelated package is out of scope.
 | `<img src={s} alt="" />` | An explicitly empty alt marks the image decorative, which is the correct annotation. |
 | `<img src={s} alt={caption} />` | A dynamic alt is trusted, per the standard `jsx-a11y/alt-text` contract. |
 
+Two things put a component in scope: a **default import** from `next/image`,
+`next/legacy/image` or `next/future/image`, and any name listed in the `imgComponents`
+option. The import path covers the default configuration; `imgComponents` is how you add
+your own wrapper. A NAMED import is not enough — `next/image` also exports
+`getImageProps`, a helper that returns props rather than rendering.
+
 **If it fires** on `next/image`, `next/legacy/image` or `next/future/image`, that is
 deliberate: it is the dominant image component in every Next.js app and was previously
 invisible unless you set `{ img: ['Image'] }` — a default nobody sets, on the framework

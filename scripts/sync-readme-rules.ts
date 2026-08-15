@@ -412,8 +412,9 @@ function renderDoctrine(): string {
     '',
     '## What you get',
     '',
-    'The rules below, with a CWE mapping, a CVSS score and a fix on every message — in',
-    'prose for a human and as structured JSON for an agent. Install it, enable',
+    'The rules below. Security rules carry a CWE mapping and, where one is assigned, a',
+    'CVSS score; every rule carries a fix on its message — in prose for a human and as',
+    'structured JSON for an agent. Install it, enable',
     '`recommended`, and read the findings. If one of them is wrong,',
     '[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a',
     'bug here, not a tuning exercise for you.',
@@ -443,9 +444,16 @@ export function spliceDoctrine(readme: string): { content: string; modified: boo
   const block = renderDoctrine();
 
   const start = readme.indexOf(DOCTRINE_START);
-  if (start !== -1) {
-    const end = readme.indexOf(DOCTRINE_END);
+  const end = readme.indexOf(DOCTRINE_END);
+
+  // Any pairing other than both-present-in-order is a corrupt file, and each broken
+  // shape corrupts it differently if waved through: an END before START makes the
+  // second slice run backwards over the block, and an orphan END leaves a stray marker
+  // behind a freshly inserted one. Refuse all of them rather than guess.
+  if (start !== -1 || end !== -1) {
+    if (start === -1) throw new Error('DOCTRINE:END without a matching START');
     if (end === -1) throw new Error('DOCTRINE:START without a matching END');
+    if (end < start) throw new Error('DOCTRINE:END appears before DOCTRINE:START');
     const content = readme.slice(0, start) + block + readme.slice(end + DOCTRINE_END.length);
     return { content, modified: content !== readme };
   }

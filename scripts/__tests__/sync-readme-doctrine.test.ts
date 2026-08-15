@@ -68,9 +68,19 @@ describe('spliceDoctrine', () => {
     expect(content).toBe(plain);
   });
 
-  it('throws on a START marker with no END rather than corrupting the file', () => {
-    const broken = '# x\n\n<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->\n\n## Rules\n';
-    expect(() => spliceDoctrine(broken)).toThrow(/without a matching END/);
+  it.each([
+    ['START with no END', '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->', /without a matching END/],
+    ['END with no START', '<!-- AUTO-GENERATED:DOCTRINE:END -->', /without a matching START/],
+    [
+      'END before START',
+      '<!-- AUTO-GENERATED:DOCTRINE:END -->\n\n<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->',
+      /END appears before/,
+    ],
+  ])('throws on %s rather than corrupting the file', (_label, markers, expected) => {
+    // Each broken shape corrupts differently if waved through: an END before START runs
+    // the second slice backwards over the block, and an orphan END is left behind a
+    // freshly inserted one.
+    expect(() => spliceDoctrine(`# x\n\n${markers}\n\n## Rules\n`)).toThrow(expected);
   });
 
   it('carries no ecosystem totals', () => {

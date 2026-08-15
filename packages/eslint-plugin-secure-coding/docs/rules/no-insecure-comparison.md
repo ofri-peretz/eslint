@@ -112,7 +112,7 @@ if (user.id == userId) {
 }
 
 // Insecure inequality
-if (value != null) {
+if (value == undefined) {
   // ❌ Type coercion
   // Handle value
 }
@@ -174,7 +174,10 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 ## Best Practices
 
 1. **Always use strict equality** (`===`, `!==`) for all comparisons
-2. **Explicit null checks**: Use `value !== null && value !== undefined` instead of `value != null`
+2. **Nullish checks are exempt**: `value != null` matches `null` AND `undefined` in one
+   comparison, which is exactly why it is written that way. This rule does not report it,
+   and rewriting it to `!== null` silently drops the `undefined` case. Core `eqeqeq`
+   exempts it for the same reason.
 3. **Type safety**: Strict equality prevents accidental type coercion bugs
 4. **Consistency**: Use strict equality throughout the codebase
 

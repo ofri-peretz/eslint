@@ -51,7 +51,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule flags calls to `setItem` (localStorage/sessionStorage) and `writeFile` (fs) that do not appear to use an encryption wrapper for their input data.
+This rule flags `writeFile`/`writeFileSync`/`appendFile`/`appendFileSync` calls that put a credential on disk without an encryption wrapper around the value. Client storage (`localStorage`, `sessionStorage`, `AsyncStorage`) belongs to [`require-secure-credential-storage`](./require-secure-credential-storage.md); the two rules used to share both receivers and reported every match twice.
 
 ```mermaid
 %%{init: {
@@ -96,8 +96,8 @@ This rule has no configuration options in the current version.
 // Writing sensitive data to a file without encryption
 fs.writeFile('user_data.json', JSON.stringify(userData));
 
-// Storing a token in localStorage in cleartext
-localStorage.setItem('session_token', token);
+// Writing a token to disk in cleartext
+fs.writeFileSync('session_token.txt', token);
 ```
 
 ### ✅ Correct

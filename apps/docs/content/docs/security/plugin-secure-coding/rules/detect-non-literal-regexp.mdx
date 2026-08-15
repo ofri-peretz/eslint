@@ -115,7 +115,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | -------------------- | ---------- | ------- | ----------------------------------- |
 | `allowLiterals`      | `boolean`  | `false` | Allow literal string regex patterns |
 | `additionalPatterns` | `string[]` | `[]`    | Additional RegExp creation patterns |
-| `maxPatternLength`   | `number`   | `100`   | Maximum allowed pattern length      |
+| `maxPatternLength`   | `number`   | `100`   | Maximum allowed length for a DYNAMIC pattern before it reports      |
 
 ## Examples
 
@@ -291,12 +291,15 @@ obj[method](userInput);
 | ------ | ---- | ------- | ----------- |
 | `allowLiterals` | `boolean` | `false` | Allow literal string regex patterns |
 | `additionalPatterns` | `string[]` | `[]` | Additional RegExp creation patterns to check |
-| `maxPatternLength` | `number` | `100` | Maximum allowed pattern length for dynamic regex |
+| `maxPatternLength` | `number` | `100` | Maximum allowed length for a DYNAMIC pattern before it reports for dynamic regex |
 
 ## Not a finding
 
-"Dynamic" means an attacker can change the pattern — not that it is spelled as something
-other than a literal.
+The boundary is **static resolvability**, not proven attacker control. A pattern is
+accepted when this file can prove it cannot change; anything whose provenance is
+unresolved — a parameter, an import, `config.pattern` — reports, because a rule cannot
+show from one file that a value is safe. That is deliberately conservative in the
+reporting direction.
 
 | Code | Why it is silent |
 | --- | --- |

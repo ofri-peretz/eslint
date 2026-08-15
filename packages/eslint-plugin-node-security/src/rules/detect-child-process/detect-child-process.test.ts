@@ -830,6 +830,24 @@ describe('detect-child-process — coverage completion', () => {
                  app.get('/x', (req) => cp.exec(req.query.q));`,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
+        // Aliased members. The LOCAL name is not the member name: `import { exec as run }`
+        // binds `run`, so gating on `dangerousMethodsSet.has('run')` missed a real sink.
+        {
+          code: `import { exec as run } from 'child_process';
+                 app.get('/x', (req) => run(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        {
+          code: `const { exec: run } = require('child_process');
+                 app.get('/x', (req) => run(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // ES2022 arbitrary module namespace name — the same member, quoted.
+        {
+          code: `import { 'exec' as run } from 'child_process';
+                 app.get('/x', (req) => run(req.query.q));`,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
         // An implicit global: the scope analyser creates the variable with no
         // definition, so resolution falls through to the recorded alias set.
         {

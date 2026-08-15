@@ -107,25 +107,30 @@ function calleeEncrypts(name: string): boolean {
 }
 
 /**
- * Is the value already encrypted on the way in?
+ * Is the STORED VALUE encrypted on the way in?
+ *
+ * Argument 1 only, for both sinks — `setItem(key, value)` and `writeFile(path, data)`
+ * agree on the position. Checking "any argument" meant
+ * `localStorage.setItem('authToken', token, encrypt(metadata))` stored the token in
+ * cleartext and silenced the rule with an encryption call on something else entirely.
  *
  * Only a CALL whose callee names encryption counts — `encrypt(v)`, `crypto.encrypt(v)`,
  * `encryptSync(v)`. A variable that happens to be named `encrypted` is not proof that
  * anything encrypted it.
  */
 export function isEncrypted(node: TSESTree.CallExpression): boolean {
-  return node.arguments.some((argument) => {
-    if (argument.type !== AST_NODE_TYPES.CallExpression) return false;
-    const callee = argument.callee;
-    if (callee.type === AST_NODE_TYPES.Identifier) {
-      return calleeEncrypts(callee.name);
-    }
-    return (
-      callee.type === AST_NODE_TYPES.MemberExpression &&
-      callee.property.type === AST_NODE_TYPES.Identifier &&
-      calleeEncrypts(callee.property.name)
-    );
-  });
+  const value = node.arguments[1];
+  if (value?.type !== AST_NODE_TYPES.CallExpression) return false;
+
+  const callee = value.callee;
+  if (callee.type === AST_NODE_TYPES.Identifier) {
+    return calleeEncrypts(callee.name);
+  }
+  return (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.property.type === AST_NODE_TYPES.Identifier &&
+    calleeEncrypts(callee.property.name)
+  );
 }
 
 /**

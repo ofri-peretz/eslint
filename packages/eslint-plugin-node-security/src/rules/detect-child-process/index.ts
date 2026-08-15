@@ -965,6 +965,67 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       isChildProcessSpecifier(node.arguments[0].value);
 
     /**
+     * The child_process member this identifier is bound to, or null.
+     *
+     * Handles the two aliasing forms — `import { exec as run } from 'child_process'` and
+     * `const { exec: run } = require('child_process')` — by reading the EXPORTED name off
+     * the specifier or the destructuring pattern rather than the local binding.
+     */
+    const childProcessMemberName = (node: TSESTree.Node): string | null => {
+      if (node.type !== AST_NODE_TYPES.Identifier) return null;
+
+      for (
+        let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (!variable) continue;
+
+        const [def] = variable.defs;
+        if (def?.type === 'ImportBinding') {
+          const declaration = def.parent;
+          if (
+            declaration?.type !== AST_NODE_TYPES.ImportDeclaration ||
+            !isChildProcessSpecifier(declaration.source.value) ||
+            def.node.type !== AST_NODE_TYPES.ImportSpecifier
+          ) {
+            return null;
+          }
+          // `imported` is a StringLiteral for ES2022 arbitrary module namespace names —
+          // `import { "exec" as run } from 'child_process'`. That names the same member,
+          // so read it rather than giving up on the syntax.
+          return def.node.imported.type === AST_NODE_TYPES.Identifier
+            ? def.node.imported.name
+            : String(def.node.imported.value);
+        }
+
+        if (def?.type === 'Variable') {
+          const declarator = def.node;
+          if (
+            declarator.init == null ||
+            !isChildProcessRequire(declarator.init) ||
+            declarator.id.type !== AST_NODE_TYPES.ObjectPattern
+          ) {
+            return null;
+          }
+          for (const property of declarator.id.properties) {
+            if (
+              property.type === AST_NODE_TYPES.Property &&
+              property.value.type === AST_NODE_TYPES.Identifier &&
+              property.value.name === node.name &&
+              property.key.type === AST_NODE_TYPES.Identifier
+            ) {
+              return property.key.name;
+            }
+          }
+        }
+        return null;
+      }
+      return null;
+    };
+
+    /**
      * Does this name still refer to child_process HERE?
      *
      * `moduleAliases` / `importedMethods` are flat name sets, so an inner binding that
@@ -1054,6 +1115,16 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       }
 
       // exec(...) when imported directly from child_process
+      // The LOCAL name is not the member name. `import { exec as run } from
+      // 'child_process'` binds `run`, so gating on `dangerousMethodsSet.has('run')`
+      // missed a real command-injection sink — and an unrelated module's export aliased
+      // to `exec` would have been reported on the name alone. Resolve to the member the
+      // module actually exports, then ask whether THAT is dangerous.
+      const member = childProcessMemberName(node.callee);
+      if (member !== null && dangerousMethodsSet.has(member)) {
+        return { method: member, calleeNode: node.callee };
+      }
+
       if (node.callee.type === 'Identifier' && dangerousMethodsSet.has(node.callee.name)) {
         // Same shadowing question for a directly-imported method: an inner
         // `const exec = /re/.exec` must not inherit the import's meaning.

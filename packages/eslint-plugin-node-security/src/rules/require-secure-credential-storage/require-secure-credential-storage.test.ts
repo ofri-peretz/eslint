@@ -80,6 +80,10 @@ ruleTester.run('require-secure-credential-storage: evidence gate', requireSecure
     { code: "localStorage.setItem(`user_password`, p)", errors: [{ messageId: 'violationDetected' }] },
     // An encrypt-looking VARIABLE is not proof anything encrypted it.
     { code: "localStorage.setItem('authToken', encrypted)", errors: [{ messageId: 'violationDetected' }] },
+    // Encryption on a THIRD argument does not encrypt the stored value. Checking "any
+    // argument" let `setItem('authToken', token, encrypt(metadata))` store the token in
+    // cleartext and silence the rule with an encryption call on something else.
+    { code: "localStorage.setItem('authToken', token, encrypt(metadata))", errors: [{ messageId: 'violationDetected' }] },
     // A wrapper call that is not encryption.
     { code: "localStorage.setItem('authToken', String(t))", errors: [{ messageId: 'violationDetected' }] },
   ],

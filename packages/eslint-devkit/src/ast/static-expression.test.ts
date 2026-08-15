@@ -251,6 +251,11 @@ describe('require.resolve', () => {
         code: `sink(Promise.resolve('x'))`,
         errors: [{ messageId: 'dynamic' }],
       },
+      // A shadowed `require` is not the module loader; a parameter returns anything.
+      {
+        code: `function f(require) { sink(require.resolve('pkg')); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
     ],
   });
 });
