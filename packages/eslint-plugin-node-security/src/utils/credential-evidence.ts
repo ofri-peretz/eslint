@@ -92,9 +92,24 @@ export function storesACredential(node: TSESTree.CallExpression): boolean {
 }
 
 /**
+ * Does this callee name encrypt?
+ *
+ * Matched at a TOKEN boundary, not by substring: `decrypt` contains `encrypt`, so a
+ * plain `.includes('encrypt')` read `writeFile(path, decrypt(blob))` as safely encrypted
+ * — the exact inverse of the truth, and the reason both rules sat in
+ * `scripts/lint-name-inference.ts` as recorded debt. Splitting on camelCase and
+ * underscores means `encryptSync` and `aes256Encrypt` match while `decrypt` does not.
+ */
+function calleeEncrypts(name: string): boolean {
+  return name
+    .split(/(?=[A-Z])|_/)
+    .some((token) => token.toLowerCase().startsWith('encrypt'));
+}
+
+/**
  * Is the value already encrypted on the way in?
  *
- * Only a call whose callee mentions encryption counts — `encrypt(v)`, `crypto.encrypt(v)`,
+ * Only a CALL whose callee names encryption counts — `encrypt(v)`, `crypto.encrypt(v)`,
  * `encryptSync(v)`. A variable that happens to be named `encrypted` is not proof that
  * anything encrypted it.
  */
@@ -103,12 +118,12 @@ export function isEncrypted(node: TSESTree.CallExpression): boolean {
     if (argument.type !== AST_NODE_TYPES.CallExpression) return false;
     const callee = argument.callee;
     if (callee.type === AST_NODE_TYPES.Identifier) {
-      return callee.name.toLowerCase().includes('encrypt');
+      return calleeEncrypts(callee.name);
     }
     return (
       callee.type === AST_NODE_TYPES.MemberExpression &&
       callee.property.type === AST_NODE_TYPES.Identifier &&
-      callee.property.name.toLowerCase().includes('encrypt')
+      calleeEncrypts(callee.property.name)
     );
   });
 }

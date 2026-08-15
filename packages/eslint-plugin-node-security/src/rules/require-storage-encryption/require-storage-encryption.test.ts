@@ -49,6 +49,7 @@ ruleTester.run('require-storage-encryption: evidence gate', requireStorageEncryp
     // A credential, encrypted on the way out.
     { code: "fs.writeFileSync('creds.json', encrypt(password))" },
     { code: "fs.writeFileSync('creds.json', vault.encryptSync(password))" },
+    { code: "fs.writeFileSync('creds.json', aes256Encrypt(password))" },
     // Client storage is the other rule's subject now.
     { code: "localStorage.setItem('authToken', t)" },
     // Not a write at all.
@@ -63,5 +64,11 @@ ruleTester.run('require-storage-encryption: evidence gate', requireStorageEncryp
     { code: "fs.appendFile('log.txt', authToken)", errors: [{ messageId: 'violationDetected' }] },
     // The filename can be the evidence.
     { code: "fs.writeFileSync('client_secret.json', data)", errors: [{ messageId: 'violationDetected' }] },
+    // `decrypt` CONTAINS `encrypt`. A substring match read this as safely encrypted —
+    // the exact inverse of the truth, and the reason both rules sat in
+    // scripts/lint-name-inference.ts as recorded debt. Matching at a camelCase token
+    // boundary pays it.
+    { code: "fs.writeFileSync('client_secret.json', decrypt(blob))", errors: [{ messageId: 'violationDetected' }] },
+    { code: "fs.appendFileSync('auth_token.log', vault.decryptSync(blob))", errors: [{ messageId: 'violationDetected' }] },
   ],
 });
