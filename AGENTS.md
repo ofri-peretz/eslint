@@ -518,9 +518,20 @@ DEV_ALLOWED_ORIGINS=3000-my-sandbox.example docker compose -f compose.dev.yml up
 `DEV_ALLOWED_ORIGINS` is comma-separated, dev-only, and empty by default —
 unset, the dev server behaves exactly as stock.
 
-**Keep this vendor-neutral.** No provider's name, env-var spelling, port scheme
-or config directory belongs in this repo's build configuration. A sandbox is
-something we try; it does not get to appear in `next.config.mjs`. If a vendor
-needs something this generic hook cannot express, that is a conversation, not a
-commit. `scripts/__tests__/dev-preview-vendor-neutral.test.ts` enforces it.
+Providers get an **overlay**, layered on the repo's own compose file rather than
+replacing it:
+
+```bash
+docker compose -f compose.dev.yml -f sandboxes/<provider>/compose.override.yml up
+```
+
+See [`sandboxes/`](./sandboxes/). The rule is a location, not a prohibition: a
+provider's name, env-var spelling and port scheme may appear **in its own
+overlay** and nowhere else — not in `apps/docs/next.config.mjs`, not in
+`compose.dev.yml`, not in the `Dockerfile`. Anything a sandbox needs from the app
+goes through a generic hook the repo would expose anyway.
+
+That is what keeps trying a provider cheap and leaving one free: adding or
+dropping a sandbox is a change to one directory.
+`scripts/__tests__/dev-preview-vendor-neutral.test.ts` enforces it.
 
