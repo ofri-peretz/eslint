@@ -23,7 +23,7 @@
  * - Trusted XPath libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, isStaticExpression } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -338,6 +338,39 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     const validatedVariables = new Set<string>();
 
     /**
+     * Is this expression assigned to a name whose every use is a proven non-sink?
+     *
+     * The narrow question behind the concatenation report. `false` for anything this file
+     * cannot answer — an expression that is not a declarator initializer, a binding with
+     * no references, a binding it cannot resolve — so silence requires positive evidence
+     * that the string goes somewhere harmless, never merely the absence of evidence that
+     * it does not.
+     */
+    function everyUseAvoidsSink(node: TSESTree.Node): boolean {
+      const declarator = node.parent;
+      if (
+        declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
+        declarator.init !== node ||
+        declarator.id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+
+      // `getDeclaredVariables` answers this from the declarator itself, so there is no
+      // scope walk and no "not found" branch to guard — a walk needs a terminal fallback
+      // that no valid declarator can reach.
+      // A declarator with an Identifier id declares exactly one variable; the cast
+      // records that rather than adding an undefined branch nothing can reach.
+      const [variable] = context.sourceCode.getDeclaredVariables(declarator) as [
+        TSESLint.Scope.Variable,
+      ];
+      const reads = variable.references.filter((ref) => ref.isRead());
+      // No reads at all: the value's destination is unknown, not safe.
+      if (reads.length === 0) return false;
+      return reads.every((ref) => !reachesXpathSink(ref.identifier));
+    }
+
+    /**
      * Does this string actually reach an XPath evaluator?
      *
      * `containsDangerousXpath` is a regex sweep over printed text — `//` or
@@ -428,8 +461,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // The others are unambiguous: `evaluate`, `selectSingleNode` and `selectNodes` name
       // nothing else in common use.
       if (
-        callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier' &&
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
         xpathFunctions.includes(callee.property.name)
       ) {
         if (callee.property.name !== 'select') {
@@ -851,14 +884,35 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // adds ZERO findings — the shapes it targets do not occur there — while closing the
         // gap on the shape it does target. It requires the SINK, so a lookalike string that
         // is never evaluated still reports nothing.
+        // "Not a Literal node" was standing in for "can change", and the two are not the
+        // same question — the substitution this rule was criticised for making with names.
+        // `const id = '42'; xpath.select("//user[@id='" + id + "']", doc)` reports under
+        // the node-type test and must not: nothing can steer `id`. `isStaticExpression`
+        // resolves const bindings, template parts and concatenation through ESLint's own
+        // scope analysis, which is the same helper the four `require`/`RegExp` rules in
+        // this branch moved to.
         const dynamicAtSink =
           reachesXpathSink(node) &&
           operands.some(
             (operand) =>
-              operand.type !== AST_NODE_TYPES.Literal && unvalidated(operand),
+              !isStaticExpression({
+                node: operand,
+                scope: context.sourceCode.getScope(operand),
+              }) && unvalidated(operand),
           );
 
-        if (hasUntrusted || dynamicAtSink) {
+        // `const s = '//u[@id=' + req.params.id + ']'; console.log(s)` reported with no
+        // evaluator anywhere in the file — the string is built and then demonstrably
+        // handed somewhere harmless.
+        //
+        // The fix is NOT "require a sink". A bare `const xpath = "..." + userInput` with
+        // no use at all is unresolved provenance, not proven safety: the variable is
+        // almost certainly evaluated in another module, and this rule cannot see there.
+        // Requiring a sink dropped four such cases, all of them shapes worth reporting.
+        //
+        // So: stay quiet only when the value HAS uses and none of them is a sink. No uses,
+        // or uses this file cannot classify, keeps the finding.
+        if ((hasUntrusted || dynamicAtSink) && !everyUseAvoidsSink(node)) {
           // FALSE POSITIVE REDUCTION
           if (
             safetyChecker.isSafe(node, context) ||

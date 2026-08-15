@@ -879,3 +879,53 @@ ruleTester.run('lock: the select sink needs an xpath receiver', noXpathInjection
     { code: 'xml.selectNodes(userQuery);', errors: 1 },
   ],
 });
+
+/**
+ * Regression lock — two false positives a reviewer found in the rule this branch set out
+ * to fix, both confirmed by measurement before being believed.
+ *
+ * 1. `dynamicAtSink` tested `operand.type !== Literal` as a stand-in for "can change".
+ *    They are not the same question — it is the same substitution this rule was
+ *    criticised for making with NAMES. `const id = '42'` is provably constant and
+ *    reported at a real sink.
+ *
+ * 2. `hasUntrusted` reported a concatenation with no evaluator anywhere in the file.
+ *    Requiring a sink outright was too blunt: a bare `const q = "..." + userInput` with
+ *    no use at all is unresolved provenance, not proven safety — the variable is almost
+ *    certainly evaluated in another module. Silence now needs positive evidence that
+ *    every use goes somewhere harmless.
+ */
+describe('no-xpath-injection: constants and destinations', () => {
+  ruleTester.run('evidence on both halves', noXpathInjection, {
+    valid: [
+      // A provably constant operand cannot be steered, even at a genuine sink.
+      { code: `const id = '42'; xpath.select("//user[@id='" + id + "']", doc);` },
+      { code: `const ID = '42'; const q = "//user[@id='" + ID + "']"; xpath.select(q, doc);` },
+      // Built from a request, then demonstrably handed somewhere harmless.
+      { code: `const s = '//u[@id=' + req.params.id + ']'; console.log(s);` },
+      { code: `const s = '//u[@id=' + req.params.id + ']'; res.send(s);` },
+    ],
+    invalid: [
+      // Declared and never used: destination unknown, which is not safety.
+      {
+        code: `const q = "/users/user[name='" + userInput + "']";`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      // Every use classified, and one of them is a sink.
+      {
+        code: `const q = "//u[@id='" + req.params.id + "']"; console.log(q); xpath.select(q, doc);`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      // Inline at the sink.
+      {
+        code: `xpath.select("//user[@id='" + req.params.id + "']", doc);`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      // A non-constant local at a sink is still dynamic — `userId` resolves to nothing.
+      {
+        code: `xpath.select("//user[@id='" + userId + "']", doc);`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+    ],
+  });
+});
