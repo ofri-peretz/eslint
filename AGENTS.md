@@ -475,3 +475,52 @@ it. Drop the label or mark the PR ready-for-review when you're confident.
 | `TURBO_TEAM`        | var    | Vercel team slug, paired with `TURBO_TOKEN`                            | optional |
 
 All are optional — workflows fall back gracefully when unset.
+
+---
+
+## Local preview of the docs site
+
+The plain path, and the one to use by default:
+
+```bash
+npm run dev --workspace docs   # http://localhost:3000
+```
+
+A container is available for sandboxes and clean-machine checks:
+
+```bash
+docker compose -f compose.dev.yml up
+```
+
+Non-obvious facts both paths depend on:
+
+- **One install at the root.** npm workspaces hoist every workspace's deps.
+  `tsx` is a devDependency of `@interlace/benchmarks` only, and the docs `dev`
+  script relies on it resolving from the hoisted root.
+- **`@interlace/ui` must be built first.** It exports from `dist/`, so
+  `npm run build --workspace @interlace/ui` has to run before `next dev`.
+  `@interlace/benchmarks` exports its `.ts` sources directly and needs no build.
+- **`LEFTHOOK=0` in containers.** The root `prepare` installs git hooks, which
+  are meaningless in a container and fail without a git identity.
+- **`sync-plugin-stats.ts` is local-only.** It reads each plugin's
+  `src/index.ts` and writes `apps/docs/src/data/plugin-stats.json`. No network.
+  The docs `dev` script runs it for you.
+
+### Remote sandboxes
+
+Next blocks unknown hostnames in dev, so a sandbox that serves the preview
+through its own hostname must declare it:
+
+```bash
+DEV_ALLOWED_ORIGINS=3000-my-sandbox.example docker compose -f compose.dev.yml up
+```
+
+`DEV_ALLOWED_ORIGINS` is comma-separated, dev-only, and empty by default —
+unset, the dev server behaves exactly as stock.
+
+**Keep this vendor-neutral.** No provider's name, env-var spelling, port scheme
+or config directory belongs in this repo's build configuration. A sandbox is
+something we try; it does not get to appear in `next.config.mjs`. If a vendor
+needs something this generic hook cannot express, that is a conversation, not a
+commit. `scripts/__tests__/dev-preview-vendor-neutral.test.ts` enforces it.
+
