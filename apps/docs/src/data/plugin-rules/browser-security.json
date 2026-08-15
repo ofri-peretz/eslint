@@ -39,7 +39,7 @@
       "cvss": "",
       "description": "Detects clickjacking vulnerabilities and missing frame protections",
       "typeStatus": "unaware",
-      "recommended": true,
+      "recommended": false,
       "warns": false,
       "fixable": false,
       "hasSuggestions": false,
@@ -694,5 +694,5 @@
     }
   ],
   "totalRules": 46,
-  "lastSynced": "2026-08-13T06:26:08.268Z"
+  "lastSynced": "2026-08-15T18:33:15.699Z"
 }
