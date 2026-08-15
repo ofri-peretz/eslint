@@ -9,6 +9,7 @@
  */
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isNonTransmittingUrl } from '../../utils/loopback-hosts';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -56,7 +57,11 @@ export const noInsecureWebsocket = createRule<RuleOptions, MessageIds>({
           // Check literal string
           if (urlArg && urlArg.type === 'Literal' && 
               typeof urlArg.value === 'string' && 
-              urlArg.value.startsWith('ws://')) {
+              urlArg.value.startsWith('ws://') &&
+              // `ws://localhost:1337` never leaves the machine, so there is no cleartext
+              // transmission to intercept. Shared with no-http-urls and
+              // no-unencrypted-transmission so the three agree on what "local" means.
+              !isNonTransmittingUrl(urlArg.value)) {
             report(node);
           }
           
@@ -72,7 +77,11 @@ export const noInsecureWebsocket = createRule<RuleOptions, MessageIds>({
       
       Literal(node: TSESTree.Literal) {
         // Check for ws:// URLs in string literals
-        if (typeof node.value === 'string' && node.value.startsWith('ws://')) {
+        if (
+          typeof node.value === 'string' &&
+          node.value.startsWith('ws://') &&
+          !isNonTransmittingUrl(node.value)
+        ) {
           report(node);
         }
       },

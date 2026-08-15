@@ -16,6 +16,7 @@ import {
   isTrustworthyLocalUrl,
   isDiscardedUrlBase,
 } from '../../utils/namespace-uris';
+import { isReservedExampleUrl } from '../../utils/loopback-hosts';
 
 type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 
@@ -183,6 +184,13 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // two rules cannot disagree about what "local" means; it covers `::1`,
       // `0.0.0.0` and `*.localhost`, which the `allowedHosts` default misses.
       if (isTrustworthyLocalUrl(value)) {
+        return;
+      }
+
+      // RFC 2606 reserved domains exist so that nothing treats them as a real endpoint.
+      // `redirectUri: 'http://example.com'` was the largest single false-positive shape
+      // for this rule — our highest-volume rule — across the real-source corpus.
+      if (isReservedExampleUrl(value)) {
         return;
       }
 

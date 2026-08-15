@@ -455,3 +455,7 @@ node-security	no-insecure-http-parser	unaware
 node-security	no-unbounded-decompression	unaware	
 node-security	require-aead-tag-verification	unaware	
 browser-security	no-incomplete-url-sanitization	unaware	
+node-security	no-dynamic-algorithm-selection	unaware	
+node-security	no-shell-injection	unaware	
+secure-coding	no-bidi-characters	unaware	
+secure-coding	no-template-injection	unaware	

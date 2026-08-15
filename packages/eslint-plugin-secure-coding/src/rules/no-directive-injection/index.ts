@@ -472,6 +472,22 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             left.property.type === 'Identifier' &&
             left.property.name === 'innerHTML') {
 
+          // A sanitizer call IS the documented fix for this defect, so reporting
+          // `node.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [...] })` tells the
+          // reader to do what they already did. Only skip when the config is not one of the
+          // known-unsafe widenings — findUnsafeSanitizerConfig still catches
+          // `{ ADD_TAGS: ['script'] }` and friends, which are reported elsewhere.
+          const isSanitizedValue =
+            right.type === 'CallExpression' &&
+            right.callee.type === 'MemberExpression' &&
+            right.callee.property.type === 'Identifier' &&
+            right.callee.property.name === 'sanitize' &&
+            findUnsafeSanitizerConfig(right) === null;
+
+          if (isSanitizedValue) {
+            return;
+          }
+
           // Check if right side contains user input
           const rightText = sourceCode.getText(right);
           if (userInputVariables.some(input => rightText.includes(input))) {

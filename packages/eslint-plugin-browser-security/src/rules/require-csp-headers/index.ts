@@ -46,8 +46,37 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-    
+
+    /**
+     * Does this file already install helmet? helmet sets Content-Security-Policy by
+     * default, so it IS the fix this rule recommends — reporting a file that already
+     * calls `app.use(helmet())` tells the reader to do what they have done. The previous
+     * code carried the comment "In real projects, you'd check for helmet middleware" and
+     * reported anyway.
+     *
+     * Detected from the AST (import/require binding), never from printed source.
+     */
+    let helmetInstalled = false;
+
     return {
+      Program() {
+        helmetInstalled = false;
+      },
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (typeof node.source.value === 'string' && /^helmet(\/|$)/.test(node.source.value)) {
+          helmetInstalled = true;
+        }
+      },
+      'CallExpression[callee.name="require"]'(node: TSESTree.CallExpression) {
+        const arg = node.arguments[0];
+        if (
+          arg?.type === 'Literal' &&
+          typeof arg.value === 'string' &&
+          /^helmet(\/|$)/.test(arg.value)
+        ) {
+          helmetInstalled = true;
+        }
+      },
       CallExpression(node: TSESTree.CallExpression) {
         // Detect res.send(html) with HTML content without CSP
         if (node.callee.type === 'MemberExpression' &&
@@ -73,9 +102,10 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
         if (node.callee.type === 'MemberExpression' &&
             node.callee.property.type === 'Identifier' &&
             node.callee.property.name === 'render') {
-          // This is a heuristic - flag render calls as a reminder
-          // In real projects, you'd check for helmet middleware
-          report(node);
+          // Only a reminder when nothing already sets CSP for this app.
+          if (!helmetInstalled) {
+            report(node);
+          }
         }
       },
     };

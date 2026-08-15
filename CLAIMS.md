@@ -21,6 +21,25 @@ A 2026-05-13 audit (see plan file `please-review-our-repository-parsed-catmull.m
 | "Top of leaderboard on the ILB-Arena 40-vuln / 38-safe corpus (1st of 18 plugins tested, 17 security-relevant)" | ilb-arena | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) `summary.leaderboard[0].rank == 1` | 2026-05-13 (re-verified against cited file) |
 | "Next-best plugin scores 66.1% F1 (eslint-plugin-jsdoc)" | ilb-arena (relative ranking) | [2026-05-03.json](benchmarks/results/ilb-arena/2026-05-03.json) `summary.leaderboard[1].f1Score == "66.1%"` | 2026-05-13 (re-verified against cited file) |
 
+### Category comparison (2026-08-14)
+
+| Claim (as it appears in docs/marketing) | Suite | Latest result | Last verified |
+| --- | --- | --- | --- |
+| "100% drop-in parity with eslint-plugin-security — 51/51 live cases on their own RuleTester suite" | ilb-competitor-parity | `node benchmarks/suites/ilb-competitor-parity/run.mjs` — 51/51 weighted, 33 cases excluded via `wont-fix.json`. Away-turf: the corpus is the competitor's own test file, vendored verbatim with attribution | 2026-08-14 |
+| "F1 100% vs 51.4% for the next-best of six community security plugins" | ilb-juliet / self-authored CWE corpus | [2026-08-14.json](benchmarks/results/ilb-juliet/2026-08-14.json) `plugins.interlace.aggregate.f1 == 100`. **Caveat that must ship with it:** fixtures are self-authored, so this is a regression gate as much as a ranking — cite the parity figure above for an independent number | 2026-08-14 |
+| "0.22 false positives per 1k SLOC vs 7.27" | ilb-real-source | [benchmark-2026-08-14.json](benchmarks/results/published/benchmark-2026-08-14.json) — 20 OSS projects, 23,682 files, 2.37M SLOC, every repo pinned to a commit. Derived from measured precision below | 2026-08-14 |
+| "Measured precision ~47% on real open-source code" | ilb-real-source + hand labelling | 20-finding stratified sample, hand-labelled 8 TP / 9 FP / 3 undecidable; rule-level classification weighted by volume covers 1,106 of 1,375 findings. **An extrapolation, not a census** — samples came from ~13 of 20 repos | 2026-08-14 |
+| "eslint-plugin-security measured precision ~20%" | ilb-real-source + hand labelling | 16-finding sample, same method, 3 TP / 12 FP / 1 undecidable. Smaller sample than ours; treat as indicative | 2026-08-14 |
+| "121/121 rules ship a documentation page" | source tree | `packages/eslint-plugin-{secure-coding,browser-security,node-security}/docs/rules/*.md` counted against exported rules | 2026-08-14 |
+
+**Withdrawn / not claimed.** "We replace every community plugin" is **not** a supported claim.
+It holds on the self-authored corpus (every vulnerable fixture any of five competitors detects,
+we also detect — verified fixture by fixture, zero exceptions) and **fails on real source**: a
+file-level check across the 20 projects shows 8.6% overlap with `eslint-plugin-security`,
+because 93% of their output is `detect-object-injection` firing where we deliberately stay
+quiet. "Quieter" is likewise measured against `eslint-plugin-security` only — against
+`eslint-plugin-no-unsanitized` we report *more* (184 vs 127 per 1k files, louder on 4 of 4).
+
 ### ESLint version support
 
 | Claim (as it appears in docs/marketing) | Evidence | Last verified |

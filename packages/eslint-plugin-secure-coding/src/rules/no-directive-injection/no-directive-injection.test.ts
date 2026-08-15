@@ -1151,3 +1151,21 @@ describe('no-directive-injection', () => {
     });
   });
 });
+
+/**
+ * Regression lock — a sanitizer call IS the documented fix for this defect, so reporting
+ * `node.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [...] })` tells the reader to do
+ * what they already did. Only a SAFE config is exempt; findUnsafeSanitizerConfig still
+ * catches widenings such as `{ ADD_TAGS: ['script'] }`.
+ */
+ruleTester.run('lock: sanitized innerHTML is the fix, not the defect', noDirectiveInjection, {
+  valid: [
+    {
+      code: "function r(node, c) { node.innerHTML = DOMPurify.sanitize(c.body, { ALLOWED_TAGS: ['b','i'] }); }",
+    },
+    { code: 'function r(node, c) { node.innerHTML = DOMPurify.sanitize(c.body); }' },
+  ],
+  invalid: [
+    { code: 'function r(node, req) { node.innerHTML = req.body.html; }', errors: 1 },
+  ],
+});

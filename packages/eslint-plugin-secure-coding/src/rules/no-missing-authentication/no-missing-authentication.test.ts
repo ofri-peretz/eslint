@@ -3,7 +3,7 @@
  * CWE-287: Improper Authentication
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noMissingAuthentication } from './index';
 
@@ -361,17 +361,18 @@ describe('no-missing-authentication', () => {
         },
       ],
       invalid: [
-        // Nested but not in auth
+        // Nested but not in auth.
+        // Previously expected TWO errors: one for the `app.use(...)` itself and one for the
+        // nested `app.get`. The first was wrong — `app.use(middleware, fn)` with no path
+        // registers global middleware and cannot be "a route handler missing
+        // authentication". Only the nested unprotected GET is the defect.
         {
           code: `
             app.use(someMiddleware(), () => {
               app.get("/nested/unprotected", (req, res) => {});
             });
           `,
-          errors: [
-            { messageId: 'missingAuthentication' },
-            { messageId: 'missingAuthentication' }
-          ],
+          errors: [{ messageId: 'missingAuthentication' }],
         },
       ],
     });
@@ -507,3 +508,51 @@ describe('no-missing-authentication', () => {
   });
 });
 
+
+/**
+ * Regression locks — each FAILS on the pre-fix rule.
+ *
+ * 1. Path-less `app.use(...)` registers GLOBAL middleware; it is not a route handler, so
+ *    "missing authentication" is meaningless there. The unfixed rule listed 'use' in
+ *    DEFAULT_ROUTE_HANDLER_PATTERNS unconditionally and fired on `app.use(helmet())` —
+ *    24 findings across 8 clean fixtures in benchmarks/corpus, the plugin's single largest
+ *    false-positive source.
+ * 2. The rule called `console.log('DEBUG MSG: ...')` whenever `ignorePatterns` matched.
+ *    That shipped to npm, and stdout writes corrupt the JSON and SARIF formatters.
+ */
+ruleTester.run('lock: path-less app.use() is not a route handler', noMissingAuthentication, {
+  valid: [
+    { code: 'app.use(helmet());' },
+    { code: 'app.use(rateLimit({ windowMs: 60000, max: 100 }));' },
+    { code: 'app.use(express.json());' },
+    { code: 'app.use((err, req, res, next) => { res.status(500).end(); });' },
+  ],
+  invalid: [
+    // A PATH-mounted use still addresses a route, so it is still checked.
+    {
+      code: 'app.use("/admin", (req, res) => {});',
+      errors: [{ messageId: 'missingAuthentication' }],
+    },
+  ],
+});
+
+describe('lock: the rule never writes to stdout', () => {
+  it('stays silent when ignorePatterns matches', async () => {
+    const { Linter } = await import('eslint');
+    const written: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => void written.push(args.join(' '));
+    try {
+      new Linter().verify('app.get("/health", (req, res) => res.send("ok"));', [
+        {
+          plugins: { sc: { rules: { 'no-missing-authentication': noMissingAuthentication } } },
+          languageOptions: { ecmaVersion: 'latest' as const },
+          rules: { 'sc/no-missing-authentication': ['error', { ignorePatterns: ['health'] }] },
+        },
+      ]);
+    } finally {
+      console.log = original;
+    }
+    expect(written).toEqual([]);
+  });
+});

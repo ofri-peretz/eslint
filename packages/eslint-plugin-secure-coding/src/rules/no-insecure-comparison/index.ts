@@ -277,7 +277,21 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         if (isLengthComparison(node.left) || isLengthComparison(node.right)) {
           return; // Length checks are safe and recommended
         }
-        
+
+        // SKIP: comparison against a boolean / null / undefined literal. A timing attack
+        // needs a secret on BOTH sides — you cannot learn a secret by discovering how many
+        // characters of `true` matched. `verifyToken(t).valid === true` is a boolean check
+        // that happens to sit on an identifier the secret-name heuristic likes.
+        const isNonSecretLiteral = (expr: TSESTree.Expression): boolean =>
+          (expr.type === AST_NODE_TYPES.Literal &&
+            (typeof expr.value === 'boolean' || expr.value === null)) ||
+          (expr.type === AST_NODE_TYPES.Identifier && expr.name === 'undefined');
+
+        if (isNonSecretLiteral(node.left) || isNonSecretLiteral(node.right)) {
+          return;
+        }
+
+
         const leftText = sourceCode.getText(node.left);
         const rightText = sourceCode.getText(node.right);
         

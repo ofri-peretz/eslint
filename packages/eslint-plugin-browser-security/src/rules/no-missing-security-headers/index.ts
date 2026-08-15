@@ -39,6 +39,21 @@ const DEFAULT_REQUIRED_HEADERS = [
 ];
 
 /**
+ * Headers whose presence says nothing about serving a document — transport, caching and
+ * redirect concerns. A scope that sets ONLY these is not rendering markup.
+ */
+const NON_DOCUMENT_HEADERS = new Set([
+  'Set-Cookie',
+  'Cache-Control',
+  'Location',
+  'Content-Disposition',
+  'ETag',
+  'Last-Modified',
+  'Expires',
+  'Vary',
+]);
+
+/**
  * Extract header name from setHeader call
  */
 function extractHeaderName(node: TSESTree.CallExpression): string | null {
@@ -107,9 +122,23 @@ function checkFunctionForSecurityHeaders(
   // above) the Program node itself.
   collectHeaders(scopeNode);
 
+  // CSP / X-Frame-Options / X-Content-Type-Options protect a RENDERED DOCUMENT. If the only
+  // headers this scope touches are transport/caching concerns, there is no document to frame
+  // or inject into and demanding them is noise — the rule fired on a plain
+  // `res.setHeader('Set-Cookie', ...)` helper that renders nothing.
+  //
+  // Deliberately narrow: an EARLIER attempt required proof of a `res.send`/`render` call in
+  // scope, which broke 9 tests. A RuleTester snippet sets a header without sending anything
+  // because the snippet is truncated, not because the handler serves no document — absence
+  // of a send call is not evidence of absence of a document.
+  if (setHeaders.size > 0 && [...setHeaders].every((h) => NON_DOCUMENT_HEADERS.has(h))) {
+    return [];
+  }
+
   // Return missing headers
   return requiredHeaders.filter(header => !setHeaders.has(header));
 }
+
 
 export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-security-headers',

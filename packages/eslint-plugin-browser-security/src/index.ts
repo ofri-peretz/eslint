@@ -181,7 +181,7 @@ withCanonicalDocsUrls('plugin-browser-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-browser-security',
-    version: '1.3.2',
+    version: '1.4.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -252,7 +252,11 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Kept exported and opt-in-able: a team that wants CWE-311 reported
   // separately from CWE-319 can enable it explicitly and accept the doubling.
   'browser-security/no-allow-arbitrary-loads': 'error',
-  'browser-security/no-clickjacking': 'error',
+  // `no-clickjacking` is DEPRECATED (meta.replacedBy -> eslint-plugin-express-security/
+  // require-helmet) and must not ship in `recommended`: a preset that turns on a rule we are
+  // telling people to stop using is a contradiction, and it was the only deprecated rule in
+  // any of our recommended sets. Still exported, so an explicit enable keeps working until
+  // the next major removes it.
   'browser-security/no-credentials-in-query-params': 'error',
   'browser-security/no-http-urls': 'error',
   'browser-security/no-incomplete-url-sanitization': 'error',
