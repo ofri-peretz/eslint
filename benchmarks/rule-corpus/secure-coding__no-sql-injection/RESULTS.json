@@ -1,0 +1,62 @@
+{
+  "rule": "secure-coding/no-sql-injection",
+  "fixtures": 14,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-sql-injection",
+      "tp": 7,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1,
+      "recall": 0.875,
+      "f1": 0.9333333333333333,
+      "crashes": [],
+      "missed": [
+        "vulnerable/08-template-fn.js"
+      ],
+      "falsePositives": []
+    },
+    {
+      "name": "sonarjs [sql-queries]",
+      "tp": 0,
+      "fp": 0,
+      "fn": 8,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "crashes": [],
+      "missed": [
+        "vulnerable/01-local-db-module.js",
+        "vulnerable/02-local-db-concat.js",
+        "vulnerable/03-local-db-execute.js",
+        "vulnerable/04-ts-cast.ts",
+        "vulnerable/05-injected-handle.js",
+        "vulnerable/06-service-class.js",
+        "vulnerable/07-variable-hop.js",
+        "vulnerable/08-template-fn.js"
+      ],
+      "falsePositives": []
+    },
+    {
+      "name": "eslint-plugin-security [detect-object-injection]",
+      "tp": 0,
+      "fp": 0,
+      "fn": 8,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "crashes": [],
+      "missed": [
+        "vulnerable/01-local-db-module.js",
+        "vulnerable/02-local-db-concat.js",
+        "vulnerable/03-local-db-execute.js",
+        "vulnerable/04-ts-cast.ts",
+        "vulnerable/05-injected-handle.js",
+        "vulnerable/06-service-class.js",
+        "vulnerable/07-variable-hop.js",
+        "vulnerable/08-template-fn.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

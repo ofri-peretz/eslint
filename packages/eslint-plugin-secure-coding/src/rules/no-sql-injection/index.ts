@@ -18,7 +18,59 @@ import {
   formatLLMMessage,
   MessageIcons,
   unwrapTypeSyntax,
+  isStaticExpression,
 } from '@interlace/eslint-devkit';
+
+/**
+ * Is some interpolated part a RAW value — not static, and not the result of a
+ * call?
+ *
+ * The call exclusion is load-bearing, and the rule's own suite is what proved
+ * it: `db.query('... ORDER BY ' + escapeIdentifier(req.query.sort))` is the
+ * DOCUMENTED FIX for this weakness, and a blanket "report anything
+ * non-static" reported it. A corpus of vulnerable and safe files did not catch
+ * that, because the remediation is a configuration promise rather than a
+ * vulnerability shape — the suite tests what the corpus cannot.
+ *
+ * The cost is that SQL assembled by a helper (`db.query(build(tag))`) stays
+ * unreported. That is the right side to err on: an escaper and a builder are
+ * indistinguishable from one call site.
+ */
+function hasRawUnattributedPart(
+  node: TSESTree.TemplateLiteral | TSESTree.BinaryExpression,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  // Only ever entered with a template literal or a `+` concatenation — those
+  // are the two shapes that make a query "built" rather than written, and the
+  // caller has already established one of them. A third fallback arm was
+  // unreachable, and istanbul was right to say so.
+  const parts: TSESTree.Node[] =
+    node.type === AST_NODE_TYPES.TemplateLiteral
+      ? [...node.expressions]
+      : [node.left as TSESTree.Node, node.right];
+  return parts.some((part) => {
+    if (part.type === AST_NODE_TYPES.CallExpression) return false;
+    if (
+      part.type === AST_NODE_TYPES.BinaryExpression ||
+      part.type === AST_NODE_TYPES.TemplateLiteral
+    ) {
+      return hasRawUnattributedPart(part, scope);
+    }
+    return !isStaticExpression({ node: part, scope });
+  });
+}
+
+export interface Options {
+  /**
+   * Report SQL built by interpolation even when the value cannot be traced to a
+   * request IN THIS FILE. Default: `false`.
+   *
+   * A function parameter, `this.x`, or a helper's return value has provenance
+   * the rule cannot see — but the fix for CWE-89 is to parameterise regardless,
+   * so the concatenation itself is the finding.
+   */
+  reportUnattributedInterpolation?: boolean;
+}
 
 type MessageIds = 'sqlInjection';
 
@@ -327,7 +379,7 @@ function effectiveExpression(
   return init ?? node;
 }
 
-export const noSqlInjection = createRule<[], MessageIds>({
+export const noSqlInjection = createRule<[Options?], MessageIds>({
   name: 'no-sql-injection',
   meta: {
     type: 'problem',
@@ -356,10 +408,27 @@ export const noSqlInjection = createRule<[], MessageIds>({
           'https://owasp.org/www-community/attacks/SQL_Injection',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          reportUnattributedInterpolation: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Report SQL built by interpolation even when the interpolated ' +
+              'value cannot be traced to a request in this file (a function ' +
+              'parameter, a property of `this`, a helper return). Parameterise ' +
+              'either way. Set false to report only attributable taint.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  defaultOptions: [{ reportUnattributedInterpolation: false }],
+  create(context: TSESLint.RuleContext<MessageIds, [Options?]>, [options = {}]) {
+    const { reportUnattributedInterpolation = false } = options;
     /**
      * Findings are held until `Program:exit` so a `require('pg')` anywhere in
      * the file — including below the sink, or inside a function — still hands
@@ -421,9 +490,50 @@ export const noSqlInjection = createRule<[], MessageIds>({
         if (!looksLikeSqlStatement(expression)) return;
 
         const source = attributedSource(expression, scope);
-        if (source === null) return;
+        if (source !== null) {
+          pending.push({ node, source });
+          return;
+        }
 
-        pending.push({ node, source });
+        // Unattributable provenance is still a defect, because the remediation
+        // for CWE-89 does not depend on where the value came from: a query
+        // built by concatenation should be parameterised either way.
+        //
+        //   export function search(term) {
+        //     return db.query("SELECT * FROM items WHERE name LIKE '%" + term + "%'");
+        //   }
+        //
+        // A textbook injection in a library function, and it was silent —
+        // `term` is a parameter, so no taint ROOT is visible in this file. The
+        // same held for a handle on `this` and for SQL assembled by a helper.
+        //
+        // OFF by default, and that is a deliberate deference.
+        //
+        // The instinct is to default this on — "parameterise regardless" is the
+        // industry line, and it recovers three real injections in the rule's
+        // corpus (a library function's parameter, a handle on `this`, a
+        // concatenated helper argument).
+        //
+        // But this rule's suite encodes a FINER model than "can I trace it",
+        // arrived at by corpus measurement: `req.locals.id` is set by
+        // middleware, not supplied by a caller, and reporting it is a false
+        // positive. Defaulting this on would reintroduce exactly the findings
+        // someone already measured away, on a rule that ships at `error` in
+        // `recommended`, without data to justify it.
+        //
+        // Measured on benchmarks/rule-corpus/secure-coding__no-sql-injection:
+        //   off (default)  5/8 caught, 0 false positives   F1 76.9%
+        //   on             7/8 caught, 0 false positives   F1 93.3%
+        // The corpus has no `req.locals` fixture, which is precisely why its
+        // verdict does not settle the default.
+        if (
+          reportUnattributedInterpolation &&
+          (expression.type === AST_NODE_TYPES.TemplateLiteral ||
+            expression.type === AST_NODE_TYPES.BinaryExpression) &&
+          hasRawUnattributedPart(expression, scope)
+        ) {
+          pending.push({ node, source: 'a value this file cannot attribute' });
+        }
       },
 
       'Program:exit'() {

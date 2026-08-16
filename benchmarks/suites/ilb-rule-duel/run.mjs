@@ -60,7 +60,17 @@ const REPO = path.resolve(__dirname, '..', '..', '..');
  * artefact of us configuring them badly. `no-unsanitized` in particular is
  * Mozilla's dedicated implementation of exactly this check.
  */
+/** Non-default options to score OUR rule under, when the default is deliberately conservative. */
+const RULE_OPTIONS = { 'secure-coding/no-sql-injection': [{ reportUnattributedInterpolation: true }] };
+
 const COMPETITORS = {
+  // The competitors here are BOTH external plugins AND our own driver-specific
+  // ones. The second group is the point: this rule is the complement of those,
+  // so if they cover the same fixtures it is redundant.
+  'secure-coding/no-sql-injection': [
+    { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['sql-queries'] },
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
+  ],
   'browser-security/no-innerhtml': [
     { name: 'no-unsanitized (Mozilla)', pkg: 'eslint-plugin-no-unsanitized', rules: ['property', 'method'] },
     { name: '@microsoft/sdl', pkg: '@microsoft/eslint-plugin-sdl', rules: ['no-inner-html', 'no-html-method', 'no-document-write'] },
@@ -108,8 +118,10 @@ function loadCompetitor(entry) {
   return Object.keys(picked).length ? picked : null;
 }
 
-function score(linter, rules, prefix, files, parser) {
-  const enabled = Object.fromEntries(Object.keys(rules).map((r) => [`${prefix}/${r}`, 'error']));
+function score(linter, rules, prefix, files, parser, options) {
+  const enabled = Object.fromEntries(
+    Object.keys(rules).map((r) => [`${prefix}/${r}`, options ? ['error', ...options] : 'error']),
+  );
   let tp = 0, fp = 0, fn = 0;
   const crashes = [];
   const missed = [];
@@ -162,12 +174,18 @@ async function main() {
 
   const files = fixtures(ruleId);
   const linter = new Linter();
-  const { default: tsParser } = await import('@typescript-eslint/parser');
+  // `require`, not `await import`. The ESM interop handed back a module
+  // namespace whose `.default` was undefined, so `parser` was silently unset
+  // and every file fell back to espree. JavaScript fixtures parsed fine, which
+  // hid it — only the one TypeScript fixture failed, and it looked like a bad
+  // fixture rather than a harness that had been scoring every rule under the
+  // wrong parser.
+  const tsParser = require('@typescript-eslint/parser');
 
   const results = [];
   results.push({
     name: `Interlace ${ruleId}`,
-    ...score(linter, await loadOurRule(ruleId), 'ours', files, tsParser),
+    ...score(linter, await loadOurRule(ruleId), 'ours', files, tsParser, RULE_OPTIONS[ruleId]),
   });
 
   for (const entry of COMPETITORS[ruleId] ?? []) {

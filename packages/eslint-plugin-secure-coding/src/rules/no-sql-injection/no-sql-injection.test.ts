@@ -356,3 +356,66 @@ ruleTester.run('no-sql-injection-ts-cast-taint', noSqlInjection, {
     },
   ],
 });
+
+/**
+ * REGRESSION LOCK — the corpus cases, and the option that recovers them.
+ *
+ * benchmarks/rule-corpus/secure-coding__no-sql-injection/ exists to answer one
+ * product question: does this rule earn its place when the ecosystem ships nine
+ * driver-specific SQL plugins?
+ *
+ * Measured answer: yes, and exclusively. Every vulnerable fixture gets its
+ * handle from the application's own module (`../lib/db`), so no driver import
+ * exists in the file and `postgresql-security/no-unsafe-query` reports ZERO on
+ * all of them. sonarjs and eslint-plugin-security also report zero. This rule
+ * is the only thing covering the shape most applications actually write.
+ *
+ *   default                              5/8 caught, 0 FP   F1 76.9%
+ *   reportUnattributedInterpolation      7/8 caught, 0 FP   F1 93.3%
+ */
+ruleTester.run('no-sql-injection-corpus-locks', noSqlInjection, {
+  valid: [
+    // The documented fix must never report, at EITHER setting. This is why the
+    // strict mode excludes call results: an escaper and a builder look the same
+    // from the call site.
+    {
+      code: "db.query('SELECT * FROM users ORDER BY ' + escapeIdentifier(req.query.sort));",
+      options: [{ reportUnattributedInterpolation: true }],
+    },
+    // Server-set, not caller-supplied — the distinction the default preserves.
+    {
+      code: "db.query('SELECT * FROM users WHERE id = ' + req.locals.id);",
+    },
+    // Parameterised, and folded constants.
+    "import { db } from '../lib/db'; db.query('SELECT * FROM users WHERE email = $1', [req.query.email]);",
+    "import { db } from '../lib/db'; const T = 'users'; db.query(`SELECT * FROM ${T} WHERE active = true`);",
+  ],
+  invalid: [
+    {
+      // Template-literal form of the strict mode — covers the TemplateLiteral
+      // arm of hasRawUnattributedPart, which the concatenation cases never reach.
+      code: 'function q(tag) { return db.query(`SELECT * FROM logs WHERE tag = ${tag}`); }',
+      options: [{ reportUnattributedInterpolation: true }],
+      errors: [{ messageId: 'sqlInjection' }],
+    },
+    {
+      // NESTED concatenation inside a template — the recursive arm.
+      code: 'function q(a, b) { return db.query(`SELECT * FROM t WHERE x = ${a + b}`); }',
+      options: [{ reportUnattributedInterpolation: true }],
+      errors: [{ messageId: 'sqlInjection' }],
+    },
+    {
+      // The shape no SDK plugin can see: handle from the app's own module.
+      code: "import { db } from '../lib/db'; db.query(`SELECT * FROM users WHERE email = '${req.query.email}'`);",
+      errors: [{ messageId: 'sqlInjection' }],
+    },
+    {
+      // A library function's parameter — silent by default, recovered by the
+      // option. Kept as an explicit case so the trade is visible in the suite
+      // rather than only in a benchmark file.
+      code: "function findUser(userId) { return db.query('SELECT * FROM users WHERE id = ' + userId); }",
+      options: [{ reportUnattributedInterpolation: true }],
+      errors: [{ messageId: 'sqlInjection' }],
+    },
+  ],
+});
