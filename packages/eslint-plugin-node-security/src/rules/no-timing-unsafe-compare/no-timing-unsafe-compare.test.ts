@@ -419,3 +419,50 @@ ruleTester.run('no-timing-unsafe-compare-ts-cast-taint', noTimingUnsafeCompare, 
     },
   ],
 });
+
+/**
+ * `secretPatterns` — the option no test had ever set, so the branch that
+ * compiles a user vocabulary shipped unexecuted.
+ *
+ * The pairs below are the same source under the default and under the option,
+ * with opposite verdicts. Both directions are covered, because this option can
+ * make the rule stricter OR quieter and both are things a project does:
+ *
+ *  - WIDENING. `key` is deliberately absent from the defaults — substring
+ *    matched it hits `firstKey`, `keys` and every AST walker's
+ *    `key === 'text'`, 88 findings on this repo alone. A project whose `key`
+ *    really is a secret adds it back here, which is exactly what the note on
+ *    DEFAULT_SECRET_PATTERNS says the option is for.
+ *  - NARROWING. Replacing the list with a shorter one drops names the defaults
+ *    carried.
+ *
+ * `secretPatterns` REPLACES the built-in list rather than extending it — the
+ * narrowing case is what pins that, and it is the behaviour a reader has to
+ * know before writing a config.
+ */
+ruleTester.run('no-timing-unsafe-compare — secretPatterns', noTimingUnsafeCompare, {
+  valid: [
+    // CONTROL for widening: `key` is not a default pattern, so the untainted-
+    // side name is not read as a secret and nothing is reported.
+    `const supplied = req.headers['x-key']; if (supplied === accountKey) { ok(); }`,
+    // NARROWING: a list without `token` silences a comparison the defaults
+    // report — proof the option REPLACES rather than extends.
+    {
+      code: `const supplied = req.headers['x-token']; if (supplied === sessionToken) { ok(); }`,
+      options: [{ secretPatterns: ['passphrase'] }],
+    },
+  ],
+  invalid: [
+    // WIDENING: adding `key` makes the identical first valid case report.
+    {
+      code: `const supplied = req.headers['x-key']; if (supplied === accountKey) { ok(); }`,
+      options: [{ secretPatterns: ['key'] }],
+      errors: [{ messageId: 'timingUnsafeCompare' }],
+    },
+    // CONTROL for narrowing: identical source, default options.
+    {
+      code: `const supplied = req.headers['x-token']; if (supplied === sessionToken) { ok(); }`,
+      errors: [{ messageId: 'timingUnsafeCompare' }],
+    },
+  ],
+});

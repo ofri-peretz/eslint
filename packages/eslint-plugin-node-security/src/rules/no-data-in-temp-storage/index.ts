@@ -145,11 +145,20 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
           tempPaths: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Custom list of temporary paths to flag'
+            // `create()` does `options.tempPaths || DEFAULT_TEMP_PATHS`, so the
+            // built-ins are the default AND setting this REPLACES them — unlike
+            // the `extra*` options elsewhere in this plugin, which extend.
+            // Note the `||`: an explicit `[]` is falsy and falls back to the
+            // built-ins rather than disabling the rule. The destructuring is
+            // the truth; this default records it.
+            default: DEFAULT_TEMP_PATHS,
+            description:
+              'Temporary path prefixes to flag. Replaces the built-in list rather than extending it.'
           },
           ignoreFiles: {
             type: 'array',
             items: { type: 'string' },
+            default: [],
             description: 'List of files or patterns to ignore'
           }
         },

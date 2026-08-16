@@ -16,7 +16,12 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 type MessageIds = 'violationDetected';
 
 export interface Options {
-  packageManager?: 'npm' | 'yarn' | 'pnpm';
+  /**
+   * Package manager whose lock file is required. Default: `'any'`, which
+   * accepts whichever of the three is present. Omitting the option and writing
+   * `'any'` are the same thing.
+   */
+  packageManager?: 'any' | 'npm' | 'yarn' | 'pnpm';
 }
 
 type RuleOptions = [Options?];
@@ -57,7 +62,16 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
         properties: {
           packageManager: {
             type: 'string',
-            enum: ['npm', 'yarn', 'pnpm'], description: 'Package manager whose lock file is required'
+            // `'any'` is a real value here, not filler. The behaviour it names
+            // — accept whichever of the three lock files is present — was
+            // already the default, but it was reachable only by OMITTING the
+            // option, so it could not be spelled and the schema could not
+            // declare a default. Naming it makes the default expressible and
+            // lets a config say "any" out loud; `undefined` still maps to it.
+            enum: ['any', 'npm', 'yarn', 'pnpm'],
+            default: 'any',
+            description:
+              'Package manager whose lock file is required. `any` accepts package-lock.json, yarn.lock or pnpm-lock.yaml — the right setting for a repo that has not standardised.',
           },
         },
         additionalProperties: false,
@@ -70,7 +84,9 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
     const path = require('node:path');
 
     const options = context.options[0] || {};
-    const userPackageManager = options.packageManager;
+    // Omitting the option and writing `'any'` mean the same thing, so the
+    // schema's `default: 'any'` and this line agree by construction.
+    const packageManager: string = options.packageManager ?? 'any';
 
     const lockFiles: Record<string, string> = {
       npm: 'package-lock.json',
@@ -78,17 +94,17 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
       pnpm: 'pnpm-lock.yaml',
     };
 
-    // When no packageManager is configured, accept ANY of the three common
-    // lock files. Otherwise look only for the configured one. This avoids
-    // firing on every file in a pnpm/yarn monorepo just because the rule
-    // defaulted to looking for package-lock.json.
-    const targetLockFiles = userPackageManager
-      ? [lockFiles[userPackageManager]]
+    // Under `any`, accept ANY of the three common lock files; otherwise look
+    // only for the configured one. This avoids firing on every file in a
+    // pnpm/yarn monorepo just because the rule defaulted to package-lock.json.
+    const specific = packageManager !== 'any';
+    const targetLockFiles = specific
+      ? [lockFiles[packageManager]]
       : Object.values(lockFiles);
-    const targetLockFile = userPackageManager
-      ? lockFiles[userPackageManager]
+    const targetLockFile = specific
+      ? lockFiles[packageManager]
       : 'package-lock.json | yarn.lock | pnpm-lock.yaml';
-    const reportedManager = userPackageManager ?? 'any';
+    const reportedManager = packageManager;
 
     /**
      * The nearest ancestor directory containing any of `names`.

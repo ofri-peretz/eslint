@@ -72,6 +72,64 @@ describe('no-dynamic-require', () => {
     });
   });
 
+  /**
+   * `allowPatterns` — declared in `Options`, in `meta.schema` and in
+   * `defaultOptions`, and read by NOTHING. `create()` destructured
+   * `allowContexts` alone, so a consumer who configured `allowPatterns` got no
+   * suppression and no complaint about it either.
+   *
+   * The pairs below are the proof that it now does something: the SAME source
+   * reports under the default and is silent with the option set. A case that
+   * came out the same either way would execute the line without proving the
+   * branch decides anything.
+   */
+  describe('Valid Code - allowPatterns', () => {
+    ruleTester.run('valid - suppressed by allowPatterns', noDynamicRequire, {
+      valid: [
+        // The i18n loader, the archetypal deliberate dynamic require.
+        {
+          code: 'const messages = require(`./locales/${lang}.json`);',
+          options: [{ allowPatterns: ['^`\\./locales/'] }],
+        },
+        // A pattern that matches an identifier argument.
+        {
+          code: 'const mod = require(pluginName);',
+          options: [{ allowPatterns: ['pluginName'] }],
+        },
+        // Several patterns, second one matching.
+        {
+          code: 'const mod = require(config.pluginPath);',
+          options: [{ allowPatterns: ['^nope$', 'pluginPath'] }],
+        },
+      ],
+      invalid: [
+        // CONTROL for case 1: the identical source, no option — reports.
+        {
+          code: 'const messages = require(`./locales/${lang}.json`);',
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        // CONTROL for case 2.
+        {
+          code: 'const mod = require(pluginName);',
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        // The option is set but matches nothing — the report survives, so an
+        // empty-ish allowlist cannot silently disable the rule.
+        {
+          code: 'const mod = require(config.pluginPath);',
+          options: [{ allowPatterns: ['^themes/'] }],
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        // An empty array is the default and must behave like the default.
+        {
+          code: 'const mod = require(moduleName);',
+          options: [{ allowPatterns: [] }],
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - Dynamic requires', () => {
     ruleTester.run('invalid - dynamic patterns', noDynamicRequire, {
       valid: [],

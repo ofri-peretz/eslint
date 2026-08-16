@@ -18,8 +18,7 @@ import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES,
 import { constLiteralOf, makeReadsTaintSource } from '../../utils/provenance';
 
 type MessageIds =
-  | 'timingUnsafeCompare'
-  | 'useTimingSafeEqual';
+  | 'timingUnsafeCompare';
 
 export interface Options {
   /**
@@ -281,7 +280,6 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-208',
       cvss: 5.9,
     },
-    hasSuggestions: true,
     messages: {
       timingUnsafeCompare: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -292,14 +290,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         fix: 'Use crypto.timingSafeEqual() for constant-time comparison',
         documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
-      useTimingSafeEqual: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use timingSafeEqual',
-        description: 'Use constant-time comparison to prevent timing attacks',
-        severity: 'LOW',
-        fix: 'crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
-      }),
+
     },
     schema: [
       {
@@ -459,12 +450,6 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'timingUnsafeCompare',
-          suggest: [
-            {
-              messageId: 'useTimingSafeEqual',
-              fix: () => null, // Complex refactoring
-            },
-          ],
         });
       }
     }

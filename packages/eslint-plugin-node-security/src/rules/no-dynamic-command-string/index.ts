@@ -198,8 +198,12 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
           extraCommandRunners: {
             type: 'array',
             items: { type: 'string' },
+            // `[]`, matching `...(extraCommandRunners ?? [])` in `create()`. The
+            // built-in COMMAND_RUNNERS are always in the set; this option adds
+            // to them, so the default is the empty addition.
+            default: [],
             description:
-              'Extra functions that accept a full command line without escaping',
+              'Extra functions that accept a full command line without escaping. Added to the built-in runners, not a replacement for them.',
           },
         },
         additionalProperties: false,

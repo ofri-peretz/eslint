@@ -124,8 +124,13 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
           extraRequestRoots: {
             type: 'array',
             items: { type: 'string' },
+            // `[]`, matching `...(extraRequestRoots ?? [])` in `create()`. The
+            // rule's built-in roots live in DEFAULT_REQUEST_ROOTS and are always
+            // added; this option EXTENDS that set, it does not replace it, so
+            // the default here is the empty extension rather than the built-ins.
+            default: [],
             description:
-              'Extra identifiers to treat as roots of request-controlled data',
+              'Extra identifiers to treat as roots of request-controlled data. Added to the built-in roots, not a replacement for them.',
           },
         },
         additionalProperties: false,

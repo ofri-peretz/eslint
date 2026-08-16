@@ -53,7 +53,7 @@ import {
   AST_NODE_TYPES,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unhandledStreamError' | 'attachErrorListener' | 'usePipeline';
+type MessageIds = 'unhandledStreamError';
 
 export interface Options {
   /** Allow unhandled stream errors in test files. Default: true */
@@ -112,7 +112,6 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-248',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       unhandledStreamError: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -124,24 +123,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         fix: "Attach stream.on('error', handler) before piping, or use pipeline(), which destroys every stream and reports the failure.",
         documentationLink: 'https://cwe.mitre.org/data/definitions/248.html',
       }),
-      attachErrorListener: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: "Attach an 'error' listener",
-        description: "Name the stream and handle 'error' before piping",
-        severity: 'LOW',
-        fix: "const s = fs.createReadStream(p); s.on('error', next); s.pipe(res);",
-        documentationLink:
-          'https://nodejs.org/api/stream.html#readablepipedestination-options',
-      }),
-      usePipeline: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use pipeline()',
-        description: 'pipeline() propagates errors and destroys every stream',
-        severity: 'LOW',
-        fix: "await pipeline(fs.createReadStream(p), res)  // 'stream/promises'",
-        documentationLink:
-          'https://nodejs.org/api/stream.html#streampipelinesource-transforms-destination-callback',
-      }),
+
     },
     schema: [
       {
@@ -248,10 +230,6 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           context.report({
             node: offender,
             messageId: 'unhandledStreamError',
-            suggest: [
-              { messageId: 'attachErrorListener', fix: () => null },
-              { messageId: 'usePipeline', fix: () => null },
-            ],
           });
         }
       },
