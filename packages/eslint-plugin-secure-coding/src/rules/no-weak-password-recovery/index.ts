@@ -28,22 +28,11 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'weakPasswordRecovery'
   | 'missingRateLimit'
   | 'predictableRecoveryToken'
-  | 'unlimitedRecoveryAttempts'
   | 'insufficientTokenEntropy'
   | 'missingTokenExpiration'
-  | 'recoveryLoggingSensitiveData'
-  | 'weakRecoveryVerification'
-  | 'tokenReuseVulnerability'
-  | 'implementRateLimiting'
-  | 'useCryptographicallySecureTokens'
-  | 'implementTokenExpiration'
-  | 'secureRecoveryFlow'
-  | 'strategyMultiFactor'
-  | 'strategyOutOfBandVerification'
-  | 'strategyTimeBoundTokens';
+  | 'recoveryLoggingSensitiveData';
 
 export interface Options extends SecurityRuleOptions {
   /** Minimum token entropy bits */
@@ -85,15 +74,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-640',
     },
     messages: {
-      weakPasswordRecovery: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Weak Password Recovery',
-        cwe: 'CWE-640',
-        description: 'Password recovery mechanism has security weaknesses',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
-      }),
       missingRateLimit: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Rate Limit',
@@ -110,15 +90,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         description: 'Recovery token can be predicted or guessed',
         severity: 'CRITICAL',
         fix: 'Use cryptographically secure random tokens',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
-      }),
-      unlimitedRecoveryAttempts: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unlimited Recovery Attempts',
-        cwe: 'CWE-640',
-        description: 'No limit on password recovery attempts',
-        severity: 'MEDIUM',
-        fix: 'Limit recovery attempts per time period',
         documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
       }),
       insufficientTokenEntropy: formatLLMMessage({
@@ -148,80 +119,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         fix: 'Never log passwords, tokens, or sensitive recovery data',
         documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
       }),
-      weakRecoveryVerification: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Weak Recovery Verification',
-        cwe: 'CWE-640',
-        description: 'Recovery request verification is insufficient',
-        severity: 'HIGH',
-        fix: 'Require strong verification (email + SMS, security questions)',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
-      }),
-      tokenReuseVulnerability: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Token Reuse Vulnerability',
-        cwe: 'CWE-640',
-        description: 'Recovery tokens can be reused',
-        severity: 'HIGH',
-        fix: 'Mark tokens as used after successful recovery',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
-      }),
-      implementRateLimiting: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Implement Rate Limiting',
-        description: 'Add rate limiting to recovery endpoints',
-        severity: 'LOW',
-        fix: 'Limit recovery attempts to 5 per hour per IP/user',
-        documentationLink: 'https://owasp.org/www-community/attacks/Brute_force_attack',
-      }),
-      useCryptographicallySecureTokens: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Cryptographically Secure Tokens',
-        description: 'Generate tokens with crypto.randomBytes()',
-        severity: 'LOW',
-        fix: 'const token = crypto.randomBytes(32).toString("hex");',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptorandombytessize-callback',
-      }),
-      implementTokenExpiration: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Implement Token Expiration',
-        description: 'Set reasonable token expiration times',
-        severity: 'LOW',
-        fix: 'Expire tokens after 15-60 minutes',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
-      }),
-      secureRecoveryFlow: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Secure Recovery Flow',
-        description: 'Implement secure password recovery flow',
-        severity: 'LOW',
-        fix: 'Verify identity, send secure link, require current password',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html',
-      }),
-      strategyMultiFactor: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Multi-Factor Strategy',
-        description: 'Require multiple verification factors',
-        severity: 'LOW',
-        fix: 'Email + SMS verification for password recovery',
-        documentationLink: 'https://owasp.org/www-community/attacks/Brute_force_attack',
-      }),
-      strategyOutOfBandVerification: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Out-of-Band Verification Strategy',
-        description: 'Use out-of-band verification channels',
-        severity: 'LOW',
-        fix: 'Send recovery codes via SMS or authenticator app',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html',
-      }),
-      strategyTimeBoundTokens: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Time-Bound Tokens Strategy',
-        description: 'Use time-bound recovery tokens',
-        severity: 'LOW',
-        fix: 'Tokens expire quickly and can only be used once',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
-      })
     },
     schema: [
       {

@@ -20,7 +20,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'sensitiveCookieJs' | 'useHttpOnlyCookie';
+type MessageIds = 'sensitiveCookieJs';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -83,7 +83,6 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1004',
       cvss: 8.1,
     },
-    hasSuggestions: true,
     messages: {
       sensitiveCookieJs: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -98,16 +97,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
       }),
-      useHttpOnlyCookie: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use HttpOnly Cookie',
-        description:
-          'Set cookies via server response with Set-Cookie header and HttpOnly flag',
-        severity: 'LOW',
-        fix: 'Server: res.cookie(name, value, { httpOnly: true, secure: true, sameSite: "strict" })',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie',
-      }),
+
     },
     schema: [
       {
@@ -212,12 +202,6 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
             data: {
               key: cookieKey,
             },
-            suggest: [
-              {
-                messageId: 'useHttpOnlyCookie',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

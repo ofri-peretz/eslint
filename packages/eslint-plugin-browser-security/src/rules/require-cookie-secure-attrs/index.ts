@@ -19,7 +19,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingSecure' | 'missingSameSite' | 'addSecureAttrs';
+type MessageIds = 'missingSecure' | 'missingSameSite';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -38,7 +38,6 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-614',
       cvss: 6.5,
     },
-    hasSuggestions: true,
     messages: {
       missingSecure: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -66,15 +65,7 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite',
       }),
-      addSecureAttrs: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Secure Attributes',
-        description: 'Add Secure and SameSite attributes',
-        severity: 'LOW',
-        fix: 'document.cookie = "name=value; Secure; SameSite=Strict"',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
-      }),
+
     },
     schema: [
       {
@@ -128,7 +119,6 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'missingSecure',
-              suggest: [{ messageId: 'addSecureAttrs', fix: () => null }],
             });
           }
 
@@ -136,7 +126,6 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'missingSameSite',
-              suggest: [{ messageId: 'addSecureAttrs', fix: () => null }],
             });
           }
         }

@@ -35,14 +35,7 @@ type MessageIds =
   | 'unsafeComponentBinding'
   | 'userControlledTemplate'
   | 'dangerousInnerHTML'
-  | 'unsafeSanitizerConfig'
-  | 'untrustedDirectiveSource'
-  | 'useTrustedDirectives'
-  | 'sanitizeTemplateInput'
-  | 'validateDirectiveNames'
-  | 'strategyTemplateSanitization'
-  | 'strategyContentSecurity'
-  | 'strategyInputValidation';
+  | 'unsafeSanitizerConfig';
 
 export interface Options extends SecurityRuleOptions {
   /** Trusted directive/component names */
@@ -221,23 +214,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Use textContent or sanitize HTML content',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML',
       }),
-      untrustedDirectiveSource: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Untrusted Directive Source',
-        cwe: 'CWE-96',
-        description: 'Directive loaded from untrusted source',
-        severity: 'MEDIUM',
-        fix: 'Load directives from trusted, verified sources',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/96.html',
-      }),
-      useTrustedDirectives: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Trusted Directives',
-        description: 'Use only trusted, verified directives',
-        severity: 'LOW',
-        fix: 'Maintain whitelist of allowed directives',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/96.html',
-      }),
       unsafeSanitizerConfig: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Sanitizer configured to allow {{allowed}}',
@@ -248,46 +224,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Drop {{allowed}} from {{option}}. If the markup genuinely needs it, render it outside the sanitized region rather than widening the allow-list.',
         documentationLink: 'https://github.com/cure53/DOMPurify#can-i-configure-dompurify',
       }),
-      sanitizeTemplateInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Sanitize Template Input',
-        description: 'Sanitize user input before template processing',
-        severity: 'LOW',
-        fix: 'Use DOMPurify or equivalent sanitization',
-        documentationLink: 'https://github.com/cure53/DOMPurify',
-      }),
-      validateDirectiveNames: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Directive Names',
-        description: 'Validate directive names against whitelist',
-        severity: 'LOW',
-        fix: 'Check directive names before dynamic creation',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/96.html',
-      }),
-      strategyTemplateSanitization: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Template Sanitization Strategy',
-        description: 'Implement template input sanitization',
-        severity: 'LOW',
-        fix: 'Sanitize all user input before template processing',
-        documentationLink: 'https://owasp.org/www-community/xss-filter-evasion-cheatsheet',
-      }),
-      strategyContentSecurity: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Content Security Strategy',
-        description: 'Use CSP to restrict directive execution',
-        severity: 'LOW',
-        fix: 'Implement strict CSP with script-src restrictions',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate all template inputs',
-        severity: 'LOW',
-        fix: 'Use schema validation for template inputs',
-        documentationLink: 'https://joi.dev/',
-      })
     },
     schema: [
       {

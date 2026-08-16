@@ -20,7 +20,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'jwtInStorage' | 'useHttpOnlyCookie';
+type MessageIds = 'jwtInStorage';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -89,7 +89,6 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-922',
       cvss: 8.1,
     },
-    hasSuggestions: true,
     messages: {
       jwtInStorage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -104,16 +103,7 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://auth0.com/docs/secure/security-guidance/data-security/token-storage',
       }),
-      useHttpOnlyCookie: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use HttpOnly Cookie',
-        description:
-          'Store JWT via server-side Set-Cookie with HttpOnly, Secure, SameSite flags',
-        severity: 'LOW',
-        fix: 'Server: res.cookie("token", jwt, { httpOnly: true, secure: true, sameSite: "strict" })',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
-      }),
+
     },
     schema: [
       {
@@ -194,12 +184,6 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
                 key: keyValue || '<dynamic>',
                 storage: callee.object.name,
               },
-              suggest: [
-                {
-                  messageId: 'useHttpOnlyCookie',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }
@@ -248,12 +232,6 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
               key: keyValue || '<dynamic>',
               storage: obj.name,
             },
-            suggest: [
-              {
-                messageId: 'useHttpOnlyCookie',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

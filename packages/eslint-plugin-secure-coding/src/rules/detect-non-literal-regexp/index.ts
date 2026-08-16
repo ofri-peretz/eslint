@@ -17,12 +17,7 @@ import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/e
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'regexpReDoS'
-  | 'useStaticRegex'
-  | 'validateInput'
-  | 'useRegexLibrary'
-  | 'addTimeout'
-  | 'escapeUserInput';
+  | 'regexpReDoS';
 
 export interface Options {
   /**
@@ -218,7 +213,6 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       description: 'Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression',
       cwe: 'CWE-400',
     },
-    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 41% reduction (51→30 tokens) - compact template variables
       regexpReDoS: formatLLMMessage({
@@ -230,49 +224,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
-      useStaticRegex: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Static Regex',
-        description: 'Use pre-defined RegExp constants',
-        severity: 'LOW',
-        fix: 'const PATTERN = /^[a-z]+$/; // Define at module level',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp',
-      }),
-      validateInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Input',
-        description: 'Validate and escape user input',
-        severity: 'LOW',
-        fix: 'Validate input length and characters before RegExp',
-        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
-      }),
-      useRegexLibrary: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe Library',
-        description: 'Use safe-regex library or re2',
-        severity: 'LOW',
-        fix: 'import { isSafe } from "safe-regex"; if (isSafe(pattern)) ...',
-        documentationLink: 'https://github.com/substack/safe-regex',
-      }),
-      addTimeout: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Timeout',
-        description: 'Add timeout to regex operations',
-        severity: 'LOW',
-        fix: 'Use timeout wrapper for regex operations',
-        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
-      }),
-      escapeUserInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Escape Input',
-        description: 'Escape special regex characters',
-        // oxlint-disable-next-line no-template-curly-in-string
-        severity: 'LOW',
-        // oxlint-disable-next-line no-template-curly-in-string
-        fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
-      })
-    },
+},
     schema: [
       {
         type: 'object',
@@ -517,30 +469,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
           safeAlternative: vulnerability.safeAlternative,
           steps,
           effort: vulnerability.effort
-        },
-        suggest: [
-          {
-            messageId: 'useStaticRegex',
-            fix: () => null
-          },
-          {
-            messageId: 'validateInput',
-            fix: () => null
-          },
-          {
-            messageId: 'useRegexLibrary',
-            fix: () => null
-          },
-          {
-            messageId: 'addTimeout',
-            fix: () => null
-          },
-          {
-            messageId: 'escapeUserInput',
-            fix: () => null
-          }
-        ]
-      });
+        },});
     };
 
     return {

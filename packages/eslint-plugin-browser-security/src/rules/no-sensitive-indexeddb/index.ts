@@ -19,7 +19,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'sensitiveInIndexedDB' | 'useEncryption';
+type MessageIds = 'sensitiveInIndexedDB';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -57,7 +57,6 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-922',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       sensitiveInIndexedDB: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -72,15 +71,7 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#local-storage',
       }),
-      useEncryption: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Encrypt Sensitive Data',
-        description: 'Use Web Crypto API to encrypt data before storing',
-        severity: 'LOW',
-        fix: 'const encrypted = await crypto.subtle.encrypt(algo, key, data);',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/encrypt',
-      }),
+
     },
     schema: [
       {
@@ -122,7 +113,6 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
                 node,
                 messageId: 'sensitiveInIndexedDB',
                 data: { name: storeNameArg.value },
-                suggest: [{ messageId: 'useEncryption', fix: () => null }],
               });
             }
           }
@@ -146,7 +136,6 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
                   node,
                   messageId: 'sensitiveInIndexedDB',
                   data: { name: prop.key.name },
-                  suggest: [{ messageId: 'useEncryption', fix: () => null }],
                 });
               }
             }

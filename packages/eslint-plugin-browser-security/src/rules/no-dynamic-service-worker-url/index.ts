@@ -19,7 +19,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'dynamicSwUrl' | 'useStaticUrl';
+type MessageIds = 'dynamicSwUrl';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -38,7 +38,6 @@ export const noDynamicServiceWorkerUrl = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-829',
       cvss: 8.1,
     },
-    hasSuggestions: true,
     messages: {
       dynamicSwUrl: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -53,15 +52,7 @@ export const noDynamicServiceWorkerUrl = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register',
       }),
-      useStaticUrl: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Static URL',
-        description: 'Use a static path for service worker',
-        severity: 'LOW',
-        fix: "navigator.serviceWorker.register('/sw.js');",
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register',
-      }),
+
     },
     schema: [
       {
@@ -112,7 +103,6 @@ export const noDynamicServiceWorkerUrl = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'dynamicSwUrl',
-              suggest: [{ messageId: 'useStaticUrl', fix: () => null }],
             });
           }
         }

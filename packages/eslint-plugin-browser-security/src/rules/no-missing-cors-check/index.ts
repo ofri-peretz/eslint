@@ -16,7 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingCorsCheck' | 'useOriginValidation' | 'useCorsMiddleware';
+type MessageIds = 'missingCorsCheck' | 'useCorsMiddleware';
 
 export interface Options {
   /** Allow missing CORS checks in test files. Default: false */
@@ -57,7 +57,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-346',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingCorsCheck: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -68,14 +67,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/346.html',
       }),
-      useOriginValidation: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Origin',
-        description: 'Validate CORS origin',
-        severity: 'LOW',
-        fix: 'cors({ origin: (origin, cb) => allowedOrigins.includes(origin) ? cb(null, true) : cb(new Error()) })',
-        documentationLink: 'https://github.com/expressjs/cors#configuration-options',
-      }),
+
       useCorsMiddleware: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use CORS Middleware',
@@ -232,12 +224,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                     issue: 'Wildcard CORS origin (*) allows all origins',
                     safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
                   },
-                  suggest: [
-                    {
-                      messageId: 'useOriginValidation',
-                      fix: (_fixer: TSESLint.RuleFixer) => null,
-                    },
-                  ],
                 });
                 return;
               }
@@ -255,12 +241,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
               issue: 'Wildcard CORS origin (*) allows all origins',
               safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
             },
-            suggest: [
-              {
-                messageId: 'useOriginValidation',
-                fix: (_fixer: TSESLint.RuleFixer) => null,
-              },
-            ],
           });
         }
       }
@@ -330,12 +310,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                         issue: 'Wildcard CORS origin (*) allows all origins',
                         safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
                       },
-                      suggest: [
-                        {
-                          messageId: 'useOriginValidation',
-                          fix: (_fixer: TSESLint.RuleFixer) => null,
-                        },
-                      ],
                     });
                   }
                 }
@@ -373,12 +347,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                                       issue: 'Wildcard CORS origin (*) allows all origins',
                                       safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
                                     },
-                                    suggest: [
-                                      {
-                                        messageId: 'useOriginValidation',
-                                        fix: (_fixer: TSESLint.RuleFixer) => null,
-                                      },
-                                    ],
                                   });
                                   return; // Found and reported, exit
                                 }
@@ -435,12 +403,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                     issue: 'Wildcard CORS header allows all origins',
                     safeAlternative: 'Validate origin before setting header: res.setHeader("Access-Control-Allow-Origin", allowedOrigins.includes(origin) ? origin : "null");',
                   },
-                  suggest: [
-                    {
-                      messageId: 'useOriginValidation',
-                      fix: (_fixer: TSESLint.RuleFixer) => null,
-                    },
-                  ],
                 });
               }
             }

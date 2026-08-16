@@ -24,7 +24,7 @@ import { resolveInitializer } from '../../utils/resolve-binding';
 /**
  * `useSanitizer` is gone.
  *
- * It was attached as `suggest: [{ messageId: 'useSanitizer', fix: () => null }]`,
+ * It was attached as ``,
  * and ESLint DISCARDS any suggestion whose fix yields no edit — verified with
  * `linter.verify`, which returns the message with no `suggestions` array at all.
  * So the advice never rendered for a single user, while `hasSuggestions: true`

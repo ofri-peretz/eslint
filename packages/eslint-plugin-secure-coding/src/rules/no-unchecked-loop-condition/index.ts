@@ -33,9 +33,7 @@ type MessageIds =
   | 'userControlledLoopBound'
   | 'missingLoopTermination'
   | 'largeLoopBound'
-  | 'unsafeRecursion'
-
-  | 'limitLoopIterations';
+  | 'unsafeRecursion';
 
 export interface Options extends SecurityRuleOptions {
   /** Maximum allowed loop iterations for static analysis */
@@ -62,7 +60,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       description: 'Detects unchecked loop conditions that could cause DoS',
       cwe: 'CWE-400',
     },
-    hasSuggestions: true,
     messages: {
       uncheckedLoopCondition: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -118,15 +115,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         fix: 'Add recursion depth limit or use iterative approach',
         documentationLink: 'https://cwe.mitre.org/data/definitions/674.html',
       }),
-      limitLoopIterations: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Limit Loop Iterations',
-        description: 'Limit maximum loop iterations',
-        severity: 'LOW',
-        fix: 'Add iteration counter with maximum limit',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for',
-      })
-    },
+},
     schema: [
       {
         type: 'object',
@@ -580,12 +569,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
               filePath: filename,
               line: String(node.loc?.start.line ?? 0),
             },
-            suggest: [
-              {
-                messageId: 'limitLoopIterations',
-                fix: () => null // Complex to auto-fix
-              },
-            ],
           });
           return;
         }

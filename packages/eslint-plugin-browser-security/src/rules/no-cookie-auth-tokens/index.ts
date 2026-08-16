@@ -19,7 +19,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'authTokenInCookie' | 'useHttpOnlyCookie';
+type MessageIds = 'authTokenInCookie';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -74,7 +74,6 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1004',
       cvss: 8.5,
     },
-    hasSuggestions: true,
     messages: {
       authTokenInCookie: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -89,15 +88,7 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#httponly-attribute',
       }),
-      useHttpOnlyCookie: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use HttpOnly Cookie',
-        description: 'Set cookies from server with HttpOnly flag',
-        severity: 'LOW',
-        fix: 'res.cookie("token", value, { httpOnly: true, secure: true });',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
-      }),
+
     },
     schema: [
       {
@@ -149,7 +140,6 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'authTokenInCookie',
-              suggest: [{ messageId: 'useHttpOnlyCookie', fix: () => null }],
             });
           }
         }

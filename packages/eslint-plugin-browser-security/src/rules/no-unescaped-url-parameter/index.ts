@@ -16,7 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unescapedUrlParameter' | 'useEncodeURIComponent' | 'useURLSearchParams';
+type MessageIds = 'unescapedUrlParameter';
 
 export interface Options {
   /** Allow unescaped URL parameters in test files. Default: false */
@@ -126,7 +126,6 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-79',
       cvss: 6.1,
     },
-    hasSuggestions: true,
     messages: {
       unescapedUrlParameter: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -137,23 +136,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/79.html',
       }),
-      useEncodeURIComponent: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use encodeURIComponent',
-        description: 'Use encodeURIComponent for URL params',
-        severity: 'LOW',
-        // oxlint-disable-next-line no-template-curly-in-string
-        fix: '`https://example.com?q=${encodeURIComponent(param)}`',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent',
-      }),
-      useURLSearchParams: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use URLSearchParams',
-        description: 'Use URLSearchParams for safe URL construction',
-        severity: 'LOW',
-        fix: 'new URLSearchParams({ q: param }).toString()',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams',
-      }),
+
     },
     schema: [
       {
@@ -258,16 +241,6 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
               parameter: text,
               safeAlternative: `Use encodeURIComponent() or URLSearchParams: const url = \`https://example.com?q=\${encodeURIComponent(${text})}\`;`,
             },
-            suggest: [
-              {
-                messageId: 'useEncodeURIComponent',
-                fix: (_fixer: TSESLint.RuleFixer) => null,
-              },
-              {
-                messageId: 'useURLSearchParams',
-                fix: (_fixer: TSESLint.RuleFixer) => null,
-              },
-            ],
           });
         }
       }
@@ -316,12 +289,6 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
                 parameter: rightText,
                 safeAlternative: `Use encodeURIComponent(): ${sourceCode.getText(node.left)} + encodeURIComponent(${rightText})`,
               },
-              suggest: [
-                {
-                  messageId: 'useEncodeURIComponent',
-                  fix: (_fixer: TSESLint.RuleFixer) => null,
-                },
-              ],
             });
           }
         }

@@ -35,8 +35,7 @@ type MessageIds =
   | 'unsafeFormatSpecifier'
   | 'userControlledFormatString'
   | 'missingFormatValidation'
-  | 'escapeFormatString'
-  | 'useSafeFormatting';
+  | 'escapeFormatString';
 
 export interface Options {
   /** Functions that use format strings */
@@ -120,14 +119,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Replace % with %% in user input',
         documentationLink: 'https://nodejs.org/api/util.html#utilformatformat-args',
       }),
-      useSafeFormatting: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe Formatting',
-        description: 'Use safe string formatting methods',
-        severity: 'LOW',
-        fix: 'Use template literals or safe format libraries',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals',
-      })
     },
     schema: [
       {

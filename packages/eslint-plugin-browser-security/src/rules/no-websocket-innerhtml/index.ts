@@ -21,7 +21,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeInnerhtml' | 'useTextContent';
+type MessageIds = 'unsafeInnerhtml';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -45,7 +45,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-79',
       cvss: 8.1,
     },
-    hasSuggestions: true,
     messages: {
       unsafeInnerhtml: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -60,14 +59,7 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/WebSocket',
       }),
-      useTextContent: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe DOM Methods',
-        description: 'Use textContent or sanitize input with DOMPurify',
-        severity: 'LOW',
-        fix: 'element.textContent = event.data; // For plain text\nelement.innerHTML = DOMPurify.sanitize(event.data); // For HTML',
-        documentationLink: 'https://github.com/cure53/DOMPurify',
-      }),
+
     },
     schema: [
       {
@@ -183,12 +175,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
               data: {
                 method: node.left.property.name,
               },
-              suggest: [
-                {
-                  messageId: 'useTextContent',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }
@@ -222,12 +208,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
                 data: {
                   method: node.callee.property.name,
                 },
-                suggest: [
-                  {
-                    messageId: 'useTextContent',
-                    fix: () => null,
-                  },
-                ],
               });
               break;
             }

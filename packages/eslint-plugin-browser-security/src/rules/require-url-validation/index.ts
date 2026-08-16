@@ -10,6 +10,7 @@
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { isAttackerSteerableUrl } from '../../utils/url-taint';
 
 type MessageIds = 'violationDetected';
 
@@ -43,48 +44,58 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
+    const { sourceCode } = context;
+
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-    
+
+    /**
+     * `<obj>.<name>` with a plain identifier base and no computed key.
+     *
+     * Kept deliberately shallow. `window.location.href = x` and
+     * `location.assign(x)` belong to `no-insecure-redirects`; widening the base
+     * here to any `Location` object would make both rules report the same line.
+     */
+    function isMember(
+      node: TSESTree.Node,
+      object: string,
+      property: string,
+    ): boolean {
+      return (
+        node.type === 'MemberExpression' &&
+        !node.computed &&
+        node.object.type === 'Identifier' &&
+        node.object.name === object &&
+        node.property.type === 'Identifier' &&
+        node.property.name === property
+      );
+    }
+
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Detect window.location assignment from user input
-        if (node.left.type === 'MemberExpression' &&
-            node.left.object.type === 'Identifier' &&
-            node.left.object.name === 'window' &&
-            node.left.property.type === 'Identifier' &&
-            node.left.property.name === 'location') {
-          
-          // Flag if right side is a variable (not a literal URL)
-          if (node.right.type === 'Identifier') {
-            report(node);
-          }
-        }
-        
-        // Detect location.href assignment
-        if (node.left.type === 'MemberExpression' &&
-            node.left.object.type === 'Identifier' &&
-            node.left.object.name === 'location' &&
-            node.left.property.type === 'Identifier' &&
-            node.left.property.name === 'href') {
-          
-          if (node.right.type === 'Identifier') {
+        // `window.location = x` and `location.href = x` are both whole-page
+        // navigations. What decides the verdict is whether an attacker chose
+        // the ORIGIN of `x` — not whether `x` happens to be spelled as a
+        // variable. A hardcoded `const SUPPORT = 'https://help.example.com'`
+        // is an Identifier and is not a redirect; `location.search` is a
+        // MemberExpression and is the textbook one.
+        if (
+          isMember(node.left, 'window', 'location') ||
+          isMember(node.left, 'location', 'href')
+        ) {
+          if (isAttackerSteerableUrl(node.right, sourceCode)) {
             report(node);
           }
         }
       },
-      
+
       CallExpression(node: TSESTree.CallExpression) {
-        // Detect window.open with variable URL
-        if (node.callee.type === 'MemberExpression' &&
-            node.callee.object.type === 'Identifier' &&
-            node.callee.object.name === 'window' &&
-            node.callee.property.type === 'Identifier' &&
-            node.callee.property.name === 'open') {
-          
+        // `window.open(url)` opens the target in a new browsing context — same
+        // open-redirect sink, same question about the argument.
+        if (isMember(node.callee, 'window', 'open')) {
           const urlArg = node.arguments[0];
-          if (urlArg && urlArg.type === 'Identifier') {
+          if (urlArg && isAttackerSteerableUrl(urlArg, sourceCode)) {
             report(node);
           }
         }

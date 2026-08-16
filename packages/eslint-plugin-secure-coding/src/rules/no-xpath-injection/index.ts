@@ -35,13 +35,7 @@ type MessageIds =
   | 'xpathInjection'
   | 'unsafeXpathConcatenation'
   | 'unvalidatedXpathInput'
-  | 'dangerousXpathExpression'
-  | 'useParameterizedXpath'
-  | 'escapeXpathInput'
-  | 'validateXpathQueries'
-  | 'strategyParameterizedQueries'
-  | 'strategyInputValidation'
-  | 'strategySafeConstruction';
+  | 'dangerousXpathExpression';
 
 export interface Options extends SecurityRuleOptions {
   /**
@@ -141,7 +135,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects XPath injection vulnerabilities',
       cwe: 'CWE-643',
     },
-    hasSuggestions: true,
     messages: {
       xpathInjection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -181,57 +174,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Restrict XPath to safe patterns and validate expressions',
         documentationLink: 'https://cwe.mitre.org/data/definitions/643.html',
       }),
-      useParameterizedXpath: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Parameterized XPath',
-        description: 'Use parameterized XPath queries',
-        severity: 'LOW',
-        fix: 'Construct XPath with proper escaping and validation',
-        documentationLink:
-          'https://owasp.org/www-community/attacks/XPATH_Injection',
-      }),
-      escapeXpathInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Escape XPath Input',
-        description: 'Escape special characters in XPath input',
-        severity: 'LOW',
-        fix: 'Use xpath.escape() or equivalent escaping function',
-        documentationLink: 'https://www.npmjs.com/package/xpath-escape',
-      }),
-      validateXpathQueries: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate XPath Queries',
-        description: 'Validate XPath queries against allowed patterns',
-        severity: 'LOW',
-        fix: 'Whitelist allowed XPath operations and validate syntax',
-        documentationLink:
-          'https://owasp.org/www-community/attacks/XPATH_Injection',
-      }),
-      strategyParameterizedQueries: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Parameterized Queries Strategy',
-        description: 'Use parameterized XPath construction',
-        severity: 'LOW',
-        fix: 'Build XPath queries programmatically with escaped parameters',
-        documentationLink:
-          'https://owasp.org/www-community/attacks/XPATH_Injection',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate XPath input at application boundary',
-        severity: 'LOW',
-        fix: 'Validate XPath syntax and restrict to safe operations',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/643.html',
-      }),
-      strategySafeConstruction: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Safe Construction Strategy',
-        description: 'Use safe XPath construction libraries',
-        severity: 'LOW',
-        fix: 'Use libraries that provide safe XPath building',
-        documentationLink: 'https://www.npmjs.com/package/xpath-builder',
-      }),
+
     },
     schema: [
       {
@@ -839,12 +782,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
                 filePath: filename,
                 line: String(node.loc?.start.line ?? 0),
               },
-              suggest: [
-                {
-                  messageId: 'useParameterizedXpath',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }

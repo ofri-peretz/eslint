@@ -18,7 +18,7 @@ import { formatLLMMessage, MessageIcons,
 } from '@interlace/eslint-devkit';
 import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'useEnvironmentVariable' | 'useSecretManager' | 'strategyEnv' | 'strategyConfig' | 'strategyVault' | 'strategyAuto';
+type MessageIds = 'useEnvironmentVariable' | 'useSecretManager';
 
 export interface Options {
   /** Patterns to ignore (regex strings). Default: [] */
@@ -661,39 +661,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Use AWS Secrets Manager, HashiCorp Vault, Azure Key Vault, or similar',
         documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
-      }),
-      strategyEnv: formatLLMMessage({
-        icon: MessageIcons.DEVELOPMENT,
-        issueName: 'Environment Variable Strategy',
-        description: 'Move credentials to environment variables',
-        severity: 'MEDIUM',
-        fix: 'Store credentials in environment variables (process.env)',
-        documentationLink: 'https://12factor.net/config',
-      }),
-      strategyConfig: formatLLMMessage({
-        icon: MessageIcons.DEVELOPMENT,
-        issueName: 'Configuration File Strategy',
-        description: 'Store credentials in encrypted configuration files',
-        severity: 'MEDIUM',
-        fix: 'Use encrypted configuration files with proper access controls',
-        documentationLink: 'https://owasp.org/www-project-cheat-sheets/cheatsheets/Configuration_Management_Cheat_Sheet.html',
-      }),
-      strategyVault: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Secret Vault Strategy',
-        cwe: 'CWE-798',
-        description: 'Use dedicated secret management system',
-        severity: 'HIGH',
-        fix: 'Implement HashiCorp Vault, AWS Secrets Manager, or similar secret vault',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
-      }),
-      strategyAuto: formatLLMMessage({
-        icon: MessageIcons.DEVELOPMENT,
-        issueName: 'Context-Aware Strategy',
-        description: 'Apply context-aware credential management',
-        severity: 'MEDIUM',
-        fix: 'Choose strategy based on deployment environment and security requirements',
-        documentationLink: 'https://owasp.org/www-project-cheat-sheets/cheatsheets/Secrets_Management_Cheat_Sheet.html',
       }),
     },
     schema: [

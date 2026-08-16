@@ -21,7 +21,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { resolveStringKey } from '../../utils/resolve-binding';
 
-type MessageIds = 'sensitiveLocalStorage' | 'useHttpOnlyCookie';
+type MessageIds = 'sensitiveLocalStorage';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -89,7 +89,6 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-922',
       cvss: 5.5,
     },
-    hasSuggestions: true,
     messages: {
       sensitiveLocalStorage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -102,15 +101,7 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/vulnerabilities/Insecure_Storage',
       }),
-      useHttpOnlyCookie: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use HttpOnly Cookie',
-        description: 'Store authentication tokens in httpOnly cookies instead',
-        severity: 'LOW',
-        fix: 'Set tokens via Set-Cookie header with httpOnly and secure flags.',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
-      }),
+
     },
     schema: [
       {
@@ -192,12 +183,6 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
                 key: keyValue,
                 storage: callee.object.name,
               },
-              suggest: [
-                {
-                  messageId: 'useHttpOnlyCookie',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }
@@ -228,12 +213,6 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
               key: keyValue,
               storage: obj.name,
             },
-            suggest: [
-              {
-                messageId: 'useHttpOnlyCookie',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

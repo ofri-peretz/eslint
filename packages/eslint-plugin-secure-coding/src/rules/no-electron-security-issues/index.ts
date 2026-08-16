@@ -28,7 +28,6 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'electronSecurityIssue'
   | 'nodeIntegrationEnabled'
   | 'contextIsolationDisabled'
   | 'webSecurityDisabled'
@@ -36,13 +35,7 @@ type MessageIds =
   | 'unsafePreloadScript'
   | 'directNodeAccess'
   | 'insecureIpcPattern'
-  | 'missingSandbox'
-  | 'enableSecurityFeatures'
-  | 'useContextIsolation'
-  | 'securePreloadScripts'
-  | 'strategySecureDefaults'
-  | 'strategyProcessSeparation'
-  | 'strategyInputValidation';
+  | 'missingSandbox';
 
 export interface Options extends SecurityRuleOptions {
   /** Allow insecure settings in development */
@@ -67,15 +60,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-16',
     },
     messages: {
-      electronSecurityIssue: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Electron Security Issue',
-        cwe: 'CWE-16',
-        description: 'Electron security vulnerability detected',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security',
-      }),
       nodeIntegrationEnabled: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Node Integration Enabled',
@@ -148,54 +132,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         fix: 'Enable sandbox for untrusted content',
         documentationLink: 'https://electronjs.org/docs/tutorial/sandbox',
       }),
-      enableSecurityFeatures: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Enable Security Features',
-        description: 'Enable Electron security features',
-        severity: 'LOW',
-        fix: 'Set contextIsolation: true, nodeIntegration: false',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security',
-      }),
-      useContextIsolation: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Context Isolation',
-        description: 'Use context isolation for security',
-        severity: 'LOW',
-        fix: 'Enable contextIsolation in BrowserWindow options',
-        documentationLink: 'https://electronjs.org/docs/tutorial/context-isolation',
-      }),
-      securePreloadScripts: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Secure Preload Scripts',
-        description: 'Use secure preload scripts',
-        severity: 'LOW',
-        fix: 'Limit APIs exposed in preload scripts',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#3-enable-context-isolation-for-remote-content',
-      }),
-      strategySecureDefaults: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Secure Defaults Strategy',
-        description: 'Use secure defaults for Electron applications',
-        severity: 'LOW',
-        fix: 'Start with secure configuration and relax only when necessary',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security',
-      }),
-      strategyProcessSeparation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Process Separation Strategy',
-        description: 'Separate main and renderer processes properly',
-        severity: 'LOW',
-        fix: 'Keep Node.js APIs in main process, use IPC for communication',
-        documentationLink: 'https://electronjs.org/docs/tutorial/application-architecture',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate all inputs in Electron applications',
-        severity: 'LOW',
-        fix: 'Validate IPC messages and user inputs',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#7-do-not-use-the-ipc-transport-for-sensitive-data',
-      })
     },
     schema: [
       {

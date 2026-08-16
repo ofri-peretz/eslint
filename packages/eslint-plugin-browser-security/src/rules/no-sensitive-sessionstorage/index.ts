@@ -19,7 +19,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'sensitiveInSessionStorage' | 'useSecureStorage';
+type MessageIds = 'sensitiveInSessionStorage';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -74,7 +74,6 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-922',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       sensitiveInSessionStorage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -89,15 +88,7 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#local-storage',
       }),
-      useSecureStorage: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Secure Storage',
-        description: 'Use HttpOnly cookies or server-side sessions',
-        severity: 'LOW',
-        fix: 'Server: res.cookie("session", value, { httpOnly: true, secure: true })',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
-      }),
+
     },
     schema: [
       {
@@ -153,9 +144,6 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'sensitiveInSessionStorage',
               data: { key: keyValue },
-              suggest: [
-                { messageId: 'useSecureStorage', fix: () => null },
-              ],
             });
           }
         }
@@ -188,9 +176,6 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
             node,
             messageId: 'sensitiveInSessionStorage',
             data: { key: keyValue },
-            suggest: [
-              { messageId: 'useSecureStorage', fix: () => null },
-            ],
           });
         }
       },

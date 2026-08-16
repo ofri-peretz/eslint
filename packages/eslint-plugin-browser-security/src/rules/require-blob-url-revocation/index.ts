@@ -20,7 +20,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingRevoke' | 'addRevocation';
+type MessageIds = 'missingRevoke';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -39,7 +39,6 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-401',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       missingRevoke: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -54,15 +53,7 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL',
       }),
-      addRevocation: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add URL Revocation',
-        description: 'Revoke the Blob URL after use',
-        severity: 'LOW',
-        fix: 'URL.revokeObjectURL(blobUrl);',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL',
-      }),
+
     },
     schema: [
       {
@@ -132,7 +123,6 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
             context.report({
               node: declaratorNode,
               messageId: 'missingRevoke',
-              suggest: [{ messageId: 'addRevocation', fix: () => null }],
             });
           }
         }

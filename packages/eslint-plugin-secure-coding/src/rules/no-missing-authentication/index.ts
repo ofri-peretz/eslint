@@ -20,7 +20,7 @@ import { formatLLMMessage, MessageIcons,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingAuthentication' | 'addAuthentication';
+type MessageIds = 'missingAuthentication';
 
 export interface Options {
   /** Allow missing authentication in test files. Default: false */
@@ -191,7 +191,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-287',
       cvss: 9.8,
     },
-    hasSuggestions: true,
     messages: {
       missingAuthentication: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -202,14 +201,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
         fix: 'Add authentication middleware: app.{{method}}(\'{{path}}\', authenticate(), handler)',
         documentationLink: 'https://cwe.mitre.org/data/definitions/287.html',
       }),
-      addAuthentication: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Authentication',
-        description: 'Add authentication middleware before route handler',
-        severity: 'LOW',
-        fix: 'app.get("/path", authenticate(), handler)',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/287.html',
-      }),
+
     },
     schema: [
       {
@@ -450,12 +442,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
                   method: methodName,
                   path: routePath,
                 },
-                suggest: [
-                  {
-                    messageId: 'addAuthentication',
-                    fix: (_fixer: TSESLint.RuleFixer) => null,
-                  },
-                ],
               });
             }
           }

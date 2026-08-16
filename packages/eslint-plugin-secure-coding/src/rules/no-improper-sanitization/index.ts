@@ -28,19 +28,9 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'improperSanitization'
   | 'insufficientXssProtection'
   | 'incompleteHtmlEscaping'
-  | 'unsafeReplaceSanitization'
-  | 'missingContextEncoding'
-  | 'sqlInjectionSanitization'
-  | 'commandInjectionSanitization'
-  | 'useProperSanitization'
-  | 'validateSanitization'
-  | 'implementContextAware'
-  | 'strategyDefenseInDepth'
-  | 'strategyInputValidation'
-  | 'strategyOutputEncoding';
+  | 'unsafeReplaceSanitization';
 
 export interface Options extends SecurityRuleOptions {
   /** Safe sanitization functions */
@@ -68,15 +58,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-116',
     },
     messages: {
-      improperSanitization: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Improper Sanitization',
-        cwe: 'CWE-116',
-        description: 'User input sanitization is insufficient or incorrect',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/116.html',
-      }),
       insufficientXssProtection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Insufficient XSS Protection',
@@ -104,81 +85,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         fix: 'Use comprehensive sanitization libraries',
         documentationLink: 'https://cwe.mitre.org/data/definitions/116.html',
       }),
-      missingContextEncoding: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Missing Context Encoding',
-        cwe: 'CWE-116',
-        description: 'Output encoding missing for specific context',
-        severity: 'MEDIUM',
-        fix: 'Encode output according to usage context (HTML, URL, SQL, etc.)',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
-      }),
-      sqlInjectionSanitization: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'SQL Injection Sanitization',
-        cwe: 'CWE-89',
-        description: 'SQL input sanitization is insufficient',
-        severity: 'HIGH',
-        fix: 'Use parameterized queries instead of sanitization',
-        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-      }),
-      commandInjectionSanitization: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Command Injection Sanitization',
-        cwe: 'CWE-78',
-        description: 'Command input sanitization is insufficient',
-        severity: 'CRITICAL',
-        fix: 'Avoid shell commands with user input, use safe APIs',
-        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
-      }),
-      useProperSanitization: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Proper Sanitization',
-        description: 'Use proper sanitization methods for each context',
-        severity: 'LOW',
-        fix: 'HTML: DOMPurify, URL: encodeURIComponent, SQL: parameterized queries',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html',
-      }),
-      validateSanitization: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Sanitization',
-        description: 'Validate that sanitization is effective',
-        severity: 'LOW',
-        fix: 'Test sanitization with malicious inputs',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/116.html',
-      }),
-      implementContextAware: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Implement Context Aware Sanitization',
-        description: 'Use different sanitization for different contexts',
-        severity: 'LOW',
-        fix: 'HTML context: escape <>&"\' , URL context: encodeURIComponent',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
-      }),
-      strategyDefenseInDepth: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Defense in Depth Strategy',
-        description: 'Implement multiple layers of input validation',
-        severity: 'LOW',
-        fix: 'Validate input, sanitize output, use CSP, implement rate limiting',
-        documentationLink: 'https://owasp.org/www-community/controls/Defense_in_depth',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate input at multiple layers',
-        severity: 'LOW',
-        fix: 'Client-side, server-side, and database-level validation',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html',
-      }),
-      strategyOutputEncoding: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Output Encoding Strategy',
-        description: 'Encode output according to context',
-        severity: 'LOW',
-        fix: 'Use appropriate encoding for HTML, JavaScript, CSS, URL contexts',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
-      })
     },
     schema: [
       {

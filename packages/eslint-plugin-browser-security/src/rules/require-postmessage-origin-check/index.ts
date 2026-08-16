@@ -20,7 +20,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { isAnchoredRegexpTest } from '../../utils/regexp-anchoring';
 
-type MessageIds = 'missingOriginCheck' | 'addOriginCheck';
+type MessageIds = 'missingOriginCheck';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -137,7 +137,6 @@ export const requirePostmessageOriginCheck = createRule<
       cwe: 'CWE-346',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingOriginCheck: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -150,15 +149,7 @@ export const requirePostmessageOriginCheck = createRule<
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns',
       }),
-      addOriginCheck: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Origin Check',
-        description: 'Validate event.origin before processing message',
-        severity: 'LOW',
-        fix: "if (event.origin !== 'https://expected-origin.com') return;",
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage',
-      }),
+
     },
     schema: [
       {
@@ -374,12 +365,6 @@ export const requirePostmessageOriginCheck = createRule<
           context.report({
             node: handler,
             messageId: 'missingOriginCheck',
-            suggest: [
-              {
-                messageId: 'addOriginCheck',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

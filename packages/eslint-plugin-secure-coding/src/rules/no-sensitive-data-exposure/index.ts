@@ -17,10 +17,7 @@ import { formatLLMMessage, MessageIcons, AST_NODE_TYPES } from '@interlace/eslin
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'sensitiveDataExposure'
-  | 'redactData'
-  | 'useMasking'
-  | 'removeFromLogs';
+  | 'sensitiveDataExposure';
 
 export interface Options {
   /** Sensitive data patterns. Default: ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'card'] */
@@ -204,17 +201,16 @@ function containsSensitiveData(
   return null;
 }
 
-
 /**
- * The same three advisory suggestions are offered at every report site. They
- * carry no autofix — redacting a value is a judgement the author has to make —
- * so they are defined once rather than reconstructed per site.
+ * There used to be three advisory suggestions here — `redactData`,
+ * `useMasking`, `removeFromLogs` — each with `fix: () => null`, attached to
+ * every report site. ESLint's report translator drops a suggestion whose fix
+ * resolves to nothing, so none of them ever reached an editor and their
+ * remediation text was never rendered; `hasSuggestions` was advertising a
+ * capability the rule did not have. Removed, together with the three
+ * messageIds. The remediation advice lives in the `fix:` line of
+ * `sensitiveDataExposure`, which IS shown.
  */
-const REDACTION_SUGGESTIONS = [
-  { messageId: 'redactData' as const, fix: () => null },
-  { messageId: 'useMasking' as const, fix: () => null },
-  { messageId: 'removeFromLogs' as const, fix: () => null },
-];
 
 export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-exposure',
@@ -226,7 +222,6 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-532',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       sensitiveDataExposure: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -235,30 +230,6 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         description: 'Sensitive data detected in {{context}}: {{dataType}}',
         severity: 'HIGH',
         fix: 'Redact or mask sensitive data before logging/exposing',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
-      }),
-      redactData: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Redact Data',
-        description: 'Redact sensitive data before logging',
-        severity: 'LOW',
-        fix: 'Redact sensitive fields before logging',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
-      }),
-      useMasking: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Masking',
-        description: 'Use data masking function',
-        severity: 'LOW',
-        fix: 'maskSensitive(data)',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
-      }),
-      removeFromLogs: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Remove From Logs',
-        description: 'Remove sensitive data from logs and errors',
-        severity: 'LOW',
-        fix: 'Filter sensitive data before logging',
         documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
       }),
     },
@@ -369,7 +340,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                   context: 'logs',
                   dataType: matchedPattern,
                 },
-                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per call
             }
@@ -399,7 +369,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                   context: 'logs',
                   dataType: side.pattern,
                 },
-                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per call
             }
@@ -415,7 +384,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                 node: arg,
                 messageId: 'sensitiveDataExposure',
                 data: { context: 'logs', dataType: matchedMember },
-                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per call
             }
@@ -465,7 +433,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                 node: arg,
                 messageId: 'sensitiveDataExposure',
                 data: { context: 'logs', dataType: matchedTemplate },
-                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per call
             }
@@ -479,7 +446,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                   context: 'logs',
                   dataType: matchedPattern2,
                 },
-                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per call
             }
@@ -512,7 +478,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                   context: 'error messages',
                   dataType: matchedErrPattern,
                 },
-                suggest: REDACTION_SUGGESTIONS,
               });
               return; // Only report once per error
             }
@@ -533,7 +498,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                     context: 'error messages',
                     dataType: leftMatchedPattern,
                   },
-                  suggest: REDACTION_SUGGESTIONS,
                 });
                 return; // Only report once per error
               }
@@ -549,7 +513,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                     context: 'error messages',
                     dataType: rightMatchedPattern,
                   },
-                  suggest: REDACTION_SUGGESTIONS,
                 });
                 return; // Only report once per error
               }

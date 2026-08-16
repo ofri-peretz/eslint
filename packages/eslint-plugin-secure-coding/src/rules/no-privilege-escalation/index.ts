@@ -20,7 +20,7 @@ import { formatLLMMessage, MessageIcons,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'privilegeEscalation' | 'addRoleCheck';
+type MessageIds = 'privilegeEscalation';
 
 export interface Options {
   /** Allow privilege escalation patterns in test files. Default: false */
@@ -170,7 +170,6 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-269',
       cvss: 8.8,
     },
-    hasSuggestions: true,
     messages: {
       privilegeEscalation: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -181,14 +180,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         fix: 'Add role check before using user input: if (!hasRole(user, requiredRole)) throw new Error("Unauthorized");',
         documentationLink: 'https://cwe.mitre.org/data/definitions/269.html',
       }),
-      addRoleCheck: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Role Check',
-        description: 'Add role check before privilege operations',
-        severity: 'LOW',
-        fix: 'if (!hasRole(user, requiredRole)) throw new Error("Unauthorized")',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/269.html',
-      }),
+
     },
     schema: [
       {
@@ -297,12 +289,6 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
                 data: {
                   issue: `Role assignment from user input: ${sourceCode.getText(node.left)} = ${sourceCode.getText(node.right)}`,
                 },
-                suggest: [
-                  {
-                    messageId: 'addRoleCheck',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }
@@ -362,12 +348,6 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
                 data: {
                   issue: `Privilege operation (${operationName}) with user input without role validation`,
                 },
-                suggest: [
-                  {
-                    messageId: 'addRoleCheck',
-                    fix: () => null,
-                  },
-                ],
               });
               return; // Report once per call
             }
@@ -398,12 +378,6 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
                   data: {
                     issue: `Role assignment in object from user input: ${sourceCode.getText(prop)}`,
                   },
-                  suggest: [
-                    {
-                      messageId: 'addRoleCheck',
-                      fix: () => null, // No auto-fix for logic
-                    },
-                  ],
                 });
               }
             }

@@ -21,7 +21,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'evalWithWsData' | 'parseDataSafely';
+type MessageIds = 'evalWithWsData';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -44,7 +44,6 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-95',
       cvss: 9.8,
     },
-    hasSuggestions: true,
     messages: {
       evalWithWsData: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -58,15 +57,7 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
         fix: 'Parse WebSocket data as JSON and validate the structure instead of executing it.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/95.html',
       }),
-      parseDataSafely: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Parse Data Safely',
-        description: 'Use JSON.parse() and validate the data structure',
-        severity: 'LOW',
-        fix: 'const data = JSON.parse(event.data); if (data.action === "update") { handleUpdate(data); }',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse',
-      }),
+
     },
     schema: [
       {
@@ -169,12 +160,6 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
                 data: {
                   method: evalFn,
                 },
-                suggest: [
-                  {
-                    messageId: 'parseDataSafely',
-                    fix: () => null,
-                  },
-                ],
               });
               break;
             }
@@ -207,12 +192,6 @@ export const noWebsocketEval = createRule<RuleOptions, MessageIds>({
                 data: {
                   method: 'new Function',
                 },
-                suggest: [
-                  {
-                    messageId: 'parseDataSafely',
-                    fix: () => null,
-                  },
-                ],
               });
               break;
             }

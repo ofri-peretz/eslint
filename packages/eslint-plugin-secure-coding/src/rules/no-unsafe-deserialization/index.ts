@@ -38,12 +38,7 @@ type MessageIds =
   | 'dangerousEvalUsage'
   | 'unsafeYamlParsing'
   | 'dangerousFunctionConstructor'
-  | 'useSafeDeserializer'
-  | 'validateBeforeDeserialization'
-  | 'avoidEval'
-  | 'strategySafeLibraries'
-  | 'strategyInputValidation'
-  | 'strategySandboxing';
+  | 'useSafeDeserializer';
 
 export interface Options extends SecurityRuleOptions {
   /** Dangerous deserialization functions to detect */
@@ -136,46 +131,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         fix: 'Use JSON.parse, safe-json-parse, or validated libraries',
         documentationLink: 'https://www.npmjs.com/package/safe-json-parse',
       }),
-      validateBeforeDeserialization: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Before Deserialization',
-        description: 'Validate input before deserialization',
-        severity: 'LOW',
-        fix: 'Implement input validation and length limits',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/502.html',
-      }),
-      avoidEval: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Avoid eval()',
-        description: 'Never use eval() for deserialization',
-        severity: 'LOW',
-        fix: 'Use JSON.parse() for data, vm.Script for code when absolutely necessary',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval',
-      }),
-      strategySafeLibraries: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Safe Libraries Strategy',
-        description: 'Use deserialization libraries with built-in safety',
-        severity: 'LOW',
-        fix: 'Use JSON.parse, js-yaml.safeLoad, or protobuf libraries',
-        documentationLink: 'https://www.npmjs.com/package/js-yaml',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate input before any deserialization',
-        severity: 'LOW',
-        fix: 'Implement schema validation and length limits',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/502.html',
-      }),
-      strategySandboxing: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Sandboxing Strategy',
-        description: 'Execute deserialization in sandboxed environment',
-        severity: 'LOW',
-        fix: 'Use vm module or worker threads for untrusted deserialization',
-        documentationLink: 'https://nodejs.org/api/vm.html',
-      })
     },
     schema: [
       {

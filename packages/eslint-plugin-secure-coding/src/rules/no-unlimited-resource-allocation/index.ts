@@ -30,20 +30,11 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'unlimitedResourceAllocation'
   | 'unlimitedBufferAllocation'
   | 'unlimitedFileOperations'
-  | 'unlimitedNetworkConnections'
   | 'unlimitedMemoryAllocation'
   | 'userControlledResourceSize'
-  | 'missingResourceLimits'
-  | 'resourceAllocationInLoop'
-  | 'implementResourceLimits'
-  | 'validateResourceSize'
-  | 'useResourcePools'
-  | 'strategyResourceManagement'
-  | 'strategyRateLimiting'
-  | 'strategyResourceCleanup';
+  | 'resourceAllocationInLoop';
 
 export interface Options extends SecurityRuleOptions {
   /** Maximum allowed resource size for static analysis */
@@ -71,15 +62,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       cwe: 'CWE-770',
     },
     messages: {
-      unlimitedResourceAllocation: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unlimited Resource Allocation',
-        cwe: 'CWE-770',
-        description: 'Resource allocation without limits',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/770.html',
-      }),
       unlimitedBufferAllocation: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Unlimited Buffer Allocation',
@@ -97,15 +79,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
         severity: 'MEDIUM',
         fix: 'Validate file size before operations',
         documentationLink: 'https://nodejs.org/api/fs.html',
-      }),
-      unlimitedNetworkConnections: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unlimited Network Connections',
-        cwe: 'CWE-770',
-        description: 'Network connections without limits',
-        severity: 'MEDIUM',
-        fix: 'Limit concurrent connections',
-        documentationLink: 'https://nodejs.org/api/http.html',
       }),
       unlimitedMemoryAllocation: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -125,15 +98,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
         fix: 'Validate and limit user-controlled resource sizes',
         documentationLink: 'https://cwe.mitre.org/data/definitions/770.html',
       }),
-      missingResourceLimits: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Missing Resource Limits',
-        cwe: 'CWE-770',
-        description: 'Resource allocation lacks proper limits',
-        severity: 'MEDIUM',
-        fix: 'Implement resource size validation',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/770.html',
-      }),
       resourceAllocationInLoop: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Resource Allocation in Loop',
@@ -143,54 +107,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
         fix: 'Move resource allocation outside loop or add iteration limits',
         documentationLink: 'https://cwe.mitre.org/data/definitions/770.html',
       }),
-      implementResourceLimits: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Implement Resource Limits',
-        description: 'Add limits to resource allocation',
-        severity: 'LOW',
-        fix: 'const limitedSize = Math.min(userSize, MAX_SIZE);',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/770.html',
-      }),
-      validateResourceSize: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Resource Size',
-        description: 'Validate resource size before allocation',
-        severity: 'LOW',
-        fix: 'if (size > MAX_SIZE) throw new Error("Size too large");',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/770.html',
-      }),
-      useResourcePools: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Resource Pools',
-        description: 'Use resource pools for better control',
-        severity: 'LOW',
-        fix: 'Implement connection pooling and resource reuse',
-        documentationLink: 'https://en.wikipedia.org/wiki/Object_pool_pattern',
-      }),
-      strategyResourceManagement: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Resource Management Strategy',
-        description: 'Implement comprehensive resource management',
-        severity: 'LOW',
-        fix: 'Use resource pools, limits, and cleanup mechanisms',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/770.html',
-      }),
-      strategyRateLimiting: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Rate Limiting Strategy',
-        description: 'Implement rate limiting for resource allocation',
-        severity: 'LOW',
-        fix: 'Use rate limiters to prevent resource exhaustion',
-        documentationLink: 'https://en.wikipedia.org/wiki/Rate_limiting',
-      }),
-      strategyResourceCleanup: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Resource Cleanup Strategy',
-        description: 'Ensure proper resource cleanup',
-        severity: 'LOW',
-        fix: 'Implement try-finally blocks and resource disposal',
-        documentationLink: 'https://en.wikipedia.org/wiki/Resource_management_(computing)',
-      })
     },
     schema: [
       {

@@ -20,7 +20,7 @@ import {
   createRule,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'dangerousEval' | 'useSafeAlternative';
+type MessageIds = 'dangerousEval';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -119,7 +119,6 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-95',
       cvss: 9.8,
     },
-    hasSuggestions: true,
     messages: {
       dangerousEval: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -132,15 +131,7 @@ export const noEval = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/attacks/Code_Injection',
       }),
-      useSafeAlternative: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe Alternative',
-        description: 'Replace with a safe alternative',
-        severity: 'LOW',
-        fix: 'Use JSON.parse() for JSON, or define functions statically.',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval#never_use_eval!',
-      }),
+
     },
     schema: [
       {
@@ -241,12 +232,6 @@ export const noEval = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'dangerousEval',
               data: { function: callee.name },
-              suggest: [
-                {
-                  messageId: 'useSafeAlternative',
-                  fix: () => null,
-                },
-              ],
             });
             return;
           }
@@ -263,12 +248,6 @@ export const noEval = createRule<RuleOptions, MessageIds>({
                 node,
                 messageId: 'dangerousEval',
                 data: { function: `${callee.name} with string` },
-                suggest: [
-                  {
-                    messageId: 'useSafeAlternative',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }
@@ -300,12 +279,6 @@ export const noEval = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'dangerousEval',
               data: { function: propertyName },
-              suggest: [
-                {
-                  messageId: 'useSafeAlternative',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }
@@ -337,12 +310,6 @@ export const noEval = createRule<RuleOptions, MessageIds>({
             node,
             messageId: 'dangerousEval',
             data: { function: 'Function constructor' },
-            suggest: [
-              {
-                messageId: 'useSafeAlternative',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

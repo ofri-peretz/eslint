@@ -47,15 +47,7 @@ const fileUsesAstTooling = createModuleEvidence({
 });
 
 type MessageIds =
-  | 'objectInjection'
-  | 'useMapInstead'
-  | 'useHasOwnProperty'
-  | 'whitelistKeys'
-  | 'useObjectCreate'
-  | 'freezePrototypes'
-  | 'strategyValidate'
-  | 'strategyWhitelist'
-  | 'strategyFreeze';
+  | 'objectInjection';
 
 export interface Options {
   /** Allow bracket notation with literal strings. Default: false (stricter) */
@@ -143,7 +135,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-915',
       confidence: 'low',
     },
-    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 37% reduction (54→34 tokens) - removes verbose current/fix/doc labels
       objectInjection: formatLLMMessage({
@@ -155,70 +146,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
       }),
-      useMapInstead: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Map',
-        description: 'Use Map instead of plain objects',
-        severity: 'LOW',
-        fix: 'const map = new Map(); map.set(key, value);',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map',
-      }),
-      useHasOwnProperty: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use hasOwnProperty',
-        description: 'Check hasOwnProperty to avoid prototype properties',
-        severity: 'LOW',
-        fix: 'if (obj.hasOwnProperty(key)) { obj[key] = value; }',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty',
-      }),
-      whitelistKeys: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Whitelist Keys',
-        description: 'Whitelist allowed property names',
-        severity: 'LOW',
-        fix: 'const ALLOWED = ["name", "email"]; if (ALLOWED.includes(key)) obj[key] = value; // reject model/tool-supplied unknown keys',
-        documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
-      }),
-      useObjectCreate: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Object.create(null)',
-        description: 'Create clean objects without prototypes',
-        severity: 'LOW',
-        fix: 'const obj = Object.create(null);',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create',
-      }),
-      freezePrototypes: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Freeze Prototypes',
-        description: 'Freeze Object.prototype to prevent pollution',
-        severity: 'LOW',
-        fix: 'Object.freeze(Object.prototype);',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze',
-      }),
-      strategyValidate: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Validate Input',
-        description: 'Add input validation before property access',
-        severity: 'LOW',
-        fix: 'Validate key against allowed values before access',
-        documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
-      }),
-      strategyWhitelist: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Whitelist Properties',
-        description: 'Whitelist allowed property names only',
-        severity: 'LOW',
-        fix: 'Define allowed keys and validate against them',
-        documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
-      }),
-      strategyFreeze: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Freeze Prototypes',
-        description: 'Freeze prototypes to prevent pollution',
-        severity: 'LOW',
-        fix: 'Object.freeze(Object.prototype) at app startup',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze',
-      })
+
     },
     schema: [
       {
@@ -1077,30 +1005,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           riskLevel,
           vulnerability: pattern?.vulnerability || 'object injection',
           safeAlternative: pattern?.safeAlternative || 'Use Map or property whitelisting',
-        },
-        suggest: [
-          {
-            messageId: 'useMapInstead',
-            fix: () => null
-          },
-          {
-            messageId: 'useHasOwnProperty',
-            fix: () => null
-          },
-          {
-            messageId: 'whitelistKeys',
-            fix: () => null
-          },
-          {
-            messageId: 'useObjectCreate',
-            fix: () => null
-          },
-          {
-            messageId: 'freezePrototypes',
-            fix: () => null
-          }
-        ]
-      });
+        },});
     };
 
     /**

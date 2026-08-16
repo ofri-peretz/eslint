@@ -20,10 +20,7 @@ import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'unsafeRegexConstruction'
-  | 'escapeUserInput'
-  | 'validatePattern'
-  | 'useSafeLibrary'
-  | 'avoidDynamicFlags';
+  | 'escapeUserInput';
 
 // Inline regex-metacharacter escape, appended to the flagged expression by the
 // `escapeUserInput` suggestion fixer. No `escapeRegExp` helper exists in user
@@ -342,32 +339,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
       }),
-      validatePattern: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Pattern',
-        description: 'Validate pattern against whitelist',
-        severity: 'LOW',
-        fix: 'Validate pattern before creating RegExp',
-        documentationLink:
-          'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
-      }),
-      useSafeLibrary: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use safe-regex',
-        description: 'Use safe-regex library for validation',
-        severity: 'LOW',
-        fix: 'if (safeRegex(pattern)) { new RegExp(pattern) }',
-        documentationLink: 'https://github.com/substack/safe-regex',
-      }),
-      avoidDynamicFlags: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Static Flags',
-        description: 'Use static flags instead of dynamic',
-        severity: 'LOW',
-        fix: 'new RegExp(pattern, "gi") with static flags',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp',
-      }),
+
     },
     schema: [
       {
@@ -462,12 +434,6 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
               details: `Pattern length (${patternLength}) exceeds maximum (${maxPatternLength})`,
               fix: 'Split into smaller patterns or validate length',
             },
-            suggest: [
-              {
-                messageId: 'validatePattern',
-                fix: () => null,
-              },
-            ],
           });
           return;
         }
@@ -483,12 +449,6 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
                 'Literal regex patterns should be avoided for security. Use variables instead.',
               fix: 'Use a variable or RegExp constructor with a string variable',
             },
-            suggest: [
-              {
-                messageId: 'validatePattern',
-                fix: () => null,
-              },
-            ],
           });
           return;
         }
@@ -519,14 +479,14 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
                   `(${patternText})${INLINE_ESCAPE_SUFFIX}`,
                 ),
             },
-            {
-              messageId: 'validatePattern',
-              fix: () => null,
-            },
-            {
-              messageId: 'useSafeLibrary',
-              fix: () => null,
-            },
+            // `validatePattern` and `useSafeLibrary` used to sit here with
+            // `fix: () => null`. ESLint's report translator drops any
+            // suggestion whose fix resolves to nothing, so neither ever
+            // reached an editor — verified by linting
+            // `new RegExp(req.query.q)` through `Linter#verify`, which
+            // returns exactly one suggestion (`escapeUserInput`). Their
+            // advice now lives in the main message's `fix:` text, which is
+            // actually rendered.
           ],
         });
       }
@@ -542,12 +502,6 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
               'Dynamic flags can lead to unexpected behavior or security issues',
             fix: 'Use static flags instead of dynamic flags',
           },
-          suggest: [
-            {
-              messageId: 'avoidDynamicFlags',
-              fix: () => null,
-            },
-          ],
         });
       }
     }

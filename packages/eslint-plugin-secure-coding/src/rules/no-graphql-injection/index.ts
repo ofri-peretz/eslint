@@ -34,13 +34,7 @@ type MessageIds =
   | 'introspectionQuery'
   | 'complexQueryDos'
   | 'unsafeVariableInterpolation'
-  | 'missingInputValidation'
-  | 'useQueryBuilder'
-  | 'disableIntrospection'
-  | 'limitQueryDepth'
-  | 'strategyQueryBuilder'
-  | 'strategyInputValidation'
-  | 'strategyIntrospection';
+  | 'missingInputValidation';
 
 export interface Options extends SecurityRuleOptions {
   /** Allow introspection queries. Default: false (security-first) */
@@ -75,7 +69,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects GraphQL injection vulnerabilities and DoS attacks',
       cwe: 'CWE-89',
     },
-    hasSuggestions: true,
     messages: {
       graphqlInjection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -122,54 +115,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Validate all user inputs before GraphQL execution',
         documentationLink: 'https://graphql.org/learn/validation/',
       }),
-      useQueryBuilder: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Query Builder',
-        description: 'Use GraphQL query builders for safe construction',
-        severity: 'LOW',
-        fix: 'Use graphql-tag or similar libraries',
-        documentationLink: 'https://www.npmjs.com/package/graphql-tag',
-      }),
-      disableIntrospection: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Disable Introspection',
-        description: 'Disable GraphQL introspection in production',
-        severity: 'LOW',
-        fix: 'Set introspection: false in GraphQL config',
-        documentationLink: 'https://www.apollographql.com/docs/apollo-server/security/introspection/',
-      }),
-      limitQueryDepth: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Limit Query Depth',
-        description: 'Limit maximum query depth',
-        severity: 'LOW',
-        fix: 'Use depth limiting plugins or custom validation',
-        documentationLink: 'https://www.npmjs.com/package/graphql-depth-limit',
-      }),
-      strategyQueryBuilder: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Query Builder Strategy',
-        description: 'Use typed query builders for compile-time safety',
-        severity: 'LOW',
-        fix: 'Use GraphQL code generation tools',
-        documentationLink: 'https://graphql-code-generator.com/',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate all inputs at GraphQL resolver level',
-        severity: 'LOW',
-        fix: 'Implement custom scalars and input validation',
-        documentationLink: 'https://graphql.org/learn/schema/#scalar-types',
-      }),
-      strategyIntrospection: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Introspection Strategy',
-        description: 'Control introspection access based on environment',
-        severity: 'LOW',
-        fix: 'Enable introspection only for development/admin users',
-        documentationLink: 'https://www.apollographql.com/docs/apollo-server/security/introspection/',
-      })
+
+
     },
     schema: [
       {
@@ -777,12 +724,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
                 filePath: filename,
                 line: String(node.loc?.start.line ?? 0),
               },
-              suggest: [
-                {
-                  messageId: 'useQueryBuilder',
-                  fix: () => null // Complex to auto-fix
-                },
-              ],
             });
           }
         }
@@ -797,12 +738,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
               filePath: filename,
               line: String(node.loc?.start.line ?? 0),
             },
-            suggest: [
-              {
-                messageId: 'limitQueryDepth',
-                fix: () => null
-              },
-            ],
           });
         }
       },

@@ -33,14 +33,7 @@ type MessageIds =
   | 'unsafeInstanceofUsage'
   | 'looseEqualityTypeCheck'
   | 'missingNullCheck'
-  | 'unreliableConstructorCheck'
-  | 'incompleteTypeValidation'
-  | 'useTypeofCorrectly'
-  | 'useProperTypeGuards'
-  | 'validateUserInput'
-  | 'strategyTypeGuards'
-  | 'strategySchemaValidation'
-  | 'strategyDefensiveProgramming';
+  | 'unreliableConstructorCheck';
 
 export interface Options extends SecurityRuleOptions {
   /** Variables that contain user input and should be validated */
@@ -64,7 +57,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       description: 'Detects improper type validation in user input handling',
       cwe: 'CWE-1287',
     },
-    hasSuggestions: true,
     messages: {
       improperTypeValidation: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -120,63 +112,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         fix: 'Use Object.prototype.toString.call() or duck typing',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor',
       }),
-      incompleteTypeValidation: formatLLMMessage({
-        icon: MessageIcons.WARNING,
-        issueName: 'Incomplete Type Validation',
-        cwe: 'CWE-1287',
-        description: 'Type validation is incomplete',
-        severity: 'LOW',
-        fix: 'Use comprehensive type checking',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/1287.html',
-      }),
-      useTypeofCorrectly: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use typeof Correctly',
-        description: 'Use typeof with null checks for objects',
-        severity: 'LOW',
-        fix: 'if (value != null && typeof value === "object")',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof',
-      }),
-      useProperTypeGuards: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Proper Type Guards',
-        description: 'Use proper type guard functions',
-        severity: 'LOW',
-        fix: 'Array.isArray(), Number.isNaN(), etc.',
-        documentationLink: 'https://www.typescriptlang.org/docs/handbook/advanced-types.html#type-guards-and-differentiating-types',
-      }),
-      validateUserInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate User Input',
-        description: 'Validate user input before processing',
-        severity: 'LOW',
-        fix: 'Use schema validation libraries',
-        documentationLink: 'https://joi.dev/',
-      }),
-      strategyTypeGuards: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Type Guards Strategy',
-        description: 'Use type guards for runtime type checking',
-        severity: 'LOW',
-        fix: 'Implement custom type guard functions',
-        documentationLink: 'https://www.typescriptlang.org/docs/handbook/advanced-types.html#type-guards-and-differentiating-types',
-      }),
-      strategySchemaValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Schema Validation Strategy',
-        description: 'Use schema validation for complex inputs',
-        severity: 'LOW',
-        fix: 'Use Joi, Yup, or Zod for input validation',
-        documentationLink: 'https://joi.dev/',
-      }),
-      strategyDefensiveProgramming: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Defensive Programming Strategy',
-        description: 'Use defensive programming techniques',
-        severity: 'LOW',
-        fix: 'Check types and handle edge cases explicitly',
-        documentationLink: 'https://en.wikipedia.org/wiki/Defensive_programming',
-      })
+
     },
     schema: [
       {
@@ -384,12 +320,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
                     filePath: filename,
                     line: String(node.loc?.start.line ?? 0),
                     },
-                    suggest: [
-                    {
-                        messageId: 'useTypeofCorrectly',
-                        fix: () => null // Would need complex AST manipulation
-                    },
-                    ],
                 });
           }
         }

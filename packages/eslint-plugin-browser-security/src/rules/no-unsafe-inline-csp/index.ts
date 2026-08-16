@@ -20,7 +20,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeInline' | 'useNonceOrHash';
+type MessageIds = 'unsafeInline';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -39,7 +39,6 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-79',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       unsafeInline: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -54,15 +53,7 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP',
       }),
-      useNonceOrHash: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Nonce or Hash',
-        description: 'Replace unsafe-inline with nonces or hashes',
-        severity: 'LOW',
-        fix: "script-src 'self' 'nonce-randomValue'; (generate nonce per-request)",
-        documentationLink:
-          'https://content-security-policy.com/nonce/',
-      }),
+
     },
     schema: [
       {
@@ -184,7 +175,6 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
       context.report({
         node,
         messageId: 'unsafeInline',
-        suggest: [{ messageId: 'useNonceOrHash', fix: () => null }],
       });
     }
 

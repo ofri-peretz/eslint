@@ -19,7 +19,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeEval' | 'removeUnsafeEval';
+type MessageIds = 'unsafeEval';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -38,7 +38,6 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-95',
       cvss: 8.1,
     },
-    hasSuggestions: true,
     messages: {
       unsafeEval: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -53,15 +52,7 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src',
       }),
-      removeUnsafeEval: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: "Remove 'unsafe-eval'",
-        description: 'Refactor code to avoid eval() and remove unsafe-eval from CSP',
-        severity: 'LOW',
-        fix: "script-src 'self'; // Remove 'unsafe-eval'",
-        documentationLink:
-          'https://web.dev/strict-csp/',
-      }),
+
     },
     schema: [
       {
@@ -94,7 +85,6 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'unsafeEval',
-          suggest: [{ messageId: 'removeUnsafeEval', fix: () => null }],
         });
       }
     }

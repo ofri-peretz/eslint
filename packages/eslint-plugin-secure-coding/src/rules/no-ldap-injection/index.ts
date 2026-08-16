@@ -35,12 +35,7 @@ type MessageIds =
   | 'unsafeLdapFilter'
   | 'unescapedLdapInput'
   | 'dangerousLdapOperation'
-  | 'useLdapEscaping'
-  | 'validateLdapInput'
-  | 'useParameterizedLdap'
-  | 'strategyInputValidation'
-  | 'strategySafeLibraries'
-  | 'strategyFilterConstruction';
+  | 'validateLdapInput';
 
 export interface Options extends SecurityRuleOptions {
   /** LDAP-related function names to check */
@@ -147,7 +142,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects LDAP injection vulnerabilities',
       cwe: 'CWE-90',
     },
-    hasSuggestions: true,
     messages: {
       ldapInjection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -185,14 +179,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Validate LDAP filters and restrict allowed operations',
         documentationLink: 'https://ldap.com/ldap-filters/',
       }),
-      useLdapEscaping: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use LDAP Escaping',
-        description: 'Use proper LDAP escaping functions',
-        severity: 'LOW',
-        fix: 'Use ldap.escape.filterValue() or equivalent',
-        documentationLink: 'https://www.npmjs.com/package/ldap-escape',
-      }),
+
       validateLdapInput: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Validate LDAP Input',
@@ -200,38 +187,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         fix: 'Validate input against allowed patterns',
         documentationLink: 'https://cwe.mitre.org/data/definitions/90.html',
-      }),
-      useParameterizedLdap: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Parameterized LDAP',
-        description: 'Use parameterized LDAP queries when possible',
-        severity: 'LOW',
-        fix: 'Use prepared LDAP statements or safe construction',
-        documentationLink: 'https://ldap.com/ldap-filters/',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate LDAP input at application boundary',
-        severity: 'LOW',
-        fix: 'Implement input validation and length limits',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/90.html',
-      }),
-      strategySafeLibraries: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Safe Libraries Strategy',
-        description: 'Use LDAP libraries with built-in escaping',
-        severity: 'LOW',
-        fix: 'Use ldapjs or libraries with automatic escaping',
-        documentationLink: 'https://www.npmjs.com/package/ldapjs',
-      }),
-      strategyFilterConstruction: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Filter Construction Strategy',
-        description: 'Use safe LDAP filter construction methods',
-        severity: 'LOW',
-        fix: 'Build filters programmatically with escaped values',
-        documentationLink: 'https://ldap.com/ldap-filters/',
       }),
     },
     schema: [
@@ -514,12 +469,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
               filePath: filename,
               line: String(node.loc?.start.line ?? 0),
             },
-            suggest: [
-              {
-                messageId: 'useLdapEscaping',
-                fix: () => null,
-              },
-            ],
           });
         } else if (
           filterArg.type === 'TemplateLiteral' &&
@@ -542,12 +491,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
               filePath: filename,
               line: String(node.loc?.start.line ?? 0),
             },
-            suggest: [
-              {
-                messageId: 'useLdapEscaping',
-                fix: () => null,
-              },
-            ],
           });
         }
       },
@@ -619,12 +562,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
                   filePath: filename,
                   line: String(node.loc?.start.line ?? 0),
                 },
-                suggest: [
-                  {
-                    messageId: 'useLdapEscaping',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }
@@ -684,12 +621,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
                   safeAlternative:
                     'Use ldap.escape.filterValue() or parameterized LDAP queries',
                 },
-                suggest: [
-                  {
-                    messageId: 'useLdapEscaping',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }
@@ -713,12 +644,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
               severity: 'MEDIUM',
               safeAlternative: 'Use proper LDAP escaping and validation',
             },
-            suggest: [
-              {
-                messageId: 'useLdapEscaping',
-                fix: () => null,
-              },
-            ],
           });
         }
       },
