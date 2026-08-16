@@ -195,8 +195,24 @@ describe('no-graphql-injection', () => {
     ruleTester.run('invalid - missing input validation', noGraphqlInjection, {
       valid: [],
       invalid: [
-        // Each Identifier argument produces a missingInputValidation error
-        // graphql.execute(query, root, context, variables) - 4 Identifier args
+        // WARNING — this case records what the rule DOES, not what it should
+        // do, and three of these four reports are false positives.
+        //
+        // `graphql.execute` is called here with the graphql-js argument order:
+        // the document, the root value, the execution context, and the
+        // variables. The rule reports every `Identifier` argument regardless of
+        // position and with no evidence that any of them carries untrusted
+        // data. `root` and `context` are the server's own objects, and
+        // `variables` is the parameterised-input mechanism — passing user data
+        // there is the MITIGATION for GraphQL injection, not the vulnerability.
+        //
+        // Narrowing this needs a decision the rule cannot make from the AST
+        // alone: the document's argument position differs between clients
+        // (`graphql.execute(schema, document, …)` in graphql-js,
+        // `client.query({ query })` in Apollo), so picking one silently trades
+        // this false positive for a false negative in the other. Left as-is
+        // and flagged, so nobody reads a green suite as evidence the behaviour
+        // is right.
         {
           code: 'const result = await graphql.execute(query, root, context, variables);',
           errors: [
