@@ -1,0 +1,22 @@
+{
+  "rule": "secure-coding/no-unchecked-loop-condition",
+  "fixtures": 25,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-unchecked-loop-condition",
+      "tp": 9,
+      "fp": 0,
+      "fn": 3,
+      "precision": 1,
+      "recall": 0.75,
+      "f1": 0.8571428571428571,
+      "crashes": [],
+      "missed": [
+        "vulnerable/08-unbounded-recursion.js",
+        "vulnerable/10-param-root.js",
+        "vulnerable/11-renamed-identifiers.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

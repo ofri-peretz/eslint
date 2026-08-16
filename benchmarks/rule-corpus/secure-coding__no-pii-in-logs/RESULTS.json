@@ -1,0 +1,20 @@
+{
+  "rule": "secure-coding/no-pii-in-logs",
+  "fixtures": 15,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-pii-in-logs",
+      "tp": 8,
+      "fp": 1,
+      "fn": 0,
+      "precision": 0.8888888888888888,
+      "recall": 1,
+      "f1": 0.9411764705882353,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": [
+        "safe/07-tokenizer-metrics.js"
+      ]
+    }
+  ]
+}

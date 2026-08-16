@@ -76,7 +76,11 @@ describe('no-format-string-injection', () => {
           ],
         },
         {
-          code: 'printf(userFormatString);',
+          // Was `printf(userFormatString)`, which only reported because
+          // `userformat` was matched as a SUBSTRING of it — the same test that
+          // read `metadata` and `paymentData` as user input. `userFormat` is a
+          // whole name on the declared list.
+          code: 'printf(userFormat);',
           errors: [
             {
               messageId: 'userControlledFormatString',
@@ -152,15 +156,15 @@ describe('no-format-string-injection', () => {
         {
           code: 'let formatStr = "User: %s"; formatStr = req.query.fmt; util.format(formatStr, user);',
           errors: [
+            // Was `missingFormatValidation`, reached only because the binding
+            // is SPELLED `formatStr` — rename it to `f` and the report died.
+            // The re-assignment `formatStr = req.query.fmt` is now tracked, so
+            // the finding is the accurate one: the format string is
+            // attacker-controlled. The escape suggestion goes with it, which is
+            // the point — it rewrote the ARGUMENT and doubled every literal
+            // percent sign in the user's own data.
             {
-              messageId: 'missingFormatValidation',
-              suggestions: [
-                {
-                  messageId: 'escapeFormatString',
-                  output:
-                    'let formatStr = "User: %s"; formatStr = req.query.fmt; util.format(formatStr, user.replace(/%/g, "%%"));',
-                },
-              ],
+              messageId: 'userControlledFormatString',
             },
           ],
         },
@@ -434,27 +438,15 @@ describe('no-format-string-injection', () => {
             }
           `,
           errors: [
+            // Was `missingFormatValidation` (with the escape suggestion), which
+            // reached this line only through the identifier being SPELLED
+            // `template`. `templates[type] || data` is now read as what the
+            // fixture's own comment says it is — a format string that can be
+            // `data` — so the finding is the precise one, and the suggestion
+            // that doubled every percent sign in the ARGUMENT is not offered
+            // for a format string the user controls.
             {
-              messageId: 'missingFormatValidation',
-              suggestions: [
-                {
-                  messageId: 'escapeFormatString',
-                  output: `
-            // Dynamic format construction
-            function formatUserMessage(type, data) {
-              // DANGEROUS: Type could be user-controlled
-              const templates = {
-                'info': 'INFO: %s',
-                'error': 'ERROR: %s',
-                'debug': 'DEBUG: %s'
-              };
-
-              const template = templates[type] || data; // Could be user input!
-              return util.format(template, data.replace(/%/g, "%%"));
-            }
-          `,
-                },
-              ],
+              messageId: 'userControlledFormatString',
             },
           ],
         },
@@ -1266,3 +1258,153 @@ ruleTester.run('option: trustedSanitizers launders a user-controlled format stri
  * No test is added for those three: any case that sets them produces the default
  * verdict, which would assert that a dead branch is working.
  */
+
+/**
+ * Regression lock — user input is a WHOLE name, never a substring of one.
+ *
+ * `isUserInput` was `lowerName.includes(input)` over the default
+ * `userInputVariables` list, which contains `data`, `params`, `request` and
+ * `input`. Three probes, three reports on code that touches no request:
+ *
+ *   console.error(paymentData, orderId)     // `data` ⊂ paymentData
+ *   console.info(validationParams, reqId)   // `params` ⊂ validationParams
+ *   util.format(metadata, id)               // `data` ⊂ metadata
+ *
+ * A dotted path is asked the same question one segment at a time, so
+ * `request.body.layout` still resolves and `paymentData.total` does not.
+ */
+ruleTester.run('lock: user input matches whole names', noFormatStringInjection, {
+  valid: [
+    'console.error(paymentData, orderId);',
+    'console.info(validationParams, requestId);',
+    'util.format(metadata, id);',
+    'console.log(bodyText, elapsedMs);',
+    'util.format(paymentData.total, id);',
+  ],
+  invalid: [
+    {
+      code: 'util.format(request.body.layout, token);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+    {
+      code: 'const { query } = ctx; util.format(query.format, secret);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — a type-only cast is not a change of provenance.
+ *
+ * `req.query.pattern as string` is `req.query.pattern` once TypeScript is
+ * erased, and Express types force the cast at nearly every query read
+ * (`string | string[] | ParsedQs`). Leaving the wrapper on meant the typed half
+ * of the ecosystem went unreported while the untyped half did not.
+ */
+ruleTester.run('lock: type casts are unwrapped', noFormatStringInjection, {
+  valid: ['util.format("account=%s", req.query.pattern as string);'],
+  invalid: [
+    {
+      code: 'util.format(req.query.pattern as string, account.apiKey);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+    {
+      code: 'util.format(<string>req.query.pattern, account.apiKey);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — the util.format sink is a BINDING, not the spelling `util.`.
+ *
+ * `const { format } = require('node:util')` is how Node's own documentation
+ * imports it, and it made the sink vanish: the rule saw a call to something
+ * named `format` and had no opinion. Resolved through the module binding, so
+ * an aliased import counts and a local helper called `format` does not.
+ */
+ruleTester.run('lock: util.format resolved through its binding', noFormatStringInjection, {
+  valid: [
+    // A local function of the same name is a different binding entirely.
+    'function format(tz, stamp) { return String(stamp); } format(req.query.tz, stamp);',
+    // Constant format string through the imported binding: still the mitigation.
+    'import { format } from "node:util"; format("tz=%s", req.query.tz);',
+  ],
+  invalid: [
+    {
+      code: 'const { format } = require("node:util"); format(req.query.fmt, token);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+    {
+      code: 'import { format as fmt } from "util"; fmt(req.query.f, token);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — a fallback does not launder the tainted branch.
+ *
+ * `flag ? DEFAULT : req.query.fmt` and `req.query.fmt ?? DEFAULT` both put the
+ * request value in the format position on one of their paths. Both were quiet,
+ * which made the finding deletable by the "make it configurable" commit that
+ * adds the default.
+ */
+ruleTester.run('lock: conditional and logical fallbacks', noFormatStringInjection, {
+  valid: ['util.format(flag ? SHORT_FORMAT : LONG_FORMAT, account.id);'],
+  invalid: [
+    {
+      code: 'util.format(flag ? DEFAULT_FMT : req.query.fmt, token);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+    {
+      code: 'util.format(req.query.fmt ?? DEFAULT_FMT, token);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — taint survives destructuring and re-assignment.
+ *
+ * The declarator visitor returned immediately unless the id was a plain
+ * Identifier, so `const { fmt } = req.query` — the idiomatic Express read —
+ * carried the taint nowhere. And a re-assignment is not a declaration, so a
+ * `let` declared with a constant stayed trusted no matter what was written into
+ * it afterwards.
+ *
+ * The `valid` pair is what keeps the fix honest: destructuring a domain object,
+ * and a `let` whose every write is a literal, must stay quiet.
+ */
+ruleTester.run('lock: destructured and re-assigned bindings', noFormatStringInjection, {
+  valid: [
+    'const { template, payload } = record; util.format(template, payload.name);',
+    'let pattern = "order=%s"; pattern = "%s/%d"; util.format(pattern, order.id);',
+    'const { total } = paymentData; util.format("t=%s", total);',
+  ],
+  invalid: [
+    {
+      code: 'const { fmt } = req.query; util.format(fmt, token);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+    {
+      code: 'const [first] = req.body.patterns; util.format(first, token);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+    {
+      code: 'let pattern = "order=%s"; pattern = req.query.pattern; util.format(pattern, order.id);',
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+  ],
+});
+
+/**
+ * Coverage — the assignment-tracking visitor only tracks a plain binding.
+ *
+ * `obj.fmt = req.query.f` writes into a property, which is a different
+ * question: nothing in this file establishes what else reads `obj`.
+ */
+ruleTester.run('coverage: assignment target must be a binding', noFormatStringInjection, {
+  valid: ['const obj = {}; obj.fmt = req.query.f; util.format(obj.fmt2, token);'],
+  invalid: [],
+});

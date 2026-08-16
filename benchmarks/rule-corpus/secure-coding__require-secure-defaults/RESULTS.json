@@ -1,0 +1,18 @@
+{
+  "rule": "secure-coding/require-secure-defaults",
+  "fixtures": 15,
+  "results": [
+    {
+      "name": "Interlace secure-coding/require-secure-defaults",
+      "tp": 7,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

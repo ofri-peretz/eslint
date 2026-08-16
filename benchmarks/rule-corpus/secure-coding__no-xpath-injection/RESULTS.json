@@ -1,0 +1,18 @@
+{
+  "rule": "secure-coding/no-xpath-injection",
+  "fixtures": 24,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-xpath-injection",
+      "tp": 12,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -20,7 +20,7 @@
  * - Framework-specific safe patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, unwrapTypeSyntax } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -283,12 +283,162 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
     });
 
     /**
-     * Check if a variable contains user input
+     * Is this identifier one the project declared as user input?
+     *
+     * WHOLE NAMES, never substrings. `varName.includes(input)` over a list
+     * containing `data`, `body`, `input` and `params` made `metadata`,
+     * `renderMetadata`, `bodyClass` and `validationParams` all read as
+     * attacker-controlled, and `varName.startsWith('user')` added `userAgent`,
+     * `username` and `userPreferences`. Measured on the printed source of an
+     * expression, which is how `chart.innerHTML = renderMetadata(series)` came
+     * to be a CWE-96 finding.
      */
-    const isUserInput = (varName: string): boolean => {
-      return userInputVariables.some(input => varName.includes(input)) || 
-             varName.startsWith('user');
+    const declaredUserInput: ReadonlySet<string> = new Set(
+      userInputVariables.map((name) => name.toLowerCase()),
+    );
+    const namesUserInput = (varName: string): boolean =>
+      declaredUserInput.has(varName.toLowerCase());
+
+    /**
+     * Every name along a member chain, plus its root identifier.
+     *
+     * `req.body.template` -> ['req', 'body', 'template'], so a declared name
+     * anywhere in the chain counts and `paymentData.total` matches nothing.
+     * A computed access contributes no name but does not stop the walk, so
+     * `req.query[key]` is still rooted at `req`.
+     */
+    const memberChainNames = (node: TSESTree.MemberExpression): string[] => {
+      const names: string[] = [];
+      let current: TSESTree.Node = node;
+      while (current.type === 'MemberExpression') {
+        if (!current.computed && current.property.type === 'Identifier') {
+          names.push(current.property.name);
+        }
+        current = current.object;
+      }
+      if (current.type === 'Identifier') names.push(current.name);
+      return names;
     };
+
+    /**
+     * Does this binding hold a value that came from user input?
+     *
+     * Answered from the scope manager, not from the binding's spelling:
+     * `const source = req.body.markup` taints `source`, and so does a later
+     * `source = req.query.tpl`. A binding whose every write is a literal stays
+     * clean however it is named.
+     */
+    const resolvesToUserInput = (
+      node: TSESTree.Identifier,
+      seen: Set<string>,
+    ): boolean => {
+      if (seen.has(node.name)) return false;
+      seen.add(node.name);
+
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+      while (scope) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (variable) {
+          return variable.references.some(
+            (reference) =>
+              reference.writeExpr !== undefined &&
+              reference.writeExpr !== null &&
+              isUserInputExpression(reference.writeExpr, seen),
+          );
+        }
+        scope = scope.upper;
+      }
+      return false;
+    };
+
+    /**
+     * A bare function PARAMETER in the template-source position.
+     *
+     * Provenance the file cannot see, at the one sink where that is enough on
+     * its own: a rendering service whose HTTP layer lives elsewhere is the
+     * ordinary shape, and `Handlebars.compile` has exactly one safe usage —
+     * compile a template the application owns. A parameter is not one, and
+     * nothing in this file can narrow it to one.
+     *
+     * Deliberately NOT applied to `innerHTML` or `dangerouslySetInnerHTML`,
+     * where a parameter is the normal shape of a DOM helper whose caller did
+     * the sanitizing, and where reporting it would fire on every such helper.
+     *
+     * Resolved through the scope manager's definition kind, so it is the
+     * binding that decides and not the parameter's spelling — which is what the
+     * previous test (`name.includes('input')`) actually measured.
+     */
+    const isUnattributedParameter = (raw: TSESTree.Node): boolean => {
+      const node = unwrapTypeSyntax(raw);
+      if (node.type !== 'Identifier') return false;
+
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+      while (scope) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (variable) {
+          return variable.defs.some((def) => def.type === 'Parameter');
+        }
+        scope = scope.upper;
+      }
+      return false;
+    };
+
+    /**
+     * Is this EXPRESSION attacker-attributable?
+     *
+     * The rule used to answer this by printing the expression and searching the
+     * text for a word, which failed in both directions at once:
+     * `Handlebars.compile(req.body.template)` — the canonical CWE-96 sink,
+     * written the way Handlebars' own documentation writes it — was silent,
+     * because only a bare `Identifier` was ever considered; while
+     * `renderMetadata(series)` reported, because its text contains `data`.
+     *
+     * A CallExpression is deliberately not attributable: a helper's return
+     * value has provenance this rule cannot see from one site, and treating it
+     * as tainted is what reported the sanitizers. Same reasoning
+     * `no-sql-injection` documents for its own call exclusion.
+     */
+    function isUserInputExpression(
+      raw: TSESTree.Node,
+      seen: Set<string> = new Set(),
+    ): boolean {
+      const node = unwrapTypeSyntax(raw);
+
+      switch (node.type) {
+        case 'Identifier':
+          return namesUserInput(node.name) || resolvesToUserInput(node, seen);
+        case 'MemberExpression':
+          return memberChainNames(node).some(namesUserInput);
+        case 'TemplateLiteral':
+          return node.expressions.some((expr) => isUserInputExpression(expr, seen));
+        case 'BinaryExpression':
+          return (
+            isUserInputExpression(node.left, seen) ||
+            isUserInputExpression(node.right, seen)
+          );
+        case 'ConditionalExpression':
+          return (
+            isUserInputExpression(node.consequent, seen) ||
+            isUserInputExpression(node.alternate, seen)
+          );
+        case 'LogicalExpression':
+          return (
+            isUserInputExpression(node.left, seen) ||
+            isUserInputExpression(node.right, seen)
+          );
+        case 'ObjectExpression':
+          // `dangerouslySetInnerHTML={{ __html: … }}` — the payload is the
+          // property value, so the object is tainted exactly when one of its
+          // values is.
+          return node.properties.some(
+            (property) =>
+              property.type === 'Property' &&
+              isUserInputExpression(property.value, seen),
+          );
+        default:
+          return false;
+      }
+    }
 
     return {
       // Check JSX attributes for directive injection
@@ -302,8 +452,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             const expression = attrValue.expression;
 
             // Check if the expression contains user input
-            const expressionText = sourceCode.getText(expression);
-            if (userInputVariables.some(input => expressionText.includes(input))) {
+            if (isUserInputExpression(expression)) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
@@ -332,7 +481,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
               const expression = attrValue.expression;
 
               // Check if directive value comes from user input
-              if (expression.type === 'Identifier' && isUserInput(expression.name)) {
+              if (isUserInputExpression(expression)) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -360,7 +509,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             if (attrValue.type === 'JSXExpressionContainer') {
               const expression = attrValue.expression;
 
-              if (expression.type === 'Identifier' && isUserInput(expression.name)) {
+              if (isUserInputExpression(expression)) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -405,8 +554,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           }
 
           // Check if right side contains user input
-          const rightText = sourceCode.getText(right);
-          if (userInputVariables.some(input => rightText.includes(input))) {
+          if (isUserInputExpression(right)) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
@@ -464,7 +612,10 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
               const templateArg = args[0];
 
               // Check if template comes from user input
-              if (templateArg.type === 'Identifier' && isUserInput(templateArg.name)) {
+              if (
+                isUserInputExpression(templateArg) ||
+                isUnattributedParameter(templateArg)
+              ) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -487,7 +638,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             if (args.length >= 2) {
               const directiveName = args[0];
 
-              if (directiveName.type === 'Identifier' && isUserInput(directiveName.name)) {
+              if (isUserInputExpression(directiveName)) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -511,7 +662,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           if (args.length >= 2) {
             const directiveName = args[0];
 
-            if (directiveName.type === 'Identifier' && isUserInput(directiveName.name)) {
+            if (isUserInputExpression(directiveName)) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }
@@ -535,6 +686,18 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         let current: TSESTree.Node | undefined = node;
         let isInDangerousContext = false;
 
+        // One defect, one finding. `el.innerHTML = `<p>${req.body.name}</p>``
+        // reported TWICE — once from the AssignmentExpression visitor, whose
+        // taint check already looks through a template literal, and again from
+        // here. The owning visitor reports the whole payload, so this one stands
+        // down whenever that payload is itself attributable.
+        //
+        // What is left for this visitor is the case the owning visitors
+        // deliberately cannot see: a template handed to a helper first, as in
+        // `el.innerHTML = wrap(`${req.body.name}`)`. A call's return value has
+        // no provenance, so the assignment is quiet and the interpolation here
+        // is the only evidence there is.
+        //
         // Every assignment of `isInDangerousContext = true` is followed by `break`,
         // so the negation is dead (CodeQL: `js/useless-conditional`).
         while (current) {
@@ -543,6 +706,8 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             if (current.parent?.type === 'JSXAttribute' &&
                 current.parent.name.type === 'JSXIdentifier' &&
                 current.parent.name.name === 'dangerouslySetInnerHTML') {
+              // A synthetic node may carry no expression at all; absence is not evidence.
+              if (current.expression && isUserInputExpression(current.expression)) return;
               isInDangerousContext = true;
               break;
             }
@@ -552,6 +717,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             if (left.type === 'MemberExpression' &&
                 left.property.type === 'Identifier' &&
                 left.property.name === 'innerHTML') {
+              if (current.right && isUserInputExpression(current.right)) return;
               isInDangerousContext = true;
               break;
             }
@@ -562,10 +728,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         if (isInDangerousContext) {
           // Check if template contains user input
           const hasUserInput = node.expressions.some((expr: TSESTree.Expression) =>
-            (expr.type === 'Identifier' && isUserInput(expr.name)) ||
-            (expr.type === 'MemberExpression' &&
-             expr.object.type === 'Identifier' &&
-             isUserInput(expr.object.name))
+            isUserInputExpression(expr),
           );
 
           if (hasUserInput) {

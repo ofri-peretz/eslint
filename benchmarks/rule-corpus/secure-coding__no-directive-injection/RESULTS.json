@@ -1,0 +1,18 @@
+{
+  "rule": "secure-coding/no-directive-injection",
+  "fixtures": 23,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-directive-injection",
+      "tp": 11,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -437,7 +437,11 @@ describe('no-xpath-injection', () => {
         invalid: [
           // Direct function call (not method) - Invalid because // is dangerous pattern
           {
-            code: 'select("//user")',
+            // The import is what makes a BARE `select(...)` an XPath evaluator.
+            // Without it the identifier carries only its spelling, and `select`
+            // is also NgRx's store operator — `store.pipe(select(selectUser))`
+            // reported CWE-643 at CVSS 9.8 in files with no XML in them.
+            code: 'import { select } from "xpath"; select("//user")',
             options: [{ xpathFunctions: ['select'], reportDangerousConstructs: true }],
             errors: [{ messageId: 'dangerousXpathExpression' }],
           },
@@ -578,7 +582,8 @@ const xpath = \`//users/..\``,
         },
         // isXpathSinkCall via a bare Identifier callee.
         {
-          code: 'select(`//users/..`);',
+          // Import-gated, as above: a bare callee needs module evidence.
+          code: 'import { select } from "xpath"; select(`//users/..`);',
           // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
           // strings, and `//` is the descendant axis, present in essentially
           // every XPath. Reporting them at CVSS 9.8 by default is what made
@@ -625,7 +630,14 @@ const xpath = \`//users/..\``,
 
       callExpression({
         type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'evaluate' },
+        // A MEMBER callee: a bare `evaluate(...)` now needs a resolvable import
+        // to count as an XPath evaluator, which a synthetic node has no scope
+        // to provide. The report path under test is the same.
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'doc' },
+          property: { type: 'Identifier', name: 'evaluate' },
+        },
         arguments: [{ type: 'Literal', value: '//users/..' }],
       });
 
@@ -639,7 +651,12 @@ const xpath = \`//users/..\``,
 
       callExpression({
         type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'evaluate' },
+        // Member callee, same reason as above.
+        callee: {
+          type: 'MemberExpression',
+          object: { type: 'Identifier', name: 'doc' },
+          property: { type: 'Identifier', name: 'evaluate' },
+        },
         arguments: [
           { type: 'Identifier', name: 'userInput', parent: undefined },
         ],
@@ -1199,3 +1216,43 @@ ruleTester.run(
     ],
   },
 );
+
+/**
+ * Regression locks — defects proved by
+ * `benchmarks/rule-corpus/secure-coding__no-xpath-injection`.
+ */
+ruleTester.run('lock - corpus-proved defects', noXpathInjection, {
+  valid: [
+    // NgRx. `select` here is the store operator and the argument is a memoised
+    // selector function. Reported at CVSS 9.8 in a file with no XML in it,
+    // because `select` is on the sink-name list and `selectUserProfile`
+    // contains `user`.
+    {
+      code: 'import { select } from "@ngrx/store"; export const vm$ = store.pipe(select(selectUserProfile));',
+    },
+    // Any feature-flag SDK. Same shape, different verb.
+    {
+      code: 'import { evaluate } from "../lib/flags"; export function canExport(userContext) { return evaluate(userContext).enabled; }',
+    },
+    // A protocol-relative URL. `//` is the descendant axis only when a node
+    // test follows it in the same literal; here it is a host.
+    {
+      code: 'export function cdnHref(host, asset) { return "//" + host + "/assets/" + asset; }',
+    },
+  ],
+  invalid: [
+    // The same bare call, WITH the import that makes it an evaluator.
+    {
+      code: 'import { select } from "xpath"; export function f(doc, name) { return select("//user[@name=\'" + name + "\']", doc); }',
+      errors: [{ messageId: 'xpathInjection' }],
+    },
+    // `select1` is the xpath package's other documented entry point. Its
+    // absence from the sink list did not merely miss the call — it actively
+    // SUPPRESSED the concatenation finding, because a value whose only use is a
+    // non-sink is treated as proven-safe.
+    {
+      code: 'const xpath = require("xpath"); exports.byMail = function (mail, doc) { const expression = "//users/user[email/text()=\'" + mail + "\']"; return xpath.select1(expression, doc); };',
+      errors: [{ messageId: 'xpathInjection' }],
+    },
+  ],
+});

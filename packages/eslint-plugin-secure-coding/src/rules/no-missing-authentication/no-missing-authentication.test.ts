@@ -597,3 +597,154 @@ describe('option: testFilePattern', () => {
     ],
   });
 });
+
+/**
+ * Regression locks — each FAILS on the pre-fix rule.
+ *
+ * 1. FALSE POSITIVES. The router check was `objectName.includes(name)` against
+ *    ['app','router','server','route',…]. `app` ⊂ `wrapper` and ⊂ `dataMapper`,
+ *    so an LRU cache and a persistence mapper were reported as unauthenticated
+ *    HTTP routes in files that import no HTTP server at all.
+ * 2. FALSE NEGATIVE — the widest one. DEFAULT_PUBLIC_ROUTE_PATTERNS contains
+ *    'status', and the rule tested those patterns against the WHOLE call text
+ *    including the handler body. Every Express handler that writes
+ *    `res.status(500)` therefore silenced the rule about its own route.
+ * 3. FALSE NEGATIVE. Auth middleware was detected by substring over the printed
+ *    text of EVERY argument, including the handler. `auth` ⊂ `getAuthorReport`
+ *    and `session` ⊂ `renderSessionRoster` — two ordinary domain nouns — both
+ *    counted as authentication.
+ * 4. FALSE NEGATIVE. A router bound to a name outside the hard-coded list
+ *    (`const api = express.Router()`) was invisible, even though the binding
+ *    resolves to the factory call in the same file.
+ * 5. FALSE NEGATIVE. `app.route(path).get(handler)`, Express's own chaining
+ *    API, was skipped because the registration's object is a CallExpression.
+ */
+describe('regression locks', () => {
+  ruleTester.run('lock: router identity comes from the binding, not a substring', noMissingAuthentication, {
+    valid: [
+      // app ⊂ wrapper / dataMapper / appointmentScheduler
+      { code: 'const wrapper = createCacheWrapper(); wrapper.get("k"); wrapper.delete("k");' },
+      { code: 'function f(appointmentScheduler) { return appointmentScheduler.get(1); }' },
+      // Resolved evidence outranks a genuine whole-word name match.
+      { code: 'const routeCache = new Map(); routeCache.get("/a"); routeCache.delete("/a");' },
+      { code: 'const serverStats = new Map(); serverStats.get("host");' },
+      { code: 'const dataMapper = { get: (id) => id }; dataMapper.get(1);' },
+    ],
+    invalid: [
+      // A router is a router whatever it is named, when the binding resolves.
+      {
+        code: 'const api = express.Router(); api.post("/admin/flags", (req, res) => {});',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+      {
+        code: 'const gateway = express(); gateway.get("/admin/secrets", (req, res) => {});',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+      {
+        code: 'const srv = new Koa(); srv.get("/admin/secrets", (req, res) => {});',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+    ],
+  });
+
+  ruleTester.run('lock: default public-route patterns match the PATH, not the handler body', noMissingAuthentication, {
+    valid: [
+      // A genuinely public path still matches, by path.
+      { code: 'app.post("/login", loginHandler);' },
+      { code: 'app.get("/healthz", (req, res) => {});' },
+    ],
+    invalid: [
+      // `res.status(500)` in the body must not exempt an admin route.
+      {
+        code: 'app.get("/admin/accounts", async (req, res) => { try { res.json(await listUsers()); } catch (e) { res.status(500).end(); } });',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+      // Same for the other default path words appearing only in the body.
+      {
+        code: 'app.get("/admin/audit", (req, res) => { recordMetrics(); pingUpstream(); });',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+    ],
+  });
+
+  ruleTester.run('lock: the handler is not its own authentication', noMissingAuthentication, {
+    valid: [
+      // Real middleware, in the middleware position.
+      { code: 'app.get("/api/reports", authenticate, getAuthorReport);' },
+      { code: 'const guard = requireAuth({}); app.get("/api/me", guard, getProfile);' },
+      { code: 'const guard = requireAuth({}); app.use("/api", guard);' },
+    ],
+    invalid: [
+      // auth ⊂ author — the handler's name is not a guard.
+      {
+        code: 'router.get("/api/reports/authors/:id", getAuthorReport);',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+      // session ⊂ renderSessionRoster — a conference talk, not a login session.
+      {
+        code: 'router.get("/api/talks/:id/roster", renderSessionRoster);',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+      // A guard-shaped local name is still not a guard in the handler slot.
+      {
+        code: 'router.get("/api/jwtTokens", listJwtTokens);',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+    ],
+  });
+
+  ruleTester.run('lock: app.route(path).get(handler) chaining is a route registration', noMissingAuthentication, {
+    valid: [
+      { code: 'app.route("/api/me").get(authenticate, getProfile);' },
+      { code: 'app.route("/login").post(loginHandler);' },
+      // Not a router base — a query builder chain must stay untouched.
+      { code: 'db.route("/x").get(handler);' },
+    ],
+    invalid: [
+      {
+        code: 'app.route("/admin/tokens").get(listTokens);',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+      // Deeper in the chain: the base is still the route() call.
+      {
+        code: 'app.route("/admin/tokens").get(listTokens).post(createToken);',
+        errors: [
+          { messageId: 'missingAuthentication' },
+          { messageId: 'missingAuthentication' },
+        ],
+      },
+    ],
+  });
+});
+
+ruleTester.run('coverage - router factory and middleware-name edge shapes', noMissingAuthentication, {
+  valid: [
+    // Middleware reached through a member chain whose OBJECT is itself a
+    // MemberExpression, so only the trailing property names the middleware.
+    { code: 'app.get("/api/x", middleware.chain.authenticate, handler);' },
+    // The same shape as a middleware FACTORY call, so the callee - not the
+    // argument - is the member chain whose object is not an Identifier.
+    { code: 'app.get("/api/y", middleware.chain.authenticate(), handler);' },
+    // An object literal argument names nothing at all.
+    { code: 'app.get("/api/z", authenticate, { name: "x" }, handler);' },
+    // Member-chain middleware whose object IS an identifier: the dotted name
+    // `passport.authenticate` is what the default patterns list.
+    { code: 'app.get("/api/orders", passport.authenticate("jwt"), listOrders);' },
+  ],
+  invalid: [
+    // `require("express")()` - the initialiser IS a CallExpression, but its
+    // callee is another call, so no factory name can be read off it. The
+    // fallback is the binding NAME, and `gw` carries no router word: this is
+    // a documented CJS false negative on the router side, kept here only to
+    // pin the branch.
+    {
+      code: 'const server = require("express")(); server.get("/admin/a", (req, res) => {});',
+      errors: [{ messageId: 'missingAuthentication' }],
+    },
+    // A declared identifier whose initialiser is not a call at all.
+    {
+      code: 'const guard = 42; app.get("/api/x", guard, (req, res) => {});',
+      errors: [{ messageId: 'missingAuthentication' }],
+    },
+  ],
+});

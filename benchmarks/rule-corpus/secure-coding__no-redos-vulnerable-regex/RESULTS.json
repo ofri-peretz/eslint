@@ -1,0 +1,18 @@
+{
+  "rule": "secure-coding/no-redos-vulnerable-regex",
+  "fixtures": 28,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-redos-vulnerable-regex",
+      "tp": 14,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

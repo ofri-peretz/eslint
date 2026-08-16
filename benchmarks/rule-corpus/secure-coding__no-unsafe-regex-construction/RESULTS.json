@@ -1,0 +1,18 @@
+{
+  "rule": "secure-coding/no-unsafe-regex-construction",
+  "fixtures": 24,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-unsafe-regex-construction",
+      "tp": 12,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

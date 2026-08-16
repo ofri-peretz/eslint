@@ -1,0 +1,20 @@
+{
+  "rule": "secure-coding/no-sensitive-data-exposure",
+  "fixtures": 27,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-sensitive-data-exposure",
+      "tp": 13,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1,
+      "recall": 0.9285714285714286,
+      "f1": 0.962962962962963,
+      "crashes": [],
+      "missed": [
+        "vulnerable/13-innocuous-column-names.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

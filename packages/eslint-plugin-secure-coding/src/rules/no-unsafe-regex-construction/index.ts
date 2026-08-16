@@ -15,19 +15,18 @@
  * @see https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, unwrapTypeSyntax } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  resolveModuleBinding,
+  unwrapTypeSyntax,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'unsafeRegexConstruction'
   | 'escapeUserInput';
 
-// Inline regex-metacharacter escape, appended to the flagged expression by the
-// `escapeUserInput` suggestion fixer. No `escapeRegExp` helper exists in user
-// code, so the fix must be self-contained rather than calling one.
-// `${}` here are regex metacharacters inside a character class, not a template
-// placeholder — the string is a literal `.replace(...)` snippet inserted by the fixer.
-// eslint-disable-next-line no-template-curly-in-string
 /**
  * Functions the ecosystem actually uses to escape a regex metacharacter set.
  *
@@ -43,10 +42,30 @@ const DEFAULT_TRUSTED_ESCAPING_FUNCTIONS = [
   'escapeRegExp',
   'escapeStringRegexp',
   'regexpEscape',
-  'escape',
-  'sanitize',
 ] as const;
 
+/**
+ * `escape` and `sanitize` used to be on that list and were removed, because
+ * neither of them does the job the list is about.
+ *
+ * The global `escape()` is URL/percent escaping: `.` `*` `+` `?` `(` `)` `[`
+ * `]` `|` all pass through it unchanged, so `new RegExp(escape(userInput))` is
+ * a catastrophic-backtracking DoS that this rule was silently blessing. An HTML
+ * `sanitize()` is the same story for a different character set. And because
+ * both names are generic, any LOCAL function wearing one — `function
+ * sanitize(v) { return v.trim(); }` — switched the rule off for the whole
+ * expression.
+ *
+ * A user whose `sanitize` really does escape regex metacharacters can still say
+ * so via `trustedEscapingFunctions`. The default must not assume it.
+ */
+
+// Inline regex-metacharacter escape, appended to the flagged expression by the
+// `escapeUserInput` suggestion fixer. No `escapeRegExp` helper exists in user
+// code, so the fix must be self-contained rather than calling one.
+// `${}` here are regex metacharacters inside a character class, not a template
+// placeholder — the string is a literal `.replace(...)` snippet inserted by the fixer.
+// eslint-disable-next-line no-template-curly-in-string
 const INLINE_ESCAPE_SUFFIX = '.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")';
 
 export interface Options {
@@ -83,7 +102,11 @@ type RuleOptions = [Options?];
  * source is what makes the two rules disjoint: this one reports what it can
  * attribute, the generic one reports the rest.
  */
-function taintSource(node: TSESTree.Node, depth = 0): string | null {
+function taintSource(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  depth = 0,
+): string | null {
   if (depth > 6) return null;
 
   // `req.query.q as string` reads exactly what `req.query.q` reads — the cast is
@@ -94,11 +117,11 @@ function taintSource(node: TSESTree.Node, depth = 0): string | null {
   // all on TypeScript Express code — the majority of its audience — while
   // passing every test, because no test in this suite was written with a cast.
   const unwrapped = unwrapTypeSyntax(node);
-  if (unwrapped !== node) return taintSource(unwrapped, depth + 1);
+  if (unwrapped !== node) return taintSource(unwrapped, scope, depth + 1);
 
   if (node.type === 'TemplateLiteral') {
     for (const expression of node.expressions) {
-      const found = taintSource(expression, depth + 1);
+      const found = taintSource(expression, scope, depth + 1);
       if (found !== null) return found;
     }
     return null;
@@ -106,13 +129,13 @@ function taintSource(node: TSESTree.Node, depth = 0): string | null {
 
   if (node.type === 'BinaryExpression' && node.operator === '+') {
     return (
-      taintSource(node.left as TSESTree.Node, depth + 1) ??
-      taintSource(node.right, depth + 1)
+      taintSource(node.left as TSESTree.Node, scope, depth + 1) ??
+      taintSource(node.right, scope, depth + 1)
     );
   }
 
   if (node.type === 'AwaitExpression') {
-    return taintSource(node.argument, depth + 1);
+    return taintSource(node.argument, scope, depth + 1);
   }
 
   if (node.type === 'MemberExpression') {
@@ -124,7 +147,11 @@ function taintSource(node: TSESTree.Node, depth = 0): string | null {
       root = root.object;
     }
     if (root.type === 'Identifier') {
-      if (REQUEST_ROOTS.has(root.name) && properties.some((p) => REQUEST_PROPERTIES.has(p))) {
+      if (
+        REQUEST_ROOTS.has(root.name) &&
+        properties.some((p) => REQUEST_PROPERTIES.has(p)) &&
+        isInboundRequestBinding(root, scope)
+      ) {
         return `${root.name}.${properties.join('.')}`;
       }
       if (root.name === 'process' && properties[0] === 'argv') {
@@ -147,13 +174,83 @@ function taintSource(node: TSESTree.Node, depth = 0): string | null {
     }
     for (const arg of node.arguments) {
       if (arg.type === 'SpreadElement') continue;
-      const found = taintSource(arg, depth + 1);
+      const found = taintSource(arg, scope, depth + 1);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+
+  // One binding hop. `const filter = req.query.filter; new RegExp(filter)` is
+  // how every real handler is written — nobody inlines the sink argument — and
+  // the provenance is fully attributable, so refusing to follow it was a false
+  // negative on the DOMINANT shape rather than a deliberate abstention.
+  //
+  // Resolution is by ESLint's own scope analysis, never by the identifier's
+  // spelling. EVERY write is examined, not just a single one: a `let` whose
+  // writes are all literals is fixed, but
+  //
+  //   let pattern = DEFAULT_PATTERN;
+  //   if (req.query.pattern) pattern = req.query.pattern;
+  //   new RegExp(pattern);
+  //
+  // is the conditional-override idiom every options-merging handler is built
+  // from, and one tainted write is enough to taint what reaches the engine.
+  if (node.type === 'Identifier') {
+    const variable = lookupVariable(node.name, scope);
+    if (!variable) return null;
+    for (const reference of variable.references) {
+      if (!reference.isWrite() || !reference.writeExpr) continue;
+      const found = taintSource(reference.writeExpr, scope, depth + 1);
       if (found !== null) return found;
     }
     return null;
   }
 
   return null;
+}
+
+/**
+ * Is this root identifier actually the inbound request, or just spelled like it?
+ *
+ * `REQUEST_ROOTS` is a name test, and on its own that is the defect class this
+ * repo exists to avoid. It reported
+ *
+ *   const request = Object.freeze({ query: { pattern: '^GET /v1/' } });
+ *   new RegExp(request.query.pattern);
+ *
+ * — three module constants, nothing from outside the file — because the
+ * spelling matched. The real request object arrives as a HANDLER PARAMETER
+ * (`(req, res) => …`, `async (ctx) => …`) or, in a script fragment, as a free
+ * variable this file cannot see the origin of. A binding declared here with an
+ * initialiser is neither, and its contents are whatever the source says.
+ *
+ * So the name still SELECTS the candidate; the binding decides.
+ */
+function isInboundRequestBinding(
+  root: TSESTree.Identifier,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  const variable = lookupVariable(root.name, scope);
+  // Unresolved: a free variable, an ambient global, or an out-of-scope import.
+  // Provenance unknown, which is not the same as proven local.
+  if (!variable || variable.defs.length === 0) return true;
+  return variable.defs.every((def) => def.type === 'Parameter');
+}
+
+/** Resolve a name to its variable by walking outward from `scope`. */
+function lookupVariable(
+  name: string,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Variable | undefined {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
+    const found = current.variables.find((v) => v.name === name);
+    if (found) return found;
+  }
+  return undefined;
 }
 
 /** Identifier roots that denote an inbound request. */
@@ -172,12 +269,97 @@ const READER_METHODS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Escapers that are only ever reached as `object.method(...)`.
+ *
+ * Exact membership against a closed set of published API names — not a
+ * substring test. `escape` and `sanitize` are deliberately NOT here: as bare
+ * identifiers a user opted into them via `trustedEscapingFunctions`, but as
+ * property names they would suppress on any receiver at all.
+ */
+const MEMBER_ESCAPERS: ReadonlySet<string> = new Set([
+  'escapeRegExp',
+  'escapeRegex',
+  'escapeStringRegexp',
+  'regexpEscape',
+]);
+
+/**
+ * Packages that exist solely to escape a regex metacharacter set. Whatever the
+ * local binding is called, this is what the function does.
+ */
+const ESCAPER_PACKAGES: ReadonlySet<string> = new Set([
+  'escape-string-regexp',
+  'lodash.escaperegexp',
+  'escape-regexp',
+  'regexp.escape',
+]);
+
+function isEscaperPackageBinding(
+  callee: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  const binding = resolveModuleBinding(callee, scope);
+  if (binding && ESCAPER_PACKAGES.has(binding.module)) return true;
+  // `lodash`'s own `escapeRegExp`, however the lodash import was spelled.
+  return (
+    binding?.module === 'lodash' && binding.path.at(-1) === 'escapeRegExp'
+  );
+}
+
+/**
+ * Does this callee denote the `RegExp` constructor?
+ *
+ * Either written directly, or reached through a binding whose writes all
+ * resolve to it. Anything that resolves to something else is not it.
+ */
+function isRegExpConstructor(
+  callee: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  depth = 0,
+): boolean {
+  if (depth > 4) return false;
+  if (callee.type !== 'Identifier') return false;
+  if (callee.name === 'RegExp') {
+    // Shadowed by a local declaration of the same name? Then it is not the global.
+    const shadow = lookupVariable('RegExp', scope);
+    return shadow === undefined || shadow.defs.length === 0;
+  }
+  const variable = lookupVariable(callee.name, scope);
+  if (!variable) return false;
+  const writes = variable.references.filter((ref) => ref.isWrite());
+  return (
+    writes.length > 0 &&
+    writes.every((ref) => {
+      // `writeExpr` is nullable, so `!== undefined` does not narrow it. A write
+      // whose expression cannot be read proves nothing about the binding.
+      const written = ref.writeExpr;
+      return written != null && isRegExpConstructor(written, scope, depth + 1);
+    })
+  );
+}
+
+function isTrustedMemberEscaper(callee: TSESTree.Node): boolean {
+  if (callee.type !== 'MemberExpression' || callee.computed) return false;
+  if (callee.property.type !== 'Identifier') return false;
+  // The ES2025 built-in, identified by the global it hangs off.
+  if (
+    callee.property.name === 'escape' &&
+    callee.object.type === 'Identifier' &&
+    callee.object.name === 'RegExp'
+  ) {
+    return true;
+  }
+  return MEMBER_ESCAPERS.has(callee.property.name);
+}
+
+/**
  * Check if a node is escaped (wrapped in an escaping function)
  */
 function isEscaped(
   node: TSESTree.Node,
   trustedFunctions: string[],
   sourceCode: TSESLint.SourceCode,
+  scope: TSESLint.Scope.Scope,
 ): boolean {
   // Check if the node itself is a call to a trusted escaping function
   if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
@@ -185,6 +367,35 @@ function isEscaped(
     if (trustedFunctions.includes(functionName)) {
       return true;
     }
+  }
+
+  // The escaper reached under a local alias.
+  //
+  //   const esc = require('escape-string-regexp');
+  //   new RegExp(esc(req.query.q), 'i');
+  //
+  // is correctly escaped code, and it reported — because the check above asks
+  // how the author spelled the binding, and `esc` is not one of the four
+  // spellings on the list. The import says which function this is; the local
+  // name never did.
+  if (
+    node.type === 'CallExpression' &&
+    isEscaperPackageBinding(node.callee, scope)
+  ) {
+    return true;
+  }
+
+  // `RegExp.escape(x)` and `_.escapeRegExp(x)` — a trusted escaper reached
+  // through a member expression rather than a bare identifier.
+  //
+  // `'RegExp.escape'` was already in the trusted list, but the check above
+  // compares against `callee.name`, which only exists on an Identifier callee.
+  // A dotted string can never equal an identifier name, so that entry was
+  // unreachable and `new RegExp(RegExp.escape(req.query.q))` — the ES2025
+  // built-in, shipped in Node 24, and the exact remediation this rule's own
+  // suggestion open-codes — reported as unescaped user input.
+  if (node.type === 'CallExpression' && isTrustedMemberEscaper(node.callee)) {
+    return true;
   }
 
   // Also check if it's wrapped in a trusted function call (for complex cases).
@@ -269,6 +480,7 @@ function extractPattern(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
   sourceCode: TSESLint.SourceCode,
   trustedFunctions: string[],
+  scope: TSESLint.Scope.Scope,
 ): {
   patternNode: TSESTree.Node | null;
   isUserInput: boolean;
@@ -281,21 +493,23 @@ function extractPattern(
     return { patternNode: null, isUserInput: false, taintedBy: null, isEscaped: false };
   }
 
-  const taintedBy = taintSource(patternNode);
+  const taintedBy = taintSource(patternNode, scope);
   const isUserInputValue = taintedBy !== null;
-  // Default trusted functions + user configured ones
+  // Default trusted functions + user configured ones.
+  //
+  // `'RegExp.escape'` used to sit in this list and could never match: the
+  // consumer of the list compares against an Identifier callee's `name`, and no
+  // identifier is spelled with a dot. It is now recognised structurally in
+  // `isEscaped` instead.
   const allTrustedFunctions = [
-    ...new Set([
-      ...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS,
-      'RegExp.escape',
-      ...trustedFunctions,
-    ]),
+    ...new Set([...DEFAULT_TRUSTED_ESCAPING_FUNCTIONS, ...trustedFunctions]),
   ];
 
   const isEscapedValue = isEscaped(
     patternNode,
     allTrustedFunctions,
     sourceCode,
+    scope,
   );
 
   return {
@@ -395,16 +609,14 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     function checkRegExpCall(
       node: TSESTree.CallExpression | TSESTree.NewExpression,
     ) {
-      // Check for RegExp constructor
-      const isRegExpCall =
-        (node.type === 'CallExpression' &&
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'RegExp') ||
-        (node.type === 'NewExpression' &&
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'RegExp');
-
-      if (!isRegExpCall) {
+      // Check for RegExp constructor, INCLUDING under a local alias.
+      //
+      // `const Pattern = RegExp; new Pattern(req.query.q)` compiles the same
+      // pattern in the same engine, and matching on `callee.name === 'RegExp'`
+      // could not see it. The alias is resolved through scope analysis back to
+      // the unshadowed global, so a user's own class called `RegExp` (which
+      // would be a resolvable local binding to something else) does not match.
+      if (!isRegExpConstructor(node.callee, sourceCode.getScope(node))) {
         return;
       }
 
@@ -412,7 +624,12 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         patternNode,
         isUserInput: isUserInputValue,
         isEscaped: isEscapedValue,
-      } = extractPattern(node, sourceCode, trustedEscapingFunctions);
+      } = extractPattern(
+        node,
+        sourceCode,
+        trustedEscapingFunctions,
+        sourceCode.getScope(node),
+      );
 
       if (!patternNode) {
         return;

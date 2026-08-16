@@ -24,6 +24,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
+  unwrapTypeSyntax,
   type SecurityRuleOptions,
 } from '@interlace/eslint-devkit';
 
@@ -263,79 +264,238 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
 
     /**
-     * Check for complex DoS patterns in loop conditions
+     * REMOVED: two printed-source DoS heuristics.
+     *
+     * `checkComplexDoSPatterns` matched `sourceCode.getText(condition)` against
+     * `.match(`, `.test(`, `page` + `pageSize`, and `*` + `limit`.
+     * `checkComplexDoSPatternsInScope` matched it against `startIndex` /
+     * `endIndex`. Both reported `userControlledLoopBound` - a CWE-606 finding
+     * asserting that a client chose the bound - on the strength of characters
+     * appearing in the rendered text of the test expression.
+     *
+     * The rule ledger flags this rule for `textual-matching` and gives the
+     * probe: put the matched text in a string literal or a comment inside
+     * otherwise-clean code. Both halves of the probe reported:
+     *
+     *   while (source.slice(c, c + 7) !== ".match(") { c += 1; }   // REPORTED
+     *   while (source.slice(c, c + 7) !== ".nope(")  { c += 1; }   // quiet
+     *
+     *   for (let i = 0; i < ((endIndex)) rows.length; i++) {}       // REPORTED,
+     *      where ((endIndex)) stands for a COMMENT naming endIndex;
+     *      the same loop without the comment is quiet.
+     *
+     * A hand-written lexer scanning for the text `.match(` was reported as a
+     * user-controlled loop bound, and so was a loop whose only offence was a
+     * comment. Two more, with no string or comment involved:
+     *
+     *   while (page < totalPages && pageSize > 0) { … }            // REPORTED
+     *   for (let i = startIndex; i < endIndex; i++) { … }          // REPORTED
+     *
+     * with `totalPages` derived from a database count and both indices derived
+     * from `rows.length`.
+     *
+     * There is no structural version of these checks to write. `page` next to
+     * `pageSize` is not evidence of anything, and a regex call in a loop
+     * condition is `no-redos-vulnerable-regex` / `detect-non-literal-regexp`
+     * territory - the ledger already flags this rule for `duplicate-coverage`
+     * with the latter. The genuinely user-controlled cases they used to catch
+     * are caught by `involvesUserInput`, which follows the value.
      */
-    const checkComplexDoSPatterns = (condition: TSESTree.Expression): boolean => {
-      const conditionText = sourceCode.getText(condition);
-
-      // Check for regex match patterns that could cause ReDoS
-      if (conditionText.includes('.match(') || conditionText.includes('.test(')) {
-        return true;
-      }
-
-      // Check for pagination patterns that could cause DoS
-      if (conditionText.includes('page') && conditionText.includes('pageSize')) {
-        return true;
-      }
-
-      // Check for complex arithmetic that could lead to overflow
-      if (conditionText.includes('*') && (conditionText.includes('pageSize') || conditionText.includes('limit'))) {
-        return true;
-      }
-
-      return false;
-    };
 
     /**
-     * Check for complex DoS patterns in variables used in loop conditions
+     * Is this collection size-checked before the loop runs?
+     *
+     * Two things were wrong with the previous form. It compared
+     * `sourceCode.getText(test)` against `sourceCode.getText(collection)` with
+     * `String.includes`, so `items` matched inside `filteredItems`; and it only
+     * looked at ANCESTOR `if` statements, so it saw
+     *
+     *   if (Array.isArray(items) && items.length < MAX) { for (const x of items) … }
+     *
+     * and missed the guard clause everybody actually writes:
+     *
+     *   if (!Array.isArray(items) || items.length > MAX) return res.status(400)…;
+     *   for (const x of items) …
+     *
+     * The guard is a preceding SIBLING, not an ancestor. This walks the
+     * statements of the enclosing block that come before the loop as well, and
+     * compares BINDINGS resolved through scope rather than printed text.
      */
-    const checkComplexDoSPatternsInScope = (condition: TSESTree.Expression): boolean => {
-      const conditionText = sourceCode.getText(condition);
+    const checkIfCollectionIsValidated = (
+      forOfNode: TSESTree.ForOfStatement,
+      collection: TSESTree.Expression,
+    ): boolean => {
+      const guarded = collection;
 
-      // Simple heuristic: check for variable names that suggest pagination
-      if (conditionText.includes('endIndex') || conditionText.includes('startIndex')) {
-        return true;
-      }
-
-      return false;
-    };
-
-    /**
-     * Check if a collection is validated before iteration
-     */
-    const checkIfCollectionIsValidated = (forOfNode: TSESTree.ForOfStatement, collection: TSESTree.Expression): boolean => {
-      const collectionText = sourceCode.getText(collection);
-
-      // Traverse up the AST to find if statements that validate this collection
-      let current: TSESTree.Node | undefined = forOfNode.parent;
-
-      while (current) {
-        if (current.type === 'IfStatement') {
-          const test = current.test;
-          const testText = sourceCode.getText(test);
-
-          // Check for Array.isArray validation
-          if (testText.includes('Array.isArray(') && testText.includes(collectionText)) {
-            // Also check for length validation. Only `<`/`>` need checking:
-            // any text containing `<=` or `>=` already contains `<`/`>` as a
-            // substring, so those two extra disjuncts could never be the
-            // deciding factor (dead code, removed rather than tested around).
-            if (testText.includes('.length') && (testText.includes('<') || testText.includes('>'))) {
-              return true;
+      /** Does this `if` test size-check the same binding? */
+      const validates = (test: TSESTree.Node): boolean => {
+        let sawArrayCheck = false;
+        let sawLengthComparison = false;
+        const walk = (node: TSESTree.Node): void => {
+          if (
+            node.type === 'CallExpression' &&
+            node.callee.type === 'MemberExpression' &&
+            !node.callee.computed &&
+            node.callee.object.type === 'Identifier' &&
+            node.callee.object.name === 'Array' &&
+            node.callee.property.type === 'Identifier' &&
+            node.callee.property.name === 'isArray' &&
+            node.arguments.some((a) => a.type !== 'SpreadElement' && samePath(a, guarded))
+          ) {
+            sawArrayCheck = true;
+          }
+          if (
+            node.type === 'BinaryExpression' &&
+            ['<', '<=', '>', '>=', '===', '==', '!==', '!='].includes(node.operator)
+          ) {
+            for (const side of [node.left, node.right]) {
+              if (
+                side.type === 'MemberExpression' &&
+                !side.computed &&
+                side.property.type === 'Identifier' &&
+                side.property.name === 'length' &&
+                samePath(side.object, guarded)
+              ) {
+                sawLengthComparison = true;
+              }
             }
           }
-        }
+          // One guard, two callers. Named child slots are frequently absent
+          // (`argument` on a BinaryExpression), so the negative arm is real
+          // there; every element of an `arguments` array is always a node, so
+          // duplicating the guard inline created a second copy whose negative
+          // arm no parser could reach.
+          const walkIfNode = (value: unknown): void => {
+            if (value && typeof value === 'object' && 'type' in value) walk(value as TSESTree.Node);
+          };
+          for (const key of ['left', 'right', 'argument', 'expression', 'test', 'object', 'callee'] as const) {
+            walkIfNode((node as unknown as Record<string, unknown>)[key]);
+          }
+          const args = (node as unknown as { arguments?: unknown[] }).arguments;
+          if (Array.isArray(args)) {
+            for (const a of args) walkIfNode(a);
+          }
+        };
+        walk(test);
+        return sawArrayCheck && sawLengthComparison;
+      };
 
-        // Stop at function boundaries
-        if (current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') {
+      // Enclosing `if` statements…
+      for (
+        let current: TSESTree.Node | undefined = forOfNode.parent;
+        current;
+        current = current.parent as TSESTree.Node | undefined
+      ) {
+        if (current.type === 'IfStatement' && validates(current.test)) return true;
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
           break;
         }
+      }
 
-        current = current.parent as TSESTree.Node | undefined;
+      // …and guard clauses earlier in the same block.
+      for (
+        let current: TSESTree.Node | undefined = forOfNode;
+        current;
+        current = current.parent as TSESTree.Node | undefined
+      ) {
+        const parent = current.parent as TSESTree.Node | undefined;
+        if (parent?.type === 'BlockStatement' || parent?.type === 'Program') {
+          const body = parent.body as TSESTree.Statement[];
+          // `current` was reached through `current.parent`, so it is always a
+          // member of `parent.body` and `indexOf` cannot return -1. The former
+          // `index >= 0 ? … : []` fallback was therefore permanently uncovered.
+          const index = body.indexOf(current as TSESTree.Statement);
+          for (const statement of body.slice(0, index)) {
+            if (statement.type === 'IfStatement' && validates(statement.test)) return true;
+          }
+        }
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
+          break;
+        }
       }
 
       return false;
     };
+
+    /** The variable this identifier resolves to, or null for an undeclared global. */
+    const resolveVariable = (node: TSESTree.Identifier): TSESLint.Scope.Variable | null => {
+      const scope = sourceCode.getScope(node);
+      for (let current: typeof scope | null = scope; current; current = current.upper) {
+        const variable = current.variables.find((v) => v.name === node.name);
+        if (variable) return variable;
+      }
+      return null;
+    };
+
+    /**
+     * Do two expressions read the same value?
+     *
+     * Identifiers are compared by the BINDING they resolve to, so `items`
+     * inside `filteredItems` is not a match - which is what
+     * `getText(test).includes(getText(collection))` used to do. Property hops
+     * are compared name by name down the chain, so `req.body.items` in the
+     * guard matches `req.body.items` in the loop and nothing else.
+     */
+    const samePath = (left: TSESTree.Node, right: TSESTree.Node): boolean => {
+      const a = unwrapTypeSyntax(left) as TSESTree.Node;
+      const b = unwrapTypeSyntax(right) as TSESTree.Node;
+      if (a.type === 'Identifier' && b.type === 'Identifier') {
+        const va = resolveVariable(a);
+        const vb = resolveVariable(b);
+        // Two undeclared globals can only be compared by name.
+        return va || vb ? va === vb : a.name === b.name;
+      }
+      if (a.type === 'MemberExpression' && b.type === 'MemberExpression') {
+        return (
+          !a.computed &&
+          !b.computed &&
+          a.property.type === 'Identifier' &&
+          b.property.type === 'Identifier' &&
+          a.property.name === b.property.name &&
+          samePath(a.object, b.object)
+        );
+      }
+      return false;
+    };
+
+    /**
+     * Is this expression bounded by a `Math.min` / `Math.max` ceiling?
+     *
+     * Matched on the AST against the `Math` global, so a call on something else
+     * that happens to be spelled the same way, and the same text inside a
+     * string or a comment, are not it.
+     */
+    const isClamped = (node: TSESTree.Node): boolean => {
+      const expression = unwrapTypeSyntax(node) as TSESTree.Node;
+      if (
+        expression.type === 'CallExpression' &&
+        expression.callee.type === 'MemberExpression' &&
+        !expression.callee.computed &&
+        expression.callee.object.type === 'Identifier' &&
+        expression.callee.object.name === 'Math' &&
+        expression.callee.property.type === 'Identifier' &&
+        ['min', 'max'].includes(expression.callee.property.name)
+      ) {
+        return true;
+      }
+      if (expression.type === 'BinaryExpression' || expression.type === 'LogicalExpression') {
+        return isClamped(expression.left) || isClamped(expression.right);
+      }
+      if (expression.type === 'ConditionalExpression') {
+        return isClamped(expression.consequent) && isClamped(expression.alternate);
+      }
+      return false;
+    };
+
+
 
 
     /**
@@ -355,8 +515,29 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       // never got to run.
 
       // Recursively check all parts of the expression
-      const checkExpression = (node: TSESTree.Expression): boolean => {
+      const checkExpression = (raw: TSESTree.Expression): boolean => {
+        // `(req.query.count as unknown as number)` reads exactly what
+        // `req.query.count` reads. Express types `req.query.x` as
+        // `string | string[] | ParsedQs | undefined`, so a TypeScript codebase
+        // CANNOT use it as a loop bound without a cast - which means the rule
+        // did not fire on TypeScript Express code at all.
+        const node = unwrapTypeSyntax(raw) as TSESTree.Expression;
         if (node.type === 'MemberExpression') {
+          // `.length` is a MEASUREMENT of data that has already been
+          // materialised, not a count the client can inflate.
+          // `Object.keys(req.body).length` is the number of fields the body
+          // parser already built; iterating it is bounded by memory that
+          // exists. `req.body.count` is a number the client chose. Reading the
+          // object's name and ignoring which property was taken from it made
+          // those two identical, and reported every
+          // `for (let i = 0; i < fields.length; i++)` downstream of a request.
+          if (
+            !node.computed &&
+            node.property.type === 'Identifier' &&
+            node.property.name === 'length'
+          ) {
+            return false;
+          }
           // Check object part (e.g., req, request, body, query, params)
           const objectText = sourceCode.getText(node.object);
           if (isUserInput(objectText)) {
@@ -379,6 +560,25 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
               )
               .some((arg: TSESTree.Expression) => checkExpression(arg))
           );
+        }
+        if (node.type === 'LogicalExpression') {
+          // `LogicalExpression` was missing entirely, so the single most common
+          // way to read a bound off a request went untracked:
+          //
+          //   const pageSize = parseInt(req.query.pageSize) || 10;
+          //
+          // A `||` default does not bound the value - it only replaces the
+          // falsy case, and `?pageSize=1e9` is not falsy.
+          //
+          // `&&` is different, and the difference is the value the expression
+          // produces: `a && b` evaluates to `b` whenever `a` is truthy, so the
+          // taint follows the RIGHT operand. That is what makes
+          // `req.body.items && req.body.items.length` a length rather than a
+          // request value.
+          return node.operator === '&&'
+            ? checkExpression(node.right as TSESTree.Expression)
+            : checkExpression(node.left as TSESTree.Expression) ||
+              checkExpression(node.right as TSESTree.Expression);
         }
         if (node.type === 'BinaryExpression') {
           // Check both sides of binary expressions
@@ -439,6 +639,84 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Is this self-call reached unconditionally from the function's body?
+     *
+     * Walking up from the call to the function that encloses it, nothing may
+     * branch: no `if`, no ternary, no `&&`/`||`/`??` short-circuit, no `switch`
+     * case, no loop, no `try`. A call that survives that walk runs on every
+     * invocation, so the function recurses forever.
+     */
+    const isUnconditionalSelfCall = (call: TSESTree.Node): boolean => {
+      const BRANCHING = new Set([
+        'IfStatement',
+        'ConditionalExpression',
+        'LogicalExpression',
+        'SwitchStatement',
+        'SwitchCase',
+        'ForStatement',
+        'ForInStatement',
+        'ForOfStatement',
+        'WhileStatement',
+        'DoWhileStatement',
+        'TryStatement',
+        'CatchClause',
+      ]);
+      let child: TSESTree.Node = call;
+      for (
+        let current: TSESTree.Node | undefined = call.parent as TSESTree.Node | undefined;
+        current;
+        child = current, current = current.parent as TSESTree.Node | undefined
+      ) {
+        if (BRANCHING.has(current.type)) return false;
+        // A guard clause EARLIER in the block is a base case even though it is
+        // a sibling rather than an ancestor:
+        //
+        //   function factorial(n, depth = 0) {
+        //     if (depth > 10) return 1;
+        //     return n * factorial(n - 1, depth + 1);
+        //   }
+        //
+        // Nothing branches above the recursive call, and the function still
+        // terminates. Reporting it would punish the correct remediation.
+        if (current.type === 'BlockStatement') {
+          // `child` is the node we just ascended from, so it is always present
+          // in `current.body`; the former `index >= 0 ? … : []` fallback was
+          // permanently uncovered for the same reason as the one above.
+          const index = current.body.indexOf(child as TSESTree.Statement);
+          const preceding = current.body.slice(0, index);
+          if (preceding.some((statement) => statement.type === 'IfStatement' && exits(statement))) {
+            return false;
+          }
+        }
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    /** Does this subtree contain a `return` or a `throw`? */
+    const exits = (node: TSESTree.Node): boolean => {
+      if (node.type === 'ReturnStatement' || node.type === 'ThrowStatement') return true;
+      for (const key in node) {
+        const child = (node as unknown as Record<string, unknown>)[key];
+        if (key === 'parent' || !child || typeof child !== 'object') continue;
+        if ('type' in child) {
+          if (exits(child as TSESTree.Node)) return true;
+        } else if (Array.isArray(child)) {
+          for (const item of child) {
+            if (item && typeof item === 'object' && 'type' in item && exits(item)) return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    /**
      * Estimate loop iterations from static analysis.
      *
      * Only ever called from the ForStatement visitor below with its own
@@ -471,7 +749,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         for (const declarator of node.declarations) {
           if (declarator.id.type === 'Identifier' && declarator.init) {
             const varName = declarator.id.name;
-            const initText = sourceCode.getText(declarator.init);
 
             // Seed taint structurally, from the initializer's AST. This was a
             // substring test over the initializer's printed text against the
@@ -485,9 +762,22 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             // loop provably terminates — the string shrinks on every pass.
             // Its only offence was a parameter named `input`.
             const hasUserInput = involvesUserInput(declarator.init);
-            const isSanitized = initText.includes('Math.min(') || initText.includes('Math.max(') ||
-                              initText.includes('parseInt(') || initText.includes('parseFloat(') ||
-                              (initText.includes('&&') && initText.includes('.length'));
+            // A CLAMP bounds the value. A PARSE does not.
+            //
+            // This used to be five substring tests over the initializer's
+            // printed text, and two of them were `parseInt(` and `parseFloat(`.
+            // Parsing changes an attacker's value from a string to a number and
+            // leaves its magnitude alone:
+            //
+            //   const limit = parseInt(req.query.limit, 10);
+            //   for (let i = 0; i < limit; i++) { … }        // ?limit=99999999
+            //
+            // was treated as sanitized and reported nothing. `Math.min` /
+            // `Math.max` are the only two that impose a ceiling, and they are
+            // now matched structurally on the `Math` global rather than found
+            // in the rendered text - where `notMath.min(` and a `Math.min(`
+            // inside a string or a comment counted just as well.
+            const isSanitized = isClamped(declarator.init);
 
             if (hasUserInput && !isSanitized) {
               taintedVariables.add(varName);
@@ -522,12 +812,34 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             const callCount = (functionCalls.get(functionName) || 0) + 1;
             functionCalls.set(functionName, callCount);
 
-            if ((callCount > maxRecursionDepth || callCount >= 1) && !reportedRecursion.has(functionName)) {
-              // For functions that look like tree traversal (have 'obj' and 'path' params)
-              const isTreeTraversal = currentFunction === 'traverseObject';
-
-              // Flag excessive recursion or specific dangerous patterns
-              if (callCount > maxRecursionDepth || currentFunction === 'recursiveFunc' || isTreeTraversal) {
+            if (!reportedRecursion.has(functionName)) {
+              // TWO HARDCODED FUNCTION NAMES USED TO LIVE HERE:
+              //
+              //   const isTreeTraversal = currentFunction === 'traverseObject';
+              //   if (callCount > maxRecursionDepth
+              //       || currentFunction === 'recursiveFunc'
+              //       || isTreeTraversal) { … }
+              //
+              // Both names are fixtures out of this rule's own test file. And
+              // `callCount` counts recursive call SITES, not depth, so the
+              // remaining disjunct needs ELEVEN self-calls written inside one
+              // function before it fires. The practical effect was that
+              // `unsafeRecursion` reported on exactly two spellings and nothing
+              // else:
+              //
+              //   function traverseObject(n) { … traverseObject(c) … }  REPORTED
+              //   function recursiveFunc(n)  { recursiveFunc(n - 1) }   REPORTED
+              //   function walk(n)           { … walk(c) … }            quiet
+              //
+              // What replaces them is the one thing about recursion that can be
+              // decided from the syntax alone: a self-call on a path with no
+              // branch above it never terminates, whatever the function is
+              // called. Depth-unbounded-but-conditional recursion
+              // (`if (child) walk(child)`) is a real CWE-674 exposure and is NOT
+              // decidable here - it needs a bound on the input's depth. That is
+              // recorded as a known miss in the rule corpus rather than guessed
+              // at from a name.
+              if (callCount > maxRecursionDepth || isUnconditionalSelfCall(node)) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -590,47 +902,21 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check for complex DoS patterns (regex loops, pagination, etc.)
-        if (checkComplexDoSPatterns(test)) {
-          if (safetyChecker.isSafe(node, context)) {
-            return;
-          }
-
-          context.report({
-            node: test,
-            messageId: 'userControlledLoopBound',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
-          return;
-        }
-
-        // Check for state-dependent conditions (simple heuristic)
-        if (test.type === 'Identifier') {
-          const varName = test.name;
-          // Simple check: if the variable name suggests it's a control flag
-          if (varName.toLowerCase().includes('continue') ||
-              varName.toLowerCase().includes('running') ||
-              varName.toLowerCase().includes('active') ||
-              varName.toLowerCase().includes('enabled')) {
-            // This could be a state-dependent infinite loop
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            context.report({
-              node: test,
-              messageId: 'infiniteLoop',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-            return;
-          }
-        }
+        // REMOVED: a state-dependent-flag check that read the CONDITION
+        // VARIABLE'S NAME:
+        //
+        //   varName.toLowerCase().includes('continue') || …('running')
+        //     || …('active') || …('enabled')   -> messageId 'infiniteLoop'
+        //
+        // `while (isActive) { … }` was reported as an Infinite Loop and
+        // `while (isReady) { … }` was not, on identical control flow. A
+        // supervisor loop driven by a flag the body clears is how every worker,
+        // poller and game loop is written, and the flag is the reason it
+        // terminates rather than evidence that it does not. The check also
+        // fired regardless of whether the body contained a `break`.
+        //
+        // Substring matching on an identifier in a REPORTING path is banned
+        // outright by CLAUDE.md, and this was four of them.
       },
 
       // Check for statements
@@ -671,23 +957,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         // Check for user-controlled loop bounds
         if (involvesUserInput(node.test)) {
-          if (safetyChecker.isSafe(node, context)) {
-            return;
-          }
-
-          context.report({
-            node: node.test,
-            messageId: 'userControlledLoopBound',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
-          return;
-        }
-
-        // Check for complex DoS patterns in for loops
-        if (checkComplexDoSPatterns(node.test) || checkComplexDoSPatternsInScope(node.test)) {
           if (safetyChecker.isSafe(node, context)) {
             return;
           }

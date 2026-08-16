@@ -82,3 +82,123 @@ describe('prefer-pool-query', () => {
     });
   });
 });
+
+/**
+ * REGRESSION LOCKS — every defect the rule corpus
+ * (`benchmarks/rule-corpus/postgresql-security__prefer-pool-query`) proved.
+ *
+ * BEFORE: TP 8 / FP 6 / FN 0 — precision 57.1%, recall 100%, F1 72.7%.
+ * AFTER:  11 / 0 / 0 — 100% on the corpus including the adversarial wave.
+ *
+ * Every false positive had the same root cause: the rule counted SYNTACTIC
+ * `client.query` call sites and read only a plain-string first argument, so a
+ * client deliberately checked out for a loop, a callback, a cursor, a stream or
+ * a session-scoped statement looked identical to a single-shot read.
+ */
+describe('prefer-pool-query — regression locks', () => {
+  ruleTester.run('one call site is not one execution', preferPoolQuery, {
+    valid: pg([
+      // Reusing a checked-out client across a loop is the entire reason
+      // `pool.connect()` exists. One `client.query` in the source, N at run
+      // time; reporting it is advice to make the code worse.
+      "async function f(ids) { const c = await pool.connect(); try { for (const i of ids) { await c.query('UPDATE t SET a = 1 WHERE id = $1', [i]); } } finally { c.release(); } }",
+      "async function f(ids) { const c = await pool.connect(); try { let i = 0; while (i < ids.length) { await c.query('UPDATE t SET a = 1'); i++; } } finally { c.release(); } }",
+      // The same counting bug reached through a callback.
+      "async function f(rows) { const c = await pool.connect(); try { await Promise.all(rows.map(r => c.query('UPDATE l SET n = $1 WHERE id = $2', [r.n, r.id]))); } finally { c.release(); } }",
+      // A retry helper may invoke the callback any number of times.
+      "async function f(k) { const c = await pool.connect(); try { return await withRetry(() => c.query('SELECT v FROM s WHERE k = $1', [k])); } finally { c.release(); } }",
+    ]),
+    invalid: [],
+  });
+
+  ruleTester.run('statements that need the connection', preferPoolQuery, {
+    valid: pg([
+      // The single most important quiet case: an explicit transaction REQUIRES
+      // one connection for every statement. A rule that reports it contradicts
+      // `no-transaction-on-pool` in the same plugin.
+      "async function f() { const c = await pool.connect(); try { await c.query('   begin isolation level serializable  '); } finally { c.release(); } }",
+      "async function f() { const c = await pool.connect(); try { await c.query('START TRANSACTION'); } finally { c.release(); } }",
+      // Session GUCs, subscriptions, cursors, prepared statements and COPY all
+      // live and die with the backend.
+      "async function f() { const c = await pool.connect(); try { await c.query(\"SET statement_timeout = '10min'\"); } finally { c.release(); } }",
+      "async function f(s) { const c = await pool.connect(); try { await c.query(`SET LOCAL statement_timeout = '${s}s'`); } finally { c.release(); } }",
+      "async function f() { const c = await pool.connect(); try { await c.query('DISCARD ALL'); } finally { c.release(); } }",
+      "async function f() { const c = await pool.connect(); try { await c.query('LISTEN job_events'); } finally { c.release(); } }",
+      "async function f() { const c = await pool.connect(); try { await c.query('DECLARE big CURSOR FOR SELECT id FROM u'); } finally { c.release(); } }",
+      "async function f() { const c = await pool.connect(); try { await c.query({ text: 'PREPARE p AS SELECT $1::int' }); } finally { c.release(); } }",
+      // Advisory locks are ordinary SELECTs, so a leading-keyword test cannot
+      // see them; the affinity lives in the function being called.
+      "async function f(k) { const c = await pool.connect(); try { await c.query('SELECT pg_try_advisory_lock($1) AS a', [k]); } finally { c.release(); } }",
+      "async function f() { const c = await pool.connect(); try { await c.query('SELECT pg_advisory_unlock_all()'); } finally { c.release(); } }",
+      // Not statements at all: a cursor handle and a COPY stream are bound to
+      // the connection, and `pool.query()` has nowhere to put them.
+      "async function f() { const c = await pool.connect(); const cur = c.query(new Cursor('SELECT id FROM u')); c.release(); return cur; }",
+      "async function f(src) { const c = await pool.connect(); try { const s = c.query(copyFrom('COPY p FROM STDIN')); await pipeline(src, s); } finally { c.release(); } }",
+      // The handle escapes — what happens to it is not knowable here.
+      "async function f() { const c = await pool.connect(); doSomething(c); c.release(); }",
+      "async function f() { const c = await pool.connect(); const fn = c.query; c.release(); }",
+      // Not a checkout.
+      "async function f() { const c = await pool.other(); }",
+    ]),
+    invalid: [],
+  });
+
+  ruleTester.run('single-shot checkouts still report', preferPoolQuery, {
+    valid: [],
+    invalid: pg([
+      {
+        // The argument form is not what decides this.
+        code: "async function f(cutoff) { const c = await pool.connect(); try { const { rows } = await c.query(`SELECT token FROM sessions WHERE expires_at < $1`, [cutoff]); return rows; } finally { c.release(); } }",
+        errors: [{ messageId: 'preferPoolQuery' }],
+      },
+      {
+        code: "async function f(t) { const c = await pool.connect(); try { await c.query({ text: 'DELETE FROM sessions WHERE token = $1', values: [t] }); } finally { c.release(); } }",
+        errors: [{ messageId: 'preferPoolQuery' }],
+      },
+      {
+        // `SELECT … FOR UPDATE` outside an explicit transaction holds the lock
+        // for one implicit transaction and then drops it. Abstaining on
+        // anything that smells like a lock would miss this.
+        code: "async function f() { const c = await pool.connect(); try { const { rows } = await c.query('SELECT id FROM jobs WHERE state = $1 ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED', ['queued']); return rows[0]; } finally { c.release(); } }",
+        errors: [{ messageId: 'preferPoolQuery' }],
+      },
+      {
+        // Leading newlines and lowercase keywords: neither detection nor the
+        // session guard may be decided by formatting.
+        code: "async function f(t) { const c = await pool.connect(); try { const { rows } = await c.query('\\n\\n   select key from settings where tenant = $1\\n', [t]); return rows; } finally { c.release(); } }",
+        errors: [{ messageId: 'preferPoolQuery' }],
+      },
+      {
+        // The pool held on `this`, and `release(true)`.
+        code: "class R { constructor() { this.pool = new Pool(); } async record(a) { const c = await this.pool.connect(); await c.query('INSERT INTO audit (a) VALUES ($1)', [a]); c.release(true); } }",
+        errors: [{ messageId: 'preferPoolQuery' }],
+      },
+      {
+        // A statement with no arguments at all is still a single-shot query.
+        code: "async function f() { const c = await pool.connect(); try { await c.query('SELECT 1'); } finally { c.release(); } }",
+        errors: [{ messageId: 'preferPoolQuery' }],
+      },
+    ]),
+  });
+});
+
+/**
+ * Coverage of the abstention paths.
+ */
+describe('prefer-pool-query — unreadable statements abstain', () => {
+  ruleTester.run('arguments the rule cannot read', preferPoolQuery, {
+    valid: [
+      // No PostgreSQL client in the file: the plugin does not run at all.
+      'async function f() { const c = await pool.connect(); await c.query(1); c.release(); }',
+      ...pg([
+        // A non-string literal, a config object with no `text` key, and no
+        // argument at all. None of them says what statement runs, and the
+        // cursor and COPY cases prove why guessing is not acceptable here.
+        'async function f() { const c = await pool.connect(); await c.query(123); c.release(); }',
+        'async function f() { const c = await pool.connect(); await c.query({ values: [1] }); c.release(); }',
+        'async function f() { const c = await pool.connect(); await c.query(); c.release(); }',
+      ]),
+    ],
+    invalid: [],
+  });
+});

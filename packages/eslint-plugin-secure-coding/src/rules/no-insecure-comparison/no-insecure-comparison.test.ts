@@ -343,13 +343,30 @@ describe('no-insecure-comparison', () => {
       ],
     });
 
+    /**
+     * LOCK — the enclosing function's NAME must not decide the verdict.
+     *
+     * These four cases used to be split two-valid / two-invalid: the identical
+     * comparison `providedValue === expectedValue` was silent inside
+     * `computeTotal` and a CWE-208 finding inside `verifyLogin`, because an
+     * `isSecurityContext` walk matched the enclosing name against
+     * `/security|auth|crypto|hash|token|secret|insecure|verify|validate/` and then
+     * promoted the generic words `provided`/`expected`/`actual`/`input`/`value`/`data`
+     * to secrets. Two names, both generic, decided the report between them.
+     *
+     * `validate` and `verify` are the commonest verbs in application code and `value`
+     * is the commonest parameter name, so the pair fired on ordinary business logic —
+     * a country-code validator, an order-state machine and an asset-hash helper, all
+     * three measured as false positives in benchmarks/rule-corpus. All four spellings
+     * are now valid; a real credential is matched by its OWN word via secretKeywords.
+     *
+     * Every case here reports on the unfixed rule's `verifyLogin`/`Auth` half.
+     */
     ruleTester.run(
-      'invalid - generic terms treated as secrets inside a security-named function',
+      'valid - the enclosing function name does not make generic words secrets',
       noInsecureComparison,
       {
         valid: [
-          // Same generic identifier name OUTSIDE a security context is not flagged —
-          // "value"/"input" alone aren't in secretKeywords and isSecurityContext is false.
           {
             code: `
               function computeTotal() {
@@ -357,8 +374,6 @@ describe('no-insecure-comparison', () => {
               }
             `,
           },
-          // MethodDefinition branch, false path: a class method whose name does
-          // NOT match the security-keyword regex — isSecurityContext stays false.
           {
             code: `
               class Cart {
@@ -368,34 +383,15 @@ describe('no-insecure-comparison', () => {
               }
             `,
           },
-        ],
-        invalid: [
-          // Function name matches /security|auth|crypto|hash|token|secret|insecure|verify|validate/i,
-          // so generic contextKeywords ('provided', 'expected', ...) become potential secrets too.
+          // Was invalid before the fix, on the function name alone.
           {
             code: `
               function verifyLogin() {
                 if (providedValue === expectedValue) {}
               }
             `,
-            errors: [
-              {
-                messageId: 'timingUnsafeComparison',
-                data: { operator: '===' },
-                suggestions: [
-                  {
-                    messageId: 'useStrictEquality',
-                    output: `
-              function verifyLogin() {
-                if (crypto.timingSafeEqual(Buffer.from(providedValue), Buffer.from(expectedValue))) {}
-              }
-            `,
-                  },
-                ],
-              },
-            ],
           },
-          // MethodDefinition branch: a class method named like a security operation.
+          // Was invalid before the fix, on the METHOD name alone.
           {
             code: `
               class Auth {
@@ -404,28 +400,180 @@ describe('no-insecure-comparison', () => {
                 }
               }
             `,
-            errors: [
-              {
-                messageId: 'timingUnsafeComparison',
-                data: { operator: '===' },
-                suggestions: [
-                  {
-                    messageId: 'useStrictEquality',
-                    output: `
-              class Auth {
-                authenticate() {
-                  if (crypto.timingSafeEqual(Buffer.from(providedValue), Buffer.from(expectedValue))) {}
-                }
+          },
+          // The shape that reached users: a form validator comparing public data.
+          {
+            code: `
+              function validateShippingAddress(value) {
+                return value === 'US';
               }
             `,
-                  },
-                ],
-              },
-            ],
+          },
+          // A number compared to a number literal inside an honestly-named auth
+          // function. There is no secret to leak by timing `2 === 2`.
+          {
+            code: `
+              function authorizeRequest(granted, required) {
+                return granted.length === required.length;
+              }
+            `,
           },
         ],
+        invalid: [],
       },
     );
+
+    /**
+     * LOCK — a secret is found through its BINDING, not only where it is compared.
+     *
+     * Each of these reported nothing before the fix: the comparison site spells no
+     * secret word, and the rule only read the identifiers written at the `===`.
+     */
+    ruleTester.run('invalid - secret reached through a binding', noInsecureComparison, {
+      valid: [],
+      invalid: [
+        // One binding hop: `expected` is a generic name for `config.callback.token`.
+        {
+          code: `
+            const expected = config.callback.token;
+            if (presented !== expected) {}
+          `,
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: `
+            const expected = config.callback.token;
+            if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(expected))) {}
+          `,
+                },
+              ],
+            },
+          ],
+        },
+        // Destructuring alias: `t` is `session.token`.
+        {
+          code: `
+            const { token: t } = session;
+            if (t === presented) {}
+          `,
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: `
+            const { token: t } = session;
+            if (crypto.timingSafeEqual(Buffer.from(t), Buffer.from(presented))) {}
+          `,
+                },
+              ],
+            },
+          ],
+        },
+        // Computed string-literal key — the same property name in brackets.
+        {
+          code: `if (req.headers['x-api-key'] === config['apiKey']) {}`,
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: `if (crypto.timingSafeEqual(Buffer.from(req.headers['x-api-key']), Buffer.from(config['apiKey']))) {}`,
+                },
+              ],
+            },
+          ],
+        },
+        // Adjacent-segment match: `SERVICE_API_KEY` splits to service/api/key, and
+        // `key` alone is deliberately not a secret word.
+        {
+          code: `if (providedKey !== process.env.SERVICE_API_KEY) {}`,
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: `if (crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(process.env.SERVICE_API_KEY))) {}`,
+                },
+              ],
+            },
+          ],
+        },
+        // A ternary selects which credential is compared; either branch counts.
+        {
+          code: `
+            const reference = isProd ? PRODUCTION_CREDENTIAL : SANDBOX_CREDENTIAL;
+            if (presented !== reference) {}
+          `,
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: `
+            const reference = isProd ? PRODUCTION_CREDENTIAL : SANDBOX_CREDENTIAL;
+            if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(reference))) {}
+          `,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    /**
+     * LOCK — `==` between two provably-string operands is exempt even when the
+     * binding is written more than once.
+     *
+     * The exemption used to require EXACTLY one write, so `let mode = 'animated';
+     * if (x) mode = 'static';` lost it — although both writes are string literals and
+     * the right operand is a string literal, so no coercion is possible. Reported as
+     * `insecureComparison` on the unfixed rule.
+     */
+    ruleTester.run('valid - multi-write binding whose every write is a string', noInsecureComparison, {
+      valid: [
+        {
+          code: `
+            let mode = 'animated';
+            if (prefersReducedMotion) { mode = 'static'; }
+            if (mode == 'static') {}
+          `,
+        },
+      ],
+      invalid: [
+        // Positive control: one write is NOT a string, so the exemption must not apply.
+        {
+          code: `
+            let mode = 'animated';
+            if (flag) { mode = readMode(); }
+            if (mode == 'static') {}
+          `,
+          errors: [
+            {
+              messageId: 'insecureComparison',
+              suggestions: [
+                {
+                  messageId: 'useStrictEquality',
+                  output: `
+            let mode = 'animated';
+            if (flag) { mode = readMode(); }
+            if (mode === 'static') {}
+          `,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
 
     ruleTester.run(
       'valid - length comparisons on secrets are safe even with strict equality',
@@ -714,4 +862,103 @@ ruleTester.run('no-insecure-comparison: coercion needs two types', noInsecureCom
       ],
     },
   ],
+});
+
+/**
+ * Branch coverage for `namesIn` — the binding-resolution walk that finds a secret
+ * through the name it carried one hop earlier.
+ */
+describe('namesIn resolution arms', () => {
+  ruleTester.run('patterns, computed keys and TS syntax', noInsecureComparison, {
+    valid: [
+      // A non-Property member of an ObjectPattern (a rest element).
+      'const { a, ...rest } = payload; if (rest === other) {}',
+      // A computed destructuring key binds no readable name.
+      'const KEY = "x"; const { [KEY]: v } = payload; if (v === other) {}',
+      // Array pattern with a hole, and a default. Neither binds a secret name.
+      'const [, second = fallback] = tuple; if (second === other) {}',
+      // A computed member whose key is not a string literal is walked, not read.
+      'if (bag[index] === other) {}',
+    ],
+    invalid: [
+      // Nested object pattern: the key is found by recursing into `property.value`.
+      {
+        code: 'const { session: { token: t } } = state; if (t === presented) {}',
+        errors: [
+          {
+            messageId: 'timingUnsafeComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output:
+                  'const { session: { token: t } } = state; if (crypto.timingSafeEqual(Buffer.from(t), Buffer.from(presented))) {}',
+              },
+            ],
+          },
+        ],
+      },
+      // Array pattern element whose binding resolves to a secret-bearing write.
+      {
+        code: 'const [first] = list; const value = credentials.get(first); if (value === presented) {}',
+        errors: [
+          {
+            messageId: 'timingUnsafeComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output:
+                  'const [first] = list; const value = credentials.get(first); if (crypto.timingSafeEqual(Buffer.from(value), Buffer.from(presented))) {}',
+              },
+            ],
+          },
+        ],
+      },
+      // TypeScript-only syntax is transparent to the walk.
+      {
+        code: 'if (presented as string === (session.token as string)) {}',
+        errors: [
+          {
+            messageId: 'timingUnsafeComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output:
+                  'if (crypto.timingSafeEqual(Buffer.from(presented as string), Buffer.from(session.token as string))) {}',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'if (presented === session.token!) {}',
+        errors: [
+          {
+            messageId: 'timingUnsafeComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: 'if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(session.token!))) {}',
+              },
+            ],
+          },
+        ],
+      },
+      // A binding written more than once claims nothing, so the OTHER operand has to
+      // carry the evidence.
+      {
+        code: 'let v = a; v = b; if (v === session.token) {}',
+        errors: [
+          {
+            messageId: 'timingUnsafeComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output: 'let v = a; v = b; if (crypto.timingSafeEqual(Buffer.from(v), Buffer.from(session.token))) {}',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
 });

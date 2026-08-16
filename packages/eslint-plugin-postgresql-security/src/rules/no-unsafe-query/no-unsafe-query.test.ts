@@ -275,6 +275,38 @@ describe('no-unsafe-query', () => {
       invalid: [],
     });
 
+    ruleTester.run('the config-object form is the same call', noUnsafeQuery, {
+      valid: pg([
+        // The remediation, written the other documented way.
+        "db.query({ text: 'SELECT * FROM t WHERE a = $1', values: [req.query.a] });",
+        // A config object with no `text`.
+        'db.query({ values: [req.query.a] });',
+        // A PARAMETER assigned once inside the body: written exactly once, but
+        // its definition is not a declaration and carries no initialiser.
+        'export function run(config) { config = { text: `SELECT * FROM t WHERE a = ${req.query.a}` }; return db.query(config); }',
+        // A `text` that folds to a literal.
+        "const T = 'users';\ndb.query({ text: `SELECT * FROM ${T}` });",
+      ]),
+      invalid: pg([
+        // FN — node-postgres' config-object form. The SQL is interpolated
+        // exactly as in the string form, and only the first argument was ever
+        // read as a string. The same gap existed on no-transaction-on-pool.
+        {
+          code: "db.query({ text: `SELECT * FROM reports WHERE owner = '${req.query.owner}'` });",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: "db.query({ 'text': 'SELECT * FROM t WHERE a = ' + req.query.a });",
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        // The object reached through one binding hop.
+        {
+          code: 'const config = { text: `SELECT * FROM t WHERE a = ${req.query.a}` };\ndb.query(config);',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+      ]),
+    });
+
     ruleTester.run('sink-argument shapes', noUnsafeQuery, {
       valid: pg([
         // No first argument at all.

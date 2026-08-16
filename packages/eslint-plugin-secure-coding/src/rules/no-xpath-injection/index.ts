@@ -23,7 +23,12 @@
  * - Trusted XPath libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  isStaticExpression,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -103,7 +108,17 @@ const XPATH_SYNTAX = new RegExp(
   // `/*` is the XPath wildcard node test — a whole location step, so nothing
   // follows it but the next step. `**/*.graphql`, `${dir}/*.extension.toml`
   // and `/** … */` are globs and comments; they continue past the `*`.
-  `\\/\\/|\\/\\*(?![\\w.*/-])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
+  // The descendant axis is `//` IMMEDIATELY followed by a node test — a name,
+  // `*`, `@` or `.`. A bare `//` with nothing after it in the same literal is a
+  // protocol-relative URL:
+  //
+  //   return '//' + host + '/assets/' + asset;      a CDN href builder
+  //
+  // which reported CWE-643 at CVSS 9.8. `://` is already stripped before this
+  // runs, so the scheme-ful form was handled; this is the scheme-less one.
+  // Where the string really is `'//' + tagName + '[@id=1]'`, the `[@`
+  // alternative still carries it.
+  `\\/\\/(?=[A-Za-z_*@.])|\\/\\*(?![\\w.*/-])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
 );
 
 /**
@@ -124,6 +139,40 @@ const XPATH_SYNTAX = new RegExp(
  */
 function looksLikeXpath(text: string): boolean {
   return XPATH_SYNTAX.test(text.replace(/:\/\//g, ' '));
+}
+
+/**
+ * Packages whose exports evaluate an XPath expression.
+ *
+ * Used to decide whether a BARE call — `select(expr, doc)`, `evaluate(ctx)` —
+ * is an XPath evaluator. As a member call the receiver disambiguates, but a
+ * bare identifier carries nothing but its spelling, and `select` and
+ * `evaluate` are two of the most reused verbs in the ecosystem:
+ *
+ *   store.pipe(select(selectUserProfile))     @ngrx/store
+ *   evaluate(userContext)                     any feature-flag SDK
+ *
+ * Both reported CWE-643 at CVSS 9.8 in files containing no XML at all. The
+ * import is the evidence; the name never was.
+ */
+const XPATH_PACKAGES = [
+  'xpath',
+  'xmldom-xpath',
+  'xpath.js',
+  'libxmljs',
+  'libxmljs2',
+  '@xmldom/xmldom',
+] as const;
+
+function isXpathModuleExport(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  const binding = resolveModuleBinding(node, scope);
+  return (
+    binding !== undefined &&
+    (XPATH_PACKAGES as readonly string[]).includes(binding.module)
+  );
 }
 
 export const noXpathInjection = createRule<RuleOptions, MessageIds>({
@@ -198,6 +247,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
               'selectNodes',
               'xpath',
               'select',
+              'select1',
             ],
             description: 'XPath evaluation methods treated as query sinks',
           },
@@ -251,6 +301,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         'selectNodes',
         'xpath',
         'select',
+        'select1',
       ],
       safeXpathConstructors: [
         'buildXPath',
@@ -279,6 +330,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         'selectNodes',
         'xpath',
         'select',
+        'select1',
       ],
       xpathValidationFunctions = [
         'validateXPath',
@@ -367,7 +419,11 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // is false for any configured list, so it was a condition no input could
       // exercise.
       if (callee.type === AST_NODE_TYPES.Identifier) {
-        return xpathFunctions.includes(callee.name);
+        // A bare call needs the IMPORT as evidence — see `isXpathModuleExport`.
+        return (
+          xpathFunctions.includes(callee.name) &&
+          isXpathModuleExport(callee, sourceCode.getScope(callee))
+        );
       }
       // Returned as one expression rather than an `if` plus a trailing
       // `return false`. Every caller arrives with either an Identifier or a
@@ -461,10 +517,13 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         );
       }
 
-      // Check for XPath library calls
+      // Check for XPath library calls. Same import gate as `isXpathSinkCall`:
+      // a bare `select(...)` / `evaluate(...)` is only an XPath evaluator when
+      // the identifier resolves to an XPath package.
       if (
         callee.type === 'Identifier' &&
-        xpathFunctions.includes(callee.name)
+        xpathFunctions.includes(callee.name) &&
+        isXpathModuleExport(callee, sourceCode.getScope(callee))
       ) {
         return true;
       }

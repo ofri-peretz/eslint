@@ -1,0 +1,18 @@
+{
+  "rule": "secure-coding/no-insecure-comparison",
+  "fixtures": 24,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-insecure-comparison",
+      "tp": 13,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

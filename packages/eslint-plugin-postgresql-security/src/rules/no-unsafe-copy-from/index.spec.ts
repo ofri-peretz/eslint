@@ -81,10 +81,11 @@ ruleTester.run('no-unsafe-copy-from', noUnsafeCopyFrom, {
     // ===========================================
     // Non-query method calls (should not flag)
     // ===========================================
-    {
-      name: 'Different method name',
-      code: "client.execute('COPY users FROM /etc/passwd')",
-    },
+    // NOTE: `client.execute('COPY users FROM /etc/passwd')` used to sit HERE,
+    // in the valid array, under the name "Different method name". node-postgres
+    // accepts `execute`, so that fixture was a false negative pinned as correct
+    // behaviour — the rule was quiet because of a spelling, not because the
+    // statement was safe. It now lives in the invalid array below.
     {
       name: 'Different object method',
       code: "client.other('COPY users FROM /etc/passwd')",
@@ -154,6 +155,17 @@ ruleTester.run('no-unsafe-copy-from', noUnsafeCopyFrom, {
   ]),
 
   invalid: pg([
+    // ===========================================
+    // The `execute` sink — moved here from the valid array, where it had been
+    // pinning a false negative as correct behaviour under the name "Different
+    // method name". node-postgres accepts `execute`.
+    // ===========================================
+    {
+      name: 'execute is a SQL sink, not a different method',
+      code: `client.execute("COPY users FROM '/etc/passwd'")`,
+      errors: [{ messageId: 'hardcodedPath' }],
+    },
+
     // ===========================================
     // Dynamic paths - CRITICAL (injection risk)
     // ===========================================

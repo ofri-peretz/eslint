@@ -18,7 +18,7 @@
  * @see https://cwe.mitre.org/data/definitions/915.html
  */
 import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
 /**
@@ -258,22 +258,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // AST-based validation detection (faster than getText + regex)
       const isIncludesCall = (testNode: TSESTree.Node): boolean => {
         // Pattern: ARRAY.includes(keyName)
-        if (testNode.type === AST_NODE_TYPES.CallExpression &&
+        return testNode.type === AST_NODE_TYPES.CallExpression &&
             testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
             testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
             testNode.callee.property.name === 'includes' &&
             testNode.arguments.length > 0 &&
             testNode.arguments[0].type === AST_NODE_TYPES.Identifier &&
-            testNode.arguments[0].name === keyName) {
-          return true;
-        }
-        // Handle negation: !ARRAY.includes(key)
-        if (testNode.type === AST_NODE_TYPES.UnaryExpression &&
-            testNode.operator === '!' &&
-            testNode.argument.type === AST_NODE_TYPES.CallExpression) {
-          return isIncludesCall(testNode.argument);
-        }
-        return false;
+            testNode.arguments[0].name === keyName;
+        // Negation is unwrapped once, for every validation form, in
+        // `hasValidation` below — see the comment there.
       };
 
       const isHasOwnPropertyCall = (testNode: TSESTree.Node): boolean => {
@@ -312,7 +305,22 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
                testNode.left.name === keyName;
       };
 
+      /**
+       * Negation is unwrapped for EVERY validation form, not just `includes`.
+       *
+       * The guard-clause spelling is the dominant one in modern code —
+       * `if (!Object.hasOwn(record, column)) { return null; }` — and it was the
+       * only one the rule could not see, because the `!` unwrap lived inside
+       * `isIncludesCall`. So `ALLOWED.includes(k)` was recognised negated and
+       * un-negated, while `Object.hasOwn(o, k)` and `k in o` were recognised
+       * only un-negated. That is an accident of where the unwrap was written,
+       * not a judgement about which guards are trustworthy: `!guard() → return`
+       * excludes exactly the keys `guard() → proceed` admits.
+       */
       const hasValidation = (testNode: TSESTree.Node): boolean => {
+        if (testNode.type === AST_NODE_TYPES.UnaryExpression && testNode.operator === '!') {
+          return hasValidation(testNode.argument);
+        }
         return isIncludesCall(testNode) || isHasOwnPropertyCall(testNode) || isInOperator(testNode);
       };
 
@@ -415,13 +423,89 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * A `+` chain with a provably-numeric operand somewhere inside it.
+     *
+     * `samples[frameStart + frame * stride + channel]` is ordinary index
+     * arithmetic, but `+` is not provably numeric unless BOTH ends are, and
+     * `frameStart` is a bare parameter. The *concatenation* argument settles it
+     * anyway: the result must contain the numeric operand's rendering as a
+     * contiguous substring, and every `String(number)` — including `NaN`,
+     * `Infinity`, `-0` and `1e+21` — contains at least one of `[0-9NI]`. None of
+     * `__proto__`, `prototype` or `constructor` contains any of those, so the
+     * sum cannot equal one of them whatever the other operands hold.
+     *
+     * Scoped to the CONFIGURED `dangerousProperties`, because a user who adds
+     * `slot0` to the list breaks the premise and must keep the finding.
+     */
+    const NUMERIC_RENDERING_CHARS = /[0-9NI]/;
+    const hasNumericOperandInConcatenation = (node: TSESTree.Node): boolean => {
+      if (
+        node.type !== AST_NODE_TYPES.BinaryExpression ||
+        (node as TSESTree.BinaryExpression).operator !== '+' ||
+        dangerousProperties.some((name) => NUMERIC_RENDERING_CHARS.test(name))
+      ) {
+        return false;
+      }
+      const anyNumericOperand = (operand: TSESTree.Node): boolean => {
+        if (
+          operand.type === AST_NODE_TYPES.BinaryExpression &&
+          (operand as TSESTree.BinaryExpression).operator === '+'
+        ) {
+          const chain = operand as TSESTree.BinaryExpression;
+          return anyNumericOperand(chain.left as TSESTree.Node) || anyNumericOperand(chain.right);
+        }
+        return isNumericKey(operand);
+      };
+      const bin = node as TSESTree.BinaryExpression;
+      return anyNumericOperand(bin.left as TSESTree.Node) || anyNumericOperand(bin.right);
+    };
+
+    /**
+     * Does this identifier resolve to a declaration whose initialiser we can SEE
+     * and which is provably not build-time constant?
+     *
+     * The two name-shaped suppressions below are a guess about provenance made
+     * from a spelling. When the binding's initialiser is visible, the guess is
+     * unnecessary and it is wrong: `const eventType = req.body.type` and
+     * `const FLAG_NAME = req.body.flag` are attacker-chosen keys whose names
+     * happen to match a convention. Evidence beats the convention wherever
+     * evidence exists.
+     *
+     * Deliberately narrow. A parameter, an import or an ambient binding has no
+     * visible initialiser, so the suppressions still apply there and the
+     * false positives they were added for (NestJS decorator metadata,
+     * `errorHttpStatusCode`) stay closed.
+     */
+    const hasVisibleNonConstantInitialiser = (node: TSESTree.Identifier): boolean => {
+      const scope = sourceCode.getScope(node);
+      const variable = scope.references.find((ref) => ref.identifier === node)?.resolved;
+      if (!variable || variable.defs.length !== 1) {
+        return false;
+      }
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') {
+        return false;
+      }
+      const init = (def.node as TSESTree.VariableDeclarator).init;
+      if (!init) {
+        return false;
+      }
+      return !isStaticExpression({ node: init, scope: sourceCode.getScope(init) });
+    };
+
+    /**
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
-      // SAFE: the key is provably numeric, or is namespaced behind a literal
-      // prefix. Both are facts about the expression's shape, not its naming —
-      // rename every identifier and the answer is unchanged.
-      if (isNumericKey(propertyNode) || hasDisqualifyingLiteralAffix(propertyNode)) {
+      // SAFE: the key is provably numeric, is namespaced behind a literal
+      // prefix, or is a concatenation containing a number. All three are facts
+      // about the expression's shape, not its naming — rename every identifier
+      // and the answer is unchanged.
+      if (
+        isNumericKey(propertyNode) ||
+        hasDisqualifyingLiteralAffix(propertyNode) ||
+        hasNumericOperandInConcatenation(propertyNode)
+      ) {
         return false;
       }
 
@@ -438,7 +522,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // They are compile-time string/symbol values defined in the codebase, never
       // derived from user input — prototype pollution via a constant key is impossible.
       // Pattern: at least 3 chars, ALL_CAPS letters, digits, underscores only.
-      if (propertyNode.type === AST_NODE_TYPES.Identifier) {
+      //
+      // Both name-shaped suppressions below are guesses about provenance drawn
+      // from a spelling, and both are DEFEATED by visible evidence — see
+      // `hasVisibleNonConstantInitialiser`. `metrics[eventType] = 1` with
+      // `const eventType = req.body.type` used to be silent purely because the
+      // name ends in `Type`, while the identical program with the key renamed
+      // `eventName` reported. Quiet in the suppress direction is a missed
+      // vulnerability, which is the worst place for a spelling to decide.
+      if (
+        propertyNode.type === AST_NODE_TYPES.Identifier &&
+        !hasVisibleNonConstantInitialiser(propertyNode as TSESTree.Identifier)
+      ) {
         const name = (propertyNode as TSESTree.Identifier).name;
         if (/^[A-Z][A-Z0-9_]{2,}$/.test(name)) {
           return false;
@@ -858,6 +953,74 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Array-iteration methods whose callback receives the ELEMENT first. Exact
+     * membership against a closed API surface, not a substring test.
+     */
+    const ELEMENT_FIRST_ITERATORS: ReadonlySet<string> = new Set([
+      'forEach',
+      'map',
+      'filter',
+      'find',
+      'findLast',
+      'some',
+      'every',
+      'flatMap',
+    ]);
+
+    /**
+     * Is this function the callback of `Object.keys(x).forEach(...)` (or `.map`,
+     * `.filter`, …), with `name` bound to its first parameter?
+     *
+     * `Object.keys(usage).forEach((k) => usage[k])` carries exactly the guarantee
+     * the rule already grants `for (const k in usage)` and
+     * `for (const k of Object.keys(usage))`: `k` is an OWN enumerable key, so the
+     * access can never reach an inherited property. It is also the most common
+     * object-iteration idiom in JavaScript, and it was the one spelling of the
+     * three that reported — an accident of node types rather than a security
+     * judgement, and on its own enough to make the rule unusable on ordinary
+     * application code.
+     */
+    const isObjectKeysCallbackKey = (fn: TSESTree.Node, name: string): boolean => {
+      if (
+        fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.type !== AST_NODE_TYPES.FunctionExpression
+      ) {
+        return false;
+      }
+      const first = fn.params[0];
+      // Either `(key) => …` or the `Object.entries` destructuring `([key, value]) => …`.
+      const bindsName =
+        (first?.type === AST_NODE_TYPES.Identifier && first.name === name) ||
+        (first?.type === AST_NODE_TYPES.ArrayPattern &&
+          first.elements[0]?.type === AST_NODE_TYPES.Identifier &&
+          first.elements[0].name === name);
+      if (!bindsName) return false;
+
+      const call = fn.parent;
+      if (
+        call?.type !== AST_NODE_TYPES.CallExpression ||
+        call.arguments[0] !== fn ||
+        call.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        call.callee.computed ||
+        call.callee.property.type !== AST_NODE_TYPES.Identifier ||
+        !ELEMENT_FIRST_ITERATORS.has(call.callee.property.name)
+      ) {
+        return false;
+      }
+
+      const source = call.callee.object;
+      return (
+        source.type === AST_NODE_TYPES.CallExpression &&
+        source.callee.type === AST_NODE_TYPES.MemberExpression &&
+        !source.callee.computed &&
+        source.callee.object.type === AST_NODE_TYPES.Identifier &&
+        source.callee.object.name === 'Object' &&
+        source.callee.property.type === AST_NODE_TYPES.Identifier &&
+        (source.callee.property.name === 'keys' || source.callee.property.name === 'entries')
+      );
+    };
+
+    /**
      * Returns true if the identifier is the iteration variable of a `for...in`
      * statement or a `for...of Object.keys()/Object.entries()` statement. Keys
      * from these loops are guaranteed to be actual property names on the object
@@ -871,6 +1034,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const variable = scope.references.find((r) => r.identifier === node)?.resolved;
       if (!variable || variable.defs.length === 0) return false;
       const def = variable.defs[0];
+      if (def.type === 'Parameter') {
+        return isObjectKeysCallbackKey(def.node as TSESTree.Node, node.name);
+      }
       const varDecl = def.node?.parent as TSESTree.Node | undefined;
       const loopStmt = varDecl?.parent as TSESTree.Node | undefined;
       if (!varDecl || varDecl.type !== AST_NODE_TYPES.VariableDeclaration) return false;

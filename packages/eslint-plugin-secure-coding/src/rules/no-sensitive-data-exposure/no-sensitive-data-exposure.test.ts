@@ -338,23 +338,40 @@ describe('no-sensitive-data-exposure', () => {
       invalid: [],
     });
 
-    ruleTester.run('valid - non-Identifier object with a log-like method name is not a logging call', noSensitiveDataExposure, {
+    // THIS CASE USED TO BE ASSERTED AS VALID. It is not: `app.logger.info(...)`
+    // writes to a log stream, and the argument is a credential in plain text.
+    // The assertion was written to cover the false branch of
+    // `object.type === 'Identifier'` and, in doing so, pinned the gap as
+    // correct behaviour. A class-held `this.logger` and a request-bound
+    // `req.log` are the same shape, and they are how Nest, winston and pino
+    // are actually used.
+    ruleTester.run('invalid - a logger reached through one property hop is still a logger', noSensitiveDataExposure, {
       valid: [
-        // Exercises the false branch of `object.type === 'Identifier'`: the
-        // method name matches ("info") but the object itself is a nested
-        // MemberExpression, not a bare Identifier.
+        // A property hop whose name is not a logger is still not one.
+        `app.metrics.info('password: 123456');`,
+      ],
+      invalid: [
         {
           code: `app.logger.info('password: 123456');`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        {
+          code: `this.logger.debug(payload.apiKey);`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+        {
+          code: `req.log.info('token: ' + accessToken);`,
+          errors: [{ messageId: 'sensitiveDataExposure' }],
         },
       ],
-      invalid: [],
     });
 
     ruleTester.run('valid - Identifier object with a name other than console or logger is not a logging call', noSensitiveDataExposure, {
       valid: [
-        // Exercises the false branch of `objName === 'console' || objName === 'logger'`.
+        // Exercises the false branch of the receiver membership test. `log` is
+        // a LOG METHOD here, not a receiver, and `myThing` is not a logger.
         {
-          code: `myThing.log('password: 123456');`,
+          code: `myThing.warn('password: 123456');`,
         },
       ],
       invalid: [],
@@ -448,50 +465,6 @@ describe('no-sensitive-data-exposure', () => {
       expect(reports).toHaveLength(0);
     });
 
-    it('skips a "+" BinaryExpression Error argument with no right-hand side (arg.right truthiness branch)', () => {
-      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
-        options: [{}],
-      });
-
-      const node = {
-        type: 'NewExpression',
-        callee: { type: 'Identifier', name: 'Error' },
-        // A synthetic "+" BinaryExpression with no `right` operand at all —
-        // unproducable by any real parser, but exercises the `arg.right &&`
-        // truthiness guard ahead of the Identifier/name checks.
-        arguments: [
-          {
-            type: 'BinaryExpression',
-            operator: '+',
-            left: { type: 'Literal', value: 'ok' },
-            right: undefined,
-          },
-        ],
-      };
-
-      (listeners['NewExpression'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(0);
-    });
-
-    it('skips a NewExpression with no callee (node.callee truthiness branch)', () => {
-      const { listeners, reports } = createWithMockContext(noSensitiveDataExposure, {
-        options: [{}],
-      });
-
-      const node = {
-        type: 'NewExpression',
-        // A synthetic NewExpression with no callee at all — unproducable by
-        // any real parser (`new` always has a callee), but exercises the
-        // `node.callee &&` truthiness guard.
-        callee: undefined,
-        arguments: [{ type: 'Literal', value: 'password leaked' }],
-      };
-
-      (listeners['NewExpression'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(0);
-    });
   });
 
   /**
@@ -708,5 +681,235 @@ describe('corpus regression — logger detection and label detection', () => {
         errors: [{ messageId: 'sensitiveDataExposure' }],
       },
     ],
+  });
+});
+
+// -----------------------------------------------------------------------
+// Regression locks. Every case below FAILS on the rule as it stood before the
+// corpus at benchmarks/rule-corpus/secure-coding__no-sensitive-data-exposure
+// was written. The corpus scored 61.5% F1 on its first run and 76.9% after the
+// adversarial wave.
+// -----------------------------------------------------------------------
+describe('Regression - argument shapes the sink never looked at', () => {
+  ruleTester.run('invalid - shapes that were silent', noSensitiveDataExposure, {
+    valid: [],
+    invalid: [
+      // A TypeScript cast is erased at compile time and reads the same value.
+      {
+        name: 'as-string cast',
+        code: `this.logger.debug(payload.apiKey as string);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // Structured logging - the argument loop had no ObjectExpression arm.
+      {
+        name: 'structured shorthand property',
+        code: `logger.error('delivery rejected', { deliveryId, apiKey });`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'structured string key',
+        code: `logger.error('delivery rejected', { 'api_key': resolved });`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // The `+` right arm only ever read Identifier, never a property access.
+      {
+        name: 'property access right of a concatenation',
+        code: `logger.info('resolved customer record ' + customer.ssn);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'nested concatenation',
+        code: `logger.info('customer ' + id + ' ssn ' + customer.ssn);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // Optional chaining, a ternary branch, and an identity wrapper.
+      {
+        name: 'optional chaining',
+        code: `logger.debug(session?.accessToken);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'ternary branch',
+        code: `logger.info('auth', isProduction ? '[redacted]' : user.password);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'String() identity wrapper',
+        code: `logger.info(String(account.password));`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // One binding hop, with the alias named after its role.
+      {
+        name: 'alias hop',
+        code: [
+          'const submitted = account.password;',
+          "logger.warn('login failed', submitted);",
+        ].join('\n'),
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // A pino child logger bound to a local, and pino-http's `req.log`.
+      {
+        name: 'local pino child logger',
+        code: [
+          'const log = rootLogger.child({ requestId });',
+          'log.info(`exchanging refresh token ${refreshToken}`);',
+        ].join('\n'),
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      // The `new Error(...)` path had drifted behind the logging path: it read
+      // Literal and `+` only, so a template was silent in an exception message
+      // while reporting in a log line. Same leak, same evidence.
+      {
+        name: 'template in an Error message',
+        code: 'throw new Error(`auth_token: ${refreshToken} is too short`);',
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        name: 'property access in an Error message',
+        code: `throw new Error(user.password);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+    ],
+  });
+
+  ruleTester.run('valid - the same shapes without the evidence', noSensitiveDataExposure, {
+    valid: [
+      // A credential-named field holding a CONSTANT exposes nothing at
+      // runtime. A hardcoded secret is no-hardcoded-credentials' finding.
+      `logger.info('policy loaded', { passwordPolicy: 'strong', apiKeyRotationDays: 30 });`,
+      ["const REDACTED = '[redacted]';", `logger.info('ok', { apiKey: REDACTED });`].join('\n'),
+      // A computed key names nothing statically.
+      `logger.debug('column', row[column]);`,
+      `logger.info('field', { [field]: value });`,
+      // A spread is not a named property.
+      `logger.info('ctx', { ...context });`,
+      // A property hop whose name is not a logger is not a logger.
+      `app.metrics.info('password: hunter2');`,
+      `metrics.warn(user.password);`,
+      // `Math.log` passes the method test and is not a logger.
+      `Math.log(weight + 1);`,
+      // A local `String` is somebody else's function.
+      ['const String = (x) => x;', `logger.info(String(account.password));`].join('\n'),
+      // A binding written twice determines nothing.
+      [
+        'let submitted = displayName;',
+        'submitted = account.password;',
+        `logger.warn('login failed', submitted);`,
+      ].join('\n'),
+      // A parameter has no initializer to resolve.
+      `export function audit(value) { logger.warn('x', value); }`,
+      // Cyclic initialisers must terminate rather than recurse forever.
+      ['let a = b;', 'let b = a;', `logger.info(a);`].join('\n'),
+    ],
+    invalid: [],
+  });
+});
+
+describe('Regression - a measurement of a secret is not the secret', () => {
+  // `memberCarriesSecret` falls back to the OBJECT name when the property
+  // does not name a secret, which is why `credentials.value` is caught. That
+  // fallback also reported `token.length` - a number, which cannot be
+  // replayed. `.length`, `.size` and `.byteLength` are language semantics,
+  // not vocabulary.
+  ruleTester.run('valid - size properties', noSensitiveDataExposure, {
+    valid: [
+      `logger.debug('token length', token.length);`,
+      `logger.debug('secret size', secret.size);`,
+      `logger.debug('key bytes', privateKey.byteLength);`,
+    ],
+    invalid: [
+      {
+        name: 'the object fallback still fires through a value-carrying property',
+        code: `logger.debug('value', apiKey.raw);`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+    ],
+  });
+});
+
+describe('Regression - a label announces a value, a sentence does not', () => {
+  // The label-and-separator test cannot tell `'password: 123456'` from
+  // `'password: follow the link'`; the number of words after the separator
+  // can. Locked in both directions.
+  ruleTester.run('valid - a clause after the separator', noSensitiveDataExposure, {
+    valid: [
+      `console.log('Reset your password: follow the link we just emailed you');`,
+      `throw new Error('api_key: required in production');`,
+      `throw new Error('encryption_key: must be at least 32 bytes');`,
+      `throw new Error('secret: set SESSION_SECRET before starting');`,
+    ],
+    invalid: [],
+  });
+
+  ruleTester.run('invalid - one token after the separator', noSensitiveDataExposure, {
+    valid: [],
+    invalid: [
+      {
+        code: `console.log('password: 123456');`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        // The camelCase normalization that makes `secretKey` match
+        // `secret key` shreds a JWT into `ey jhb gci`, so the one-token test
+        // has to run on the raw text.
+        code: `logger.error('token=eyJhbGciOiJIUzI1NiJ9');`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+      {
+        code: `console.log('SSN: 123-45-6789');`,
+        errors: [{ messageId: 'sensitiveDataExposure' }],
+      },
+    ],
+  });
+
+  /**
+   * Locks for the negative-direction arms: the shapes that decide NOT to
+   * report, or that report from the left of a concatenation. Each is a real
+   * program, not a synthetic AST.
+   */
+  describe('coverage - resolution arms that decline to report', () => {
+    ruleTester.run('concatenation and object-key arms', noSensitiveDataExposure, {
+      valid: [
+        // A numeric object key. It is neither an Identifier nor a string
+        // Literal, so no name can be read from it and nothing is claimed. An
+        // error-code map is the ordinary shape.
+        {
+          code: [
+            'const logger = require("pino")();',
+            'const HTTP_REASONS = { 1: "continue", 401: "unauthorized" };',
+            'export function report(status) { logger.info({ 401: HTTP_REASONS[401] }); }',
+          ].join('\n'),
+        },
+        // A binding written twice has no single initializer to trust, so the
+        // resolver declines rather than picking a declaration the author may
+        // not have run.
+        {
+          code: [
+            'var detail = "harmless";',
+            'var detail = "also harmless";',
+            'export function report() { console.log(detail); }',
+          ].join('\n'),
+        },
+        // `new TypeError(...)` is not `new Error(...)`. The error-message path
+        // is keyed to the Error constructor by exact name, so a different
+        // constructor takes the other arm.
+        {
+          code: `export function reject() { throw new TypeError('argument must be a string'); }`,
+        },
+      ],
+      invalid: [
+        // The credential sits on the LEFT of the concatenation, so the left
+        // operand has to be described rather than just the right.
+        {
+          code: [
+            'const logger = require("pino")();',
+            'export function audit(account) {',
+            '  logger.info(account.password + " was rotated");',
+            '}',
+          ].join('\n'),
+          errors: [{ messageId: 'sensitiveDataExposure' }],
+        },
+      ],
+    });
   });
 });

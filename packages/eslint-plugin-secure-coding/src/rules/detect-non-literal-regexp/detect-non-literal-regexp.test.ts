@@ -126,17 +126,125 @@ describe('detect-non-literal-regexp', () => {
   describe('Edge Cases', () => {
     ruleTester.run('edge cases', detectNonLiteralRegexp, {
       valid: [
-        // Note: Rule may detect RegExp calls even when reassigned
-        // This is a limitation of static analysis
         // allowLiterals option now allows static string patterns
         {
           code: 'new RegExp("^test$");',
           options: [{ allowLiterals: true }],
         },
+        /**
+         * This case used to live under `invalid`, annotated "Rule may detect
+         * RegExp calls even when reassigned / This is a limitation of static
+         * analysis" — i.e. the suite pinned a false positive as correct
+         * behaviour and documented it instead of fixing it.
+         *
+         * `RegExp` here is a local binding to `myFunction`. No regular
+         * expression is constructed anywhere in this program. The only reason
+         * the rule fired was that the identifier was SPELLED `RegExp`, which is
+         * the reporting-by-name defect class CLAUDE.md puts first. The callee is
+         * now resolved through the scope chain.
+         */
+        'const RegExp = myFunction; RegExp(pattern);',
+        // A parameter shadowing the intrinsic — same reasoning, and the shape a
+        // dependency-injection seam actually produces.
+        'function render(RegExp, pattern) { return RegExp(pattern); }',
       ],
       invalid: [
+        /**
+         * REGRESSION LOCK — the constructor reached through a global namespace.
+         * `new globalThis.RegExp(p)` is what isomorphic libraries write to
+         * survive a bundler that shadows the bare identifier; the old
+         * `callee.name === 'RegExp'` test could not see it at all.
+         */
         {
-          code: 'const RegExp = myFunction; RegExp(pattern);',
+          code: 'export function compile(rawPattern) { return new globalThis.RegExp(rawPattern); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        /**
+         * REGRESSION LOCK — the native-constructor capture. `NativeRegExp`
+         * resolves, with no ambiguity, to the intrinsic.
+         */
+        {
+          code: 'const NativeRegExp = RegExp; export function compile(p) { return new NativeRegExp(p); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        /**
+         * REGRESSION LOCK — a binding whose initialiser is constant but which is
+         * later written by a `for...of` over an unproven iterable. The write has
+         * no inspectable expression, so the value must stay unproven: clearing
+         * it would be a missed vulnerability, not a missed suppression.
+         */
+        {
+          code: 'export function scan(userPatterns) { let source = "^a$"; for (source of userPatterns) { new RegExp(source); } }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+      ],
+    });
+  });
+
+  describe('Build-time constants are not attacker-controlled', () => {
+    ruleTester.run('constant provenance', detectNonLiteralRegexp, {
+      valid: [
+        /**
+         * REGRESSION LOCK — a `let` whose every write is a string literal. The
+         * old check asked for the `const` KEYWORD; the question that decides
+         * safety is whether the set of values the binding can hold is closed.
+         */
+        'export function compile(mode) { let source = "^\\\\d+$"; if (mode === "word") { source = "^\\\\w+$"; } return new RegExp(source); }',
+        /**
+         * REGRESSION LOCK — `for (const source of CONST_LIST)`. The loop binding
+         * has no initialiser of its own, so reading `declarator.init` found
+         * `null` and gave up, even though the iterable is a module constant of
+         * literals — the same fact as `CONST_ARRAY.join("|")`, which was already
+         * cleared, reached through a different node type.
+         */
+        'const SOURCES = ["^a$", "^b$"]; export function each() { for (const source of SOURCES) { new RegExp(source); } }',
+        /**
+         * REGRESSION LOCK — `String.raw` around the pattern source. Fixed at
+         * parse time; only the node type differs from a plain literal.
+         */
+        'export const SEMVER = new RegExp(String.raw`^\\d+\\.\\d+\\.\\d+$`);',
+      ],
+      invalid: [
+        // Positive control for the three above: the same shapes with an unproven
+        // iterable / an unproven write must still report.
+        {
+          code: 'export function each(sources) { for (const source of sources) { new RegExp(source); } }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        {
+          code: 'export function compile(mode, raw) { let source = "^\\\\d+$"; if (mode === "raw") { source = raw; } return new RegExp(source); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // A tagged template whose tag is NOT String.raw proves nothing about the
+        // produced string — the tag function can return anything.
+        {
+          code: 'export function compile(tag, value) { return new RegExp(tag`^${value}$`); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+      ],
+    });
+
+    ruleTester.run('constructor resolution boundaries', detectNonLiteralRegexp, {
+      valid: [
+        // An alias chain longer than the resolution bound gives up and reports
+        // nothing rather than recursing — the safe direction for a callee test
+        // is to decline, since declining only costs a finding on a shape that
+        // does not occur in real code.
+        'const a1 = RegExp; const a2 = a1; const a3 = a2; const a4 = a3; const a5 = a4; const a6 = a5; export function f(p) { return new a6(p); }',
+        // A callee that is neither an Identifier nor a member access resolves to
+        // nothing knowable.
+        'export function f(makeCtor, p) { return new (makeCtor())(p); }',
+      ],
+      invalid: [
+        // `String.raw` WITH a substitution: constant iff the substitution is.
+        {
+          code: 'export function f(v) { return new RegExp(String.raw`^${v}$`); }',
+          errors: [{ messageId: 'regexpReDoS' }],
+        },
+        // An UpdateExpression write carries no inspectable expression, so the
+        // binding stays unproven.
+        {
+          code: 'export function f() { let source = "a"; source++; return new RegExp(source); }',
           errors: [{ messageId: 'regexpReDoS' }],
         },
       ],

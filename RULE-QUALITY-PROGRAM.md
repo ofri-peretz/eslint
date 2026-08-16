@@ -183,3 +183,96 @@ Only TWO rules have numbers behind them: `no-innerhtml` (100% F1 vs Mozilla
 81.6%) and `no-sql-injection` (8/8 with the option; SDK plugins catch 0/8).
 Everything else has been FIXED, not VERIFIED. Those are different claims, and
 the plugins are not ready to promote until more of them are the second kind.
+
+
+---
+
+# FINAL STATE — all agents reported
+
+~84 rules measured with adversarial waves, up from 2 at session start.
+secure-coding 21, node-security ~20, browser-security ~20, postgresql-security 13.
+
+## THE FOUR EDITS THAT LAND EVERYTHING
+
+All staged work is blocked on these. Each is outside every agent's boundary by
+design, which is why nothing moved.
+
+1. `packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-search-path/index.ts:274`
+   `error TS7022: 'parent' implicitly has type 'any'`
+   Fix: annotate the loop variable `TSESTree.Node | undefined`.
+2. `.oxlintrc.json` — add `benchmarks/rule-corpus/**` to ignores.
+   MY omission when I created that dir. Clears 66 of 93 oxlint errors.
+3. `scripts/lint-name-inference.ts` — delete 11 STALE entries.
+   secure-coding x6, browser-security x2, node-security x1, postgresql x2.
+   Two are stale BECAUSE the debt was paid. Six agents reported this.
+4. `benchmarks/rule-corpus/secure-coding__no-sql-injection/RESULTS.json` is STALE.
+   Claims 93.3%; the rule at HEAD scores 76.9%. I generated it with the strict
+   option on and committed it by hand — the exact drift the ledger exists to
+   prevent.
+
+Then: full battery INCLUDING `tsc` (not just vitest), commit per-plugin with
+explicit paths, update PR #574.
+
+## FINDINGS THAT OUTRANK EVERY F1 NUMBER
+
+- **A deprecation pointer that downgrades users.** `secure-coding/no-insecure-comparison`
+  (100% F1) is marked `replacedBy node-security/no-timing-unsafe-compare`, which
+  scores 26.7% on the same corpus. Following it loses real coverage.
+- **A missing sink that SUPPRESSED rather than missed.** `no-xpath-injection`
+  lacked `select1`; a value whose every use is a non-sink was treated as PROVEN
+  SAFE, silencing the textbook XML auth-bypass.
+- **A rule blessing live ReDoS.** `no-unsafe-regex-construction` trusted
+  `escape`/`sanitize` as regex escapers. Neither escapes a metacharacter.
+- **Partitions drawn by SPELLING.** The URL cluster split on
+  `window.location.href` vs `location.href` — same defect, two rule IDs, and
+  three shapes owned by NOBODY. Repartitioned by API, locked with a 17-shape matrix.
+- **A stateful regex leaking across files.** `no-unsafe-eval-csp` used a
+  module-level `/g` regex with `.test()`; ESLint lints a project through one
+  Linter, so results depended on lint order.
+- **Case-sensitive header names.** `no-missing-security-headers` reported a
+  handler that set all three correctly in lowercase — which HTTP/2 mandates.
+
+## FIVE WAYS A GREEN CHECK LIED TODAY
+
+1. Harness scored config errors (`ruleId: null`) as detections
+2. istanbul pointed at line numbers shifted by my own edits — I deleted working code
+3. A fixture passed on a decoy match elsewhere in the file
+4. Scoped coverage reported clean where the full-package run did not
+5. vitest green over a `tsc` failure
+
+Corollary: **re-run coverage FULL-PACKAGE, not scoped**, across every plugin an
+agent touched. Most reports used scoped runs.
+
+## MY OWN AUDIT HAS A HOLE
+
+`duplicate-coverage` keys on CWE, so it structurally could not see
+`require-csp-headers` ↔ `no-missing-security-headers` — two rules saying "you
+have no CSP" on one line at CWE-693 and CWE-1021. The 43 duplicate smells are a
+FLOOR, not a count.
+
+## SHARED-CODE DEFECTS (unowned, ranked by measured blast radius)
+
+1. `node-security/src/utils/provenance.ts` — no `LogicalExpression` case, so
+   `req.headers['x'] || ''` stops the taint walk. Measured at **+20% recall** on
+   one rule; 4 rules affected. Three agents flagged it independently.
+2. `node-security/src/utils/credential-evidence.ts` — `isEncryptedExpression`
+   judges the callee NAME, so `const encrypt = (v) => v` counts as encryption.
+   Caps two rules. Also the "behind a helper" gate evasion CLAUDE.md documents,
+   still unflagged by `lint:name-inference`.
+3. `eslint-devkit/src/ast/static-expression.ts` — computed members always
+   return false, so the ecosystem reports its OWN recommended remediation
+   (`Object.freeze` lookup table + `Object.hasOwn` guard).
+4. `browser-security/src/utils/url-taint.ts` — every call result opaque, so
+   `new URLSearchParams(location.search).get('next')` — the commonest
+   open-redirect source in front-end code — is invisible to all four URL rules.
+
+## THE STANDING CAVEAT
+
+**Every rule that scored 100% on its first wave fell when a second wave was
+written against it. Without exception, all day.** That says a third wave would
+find more, and that these corpora measure what we thought to test.
+
+The missing measurement is the real-source sweep (`ilb-real-source`, the 102-repo
+matrix) — code nobody wrote to exercise a rule. Expect it to find FPs. That is
+not failure; it is the only way to know the corpus number means anything outside
+our own fixtures.

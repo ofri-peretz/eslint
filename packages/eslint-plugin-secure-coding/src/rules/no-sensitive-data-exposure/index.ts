@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, AST_NODE_TYPES, unwrapTypeSyntax, isStaticExpression } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -86,10 +86,35 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
     // "label, separator, value" and reported a credential leak on a line that
     // logs an error message. A label sits against its separator; a sentence
     // that happens to contain a colon later does not become one.
-    return new RegExp(
-      `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=]\\s*\\S`,
-      'i',
-    ).test(normalized);
+    // …and what follows the separator is ONE token, not a clause.
+    //
+    // Tested against the RAW text, never the normalized copy. The camelCase
+    // split that makes `secretKey` match `secret key` also shreds a JWT:
+    // `'token=eyJhbGciOiJIUzI1NiJ9'` normalizes to `token=ey jhb gci…`, which
+    // has spaces in it and would fail a one-token test that ran on it.
+    //
+    // Every credential this rule is asserted to catch is a single token:
+    // `password: 123456`, `SSN: 123-45-6789`, `token=eyJhbGciOiJIUzI1NiJ9`,
+    // `secret key: sk_live_9f2a`. Every false positive found on this corpus is
+    // a sentence:
+    //
+    //   console.log('Reset your password: follow the link we emailed you')
+    //   throw new Error('api_key: required in production')
+    //   throw new Error('encryption_key: must be at least 32 bytes')
+    //
+    // The label-and-separator test cannot separate those - both sides look
+    // identical to it. The number of words after the separator can, and it is
+    // a property of the string itself rather than of anything around it.
+    //
+    // The cost is a multi-pair line (`password=x user=y`), where the value is
+    // no longer last. That shape has not appeared in any corpus fixture; the
+    // sentences have appeared in three.
+    return (
+      new RegExp(
+        `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=]\\s*\\S`,
+        'i',
+      ).test(normalized) && /[:=]\s*\S+\s*$/.test(text)
+    );
   });
 }
 
@@ -183,10 +208,25 @@ function memberCarriesSecret(
       : null;
   const fromProp = propName ? identifierNamesSecret(propName, patterns) : null;
   if (fromProp) return fromProp;
+  // The object-name fallback must not fire through a property that cannot
+  // carry the value. `token.length` is a number and `buffer.byteLength` is a
+  // number; neither can be replayed, and `logger.debug('token length',
+  // token.length)` was reported as a credential leak because the fallback read
+  // the receiver's name and ignored what was actually taken from it.
+  //
+  // These are language semantics, not vocabulary: `.length` on a string, an
+  // array or a TypedArray is its size, in every codebase.
+  if (propName && VALUE_FREE_PROPERTIES.has(propName)) return null;
   return node.object.type === AST_NODE_TYPES.Identifier
     ? identifierNamesSecret(node.object.name, patterns)
     : null;
 }
+
+/**
+ * Properties whose value is a measurement of the receiver rather than the
+ * receiver's contents. Exact membership against a fixed language surface.
+ */
+const VALUE_FREE_PROPERTIES = new Set(['length', 'size', 'byteLength', 'byteOffset']);
 
 function containsSensitiveData(
   text: string,
@@ -281,179 +321,300 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
 }: Options = options || {};
 
     /**
+     * Receivers whose log methods write to a log stream. Exact membership on a
+     * closed set, never a substring: `login`, `logout`, `dialog`, `catalog` and
+     * `blog` all contain "log" and none of them is a logger.
+     *
+     * `log` earns its place next to `console` and `logger` because
+     * `const log = rootLogger.child({ requestId })` is how pino is used in
+     * every Node service, and `req.log.info(...)` is what pino-http installs.
+     * Those calls were silent: the receiver check required a bare Identifier
+     * named exactly `console` or `logger`, so a class-held `this.logger` and a
+     * request-bound `log` both walked through with their credentials.
+     */
+    const LOGGER_RECEIVERS = new Set(['console', 'logger', 'log']);
+
+    /** Methods that write a record. Exact membership, closed set. */
+    const LOG_METHODS = new Set([
+      'log', 'info', 'warn', 'error', 'debug', 'trace', 'fatal', 'verbose', 'silly',
+    ]);
+
+    /**
+     * Is this receiver a logger? `console`, `logger`, `log` - written bare, or
+     * reached through one property hop (`this.logger`, `req.log`,
+     * `container.logger`). The hop is a property NAME matched exactly, not a
+     * search through the printed receiver text.
+     */
+    function isLoggerReceiver(node: TSESTree.Node): boolean {
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        return LOGGER_RECEIVERS.has(node.name.toLowerCase());
+      }
+      return (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
+        node.property.type === AST_NODE_TYPES.Identifier &&
+        LOGGER_RECEIVERS.has(node.property.name.toLowerCase())
+      );
+    }
+
+    /**
+     * Does this argument carry a secret into the sink? Returns the node to
+     * report and the pattern that matched, or null.
+     *
+     * One helper for both sinks. The two paths had drifted: the logging path
+     * grew Member and Template arms that the `new Error(...)` path never got,
+     * so ``throw new Error(`token: ${accessToken}`)`` was silent while
+     * ``logger.error(`token: ${accessToken}`)`` reported. Same leak, same
+     * evidence, two different answers.
+     */
+    function describeExposure(
+      argument: TSESTree.Node,
+    ): { node: TSESTree.Node; pattern: string } | null {
+      // `payload.apiKey as string` reads exactly what `payload.apiKey` reads.
+      // The cast is erased at compile time; leaving it unwrapped meant the rule
+      // never fired on the dialect TypeScript users are forced to write.
+      const arg = unwrapTypeSyntax(argument) as TSESTree.Node;
+
+      if (arg.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string') {
+        const pattern = literalCarriesSecret(arg.value, sensitivePatterns)
+          ? containsSensitiveData(arg.value, sensitivePatterns)
+          : null;
+        return pattern ? { node: arg, pattern } : null;
+      }
+
+      if (arg.type === AST_NODE_TYPES.BinaryExpression && arg.operator === '+') {
+        // `'password: ' + password` - the classic credential leak. The left
+        // literal must END at the separator (see literalLabelsValue), and the
+        // value on the right is read whether it is a bare identifier or a
+        // property access: `'record ' + customer.ssn` was silent because the
+        // right arm only ever looked at Identifier.
+        //
+        // Recursion handles `'a: ' + b + '/' + c.d`, which parses as a
+        // left-leaning tree of BinaryExpressions rather than one flat argument.
+        if (arg.left.type === AST_NODE_TYPES.Literal && typeof arg.left.value === 'string') {
+          const labelled = literalLabelsValue(arg.left.value, sensitivePatterns);
+          if (labelled) return { node: arg.left, pattern: labelled };
+        } else {
+          const fromLeft = describeExposure(arg.left);
+          if (fromLeft) return fromLeft;
+        }
+        return namedValueExposure(arg.right);
+      }
+
+      if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
+        // ``logger.debug(`token=${t}`)`` - an interpolation is exactly the
+        // evidence the static-string guard looks for: unlike a constant, a
+        // template splices a runtime value into the record.
+        const fromExpression = arg.expressions
+          .map((e) => namedValueExposure(e))
+          .find((m): m is { node: TSESTree.Node; pattern: string } => Boolean(m));
+        if (fromExpression) return { node: arg, pattern: fromExpression.pattern };
+
+        // The quasis are joined with a placeholder standing in for each
+        // interpolation, rather than tested one by one. ``  `token=${t}` ``
+        // splits into `token=` and ``, and neither half satisfies "label,
+        // separator, then a value" - the value is the hole between them.
+        const INTERPOLATION = '\u0001'; // cannot occur in source text
+        const joined = arg.quasis.map((q) => q.value.cooked).join(INTERPOLATION);
+        // Only when something is actually interpolated: a template with no
+        // expressions is a constant string, and reporting it would be the prose
+        // false positive this guard exists to prevent.
+        const fromText =
+          arg.expressions.length > 0 && literalCarriesSecret(joined, sensitivePatterns)
+            ? containsSensitiveData(joined, sensitivePatterns)
+            : null;
+        return fromText ? { node: arg, pattern: fromText } : null;
+      }
+
+      if (arg.type === AST_NODE_TYPES.ObjectExpression) {
+        // Structured logging - how every modern Node service logs.
+        // `logger.error('rejected', { deliveryId, apiKey })` puts the
+        // credential in a shorthand property, and the argument loop had no
+        // ObjectExpression arm at all, so the whole idiom was invisible.
+        //
+        // The KEY names the field and the VALUE decides whether anything
+        // runtime is being written. `{ passwordPolicy: 'strong' }` names a
+        // credential and carries a constant, so it is not an exposure - a
+        // hardcoded secret is no-hardcoded-credentials' finding, not this
+        // rule's. `isStaticExpression` draws that line, rather than a second
+        // guess at the name.
+        for (const property of arg.properties) {
+          if (property.type !== AST_NODE_TYPES.Property || property.computed) continue;
+          const keyName =
+            property.key.type === AST_NODE_TYPES.Identifier
+              ? property.key.name
+              : property.key.type === AST_NODE_TYPES.Literal &&
+                  typeof property.key.value === 'string'
+                ? property.key.value
+                : null;
+          const pattern = keyName
+            ? identifierNamesSecret(keyName, sensitivePatterns)
+            : null;
+          if (!pattern) continue;
+          if (
+            isStaticExpression({
+              node: property.value,
+              scope: context.sourceCode.getScope(arg),
+            })
+          ) {
+            continue;
+          }
+          return { node: property, pattern };
+        }
+        return null;
+      }
+
+      if (arg.type === AST_NODE_TYPES.ConditionalExpression) {
+        // `isProduction ? '[redacted]' : user.password`. The branch that leaks
+        // is reachable, and in every non-production environment it is the
+        // branch that runs.
+        return describeExposure(arg.consequent) ?? describeExposure(arg.alternate);
+      }
+
+      if (
+        arg.type === AST_NODE_TYPES.CallExpression &&
+        arg.callee.type === AST_NODE_TYPES.Identifier &&
+        arg.callee.name === 'String' &&
+        arg.arguments.length === 1 &&
+        arg.arguments[0].type !== AST_NODE_TYPES.SpreadElement &&
+        !isShadowed('String', arg)
+      ) {
+        // `String(account.password)` is an identity transform on a string, and
+        // it is what TypeScript users write when the declared type is wider
+        // than `string`. Exact membership on the global, and only when nothing
+        // in scope has redeclared it.
+        return describeExposure(arg.arguments[0]);
+      }
+
+      return namedValueExposure(arg);
+    }
+
+    /** Does anything in scope declare this name, rather than it being the global? */
+    function isShadowed(name: string, node: TSESTree.Node): boolean {
+      const scope = context.sourceCode.getScope(node);
+      for (let current: typeof scope | null = scope; current; current = current.upper) {
+        const variable = current.variables.find((v) => v.name === name);
+        if (variable) return variable.defs.length > 0;
+      }
+      return false;
+    }
+
+    /**
+     * An identifier or property access whose NAME says it holds a secret,
+     * following one binding hop.
+     *
+     * `const submitted = account.password; logger.warn('failed', submitted)` was
+     * silent: `submitted` names nothing, and the rule never looked at what it
+     * holds. Aliasing a value to a role-shaped name is what destructuring a
+     * payload looks like, so this was not an exotic shape - it was the common
+     * one.
+     */
+    function namedValueExposure(
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): { node: TSESTree.Node; pattern: string } | null {
+      const value = unwrapTypeSyntax(node) as TSESTree.Node;
+      if (seen.has(value)) return null;
+      seen.add(value);
+
+      // `session?.accessToken` reads exactly what `session.accessToken` reads.
+      // The optional-chaining wrapper is the only difference, and a
+      // `type === 'MemberExpression'` test does not match it.
+      if (value.type === AST_NODE_TYPES.ChainExpression) {
+        return namedValueExposure(value.expression, seen);
+      }
+      if (value.type === AST_NODE_TYPES.Identifier) {
+        const pattern = identifierNamesSecret(value.name, sensitivePatterns);
+        if (pattern) return { node: value, pattern };
+        const init = resolveBindingInit(value);
+        const viaBinding = init ? namedValueExposure(init, seen) : null;
+        // Report at the identifier the author wrote, with the pattern the
+        // initializer proved.
+        return viaBinding ? { node: value, pattern: viaBinding.pattern } : null;
+      }
+      if (value.type === AST_NODE_TYPES.MemberExpression) {
+        const pattern = memberCarriesSecret(value, sensitivePatterns);
+        return pattern ? { node: value, pattern } : null;
+      }
+      return null;
+    }
+
+    /**
+     * The initializer of the variable this identifier resolves to, when the
+     * binding is written exactly once. A binding written twice holds neither
+     * value with certainty, and reading the declaration would be reading code
+     * the author did not run.
+     */
+    function resolveBindingInit(node: TSESTree.Identifier): TSESTree.Expression | null {
+      const scope = context.sourceCode.getScope(node);
+      for (let current: typeof scope | null = scope; current; current = current.upper) {
+        const variable = current.variables.find((v) => v.name === node.name);
+        if (!variable) continue;
+        if (variable.defs.length !== 1) return null;
+        const [def] = variable.defs;
+        if (def.type !== 'Variable' || !def.node.init) return null;
+        return variable.references.filter((r) => r.isWrite()).length === 1
+          ? def.node.init
+          : null;
+      }
+      return null;
+    }
+
+    /** Report the first argument that carries a secret; at most one per call. */
+    function reportFirstExposure(
+      argumentList: readonly TSESTree.Node[],
+      exposureContext: 'logs' | 'error messages',
+    ): void {
+      for (const argument of argumentList) {
+        const exposure = describeExposure(argument);
+        if (exposure) {
+          context.report({
+            node: exposure.node,
+            messageId: 'sensitiveDataExposure',
+            data: { context: exposureContext, dataType: exposure.pattern },
+          });
+          return;
+        }
+      }
+    }
+
+    /**
      * Check CallExpression for logging calls with sensitive data
      */
     function checkCallExpression(node: TSESTree.CallExpression) {
-      // Check if it's a logging call (console.*, logger.*)
       const isLoggingCall = (() => {
-        if (node.callee.type === 'MemberExpression') {
-          const object = node.callee.object;
+        if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
           const property = node.callee.property;
-          if (property.type === 'Identifier') {
-            const methodName = property.name.toLowerCase();
-            if (['log', 'info', 'warn', 'error', 'debug', 'trace'].includes(methodName)) {
-              // Check if it's console.* or logger.*
-              if (object.type === 'Identifier') {
-                const objName = object.name.toLowerCase();
-                if (objName === 'console' || objName === 'logger') {
-                  return true;
-                }
-              }
-            }
-          }
-        } else if (node.callee.type === 'Identifier') {
-          // `log(…)`, `customLogger(…)`, `logDebug(…)` — a bare function whose
-          // NAME says it logs.
+          return (
+            !node.callee.computed &&
+            property.type === AST_NODE_TYPES.Identifier &&
+            LOG_METHODS.has(property.name.toLowerCase()) &&
+            isLoggerReceiver(node.callee.object)
+          );
+        }
+        if (node.callee.type === AST_NODE_TYPES.Identifier) {
+          // `log(...)`, `customLogger(...)`, `logDebug(...)` - a bare function
+          // whose NAME says it logs.
           //
           // Word boundaries, not substrings. `'completeLogin'.includes('log')`
           // is true, so Shopify CLI's `completeLogin(page, url, email,
           // password)` was read as a logging call and its `password` argument
-          // reported — 7 of this rule's 12 wild-corpus findings, on a function
+          // reported - 7 of this rule's 12 wild-corpus findings, on a function
           // that submits a login form and logs nothing.
-          //
-          // `login`, `logout`, `dialog`, `catalog`, `blog` all contain "log"
-          // and none of them is a logger.
           const words = node.callee.name
             .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
             .toLowerCase()
             .split(/[^a-z0-9]+/);
-          if (words.includes('log') || words.includes('logger')) {
-            return true;
-          }
+          return words.includes('log') || words.includes('logger');
         }
         return false;
       })();
 
       if (isLoggingCall && checkConsoleLog) {
-        // Check if any argument contains sensitive data
-        for (const arg of node.arguments) {
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            const text = arg.value;
-            const matchedPattern = literalCarriesSecret(text, sensitivePatterns)
-              ? containsSensitiveData(text, sensitivePatterns)
-              : null;
-            if (matchedPattern) {
-              context.report({
-                node: arg,
-                messageId: 'sensitiveDataExposure',
-                data: {
-                  context: 'logs',
-                  dataType: matchedPattern,
-                },
-              });
-              return; // Only report once per call
-            }
-          } else if (arg.type === 'BinaryExpression' && arg.operator === '+') {
-            // `console.log('password: ' + password)` — the classic credential
-            // leak to logs, and the case this rule most exists for. The
-            // logging path handled only Literal and Identifier arguments, so
-            // a concatenation of the two was silent: a pre-existing false
-            // negative, mirrored from the `new Error(...)` path below which
-            // already checked both sides.
-            const side =
-              (arg.left?.type === 'Literal' &&
-              typeof arg.left.value === 'string' &&
-              literalLabelsValue(arg.left.value, sensitivePatterns)
-                ? { node: arg.left, pattern: literalLabelsValue(arg.left.value, sensitivePatterns) }
-                : undefined) ??
-              (arg.right?.type === 'Identifier' &&
-              identifierNamesSecret(arg.right.name, sensitivePatterns)
-                ? { node: arg.right, pattern: identifierNamesSecret(arg.right.name, sensitivePatterns) }
-                : undefined);
-
-            if (side?.pattern) {
-              context.report({
-                node: side.node,
-                messageId: 'sensitiveDataExposure',
-                data: {
-                  context: 'logs',
-                  dataType: side.pattern,
-                },
-              });
-              return; // Only report once per call
-            }
-          } else if (arg.type === AST_NODE_TYPES.MemberExpression) {
-            // `console.log(user.password)` — the shape the rule most exists
-            // for, and it was silent. The logging path read Literal, `+` and
-            // Identifier arguments only, so every property access carrying a
-            // secret walked straight through. The `+` arm above was added for
-            // the same class of gap; this is the other half of it.
-            const matchedMember = memberCarriesSecret(arg, sensitivePatterns);
-            if (matchedMember) {
-              context.report({
-                node: arg,
-                messageId: 'sensitiveDataExposure',
-                data: { context: 'logs', dataType: matchedMember },
-              });
-              return; // Only report once per call
-            }
-          } else if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
-            // `` console.log(`token=${t}`) `` — an interpolation is exactly the
-            // evidence the static-string guard looks for: unlike a constant,
-            // a template splices a runtime value into the log line.
-            //
-            // Both halves are read. The interpolated expression names the
-            // secret in `${apiKey}`; the surrounding text names it in
-            // `` `password: ${value}` ``, where the expression is anonymous and
-            // only the label says what is being logged.
-            const fromExpression = arg.expressions
-              .map((e) =>
-                e.type === AST_NODE_TYPES.Identifier
-                  ? identifierNamesSecret(e.name, sensitivePatterns)
-                  : e.type === AST_NODE_TYPES.MemberExpression
-                    ? memberCarriesSecret(e, sensitivePatterns)
-                    : null,
-              )
-              .find((m): m is string => Boolean(m));
-            // Only when something is actually interpolated: a template with no
-            // expressions is a constant string, and reporting it would be the
-            // prose false positive this guard exists to prevent.
-            //
-            // The quasis are joined with a placeholder standing in for each
-            // interpolation, rather than tested one by one. `` `token=${t}` ``
-            // splits into `token=` and ``, and neither half satisfies
-            // "label, separator, then a value" — the value is the hole between
-            // them. Substituting a non-space character for that hole makes the
-            // same guard read the template the way a person does.
-            const INTERPOLATION = '\u0001'; // cannot occur in source text
-            const joined = arg.quasis
-              .map((q) => q.value.cooked)
-              .join(INTERPOLATION);
-            // Only when something is actually interpolated: a template with no
-            // expressions is a constant string, and reporting it would be the
-            // prose false positive this guard exists to prevent.
-            const fromText =
-              arg.expressions.length > 0 &&
-              literalCarriesSecret(joined, sensitivePatterns)
-                ? containsSensitiveData(joined, sensitivePatterns)
-                : null;
-            const matchedTemplate = fromExpression ?? fromText;
-            if (matchedTemplate) {
-              context.report({
-                node: arg,
-                messageId: 'sensitiveDataExposure',
-                data: { context: 'logs', dataType: matchedTemplate },
-              });
-              return; // Only report once per call
-            }
-          } else if (arg.type === AST_NODE_TYPES.Identifier && arg.name) {
-            const matchedPattern2 = identifierNamesSecret(arg.name, sensitivePatterns);
-            if (matchedPattern2) {
-              context.report({
-                node: arg,
-                messageId: 'sensitiveDataExposure',
-                data: {
-                  context: 'logs',
-                  dataType: matchedPattern2,
-                },
-              });
-              return; // Only report once per call
-            }
-          }
-        }
+        reportFirstExposure(node.arguments, 'logs');
       }
     }
-    
+
     /**
      * Check NewExpression for Error with sensitive data
      */
@@ -461,64 +622,8 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
       if (!checkErrorMessages) {
         return;
       }
-
-      if (node.callee && node.callee.type === 'Identifier' && node.callee.name === 'Error') {
-        // Check all arguments for sensitive data (report only once per error)
-        for (const arg of node.arguments) {
-            if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            const text = arg.value;
-            const matchedErrPattern = literalCarriesSecret(text, sensitivePatterns)
-              ? containsSensitiveData(text, sensitivePatterns)
-              : null;
-            if (matchedErrPattern) {
-              context.report({
-                node: arg,
-                messageId: 'sensitiveDataExposure',
-                data: {
-                  context: 'error messages',
-                  dataType: matchedErrPattern,
-                },
-              });
-              return; // Only report once per error
-            }
-          } else if (arg.type === 'BinaryExpression' && arg.operator === '+') {
-            // Check left side if it's a literal
-            if (arg.left && arg.left.type === 'Literal' && typeof arg.left.value === 'string') {
-              const leftText = arg.left.value;
-              // Not `literalCarriesSecret` here: in `'password: ' + password`
-              // the label is on the left and the value on the right, so the
-              // left literal legitimately ends at the separator — and it must
-              // END there. See literalLabelsValue.
-              const leftMatchedPattern = literalLabelsValue(leftText, sensitivePatterns);
-              if (leftMatchedPattern) {
-                context.report({
-                  node: arg.left,
-                  messageId: 'sensitiveDataExposure',
-                  data: {
-                    context: 'error messages',
-                    dataType: leftMatchedPattern,
-                  },
-                });
-                return; // Only report once per error
-              }
-            }
-            // Check right side if it's an identifier
-            if (arg.right && arg.right.type === 'Identifier' && arg.right.name) {
-              const rightMatchedPattern = identifierNamesSecret(arg.right.name, sensitivePatterns);
-              if (rightMatchedPattern) {
-                context.report({
-                  node: arg.right,
-                  messageId: 'sensitiveDataExposure',
-                  data: {
-                    context: 'error messages',
-                    dataType: rightMatchedPattern,
-                  },
-                });
-                return; // Only report once per error
-              }
-            }
-          }
-        }
+      if (node.callee.type === AST_NODE_TYPES.Identifier && node.callee.name === 'Error') {
+        reportFirstExposure(node.arguments, 'error messages');
       }
     }
 

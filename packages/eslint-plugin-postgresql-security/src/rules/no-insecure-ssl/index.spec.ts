@@ -31,7 +31,10 @@ ruleTester.run('no-insecure-ssl', noInsecureSsl, {
     "new Pool({ user: 'postgres' })",
     // Explicitly secure
     "new Client({ ssl: { ca: '...' } })",
-    "new obj.Client({ ssl: { rejectUnauthorized: false } })", // MemberExpression callee (ignored)
+    // `obj` is not a pg module binding, so `obj.Client` is not a pg client.
+    // This case used to pass for the WRONG reason — the rule skipped every
+    // MemberExpression callee, which is also why it missed `new pg.Pool(...)`.
+    "new obj.Client({ ssl: { rejectUnauthorized: false } })",
     // String connection string (would require different parsing, rule targets config object)
     "new Client('postgres://user:pass@host/db')",
     // Line 51: ssl object without rejectUnauthorized property (else branch)
@@ -45,7 +48,9 @@ ruleTester.run('no-insecure-ssl', noInsecureSsl, {
   ]),
   invalid: pg([
     {
-      code: "new Client({ ssl: { rejectUnauthorized: false } })",
+      // `Client` has to be imported to BE a Client. Without the import this
+      // fixture asserted that the rule may decide from the spelling alone.
+      code: "import { Client } from 'pg';\nnew Client({ ssl: { rejectUnauthorized: false } })",
       errors: [{ messageId: 'noInsecureSsl' }],
     },
     {

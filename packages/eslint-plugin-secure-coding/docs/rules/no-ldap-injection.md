@@ -93,8 +93,8 @@ const filter = `(uid=${ldap.escape.filterValue(userId)})`;
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `ldapFunctions` | `string[]` | `["search","bind","modify","add","delete","compare","searchAsync"]` | LDAP client methods treated as query sinks |
-| `ldapEscapeFunctions` | `string[]` | `["escape.filterValue","escape.dnValue","filterEscape","dnEscape"]` | Function names that escape LDAP filter or DN values |
+| `ldapFunctions` | `string[]` | `["search","searchAsync","searchPaginated","bind","modify","modifyDN","add","del","delete","compare"]` | LDAP client methods examined. Argument 0 is treated as the DN for all of them; argument 1 is treated as a filter only for the search family (`search`, `searchAsync`, `searchPaginated`) — for the rest it is a password, an entry, a change or an attribute name, and is examined only if its own text is filter grammar. |
+| `ldapEscapeFunctions` | `string[]` | `["escape.filterValue","escape.dnValue","filterValue","dnValue","filterEscape","dnEscape"]` | Function names that escape LDAP filter or DN values. Matched by exact membership against the bare name or the tail of a dotted path — never by substring. |
 | `ldapValidationFunctions` | `string[]` | `["validateLdapInput","sanitizeLdapFilter","cleanLdapValue","checkLdapFilter"]` | Function names that count as LDAP input validation |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as LDAP sanitizers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |

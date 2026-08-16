@@ -441,53 +441,6 @@ describe('no-unchecked-loop-condition', () => {
         },
         {
           code: `
-            // Infinite loop through state-dependent condition
-            let shouldContinue = true;
-
-            function processQueue() {
-              // DANGEROUS: Condition depends on external state that may never change
-              while (shouldContinue) {
-                const item = queue.shift();
-                if (!item) {
-                  // Forgot to set shouldContinue = false!
-                  continue;
-                }
-                processItem(item);
-              }
-            }
-          `,
-          errors: [
-            {
-              messageId: 'infiniteLoop',
-            },
-          ],
-        },
-        {
-          code: `
-            // Stack overflow through uncontrolled recursion
-            function traverseObject(obj, path = []) {
-              // DANGEROUS: No recursion depth limit
-              for (const key in obj) {
-                const value = obj[key];
-                const currentPath = [...path, key];
-
-                if (typeof value === 'object' && value !== null) {
-                  // Deeply nested objects could cause stack overflow
-                  traverseObject(value, currentPath);
-                } else {
-                  processLeaf(currentPath, value);
-                }
-              }
-            }
-          `,
-          errors: [
-            {
-              messageId: 'unsafeRecursion',
-            },
-          ],
-        },
-        {
-          code: `
             // DoS through user-controlled iteration bounds
             app.get('/paginate', (req, res) => {
               const pageSize = parseInt(req.query.pageSize) || 10;
@@ -517,48 +470,23 @@ describe('no-unchecked-loop-condition', () => {
   });
 
   describe('Invalid Code - WhileStatement/DoWhileStatement gaps', () => {
-    // `text.match(pattern)` (or `.test(`) is the only checkComplexDoSPatterns
-    // shape exercised by the pre-existing "Complex Loop Condition Scenarios"
-    // fixture, and it uses req-derived variable names that involvesUserInput
-    // catches first — so the WhileStatement branch that reports after
-    // checkComplexDoSPatterns returns true (as opposed to involvesUserInput)
-    // was never reached. `cache`/`rx` are plain local names, not user input.
-    ruleTester.run('invalid - WhileStatement complex-DoS pattern (non-user-input names)', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'while (cache.match(rx)) { cache = cache.replace(rx, \'\'); }',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
+    // THESE THREE CASES USED TO BE ASSERTED AS INVALID, and their own titles
+    // conceded there was no user input in any of them: "(non-user-input
+    // names)", "pagination pattern", "arithmetic-overflow pattern". The verdict
+    // came from `sourceCode.getText(condition)` containing `.match(`, or `page`
+    // next to `pageSize`, or `*` next to `limit` - and the messageId reported
+    // was `userControlledLoopBound`, a CWE-606 claim that a CLIENT chose the
+    // bound. Nothing here is client-controlled.
+    //
+    // The heuristics that produced them are gone; see the REMOVED note in
+    // index.ts for the string-literal and comment probes that settled it.
+    ruleTester.run('valid - no user input means no user-controlled bound', noUncheckedLoopCondition, {
+      valid: [
+        "while (cache.match(rx)) { cache = cache.replace(rx, ''); }",
+        'while (page < pageSize) { advance(); }',
+        'while (offset * limit < total) { advance(); }',
       ],
-    });
-
-    // checkComplexDoSPatterns' pagination branch (`page` + `pageSize` both
-    // present) and arithmetic-overflow branch (`*` with `pageSize`/`limit`)
-    // are two independent early returns never hit by the `.match(`-based
-    // fixture above, since that pattern satisfies the first `if` and
-    // returns before reaching either of these.
-    ruleTester.run('invalid - WhileStatement complex-DoS pagination pattern', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'while (page < pageSize) { advance(); }',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
-    });
-
-    ruleTester.run('invalid - WhileStatement complex-DoS arithmetic-overflow pattern', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          // Uses `limit` (not `pageSize`) so the pagination branch's
-          // `.includes('page')` check doesn't intercept it first — isolates
-          // the arithmetic-overflow branch (`*` combined with `limit`).
-          code: 'while (offset * limit < total) { advance(); }',
-          errors: [{ messageId: 'userControlledLoopBound' }],
-        },
-      ],
+      invalid: [],
     });
 
     // do-while's userControlledLoopBound report path was only ever exercised
@@ -599,39 +527,26 @@ describe('no-unchecked-loop-condition', () => {
     });
   });
 
-  describe('Invalid Code - WhileStatement state-dependent variable-name branches', () => {
-    // The state-dependent-flag check is a 4-way `||` over `.includes(...)`
-    // substring tests ('continue', 'running', 'active', 'enabled'); the
-    // only existing fixture uses a name matching 'running', so the other
-    // three disjuncts' true branches were never independently exercised.
-    ruleTester.run('invalid - state-dependent flag named with "continue"', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'while (shouldContinue) { doWork(); }',
-          errors: [{ messageId: 'infiniteLoop' }],
-        },
+  describe('A flag is not evidence of an infinite loop', () => {
+    // THIS DESCRIBE USED TO BE `Invalid Code - WhileStatement state-dependent
+    // variable-name branches`, and it asserted all three of these as invalid.
+    // Its own comment named the mechanism: "a 4-way `||` over `.includes(...)`
+    // substring tests ('continue'/'running'/'active'/'enabled')". The verdict
+    // was the SPELLING of the condition variable - `while (isActive)` reported
+    // and `while (isReady)` did not, on identical control flow - and it fired
+    // whether or not the body contained a `break`.
+    //
+    // A supervisor loop driven by a flag the body clears is the most common
+    // loop in any codebase, and the flag is the reason it terminates.
+    ruleTester.run('valid - loops driven by a state flag', noUncheckedLoopCondition, {
+      valid: [
+        'while (shouldContinue) { doWork(); }',
+        'while (isActive) { doWork(); }',
+        'while (isEnabled) { doWork(); }',
+        'while (isRunning) { doWork(); }',
+        'let isActive = true; while (isActive) { isActive = step(); }',
       ],
-    });
-
-    ruleTester.run('invalid - state-dependent flag named with "active"', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'while (isActive) { doWork(); }',
-          errors: [{ messageId: 'infiniteLoop' }],
-        },
-      ],
-    });
-
-    ruleTester.run('invalid - state-dependent flag named with "enabled"', noUncheckedLoopCondition, {
-      valid: [],
-      invalid: [
-        {
-          code: 'while (isEnabled) { doWork(); }',
-          errors: [{ messageId: 'infiniteLoop' }],
-        },
-      ],
+      invalid: [],
     });
   });
 
@@ -945,25 +860,34 @@ describe('no-unchecked-loop-condition', () => {
       const functionDeclaration = listeners.FunctionDeclaration as (node: unknown) => void;
       const callExpression = listeners.CallExpression as (node: unknown) => void;
 
-      // Register the enclosing function so currentFunctionStack has an entry.
-      functionDeclaration({ type: 'FunctionDeclaration', id: { type: 'Identifier', name: 'recur' } });
-
-      // maxRecursionDepth defaults to a value >0; calling with callCount
-      // reaching 1 and `currentFunction === 'recursiveFunc'` is not needed —
-      // `callCount >= 1` alone triggers the report on the very first call
-      // when combined with the name-based dangerous-pattern check, so use
-      // the literal name 'recursiveFunc' to satisfy the flagged-pattern OR.
-      functionDeclaration({ type: 'FunctionDeclaration', id: { type: 'Identifier', name: 'recursiveFunc' } });
-      callExpression({
+      // THIS TEST USED TO PASS THE LITERAL NAME 'recursiveFunc', with a comment
+      // saying so, "to satisfy the flagged-pattern OR". That OR was two
+      // hardcoded function names lifted out of this file's own fixtures. The
+      // evidence is now structural: a self-call with no branch above it inside
+      // the function, whatever the function is called.
+      const fn: Record<string, unknown> = {
+        type: 'FunctionDeclaration',
+        id: { type: 'Identifier', name: 'drain' },
+      };
+      const block: Record<string, unknown> = { type: 'BlockStatement', parent: fn };
+      const statement: Record<string, unknown> = { type: 'ExpressionStatement', parent: block };
+      block.body = [statement];
+      fn.body = block;
+      const call: Record<string, unknown> = {
         type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'recursiveFunc' },
+        callee: { type: 'Identifier', name: 'drain' },
         arguments: [],
-      });
+        parent: statement,
+      };
+      statement.expression = call;
+
+      functionDeclaration(fn);
+      callExpression(call);
 
       expect(reports).toHaveLength(1);
+      expect(reports[0].messageId).toBe('unsafeRecursion');
       expect(reports[0].data?.line).toBe('0');
     });
-
     it('WhileStatement infiniteLoop (while(true)) falls back to line 0', () => {
       const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition);
       const whileStatement = listeners.WhileStatement as (node: unknown) => void;
@@ -993,48 +917,6 @@ describe('no-unchecked-loop-condition', () => {
 
       expect(reports).toHaveLength(1);
       expect(reports[0].messageId).toBe('userControlledLoopBound');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('WhileStatement complex-DoS userControlledLoopBound falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'cache.match(rx)',
-      });
-      const whileStatement = listeners.WhileStatement as (node: unknown) => void;
-
-      whileStatement({
-        type: 'WhileStatement',
-        test: {
-          type: 'CallExpression',
-          callee: {
-            type: 'MemberExpression',
-            object: { type: 'Identifier', name: 'cache' },
-            property: { type: 'Identifier', name: 'match' },
-          },
-          arguments: [{ type: 'Identifier', name: 'rx' }],
-        },
-        body: { type: 'BlockStatement', body: [] },
-      });
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('userControlledLoopBound');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('WhileStatement state-dependent infiniteLoop falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'isRunning',
-      });
-      const whileStatement = listeners.WhileStatement as (node: unknown) => void;
-
-      whileStatement({
-        type: 'WhileStatement',
-        test: { type: 'Identifier', name: 'isRunning' },
-        body: { type: 'BlockStatement', body: [] },
-      });
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('infiniteLoop');
       expect(reports[0].data?.line).toBe('0');
     });
 
@@ -1082,33 +964,6 @@ describe('no-unchecked-loop-condition', () => {
         type: 'ForStatement',
         init: null,
         test: { type: 'BinaryExpression', operator: '>', left: { type: 'MemberExpression', object: { type: 'Identifier', name: 'req' }, property: { type: 'Identifier', name: 'count' } }, right: { type: 'Literal', value: 0 } },
-        update: { type: 'UpdateExpression' },
-        body: { type: 'BlockStatement', body: [] },
-      });
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('userControlledLoopBound');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('ForStatement complex-DoS userControlledLoopBound falls back to line 0', () => {
-      const { listeners, reports } = createWithMockContext(noUncheckedLoopCondition, {
-        sourceText: 'cache.match(rx)',
-      });
-      const forStatement = listeners.ForStatement as (node: unknown) => void;
-
-      forStatement({
-        type: 'ForStatement',
-        init: null,
-        test: {
-          type: 'CallExpression',
-          callee: {
-            type: 'MemberExpression',
-            object: { type: 'Identifier', name: 'cache' },
-            property: { type: 'Identifier', name: 'match' },
-          },
-          arguments: [{ type: 'Identifier', name: 'rx' }],
-        },
         update: { type: 'UpdateExpression' },
         body: { type: 'BlockStatement', body: [] },
       });
@@ -1400,5 +1255,260 @@ describe('no-unchecked-loop-condition — option differentials', () => {
         errors: [{ messageId: 'userControlledLoopBound' }],
       },
     ],
+  });
+});
+
+// -------------------------------------------------------------------------
+// Regression locks. Every case below FAILS on the rule as it stood before the
+// corpus at benchmarks/rule-corpus/secure-coding__no-unchecked-loop-condition
+// was written. That corpus scored 56.0% F1 on its first run: 6 false positives
+// and 5 misses on 25 fixtures.
+// -------------------------------------------------------------------------
+describe('Regression - the ledger textual-matching probe', () => {
+  // docs/rule-ledger/secure-coding__no-unchecked-loop-condition.md flagged this
+  // rule for `textual-matching` and gave the probe: put the matched text in a
+  // string literal or a comment inside otherwise-clean code. Both halves
+  // reported. Each pair below is the probe with its positive control - the
+  // second member of every pair was ALWAYS quiet, which is what makes the first
+  // member evidence about the text rather than about the loop.
+  ruleTester.run('valid - matched text in a string literal or a comment', noUncheckedLoopCondition, {
+    valid: [
+      // `.match(` as data, in a hand-written lexer.
+      `while (source.slice(c, c + 7) !== '.match(') { c += 1; }`,
+      `while (source.slice(c, c + 7) !== '.test(') { c += 1; }`,
+      // `endIndex` in a comment inside the loop test.
+      'for (let i = 0; i < /* stop before endIndex */ rows.length; i++) { work(i); }',
+      // A local index window; `startIndex`/`endIndex` are the spellings, and
+      // both ends are derived from `rows.length`.
+      'const startIndex = 0; const endIndex = 5; for (let i = startIndex; i < endIndex; i++) { work(i); }',
+      // `page` next to `pageSize`, with the bound derived from a server count.
+      'let page = 0; while (page < totalPages && pageSize > 0) { page += 1; }',
+      // `*` next to `limit`, with both operands local constants.
+      'const limit = 50; const width = 100; for (let i = 0; i < limit * width; i++) { slots.push(null); }',
+    ],
+    invalid: [],
+  });
+});
+
+describe('Regression - a flag is not evidence of an infinite loop', () => {
+  ruleTester.run('valid - state-flag loops', noUncheckedLoopCondition, {
+    valid: [
+      'let isActive = true; while (isActive) { isActive = step(); }',
+      'while (shouldContinue) { doWork(); }',
+      'while (isRunning) { doWork(); }',
+      'while (isEnabled) { doWork(); }',
+    ],
+    invalid: [
+      // The shapes that ARE evidence still report.
+      { code: 'while (true) { doWork(); }', errors: [{ messageId: 'infiniteLoop' }] },
+      { code: 'for (;;) { doWork(); }', errors: [{ messageId: 'infiniteLoop' }] },
+    ],
+  });
+});
+
+describe('Regression - taint roots the walk could not follow', () => {
+  ruleTester.run('invalid - shapes that were silent', noUncheckedLoopCondition, {
+    valid: [],
+    invalid: [
+      {
+        // A TypeScript cast. Express types `req.query.x` as
+        // `string | string[] | ParsedQs | undefined`, so a TS codebase cannot
+        // use it as a bound without one - which meant the rule did not fire on
+        // TypeScript Express code at all.
+        name: 'as-number cast',
+        code: 'for (let i = 0; i < (req.query.count as unknown as number); i++) { work(i); }',
+        errors: [{ messageId: 'userControlledLoopBound' }],
+      },
+      {
+        // A parse is not a clamp. `?limit=99999999` parses cleanly.
+        name: 'parsed but not clamped',
+        code: [
+          'const limit = parseInt(req.query.limit, 10);',
+          'for (let i = 0; i < limit; i++) { rows.push(i); }',
+        ].join('\n'),
+        errors: [{ messageId: 'userControlledLoopBound' }],
+      },
+      {
+        // A `||` default replaces the falsy case and bounds nothing.
+        name: 'logical-or default',
+        code: [
+          'const pageSize = parseInt(req.query.pageSize) || 10;',
+          'for (let i = 0; i < pageSize; i++) { rows.push(i); }',
+        ].join('\n'),
+        errors: [{ messageId: 'userControlledLoopBound' }],
+      },
+    ],
+  });
+
+  ruleTester.run('valid - bounds that really are bounded', noUncheckedLoopCondition, {
+    valid: [
+      // `Math.min`/`Math.max` are the only two that impose a ceiling, and they
+      // are matched on the `Math` global rather than found in the text.
+      [
+        'const requested = Number.parseInt(req.query.pages, 10) || 1;',
+        'const pages = Math.min(Math.max(requested, 1), 100);',
+        'for (let i = 0; i < pages; i++) { rows.push(i); }',
+      ].join('\n'),
+      // `.length` is a MEASUREMENT of data already materialised, not a count
+      // the client can inflate. `Object.keys(req.body).length` is the number of
+      // fields the body parser already built.
+      [
+        'const fields = Object.keys(req.body);',
+        'for (let i = 0; i < fields.length; i++) { applied.push(fields[i]); }',
+      ].join('\n'),
+      'const n = req.body.items && req.body.items.length; while (check(n)) { doWork(); }',
+    ],
+    invalid: [
+      {
+        // …but a property that is not a measurement still reports.
+        name: 'a chosen count, not a measured one',
+        code: 'for (let i = 0; i < req.body.count; i++) { work(i); }',
+        errors: [{ messageId: 'userControlledLoopBound' }],
+      },
+    ],
+  });
+});
+
+describe('Regression - a guard clause validates a collection', () => {
+  ruleTester.run('valid - size-checked collections', noUncheckedLoopCondition, {
+    valid: [
+      // The guard-clause form, which is what everybody writes. It is a
+      // preceding SIBLING of the loop, not an ancestor, so an ancestor-only
+      // walk reported the fix.
+      [
+        'const items = req.body.items;',
+        'if (!Array.isArray(items) || items.length > 500) { return; }',
+        'for (const item of items) { save(item); }',
+      ].join('\n'),
+      // The nested form still works.
+      'if (Array.isArray(req.body.items) && req.body.items.length < 100) { for (const item of req.body.items) { save(item); } }',
+    ],
+    invalid: [
+      {
+        // A guard on a DIFFERENT binding is not a guard on this one. The old
+        // check compared printed text with `String.includes`, so `items`
+        // matched inside `filteredItems`.
+        name: 'a guard on a different binding',
+        code: [
+          'const items = req.body.items;',
+          'const filteredItems = [];',
+          'if (!Array.isArray(filteredItems) || filteredItems.length > 500) { return; }',
+          'for (const item of items) { save(item); }',
+        ].join('\n'),
+        errors: [{ messageId: 'uncheckedLoopCondition' }],
+      },
+    ],
+  });
+});
+
+describe('Regression - recursion is decided by structure, not by two names', () => {
+  // `currentFunction === 'recursiveFunc'` and `currentFunction ===
+  // 'traverseObject'` used to be the ONLY things that could report
+  // `unsafeRecursion` in practice: the other disjunct counts recursive call
+  // SITES against maxRecursionDepth, so it needs eleven self-calls written
+  // inside one function. Both names are fixtures from this file.
+  ruleTester.run('valid - recursion the rule cannot decide, and recursion it can clear', noUncheckedLoopCondition, {
+    valid: [
+      // Renaming the two magic names must not change the verdict. Both of
+      // these are conditional recursion, which is not decidable here.
+      'function traverseObject(n) { for (const c of n.kids) { traverseObject(c); } }',
+      'function walk(n) { for (const c of n.kids) { walk(c); } }',
+      // A depth-bounded recursion is the correct remediation and must not be
+      // reported. The base case is a preceding sibling of the recursive call.
+      'function factorial(n, depth = 0) { if (depth > 10) return 1; return n * factorial(n - 1, depth + 1); }',
+      'function safeRecursion(n, depth = 0) { if (depth > 10) return; if (n > 0) safeRecursion(n - 1, depth + 1); }',
+    ],
+    invalid: [
+      {
+        // Nothing branches above the self-call, so the function never returns -
+        // whatever it is called.
+        name: 'unconditional self-recursion, innocuously named',
+        code: 'function drain(queue) { handle(queue.pop()); drain(queue); }',
+        errors: [{ messageId: 'unsafeRecursion' }],
+      },
+    ],
+  });
+
+  /**
+   * Locks for the three remaining decision arms, each written as a real
+   * program rather than a synthetic AST.
+   */
+  describe('coverage - remaining decision arms', () => {
+    ruleTester.run('block base case, ternary clamp, mismatched guard', noUncheckedLoopCondition, {
+      valid: [
+        // The base case is a BLOCK, not a bare statement. The exit search has
+        // to walk the block's statement ARRAY to find the `return`; with a
+        // braceless base case it never touches that arm. Both spellings are
+        // the same program and must agree.
+        'function walk(n) { if (n <= 0) { return 0; } return walk(n - 1); }',
+        // A clamp reached through a ternary. Both branches clamp, so the bound
+        // is bounded whichever way the flag falls - which is exactly why the
+        // arm requires BOTH branches rather than either.
+        [
+          'export function paginate(req, fast) {',
+          '  const limit = fast ? Math.min(req.query.n, 10) : Math.min(req.query.n, 5);',
+          '  const rows = [];',
+          '  for (let i = 0; i < limit; i++) { rows.push(i); }',
+          '  return rows;',
+          '}',
+        ].join('\n'),
+      ],
+      invalid: [
+        // A validation call whose argument is a LITERAL, not the collection
+        // being iterated. Comparing a Literal against an Identifier is the
+        // path-comparison mismatch arm: the guard proves nothing about
+        // `req.body.items`, so the loop is still unchecked.
+        {
+          name: 'guard argument does not match the iterated collection',
+          code: [
+            'export function importAll(req) {',
+            '  if (Array.isArray(42)) {',
+            '    for (const record of req.body.items) { persist(record); }',
+            '  }',
+            '}',
+          ].join('\n'),
+          errors: [{ messageId: 'uncheckedLoopCondition' }],
+        },
+        // There IS a branch above the self-call, but it cannot terminate
+        // anything: no `return` and no `throw` anywhere inside it. A branch
+        // that only logs is not a base case, so the recursion is still
+        // unbounded. This is the arm that distinguishes "a guard exists" from
+        // "a guard exits".
+        {
+          name: 'preceding branch contains no exit at all',
+          code: 'function countdown(n) { if (n > 5) { console.log(n); } countdown(n - 1); }',
+          errors: [{ messageId: 'unsafeRecursion' }],
+        },
+        // `||` in the condition, where `&&` is handled separately. For `&&`
+        // only the right operand can bound the loop (`items && items.length`),
+        // but for `||` EITHER side can supply an attacker-chosen bound, so
+        // both have to be examined - here the tainted value is on the left.
+        {
+          name: 'either side of a logical OR can carry the bound',
+          code: [
+            'export function replay(req, fallback) {',
+            '  let cursor = 0;',
+            '  while (cursor < (req.query.events || fallback)) { cursor++; }',
+            '  return cursor;',
+            '}',
+          ].join('\n'),
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+        // The mirror of the case above. With the tainted operand on the LEFT
+        // the check short-circuits and never evaluates the right; only a clean
+        // left operand forces the right-hand branch to be taken.
+        {
+          name: 'logical OR with the tainted operand on the right',
+          code: [
+            'export function replay(req, fallback) {',
+            '  let cursor = 0;',
+            '  while (cursor < (fallback || req.query.events)) { cursor++; }',
+            '  return cursor;',
+            '}',
+          ].join('\n'),
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+      ],
+    });
   });
 });

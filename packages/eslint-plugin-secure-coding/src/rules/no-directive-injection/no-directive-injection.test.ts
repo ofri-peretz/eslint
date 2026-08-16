@@ -161,14 +161,26 @@ describe('no-directive-injection', () => {
     ruleTester.run('invalid - template injection in JSX', noDirectiveInjection, {
       valid: [],
       invalid: [
-        // Template literal with userInput in dangerouslySetInnerHTML
-        // Only triggers dangerousInnerHTML (JSX context doesn't trigger templateInjection via TemplateLiteral visitor)
+        // Template literal with userInput in dangerouslySetInnerHTML.
+        //
+        // ONE finding. This asserted two — `dangerousInnerHTML` from the
+        // JSXAttribute visitor and `templateInjection` from the TemplateLiteral
+        // visitor — for a single line with a single defect, which is a reader
+        // being told to fix the same thing twice.
         {
           code: '<div dangerouslySetInnerHTML={{ __html: `Hello ${userInput}!` }} />',
           errors: [
             {
               messageId: 'dangerousInnerHTML',
             },
+          ],
+        },
+        // The TemplateLiteral visitor still owns the case the JSX visitor
+        // cannot see: the payload goes through a helper first, so the attribute
+        // value has no provenance and the interpolation is the only evidence.
+        {
+          code: '<div dangerouslySetInnerHTML={{ __html: wrap(`Hello ${userInput}!`) }} />',
+          errors: [
             {
               messageId: 'templateInjection',
             },
@@ -314,9 +326,26 @@ describe('no-directive-injection', () => {
         },
       ],
       invalid: [
-        // requestData contains 'request' which is in user input variables
+        // Was `<div dangerouslySetInnerHTML={{ __html: requestData }} />` with
+        // the comment "requestData contains 'request' which is in user input
+        // variables" — the substring defect asserted as the intended contract.
+        // It is what made `renderMetadata(series)` and `bodyClass` findings.
+        //
+        // The option is now exercised the way a consumer would use it: the same
+        // source is valid until the project declares the name, and the name is
+        // matched whole.
         {
-          code: '<div dangerouslySetInnerHTML={{ __html: requestData }} />',
+          code: '<div dangerouslySetInnerHTML={{ __html: customVar }} />',
+          options: [{ userInputVariables: ['customVar'] }],
+          errors: [
+            {
+              messageId: 'dangerousInnerHTML',
+            },
+          ],
+        },
+        // A declared name reached through a member chain still counts.
+        {
+          code: '<div dangerouslySetInnerHTML={{ __html: request.body.bio }} />',
           errors: [
             {
               messageId: 'dangerousInnerHTML',
@@ -331,21 +360,15 @@ describe('no-directive-injection', () => {
     ruleTester.run('complex - real-world directive injection attacks', noDirectiveInjection, {
       valid: [],
       invalid: [
-        // innerHTML assignment with template literal containing user input
+        // innerHTML assignment with template literal containing user input.
+        // One defect, one finding — see the note in the JSX block above.
         {
           code: 'element.innerHTML = `<div>${userInput}</div>`;',
-          errors: [
-            { messageId: 'dangerousInnerHTML' },
-            { messageId: 'templateInjection' },
-          ],
+          errors: [{ messageId: 'dangerousInnerHTML' }],
         },
-        // Dangerous template literal inside dangerouslySetInnerHTML (Now properly detected by fix)
         {
           code: '<div dangerouslySetInnerHTML={{ __html: `Hello ${userInput}!` }} />',
-          errors: [
-            { messageId: 'dangerousInnerHTML' },
-            { messageId: 'templateInjection' },
-          ],
+          errors: [{ messageId: 'dangerousInnerHTML' }],
         },
         // Multiple dangerous patterns
         {
@@ -1218,4 +1241,195 @@ describe('option: userInputVariables', () => {
       },
     ],
   });
+});
+
+/**
+ * Regression lock — the canonical CWE-96 sink, written the way the libraries
+ * document it.
+ *
+ * Every template-compilation site required the argument to be a bare
+ * `Identifier` whose NAME contained one of `req`, `body`, `query`, `params`,
+ * `input`, `data`. So `Handlebars.compile(userInput)` reported and
+ * `Handlebars.compile(req.body.template)` — the actual vulnerability, and the
+ * form in Handlebars' own documentation — did not. Measured across the corpus:
+ * 4 of 8 vulnerable fixtures missed, including all three template-compiler
+ * shapes.
+ */
+ruleTester.run('lock: member expressions reach the template sinks', noDirectiveInjection, {
+  valid: [
+    'Handlebars.compile(INVOICE_TEMPLATE);',
+    'const t = "<b>{{n}}</b>"; Handlebars.compile(t);',
+    // A helper's return value has provenance the rule cannot see from here.
+    'Handlebars.compile(loadTemplate(tenantId));',
+  ],
+  invalid: [
+    {
+      code: 'Handlebars.compile(req.body.template);',
+      errors: [{ messageId: 'userControlledTemplate' }],
+    },
+    {
+      code: '_.template(req.query.tpl);',
+      errors: [{ messageId: 'userControlledTemplate' }],
+    },
+    {
+      code: 'ejs.render(req.body.tpl, ctx);',
+      errors: [{ messageId: 'userControlledTemplate' }],
+    },
+    // A type-only cast is not a change of provenance; Express + TypeScript
+    // forces one at nearly every query read.
+    {
+      code: 'Handlebars.compile(req.query.tpl as string);',
+      errors: [{ messageId: 'userControlledTemplate' }],
+    },
+    // Adding a default does not launder the branch that is still the request.
+    {
+      code: 'Handlebars.compile(useCustom ? req.body.tpl : DEFAULT_TPL);',
+      errors: [{ messageId: 'userControlledTemplate' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — user input is a WHOLE name, and it is read off the AST.
+ *
+ * The innerHTML and dangerouslySetInnerHTML sites searched the PRINTED SOURCE
+ * of the expression for any of the option words, and `isUserInput` added
+ * `varName.startsWith('user')`. Measured: `chart.innerHTML =
+ * renderMetadata(series)` and `panel.innerHTML = buildLegend(seriesMetadata)`
+ * were both CWE-96 findings, because `Metadata` contains `data`; every
+ * `userAgent`, `username` and `userPreferences` in every React codebase
+ * qualified as attacker-controlled.
+ */
+ruleTester.run('lock: taint is structural, not textual', noDirectiveInjection, {
+  valid: [
+    'chart.innerHTML = renderMetadata(series);',
+    'panel.innerHTML = buildLegend(seriesMetadata);',
+    'el.innerHTML = userManualHtml;',
+    'el.innerHTML = userAgent;',
+    'el.innerHTML = `<p>${username}</p>`;',
+    // A let whose every write is a literal stays clean, however it is spelled.
+    'let markup = "<p>a</p>"; if (compact) markup = "<p>b</p>"; el.innerHTML = markup;',
+  ],
+  invalid: [
+    {
+      code: 'container.innerHTML = req.body.html;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // Resolved through the scope manager, across two hops and with every
+    // identifier renamed to something bland.
+    {
+      code: 'const payload = req.body.markup; const chunk = payload; el.innerHTML = chunk;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: '<div dangerouslySetInnerHTML={{ __html: req.body.bio }} />',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — one defect, one finding.
+ *
+ * `el.innerHTML = `<p>${req.body.name}</p>`` produced TWO reports: the
+ * AssignmentExpression visitor already looks through a template literal, and
+ * the TemplateLiteral visitor then reported the same line again. The
+ * TemplateLiteral visitor stands down when the owning payload is itself
+ * attributable, and keeps the case the owning visitors cannot see — a template
+ * handed to a helper first.
+ */
+ruleTester.run('lock: no duplicate finding on one interpolation', noDirectiveInjection, {
+  valid: [],
+  invalid: [
+    {
+      code: 'el.innerHTML = `<p>${req.body.name}</p>`;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'el.innerHTML = wrap(`<p>${req.body.name}</p>`);',
+      errors: [{ messageId: 'templateInjection' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — a function parameter is not a template this file owns.
+ *
+ * `Handlebars.compile` has one safe usage: compile a template the application
+ * owns. A parameter is not one, and nothing in the file can narrow it to one —
+ * a rendering service whose HTTP layer lives in another module is the ordinary
+ * shape for this weakness.
+ *
+ * It used to be caught only when the parameter happened to be SPELLED
+ * `userInputTemplate` (`name.includes('input')`); rename it to
+ * `templateSource` and the report died. Decided from the scope manager's
+ * definition kind now, so the spelling is irrelevant in both directions.
+ *
+ * The `valid` set is what keeps it from becoming "report every compile": a
+ * constant, a const-folded template, a `let` whose writes are all literals, and
+ * a helper's return value all stay quiet — and the parameter rule is confined
+ * to the compiler sinks, never to innerHTML, where a parameter is the normal
+ * shape of a DOM helper whose caller did the sanitizing.
+ */
+ruleTester.run('lock: unattributed parameter at the compiler sink', noDirectiveInjection, {
+  valid: [
+    'function render(data) { return Handlebars.compile(INVOICE_TEMPLATE)(data); }',
+    'function render(data) { const s = "<p>{{x}}</p>"; return Handlebars.compile(s)(data); }',
+    'function render(compact, data) { let s = "<p>a</p>"; if (compact) s = "<p>b</p>"; return Handlebars.compile(s)(data); }',
+    'function render(id) { return Handlebars.compile(loadTemplate(id)); }',
+    'function paint(el, html) { el.innerHTML = html; }',
+  ],
+  invalid: [
+    {
+      code: 'export function render(templateSource, data) { return Handlebars.compile(templateSource)(data); }',
+      errors: [{ messageId: 'userControlledTemplate' }],
+    },
+    {
+      code: 'function compileWidget(tpl) { return _.template(tpl); }',
+      errors: [{ messageId: 'userControlledTemplate' }],
+    },
+  ],
+});
+
+/**
+ * Coverage — the arms of the structural taint predicate.
+ *
+ * Each pair is over the same shape with the tainted side moved, so a
+ * short-circuit that stopped evaluating one side would turn the block red.
+ */
+ruleTester.run('coverage: taint predicate arms', noDirectiveInjection, {
+  valid: [
+    // Member chain rooted at something that is not an Identifier.
+    'el.innerHTML = getConfig().safeMarkup;',
+    // Computed access contributes no name.
+    'el.innerHTML = lookup[key];',
+    // Neither side of the concatenation or the fallback is attributable.
+    'el.innerHTML = "<p>" + label + "</p>";',
+    'el.innerHTML = label || DEFAULT_MARKUP;',
+    'el.innerHTML = flag ? SHORT_MARKUP : LONG_MARKUP;',
+    // A spread carries no property value to inspect.
+    '<div dangerouslySetInnerHTML={{ ...defaults }} />',
+    // An annotated template inside a helper — the safety check on the
+    // TemplateLiteral report path.
+    'el.innerHTML = wrap(/** @validated */ `<p>${req.body.n}</p>`);',
+  ],
+  invalid: [
+    // Concatenation, tainted on each side in turn.
+    { code: 'el.innerHTML = req.body.n + "</p>";', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    { code: 'el.innerHTML = "<p>" + req.body.n;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    // Fallback, tainted on each side in turn.
+    { code: 'el.innerHTML = req.body.n || DEFAULT_MARKUP;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    { code: 'el.innerHTML = DEFAULT_MARKUP || req.body.n;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    // Ternary, tainted on each side in turn.
+    { code: 'el.innerHTML = flag ? req.body.n : SAFE_MARKUP;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    { code: 'el.innerHTML = flag ? SAFE_MARKUP : req.body.n;', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    // Computed access rooted at the request still resolves through the root.
+    { code: 'el.innerHTML = req.body[key];', errors: [{ messageId: 'dangerousInnerHTML' }] },
+    // A binding written from itself: the cycle guard returns false for the
+    // self-write and the genuine write still decides.
+    {
+      code: 'let markup; markup = markup; markup = req.body.html; el.innerHTML = markup;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+  ],
 });

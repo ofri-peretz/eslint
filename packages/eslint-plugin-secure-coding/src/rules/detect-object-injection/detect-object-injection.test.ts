@@ -1352,3 +1352,117 @@ ruleTester.run('lock: reads and writes keyed off a const allowlist', detectObjec
     },
   ],
 });
+
+/**
+ * Locks for the defects proved by
+ * `benchmarks/rule-corpus/secure-coding__detect-object-injection/`.
+ *
+ * Each `valid` entry below reports on the unfixed rule, and each `invalid` entry
+ * is silent on it. They are grouped here rather than folded into the suites
+ * above so the pairing between a fixture and its lock stays visible.
+ */
+ruleTester.run('lock: evidence beats spelling, and guard spellings are equivalent', detectObjectInjection, {
+  valid: [
+    /**
+     * `!Object.hasOwn(o, k)` + early return. The `!` unwrap used to live inside
+     * `isIncludesCall`, so `ALLOWED.includes(k)` was recognised negated and
+     * un-negated while `hasOwn` and `in` were recognised only un-negated. The
+     * guard-clause spelling is the dominant one in modern code.
+     */
+    'export function readColumn(record, column) { if (!Object.hasOwn(record, column)) { return null; } return record[column]; }',
+    // The same equivalence for `in`.
+    'export function readColumn(record, column) { if (!(column in record)) { return null; } return record[column]; }',
+    /**
+     * `Object.keys(x).forEach((k) => x[k])` — the most common object-iteration
+     * idiom in JavaScript, and the one spelling of the three own-keys forms that
+     * reported. `for...in` and `for...of Object.keys()` were already quiet.
+     */
+    'export function sum(usage) { let total = 0; Object.keys(usage).forEach((projectKey) => { total += usage[projectKey]; }); return total; }',
+    // Same guarantee through `.map` and through the `Object.entries` destructuring.
+    'export function names(usage) { return Object.keys(usage).map(function (k) { return usage[k].name; }); }',
+    'export function pairs(usage) { return Object.entries(usage).map(([k]) => usage[k]); }',
+    /**
+     * Index arithmetic where nothing is named like an index. The result must
+     * contain the numeric operand's rendering as a contiguous substring, and
+     * every `String(number)` contains one of `[0-9NI]` — none of which appears
+     * in `__proto__`, `prototype` or `constructor`.
+     */
+    'export function pick(samples, frameStart, stride, channel) { const out = []; for (let frame = 0; frame < 8; frame++) { out[frame] = samples[frameStart + frame * stride + channel]; } return out; }',
+  ],
+  invalid: [
+    /**
+     * The name-shaped suppressions, defeated by a visible initialiser.
+     * `eventType` ends in `Type`, so the rule used to stay silent — while the
+     * identical program with the key renamed `eventName` reported. Quiet in the
+     * suppress direction is a MISSED vulnerability.
+     */
+    {
+      code: 'export function record(req, counters) { const eventType = req.body.type; counters[eventType] = 1; }',
+      errors: 1,
+    },
+    {
+      code: 'export function override(req, overrides) { const FLAG_NAME = req.body.flag; overrides[FLAG_NAME] = true; }',
+      errors: 1,
+    },
+    /**
+     * Positive control for the pair above: with NO visible initialiser the
+     * suppressions still apply, so the NestJS metadata false positives they were
+     * added for stay closed.
+     */
+    {
+      code: 'export function record(req, counters) { const eventName = req.body.type; counters[eventName] = 1; }',
+      errors: 1,
+    },
+    /**
+     * Positive control for the `Object.keys` callback: a plain callback
+     * parameter proves nothing about the key.
+     */
+    {
+      code: 'export function apply(store, entries) { entries.forEach((key) => { store[key] = 1; }); }',
+      errors: 1,
+    },
+    /**
+     * Positive control for the concatenation proof: a `+` between two operands
+     * neither of which is provably numeric can produce any string at all.
+     */
+    {
+      code: 'export function put(store, prefix, suffix) { store[prefix + suffix] = 1; }',
+      errors: 1,
+    },
+    /**
+     * The concatenation proof is scoped to the CONFIGURED dangerous names: a
+     * user who adds one containing a digit breaks the premise and must keep the
+     * finding.
+     */
+    {
+      code: 'export function put(store, base, index) { store[base + index * 2] = 1; }',
+      options: [{ dangerousProperties: ['__proto__', 'slot0'] }],
+      errors: 1,
+    },
+    /**
+     * The callback shape must be checked, not just the parameter position: a
+     * function that merely HAS a first parameter of that name, without being the
+     * argument of an `Object.keys(...)` iterator, proves nothing.
+     */
+    {
+      code: 'export function build(store) { const read = (key) => store[key]; return read; }',
+      errors: 1,
+    },
+    /**
+     * The destructured form binds only the FIRST element to a key. Indexing by
+     * the second element (the value) carries no own-keys guarantee at all.
+     */
+    {
+      code: 'export function f(usage) { return Object.entries(usage).map(([k, v]) => usage[v]); }',
+      errors: 1,
+    },
+    /**
+     * A binding that is neither a loop variable nor a callback parameter — here
+     * an import — is not an own-keys iteration and proves nothing.
+     */
+    {
+      code: "import { columnKey } from './columns'; export function f(record) { return record[columnKey]; }",
+      errors: 1,
+    },
+  ],
+});

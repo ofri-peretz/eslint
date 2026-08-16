@@ -145,6 +145,37 @@ function effectiveExpression(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope | null,
 ): TSESTree.Node {
+  // node-postgres also takes a config object: `db.query({ text, values })`.
+  // The SQL is interpolated exactly as it is in the string form, and it went
+  // straight past a rule that only ever read the first argument as a string.
+  // The same gap was found independently on `no-transaction-on-pool`.
+  if (node.type === AST_NODE_TYPES.ObjectExpression) {
+    const text = node.properties.find(
+      (prop): prop is TSESTree.Property =>
+        prop.type === AST_NODE_TYPES.Property &&
+        ((prop.key.type === AST_NODE_TYPES.Identifier &&
+          !prop.computed &&
+          prop.key.name === 'text') ||
+          (prop.key.type === AST_NODE_TYPES.Literal && prop.key.value === 'text')),
+    );
+    return text === undefined ? node : effectiveExpression(text.value, scope);
+  }
+
+  // `const config = { text: … }; db.query(config)` — the config object one
+  // binding above the sink. Restricted to an ObjectExpression initialiser on
+  // purpose: a STRING binding is handled by the `fragments` map instead, which
+  // also accumulates the `+=` builder shape that a single init cannot express.
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    const variable = resolveVariable(node.name, scope);
+    if (variable === null) return node;
+    if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return node;
+    const def = variable.defs.find((d) => d.type === 'Variable');
+    const init = def === undefined ? null : (def.node as TSESTree.VariableDeclarator).init;
+    return init != null && init.type === AST_NODE_TYPES.ObjectExpression
+      ? effectiveExpression(init, scope)
+      : node;
+  }
+
   if (node.type === AST_NODE_TYPES.CallExpression) {
     if (node.callee.type !== AST_NODE_TYPES.Identifier) return node;
     const fn = resolveVariable(node.callee.name, scope);

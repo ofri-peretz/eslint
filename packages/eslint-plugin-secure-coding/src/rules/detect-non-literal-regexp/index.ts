@@ -114,6 +114,123 @@ const CONSTANT_PRESERVING_METHODS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Global namespace objects that hold the intrinsic `RegExp`.
+ *
+ * Exact membership against a closed set of language-defined names — not a
+ * substring test on a spelling. Renaming every identifier in a file changes
+ * nothing about which of these is the global object.
+ */
+const GLOBAL_NAMESPACES: ReadonlySet<string> = new Set(['globalThis', 'global', 'window', 'self']);
+
+/**
+ * Resolve a name to its variable through the scope chain, or null.
+ */
+function resolveVariable(
+  name: string,
+  scope: TSESLint.Scope.Scope | null,
+): TSESLint.Scope.Variable | null {
+  for (let current = scope; current !== null; current = current.upper) {
+    const variable = current.variables.find((candidate) => candidate.name === name) ?? null;
+    if (variable !== null) {
+      return variable;
+    }
+  }
+  return null;
+}
+
+/**
+ * Is this name the environment's binding rather than one this file declares?
+ *
+ * `function render(RegExp) { new RegExp(p) }` calls a parameter, not the
+ * intrinsic; treating it as the constructor would report code that never
+ * compiles a pattern. A global-scope entry carrying no definition belongs to the
+ * environment, so it counts.
+ */
+function isEnvironmentGlobal(name: string, scope: TSESLint.Scope.Scope | null): boolean {
+  const variable = resolveVariable(name, scope);
+  return variable === null || variable.defs.length === 0;
+}
+
+/**
+ * Does this callee evaluate to the intrinsic RegExp constructor?
+ *
+ * Three spellings reach the same intrinsic and were previously three different
+ * answers, because the check was `callee.name === 'RegExp'`:
+ *
+ *   new RegExp(p)                 — reported
+ *   new globalThis.RegExp(p)      — silent (isomorphic libraries write this to
+ *                                   survive a bundler that shadows the bare name)
+ *   const R = RegExp; new R(p)    — silent (the native-constructor capture that
+ *                                   libraries use to survive a patched global)
+ *
+ * Resolved through the scope chain, so the answer depends on what the binding
+ * IS, never on what it is called.
+ */
+function isRegExpConstructor(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+  depth = 0,
+): boolean {
+  // A chain of aliases longer than this is not real code; refusing it keeps a
+  // cyclic `const a = b; const b = a` from recursing.
+  if (depth > 4) {
+    return false;
+  }
+
+  if (node.type === 'MemberExpression') {
+    return (
+      !node.computed &&
+      node.property.type === 'Identifier' &&
+      node.property.name === 'RegExp' &&
+      node.object.type === 'Identifier' &&
+      GLOBAL_NAMESPACES.has(node.object.name) &&
+      isEnvironmentGlobal(node.object.name, sourceCode.getScope(node.object))
+    );
+  }
+
+  if (node.type !== 'Identifier') {
+    return false;
+  }
+
+  if (node.name === 'RegExp' && isEnvironmentGlobal(node.name, sourceCode.getScope(node))) {
+    return true;
+  }
+
+  // `const NativeRegExp = RegExp` — one declaration, never rewritten, so the
+  // binding provably holds the intrinsic.
+  const variable = resolveVariable(node.name, sourceCode.getScope(node));
+  if (variable === null || variable.defs.length !== 1) {
+    return false;
+  }
+  const definition = variable.defs[0]!;
+  if (definition.type !== 'Variable' || definition.parent.kind !== 'const') {
+    return false;
+  }
+  const init = definition.node.init;
+  return init !== null && isRegExpConstructor(init, sourceCode, depth + 1);
+}
+
+/**
+ * `String.raw` used as a template tag, on the real intrinsic.
+ *
+ * `String.raw` is how a regex source is written without doubling every
+ * backslash — TypeScript's own handbook recommends it for constructed patterns.
+ * The produced string is fixed at parse time; only the node type differs from a
+ * plain literal.
+ */
+function isStringRawTag(node: TSESTree.Node, sourceCode: TSESLint.SourceCode): boolean {
+  return (
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property.type === 'Identifier' &&
+    node.property.name === 'raw' &&
+    node.object.type === 'Identifier' &&
+    node.object.name === 'String' &&
+    isEnvironmentGlobal(node.object.name, sourceCode.getScope(node.object))
+  );
+}
+
+/**
  * Can the program determine this value before any input arrives?
  *
  * The rule previously asked only "is this a string literal?", so
@@ -170,6 +287,13 @@ function isBuildTimeConstant(
             isBuildTimeConstant(argument, sourceCode, depth + 1),
         )
       );
+    case 'TaggedTemplateExpression':
+      return (
+        isStringRawTag(node.tag, sourceCode) &&
+        node.quasi.expressions.every((expression) =>
+          isBuildTimeConstant(expression, sourceCode, depth + 1),
+        )
+      );
     case 'Identifier':
       return isConstantBinding(node, sourceCode, depth);
     default:
@@ -183,12 +307,7 @@ function isConstantBinding(
   sourceCode: TSESLint.SourceCode,
   depth: number,
 ): boolean {
-  let variable: TSESLint.Scope.Variable | null = null;
-  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
-  while (scope !== null && variable === null) {
-    variable = scope.variables.find((candidate) => candidate.name === node.name) ?? null;
-    scope = scope.upper;
-  }
+  const variable = resolveVariable(node.name, sourceCode.getScope(node));
   // Shadowed or re-declared bindings are not worth reasoning about.
   if (variable === null || variable.defs.length !== 1) {
     return false;
@@ -203,12 +322,52 @@ function isConstantBinding(
   if (definition.parent.parent?.type === 'ForStatement') {
     return true;
   }
-  if (definition.parent.kind !== 'const') {
+
+  const init = definition.node.init;
+
+  // `for (const source of REDACTION_SOURCES)` — the binding carries no
+  // initialiser of its own, so reading `declarator.init` finds `null` and the
+  // old check gave up. What the binding can hold is decided entirely by the
+  // iterable, and a module constant of literals is as fixed as the
+  // `CONST_ARRAY.join('|')` shape this function already cleared. Covering one
+  // and not the other was an accident of node types, not a security judgement.
+  if (init === null) {
+    const loop = definition.parent.parent;
+    return (
+      loop?.type === 'ForOfStatement' &&
+      loop.left === definition.parent &&
+      isBuildTimeConstant(loop.right, sourceCode, depth + 1)
+    );
+  }
+
+  if (!isBuildTimeConstant(init, sourceCode, depth + 1)) {
     return false;
   }
 
-  const init = definition.node.init;
-  return init !== null && isBuildTimeConstant(init, sourceCode, depth + 1);
+  // The declaration KEYWORD was the old test, and it is the wrong question.
+  // `let source = '^\d+$'; if (mode === 'word') source = '^\w+$';` can only ever
+  // hold one of the strings written in this file — the set of values is closed
+  // whatever the keyword says. What matters is that every write is itself
+  // build-time constant.
+  //
+  // Two write shapes must not clear the binding. A write whose expression is
+  // itself unproven — `for (p of userPatterns)` over an already-declared
+  // binding, which scope analysis records with the ITERABLE as the written
+  // expression — fails the constant test below. A write with no inspectable
+  // expression at all (`p++`, an UpdateExpression, which carries no
+  // `writeExpr`) has nothing to test and is refused outright. Both leave the
+  // value unproven, which is the safe direction: the cost is a report, never a
+  // missed vulnerability.
+  return variable.references.every((reference) => {
+    if (!reference.isWrite()) {
+      return true;
+    }
+    const written = reference.writeExpr;
+    if (!written) {
+      return false;
+    }
+    return written === init || isBuildTimeConstant(written, sourceCode, depth + 1);
+  });
 }
 
 export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
@@ -423,11 +582,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
      * Check RegExp constructor calls for vulnerabilities
      */
     const checkRegExpCall = (node: TSESTree.CallExpression | TSESTree.NewExpression) => {
-      // Check for RegExp constructor calls
-      const isRegExpCall = node.callee.type === 'Identifier' && node.callee.name === 'RegExp';
-      const isNewRegExp = node.type === 'NewExpression' && node.callee.type === 'Identifier' && node.callee.name === 'RegExp';
-
-      if (!isRegExpCall && !isNewRegExp) {
+      // Does the callee resolve to the intrinsic RegExp constructor? Asked of
+      // the BINDING, not of the spelling at the call site — see
+      // `isRegExpConstructor`.
+      if (!isRegExpConstructor(node.callee, context.sourceCode)) {
         return;
       }
 

@@ -23,7 +23,7 @@
  * - Parameterized LDAP query construction
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule, isStaticExpression } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -72,17 +72,21 @@ export function containsDangerousLdapFilter(filterText: string): boolean {
 }
 
 /**
- * Check if string contains LDAP filter interpolation.
+ * Does the STATIC text of a string being built parse as LDAP filter grammar?
  *
- * Extracted to module scope (from inside `create()`) for direct unit
- * testability — this function is pure and captures no closure state.
+ * RFC 4515 filters are `(attribute<op>value)`, so an opening parenthesis followed by
+ * an attribute description and a comparison operator is the shape, and it is evidence
+ * from the VALUE rather than from the variable's name.
+ *
+ * It replaces two predicates that were not evidence at all: `varName.includes('filter')
+ * || includes('ldap') || includes('query') || includes('search') || includes('dn') ||
+ * includes('bind')`, which decided by spelling, and `text.includes('(') &&
+ * text.includes(')')`, which every TypeScript generic, every function call and every
+ * glob in the ecosystem satisfies — it is what made two `Shopify/cli` template literals
+ * and one `expressjs/morgan` header lookup into CWE-90 findings.
  */
-export function containsLdapInterpolation(text: string): boolean {
-  return (
-    /\$\{[^}]+\}/.test(text) ||
-    /'[^']*\+[^+]*'/.test(text) ||
-    /"[^"]*\+[^+]*"/.test(text)
-  );
+export function looksLikeLdapFilterGrammar(staticText: string): boolean {
+  return /\(\s*[A-Za-z][\w.;-]*\s*(?:[:~<>]?=)/.test(staticText);
 }
 
 /**
@@ -117,21 +121,75 @@ export function containsLdapInterpolation(text: string): boolean {
  * alternative is a CWE-90 finding on every repository that has never spoken
  * LDAP in its life.
  */
+/** The LDAP client packages, shared by the file gate and by local-binding resolution. */
+const LDAP_PACKAGES = new Set([
+  'ldapjs',
+  'ldapts',
+  'ldapauth-fork',
+  'passport-ldapauth',
+  'ldap-authentication',
+  'ldap-escape',
+  'ldap-filter',
+  'activedirectory',
+  'activedirectory2',
+  'node-ldap',
+]);
+
+const LDAP_SCOPES = new Set(['@ldapjs']);
+
+/**
+ * The methods whose SECOND argument is a filter (or a search-options object carrying
+ * one). Every other LDAP method takes something else there: `bind` a password, `add`
+ * an entry, `modify` a change, `compare` an attribute name. Treating argument 1 as a
+ * filter for all of them reported `client.bind(dn, password, cb)` — the canonical
+ * ldapjs authentication call, straight out of its README — as an LDAP injection.
+ */
+const SEARCH_METHODS = new Set(['search', 'searchAsync', 'searchPaginated']);
+
+/**
+ * Framework request objects, matched as the ROOT IDENTIFIER of a member chain.
+ * Exact membership against a closed set, not a substring of the printed expression.
+ */
+const REQUEST_ROOTS = new Set(['req', 'request', 'ctx', 'httpRequest']);
+
+const DEFAULT_LDAP_FUNCTIONS = [
+  'search',
+  'searchAsync',
+  'searchPaginated',
+  'bind',
+  'modify',
+  'modifyDN',
+  'add',
+  // ldapjs spells delete `del`; omitting it meant `client.del(taintedDn, cb)` — DN
+  // injection on the destructive operation — was never even looked at.
+  'del',
+  'delete',
+  'compare',
+];
+
+const DEFAULT_ESCAPE_FUNCTIONS = [
+  'escape.filterValue',
+  'escape.dnValue',
+  'filterValue',
+  'dnValue',
+  'filterEscape',
+  'dnEscape',
+];
+
+const DEFAULT_VALIDATION_FUNCTIONS = [
+  'validateLdapInput',
+  'sanitizeLdapFilter',
+  'cleanLdapValue',
+  'checkLdapFilter',
+];
+
 const fileImportsLdapClient = createModuleEvidence({
-  packages: [
-    'ldapjs',
-    'ldapts',
-    'ldapauth-fork',
-    'passport-ldapauth',
-    'ldap-authentication',
-    'ldap-escape',
-    'ldap-filter',
-    'activedirectory',
-    'activedirectory2',
-    'node-ldap',
-  ],
-  scopes: ['@ldapjs'],
+  packages: [...LDAP_PACKAGES],
+  scopes: [...LDAP_SCOPES],
 });
+
+
+
 
 export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-ldap-injection',
@@ -196,37 +254,19 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           ldapFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: [
-              'search',
-              'bind',
-              'modify',
-              'add',
-              'delete',
-              'compare',
-              'searchAsync',
-            ],
+            default: DEFAULT_LDAP_FUNCTIONS,
             description: 'LDAP client methods treated as query sinks',
           },
           ldapEscapeFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: [
-              'escape.filterValue',
-              'escape.dnValue',
-              'filterEscape',
-              'dnEscape',
-            ],
+            default: DEFAULT_ESCAPE_FUNCTIONS,
             description: 'Function names that escape LDAP filter or DN values',
           },
           ldapValidationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: [
-              'validateLdapInput',
-              'sanitizeLdapFilter',
-              'cleanLdapValue',
-              'checkLdapFilter',
-            ],
+            default: DEFAULT_VALIDATION_FUNCTIONS,
             description: 'Function names that count as LDAP input validation',
           },
           trustedSanitizers: {
@@ -255,27 +295,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      ldapFunctions: [
-        'search',
-        'bind',
-        'modify',
-        'add',
-        'delete',
-        'compare',
-        'searchAsync',
-      ],
-      ldapEscapeFunctions: [
-        'escape.filterValue',
-        'escape.dnValue',
-        'filterEscape',
-        'dnEscape',
-      ],
-      ldapValidationFunctions: [
-        'validateLdapInput',
-        'sanitizeLdapFilter',
-        'cleanLdapValue',
-        'checkLdapFilter',
-      ],
+      ldapFunctions: DEFAULT_LDAP_FUNCTIONS,
+      ldapEscapeFunctions: DEFAULT_ESCAPE_FUNCTIONS,
+      ldapValidationFunctions: DEFAULT_VALIDATION_FUNCTIONS,
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -284,27 +306,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      ldapFunctions = [
-        'search',
-        'bind',
-        'modify',
-        'add',
-        'delete',
-        'compare',
-        'searchAsync',
-      ],
-      ldapEscapeFunctions = [
-        'escape.filterValue',
-        'escape.dnValue',
-        'filterEscape',
-        'dnEscape',
-      ],
-      ldapValidationFunctions = [
-        'validateLdapInput',
-        'sanitizeLdapFilter',
-        'cleanLdapValue',
-        'checkLdapFilter',
-      ],
+      ldapFunctions = DEFAULT_LDAP_FUNCTIONS,
+      ldapEscapeFunctions = DEFAULT_ESCAPE_FUNCTIONS,
+      ldapValidationFunctions = DEFAULT_VALIDATION_FUNCTIONS,
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
@@ -313,7 +317,6 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     const sourceCode = context.sourceCode;
     const filename = context.filename;
 
-    // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
       trustedSanitizers,
       trustedAnnotations,
@@ -322,330 +325,566 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     });
 
     /**
-     * Check if this is an LDAP-related operation
+     * Local names bound to an LDAP module in THIS file.
+     *
+     * The file gate proves an LDAP client is loaded somewhere in the file; it does not
+     * prove the receiver of `x.add(a, b)` is that client. `intentKeys.add(k)` on a Set
+     * and `entryCache.delete(k)` on a Map wear the same method names, and treating them
+     * as LDAP operations is exactly how this rule reported an LDAP filter inside
+     * Shopify's CLI. Collecting the imported locals lets the receiver be resolved to a
+     * construction call made from one of them, which a `new Set()` can never satisfy.
      */
-    const isLdapOperation = (node: TSESTree.CallExpression): boolean => {
-      const callee = node.callee;
+    const ldapLocals = new Set<string>();
 
-      // Check for LDAP method calls
-      if (
+    /** Whether this file loads an LDAP client at all. Set from Program, visited first. */
+    let ldapInFile = false;
+
+    const collectLdapLocals = (program: TSESTree.Program): void => {
+      const record = (node: TSESTree.Node | null | undefined): void => {
+        if (node?.type === 'Identifier') ldapLocals.add(node.name);
+        else if (node?.type === 'ObjectPattern') {
+          for (const property of node.properties) {
+            if (property.type === 'Property') record(property.value);
+          }
+        }
+      };
+      const isLdapSource = (raw: unknown): boolean =>
+        typeof raw === 'string' &&
+        (LDAP_PACKAGES.has(raw) || [...LDAP_SCOPES].some((scope) => raw.startsWith(`${scope}/`)));
+
+      for (const statement of program.body) {
+        if (statement.type === 'ImportDeclaration' && isLdapSource(statement.source.value)) {
+          for (const specifier of statement.specifiers) record(specifier.local);
+        }
+        if (statement.type === 'VariableDeclaration') {
+          for (const declarator of statement.declarations) {
+            const init = declarator.init;
+            if (
+              init?.type === 'CallExpression' &&
+              init.callee.type === 'Identifier' &&
+              init.callee.name === 'require' &&
+              init.arguments[0]?.type === 'Literal' &&
+              isLdapSource(init.arguments[0].value)
+            ) {
+              record(declarator.id);
+            }
+          }
+        }
+      }
+    };
+
+    /** Unwrap TypeScript-only syntax that changes nothing at runtime. */
+    const unwrap = (node: TSESTree.Node): TSESTree.Node => {
+      let current = node;
+      while (
+        current.type === 'TSAsExpression' ||
+        current.type === 'TSSatisfiesExpression' ||
+        current.type === 'TSNonNullExpression' ||
+        current.type === 'ChainExpression'
+      ) {
+        current = current.expression;
+      }
+      return current;
+    };
+
+    /** Every expression ever written to a binding, resolved through the scope. */
+    const writesOf = (identifier: TSESTree.Identifier): TSESTree.Expression[] => {
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === identifier.name);
+        if (!variable) continue;
+        return variable.references
+          .filter((ref) => ref.isWrite() && ref.writeExpr)
+          .map((ref) => ref.writeExpr as TSESTree.Expression);
+      }
+      return [];
+    };
+
+    /** The single value a binding provably holds, or undefined if it is written more than once. */
+    const soleWriteOf = (identifier: TSESTree.Identifier): TSESTree.Expression | undefined => {
+      const writes = writesOf(identifier);
+      return writes.length === 1 ? writes[0] : undefined;
+    };
+
+    /**
+     * Is this expression a construction of an LDAP client, made from a binding this file
+     * imported from an LDAP package? `ldap.createClient({…})`, `new Client({…})`.
+     */
+    const isLdapConstruction = (node: TSESTree.Node): boolean => {
+      const expression = unwrap(node);
+      if (expression.type === 'NewExpression') {
+        const { callee } = expression;
+        if (callee.type === 'Identifier') return ldapLocals.has(callee.name);
+        return (
+          callee.type === 'MemberExpression' &&
+          callee.object.type === 'Identifier' &&
+          ldapLocals.has(callee.object.name)
+        );
+      }
+      if (expression.type !== 'CallExpression') return false;
+      const { callee } = expression;
+      if (callee.type === 'Identifier') return ldapLocals.has(callee.name);
+      return (
         callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier' &&
-        ldapFunctions.includes(callee.property.name)
+        callee.object.type === 'Identifier' &&
+        ldapLocals.has(callee.object.name)
+      );
+    };
+
+    /** The class body enclosing a node, if any. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const enclosingClassBody = (node: TSESTree.Node): TSESTree.ClassBody | undefined => {
+      for (let current: TSESTree.Node | undefined = node; current; current = current.parent) {
+        if (current.type === 'ClassBody') return current;
+      }
+      return undefined;
+    };
+
+    /**
+     * Does the receiver of this method call provably resolve to something that is NOT
+     * an LDAP client?
+     *
+     * `add`, `delete`, `search` and `compare` are also Set, Map and Array methods, and
+     * a file that imports ldapjs still uses collections. `intentKeys.add(intentKey)` on
+     * a `Set` is how this rule reported an LDAP filter inside Shopify's CLI.
+     *
+     * The test is NEGATIVE on purpose. Demanding positive proof that the receiver was
+     * constructed from an LDAP import would silence every client that arrives as a
+     * parameter, an injected dependency or an undeclared module global — the common
+     * case. Skipping only when the binding is provably a collection, an array or a
+     * literal keeps that recall and still removes the false positive, because a value
+     * built by `new Set()` is known, not guessed.
+     */
+    const isProvablyNotLdapReceiver = (receiver: TSESTree.Node): boolean => {
+      const expression = unwrap(receiver);
+
+      if (
+        expression.type === 'ArrayExpression' ||
+        expression.type === 'ObjectExpression' ||
+        expression.type === 'Literal'
       ) {
         return true;
       }
 
+      if (expression.type === 'NewExpression' || expression.type === 'CallExpression') {
+        return !isLdapConstruction(expression);
+      }
+
+      if (expression.type === 'Identifier') {
+        const writes = writesOf(expression);
+        if (writes.length === 0) return false;
+        // Any write that constructs an LDAP client is enough to keep looking.
+        if (writes.some(isLdapConstruction)) return false;
+        return writes.every((write) => {
+          const value = unwrap(write);
+          return (
+            // A call or a `new` that is not an LDAP construction — the same test the
+            // direct-receiver arm above applies, so `const q = makeQueue()` and
+            // `makeQueue().add(…)` agree.
+            value.type === 'NewExpression' ||
+            value.type === 'CallExpression' ||
+            value.type === 'ArrayExpression' ||
+            value.type === 'ObjectExpression' ||
+            value.type === 'Literal'
+          );
+        });
+      }
+
+      // `this.client` — read the class field's initializer, when the class declares one.
+      if (
+        expression.type === 'MemberExpression' &&
+        expression.object.type === 'ThisExpression' &&
+        !expression.computed &&
+        expression.property.type === 'Identifier'
+      ) {
+        const fieldName = expression.property.name;
+        const body = enclosingClassBody(expression);
+        if (!body) return false;
+        const field = body.body.find(
+          (member) =>
+            member.type === 'PropertyDefinition' &&
+            !member.computed &&
+            member.key.type === 'Identifier' &&
+            member.key.name === fieldName,
+        ) as TSESTree.PropertyDefinition | undefined;
+        if (!field?.value) return false;
+        return !isLdapConstruction(field.value);
+      }
+
       return false;
     };
 
     /**
-     * Check if LDAP input is from untrusted source
+     * Is this expression handed to a function that escapes or validates LDAP input?
+     *
+     * Looked for in two directions: UP the parent chain, for
+     * `` `(uid=${ldap.escape.filterValue(x)})` ``, and back through the BINDING, for
+     * `const escaped = ldapEscape(x); … `(uid=${escaped})``. Escaping one statement
+     * earlier is the commoner spelling, and reading only the parent chain missed it.
      */
-    const isUntrustedLdapInput = (inputNode: TSESTree.Node): boolean => {
-      // Check member expressions like req.query.name, req.params.id, etc.
-      if (inputNode.type === 'MemberExpression') {
-        const fullName = sourceCode.getText(inputNode).toLowerCase();
-        return (
-          fullName.includes('req.') ||
-          fullName.includes('request.') ||
-          fullName.includes('query.') ||
-          fullName.includes('params.') ||
-          fullName.includes('body.')
-        );
+    const isEscaped = (node: TSESTree.Node): boolean => {
+      const expression = unwrap(node);
+      if (expression.type === 'Identifier') {
+        const write = soleWriteOf(expression);
+        if (write && write !== expression && isEscapedAt(write)) return true;
       }
-
-      // In test contexts, also consider certain variable names as potentially untrusted
-      if (inputNode.type === 'Identifier') {
-        const varName = inputNode.name.toLowerCase();
-        return (
-          [
-            'userid',
-            'username',
-            'userinput',
-            'input',
-            'term',
-            'name',
-            'search',
-            'query',
-            'param',
-            'password',
-            'id',
-            'dn',
-          ].includes(varName) ||
-          varName.startsWith('user') ||
-          varName.startsWith('input') ||
-          varName.endsWith('input') ||
-          varName.includes('user') ||
-          varName.includes('input')
-        );
-      }
-
-      return false;
+      return isEscapedAt(node);
     };
 
-    /**
-     * Check if LDAP input has been escaped
-     */
-    const isLdapInputEscaped = (inputNode: TSESTree.Node): boolean => {
-      let current: TSESTree.Node | undefined = inputNode;
-
-      while (current) {
-        if (current.type === 'CallExpression') {
-          const callee = current.callee;
-
-          // Check for escape function calls
+    function isEscapedAt(node: TSESTree.Node): boolean {
+      for (let current: TSESTree.Node | undefined = node; current; current = current.parent) {
+        if (current.type !== 'CallExpression') continue;
+        const { callee } = current;
+        if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+          const propertyName = callee.property.name;
+          // Exact membership against the configured escape functions, matching either
+          // the bare name (`filterEscape`) or the tail of a dotted path
+          // (`escape.filterValue` -> `filterValue`). The previous test was
+          // `propertyName.includes('escape')`, a substring match in a SUPPRESSION path:
+          // any method whose name merely contained "escape" cleared the value.
           if (
-            callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier'
-          ) {
-            const propertyName = callee.property.name;
-            if (
-              ldapEscapeFunctions.some(
-                (escapeFunc) =>
-                  escapeFunc.includes(propertyName) ||
-                  propertyName.includes('escape'),
-              )
-            ) {
-              return true;
-            }
-          }
-
-          // Check for validation function calls
-          if (
-            callee.type === 'Identifier' &&
-            ldapValidationFunctions.includes(callee.name)
+            ldapEscapeFunctions.some(
+              (escapeFunc) => escapeFunc === propertyName || escapeFunc.endsWith(`.${propertyName}`),
+            )
           ) {
             return true;
           }
         }
-        current = current.parent as TSESTree.Node;
+        if (
+          callee.type === 'Identifier' &&
+          (ldapValidationFunctions.includes(callee.name) || ldapEscapeFunctions.includes(callee.name))
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    const isStatic = (node: TSESTree.Node): boolean =>
+      isStaticExpression({ node, scope: sourceCode.getScope(node) });
+
+    /**
+     * The attacker-influencable parts of a STRING-CONSTRUCTION expression.
+     *
+     * `null` means "this is not a string being built" — an options object, a
+     * `new EqualityFilter({…})`, a lookup into a frozen table. Those are not filter
+     * grammar and must not be reported. `[]` means the string is built entirely from
+     * values written in this file. A non-empty array is the injection.
+     *
+     * This replaces two heuristics that decided by spelling: a list of variable-name
+     * substrings (`user`, `input`, `id`, `dn`, `name`, `term`…) for "is it tainted",
+     * and `text.includes('(') && text.includes(')')` for "is it a filter". The first
+     * missed every renamed variable and the second made DN injection undetectable by
+     * construction, because a distinguished name contains no parentheses.
+     */
+    const dynamicParts = (
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): TSESTree.Node[] | null => {
+      const expression = unwrap(node);
+      if (seen.has(expression)) return null;
+      seen.add(expression);
+
+      if (expression.type === 'TemplateLiteral') {
+        return expression.expressions.filter((part) => !isStatic(part) && !isEscaped(part));
       }
 
-      return false;
+      if (expression.type === 'BinaryExpression' && expression.operator === '+') {
+        const leaves: TSESTree.Node[] = [];
+        const flatten = (n: TSESTree.Node): void => {
+          const inner = unwrap(n);
+          if (inner.type === 'BinaryExpression' && inner.operator === '+') {
+            flatten(inner.left);
+            flatten(inner.right);
+          } else leaves.push(inner);
+        };
+        flatten(expression);
+        // Concatenation of numbers is not a filter. Require at least one string part,
+        // which is what makes the result a string at all.
+        const hasStringPart = leaves.some(
+          (leaf) =>
+            (leaf.type === 'Literal' && typeof leaf.value === 'string') ||
+            leaf.type === 'TemplateLiteral',
+        );
+        if (!hasStringPart) return null;
+        return leaves.filter((leaf) => !isStatic(leaf) && !isEscaped(leaf));
+      }
+
+      if (expression.type === 'ConditionalExpression') {
+        const consequent = dynamicParts(expression.consequent, seen);
+        const alternate = dynamicParts(expression.alternate, seen);
+        if (consequent === null && alternate === null) return null;
+        return [...(consequent ?? []), ...(alternate ?? [])];
+      }
+
+      if (expression.type === 'Identifier') {
+        const write = soleWriteOf(expression);
+        return write ? dynamicParts(write, seen) : null;
+      }
+
+      return null;
     };
 
     /**
-     * Whether this file loads an LDAP client. Set once from Program, which
-     * ESLint visits before any of its children.
+     * Is this expression the request itself, handed over whole?
      *
-     * Gates EVERY branch below, not just one. Each branch used to carry what
-     * looked like its own evidence — an LDAP-shaped method name, a literal that
-     * parses as a filter, a `${}` inside parentheses — and each of those turned
-     * out to be satisfiable by ordinary non-LDAP code. See the note on
-     * `fileImportsLdapClient`.
+     * `{ filter: req.query.filter }` builds no string, so `dynamicParts` says nothing
+     * about it, yet the whole filter is attacker-supplied. Restricted to NON-COMPUTED
+     * member chains: `LOOKUP[req.params.x]` is a computed read out of a table this file
+     * declares, and its value is whatever the table holds, not what the request said.
      */
-    let ldapInFile = false;
+    const isRequestValue = (node: TSESTree.Node, seen: Set<TSESTree.Node> = new Set()): boolean => {
+      const expression = unwrap(node);
+      // `var a = b; var b = a;` resolves forever without this — a stack overflow that
+      // takes the whole ESLint run down, not just the rule. Found by the structural
+      // coverage cases below, which is why they are there.
+      if (seen.has(expression)) return false;
+      seen.add(expression);
+      if (expression.type === 'Identifier') {
+        const write = soleWriteOf(expression);
+        return write ? isRequestValue(write, seen) : false;
+      }
+      // `search(base, normalise(req.query.q))` — passing request data through a helper
+      // does not launder it. An escaping or validating call is exempt by `isEscaped`,
+      // and a project's own sanitizer by `trustedSanitizers`.
+      if (expression.type === 'CallExpression') {
+        if (isEscaped(expression)) return false;
+        return expression.arguments.some(
+          (argument) => argument.type !== 'SpreadElement' && isRequestValue(argument, seen),
+        );
+      }
+      if (expression.type !== 'MemberExpression' || expression.computed) return false;
+      return !isStatic(expression) && isUntrustedRequestChain(expression);
+    };
+
+    /**
+     * The root of a member chain is a request object supplied by the framework.
+     * Matched on the ROOT IDENTIFIER only, against a closed set — not on the printed
+     * text of the whole expression, which used to make any chain containing the
+     * substring `req.` untrusted.
+     */
+    function isUntrustedRequestChain(node: TSESTree.MemberExpression): boolean {
+      let current: TSESTree.Node = node;
+      while (current.type === 'MemberExpression') current = current.object;
+      if (current.type !== 'Identifier') return false;
+      if (REQUEST_ROOTS.has(current.name)) return true;
+      // `const { query } = req; … query.filter` — the root was destructured out of a
+      // request one statement earlier. Resolved through the SCOPE; a bare, undeclared
+      // `query.filter` proves nothing and stays unreported.
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(current);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === (current as TSESTree.Identifier).name);
+        if (!variable) continue;
+        return variable.defs.some((def) => {
+          if (def.type !== 'Variable') return false;
+          const init = def.node.init ? unwrap(def.node.init) : undefined;
+          if (!init) return false;
+          if (init.type === 'Identifier') return REQUEST_ROOTS.has(init.name);
+          return init.type === 'MemberExpression' && isUntrustedRequestChain(init);
+        });
+      }
+      return false;
+    }
+
+    /** The value of an options object's `filter` property, following one binding hop. */
+    const filterOption = (node: TSESTree.Node): TSESTree.Node | undefined => {
+      let expression = unwrap(node);
+      if (expression.type === 'Identifier') {
+        const write = soleWriteOf(expression);
+        if (!write) return undefined;
+        expression = unwrap(write);
+      }
+      if (expression.type !== 'ObjectExpression') return undefined;
+      for (const property of expression.properties) {
+        if (property.type !== 'Property') continue;
+        const { key } = property;
+        if (!property.computed && key.type === 'Identifier' && key.name === 'filter') {
+          return property.value;
+        }
+        if (key.type === 'Literal' && key.value === 'filter') return property.value;
+        // `{ [FILTER_KEY]: … }` — resolve the key through its binding.
+        if (property.computed && key.type === 'Identifier') {
+          const keyWrite = soleWriteOf(key);
+          if (keyWrite && unwrap(keyWrite).type === 'Literal') {
+            const literal = unwrap(keyWrite) as TSESTree.Literal;
+            if (literal.value === 'filter') return property.value;
+          }
+        }
+      }
+      return undefined;
+    };
+
+    /**
+     * One node, one report. A filter is commonly built into a variable and then handed
+     * to `search()`, and both sites resolve to the SAME construction node - without
+     * this, one vulnerability is reported twice at the same location.
+     */
+    const reported = new Set<TSESTree.Node>();
+
+    const report = (
+      node: TSESTree.Node,
+      messageId: MessageIds,
+      data: Record<string, string>,
+    ): void => {
+      if (reported.has(node)) return;
+      if (safetyChecker.isSafe(node, context)) return;
+      reported.add(node);
+      context.report({
+        node,
+        messageId,
+        data: { filePath: filename, line: String(node.loc.start.line), ...data },
+      });
+    };
+
+    /**
+     * The parts of a string-construction expression that are written in this file:
+     * template quasis and string literals, with the interpolations left out. This is
+     * the text whose grammar is checked - never the printed source of the whole
+     * expression, which drags the interpolated variable NAMES into the match.
+     */
+    const staticSkeleton = (node: TSESTree.Node, seen: Set<TSESTree.Node> = new Set()): string => {
+      const expression = unwrap(node);
+      if (seen.has(expression)) return '';
+      seen.add(expression);
+      if (expression.type === 'Literal') {
+        return typeof expression.value === 'string' ? expression.value : '';
+      }
+      if (expression.type === 'TemplateLiteral') {
+        return expression.quasis.map((quasi) => quasi.value.raw).join('\u0000');
+      }
+      if (expression.type === 'BinaryExpression' && expression.operator === '+') {
+        return staticSkeleton(expression.left, seen) + '\u0000' + staticSkeleton(expression.right, seen);
+      }
+      if (expression.type === 'ConditionalExpression') {
+        return staticSkeleton(expression.consequent, seen) + '\u0000' + staticSkeleton(expression.alternate, seen);
+      }
+      if (expression.type === 'Identifier') {
+        const write = soleWriteOf(expression);
+        return write ? staticSkeleton(write, seen) : '';
+      }
+      return '';
+    };
+
+    /**
+     * Follow an identifier to the expression it was bound from, so the report lands on
+     * the construction rather than on the name. Without this the same vulnerability is
+     * reported twice — once at `const filter = …` and once at `search(base, filter)` —
+     * because the two sites are different nodes holding the same value.
+     */
+    const originOf = (node: TSESTree.Node): TSESTree.Node => {
+      let current = unwrap(node);
+      for (let hops = 0; current.type === 'Identifier' && hops < 8; hops += 1) {
+        const write = soleWriteOf(current);
+        if (!write) break;
+        current = unwrap(write);
+      }
+      return current;
+    };
+
+    /** A filter expression: report the injection, or the dangerous hardcoded filter. */
+    const checkFilter = (rawFilterNode: TSESTree.Node): void => {
+      const filterNode = originOf(rawFilterNode);
+      const parts = dynamicParts(filterNode);
+      if (parts && parts.length > 0) {
+        report(filterNode, 'unsafeLdapFilter', {});
+        return;
+      }
+      if (isRequestValue(filterNode)) {
+        report(filterNode, 'unescapedLdapInput', {});
+        return;
+      }
+      // A hardcoded filter that matches everything. Checked on the STATIC text of the
+      // construction, so a template literal whose interpolations all fold to constants
+      // is examined the same way a plain string literal is.
+      if (containsDangerousLdapFilter(staticSkeleton(filterNode).split('\u0000').join(''))) {
+        report(filterNode, 'dangerousLdapOperation', {});
+      }
+    };
+
+    /** A distinguished-name argument: a DN has no parentheses, so shape is all there is. */
+    const checkDn = (rawDnNode: TSESTree.Node): void => {
+      const dnNode = originOf(rawDnNode);
+      const parts = dynamicParts(dnNode);
+      if (parts && parts.length > 0) {
+        report(dnNode, 'ldapInjection', {
+          severity: 'HIGH',
+          safeAlternative: 'Use ldap.escape.dnValue() or build the DN from validated components',
+        });
+        return;
+      }
+      if (isRequestValue(dnNode)) {
+        report(dnNode, 'ldapInjection', {
+          severity: 'MEDIUM',
+          safeAlternative: 'Use proper LDAP escaping and validation',
+        });
+      }
+    };
+
+    /** A string whose own literal text is LDAP filter grammar, built from dynamic parts. */
+    const checkConstructedFilter = (node: TSESTree.Node): void => {
+      if (!looksLikeLdapFilterGrammar(staticSkeleton(node))) return;
+      checkFilter(node);
+    };
 
     return {
       Program(program: TSESTree.Program) {
         ldapInFile = fileImportsLdapClient(program);
+        if (ldapInFile) collectLdapLocals(program);
       },
 
-      // Check LDAP function calls
-      CallExpression(node: TSESTree.CallExpression) {
-        if (!ldapInFile || !isLdapOperation(node)) {
-          return;
-        }
-
-        const args = node.arguments;
-        if (args.length < 2) {
-          return; // Need at least base DN and filter/options
-        }
-
-        // Check filter argument (usually the second argument)
-        const filterArg = args[1];
-
-        // Check if filter argument comes from untrusted input (like req.query.filter)
-        if (isUntrustedLdapInput(filterArg)) {
-          if (safetyChecker.isSafe(filterArg, context)) {
-            return;
-          }
-
-          context.report({
-            node: filterArg,
-            messageId: 'unescapedLdapInput',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
-        } else if (
-          filterArg.type === 'TemplateLiteral' &&
-          filterArg.expressions.length > 0
-        ) {
-          // Special handling for template literals with any expressions in LDAP calls
-          // This is a more aggressive check for LDAP injection in function calls.
-          // NOTE: the `expressions.length > 0` guard above already guarantees at
-          // least one interpolated expression is present, so a further
-          // `.some(() => true)` check was always trivially true and has been
-          // removed as provably dead code (behavior-unchanged).
-          if (safetyChecker.isSafe(filterArg, context)) {
-            return;
-          }
-
-          context.report({
-            node: filterArg,
-            messageId: 'unescapedLdapInput',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
-        }
-      },
-
-      // Check variable declarations with LDAP filters
+      /**
+       * A filter built at its declaration, before it ever reaches a client method.
+       * Gated on the value's own grammar, so it fires on `const spec =
+       * `(uid=${criterion})`` and stays silent on every other template literal in the
+       * file regardless of what the variable is called.
+       */
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!ldapInFile || !node.init || node.id.type !== 'Identifier') {
+        if (!ldapInFile || !node.init) return;
+        checkConstructedFilter(node.init);
+      },
+
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (!ldapInFile) return;
+        checkConstructedFilter(node.right);
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        if (!ldapInFile) return;
+        const callee = unwrap(node.callee);
+        if (callee.type !== 'MemberExpression' || callee.computed) return;
+        // A non-computed member's property is always an Identifier or a PrivateIdentifier.
+        if (callee.property.type !== 'Identifier') return;
+        const method = callee.property.name;
+        if (!ldapFunctions.includes(method)) return;
+        if (isProvablyNotLdapReceiver(callee.object)) return;
+
+        const args = node.arguments.filter(
+          (argument): argument is TSESTree.Expression => argument.type !== 'SpreadElement',
+        );
+        if (args.length === 0) return;
+
+        // Argument 0 is the base DN (or the entry DN) for every method on the list.
+        checkDn(args[0]);
+
+        // Argument 1 is a FILTER only for the search family. It is the bind PASSWORD,
+        // the add ENTRY, the modify CHANGE and the compare ATTRIBUTE for the others —
+        // none of them filter grammar, and reporting them made the canonical
+        // `client.bind(dn, password, cb)` a CWE-90 finding.
+        if (args.length < 2) return;
+        if (SEARCH_METHODS.has(method)) {
+          const optionsFilter = filterOption(args[1]);
+          checkFilter(optionsFilter ?? args[1]);
           return;
         }
-
-        const varName = node.id.name.toLowerCase();
-        // Check if variable name suggests LDAP-related content
-        const isLdapRelated =
-          varName.includes('filter') ||
-          varName.includes('ldap') ||
-          varName.includes('query') ||
-          varName.includes('search') ||
-          varName.includes('dn') ||
-          varName.includes('bind');
-
-        // If not obviously LDAP-related, check if the assigned value looks like LDAP
-        if (!isLdapRelated && node.init) {
-          const initText = sourceCode.getText(node.init);
-          if (!initText.includes('(') || !initText.includes(')')) {
-            return;
-          }
-        }
-
-        // Check if assigned value contains dangerous LDAP patterns
-        if (
-          node.init.type === 'Literal' &&
-          typeof node.init.value === 'string'
-        ) {
-          if (containsDangerousLdapFilter(node.init.value)) {
-            if (safetyChecker.isSafe(node.init, context)) {
-              return;
-            }
-
-            context.report({
-              node: node.init,
-              messageId: 'dangerousLdapOperation',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
-        } else if (node.init.type === 'TemplateLiteral') {
-          // Handle template literals with interpolation
-          const fullText = sourceCode.getText(node.init);
-
-          // Check for interpolation in LDAP-like expressions
-          if (containsLdapInterpolation(fullText)) {
-            // Check if any interpolated values are untrusted
-            const hasUntrustedInterpolation = node.init.expressions.some(
-              (expr: TSESTree.Expression) =>
-                isUntrustedLdapInput(expr) && !isLdapInputEscaped(expr),
-            );
-
-            if (hasUntrustedInterpolation) {
-              if (safetyChecker.isSafe(node.init, context)) {
-                return;
-              }
-
-              context.report({
-                node: node.init,
-                messageId: 'unsafeLdapFilter',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-              });
-            }
-          }
-
-          // Check for dangerous patterns in template literals
-          if (containsDangerousLdapFilter(fullText)) {
-            if (safetyChecker.isSafe(node.init, context)) {
-              return;
-            }
-
-            context.report({
-              node: node.init,
-              messageId: 'dangerousLdapOperation',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
-        } else if (
-          node.init.type === 'BinaryExpression' &&
-          node.init.operator === '+'
-        ) {
-          // Handle string concatenation
-          const fullText = sourceCode.getText(node.init);
-
-          // Check if this looks like LDAP filter construction
-          if (fullText.includes('(') && fullText.includes(')')) {
-            // Check if untrusted input is involved (recursive check)
-            const hasUntrustedInput = (expr: TSESTree.Expression): boolean => {
-              if (isUntrustedLdapInput(expr) && !isLdapInputEscaped(expr)) {
-                return true;
-              }
-              if (expr.type === 'BinaryExpression' && expr.operator === '+') {
-                return (
-                  hasUntrustedInput(expr.left) || hasUntrustedInput(expr.right)
-                );
-              }
-              return false;
-            };
-
-            if (
-              hasUntrustedInput(node.init.left) ||
-              hasUntrustedInput(node.init.right)
-            ) {
-              if (safetyChecker.isSafe(node.init, context)) {
-                return;
-              }
-
-              context.report({
-                node: node.init,
-                messageId: 'ldapInjection',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                  severity: 'HIGH',
-                  safeAlternative:
-                    'Use ldap.escape.filterValue() or parameterized LDAP queries',
-                },
-              });
-            }
-          }
-        } else if (
-          // Direct untrusted assignment: `const ldapQuery = req.query.filter`.
-          // The file gate above is the only thing standing between this and
-          // every `req.`-shaped member expression in the ecosystem.
-          isUntrustedLdapInput(node.init) &&
-          !isLdapInputEscaped(node.init)
-        ) {
-          if (safetyChecker.isSafe(node.init, context)) {
-            return;
-          }
-
-          context.report({
-            node: node.init,
-            messageId: 'ldapInjection',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-              severity: 'MEDIUM',
-              safeAlternative: 'Use proper LDAP escaping and validation',
-            },
-          });
-        }
+        // A method the caller added through `ldapFunctions`, or one whose argument 1 is
+        // an entry / a change / a password. Only its own grammar can make it a filter.
+        checkConstructedFilter(args[1]);
       },
     };
   },

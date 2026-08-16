@@ -83,31 +83,89 @@ function getContainingFunction(node: TSESTree.Node): TSESTree.Node | null {
   );
 }
 
+/** The name a `!flag` / `!obj.flag` test negates, or null. */
+function negatedFlagName(test: TSESTree.Node): string | null {
+  if (test.type !== AST_NODE_TYPES.UnaryExpression || test.operator !== '!') return null;
+  const arg = test.argument;
+  if (arg.type === AST_NODE_TYPES.Identifier) return arg.name;
+  if (
+    arg.type === AST_NODE_TYPES.MemberExpression &&
+    !arg.computed &&
+    arg.property.type === AST_NODE_TYPES.Identifier
+  ) {
+    return arg.property.name;
+  }
+  return null;
+}
+
+/** Does this statement subtree assign `true` to the named flag? */
+function assignsTrue(node: TSESTree.Node, flag: string): boolean {
+  let found = false;
+  const walk = (current: TSESTree.Node): void => {
+    if (found) return;
+    if (
+      current.type === AST_NODE_TYPES.AssignmentExpression &&
+      current.operator === '=' &&
+      current.right.type === AST_NODE_TYPES.Literal &&
+      current.right.value === true
+    ) {
+      const { left } = current;
+      if (left.type === AST_NODE_TYPES.Identifier && left.name === flag) found = true;
+      if (
+        left.type === AST_NODE_TYPES.MemberExpression &&
+        !left.computed &&
+        left.property.type === AST_NODE_TYPES.Identifier &&
+        left.property.name === flag
+      ) {
+        found = true;
+      }
+    }
+    for (const key of Object.keys(current)) {
+      if (key === 'parent') continue;
+      const value = (current as unknown as Record<string, unknown>)[key];
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item && typeof item === 'object' && 'type' in item) walk(item as TSESTree.Node);
+        }
+      } else if (value && typeof value === 'object' && 'type' in value) {
+        walk(value as TSESTree.Node);
+      }
+    }
+  };
+  walk(node);
+  return found;
+}
+
 /**
- * Checks if node is guarded by a conditional check (e.g., if (!released))
+ * Is this release call behind a release-once guard?
+ *
+ * The old test asked whether the negated identifier was SPELLED `released`,
+ * `done` or `closed`. That is control-flow state inferred from a variable name,
+ * and it was the rule's registered name-inference debt. It reported this
+ * correct release-once guard —
+ *
+ *   let settled = false;
+ *   if (!settled) { settled = true; client.release(); }
+ *
+ * — purely because the flag is called `settled`, while accepting
+ *
+ *   if (!released) { client.release(); }
+ *
+ * which guards nothing at all, because the flag is never set.
+ *
+ * What makes a guard real is that the guarded block SETS the flag it tested.
+ * That is the fact; the spelling never was.
  */
 function isGuardedByCondition(node: TSESTree.Node): boolean {
   const ifStmt = findAncestor(node, (n): n is TSESTree.IfStatement =>
     n.type === AST_NODE_TYPES.IfStatement
   );
   if (!ifStmt) return false;
-  
-  const conditionText = ifStmt.test;
-  
-  // Check for patterns like: !released, released === false, !client.released
-  if (conditionText.type === AST_NODE_TYPES.UnaryExpression && conditionText.operator === '!') {
-    const arg = conditionText.argument;
-    if (arg.type === AST_NODE_TYPES.Identifier) {
-      const name = arg.name.toLowerCase();
-      return name.includes('released') || name.includes('done') || name.includes('closed');
-    }
-    if (arg.type === AST_NODE_TYPES.MemberExpression && arg.property.type === AST_NODE_TYPES.Identifier) {
-      const name = arg.property.name.toLowerCase();
-      return name.includes('released') || name.includes('done') || name.includes('closed');
-    }
-  }
-  
-  return false;
+
+  const flag = negatedFlagName(ifStmt.test);
+  if (flag === null) return false;
+
+  return assignsTrue(ifStmt.consequent, flag);
 }
 
 /**
@@ -266,6 +324,76 @@ export const preventDoubleRelease: TSESLint.RuleModule<
     if (!fileUsesPostgres(context.sourceCode.ast)) return {};
 
     return {
+      /**
+       * The CALLBACK form: `pool.connect((err, client, done) => { … })`.
+       *
+       * `done` IS the release. The rule declared a `doubleReleaseCallback`
+       * message for this and never reported it once — the report path was
+       * never built, so the entire legacy pg API was a blind spot. The ledger
+       * flagged it as an orphan message; it was a false negative.
+       *
+       * The defect is the error path that calls `done(err)` and then falls
+       * THROUGH to the success path instead of returning.
+       */
+      'CallExpression > ArrowFunctionExpression, CallExpression > FunctionExpression'(
+        callback: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
+      ) {
+        const call = callback.parent as TSESTree.CallExpression;
+        if (
+          call.callee.type !== AST_NODE_TYPES.MemberExpression ||
+          call.callee.property.type !== AST_NODE_TYPES.Identifier ||
+          call.callee.property.name !== 'connect'
+        ) {
+          return;
+        }
+
+        // `(err, client, done)` — the third parameter is the release callback.
+        const doneParam = callback.params[2];
+        if (doneParam === undefined || doneParam.type !== AST_NODE_TYPES.Identifier) return;
+
+        // Flattened rather than `[0]` with an undefined guard: a function's
+        // third parameter always declares a variable, so that guard was
+        // unreachable through the real parser. Dead branches get deleted here.
+        const calls = context.sourceCode
+          .getDeclaredVariables(callback)
+          .filter((v) => v.name === doneParam.name)
+          .flatMap((v) => v.references.map((ref) => ref.identifier))
+          .filter(
+            (id) => id.parent?.type === AST_NODE_TYPES.CallExpression && id.parent.callee === id,
+          )
+          .map((id) => id.parent as TSESTree.CallExpression)
+          .sort((a, b) => a.range[0] - b.range[0]);
+
+        if (calls.length < 2) return;
+
+        // Every call but the last has to be terminated by a `return` or a
+        // `throw` in its own block, or control falls through to the next one.
+        const terminated = (node: TSESTree.Node): boolean => {
+          const statement = node.parent?.type === AST_NODE_TYPES.ExpressionStatement
+            ? node.parent
+            : null;
+          const block = statement?.parent;
+          if (block === undefined || block === null || block.type !== AST_NODE_TYPES.BlockStatement) {
+            return false;
+          }
+          const index = block.body.indexOf(statement as TSESTree.Statement);
+          return block.body
+            .slice(index + 1)
+            .some(
+              (s) =>
+                s.type === AST_NODE_TYPES.ReturnStatement ||
+                s.type === AST_NODE_TYPES.ThrowStatement,
+            );
+        };
+
+        if (calls.slice(0, -1).every((c) => terminated(c))) return;
+
+        context.report({
+          node: calls[calls.length - 1],
+          messageId: 'doubleReleaseCallback',
+        });
+      },
+
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         const declaredVariables = context.sourceCode.getDeclaredVariables(node);
 
@@ -304,6 +432,30 @@ export const preventDoubleRelease: TSESLint.RuleModule<
               }
             }
           });
+
+          // ONE checkout, a release INSIDE a loop. Every iteration after the
+          // first releases a client this scope no longer owns — a double
+          // release that the pairwise comparison below can never see, because
+          // there is only one release call in the source.
+          if (releaseCalls.length >= 1 && def?.type === 'Variable') {
+            for (const call of releaseCalls) {
+              const loop = findAncestor(call.node, (n): n is TSESTree.Node =>
+                n.type === AST_NODE_TYPES.ForStatement ||
+                n.type === AST_NODE_TYPES.ForOfStatement ||
+                n.type === AST_NODE_TYPES.ForInStatement ||
+                n.type === AST_NODE_TYPES.WhileStatement ||
+                n.type === AST_NODE_TYPES.DoWhileStatement,
+              );
+              // A checkout inside the same loop means each iteration owns its
+              // own client, which is correct.
+              if (loop === undefined || loop === null) continue;
+              if (loop.range[0] <= def.node.range[0] && def.node.range[1] <= loop.range[1]) {
+                continue;
+              }
+              if (getContainingFunction(call.node) !== getContainingFunction(def.node)) continue;
+              context.report({ node: call.node, messageId: 'doubleRelease' });
+            }
+          }
 
           if (releaseCalls.length > 1) {
             releaseCalls.sort((a, b) => a.node.range[0] - b.node.range[0]);

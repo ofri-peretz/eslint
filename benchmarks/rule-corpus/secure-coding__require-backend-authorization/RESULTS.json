@@ -1,0 +1,20 @@
+{
+  "rule": "secure-coding/require-backend-authorization",
+  "fixtures": 17,
+  "results": [
+    {
+      "name": "Interlace secure-coding/require-backend-authorization",
+      "tp": 8,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1,
+      "recall": 0.8888888888888888,
+      "f1": 0.9411764705882353,
+      "crashes": [],
+      "missed": [
+        "vulnerable/08-renamed-property.jsx"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

@@ -198,10 +198,22 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       ) {
         const variable = scope.variables.find((v) => v.name === node.name);
         if (!variable) continue;
-        if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return false;
-        const [def] = variable.defs;
-        if (!def || def.type !== 'Variable' || !def.node.init) return false;
-        return isStringTyped(def.node.init, seen);
+        // EVERY write, not "exactly one write". The single-write rule was a proxy for
+        // "provably a string", and it is the wrong proxy for the commonest shape there
+        // is — `let mode = 'animated'; if (x) mode = 'static';`. Both writes are string
+        // literals, so `mode == 'static'` cannot coerce, yet the binding has two writes
+        // and the exemption was refused. Reading the writes themselves answers the
+        // actual question, and a binding with no writes at all (a parameter, an import)
+        // still proves nothing and still returns false.
+        const writes = variable.references.filter((ref) => ref.isWrite());
+        if (writes.length === 0) return false;
+        // `writeExpr` is absent for a write with no inspectable expression and
+        // is typed as nullable, so `!== undefined` alone does not narrow it.
+        // A write we cannot read proves nothing, which is a refusal.
+        return writes.every((ref) => {
+          const written = ref.writeExpr;
+          return written != null && isStringTyped(written, seen);
+        });
       }
       return false;
     }
@@ -227,6 +239,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         'apikey', 'api_key', 'secretkey', 'secret_key', 'privatekey', 'private_key',
         'signature', 'hmac', 'digest', 'checksum', 'nonce', 'otp',
         'passwordhash', 'password_hash', 'hashedpassword', 'hashed_password',
+        'credential', 'credentials',
       ]);
 
       /**
@@ -241,59 +254,146 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           .split(/[^A-Za-z0-9]+/)
           .filter(Boolean)
           .map((p) => p.toLowerCase());
-        return [...parts, parts.join(''), parts.join('_'), name.toLowerCase()];
+        // ADJACENT PAIRS. A two-word secret name only matched when the whole
+        // identifier was exactly those two words: `apiKey` hit the `apikey` entry,
+        // but `SERVICE_API_KEY` split to ['service','api','key'] and matched
+        // nothing — `key` alone is deliberately not a secret word, so the most
+        // literally-named credential in the corpus went unreported. Joining
+        // neighbouring segments finds `api`+`key` wherever it sits in the name,
+        // and the keyword set stays closed, so this widens the match without
+        // widening what counts as a secret.
+        const pairs: string[] = [];
+        for (let i = 0; i + 1 < parts.length; i += 1) {
+          pairs.push(parts[i] + parts[i + 1], `${parts[i]}_${parts[i + 1]}`);
+        }
+        return [...parts, ...pairs, parts.join(''), parts.join('_'), name.toLowerCase()];
       };
 
-      /** Every identifier / property name appearing inside an expression. */
+      /**
+       * Every name the VALUE of an expression is known by — including the names it
+       * carried one binding ago.
+       *
+       * The comparison site is not where a secret is named. `const expected =
+       * config.callback.token; if (presented !== expected)` writes no secret word at
+       * the `!==`, and reading only that line missed it; so did `const { token: t } =
+       * session; t === presented`, and so did the computed-key spelling
+       * `req.headers['x-api-key']`. All three are the same secret, written the way
+       * real code writes it. Each hop below is a resolution through the SCOPE — the
+       * binding's own writes, the destructuring key that produced it, the string
+       * literal that is the property name — never a guess from the spelling at hand.
+       */
+      const scopeAtNode = sourceCode.getScope(node);
+
+      /** The key names a destructuring pattern binds `target` under, e.g. `{ token: t }` → 'token'. */
       // oxlint-disable-next-line consistent-function-scoping
-      const namesIn = (expr: TSESTree.Node): string[] => {
-        const out: string[] = [];
-        const walk = (n: TSESTree.Node): void => {
-          if (n.type === 'Identifier') out.push(n.name);
-          else if (n.type === 'MemberExpression') {
-            walk(n.object);
-            if (!n.computed && n.property.type === 'Identifier') out.push(n.property.name);
-            else walk(n.property);
-          } else if (n.type === 'CallExpression') {
-            walk(n.callee);
+      const destructuringKeys = (pattern: TSESTree.Node, target: TSESTree.Identifier): string[] => {
+        const keys: string[] = [];
+        const walkPattern = (n: TSESTree.Node): void => {
+          if (n.type === 'ObjectPattern') {
+            for (const property of n.properties) {
+              if (property.type !== 'Property') continue;
+              if (property.value === target && !property.computed && property.key.type === 'Identifier') {
+                keys.push(property.key.name);
+              }
+              walkPattern(property.value);
+            }
+          } else if (n.type === 'ArrayPattern') {
+            for (const element of n.elements) if (element) walkPattern(element);
+          } else if (n.type === 'AssignmentPattern') {
+            walkPattern(n.left);
           }
         };
+        walkPattern(pattern);
+        return keys;
+      };
+
+      const namesIn = (expr: TSESTree.Node): string[] => {
+        const out: string[] = [];
+        const visited = new Set<TSESTree.Node>();
+        const walk = (n: TSESTree.Node): void => {
+          if (visited.has(n)) return;
+          visited.add(n);
+          if (n.type === 'Identifier') {
+            out.push(n.name);
+            resolveIdentifier(n);
+          } else if (n.type === 'MemberExpression') {
+            walk(n.object);
+            if (!n.computed && n.property.type === 'Identifier') out.push(n.property.name);
+            // `req.headers['x-api-key']` — a computed key that is a string literal is
+            // the same property name as `req.headers.xApiKey`, just spelled with
+            // brackets. Read it; anything non-literal is walked as an expression.
+            else if (n.computed && n.property.type === 'Literal' && typeof n.property.value === 'string') {
+              out.push(n.property.value);
+            } else walk(n.property);
+          } else if (n.type === 'CallExpression') {
+            walk(n.callee);
+          } else if (n.type === 'ConditionalExpression') {
+            // Either branch can be the secret, so both count.
+            walk(n.consequent);
+            walk(n.alternate);
+          } else if (
+            n.type === 'TSAsExpression' ||
+            n.type === 'TSSatisfiesExpression' ||
+            n.type === 'TSNonNullExpression'
+          ) {
+            walk(n.expression);
+          }
+        };
+
+        /** Follow an identifier to what it was bound from, one binding at a time. */
+        function resolveIdentifier(identifier: TSESTree.Identifier): void {
+          for (
+            let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+            scope;
+            scope = scope.upper
+          ) {
+            const variable = scope.variables.find((v) => v.name === identifier.name);
+            if (!variable) continue;
+            const writes = variable.references.filter((ref) => ref.isWrite());
+            // More than one write and the value at the comparison is not knowable from
+            // any single initializer, so nothing is claimed.
+            if (writes.length === 1 && writes[0].writeExpr) walk(writes[0].writeExpr);
+            for (const def of variable.defs) {
+              if (def.type !== 'Variable') continue;
+              out.push(...destructuringKeys(def.node.id, def.name));
+            }
+            return;
+          }
+        }
+
         walk(expr);
         return out;
       };
 
-      const isSecurityContext = ((): boolean => {
-         let current: TSESTree.Node | undefined = node;
-         while (current) {
-             if ((current.type === 'FunctionDeclaration' || 
-                  current.type === 'FunctionExpression' || 
-                  current.type === 'ArrowFunctionExpression') && 
-                  'id' in current && current.id?.name) {
-                 if (/security|auth|crypto|hash|token|secret|insecure|verify|validate/i.test(current.id.name)) {
-                     return true;
-                 }
-             }
-             if (current.type === 'MethodDefinition' && current.key.type === 'Identifier') {
-                  if (/security|auth|crypto|hash|token|secret|insecure|verify|validate/i.test(current.key.name)) {
-                     return true;
-                 }
-             }
-             current = current.parent;
-         }
-         return false;
-      })();
-
-      const isPotentialSecret = (expr: TSESTree.Expression): boolean => {
-        const segments = namesIn(expr).flatMap(nameSegments);
-        if (segments.some(segment => secretKeywords.has(segment))) return true;
-
-        // In security contexts, treat generic terms as potential secrets
-        if (isSecurityContext) {
-            const contextKeywords = new Set(['provided', 'expected', 'actual', 'input', 'value', 'data']);
-            return segments.some(segment => contextKeywords.has(segment));
-        }
-        return false;
-      };
+      /**
+       * Does this operand name a secret?
+       *
+       * REMOVED, deliberately: an `isSecurityContext` escalation that walked up to the
+       * enclosing function or method, tested its NAME against
+       * `/security|auth|crypto|hash|token|secret|insecure|verify|validate/`, and — if it
+       * matched — promoted the generic words `provided`, `expected`, `actual`, `input`,
+       * `value` and `data` to secrets. Two names, both generic, decided a CWE-208
+       * finding between them, with no evidence from the values at all. The same
+       * comparison reported or stayed silent purely on the enclosing function's
+       * spelling:
+       *
+       *   function validateAddress(value) { return value === 'US'; }   // reported
+       *   function normalizeAddress(value) { return value === 'US'; }  // silent
+       *
+       * `validate` is the single commonest verb in application code — every Zod
+       * refinement, every schema method, every form checker — and `value` is the single
+       * commonest parameter name, so the pair fires on ordinary business logic. It cost
+       * three false positives in this rule's corpus (a country-code validator, an
+       * order-state machine, an asset-hash helper) and bought nothing: a real credential
+       * is named by its own word, and `secretKeywords` already matches those. The rule's
+       * own test suite asserted this behaviour as correct; those cases are now `valid`.
+       *
+       * See CLAUDE.md, "A rule decides by evidence. Never by a name."
+       */
+      const isPotentialSecret = (expr: TSESTree.Expression): boolean =>
+        namesIn(expr)
+          .flatMap(nameSegments)
+          .some((segment) => secretKeywords.has(segment));
 
       // Timing-safe comparison for secrets even with strict equality
       if ((node.operator === '===' || node.operator === '!==') &&

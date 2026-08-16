@@ -3,9 +3,8 @@
  * Security: CWE-1287 (Improper Validation of Specified Type of Input)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noImproperTypeValidation } from './index';
 
 // Configure RuleTester for Vitest
@@ -107,103 +106,75 @@ describe('no-improper-type-validation', () => {
     });
   });
 
-  describe('Invalid Code - Loose Equality Type Checks', () => {
-    ruleTester.run('invalid - loose equality for types', noImproperTypeValidation, {
+  describe('Loose equality: type juggling, not the nullish idiom', () => {
+    /**
+     * LOCK — the `looseEqualityTypeCheck` implementation was INVERTED.
+     *
+     * `isLooseEqualityTypeCheck` required the printed text of an operand to contain
+     * "null" or "undefined". So the ONLY `==` it ever reported was `x == null` — the
+     * idiomatic nullish test that core `eqeqeq` exempts under `smart`, that this
+     * plugin's own `no-insecure-comparison` exempts in as many words, and that this
+     * rule's own `unsafeTypeofCheck` message prescribes as the fix. Meanwhile the
+     * authentication bypass the message describes — a string from the request body
+     * loosely compared to a stored number, where `'0e0' == 0` is true — never
+     * reported at all, because neither operand's text contains "null".
+     */
+    ruleTester.run('invalid - real type juggling', noImproperTypeValidation, {
       valid: [],
       invalid: [
-        // Loose equality with null on user input variable - triggers both messages
-        // IfStatement reports missingNullCheck, BinaryExpression reports looseEqualityTypeCheck
+        // Was SILENT before the fix.
         {
-          code: 'if (input != null) { processInput(input); }',
-          errors: [
-            {
-              messageId: 'missingNullCheck',
-            },
-            {
-              messageId: 'looseEqualityTypeCheck',
-            },
-          ],
+          code: 'if (req.body.otp == storedOtp) { grant(); }',
+          errors: [{ messageId: 'looseEqualityTypeCheck' }],
         },
-        // Loose equality with null (always flagged due to null comparison)
         {
-          code: 'if (userData == null) { return; }',
-          errors: [
-            {
-              messageId: 'looseEqualityTypeCheck',
-            },
-          ],
+          code: 'if (req.body.admin == 1) { elevate(); }',
+          errors: [{ messageId: 'looseEqualityTypeCheck' }],
         },
       ],
     });
-  });
 
-  describe('Invalid Code - Missing Null Checks', () => {
-    ruleTester.run('invalid - missing null checks', noImproperTypeValidation, {
-      valid: [],
-      invalid: [
-        // userInput is a user input variable - reports missingNullCheck first (IfStatement),
-        // then looseEqualityTypeCheck (BinaryExpression)
-        {
-          code: 'if (userInput != null) { processData(userInput); }',
-          errors: [
-            {
-              messageId: 'missingNullCheck',
-            },
-            {
-              messageId: 'looseEqualityTypeCheck',
-            },
-          ],
-        },
-        // req.body involves user input variable - only reports looseEqualityTypeCheck
-        // because req.body as MemberExpression doesn't trigger missingNullCheck
-        {
-          code: 'if (req.body == null) { return; }',
-          errors: [
-            {
-              messageId: 'looseEqualityTypeCheck',
-            },
-          ],
-        },
+    ruleTester.run('valid - the nullish idiom and same-type comparisons', noImproperTypeValidation, {
+      valid: [
+        // All four REPORTED before the fix.
+        'if (input != null) { processInput(input); }',
+        'if (userData == null) { return; }',
+        'if (null == userData) { return; }',
+        'function isPlainObject(value) { return value != null && typeof value === "object"; }',
+        // Two numbers cannot coerce. `annulled` merely CONTAINS the letters "null".
+        'const annulled = rows.length; if (annulled == 1) { note(); }',
+        // Two strings cannot coerce either.
+        'const role = "admin"; if (role == "admin") { go(); }',
       ],
+      invalid: [],
     });
   });
 
   describe('Invalid Code - Unreliable Constructor Checks', () => {
     ruleTester.run('invalid - unreliable constructor checks', noImproperTypeValidation, {
-      valid: [],
+      valid: [
+        // LOCK — reading a class name for a LOG LABEL is not a type check. Nothing
+        // branches on it, nothing is merged, nothing is authorised. Reported before
+        // the fix, because any `constructor.name` in a VariableDeclarator counted.
+        'const errorKind = error.constructor.name; logger.warn({ errorKind });',
+        'logger.warn({ kind: error.constructor.name });',
+      ],
       invalid: [
         {
-          code: 'const type = userInput.constructor.name;',
-          errors: [
-            {
-              messageId: 'unreliableConstructorCheck',
-            },
-          ],
-        },
-        {
           code: 'if (data.constructor.name === "Array") { handleArray(data); }',
-          errors: [
-            {
-              messageId: 'unreliableConstructorCheck',
-            },
-          ],
+          errors: [{ messageId: 'unreliableConstructorCheck' }],
         },
       ],
     });
   });
 
-  describe('Invalid Code - Improper Type Validation', () => {
-    ruleTester.run('invalid - improper type validation patterns', noImproperTypeValidation, {
+  describe('Invalid Code - typeof on a plain identifier', () => {
+    ruleTester.run('invalid - typeof object check', noImproperTypeValidation, {
       valid: [],
       invalid: [
-        // typeof userInput === "object" - unsafe typeof check on user input
         {
           code: 'const type = typeof userInput === "object";',
-          errors: [
-            {
-              messageId: 'unsafeTypeofCheck',
-            },
-          ],
+          errors: [{ messageId: 'unsafeTypeofCheck' }],
         },
       ],
     });
@@ -260,39 +231,16 @@ describe('no-improper-type-validation', () => {
   });
 
   describe('Configuration Options', () => {
-    ruleTester.run('config - custom user input variables', noImproperTypeValidation, {
-      valid: [
-        // otherInput is NOT in userInputVariables, so it's not flagged
-        {
-          code: 'if (typeof otherInput === "object") { /* process */ }',
-          options: [{ userInputVariables: ['customInput'] }],
-        },
-      ],
-      invalid: [
-        // customInput IS in userInputVariables, so it's flagged
-        {
-          code: 'if (typeof customInput === "object") { /* process */ }',
-          options: [{ userInputVariables: ['customInput'] }],
-          errors: [
-            {
-              messageId: 'unsafeTypeofCheck',
-            },
-          ],
-        },
-      ],
-    });
-
     ruleTester.run('config - disable instanceof checks', noImproperTypeValidation, {
-      valid: [],
+      valid: [
+        // Default: instanceof is same-realm and unremarkable.
+        'if (data instanceof Array) { /* process */ }',
+      ],
       invalid: [
         {
           code: 'if (data instanceof Array) { /* process */ }',
           options: [{ allowInstanceofSameRealm: false }],
-          errors: [
-            {
-              messageId: 'unsafeInstanceofUsage',
-            },
-          ],
+          errors: [{ messageId: 'unsafeInstanceofUsage' }],
         },
       ],
     });
@@ -391,61 +339,62 @@ describe('no-improper-type-validation', () => {
     });
   });
 
-  describe('Truthiness Check on User Input', () => {
-    ruleTester.run('invalid - implicit truthiness check on user input', noImproperTypeValidation, {
-      valid: [],
-      invalid: [
-        // Bare identifier truthiness check on a user-input variable:
-        // IfStatement handler, test.type === 'Identifier' && isUserInput(...) branch.
-        {
-          code: 'if (userInput) { processData(userInput); }',
-          errors: [
-            {
-              messageId: 'improperTypeValidation',
-            },
-          ],
-        },
-      ],
-    });
-
-    ruleTester.run('valid - truthiness check on non-user-input identifier is not flagged', noImproperTypeValidation, {
+  describe('Truthiness is not a type check, and a name is not evidence', () => {
+    /**
+     * LOCK — `if (userInput)` used to be reported as "Type validation may be bypassed
+     * or incomplete", solely because the identifier's spelling contained one of
+     * `req`/`request`/`body`/`query`/`params`/`input`/`data`/`userInput`. So
+     * `if (metadata)` reported (it contains "data") and `if (isReady)` did not, on
+     * identical code with no sink in sight. A truthiness guard IS a weak check, but
+     * the rule had no evidence that these particular values needed one, and the
+     * message it emitted named a CWE.
+     */
+    ruleTester.run('valid - truthiness checks', noImproperTypeValidation, {
       valid: [
-        // Identifier truthiness check on a variable that is NOT user input:
-        // exercises the false branch of isUserInput(test.name).
-        {
-          code: 'if (isReady) { doSomething(); }',
-        },
+        'if (userInput) { processData(userInput); }',
+        'if (metadata) { render(metadata.title); }',
+        'if (isReady) { doSomething(); }',
       ],
       invalid: [],
     });
   });
 
-  describe('typeof Check on MemberExpression User Input', () => {
-    ruleTester.run('invalid - typeof check on member expression user input', noImproperTypeValidation, {
+  describe('typeof x === "object" is unsafe wherever x came from', () => {
+    /**
+     * LOCK — the null-blindness of `typeof x === 'object'` is a property of the
+     * OPERATOR. The rule used to look only when the operand was a bare identifier, or
+     * a member expression whose OBJECT was a bare identifier, whose spelling matched a
+     * word list. One property deeper, behind optional chaining, or renamed, and the
+     * identical hole went unreported.
+     */
+    ruleTester.run('invalid - every spelling of the same hole', noImproperTypeValidation, {
       valid: [],
       invalid: [
-        // typeof req.body === "object": left.argument is a MemberExpression whose
-        // object is a user-input Identifier (matchesUserInput MemberExpression branch).
         {
           code: 'if (typeof req.body === "object") { processData(req.body); }',
-          errors: [
-            {
-              messageId: 'unsafeTypeofCheck',
-            },
-          ],
+          errors: [{ messageId: 'unsafeTypeofCheck' }],
         },
-      ],
-    });
-
-    ruleTester.run('valid - typeof check on non-user-input member expression is not flagged', noImproperTypeValidation, {
-      valid: [
-        // MemberExpression argument whose object is NOT user input: exercises
-        // the false branch of the MemberExpression matchesUserInput check.
+        // Was SILENT: `req.body` is a MemberExpression, not an Identifier.
+        {
+          code: 'if (typeof req.body.profile === "object") { merge(req.body.profile); }',
+          errors: [{ messageId: 'unsafeTypeofCheck' }],
+        },
+        // Was SILENT: optional chaining.
+        {
+          code: 'if (typeof payload?.settings === "object") { merge(payload.settings); }',
+          errors: [{ messageId: 'unsafeTypeofCheck' }],
+        },
+        // Was SILENT: renamed to an innocuous word.
+        {
+          code: 'if (typeof envelope === "object") { merge(envelope); }',
+          errors: [{ messageId: 'unsafeTypeofCheck' }],
+        },
+        // Was reported, and still is.
         {
           code: 'if (typeof config.settings === "object") { /* process */ }',
+          errors: [{ messageId: 'unsafeTypeofCheck' }],
         },
       ],
-      invalid: [],
     });
   });
 
@@ -462,22 +411,14 @@ describe('no-improper-type-validation', () => {
       invalid: [],
     });
 
-    ruleTester.run('mixed - null check on left of && suppresses unsafeTypeofCheck but its own loose equality is still flagged (!=)', noImproperTypeValidation, {
-      valid: [],
-      invalid: [
-        // Same walk-up (using the loose "!= null" text form) suppresses the
-        // unsafeTypeofCheck report on the right side of `&&`, but the left
-        // side `userInput != null` is itself a loose-equality null comparison
-        // on a user-input variable, so looseEqualityTypeCheck still fires once.
-        {
-          code: 'if (userInput != null && typeof userInput === "object") { processData(userInput); }',
-          errors: [
-            {
-              messageId: 'looseEqualityTypeCheck',
-            },
-          ],
-        },
+    ruleTester.run('valid - the loose null guard is the fix, not a finding', noImproperTypeValidation, {
+      valid: [
+        // The `!= null` guard suppresses the typeof report AND is itself exempt: it
+        // is the exact remediation `unsafeTypeofCheck` prescribes. It used to be
+        // reported as a `looseEqualityTypeCheck` in the same breath.
+        'if (userInput != null && typeof userInput === "object") { processData(userInput); }',
       ],
+      invalid: [],
     });
 
     ruleTester.run('invalid - typeof check on right of && without null check on left still reports', noImproperTypeValidation, {
@@ -515,19 +456,16 @@ describe('no-improper-type-validation', () => {
     });
   });
 
-  describe('instanceof usage - non-user-input left side', () => {
-    ruleTester.run('valid - instanceof on non-user-input identifier is not flagged', noImproperTypeValidation, {
-      valid: [
-        // instanceof usage where isUnsafeInstanceof(node) is true (strict mode
-        // via allowInstanceofSameRealm: false) but the left side is NOT a
-        // user-input identifier: exercises the false branch of
-        // `left.type === 'Identifier' && isUserInput(left.name)`.
+  describe('instanceof under allowInstanceofSameRealm: false', () => {
+    ruleTester.run('invalid - the option reports every instanceof, not only named ones', noImproperTypeValidation, {
+      valid: [],
+      invalid: [
         {
           code: 'if (config instanceof Array) { /* process */ }',
           options: [{ allowInstanceofSameRealm: false }],
+          errors: [{ messageId: 'unsafeInstanceofUsage' }],
         },
       ],
-      invalid: [],
     });
   });
 
@@ -632,235 +570,30 @@ describe('no-improper-type-validation', () => {
     });
   });
 
-  describe('Missing Null Check - right-side user input, undefined already present', () => {
-    ruleTester.run('invalid - user input on right side of null comparison', noImproperTypeValidation, {
-      valid: [],
+  describe('The "null" substring is not a null check', () => {
+    /**
+     * LOCK — `missingNullCheck` used to fire whenever the PRINTED TEXT of an
+     * `if (…)` contained the substring `!= null` or `== null`. The rule's own test
+     * suite documented, approvingly, that `if (something != nullinput)` satisfied it
+     * because the identifier `nullinput` begins with the letters "null". Both
+     * spellings below are ordinary code and both are now valid; the message itself is
+     * gone, because the shape it named was the idiomatic nullish test.
+     */
+    ruleTester.run('valid - identifiers that merely contain the letters', noImproperTypeValidation, {
+      valid: [
+        'if (null != userInput) { processData(userInput); }',
+        'if (userInput !== null && userInput !== undefined) { processData(userInput); }',
+        // The guard may come AFTER the typeof, which the left-only walk never saw.
+        'if (typeof userInput === "object" && userInput !== null) { processData(userInput); }',
+      ],
       invalid: [
-        // isUserInput matches on the right-hand identifier of the comparison
-        // rather than the left (test.right.type === 'Identifier' branch in the
-        // BinaryExpression handler's isLooseEqualityTypeCheck report). The
-        // missingNullCheck IfStatement branch requires the literal text "!= null"
-        // (in that order), which "null != userInput" does not contain, so only
-        // looseEqualityTypeCheck fires here.
-        {
-          code: 'if (null != userInput) { processData(userInput); }',
-          errors: [
-            {
-              messageId: 'looseEqualityTypeCheck',
-            },
-          ],
-        },
-        // `nullinput` is a user-input variable name (contains the exact,
-        // case-sensitive substring "input") whose own identifier text begins
-        // with "null", so the comparison text "something != nullinput"
-        // contains the literal substring "!= null" needed by the
-        // missingNullCheck IfStatement gate, while `test.right` (not
-        // `test.left`) is the matching user-input Identifier — exercising the
-        // `test.right.type === 'Identifier' && isUserInput(...)` branch.
+        // Still reported — but as an honest loose comparison between two operands of
+        // unknown type, NOT because `nullinput` starts with the letters "null".
         {
           code: 'if (something != nullinput) { processData(nullinput); }',
-          errors: [
-            {
-              messageId: 'missingNullCheck',
-            },
-            {
-              messageId: 'looseEqualityTypeCheck',
-            },
-          ],
+          errors: [{ messageId: 'looseEqualityTypeCheck' }],
         },
       ],
-    });
-
-    ruleTester.run('valid - null check already includes undefined check is not flagged as missingNullCheck', noImproperTypeValidation, {
-      valid: [
-        // testText already includes "!== undefined", so the missingNullCheck
-        // IfStatement branch is skipped (though looseEqualityTypeCheck may still
-        // apply to the "== null"/"!= null" text depending on operators used).
-        {
-          code: 'if (userInput !== null && userInput !== undefined) { processData(userInput); }',
-        },
-      ],
-      invalid: [],
-    });
-  });
-
-  describe('Layer 2 - synthetic nodes without loc (mock context)', () => {
-    // NOTE: `typeof` is a reserved word, so `typeof(value)` always parses as a
-    // UnaryExpression (the parens are just a grouping expression around
-    // `value`), never as a CallExpression with an Identifier callee named
-    // "typeof" — that shape cannot be produced by any real parser. The
-    // CallExpression handler's `callee.name === 'typeof'` branch is exercised
-    // below via a synthetic AST node instead.
-    it('unsafeTypeofCheck report falls back to line "0" when node.loc is undefined', () => {
-      const { listeners, reports } = createWithMockContext(noImproperTypeValidation, {
-        options: [{}],
-      });
-
-      const typeofArg = { type: 'Identifier', name: 'userInput' };
-      const unaryTypeof = {
-        type: 'UnaryExpression',
-        operator: 'typeof',
-        argument: typeofArg,
-        parent: undefined,
-      };
-      const node = {
-        type: 'BinaryExpression',
-        operator: '===',
-        left: unaryTypeof,
-        right: { type: 'Literal', value: 'object' },
-        loc: undefined,
-        parent: undefined,
-      };
-      unaryTypeof.parent = node;
-
-      (listeners['BinaryExpression'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('unsafeTypeofCheck');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('unsafeInstanceofUsage report falls back to line "0" when node.loc is undefined', () => {
-      const { listeners, reports } = createWithMockContext(noImproperTypeValidation, {
-        options: [{ allowInstanceofSameRealm: false }],
-      });
-
-      const node = {
-        type: 'BinaryExpression',
-        operator: 'instanceof',
-        left: { type: 'Identifier', name: 'userInput' },
-        right: { type: 'Identifier', name: 'Array' },
-        loc: undefined,
-        parent: undefined,
-      };
-
-      (listeners['BinaryExpression'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('unsafeInstanceofUsage');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('looseEqualityTypeCheck report falls back to line "0" when node.loc is undefined', () => {
-      const { listeners, reports } = createWithMockContext(noImproperTypeValidation, {
-        options: [{}],
-        sourceText: 'userInput == null',
-      });
-
-      const node = {
-        type: 'BinaryExpression',
-        operator: '==',
-        left: { type: 'Identifier', name: 'userInput' },
-        right: { type: 'Literal', value: null, raw: 'null' },
-        loc: undefined,
-        parent: undefined,
-      };
-
-      (listeners['BinaryExpression'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('looseEqualityTypeCheck');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('unreliableConstructorCheck report falls back to line "0" when node.loc is undefined', () => {
-      const { listeners, reports } = createWithMockContext(noImproperTypeValidation, {
-        options: [{}],
-      });
-
-      const constructorMember = {
-        type: 'MemberExpression',
-        object: { type: 'Identifier', name: 'userInput' },
-        property: { type: 'Identifier', name: 'constructor' },
-      };
-      const node = {
-        type: 'MemberExpression',
-        object: constructorMember,
-        property: { type: 'Identifier', name: 'name' },
-        loc: undefined,
-        parent: undefined,
-      };
-      const declarator = {
-        type: 'VariableDeclarator',
-        id: { type: 'Identifier', name: 'type' },
-        init: node,
-        parent: undefined,
-      };
-      node.parent = declarator;
-
-      (listeners['MemberExpression'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('unreliableConstructorCheck');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('improperTypeValidation (CallExpression) report falls back to line "0" when node.loc is undefined', () => {
-      const { listeners, reports } = createWithMockContext(noImproperTypeValidation, {
-        options: [{}],
-      });
-
-      const node = {
-        type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'typeof' },
-        arguments: [{ type: 'Identifier', name: 'value' }],
-        loc: undefined,
-        parent: undefined,
-      };
-
-      (listeners['CallExpression'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('improperTypeValidation');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('improperTypeValidation (truthiness IfStatement) report falls back to line "0" when node.loc is undefined', () => {
-      const { listeners, reports } = createWithMockContext(noImproperTypeValidation, {
-        options: [{}],
-      });
-
-      const test = { type: 'Identifier', name: 'userInput' };
-      const node = {
-        type: 'IfStatement',
-        test,
-        consequent: { type: 'BlockStatement', body: [] },
-        loc: undefined,
-        parent: undefined,
-      };
-
-      (listeners['IfStatement'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('improperTypeValidation');
-      expect(reports[0].data?.line).toBe('0');
-    });
-
-    it('missingNullCheck report falls back to line "0" when node.loc is undefined', () => {
-      const { listeners, reports } = createWithMockContext(noImproperTypeValidation, {
-        options: [{}],
-        sourceText: 'userInput != null',
-      });
-
-      const test = {
-        type: 'BinaryExpression',
-        operator: '!=',
-        left: { type: 'Identifier', name: 'userInput' },
-        right: { type: 'Literal', value: null, raw: 'null' },
-      };
-      const node = {
-        type: 'IfStatement',
-        test,
-        consequent: { type: 'BlockStatement', body: [] },
-        loc: undefined,
-        parent: undefined,
-      };
-
-      (listeners['IfStatement'] as (n: unknown) => void)(node);
-
-      expect(reports).toHaveLength(1);
-      expect(reports[0].messageId).toBe('missingNullCheck');
-      expect(reports[0].data?.line).toBe('0');
     });
   });
 
@@ -907,27 +640,19 @@ describe('no-improper-type-validation', () => {
             },
           ],
         },
-        // input != null triggers missingNullCheck (IfStatement) first,
-        // then looseEqualityTypeCheck (BinaryExpression)
+        // A loose comparison in an authorisation decision, which is what the
+        // `looseEqualityTypeCheck` message is actually about.
         {
           code: `
-            // Incomplete type validation
-            function validateAndProcess(input) {
-              // DANGEROUS: only checks != null, misses undefined
-              if (input != null) {
-                if (typeof input === "string") {
-                  processString(input);
-                } else if (Array.isArray(input)) {
-                  processArray(input);
-                }
-                // undefined would pass != null check but cause issues
+            function grantAccess(req) {
+              // DANGEROUS: '0e0' == 0 and '0' == 0 both pass
+              if (req.body.code == storedCode) {
+                return { role: "admin" };
               }
+              return { role: "user" };
             }
           `,
           errors: [
-            {
-              messageId: 'missingNullCheck',
-            },
             {
               messageId: 'looseEqualityTypeCheck',
             },
@@ -949,7 +674,7 @@ ruleTester.run('option: trustedSanitizers accepts a project validator at the sin
     // which also probes each operand: the left operand is a call to the registered
     // validator, so the comparison is treated as already type-checked.
     {
-      code: 'const missing = assertUserShape(userInput) == null;',
+      code: 'const mismatched = assertUserShape(userInput) == 0;',
       options: [{ trustedSanitizers: ['assertUserShape'] }],
     },
   ],
@@ -957,13 +682,13 @@ ruleTester.run('option: trustedSanitizers accepts a project validator at the sin
     // Identical source with the validator unregistered. Membership is exact — an
     // unknown wrapper name is not evidence that anything was validated.
     {
-      code: 'const missing = assertUserShape(userInput) == null;',
+      code: 'const mismatched = assertUserShape(userInput) == 0;',
       errors: [{ messageId: 'looseEqualityTypeCheck' }],
     },
     // Registered AND strict: strictMode makes `isSafe` return false before the
     // sanitizer list is consulted, so the same code reports again.
     {
-      code: 'const missing = assertUserShape(userInput) == null;',
+      code: 'const mismatched = assertUserShape(userInput) == 0;',
       options: [{ trustedSanitizers: ['assertUserShape'], strictMode: true }],
       errors: [{ messageId: 'looseEqualityTypeCheck' }],
     },
@@ -975,14 +700,14 @@ ruleTester.run('option: trustedAnnotations extends the safe-comment vocabulary',
     // `@type-checked-upstream` is not one of the devkit's SAFE_ANNOTATIONS and shares
     // no substring with any of them, so it can only suppress once declared.
     {
-      code: '// @type-checked-upstream\nconst missing = userInput == null;',
+      code: '// @type-checked-upstream\nconst mismatched = userInput == 0;',
       options: [{ trustedAnnotations: ['@type-checked-upstream'] }],
     },
   ],
   invalid: [
     // Same two lines, no declaration.
     {
-      code: '// @type-checked-upstream\nconst missing = userInput == null;',
+      code: '// @type-checked-upstream\nconst mismatched = userInput == 0;',
       errors: [{ messageId: 'looseEqualityTypeCheck' }],
     },
   ],
@@ -992,16 +717,166 @@ ruleTester.run('option: strictMode revokes annotation-based suppression', noImpr
   valid: [
     // `@validated` ships in SAFE_ANNOTATIONS, so this is quiet with no options at all.
     {
-      code: '// @validated by the request schema\nconst missing = userInput == null;',
+      code: '// @validated by the request schema\nconst mismatched = userInput == 0;',
     },
   ],
   invalid: [
     // Same source under strictMode: the annotation no longer counts, which is the
     // behaviour an audit run wants from the flag.
     {
-      code: '// @validated by the request schema\nconst missing = userInput == null;',
+      code: '// @validated by the request schema\nconst mismatched = userInput == 0;',
       options: [{ strictMode: true }],
       errors: [{ messageId: 'looseEqualityTypeCheck' }],
     },
   ],
+});
+
+/**
+ * Branch coverage for the structural predicates that replaced the name lists:
+ * `sameExpression`, `hasNullGuard` and `primitiveTypeOf`. Each case is chosen so
+ * that a DIFFERENT arm decides the verdict.
+ */
+describe('structural predicates', () => {
+  ruleTester.run('sameExpression and hasNullGuard arms', noImproperTypeValidation, {
+    valid: [
+      // Member chain, both sides identical — recursion through object AND property.
+      'if (req.body.profile !== null && typeof req.body.profile === "object") { go(); }',
+      // `this` receiver.
+      'class A { m() { if (this.payload != null && typeof this.payload === "object") { go(); } } }',
+      // Computed member with an identical literal key — the Literal arm.
+      'if (bag["k"] !== null && typeof bag["k"] === "object") { go(); }',
+      // Guard written with the nullish literal on the LEFT.
+      'if (null !== payload && typeof payload === "object") { go(); }',
+    ],
+    invalid: [
+      // Different node TYPES on the two sides: guard does not match the operand.
+      {
+        code: 'if (other !== null && typeof payload === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // Same type, different name.
+      {
+        code: 'if (other !== null && typeof payload.inner === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // Member chains that differ in `computed`.
+      {
+        code: 'if (bag["k"] !== null && typeof bag.k === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // Computed member chains with DIFFERENT literal keys.
+      {
+        code: 'if (bag["a"] !== null && typeof bag["b"] === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // A guard that is neither `!=` nor `!==`.
+      {
+        code: 'if (payload === undefined && typeof payload === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // Same node TYPE on both sides, but a kind `sameExpression` cannot compare:
+      // two calls may return different values, so identity is not claimed.
+      {
+        code: 'if (getPayload() !== null && typeof getPayload() === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // A guard that compares against something that is not nullish.
+      {
+        code: 'if (payload !== 0 && typeof payload === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // Not a BinaryExpression at all in the chain.
+      {
+        code: 'if (isReady && typeof payload === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // Comparing a non-`object` string: not this rule's shape, so `!==` falls through
+      // to the loose-equality arm (which does not apply) and nothing is reported.
+      {
+        code: 'if (typeof payload === "object") { go(); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+    ],
+  });
+
+  ruleTester.run('primitiveTypeOf arms', noImproperTypeValidation, {
+    valid: [
+      // Template literal vs string literal.
+      'if (`${a}b` == "x") { go(); }',
+      // `.length` vs numeric literal.
+      'if (list.length == 3) { go(); }',
+      // Explicit coercions.
+      'if (String(a) == "x") { go(); }',
+      'if (Number(a) == 1) { go(); }',
+      'if (parseInt(a, 10) == 1) { go(); }',
+      // A binding whose every write is the same primitive type.
+      'let mode = "a"; if (flag) { mode = "b"; } if (mode == "b") { go(); }',
+    ],
+    invalid: [
+      // A boolean literal is neither string nor number.
+      {
+        code: 'if (flag == true) { go(); }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+      // …including on the right of a provably-string left operand.
+      {
+        code: 'if ("a" == true) { go(); }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+      // A call to something else proves nothing.
+      {
+        code: 'if (compute(a) == 1) { go(); }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+      // A computed `.length`-looking read is not the language's `.length`.
+      {
+        code: 'if (list["length"] == 3) { go(); }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+      // Mixed writes: one string, one number.
+      {
+        code: 'let v = "a"; if (flag) { v = 1; } if (v == "a") { go(); }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+      // A binding with no writes at all (a parameter) proves nothing.
+      {
+        code: 'function f(v) { return v == 1; }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+      // A binding that is not declared in any scope.
+      {
+        code: 'if (undeclaredGlobal == 1) { go(); }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+      // Cyclic initializers must terminate and prove nothing.
+      {
+        code: 'var a = b; var b = a; if (a == 1) { go(); }',
+        errors: [{ messageId: 'looseEqualityTypeCheck' }],
+      },
+    ],
+  });
+
+  ruleTester.run('constructor.name arms', noImproperTypeValidation, {
+    valid: [
+      // Property is not `name`.
+      'const c = value.constructor.prototype;',
+      // Computed access.
+      'const n = value.constructor["name"];',
+      // Inner property is not `constructor`.
+      'if (value.proto.name === "Array") { go(); }',
+      // Inner is not a MemberExpression at all.
+      'if (constructor.name === "Array") { go(); }',
+      // Inner is a COMPUTED member.
+      'if (value["constructor"].name === "Array") { go(); }',
+      // Not compared at all — passed to a call, or read into a log label.
+      'logger.warn(value.constructor.name);',
+      'const kind = value.constructor.name;',
+    ],
+    invalid: [
+      {
+        code: 'if ("Array" === value.constructor.name) { go(); }',
+        errors: [{ messageId: 'unreliableConstructorCheck' }],
+      },
+    ],
+  });
 });

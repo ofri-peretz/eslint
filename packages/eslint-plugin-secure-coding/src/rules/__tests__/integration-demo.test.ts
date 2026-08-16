@@ -65,13 +65,42 @@ describe('Demo Gaps Reproduction', () => {
 
 
   describe('no-insecure-comparison', () => {
+    /**
+     * This block used to assert that
+     *
+     *   export function insecure_noInsecureComparison(provided: string, expected: string) {
+     *     if (provided === expected) { return true; }
+     *   }
+     *
+     * was a CWE-208 timing finding. Two plainly-typed string PARAMETERS compared with
+     * `===`; there is no secret anywhere in the program. The report came from a chain
+     * of three name matches: the function name matched
+     * `/security|auth|crypto|hash|token|secret|insecure|verify|validate/` — on the word
+     * "insecure", which is in the FIXTURE'S OWN NAME — and that promoted the generic
+     * identifiers `provided` and `expected` into the secret vocabulary. Rename the
+     * function to `compare_noInsecureComparison` and the finding disappears.
+     *
+     * A demo fixture named after the rule it is demonstrating is the worst possible
+     * shape for a heuristic that reads names, and this one passed because of it. The
+     * case is kept as VALID, plus the same comparison with real evidence of a secret
+     * alongside it, so the pair disagrees for a reason that is in the code.
+     */
     ruleTester.run('demo-repro', noInsecureComparison, {
-      valid: [],
+      valid: [
+        `
+            export function insecure_noInsecureComparison(provided: string, expected: string) {
+              if (provided === expected) {
+                return true;
+              }
+              return false;
+            }
+          `,
+      ],
       invalid: [
         {
           code: `
-            export function insecure_noInsecureComparison(provided: string, expected: string) {
-              if (provided === expected) {
+            export function insecure_noInsecureComparison(providedToken: string, expectedToken: string) {
+              if (providedToken === expectedToken) {
                 return true;
               }
               return false;
@@ -80,10 +109,10 @@ describe('Demo Gaps Reproduction', () => {
           errors: [{ 
             messageId: 'timingUnsafeComparison',
             suggestions: [{
-              messageId: 'useStrictEquality', // The rule reuses this ID for the timing safe fix? Yes, assuming I didn't change it in rule.
+              messageId: 'useStrictEquality',
               output: `
-            export function insecure_noInsecureComparison(provided: string, expected: string) {
-              if (crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected))) {
+            export function insecure_noInsecureComparison(providedToken: string, expectedToken: string) {
+              if (crypto.timingSafeEqual(Buffer.from(providedToken), Buffer.from(expectedToken))) {
                 return true;
               }
               return false;

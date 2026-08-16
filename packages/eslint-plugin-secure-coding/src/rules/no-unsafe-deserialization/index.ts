@@ -25,6 +25,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule,
+  resolveModuleBinding,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -56,6 +57,79 @@ type RuleOptions = [Options?];
  * deserializer.
  */
 const TIMER_FUNCTIONS = new Set(['setTimeout', 'setInterval']);
+
+/**
+ * Package → the exports of it that execute or revive arbitrary code.
+ *
+ * Resolved through ESLint's scope analysis, NOT through the spelling of the
+ * local binding. The name-based check this supplements asks whether the
+ * receiver identifier is literally called `yaml` / `js-yaml` / `node-serialize`,
+ * which is a test of how the author chose to name a variable:
+ *
+ *   import yaml   from 'js-yaml'; yaml.load(req.body.doc)     reported
+ *   import jsyaml from 'js-yaml'; jsyaml.load(req.body.doc)   SILENT
+ *   import { load } from 'js-yaml'; load(req.body.doc)        SILENT
+ *
+ * All three are the same sink. The second spelling is the UMD global the
+ * package itself ships; the third is the form js-yaml's own v4 README uses.
+ */
+const MODULE_SINKS: Readonly<Record<string, ReadonlySet<string>>> = {
+  // `safeLoad` binds the schema with no `!!js/function` tag — deliberately absent.
+  'js-yaml': new Set(['load', 'loadAll']),
+  'node-serialize': new Set(['unserialize']),
+  // funcster exists to turn JSON back into live functions.
+  funcster: new Set(['deserialize', 'deepDeserialize']),
+  v8: new Set(['deserialize']),
+};
+
+/**
+ * Packages whose parse entry point provably cannot execute code or instantiate
+ * a type the payload names.
+ *
+ * `yaml` (eemeli/yaml) is a pure YAML 1.2 parser with no function tag — it is
+ * NOT js-yaml, and the two are told apart only by resolving the import. Under
+ * the receiver-name check `const YAML = require('yaml'); YAML.parse(text)` was
+ * CWE-502 at CVSS 9.8 purely because the variable is spelled `YAML`.
+ *
+ * The argument is the one this file already makes for `JSON.parse`: a parser
+ * that cannot execute its input is the REMEDIATION, not the finding.
+ */
+/**
+ * Sinks with no safe input at all, so the provenance question does not arise.
+ *
+ * `node-serialize`'s `unserialize` and `funcster`'s deserializers exist to turn
+ * data back into executable functions — that is their advertised feature, not a
+ * misuse. There is no value you can pass them that is safe unless you already
+ * control it as code, in which case you would not be deserializing it.
+ *
+ * `js-yaml`'s `load` is deliberately NOT here: loading a repo-local file with it
+ * is ordinary and correct, so it stays gated on untrusted input.
+ */
+const ALWAYS_UNSAFE_MODULES: ReadonlySet<string> = new Set([
+  'node-serialize',
+  'funcster',
+]);
+
+/**
+ * js-yaml schemas that define no JS-instantiating tag. Pinning one of these
+ * makes `load` inert — it is what `safeLoad` did before v4 removed it.
+ * `DEFAULT_SCHEMA` is deliberately absent: it is safe in v4 and was not in v3,
+ * and the rule cannot see which major is installed.
+ */
+const SAFE_YAML_SCHEMAS: ReadonlySet<string> = new Set([
+  'JSON_SCHEMA',
+  'CORE_SCHEMA',
+  'FAILSAFE_SCHEMA',
+]);
+
+const NON_EXECUTING_PACKAGES: ReadonlySet<string> = new Set([
+  'yaml',
+  'bson',
+  'cbor',
+  'msgpackr',
+  '@msgpack/msgpack',
+  'protobufjs',
+]);
 
 /**
  * True when the expression can only evaluate to a string, i.e. the argument
@@ -207,8 +281,57 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     /**
      * Check if this is a dangerous deserialization function
      */
+    /**
+     * `yaml.load(text, { schema: yaml.JSON_SCHEMA })` — the loader constrained
+     * to a schema with no `!!js/function`, `!!js/regexp` or `!!js/undefined`
+     * tag.
+     *
+     * This is the remediation js-yaml's own v4 migration guide gives in place
+     * of v3's `safeLoad`, and reporting it tells the user to fix code that is
+     * already fixed. The schema is resolved back to the js-yaml export rather
+     * than matched on the spelling of the property value.
+     */
+    const pinsSafeYamlSchema = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => {
+      const optionsArg = node.arguments[1];
+      if (optionsArg?.type !== 'ObjectExpression') return false;
+      return optionsArg.properties.some((property) => {
+        if (property.type !== 'Property' || property.computed) return false;
+        if (property.key.type !== 'Identifier' || property.key.name !== 'schema') {
+          return false;
+        }
+        const schema = resolveModuleBinding(
+          property.value,
+          sourceCode.getScope(property.value),
+        );
+        return (
+          schema?.module === 'js-yaml' &&
+          SAFE_YAML_SCHEMAS.has(schema.path.at(-1) ?? '')
+        );
+      });
+    };
+
     const isDangerousDeserialization = (node: TSESTree.CallExpression | TSESTree.NewExpression): boolean => {
       const callee = node.callee;
+
+      // Module identity first, because it is EVIDENCE where the checks below
+      // are inference from a spelling. A resolved binding settles the question
+      // in both directions: `js-yaml`'s `load` is a sink however the import was
+      // named, and the `yaml` package's `parse` is not one however it was named.
+      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (binding) {
+        // `some` over the whole export path rather than only its last segment:
+        // an empty path (the module root, `import serialize from 'x'; x(…)`)
+        // then needs no separate undefined case, and `pkg.default.load` — the
+        // interop shape a CJS/ESM bridge produces — resolves the same as
+        // `pkg.load`.
+        const sinks = MODULE_SINKS[binding.module];
+        if (sinks && binding.path.some((segment) => sinks.has(segment))) {
+          return !pinsSafeYamlSchema(node);
+        }
+        if (NON_EXECUTING_PACKAGES.has(binding.module)) return false;
+      }
 
       // Check for dangerous function calls
       if (callee.type === 'Identifier' && dangerousFunctions.includes(callee.name)) {
@@ -323,6 +446,18 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           if (['readFile', 'readFileSync'].includes(callee.property.name)) {
             return true;
           }
+          // A method call carries its RECEIVER's provenance.
+          //
+          //   serialize.unserialize(Buffer.from(req.cookies.session, 'base64').toString())
+          //
+          // is the node-serialize RCE exactly as CVE-2017-5941 was written, and
+          // it was silent: the walker recursed into a call's ARGUMENTS but
+          // never into the object it was called on, so `.toString()` — and
+          // equally `.trim()`, `.replace()`, `.split()`, every string method a
+          // handler puts between the request and the sink — erased the taint.
+          if (isUntrustedInput(callee.object)) {
+            return true;
+          }
         }
         return inputNode.arguments.some(
           (arg) => arg.type !== 'SpreadElement' && isUntrustedInput(arg),
@@ -416,6 +551,21 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    /**
+     * A sink from {@link ALWAYS_UNSAFE_MODULES}, reached through a resolved
+     * import. These report without the untrusted-input gate — see that
+     * constant for why the provenance question does not arise for them.
+     */
+    const isAlwaysUnsafeSink = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => {
+      const binding = resolveModuleBinding(
+        node.callee,
+        sourceCode.getScope(node.callee),
+      );
+      return binding !== undefined && ALWAYS_UNSAFE_MODULES.has(binding.module);
+    };
+
     const checkCallExpression = (node: TSESTree.CallExpression | TSESTree.NewExpression) => {
       // 1. Check Function Constructor (NewExpression or CallExpression)
       if ((node.type === 'NewExpression' || node.type === 'CallExpression') &&
@@ -446,7 +596,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       // 2. Check CallExpressions (eval, unserialize, yaml, etc.)
       if (isDangerousDeserialization(node) && !isInsideDeserializerImplementation(node)) {
          const args: TSESTree.CallExpressionArgument[] = node.arguments;
-         const hasUntrustedInput = args.some((arg): boolean => isUntrustedInput(arg));
+         const hasUntrustedInput =
+           args.some((arg): boolean => isUntrustedInput(arg)) ||
+           isAlwaysUnsafeSink(node);
 
          if (hasUntrustedInput) {
             // Basic safety check
@@ -575,60 +727,26 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           validatedVariables.add(node.id.name);
         }
 
-        // Check for require/import of dangerous libraries
-        if (node.init.type === 'CallExpression' &&
-            node.init.callee.type === 'Identifier' &&
-            node.init.callee.name === 'require') {
-
-          const requireArg = node.init.arguments[0];
-          if (requireArg?.type === 'Literal' && typeof requireArg.value === 'string') {
-            const moduleName = requireArg.value;
-
-            if (['node-serialize', 'serialize-javascript', 'js-yaml', 'yaml'].includes(moduleName)) {
-              // Check if this variable is used unsafely later
-              if (node.id.type === 'Identifier') {
-                // Look ahead to see if this library is used dangerously
-                // This is a simplified check - in practice, we'd need more sophisticated analysis
-                  const variables = sourceCode.getDeclaredVariables(node);
-                  for (const variable of variables) {
-                    for (const reference of variable.references) {
-                      const refNode = reference.identifier;
-                      
-                      // Check if reference is part of a call to dangerous method
-                      // e.g. serialize.unserialize()
-                      if (refNode.parent && refNode.parent.type === 'MemberExpression' &&
-                          refNode.parent.object === refNode) {
-                        const memberExpr = refNode.parent;
-                        const propertyName = memberExpr.property.type === 'Identifier' ? memberExpr.property.name : '';
-                        
-                        if (['unserialize', 'deserialize', 'load', 'parse'].includes(propertyName)) {
-                          const callExpr = memberExpr.parent;
-                          if (callExpr && callExpr.type === 'CallExpression' && callExpr.callee === memberExpr) {
-                            
-                            // FALSE POSITIVE REDUCTION
-                            if (safetyChecker.isSafe(callExpr, context)) {
-                              continue;
-                            }
-
-                            context.report({
-                              node: callExpr,
-                              messageId: 'unsafeDeserialization',
-                              data: {
-                                filePath: filename,
-                                line: String(callExpr.loc?.start.line ?? 0),
-                                severity: 'CRITICAL',
-                                safeAlternative: 'Avoid using this library or use safe alternatives',
-                              },
-                            });
-                          }
-                        }
-                      }
-                    }
-                }
-              }
-            }
-          }
-        }
+        // A second reporting path for `require`d libraries used to live here.
+        //
+        // It walked the declared variable's references and reported any
+        // `.unserialize` / `.deserialize` / `.load` / `.parse` call on it,
+        // WITHOUT asking whether the argument was untrusted, and at CRITICAL.
+        // Two defects followed, both reproduced on the corpus:
+        //
+        //   const serialize = require('node-serialize');
+        //   serialize.unserialize(req.cookies.session);   // reported TWICE,
+        //   // once here and once from checkCallExpression, at the same range —
+        //   // one defect, two findings, two suppression comments to write.
+        //
+        //   const YAML = require('yaml');
+        //   const cfg = YAML.parse(readFileSync('./defaults.yaml', 'utf8'));
+        //   // reported at CRITICAL with no untrusted input anywhere: a pure
+        //   // YAML 1.2 parser, on a file that ships inside the bundle.
+        //
+        // Everything it caught that was real is caught by `checkCallExpression`
+        // via MODULE_SINKS, which resolves the same `require` through scope
+        // analysis and additionally requires untrusted input to reach the sink.
       }
     };
   },

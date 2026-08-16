@@ -73,23 +73,33 @@ const ruleTester = new RuleTester({
 describe('prevent-double-release — coverage gaps (Layer 1)', () => {
   ruleTester.run('guard-name variants', preventDoubleRelease, {
     valid: pg([
+      // These two fixtures used to omit the flag ASSIGNMENT — `if
+      // (!state.released) { client.release(); }` twice — and were asserted
+      // valid. `state.released` is never written, so the test is falsy both
+      // times, both branches run, and the client really is released twice.
+      // They passed only because the flag was SPELLED `released` / `done` /
+      // `closed`, which was this rule's registered name-inference debt.
+      //
+      // A guard guards when the guarded block SETS the flag it tested. The
+      // spelling is now irrelevant, so these use a neutral name.
       {
-        name: 'both releases guarded by member flags: .released then .done',
+        name: 'both releases behind a flag the guarded block sets',
         code: `
           function f(state) {
             const client = getClient();
-            if (!state.released) { client.release(); }
-            if (!state.done) { client.release(); }
+            if (!state.settled) { state.settled = true; client.release(); }
+            if (!state.settled) { state.settled = true; client.release(); }
           }
         `,
       },
       {
-        name: 'both releases guarded by member flag .closed',
+        name: 'a bare local flag works the same way',
         code: `
-          function f(state) {
+          function f() {
             const client = getClient();
-            if (!state.closed) { client.release(); }
-            if (!state.closed) { client.release(); }
+            let settled = false;
+            if (!settled) { settled = true; client.release(); }
+            if (!settled) { settled = true; client.release(); }
           }
         `,
       },

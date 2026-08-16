@@ -1,0 +1,24 @@
+{
+  "rule": "secure-coding/no-privilege-escalation",
+  "fixtures": 22,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-privilege-escalation",
+      "tp": 8,
+      "fp": 1,
+      "fn": 3,
+      "precision": 0.8888888888888888,
+      "recall": 0.7272727272727273,
+      "f1": 0.7999999999999999,
+      "crashes": [],
+      "missed": [
+        "vulnerable/08-membership-tier.js",
+        "vulnerable/09-fail-open-guard.js",
+        "vulnerable/11-mass-assignment.js"
+      ],
+      "falsePositives": [
+        "safe/09-lookup-table.js"
+      ]
+    }
+  ]
+}

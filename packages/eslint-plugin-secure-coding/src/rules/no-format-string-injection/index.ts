@@ -21,7 +21,12 @@
  * - Trusted formatting libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isModuleBinding,
+  isStaticExpression,
+  unwrapTypeSyntax,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 // Temporarily remove complex imports to fix type issues
 // import {
@@ -205,25 +210,78 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if a variable contains user input
+     * Is this identifier one the project declared as user input?
+     *
+     * WHOLE NAMES, never substrings. This was
+     * `lowerName.includes(input.toLowerCase())` over the `userInputVariables`
+     * list, and the list contains `data`, `params`, `request` and `input` — so
+     * the following were measured being reported as attacker-controlled format
+     * strings, in one probe each:
+     *
+     *   console.error(paymentData, orderId)      // `data` ⊂ paymentData
+     *   console.info(validationParams, reqId)    // `params` ⊂ validationParams
+     *   util.format(metadata, id)                // `data` ⊂ metadata
+     *
+     * None of the three is user input, and none of the three is even a format
+     * string. Exact membership against a declared list is a contract the option
+     * can honour ("variable names treated as user-controlled input"); a
+     * substring of one is a coincidence of spelling.
      */
+    const USER_INPUT_ALIASES: ReadonlySet<string> = new Set([
+      'user',
+      'userinput',
+      'userdata',
+      'userparam',
+      'userparams',
+      'usermessage',
+      'usertemplate',
+      'userformat',
+      'uservar',
+    ]);
+
+    const declaredUserInput: ReadonlySet<string> = new Set(
+      userInputVariables.map((name) => name.toLowerCase()),
+    );
+
     const isUserInput = (varName: string): boolean => {
       const lowerName = varName.toLowerCase();
-      return userInputVariables.some(input => lowerName.includes(input.toLowerCase())) ||
-             lowerName === 'user' ||
-             lowerName.includes('userinput') ||
-             lowerName.includes('userdata') ||
-             lowerName.includes('userparam') ||
-             lowerName.includes('usermessage') ||
-             lowerName.includes('usertemplate') ||
-             lowerName.includes('userformat') ||
-             lowerName.includes('uservar');
+      return declaredUserInput.has(lowerName) || USER_INPUT_ALIASES.has(lowerName);
     };
+
+    /**
+     * The same question for a dotted path, asked one SEGMENT at a time.
+     *
+     * `request.body.layout` is user input because a whole segment of it is
+     * `request`; `paymentData.total` is not, because no segment of it is any
+     * declared name. Comparing the joined path as one string is what let
+     * `metadata.id` through.
+     */
+    const isUserInputPath = (path: string): boolean =>
+      path.split('.').some((segment) => isUserInput(segment));
 
     /**
      * Check if a node represents user input (including member expressions)
      */
-    const isUserInputNode = (node: TSESTree.Node): boolean => {
+    const isUserInputNode = (rawNode: TSESTree.Node): boolean => {
+      // `req.query.pattern as string` is `req.query.pattern`. The cast is
+      // erased before anything runs, and Express + TypeScript forces one at
+      // nearly every query-parameter read (`string | string[] | ParsedQs`), so
+      // leaving the wrapper on meant the typed half of the ecosystem went
+      // unreported while the untyped half did not.
+      const node = unwrapTypeSyntax(rawNode);
+
+      // `flag ? DEFAULT_FORMAT : req.query.fmt` and `req.query.fmt ?? DEFAULT`
+      // both put the request value in the format position on at least one path.
+      // A finding that a reviewer can defeat by adding a fallback is not a
+      // finding, and both spellings are what a "make it configurable" commit
+      // produces.
+      if (node.type === 'ConditionalExpression') {
+        return isUserInputNode(node.consequent) || isUserInputNode(node.alternate);
+      }
+      if (node.type === 'LogicalExpression') {
+        return isUserInputNode(node.left) || isUserInputNode(node.right);
+      }
+
       if (node.type === 'Identifier') {
         return isUserInput(node.name) || dangerousVariables.has(node.name);
       }
@@ -245,7 +303,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
         // Check other user input patterns
         const fullName = getMemberExpressionName(node);
-        return isUserInput(fullName);
+        return isUserInputPath(fullName);
       }
 
       return false;
@@ -289,7 +347,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
              ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name);
     };
 
-    // oxlint-disable-next-line consistent-function-scoping
     const isFormatFunctionCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
@@ -299,6 +356,19 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           callee.object.name === 'util' &&
           callee.property.type === 'Identifier' &&
           callee.property.name === 'format') {
+        return true;
+      }
+
+      // `const { format } = require('node:util')` / `import { format } from 'util'`
+      // — the idiomatic import, and the shape that made the sink disappear:
+      // matching the spelling `util.format` meant the rule saw a call to
+      // something named `format` and had no opinion about it. Resolved through
+      // the binding instead of the receiver's name, so `const { format: fmt }`
+      // and `node:util` both count and a local helper called `format` does not.
+      if (
+        callee.type === 'Identifier' &&
+        isModuleBinding(callee, context.sourceCode.getScope(callee), 'util', ['format'])
+      ) {
         return true;
       }
 
@@ -743,6 +813,40 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
               },
             });
           }
+        }
+      },
+
+      /**
+       * `const { fmt } = req.query` / `const [first] = req.body.patterns`.
+       *
+       * The declarator visitor below returns immediately unless the id is a
+       * plain Identifier, so destructuring — the idiomatic way an Express
+       * handler reads its query and body — carried the taint nowhere and
+       * `util.format(fmt, token)` two lines later was silent. Every name the
+       * pattern binds comes from the same tainted initialiser, and the scope
+       * manager already knows which names those are.
+       */
+      'VariableDeclarator[id.type!="Identifier"]': function (
+        node: TSESTree.VariableDeclarator,
+      ) {
+        if (!node.init || !isUserInputNode(node.init)) return;
+        for (const variable of context.sourceCode.getDeclaredVariables(node)) {
+          dangerousVariables.add(variable.name);
+        }
+      },
+
+      /**
+       * `let fmt = 'user=%s'; fmt = req.query.fmt;`
+       *
+       * A re-assignment is not a declaration, so nothing tracked it: the
+       * binding was judged on the literal it was declared with and stayed
+       * trusted for the rest of the file. A `let` whose writes are all literals
+       * is still untouched — only a write of user input marks it.
+       */
+      AssignmentExpression: function (node: TSESTree.AssignmentExpression) {
+        if (node.left.type !== 'Identifier') return;
+        if (isUserInputNode(node.right)) {
+          dangerousVariables.add(node.left.name);
         }
       },
 

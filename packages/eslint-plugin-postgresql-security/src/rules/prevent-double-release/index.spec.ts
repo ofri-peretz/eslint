@@ -207,12 +207,21 @@ ruleTester.run('prevent-double-release', preventDoubleRelease, {
     },
     
     {
-      name: 'Guarded with !client.released member',
+      // A guard only guards if the guarded block SETS the flag it tested.
+      //
+      // This fixture used to omit the assignment entirely — `if
+      // (!client.released) { client.release(); }` twice — and was asserted
+      // VALID. `client.released` is never written (a pg PoolClient has no such
+      // property), so the test is undefined both times, both branches run, and
+      // the client really is released twice. The old rule accepted it because
+      // the flag was SPELLED `released`. It is now an invalid case below.
+      name: 'Guarded with a flag the guarded block sets',
       code: `
         async function guardedMember() {
           const client = await pool.connect();
-          if (!client.released) { client.release(); }
-          if (!client.released) { client.release(); }
+          const state = { released: false };
+          if (!state.released) { state.released = true; client.release(); }
+          if (!state.released) { state.released = true; client.release(); }
         }
       `,
     },
@@ -281,9 +290,39 @@ ruleTester.run('prevent-double-release', preventDoubleRelease, {
     // EDGE CASES - NOT DETECTED (DOCUMENTED FN)
     // ============================================
     
-    // These are known limitations documented in the rule
+    // The two "documented FN" loop fixtures that used to sit here have moved
+    // to `invalid`. They were textbook double releases — a release inside a
+    // loop plus another after it — asserted as correct behaviour because the
+    // rule could not see them. Documenting a defect is not mitigating it.
+    //
+    // The checkout INSIDE the loop is the correct shape, and stays valid:
     {
-      name: 'Loop pattern - requires CFG (documented FN)',
+      name: 'Checkout and release both inside the loop',
+      code: `
+        async function perIteration(ids) {
+          for (const id of ids) {
+            const client = await pool.connect();
+            try {
+              await client.query('DELETE FROM sessions WHERE id = $1', [id]);
+            } finally {
+              client.release();
+            }
+          }
+        }
+      `,
+    },
+  ]),
+
+  invalid: pg([
+    // ============================================
+    // MOVED FROM `valid` — defects that were asserted as correct behaviour
+    // ============================================
+
+    // Was: "Loop pattern - requires CFG (documented FN)". One checkout, a
+    // release inside the loop AND another after it. Every iteration past the
+    // first releases a client this scope no longer owns.
+    {
+      name: 'Release inside a loop, with the checkout outside it',
       code: `
         async function loopRelease() {
           const client = await pool.connect();
@@ -293,10 +332,12 @@ ruleTester.run('prevent-double-release', preventDoubleRelease, {
           client.release();
         }
       `,
+      errors: [{ messageId: 'doubleRelease' }],
     },
-    
+
+    // Was: "While loop with release - requires CFG (documented FN)".
     {
-      name: 'While loop with release - requires CFG (documented FN)',
+      name: 'Release inside a while loop, with the checkout outside it',
       code: `
         async function whileRelease() {
           const client = await pool.connect();
@@ -307,10 +348,24 @@ ruleTester.run('prevent-double-release', preventDoubleRelease, {
           client.release();
         }
       `,
+      errors: [{ messageId: 'doubleRelease' }],
     },
-  ]),
 
-  invalid: pg([
+    // Was: "Guarded with !client.released member". The flag is never SET, so
+    // the test is undefined both times and both branches run. A guard that
+    // guards nothing was accepted because the flag was spelled `released`.
+    {
+      name: 'A guard whose flag is never assigned guards nothing',
+      code: `
+        async function fakeGuard() {
+          const client = await pool.connect();
+          if (!client.released) { client.release(); }
+          if (!client.released) { client.release(); }
+        }
+      `,
+      errors: [{ messageId: 'doubleRelease' }],
+    },
+
     // ============================================
     // BASIC DOUBLE RELEASE
     // ============================================

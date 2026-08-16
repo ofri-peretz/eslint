@@ -91,10 +91,38 @@ describe('no-unsafe-deserialization', () => {
 
   describe('Invalid Code - Unsafe YAML Parsing', () => {
     ruleTester.run('invalid - unsafe YAML parsing', noUnsafeDeserialization, {
-      valid: [],
-      invalid: [
+      valid: [
+        // REGRESSION LOCK — the `yaml` package is not js-yaml.
+        //
+        // This exact line was asserted INVALID here, which encoded a false
+        // positive: eemeli/yaml is a pure YAML 1.2 parser with no function tag,
+        // so `parse` cannot execute code or instantiate a type the payload
+        // names. It was reported only because the local binding is spelled
+        // `yaml`. Resolving the import tells the two packages apart.
         {
           code: 'const yaml = require("yaml"); const obj = yaml.parse(userInput);',
+        },
+        {
+          code: 'import YAML from "yaml"; export const cfg = YAML.parse(req.body.raw);',
+        },
+      ],
+      invalid: [
+        // The sink that IS dangerous, on the same method-name shape.
+        {
+          code: 'const yaml = require("js-yaml"); const obj = yaml.load(req.body.doc);',
+          errors: [{ messageId: 'unsafeYamlParsing' }],
+        },
+        // REGRESSION LOCK — the same js-yaml sink under a different local name.
+        // `jsyaml` is the UMD global the package itself ships. Detection that
+        // required the binding to be spelled `yaml` was reading a variable name,
+        // not an interface, and this line was silent.
+        {
+          code: 'import jsyaml from "js-yaml"; export const obj = jsyaml.load(req.body.doc);',
+          errors: [{ messageId: 'unsafeYamlParsing' }],
+        },
+        // REGRESSION LOCK — the named-import form js-yaml's own v4 README uses.
+        {
+          code: 'import { load } from "js-yaml"; export const obj = load(req.body.doc);',
           errors: [{ messageId: 'unsafeDeserialization' }],
         },
       ],
@@ -315,10 +343,15 @@ describe('no-unsafe-deserialization', () => {
               res.json(obj);
             });
           `,
+          // ONE call, ONE finding.
+          //
+          // This asserted TWO `unsafeDeserialization` errors at the same range:
+          // the rule had a second reporting path on `VariableDeclarator` that
+          // walked a `require`d binding's references and reported the same call
+          // `checkCallExpression` had already reported. Two findings for one
+          // defect means two suppression comments, and the duplicate was
+          // written into this suite as the expected result.
           errors: [
-            {
-              messageId: 'unsafeDeserialization',
-            },
             {
               messageId: 'unsafeDeserialization',
             },
@@ -334,10 +367,10 @@ describe('no-unsafe-deserialization', () => {
               return yaml.load(yamlString);
             }
           `,
+          // ONE call, ONE finding — same duplicate-report defect as above, and
+          // here the two findings even disagreed about which messageId (and so
+          // which remediation) applied to the same line.
           errors: [
-            {
-              messageId: 'unsafeDeserialization',
-            },
             {
               messageId: 'unsafeYamlParsing',
             },
@@ -498,62 +531,14 @@ describe('no-unsafe-deserialization', () => {
     });
 
 
-    it('VariableDeclarator reference tracking falls back to line 0 when callExpr has no loc (id 90)', () => {
-      // Build a fake AST: const s = require('node-serialize'); s.unserialize(data)
-      const fakeCallExpr: Record<string, unknown> = { type: 'CallExpression' };
-      const fakeMemberExpr: Record<string, unknown> = {
-        type: 'MemberExpression',
-        property: { type: 'Identifier', name: 'unserialize' },
-        parent: fakeCallExpr,
-      };
-      const fakeRefId: Record<string, unknown> = {
-        type: 'Identifier',
-        name: 's',
-        parent: fakeMemberExpr,
-      };
-      fakeMemberExpr.object = fakeRefId;
-      fakeCallExpr.callee = fakeMemberExpr;
-
-      const capturedReports: Record<string, unknown>[] = [];
-      const sourceCode = {
-        text: '',
-        getText: () => 's.unserialize(data)',
-        getScope: () => ({ variables: [], references: [], childScopes: [] }),
-        getAncestors: () => [],
-        getCommentsBefore: () => [],
-        getDeclaredVariables: () => [{ references: [{ identifier: fakeRefId }] }],
-      };
-      const mockContext = {
-        id: 'mock-rule',
-        filename: 'mock.ts',
-        physicalFilename: 'mock.ts',
-        cwd: '/',
-        options: noUnsafeDeserialization.defaultOptions ?? [],
-        settings: {},
-        parserOptions: {},
-        languageOptions: {},
-        sourceCode,
-        getFilename: () => 'mock.ts',
-        getPhysicalFilename: () => 'mock.ts',
-        getCwd: () => '/',
-        getSourceCode: () => sourceCode,
-        getScope: () => ({ variables: [], references: [], childScopes: [] }),
-        getAncestors: () => [],
-        report: (d: Record<string, unknown>) => capturedReports.push(d),
-      };
-      const listeners = noUnsafeDeserialization.create(mockContext as never);
-      (listeners.VariableDeclarator as (n: unknown) => void)({
-        type: 'VariableDeclarator',
-        id: { type: 'Identifier', name: 's' },
-        init: {
-          type: 'CallExpression',
-          callee: { type: 'Identifier', name: 'require' },
-          arguments: [{ type: 'Literal', value: 'node-serialize' }],
-        },
-      });
-      expect(capturedReports).toHaveLength(1);
-      expect((capturedReports[0] as { data?: { line?: string } }).data?.line).toBe('0');
-    });
+    // REMOVED — `VariableDeclarator reference tracking falls back to line 0
+    // (id 90)`.
+    //
+    // It exercised a SECOND reporting path that walked a `require`d binding's
+    // references and reported `s.unserialize(...)` a second time, at the same
+    // range `checkCallExpression` already reported, and without asking whether
+    // the argument was untrusted. That path is deleted; see the rule source for
+    // the two defects it caused. Nothing is left for this mock to drive.
   });
 });
 
@@ -754,4 +739,76 @@ describe('no-unsafe-deserialization — option differentials', () => {
       },
     ],
   });
+});
+
+/**
+ * Regression locks — defects proved by
+ * `benchmarks/rule-corpus/secure-coding__no-unsafe-deserialization`.
+ */
+ruleTester.run('lock - corpus-proved defects', noUnsafeDeserialization, {
+  valid: [
+    // js-yaml's loader pinned to a schema with no JS tag. This is the
+    // remediation js-yaml's own v4 migration guide gives in place of
+    // `safeLoad`, and it was reported as the vulnerability it fixes.
+    {
+      code: 'const yaml = require("js-yaml"); exports.p = (req) => yaml.load(req.body.manifest, { schema: yaml.JSON_SCHEMA });',
+    },
+    {
+      code: 'import { load, CORE_SCHEMA } from "js-yaml"; export const p = (req) => load(req.body.manifest, { schema: CORE_SCHEMA });',
+    },
+    // Branch coverage for `pinsSafeYamlSchema`: a spread and a computed key in
+    // the options object name no schema, so the loader is still a sink — but
+    // with a static payload there is nothing untrusted to report.
+    {
+      code: 'import { load } from "js-yaml"; const opts = {}; export const p = () => load("a: 1", { ...opts, [key]: 1 });',
+    },
+    // …and an options object whose keys name no schema at all.
+    {
+      code: 'import { load } from "js-yaml"; export const p = () => load("a: 1", { json: true });',
+    },
+    // A module ROOT called directly — the binding resolves with an EMPTY export
+    // path, which is a different shape from `pkg.method(...)`. Serialising is
+    // not deserialising, so nothing is reported either way.
+    {
+      code: 'import serialize from "serialize-javascript"; export const html = (state) => serialize(state, { isJSON: true });',
+    },
+    // …and the same empty-path shape in the schema position.
+    {
+      code: 'import yaml, { load } from "js-yaml"; export const p = () => load("a: 1", { schema: yaml });',
+    },
+    // Binary codecs whose method is literally called `deserialize`. BSON and
+    // msgpack decode into plain values against a fixed wire format; neither
+    // instantiates a type the payload names.
+    {
+      code: 'import { deserialize } from "bson"; export const read = (req) => deserialize(req.body.document);',
+    },
+    // The WRITE half of the same libraries creates no deserialization surface.
+    {
+      code: 'import v8 from "node:v8"; export const snap = (job) => v8.serialize(job).toString("base64");',
+    },
+  ],
+  invalid: [
+    // Taint through a method call's RECEIVER. This is CVE-2017-5941 written the
+    // way it is actually written, and it was silent: the walker recursed into a
+    // call's ARGUMENTS but never into the object it was called on, so
+    // `.toString()` erased the provenance.
+    {
+      code: 'const serialize = require("node-serialize"); exports.h = (req) => serialize.unserialize(Buffer.from(req.cookies.session, "base64").toString());',
+      errors: [{ messageId: 'unsafeDeserialization' }],
+    },
+    // funcster exists to turn JSON back into live functions.
+    {
+      code: 'import funcster from "funcster"; export const h = (req) => funcster.deepDeserialize(req.body.hooks);',
+      errors: [{ messageId: 'unsafeDeserialization' }],
+    },
+    // The js-yaml sink through a namespace import and two string methods.
+    {
+      // `unsafeDeserialization`, not `unsafeYamlParsing`: the messageId is
+      // chosen by whether the PRINTED callee text contains `yaml`, and this one
+      // is spelled `jsYaml`. The finding is correct; only the remediation text
+      // is generic. Recorded here rather than papered over.
+      code: 'import * as jsYaml from "js-yaml"; export const ingest = (req) => jsYaml.load(String(req.body.document).trim());',
+      errors: [{ messageId: 'unsafeDeserialization' }],
+    },
+  ],
 });
