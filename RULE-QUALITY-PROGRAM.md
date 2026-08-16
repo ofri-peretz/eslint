@@ -27,7 +27,7 @@
 
 | # | Root cause | Blast radius | Status |
 |---|---|---|---|
-| R1 | Taint walkers have no `TSAsExpression` arm. `req.query.q as string` is REQUIRED in TS Express (the type is `string \| string[] \| ParsedQs`), so these rules never fire in TS codebases. | no-ssrf, no-timing-unsafe-compare, no-sql-injection, no-template-injection, no-unsafe-deserialization, no-unsafe-regex-construction, no-unchecked-loop-condition | TODO |
+| R1 ✅ | **FIXED.** Taint walkers have no `TSAsExpression` arm. `req.query.q as string` is REQUIRED in TS Express (the type is `string \| string[] \| ParsedQs`), so these rules never fire in TS codebases. | no-ssrf, no-timing-unsafe-compare, no-sql-injection, no-template-injection, no-unsafe-deserialization, no-unsafe-regex-construction, no-unchecked-loop-condition | TODO |
 | R2 | devkit `isUserInputExpression` = `getText(expr).includes(pattern)` over `['req','request','body','query','params','input','data']`. Both banned patterns at once, in a SHARED helper. `requiredBytes` contains `req`; `metadataLength` contains `data`. | every caller of the devkit helper | TODO |
 | R3 | Substring vocabulary matching instead of whole-word. | 7 rules (helper built, not yet wired) | PARTIAL |
 | R4 | Crypto rules are literal-only; one `const ALGO = 'md5'` defeats them. | no-weak-hash-algorithm, no-static-iv, no-weak-cipher-algorithm, no-ecb-mode, no-insecure-key-derivation, require-aead-tag-verification | TODO |
@@ -41,9 +41,9 @@ Priority = ships in `recommended` at `error` (reaches every consumer).
 
 | rule | plugin | defect | status |
 |---|---|---|---|
-| no-shell-injection | node-security | FP CVSS 9.8 on `db.exec()` (better-sqlite3). No import check at all; `schema: []` so nothing suppresses it. | TODO |
-| detect-non-literal-fs-filename | node-security | FN: misses every Express path traversal. `DEFAULT_TAINT_ROOTS = ['process']` while docs claim req/request/ctx/event. | TODO |
-| no-client-side-auth-logic | browser-security | FP: `role` inside `casserole`. | TODO |
+| no-shell-injection | node-security | FP CVSS 9.8 on `db.exec()`. | ✅ DONE — gated on isModuleBinding; 12 fixtures made realistic |
+| detect-non-literal-fs-filename | node-security | NOT an FN — the partition works (`no-arbitrary-file-access` catches it, one report). The schema DESCRIPTION lied about its default. | ✅ DONE — description corrected, `default: ['process']` declared |
+| no-client-side-auth-logic | browser-security | FP: `role` inside `casserole`. | ✅ DONE — whole-word + configurable vocabulary |
 | no-xpath-injection | secure-coding | FP on CONSTANT xpath (`//`, `text()` flagged). | TODO |
 | no-template-injection | secure-coding | FP on `Handlebars.compile(fs.readFileSync('./tpl.hbs'))`. FN on one hop + casts. | TODO |
 | no-xxe-injection | secure-coding | FP: any `new DOMParser()`. FN: `parseXml` (libxmljs2's real API) not in the method list. | TODO |
@@ -82,6 +82,18 @@ DEFECTS: 92 no-corpus-fixture · 46 inert-suggestion · 45 unasserted-message ·
 SMELLS: 48 duplicate-coverage · 40 unconfigurable-vocabulary · 17 textual-matching ·
 16 nominal-inference-report · 9 dynamic-regexp · 4 unguarded-recursion ·
 3 whole-program-text · 3 nominal-inference-suppress
+
+## Landed tonight
+
+1. `unwrapTypeSyntax` (R1) — 6 rules + shared provenance.ts, 7 regression locks
+2. `compileUserPattern` — 5 ReDoS hangs (54.9s → 1.4s) and 5 crash sites
+3. `no-eval` — was inverted; `deferDynamicPayloads` option, default self-sufficient
+4. `no-client-side-auth-logic` — casserole FP; vocabulary now configurable
+5. `no-shell-injection` — every `.exec()` in the ecosystem; now evidence-gated
+6. `detect-non-literal-fs-filename` — schema description corrected
+7. The ratchet gate caught 2 option-contract regressions I introduced myself
+
+Recall gate re-run after each: **69 TP / 0 FP / 0 FN, unchanged throughout.**
 
 ## Remaining scope
 
