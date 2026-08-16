@@ -43,8 +43,14 @@ type MessageIds =
  * reads as a guarantee.
  */
 export interface Options extends SecurityRuleOptions {
-  /** Recovery-related keywords */
-  recoveryKeywords?: string[];
+  /**
+   * `recoveryKeywords` lived here too, defaulting to
+   * `['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken']`.
+   * `create()` never destructured it: `isRecoveryRelated` declares its own
+   * local `const recoveryKeywords = ['reset', 'recover', 'forgot', 'restore']`
+   * which shadows any setting, and that local is not even the same list. A
+   * consumer tuning the option was editing a value nothing read.
+   */
 
   /** Secure token generation functions */
   secureTokenFunctions?: string[];
@@ -126,11 +132,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
-          recoveryKeywords: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken'], description: 'Identifier keywords that mark password-recovery code'
-          },
           secureTokenFunctions: {
             type: 'array',
             items: { type: 'string' },
@@ -145,7 +146,14 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
-            default: [],
+            // The destructuring in create() is the truth and it defaults to
+            // `['secure-recovery', 'rate-limited']`, not `[]`. Recorded here
+            // rather than "corrected" to `[]`: changing the schema default
+            // does not change behaviour (ESLint's applyDefault seeds from
+            // `defaultOptions`, and the destructuring wins when the key is
+            // absent), but changing the destructuring WOULD — it would
+            // withdraw two annotations this rule has always honoured.
+            default: ['secure-recovery', 'rate-limited'],
             description: 'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
@@ -160,10 +168,9 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      recoveryKeywords: ['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken'],
       secureTokenFunctions: ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'],
       trustedSanitizers: [],
-      trustedAnnotations: [],
+      trustedAnnotations: ['secure-recovery', 'rate-limited'],
       strictMode: false,
     },
   ],
@@ -200,6 +207,10 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       
       // Require BOTH a password keyword AND a recovery action keyword
       const passwordKeywords = ['password', 'pwd'];
+      // Hard-coded, and deliberately narrower than the vocabulary the removed
+      // `recoveryKeywords` option advertised. Both a password word and a
+      // recovery ACTION word must be present, which is what keeps this off
+      // every function that merely mentions a password.
       const recoveryKeywords = ['reset', 'recover', 'forgot', 'restore'];
       
       const hasPasswordKeyword = passwordKeywords.some(keyword => lowerText.includes(keyword));

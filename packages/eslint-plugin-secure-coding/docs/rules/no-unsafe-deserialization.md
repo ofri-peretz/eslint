@@ -124,7 +124,6 @@ const obj = safeDeserialize(userInput);
   rules: {
     'secure-coding/no-unsafe-deserialization': ['error', {
       dangerousFunctions: ['eval', 'Function', 'serialize.unserialize'],
-      safeLibraries: ['safe-serialize', 'json5'],
       validationFunctions: ['isValidJson', 'validateInput']
     }]
   }
@@ -136,7 +135,6 @@ const obj = safeDeserialize(userInput);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `dangerousFunctions` | `string[]` | `["eval","Function","setTimeout","setInterval","unserialize","deserialize","parseUnsafe"]` | Functions that execute or deserialize untrusted input |
-| `safeLibraries` | `string[]` | `["JSON","safe-json-parse","js-yaml.safeLoad","protobuf","msgpack"]` | Parsers that do not execute their input |
 | `validationFunctions` | `string[]` | `["validateInput","sanitizeData","checkSchema","validateSchema"]` | Function names that count as input validation |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe deserializers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |

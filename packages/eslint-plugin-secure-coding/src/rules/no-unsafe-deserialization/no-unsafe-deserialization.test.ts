@@ -664,3 +664,94 @@ ruleTester.run('no-unsafe-deserialization-ts-cast-taint', noUnsafeDeserializatio
     },
   ],
 });
+
+/**
+ * Schema options that nothing else in this file sets.
+ *
+ * `trustedSanitizers`, `trustedAnnotations` and `strictMode` all shipped with
+ * their branches never executed by a test. Each is covered below by a PAIR over
+ * the SAME source text — one entry that sets the option, one that does not —
+ * whose verdicts disagree. Setting an option and asserting the default answer
+ * would execute the line while proving nothing: the branch could be deleted and
+ * this suite would stay green.
+ *
+ * `safeLibraries` is deliberately absent. It is declared in the schema, the
+ * Options interface and defaultOptions, but `create()` never destructures or
+ * reads it, so no value of it can change any verdict. Probing the same snippet
+ * with `safeLibraries: []`, with the default, and with a list naming the exact
+ * sink (`['deserialize','yaml','yaml.load']`) produces byte-identical output.
+ * Writing a test for it would be a same-result test by construction.
+ */
+describe('no-unsafe-deserialization — option differentials', () => {
+  // `deserialize` is on the default dangerousFunctions list, so this reports out
+  // of the box. It is also the exact shape trustedSanitizers documents itself
+  // for: "additional function names to consider as safe deserializers" — a
+  // project whose own `deserialize` validates against a schema first.
+  const CUSTOM_DESERIALIZER = 'deserialize(req.body.payload);';
+
+  ruleTester.run('option trustedSanitizers', noUnsafeDeserialization, {
+    valid: [
+      // The report site hands safetyChecker.isSafe the sink CALL, and a call
+      // whose callee is a trusted name reads as sanitized. Membership is exact
+      // (Set.has), so only this explicit entry can match.
+      {
+        code: CUSTOM_DESERIALIZER,
+        options: [{ trustedSanitizers: ['deserialize'] }],
+      },
+    ],
+    invalid: [
+      // Identical source, default (empty) trustedSanitizers.
+      {
+        code: CUSTOM_DESERIALIZER,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+    ],
+  });
+
+  // `@appsec-reviewed` is not a substring of any built-in SAFE_ANNOTATIONS
+  // entry — not `@safe`, `@validated`, `@verified` or any sibling — so the
+  // default list cannot silence this and only the custom entry can. The
+  // annotation walk starts at the sink node and climbs to the enclosing
+  // function, which is why a leading line comment is enough.
+  const ANNOTATED_EVAL = `
+    // @appsec-reviewed
+    eval(req.body.code);
+  `;
+
+  ruleTester.run('option trustedAnnotations', noUnsafeDeserialization, {
+    valid: [
+      {
+        code: ANNOTATED_EVAL,
+        options: [{ trustedAnnotations: ['@appsec-reviewed'] }],
+      },
+    ],
+    invalid: [
+      // Same source with the default (empty) annotation list: the comment is
+      // just a comment and eval on request data reports.
+      {
+        code: ANNOTATED_EVAL,
+        errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+      },
+    ],
+  });
+
+  ruleTester.run('option strictMode', noUnsafeDeserialization, {
+    valid: [
+      {
+        code: ANNOTATED_EVAL,
+        options: [{ trustedAnnotations: ['@appsec-reviewed'] }],
+      },
+    ],
+    invalid: [
+      // strictMode forces safetyChecker.isSafe to false unconditionally, so the
+      // annotation that silenced the valid twin stops being honoured. Both eval
+      // report sites here are guarded only by isSafe — nothing calls
+      // hasSafeAnnotation directly — so nothing else can account for the flip.
+      {
+        code: ANNOTATED_EVAL,
+        options: [{ trustedAnnotations: ['@appsec-reviewed'], strictMode: true }],
+        errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+      },
+    ],
+  });
+});

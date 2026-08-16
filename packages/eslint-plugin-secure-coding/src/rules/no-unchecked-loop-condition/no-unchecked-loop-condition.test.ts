@@ -1280,3 +1280,125 @@ describe('corpus regressions — names are not taint', () => {
     ],
   });
 });
+
+/**
+ * Schema options that nothing else in this file sets.
+ *
+ * `maxRecursionDepth`, `trustedSanitizers`, `trustedAnnotations` and
+ * `strictMode` all shipped with their branches never executed by a test. Each
+ * one below is covered by a PAIR over the SAME source text — one entry that
+ * sets the option, one that does not — whose verdicts disagree. A test that
+ * sets an option and gets the default answer executes the line and proves
+ * nothing: the branch could be deleted and this suite would stay green.
+ */
+describe('no-unchecked-loop-condition — option differentials', () => {
+  // Two self-call sites, under a name that is neither of the two the recursion
+  // check hard-codes (`recursiveFunc`, `traverseObject`). That leaves
+  // `callCount > maxRecursionDepth` as the only thing that can decide the
+  // verdict, so the source sits either side of the threshold: the default 10 is
+  // never reached, a limit of 1 is crossed by the second call site.
+  //
+  // Worth knowing while reading this pair: `callCount` is the number of
+  // *lexical* self-call sites the visitor has walked past, not a runtime
+  // recursion depth. The option therefore behaves as "how many recursive call
+  // sites may a function contain", which is not what its schema description
+  // ("Recursion depth above which a call is reported") says. These cases pin
+  // that the option is load-bearing, not that the measure is the right one.
+  const TWO_SITE_RECURSION = `
+    function walk(node) {
+      if (node.left) walk(node.left);
+      if (node.right) walk(node.right);
+    }
+  `;
+
+  ruleTester.run('option maxRecursionDepth', noUncheckedLoopCondition, {
+    valid: [
+      // Default maxRecursionDepth is 10 and two self-calls never reach it.
+      { code: TWO_SITE_RECURSION },
+    ],
+    invalid: [
+      // Identical source, limit lowered to 1: the second self-call crosses it.
+      // Delete `maxRecursionDepth` from the rule and this case goes quiet.
+      {
+        code: TWO_SITE_RECURSION,
+        options: [{ maxRecursionDepth: 1 }],
+        errors: [{ messageId: 'unsafeRecursion' }],
+      },
+    ],
+  });
+
+  ruleTester.run('option trustedSanitizers', noUncheckedLoopCondition, {
+    valid: [
+      // The recursion report site hands the CALL node to safetyChecker.isSafe,
+      // and a call whose callee is a trusted name reads as sanitized — so
+      // registering `walk` as a loop protector suppresses it. Membership is
+      // exact, which is why the default (empty list) cannot match it.
+      // `maxRecursionDepth: 1` is only there to make the source report at all;
+      // the sole difference from the invalid twin is the trustedSanitizers entry.
+      {
+        code: TWO_SITE_RECURSION,
+        options: [{ maxRecursionDepth: 1, trustedSanitizers: ['walk'] }],
+      },
+    ],
+    invalid: [
+      {
+        code: TWO_SITE_RECURSION,
+        options: [{ maxRecursionDepth: 1 }],
+        errors: [{ messageId: 'unsafeRecursion' }],
+      },
+    ],
+  });
+
+  ruleTester.run('option strictMode', noUncheckedLoopCondition, {
+    valid: [
+      {
+        code: TWO_SITE_RECURSION,
+        options: [{ maxRecursionDepth: 1, trustedSanitizers: ['walk'] }],
+      },
+    ],
+    invalid: [
+      // strictMode makes safetyChecker.isSafe return false unconditionally, so
+      // the trustedSanitizers entry that silenced the valid twin above stops
+      // being honoured. This is the clean differential for strictMode: the
+      // report site here is guarded ONLY by isSafe, so nothing else can account
+      // for the change.
+      {
+        code: TWO_SITE_RECURSION,
+        options: [
+          { maxRecursionDepth: 1, trustedSanitizers: ['walk'], strictMode: true },
+        ],
+        errors: [{ messageId: 'unsafeRecursion' }],
+      },
+    ],
+  });
+
+  // A request-driven loop bound, carrying a comment that none of the built-in
+  // SAFE_ANNOTATIONS is a substring of — `@appsec-reviewed` contains neither
+  // `@safe`, `@validated`, `@verified` nor any sibling, so the default list
+  // cannot silence it and only the custom entry can.
+  const ANNOTATED_USER_BOUND = `
+    function drain(req) {
+      // @appsec-reviewed
+      while (req.query.more) {
+        poll();
+      }
+    }
+  `;
+
+  ruleTester.run('option trustedAnnotations', noUncheckedLoopCondition, {
+    valid: [
+      {
+        code: ANNOTATED_USER_BOUND,
+        options: [{ trustedAnnotations: ['@appsec-reviewed'] }],
+      },
+    ],
+    invalid: [
+      // Same source with the default (empty) annotation list: the comment is
+      // just a comment and the user-controlled bound reports.
+      {
+        code: ANNOTATED_USER_BOUND,
+        errors: [{ messageId: 'userControlledLoopBound' }],
+      },
+    ],
+  });
+});

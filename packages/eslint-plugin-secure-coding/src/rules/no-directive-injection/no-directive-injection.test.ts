@@ -1169,3 +1169,53 @@ ruleTester.run('lock: sanitized innerHTML is the fix, not the defect', noDirecti
     { code: 'function r(node, req) { node.innerHTML = req.body.html; }', errors: 1 },
   ],
 });
+
+/**
+ * `userInputVariables` — the vocabulary that decides what counts as
+ * user-controlled on the innerHTML path.
+ *
+ * The pair below is the same source twice; only the option differs. `payload`
+ * is not in the default list (`req`, `request`, `body`, `query`, `params`,
+ * `input`, `data`, `userInput`), so a codebase that names its request payloads
+ * that way gets nothing until it says so — which is the whole reason the
+ * option exists.
+ *
+ * Note what the test also documents: the match is `rightText.includes(input)`
+ * over the PRINTED source of the assignment's right-hand side, not a binding
+ * resolved through scope. That is why `payload.markup` matches on `payload`,
+ * and it is also why a variable merely spelled `formData` matches the default
+ * entry `data`. The option is a consumer's only lever over that.
+ */
+describe('option: userInputVariables', () => {
+  const ASSIGN = 'function r(node, payload) { node.innerHTML = payload.markup; }';
+
+  ruleTester.run('a custom vocabulary adds a source', noDirectiveInjection, {
+    valid: [ASSIGN],
+    invalid: [
+      {
+        code: ASSIGN,
+        options: [{ userInputVariables: ['payload'] }],
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+    ],
+  });
+
+  // And the converse: the option REPLACES the default vocabulary rather than
+  // extending it, so a consumer who registers only their own name stops the
+  // rule seeing `req.body` at all. Worth pinning — it is the failure mode a
+  // reader of the docs would not expect.
+  ruleTester.run('a custom vocabulary replaces the defaults', noDirectiveInjection, {
+    valid: [
+      {
+        code: 'function r(node, req) { node.innerHTML = req.body.html; }',
+        options: [{ userInputVariables: ['payload'] }],
+      },
+    ],
+    invalid: [
+      {
+        code: 'function r(node, req) { node.innerHTML = req.body.html; }',
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+    ],
+  });
+});

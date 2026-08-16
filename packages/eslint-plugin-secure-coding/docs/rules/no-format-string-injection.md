@@ -97,10 +97,7 @@ util.format("User: %s, Age: %d", name, age);
 | `formatFunctions` | `string[]` | `["util.format","console.log","console.error","console.warn","sprintf","printf","vsprintf"]` | Functions whose first argument is a format string |
 | `formatSpecifiers` | `string[]` | `["%s","%d","%i","%f","%j","%o","%O","%c","%%"]` | Format specifiers recognised in a format string |
 | `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data","userInput"]` | Variable names treated as user-controlled input |
-| `safeFormatLibraries` | `string[]` | `["mustache","handlebars","ejs","pug"]` | Templating libraries that escape their own input |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as format string sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

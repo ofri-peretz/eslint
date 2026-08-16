@@ -1141,3 +1141,73 @@ ruleTester.run('lock: specifier detected from quasis', noFormatStringInjection, 
     { code: 'const formatStr = `%d ${req.body.value}`;', errors: 1 },
   ],
 });
+
+/**
+ * Option coverage — every case below is a PAIR over the same source whose verdicts
+ * disagree. A test that merely sets an option and reproduces the default verdict
+ * executes the line without proving anything: the branch could be deleted and the
+ * suite would stay green.
+ */
+ruleTester.run('option: formatSpecifiers is the alphabet the scan looks for', noFormatStringInjection, {
+  valid: [
+    // `%n` is not in the default specifier list, so the template carries no format
+    // directive as far as this rule is concerned and the VariableDeclarator branch
+    // never reaches its report. Same source as the invalid case below.
+    { code: 'const formatStr = `Progress: %n ${req.body.stage}`;' },
+  ],
+  invalid: [
+    // Adding `%n` to the alphabet is the only difference. `%n` is the classic
+    // write-what-where specifier, so a project that formats through a C-style
+    // backend has a real reason to declare it — and the rule now sees a
+    // user-interpolated template that carries a directive.
+    {
+      code: 'const formatStr = `Progress: %n ${req.body.stage}`;',
+      options: [{ formatSpecifiers: ['%n'] }],
+      errors: [{ messageId: 'formatStringInjection' }],
+    },
+  ],
+});
+
+ruleTester.run('option: trustedSanitizers launders a user-controlled format string', noFormatStringInjection, {
+  valid: [
+    // Registering the project's own guard puts `userFormat` into validatedVariables,
+    // which is the ONLY thing this rule's internal safety checker consults for a
+    // CallExpression's first argument. Without the registration the same two lines
+    // report — see the invalid case.
+    {
+      code: [
+        'const userFormat = myFormatGuard(req.query.fmt);',
+        'util.format(userFormat, values);',
+      ].join('\n'),
+      options: [{ trustedSanitizers: ['myFormatGuard'] }],
+    },
+  ],
+  invalid: [
+    // An unknown wrapper is not evidence that the format string was checked, so the
+    // value still reads as attacker-controlled in the format position — CWE-134.
+    {
+      code: [
+        'const userFormat = myFormatGuard(req.query.fmt);',
+        'util.format(userFormat, values);',
+      ].join('\n'),
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+  ],
+});
+
+/**
+ * NOT covered here, deliberately: `safeFormatLibraries`, `trustedAnnotations` and
+ * `strictMode` are declared in the schema and in defaultOptions but are never read
+ * inside `create()` — the destructure at the top of `create` takes only
+ * `formatSpecifiers`, `userInputVariables` and `trustedSanitizers`, and this rule
+ * substitutes a local `safetyChecker` that hardcodes `@safe-format` instead of
+ * calling the devkit's `createSafetyChecker`. Measured, not inferred:
+ *
+ *   `/* @safe-format *\/ util.format(safeFormat, req.body.name)` stays QUIET with
+ *   `strictMode: true` — strict mode cannot re-enable a report it does not gate.
+ *   The same call with `trustedAnnotations: ['@fmt-reviewed']` and a
+ *   `/* @fmt-reviewed *\/` comment still reports.
+ *
+ * No test is added for those three: any case that sets them produces the default
+ * verdict, which would assert that a dead branch is working.
+ */

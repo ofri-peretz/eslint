@@ -414,3 +414,45 @@ describe('no-privilege-escalation', () => {
   });
 });
 
+
+/**
+ * `testFilePattern` — the regex that decides which filenames `allowInTests`
+ * applies to.
+ *
+ * Both cases below use the SAME source and the SAME filename and differ only
+ * in the option, so the pair proves the pattern is consulted rather than
+ * merely accepted. `fixtures/seed-roles.ts` deliberately does not match the
+ * default `\.(test|spec)\.(ts|tsx|js|jsx)$` — a repository whose fixtures live
+ * outside that naming convention gets no exemption until it says so.
+ */
+describe('option: testFilePattern', () => {
+  const SEED = 'user.role = req.body.role;';
+
+  ruleTester.run('a custom pattern extends the exemption', noPrivilegeEscalation, {
+    valid: [
+      {
+        code: SEED,
+        filename: 'fixtures/seed-roles.ts',
+        options: [{ allowInTests: true, testFilePattern: 'fixtures/' }],
+      },
+    ],
+    invalid: [
+      // Identical source and filename, `allowInTests` still on — only the
+      // pattern is gone, and the finding comes back.
+      {
+        code: SEED,
+        filename: 'fixtures/seed-roles.ts',
+        options: [{ allowInTests: true }],
+        errors: [{ messageId: 'privilegeEscalation' }],
+      },
+      // The converse: a narrower pattern than the default withdraws the
+      // exemption from a file the default would have covered.
+      {
+        code: SEED,
+        filename: 'roles.spec.ts',
+        options: [{ allowInTests: true, testFilePattern: '\\.test\\.ts$' }],
+        errors: [{ messageId: 'privilegeEscalation' }],
+      },
+    ],
+  });
+});

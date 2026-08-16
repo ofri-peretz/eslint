@@ -1094,3 +1094,108 @@ ruleTester.run('no-xpath-injection-sink-walk-terminates', noXpathInjection, {
   ],
   invalid: [],
 });
+
+/**
+ * Option coverage — `trustedSanitizers`, `trustedAnnotations`, `strictMode`.
+ *
+ * Every block below is a PAIR over one unchanged snippet: the `valid` entry
+ * sets the option, the `invalid` entry runs the same source without it (or
+ * with the option that overrides it), and the two verdicts disagree. A case
+ * that sets an option and reaches the default verdict executes the line and
+ * proves nothing — the option could be deleted from the rule and this file
+ * would stay green.
+ *
+ * The made-up names are deliberate. `trustedSanitizers` extends
+ * `SANITIZATION_FUNCTIONS` and membership is exact (`Set.has`), so `zzzWrap`
+ * cannot match by any other route; `@zzz-reviewed` contains none of the
+ * built-in `SAFE_ANNOTATIONS` as a substring, and the built-in check is a
+ * substring match.
+ */
+ruleTester.run(
+  'option: trustedSanitizers marks a variable validated',
+  noXpathInjection,
+  {
+    valid: [
+      {
+        // The rule keeps its own `validatedVariables` set, filled from
+        // `xpathValidationFunctions` and `trustedSanitizers`. Naming `zzzWrap`
+        // puts `userQuery` in it, so the evaluator no longer sees the value as
+        // unvalidated input.
+        code: 'const userQuery = zzzWrap(req.params.id);\ndocument.evaluate(userQuery, doc);',
+        options: [{ trustedSanitizers: ['zzzWrap'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Byte-identical source with the option withheld. `zzzWrap` is then an
+        // unknown function, `userQuery` never enters `validatedVariables`, and
+        // the evaluator reports — so the option is what changed the verdict,
+        // not the code.
+        code: 'const userQuery = zzzWrap(req.params.id);\ndocument.evaluate(userQuery, doc);',
+        errors: [{ messageId: 'unvalidatedXpathInput' }],
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'option: trustedAnnotations silences an untrusted evaluator argument',
+  noXpathInjection,
+  {
+    valid: [
+      {
+        // `hasSafeAnnotation` walks the node and its ancestors up to the
+        // enclosing function, so the comment before the call statement covers
+        // the argument. `@zzz-reviewed` is only an annotation because the
+        // option says so.
+        code: '/* @zzz-reviewed by appsec */\ndocument.evaluate(searchQuery, doc);',
+        options: [{ trustedAnnotations: ['@zzz-reviewed'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, same comment, option withheld: the comment matches none
+        // of the built-in annotations, so the argument is still unvalidated
+        // input and the call reports.
+        code: '/* @zzz-reviewed by appsec */\ndocument.evaluate(searchQuery, doc);',
+        errors: [{ messageId: 'unvalidatedXpathInput' }],
+      },
+    ],
+  },
+);
+
+/**
+ * `strictMode` only reaches report sites guarded by `safetyChecker.isSafe`.
+ *
+ * The site chosen here — the concatenation path's `xpathInjection` report — is
+ * one of those. It is NOT interchangeable with the two blocks above: the
+ * `validatedVariables` set and the direct `hasSafeAnnotation` call at the
+ * evaluator both bypass the safety checker entirely, so `strictMode: true`
+ * leaves those two snippets quiet. Pairing strictMode against either of them
+ * would have produced a test that passes whatever strictMode does.
+ */
+ruleTester.run(
+  'option: strictMode overrides trustedSanitizers',
+  noXpathInjection,
+  {
+    valid: [
+      {
+        // `zzzWrap` is dynamic and the string reaches an evaluator, so the
+        // concatenation would report; the trusted sanitizer is the only thing
+        // keeping it quiet.
+        code: 'const q = "//user[@id=" + zzzWrap(id);\ndocument.evaluate(q, doc);',
+        options: [{ trustedSanitizers: ['zzzWrap'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, same sanitizer list, plus `strictMode`. The checker now
+        // returns false unconditionally, so the suppression the previous case
+        // relies on disappears and the finding comes back.
+        code: 'const q = "//user[@id=" + zzzWrap(id);\ndocument.evaluate(q, doc);',
+        options: [{ trustedSanitizers: ['zzzWrap'], strictMode: true }],
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+    ],
+  },
+);

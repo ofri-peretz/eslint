@@ -287,3 +287,44 @@ describe('no-xxe-injection', () => {
     });
   });
 });
+/**
+ * Option coverage — `safeParserOptions` names the parser keys that count as a secure
+ * configuration when set to `false`/`null`. Both blocks are PAIRS over identical
+ * source whose verdicts disagree; a case that set the option and reproduced the
+ * default answer would execute `hasSecureParserOptions` without testing it.
+ */
+ruleTester.run('option: safeParserOptions recognises a parser key the defaults miss', noXxeInjection, {
+  valid: [
+    // `externalEntities` is the kill switch in several parsers but is absent from
+    // the default list, so declaring it is what makes the call read as configured.
+    {
+      code: 'const doc = libxml.parseXmlString(userXml, { externalEntities: false });',
+      options: [{ safeParserOptions: ['externalEntities'] }],
+    },
+  ],
+  invalid: [
+    // Identical source with the stock list: the rule cannot tell that this parser
+    // was hardened, so untrusted XML still reaches an unconfigured parse.
+    {
+      code: 'const doc = libxml.parseXmlString(userXml, { externalEntities: false });',
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+  ],
+});
+
+ruleTester.run('option: safeParserOptions REPLACES the defaults, it does not extend them', noXxeInjection, {
+  valid: [
+    // `noent` is in the stock list, so this is quiet with no options at all.
+    { code: 'const doc = libxml.parseXmlString(userXml, { noent: false });' },
+  ],
+  invalid: [
+    // Same source, but a caller-supplied list drops `noent` — the option overwrites
+    // rather than appends. Locking the direction matters: a project that narrows the
+    // list to one key silently loses the recognition of every other secure flag.
+    {
+      code: 'const doc = libxml.parseXmlString(userXml, { noent: false });',
+      options: [{ safeParserOptions: ['entityResolver'] }],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+  ],
+});

@@ -556,3 +556,44 @@ describe('lock: the rule never writes to stdout', () => {
     expect(written).toEqual([]);
   });
 });
+
+/**
+ * `testFilePattern` — the regex that decides which filenames `allowInTests`
+ * applies to.
+ *
+ * Same source, same filename, one option apart. `fixtures/routes.ts` does not
+ * match the default `\.(test|spec)\.(ts|tsx|js|jsx)$`, so a repository that
+ * keeps its route fixtures outside that convention gets no exemption until it
+ * says so.
+ */
+describe('option: testFilePattern', () => {
+  const ROUTE = 'app.get("/api/users", (req, res) => {});';
+
+  ruleTester.run('a custom pattern extends the exemption', noMissingAuthentication, {
+    valid: [
+      {
+        code: ROUTE,
+        filename: 'fixtures/routes.ts',
+        options: [{ allowInTests: true, testFilePattern: 'fixtures/' }],
+      },
+    ],
+    invalid: [
+      // Identical source and filename, `allowInTests` still on — only the
+      // pattern is gone, and the finding comes back.
+      {
+        code: ROUTE,
+        filename: 'fixtures/routes.ts',
+        options: [{ allowInTests: true }],
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+      // The converse: a narrower pattern than the default withdraws the
+      // exemption from a file the default would have covered.
+      {
+        code: ROUTE,
+        filename: 'routes.spec.ts',
+        options: [{ allowInTests: true, testFilePattern: '\\.test\\.ts$' }],
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
+    ],
+  });
+});

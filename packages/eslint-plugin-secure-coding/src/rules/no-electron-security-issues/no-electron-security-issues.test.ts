@@ -678,3 +678,80 @@ ruleTester.run('lock: renderer detection is segment-based', noElectronSecurityIs
     { code: "const fs = require('fs');", filename: 'src/views/main.js', errors: 1 },
   ],
 });
+
+/**
+ * Option coverage — each block is a PAIR over identical source whose verdicts
+ * disagree, so deleting the option's branch would turn the suite red. Every report
+ * site in this rule is gated by `safetyChecker.isSafe`, which is the devkit's
+ * `createSafetyChecker` seeded from these three options.
+ */
+ruleTester.run('option: trustedAnnotations extends the safe-comment vocabulary', noElectronSecurityIssues, {
+  valid: [
+    // `@electron-reviewed` is not one of the devkit's SAFE_ANNOTATIONS, so it only
+    // suppresses once the project declares it. The annotation walk starts at the
+    // reported Property and climbs to the enclosing function, which is why the
+    // comment sitting immediately before the property is found.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @electron-reviewed by the desktop team */ nodeIntegration: true } });',
+      options: [{ trustedAnnotations: ['@electron-reviewed'] }],
+    },
+  ],
+  invalid: [
+    // Identical source without the declaration: an unrecognised comment is not
+    // evidence, and nodeIntegration: true still hands the renderer Node.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @electron-reviewed by the desktop team */ nodeIntegration: true } });',
+      errors: [{ messageId: 'nodeIntegrationEnabled' }],
+    },
+  ],
+});
+
+ruleTester.run('option: strictMode revokes annotation-based suppression', noElectronSecurityIssues, {
+  valid: [
+    // `@validated` is a built-in safe annotation, so by default it silences the
+    // report without any configuration at all.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @validated by the hardening checklist */ nodeIntegration: true } });',
+    },
+  ],
+  invalid: [
+    // Same source, strictMode on. `isSafe` returns false unconditionally, so the
+    // comment stops counting — which is the whole point of the flag for a team that
+    // does not trust its own annotations during an audit.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @validated by the hardening checklist */ nodeIntegration: true } });',
+      options: [{ strictMode: true }],
+      errors: [{ messageId: 'nodeIntegrationEnabled' }],
+    },
+  ],
+});
+
+ruleTester.run('option: trustedSanitizers whitelists an audited Node-API wrapper', noElectronSecurityIssues, {
+  valid: [
+    // The reported node at the directNodeAccess site is the CallExpression itself,
+    // so `isSanitizedInput` can match it by method name: registering `auditedEnv`
+    // makes `process.auditedEnv(...)` a sanitization call and the report is skipped.
+    {
+      code: 'const home = process.auditedEnv("HOME");',
+      filename: 'renderer.js',
+      options: [{ trustedSanitizers: ['auditedEnv'] }],
+    },
+  ],
+  invalid: [
+    // Same call, same renderer file, no registration — direct Node access from the
+    // renderer process.
+    {
+      code: 'const home = process.auditedEnv("HOME");',
+      filename: 'renderer.js',
+      errors: [{ messageId: 'directNodeAccess' }],
+    },
+    // And strictMode overrides the registration: the sanitizer list is consulted
+    // through `isSafe`, which strict mode short-circuits before it is ever read.
+    {
+      code: 'const home = process.auditedEnv("HOME");',
+      filename: 'renderer.js',
+      options: [{ trustedSanitizers: ['auditedEnv'], strictMode: true }],
+      errors: [{ messageId: 'directNodeAccess' }],
+    },
+  ],
+});

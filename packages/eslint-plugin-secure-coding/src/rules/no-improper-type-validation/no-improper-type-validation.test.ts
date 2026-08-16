@@ -937,3 +937,71 @@ describe('no-improper-type-validation', () => {
     });
   });
 });
+
+/**
+ * Option coverage — each block is a PAIR over identical source whose verdicts
+ * disagree. Setting an option and getting the default answer back would execute the
+ * line while proving nothing, so every case below has a partner it contradicts.
+ */
+ruleTester.run('option: trustedSanitizers accepts a project validator at the sink', noImproperTypeValidation, {
+  valid: [
+    // The looseEqualityTypeCheck site hands the whole BinaryExpression to `isSafe`,
+    // which also probes each operand: the left operand is a call to the registered
+    // validator, so the comparison is treated as already type-checked.
+    {
+      code: 'const missing = assertUserShape(userInput) == null;',
+      options: [{ trustedSanitizers: ['assertUserShape'] }],
+    },
+  ],
+  invalid: [
+    // Identical source with the validator unregistered. Membership is exact — an
+    // unknown wrapper name is not evidence that anything was validated.
+    {
+      code: 'const missing = assertUserShape(userInput) == null;',
+      errors: [{ messageId: 'looseEqualityTypeCheck' }],
+    },
+    // Registered AND strict: strictMode makes `isSafe` return false before the
+    // sanitizer list is consulted, so the same code reports again.
+    {
+      code: 'const missing = assertUserShape(userInput) == null;',
+      options: [{ trustedSanitizers: ['assertUserShape'], strictMode: true }],
+      errors: [{ messageId: 'looseEqualityTypeCheck' }],
+    },
+  ],
+});
+
+ruleTester.run('option: trustedAnnotations extends the safe-comment vocabulary', noImproperTypeValidation, {
+  valid: [
+    // `@type-checked-upstream` is not one of the devkit's SAFE_ANNOTATIONS and shares
+    // no substring with any of them, so it can only suppress once declared.
+    {
+      code: '// @type-checked-upstream\nconst missing = userInput == null;',
+      options: [{ trustedAnnotations: ['@type-checked-upstream'] }],
+    },
+  ],
+  invalid: [
+    // Same two lines, no declaration.
+    {
+      code: '// @type-checked-upstream\nconst missing = userInput == null;',
+      errors: [{ messageId: 'looseEqualityTypeCheck' }],
+    },
+  ],
+});
+
+ruleTester.run('option: strictMode revokes annotation-based suppression', noImproperTypeValidation, {
+  valid: [
+    // `@validated` ships in SAFE_ANNOTATIONS, so this is quiet with no options at all.
+    {
+      code: '// @validated by the request schema\nconst missing = userInput == null;',
+    },
+  ],
+  invalid: [
+    // Same source under strictMode: the annotation no longer counts, which is the
+    // behaviour an audit run wants from the flag.
+    {
+      code: '// @validated by the request schema\nconst missing = userInput == null;',
+      options: [{ strictMode: true }],
+      errors: [{ messageId: 'looseEqualityTypeCheck' }],
+    },
+  ],
+});

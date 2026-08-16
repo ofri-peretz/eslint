@@ -1426,3 +1426,118 @@ ruleTester.run('lock: selection-set field probe', noGraphqlInjection, {
     { code: 'const q = \'query { user(id: "\' + req.body.id + \'") }\';', errors: 2 },
   ],
 });
+
+/**
+ * Option coverage — `validationFunctions`, `trustedSanitizers`,
+ * `trustedAnnotations`, `strictMode`.
+ *
+ * Every block below is a PAIR over one unchanged snippet: the `valid` entry
+ * sets the option, the `invalid` entry runs the same source without it (or
+ * with the option that overrides it), and the two verdicts disagree. Setting
+ * an option and still getting the default verdict would execute the line while
+ * proving nothing — the option could be deleted from the rule and this file
+ * would stay green.
+ *
+ * `zzzCheck` / `zzzWrap` / `@zzz-reviewed` are deliberately absent from every
+ * built-in list: `validationFunctions` and `trustedSanitizers` are matched by
+ * exact name, and `@zzz-reviewed` contains no built-in annotation as a
+ * substring, so nothing but the option under test can produce the quiet
+ * verdict.
+ */
+ruleTester.run(
+  'option: validationFunctions clears an interpolated expression',
+  noGraphqlInjection,
+  {
+    valid: [
+      {
+        // `isInputValidated` walks up from each interpolated expression looking
+        // for a call to a named validator. Naming `zzzCheck` makes the single
+        // interpolation validated, so the template has nothing unsafe left.
+        code: 'const q = `query { user(id: "${zzzCheck(id)}") }`;',
+        options: [{ validationFunctions: ['zzzCheck'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Identical source with the default validator list, which does not
+        // contain `zzzCheck`: the interpolation is unvalidated and the query
+        // reports.
+        code: 'const q = `query { user(id: "${zzzCheck(id)}") }`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'option: trustedSanitizers clears a concatenated operand',
+  noGraphqlInjection,
+  {
+    valid: [
+      {
+        // The concatenation path asks `safetyChecker.isSafe` about the whole
+        // BinaryExpression, which inspects both operands. With `zzzWrap`
+        // trusted, the dynamic operand is a sanitizer call and the query is no
+        // longer built from raw input.
+        code: 'const q = "query {\\nuser\\n}" + zzzWrap(id);',
+        options: [{ trustedSanitizers: ['zzzWrap'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, option withheld: `zzzWrap` is an unknown function, so
+        // the concatenation is unsanitised GraphQL construction.
+        code: 'const q = "query {\\nuser\\n}" + zzzWrap(id);',
+        errors: [{ messageId: 'graphqlInjection' }],
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'option: trustedAnnotations silences a concatenated query',
+  noGraphqlInjection,
+  {
+    valid: [
+      {
+        // `hasSafeAnnotation` climbs from the BinaryExpression to the
+        // declaration, whose leading comment carries the custom annotation.
+        code: '/* @zzz-reviewed by appsec */\nconst q = "query {\\nuser\\n}" + userInput;',
+        options: [{ trustedAnnotations: ['@zzz-reviewed'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, same comment, option withheld: the comment matches none
+        // of the built-in annotations, so the concatenation reports.
+        code: '/* @zzz-reviewed by appsec */\nconst q = "query {\\nuser\\n}" + userInput;',
+        errors: [{ messageId: 'graphqlInjection' }],
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'option: strictMode overrides trustedSanitizers',
+  noGraphqlInjection,
+  {
+    valid: [
+      {
+        // Same snippet as the trustedSanitizers pair above: quiet only because
+        // the sanitizer is trusted.
+        code: 'const q = "query {\\nuser\\n}" + zzzWrap(id);',
+        options: [{ trustedSanitizers: ['zzzWrap'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, same sanitizer list, plus `strictMode`. The checker now
+        // returns false unconditionally, so the trusted sanitizer stops
+        // suppressing and the finding returns.
+        code: 'const q = "query {\\nuser\\n}" + zzzWrap(id);',
+        options: [{ trustedSanitizers: ['zzzWrap'], strictMode: true }],
+        errors: [{ messageId: 'graphqlInjection' }],
+      },
+    ],
+  },
+);

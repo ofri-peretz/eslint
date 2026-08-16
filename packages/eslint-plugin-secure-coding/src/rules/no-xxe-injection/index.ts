@@ -208,10 +208,18 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           safeParserOptions: {
             type: 'array',
             items: { type: 'string' },
+            // Mirrors the destructuring default in create(). Without it the
+            // schema said "any array of strings, default unspecified" while
+            // the rule behaved as if four specific entity-expansion switches
+            // were named, and the generated docs could not state either.
+            default: ['noent', 'resolveExternals', 'expandEntityReferences', 'entityResolver'],
+            description: 'Parser option keys whose disabled value proves entity expansion is off',
           },
           xmlValidationFunctions: {
             type: 'array',
             items: { type: 'string' },
+            default: ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],
+            description: 'Function names that count as XML input validation',
           },
         },
         additionalProperties: false,

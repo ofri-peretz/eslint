@@ -1095,3 +1095,95 @@ describe('corpus regression — XML parsing and array iteration', () => {
     ],
   });
 });
+
+/**
+ * Schema options that nothing else in this file sets.
+ *
+ * `safeResourceFunctions`, `trustedSanitizers` and `strictMode` all shipped
+ * with their branches never executed by a test. Each is covered below by a PAIR
+ * over the SAME source text — one entry that sets the option, one that does
+ * not — whose verdicts disagree. Setting an option and asserting the default
+ * answer would execute the line while proving nothing: the branch could be
+ * deleted and this suite would stay green.
+ */
+describe('no-unlimited-resource-allocation — option differentials', () => {
+  // A user-controlled allocation size routed through a project-local clamp.
+  // The rule has no way to know `clampToQuota` bounds anything, so by default
+  // it reports; `safeResourceFunctions` is how a project tells it.
+  const CLAMPED_ALLOC = `
+    function upload(req) {
+      return Buffer.alloc(clampToQuota(req.body.size));
+    }
+  `;
+
+  ruleTester.run('option safeResourceFunctions', noUnlimitedResourceAllocation, {
+    valid: [
+      // Registering the clamp satisfies hasSizeValidation, which is the only
+      // thing standing between this call and a userControlledResourceSize
+      // report. Drop the option and the invalid twin below fires.
+      {
+        code: CLAMPED_ALLOC,
+        options: [{ safeResourceFunctions: ['clampToQuota'] }],
+      },
+    ],
+    invalid: [
+      // Identical source on the defaults (validateSize / checkLimits /
+      // limitResource / safeAlloc): the clamp is an unknown name, the size is
+      // still request-derived, so it reports.
+      {
+        code: CLAMPED_ALLOC,
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+
+  // The same allocation with nothing wrapping the size at all.
+  const RAW_ALLOC = `
+    function upload(req) {
+      return Buffer.alloc(req.body.size);
+    }
+  `;
+
+  ruleTester.run('option trustedSanitizers', noUnlimitedResourceAllocation, {
+    valid: [
+      // Note WHAT this option can reach in this rule: every report site hands
+      // safetyChecker.isSafe the ALLOCATION call itself, never the size
+      // expression, so the name that has to be registered is the allocator's —
+      // `Buffer.alloc` is matched on its member name `alloc`. That is the only
+      // shape of `trustedSanitizers` this rule can honour, and it reads as
+      // "our pooled .alloc() is capped internally".
+      {
+        code: RAW_ALLOC,
+        options: [{ trustedSanitizers: ['alloc'] }],
+      },
+    ],
+    invalid: [
+      // Same source, default (empty) trustedSanitizers. Membership is exact, so
+      // nothing in the built-in SANITIZATION_FUNCTIONS list matches `alloc`.
+      {
+        code: RAW_ALLOC,
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+
+  ruleTester.run('option strictMode', noUnlimitedResourceAllocation, {
+    valid: [
+      {
+        code: RAW_ALLOC,
+        options: [{ trustedSanitizers: ['alloc'] }],
+      },
+    ],
+    invalid: [
+      // strictMode forces safetyChecker.isSafe to false unconditionally, so the
+      // trustedSanitizers entry that silenced the valid twin stops being
+      // honoured. The userControlledResourceSize site is guarded only by
+      // isSafe, so nothing else can account for the disagreement.
+      {
+        code: RAW_ALLOC,
+        options: [{ trustedSanitizers: ['alloc'], strictMode: true }],
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+});

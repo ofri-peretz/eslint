@@ -44,9 +44,6 @@ export interface Options extends SecurityRuleOptions {
   /** Dangerous deserialization functions to detect */
   dangerousFunctions?: string[];
 
-  /** Safe deserialization libraries */
-  safeLibraries?: string[];
-
   /** Functions that validate input before deserialization */
   validationFunctions?: string[];
 }
@@ -141,11 +138,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['eval', 'Function', 'setTimeout', 'setInterval', 'unserialize', 'deserialize', 'parseUnsafe'], description: 'Functions that execute or deserialize untrusted input'
           },
-          safeLibraries: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['JSON', 'safe-json-parse', 'js-yaml.safeLoad', 'protobuf', 'msgpack'], description: 'Parsers that do not execute their input'
-          },
           validationFunctions: {
             type: 'array',
             items: { type: 'string' },
@@ -176,7 +168,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       dangerousFunctions: ['eval', 'Function', 'setTimeout', 'setInterval', 'unserialize', 'deserialize', 'parseUnsafe'],
-      safeLibraries: ['JSON', 'safe-json-parse', 'js-yaml.safeLoad', 'protobuf', 'msgpack'],
       validationFunctions: ['validateInput', 'sanitizeData', 'checkSchema', 'validateSchema'],
       trustedSanitizers: [],
       trustedAnnotations: [],
@@ -515,9 +506,13 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         // of them a false positive, most on plain `parseJSON(jsonString)`
         // utilities.
         //
-        // The same argument covers the rest of `safeLibraries`: yaml.safeLoad,
-        // protobuf and msgpack are on that list precisely because they do not
-        // execute their input.
+        // The same argument covered the rest of what used to be the
+        // `safeLibraries` option — yaml.safeLoad, protobuf, msgpack — which
+        // were on that list precisely because they do not execute their input.
+        // That option has been removed: `create()` never read it, so a
+        // consumer registering their own non-executing parser changed nothing.
+        // The safe set is the hard-coded exclusion here, and `dangerousFunctions`
+        // is the option that actually moves the sink set.
     };
 
     return {

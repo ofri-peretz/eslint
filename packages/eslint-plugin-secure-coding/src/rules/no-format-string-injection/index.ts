@@ -47,17 +47,24 @@ export interface Options {
   /** Variables that contain user input */
   userInputVariables?: string[];
 
-  /** Safe formatting libraries */
-  safeFormatLibraries?: string[];
-
   /** Additional function names to consider as sanitizers */
   trustedSanitizers?: string[];
 
-  /** Additional JSDoc annotations to consider as safe markers */
-  trustedAnnotations?: string[];
-
-  /** Disable all false positive detection (strict mode) */
-  strictMode?: boolean;
+  /**
+   * `safeFormatLibraries`, `trustedAnnotations` and `strictMode` used to be
+   * declared here, in `meta.schema` and in both copies of the defaults.
+   * `create()` destructures only `formatSpecifiers`, `userInputVariables` and
+   * `trustedSanitizers`, and nothing else in the body reads them.
+   *
+   * `strictMode` is the one that mattered: this rule does not use the devkit's
+   * `createSafetyChecker` at all (that import is commented out below) but a
+   * local `safetyChecker` that hard-codes the `@safe-format` annotation. So
+   * `strictMode: true` could not revoke that suppression, and
+   * `trustedAnnotations` could not add to it — measured, not inferred:
+   * `/* @safe-format *\/ util.format(fmt, req.body.name)` stays QUIET under
+   * `strictMode: true`, and `/* @fmt-reviewed *\/` still reports with
+   * `trustedAnnotations: ['@fmt-reviewed']`.
+   */
 }
 
 type RuleOptions = [Options?];
@@ -139,27 +146,11 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
           },
-          safeFormatLibraries: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['mustache', 'handlebars', 'ejs', 'pug'], description: 'Templating libraries that escape their own input'
-          },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
             description: 'Additional function names to consider as format string sanitizers',
-          },
-          trustedAnnotations: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
-          },
-          strictMode: {
-            type: 'boolean',
-            default: false,
-            description: 'Disable all false positive detection (strict mode)',
           },
         },
         additionalProperties: false,
@@ -171,10 +162,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
-      safeFormatLibraries: ['mustache', 'handlebars', 'ejs', 'pug'],
       trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
-      trustedAnnotations: [],
-      strictMode: false,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -182,10 +170,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
-      safeFormatLibraries: ['mustache', 'handlebars', 'ejs', 'pug'],
       trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
-      trustedAnnotations: [],
-      strictMode: false,
     };
 
     const options: Required<Options> = { ...defaultOptions, ...context.options[0] } as Required<Options>;

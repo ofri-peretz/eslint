@@ -542,3 +542,85 @@ describe('corpus regression — declarations are not recovery flows', () => {
     ],
   });
 });
+
+/**
+ * Every remaining schema option, pinned by a pair of cases over IDENTICAL
+ * source whose verdicts disagree. A case that reports the same way with and
+ * without the setting would execute the branch without proving it does
+ * anything.
+ */
+describe('option branches', () => {
+  ruleTester.run('secureTokenFunctions vouches for a custom generator', noWeakPasswordRecovery, {
+    // `zzzMint` is not on the default list, so wrapping a predictable source in
+    // it changes nothing — the token is still `Date.now()` underneath…
+    valid: [
+      {
+        code: 'const passwordResetToken = zzzMint(Date.now());',
+        options: [{ secureTokenFunctions: ['zzzMint'] }],
+      },
+    ],
+    // …until the project vouches for it. Note what that means: the check is
+    // `secureTokenFunctions.some(f => callText.includes(f))` over the printed
+    // initializer, so registering a name asserts the whole expression is
+    // sound. It does not look inside.
+    invalid: [
+      {
+        code: 'const passwordResetToken = zzzMint(Date.now());',
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+    ],
+  });
+
+  ruleTester.run('trustedAnnotations honours a project marker', noWeakPasswordRecovery, {
+    valid: [
+      {
+        code: '// @zzz-reviewed\nconst passwordResetToken = String(Math.random()).slice(2);',
+        options: [{ trustedAnnotations: ['@zzz-reviewed'] }],
+      },
+    ],
+    invalid: [
+      {
+        code: '// @zzz-reviewed\nconst passwordResetToken = String(Math.random()).slice(2);',
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+    ],
+  });
+
+  ruleTester.run('strictMode revokes the built-in annotations', noWeakPasswordRecovery, {
+    // `@secure-recovery` is one of this rule's own default trustedAnnotations,
+    // so it silences the finding out of the box…
+    valid: ['// @secure-recovery\nconst passwordResetToken = String(Math.random()).slice(2);'],
+    // …and strictMode withdraws that, and every other suppression the safety
+    // checker offers.
+    invalid: [
+      {
+        code: '// @secure-recovery\nconst passwordResetToken = String(Math.random()).slice(2);',
+        options: [{ strictMode: true }],
+        errors: [{ messageId: 'predictableRecoveryToken' }],
+      },
+    ],
+  });
+
+  // `trustedSanitizers` is reachable, but only in a shape worth stating
+  // plainly: every `safetyChecker.isSafe(...)` call in this rule passes the
+  // SINK node, never the value being protected. On the logging path the sink
+  // is `logger.info(...)`, so the only way a consumer can satisfy the option
+  // is to register the logger method's own name — `info` — as a sanitizer.
+  // Wrapping the token in a registered sanitizer (`logger.info(zzzWrap(t))`)
+  // cannot suppress anything, which is the opposite of how the option reads.
+  // The pair below pins the branch as it behaves, not as it should behave.
+  ruleTester.run('trustedSanitizers is satisfied by the sink, not the value', noWeakPasswordRecovery, {
+    valid: [
+      {
+        code: 'logger.info(resetPasswordToken);',
+        options: [{ trustedSanitizers: ['info'] }],
+      },
+    ],
+    invalid: [
+      {
+        code: 'logger.info(resetPasswordToken);',
+        errors: [{ messageId: 'recoveryLoggingSensitiveData' }],
+      },
+    ],
+  });
+});
