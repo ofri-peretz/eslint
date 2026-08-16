@@ -3,7 +3,7 @@
  * CWE-1104: Use of Unmaintained Third Party Components
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noCryptojs } from './index';
 
@@ -53,5 +53,18 @@ describe('no-cryptojs', () => {
         errors: [{ messageId: 'deprecatedCryptojs' }],
       },
     ],
+  });
+
+  /**
+   * Lock: this rule takes no options.
+   *
+   * It used to declare `severity: 'error' | 'warn'`, defaulted to `'warn'`, and
+   * document it as "Severity level for reports". Nothing read it, and no rule
+   * can read it — ESLint decides severity from the config entry. Anyone who set
+   * it got warn-level reports and silence about the mistake. Re-adding an
+   * option that `create()` does not consume should fail here.
+   */
+  it('declares an empty schema — no inert `severity` option', () => {
+    expect(noCryptojs.meta.schema).toEqual([]);
   });
 });

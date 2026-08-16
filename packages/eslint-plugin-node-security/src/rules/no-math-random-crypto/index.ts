@@ -23,7 +23,7 @@ import {
   AST_NODE_TYPES,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'mathRandomCrypto' | 'useRandomBytes' | 'useRandomUUID';
+type MessageIds = 'mathRandomCrypto';
 
 export interface Options {
   /** Allow Math.random() in test files. Default: false */
@@ -86,7 +86,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       cvss: 5.3,
       confidence: 'medium',
     },
-    hasSuggestions: true,
     messages: {
       mathRandomCrypto: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -99,25 +98,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation',
       }),
-      useRandomBytes: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use randomBytes',
-        description:
-          'Use crypto.randomBytes() for cryptographically secure random values',
-        severity: 'LOW',
-        fix: 'crypto.randomBytes(32).toString("hex")',
-        documentationLink:
-          'https://nodejs.org/api/crypto.html#cryptorandombytessize-callback',
-      }),
-      useRandomUUID: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use randomUUID',
-        description: 'Use crypto.randomUUID() for UUID generation',
-        severity: 'LOW',
-        fix: 'crypto.randomUUID()',
-        documentationLink:
-          'https://nodejs.org/api/crypto.html#cryptorandomuuidoptions',
-      }),
+
     },
     schema: [
       {
@@ -170,7 +151,24 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check assignment to crypto-named property
+        // Check assignment to a crypto-named target.
+        //
+        // The bare-identifier arm is what catches the single commonest way an
+        // insecure token is written:
+        //
+        // ```js
+        // let token = '';
+        // for (let i = 0; i < 32; i++) {
+        //   token += CHARS[Math.floor(Math.random() * CHARS.length)];
+        // }
+        // ```
+        //
+        // The declarator arm above cannot see it — `let token = ''` initialises
+        // to an empty string, and `Math.random()` never appears under that
+        // declarator. Every character of the token comes from the `+=`, whose
+        // left side is an `Identifier`, and only the `MemberExpression` shape
+        // was handled. So the textbook accumulator loop was silent while
+        // `const token = Math.random().toString(36)` reported.
         if (current.type === AST_NODE_TYPES.AssignmentExpression) {
           if (
             current.left.type === AST_NODE_TYPES.MemberExpression &&
@@ -178,6 +176,11 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           ) {
             const propName = current.left.property.name;
             if (nameSuggestsCrypto(propName)) {
+              return true;
+            }
+          }
+          if (current.left.type === AST_NODE_TYPES.Identifier) {
+            if (nameSuggestsCrypto(current.left.name)) {
               return true;
             }
           }
@@ -251,16 +254,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'mathRandomCrypto',
-              suggest: [
-                {
-                  messageId: 'useRandomBytes',
-                  fix: () => null, // Complex refactoring
-                },
-                {
-                  messageId: 'useRandomUUID',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }

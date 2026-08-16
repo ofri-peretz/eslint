@@ -16,14 +16,20 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'deprecatedCryptojs'
-  | 'useNativeCrypto'
-  | 'useWebCrypto';
+  | 'deprecatedCryptojs';
 
-export interface Options {
-  /** Severity level. Default: 'warn' */
-  severity?: 'error' | 'warn';
-}
+/**
+ * No options.
+ *
+ * A `severity: 'error' | 'warn'` option used to sit here, defaulted in both the
+ * schema and `defaultOptions` and documented in `docs/rules/no-cryptojs.md` as
+ * "Severity level for reports". `create()` never read it, and no rule can:
+ * ESLint takes severity from the config entry (`'…/no-cryptojs': 'error'`), not
+ * from rule options. A consumer who set `severity: 'error'` got warn-level
+ * reports and a schema that accepted the setting without complaint. Deleted, so
+ * that config fails loudly instead of lying quietly.
+ */
+export type Options = Record<string, never>;
 
 type RuleOptions = [Options?];
 
@@ -37,7 +43,6 @@ export const noCryptojs = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1104',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       deprecatedCryptojs: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -48,58 +53,16 @@ export const noCryptojs = createRule<RuleOptions, MessageIds>({
         fix: 'Migrate to native Node.js crypto module or Web Crypto API',
         documentationLink: 'https://nodejs.org/api/crypto.html',
       }),
-      useNativeCrypto: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Node.js crypto',
-        description: 'Node.js crypto module is maintained by the Node.js core team',
-        severity: 'LOW',
-        fix: 'import crypto from "node:crypto"',
-        documentationLink: 'https://nodejs.org/api/crypto.html',
-      }),
-      useWebCrypto: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Web Crypto API',
-        description: 'Web Crypto API works in browsers and Node.js',
-        severity: 'LOW',
-        fix: 'globalThis.crypto.subtle',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API',
-      }),
+
     },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          severity: {
-            type: 'string',
-            enum: ['error', 'warn'],
-            default: 'warn',
-            description: 'Severity level for the rule',
-          },
-        },
-        additionalProperties: false,
-      },
-    ],
+    schema: [],
   },
-  defaultOptions: [
-    {
-      severity: 'warn',
-    },
-  ],
+  defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     function reportDeprecatedLibrary(node: TSESTree.Node) {
       context.report({
         node,
         messageId: 'deprecatedCryptojs',
-        suggest: [
-          {
-            messageId: 'useNativeCrypto',
-            fix: () => null, // Complex migration
-          },
-          {
-            messageId: 'useWebCrypto',
-            fix: () => null, // Complex migration
-          },
-        ],
       });
     }
 
