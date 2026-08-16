@@ -101,6 +101,12 @@ describe('no-dynamic-require', () => {
           code: 'const mod = require(config.pluginPath);',
           options: [{ allowPatterns: ['^nope$', 'pluginPath'] }],
         },
+        // …and an uncompilable pattern still suppresses when its literal text
+        // occurs, because the degraded form is a substring match.
+        {
+          code: 'const mod = require(paths["["]);',
+          options: [{ allowPatterns: ['['] }],
+        },
       ],
       invalid: [
         // CONTROL for case 1: the identical source, no option — reports.
@@ -124,6 +130,16 @@ describe('no-dynamic-require', () => {
         {
           code: 'const mod = require(moduleName);',
           options: [{ allowPatterns: [] }],
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        // An UNCOMPILABLE pattern must not take the lint run down with it. A
+        // bare `new RegExp('[')` throws "Invalid regular expression" out of
+        // create(), killing every rule on the file, not just this one.
+        // `compileUserPatterns` degrades it to a substring match, so `[` here
+        // simply fails to match `moduleName` and the report survives.
+        {
+          code: 'const mod = require(moduleName);',
+          options: [{ allowPatterns: ['['] }],
           errors: [{ messageId: 'dynamicRequire' }],
         },
       ],

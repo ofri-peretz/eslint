@@ -9,7 +9,12 @@
  * Forbid `require()` calls with expressions (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import {
+  compileUserPatterns,
+  createRule,
+  isStaticExpression,
+  matchesAnyUserPattern,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'dynamicRequire';
@@ -96,9 +101,16 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
 
     const filename = context.filename || '';
 
-    // Compiled once per file rather than once per `require()`. A rule that
+    // Compiled once per file rather than once per `require()`: a rule that
     // rebuilds a RegExp inside a visitor pays for it on every node.
-    const allowed = allowPatterns.map((pattern) => new RegExp(pattern));
+    //
+    // `compileUserPatterns`, not a bare `new RegExp`. A user pattern reaches
+    // this line, and a bare constructor has two measured failure modes here —
+    // `[` throws "Invalid regular expression" out of `create()`, killing the
+    // whole lint run rather than just this rule, and `(a+)+$` takes tens of
+    // seconds on a single file. The devkit helper degrades both to a plain
+    // substring match. `no-timing-unsafe-compare` learned this first.
+    const allowed = compileUserPatterns(allowPatterns, '');
 
     function isInAllowedContext(): boolean {
       if (allowContexts.includes('test') && (filename.includes('.test.') || filename.includes('.spec.') || filename.includes('/__tests__/'))) {
@@ -162,7 +174,7 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
           // the second is the defect class the doctrine is about.
           if (allowed.length > 0) {
             const text = context.sourceCode.getText(requireArg);
-            if (allowed.some((pattern) => pattern.test(text))) {
+            if (matchesAnyUserPattern(allowed, text)) {
               return;
             }
           }
