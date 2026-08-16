@@ -12,7 +12,10 @@
  * @see https://cwe.mitre.org/data/definitions/798.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons,
+  compileUserPatterns,
+  type PatternTest,
+} from '@interlace/eslint-devkit';
 import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'useEnvironmentVariable' | 'useSecretManager' | 'strategyEnv' | 'strategyConfig' | 'strategyVault' | 'strategyAuto';
@@ -529,7 +532,7 @@ type CredentialConfidence = 'structural' | 'ambiguous';
 function looksLikeCredential(
   value: string,
   options: Required<Pick<Options, 'minLength' | 'detectApiKeys' | 'detectPasswords' | 'detectTokens' | 'detectDatabaseStrings' | 'customPatterns'>>,
-  ignorePatterns: RegExp[]
+  ignorePatterns: readonly PatternTest[]
 ): { isCredential: boolean; type: string; confidence: CredentialConfidence } {
   const NONE = { isCredential: false, type: '', confidence: 'ambiguous' as const };
 
@@ -813,7 +816,12 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     );
 
     // Compile ignore patterns to regex
-    const compiledIgnorePatterns = ignorePatterns.map((pattern: string) => new RegExp(pattern));
+    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+    // "Invalid regular expression" out of create(), killing the whole lint
+    // run rather than just this rule. compileUserPattern degrades both to a
+    // substring match.
+    const compiledIgnorePatterns = compileUserPatterns(ignorePatterns as string[]);
 
     const detectionOptions = {
       minLength,

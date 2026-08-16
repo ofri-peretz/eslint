@@ -34,6 +34,7 @@ export * from './ast/module-binding';
 export * from './ast/static-expression';
 export * from './ast/identifier-words';
 export * from './ast/type-syntax';
+export * from './ast/user-regex';
 
 // Type utilities
 export * from './types/type-utils';

@@ -12,7 +12,9 @@
  * @see https://cwe.mitre.org/data/definitions/208.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES,
+  compileUserPatterns,
+} from '@interlace/eslint-devkit';
 import { constLiteralOf, makeReadsTaintSource } from '../../utils/provenance';
 
 type MessageIds =
@@ -356,7 +358,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     // because `key` is not among them. The existence-check guard below is what
     // handles the same shape when a project adds `key` back through
     // `secretPatterns` — two separate mechanisms, not one.
-    const patterns = secretPatterns.map((p) => new RegExp(p, 'i'));
+    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+    // "Invalid regular expression" out of create(), killing the whole lint
+    // run rather than just this rule. compileUserPattern degrades both to a
+    // substring match.
+    const patterns = compileUserPatterns(secretPatterns as string[], 'i');
 
     function nameLooksSecret(name: string): boolean {
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;

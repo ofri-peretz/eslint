@@ -13,7 +13,11 @@
  * @see https://owasp.org/www-community/vulnerabilities/Improper_Access_Control
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons,
+  compileUserPatterns,
+  compileUserPattern,
+  type PatternTest,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'privilegeEscalation' | 'addRoleCheck';
@@ -82,7 +86,7 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
 function containsUserInput(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  userInputPatterns: RegExp[]
+  userInputPatterns: readonly PatternTest[]
 ): boolean {
   const text = sourceCode.getText(node);
   return userInputPatterns.some(pattern => pattern.test(text));
@@ -245,14 +249,19 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const testFileRegex = new RegExp(testFilePattern);
+    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+    // "Invalid regular expression" out of create(), killing the whole lint
+    // run rather than just this rule. compileUserPattern degrades both to a
+    // substring match.
+    const testFileRegex = compileUserPattern(testFilePattern);
     const isTestFile = allowInTests && testFileRegex.test(filename);
     const sourceCode = context.sourceCode;
 
     // Combine default and additional user input patterns
     const userInputPatterns = [
       ...DEFAULT_USER_INPUT_PATTERNS,
-      ...additionalUserInputPatterns.map(pattern => new RegExp(pattern, 'i')),
+      ...compileUserPatterns(additionalUserInputPatterns as string[], 'i'),
     ];
 
     /**

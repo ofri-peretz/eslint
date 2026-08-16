@@ -13,7 +13,11 @@
  * @see https://owasp.org/www-community/vulnerabilities/Improper_Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons,
+  compileUserPattern,
+  compileUserPatterns,
+  matchesAnyUserPattern,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingAuthentication' | 'addAuthentication';
@@ -167,15 +171,14 @@ function isInsideAuthMiddleware(
  * Check if a string matches any ignore pattern
  */
 function matchesIgnorePattern(text: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
-    try {
-      const regex = new RegExp(pattern, 'i');
-      return regex.test(text);
-    } catch {
-      // Invalid regex - treat as literal string match
-      return text.toLowerCase().includes(pattern.toLowerCase());
-    }
-  });
+  // The try/catch here already handled an INVALID pattern. It did nothing for a
+  // VALID but catastrophic one: `ignorePatterns: ['(a+)+$']` against a 30-char
+  // route path took 58.2s on a single file (control: 1.65s), because
+  // backtracking explodes inside a regex that compiles perfectly well.
+  //
+  // compileUserPattern covers both, and hoisting the compile out of the
+  // per-call loop is a bonus rather than the point.
+  return matchesAnyUserPattern(compileUserPatterns(patterns, 'i'), text);
 }
 
 export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
@@ -267,7 +270,12 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const testFileRegex = new RegExp(testFilePattern);
+    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+    // "Invalid regular expression" out of create(), killing the whole lint
+    // run rather than just this rule. compileUserPattern degrades both to a
+    // substring match.
+    const testFileRegex = compileUserPattern(testFilePattern);
     const isTestFile = allowInTests && testFileRegex.test(filename);
     const sourceCode = context.sourceCode;
 
