@@ -37,13 +37,14 @@ type MessageIds =
   | 'insecureIpcPattern'
   | 'missingSandbox';
 
+/**
+ * `allowInDev` and `safePreloadPatterns` (default `['contextBridge',
+ * 'ipcRenderer']`) used to be declared here and in `meta.schema`. Neither was
+ * ever read by `create()`. `allowInDev` in particular promised that the rule
+ * would stand down in development builds, which it never did — a promise worth
+ * removing rather than leaving a consumer to rely on.
+ */
 export interface Options extends SecurityRuleOptions {
-  /** Allow insecure settings in development */
-  allowInDev?: boolean;
-
-  /** Safe preload script patterns */
-  safePreloadPatterns?: string[];
-
   /** Allowed IPC channels */
   allowedIpcChannels?: string[];
 }
@@ -137,16 +138,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
-          allowInDev: {
-            type: 'boolean',
-            default: false,
-            description: 'Allow insecure settings in development'
-          },
-          safePreloadPatterns: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['contextBridge', 'ipcRenderer'], description: 'Preload-script APIs treated as safe'
-          },
           allowedIpcChannels: {
             type: 'array',
             items: { type: 'string' },
@@ -176,8 +167,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowInDev: false,
-      safePreloadPatterns: ['contextBridge', 'ipcRenderer'],
       allowedIpcChannels: [],
       trustedSanitizers: [],
       trustedAnnotations: [],
@@ -218,7 +207,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       for (const prop of optionsNode.properties) {
         if (prop.type === 'Property' &&
             prop.key.type === 'Identifier') {
-
           const key = prop.key.name;
           const value = prop.value;
 
@@ -420,7 +408,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
           if (node.left.type === 'MemberExpression' &&
               node.left.property.type === 'Identifier' &&
               node.left.property.name === 'preload') {
-
             if (node.right.type === 'Literal' && typeof node.right.value === 'string') {
               const preloadPath = node.right.value;
 

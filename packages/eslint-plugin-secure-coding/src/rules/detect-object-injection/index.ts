@@ -49,18 +49,19 @@ const fileUsesAstTooling = createModuleEvidence({
 type MessageIds =
   | 'objectInjection';
 
+/**
+ * `additionalMethods` and `strategy` used to be declared here and in
+ * `meta.schema`. Neither was ever read by `create()`. `strategy` selected
+ * between the `strategyValidate`/`strategyWhitelist`/`strategyFreeze`
+ * suggestions, which were themselves never reported and have been removed —
+ * so it chose between three things that did not exist.
+ */
 export interface Options {
   /** Allow bracket notation with literal strings. Default: false (stricter) */
   allowLiterals?: boolean;
 
-  /** Additional object methods to check for injection */
-  additionalMethods?: string[];
-
   /** Properties to consider dangerous. Default: __proto__, prototype, constructor */
   dangerousProperties?: string[];
-
-  /** Strategy for fixing object injection: 'validate', 'whitelist', 'freeze', or 'auto' */
-  strategy?: 'validate' | 'whitelist' | 'freeze' | 'auto';
 }
 
 type RuleOptions = [Options?];
@@ -146,7 +147,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
       }),
-
     },
     schema: [
       {
@@ -157,24 +157,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Allow bracket notation with literal strings'
           },
-          additionalMethods: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Additional object methods to check for injection'
-          },
           dangerousProperties: {
             type: 'array',
             items: { type: 'string' },
             default: ['__proto__', 'prototype', 'constructor'],
             description: 'Properties to consider dangerous'
           },
-          strategy: {
-            type: 'string',
-            enum: ['validate', 'whitelist', 'freeze', 'auto'],
-            default: 'auto',
-            description: 'Strategy for fixing object injection (auto = smart detection)'
-          }
         },
         additionalProperties: false,
       },
@@ -183,9 +171,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowLiterals: false,
-      additionalMethods: [],
       dangerousProperties: ['__proto__', 'prototype', 'constructor'],
-      strategy: 'auto'
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -552,7 +538,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       isAssignment: boolean;
       pattern: ObjectInjectionPattern | null;
     } => {
-
       let object: string;
       let property: string;
       let propertyNode: TSESTree.Node;

@@ -37,18 +37,16 @@ type MessageIds =
   | 'dangerousInnerHTML'
   | 'unsafeSanitizerConfig';
 
+/**
+ * `trustedDirectives`, `frameworks` and `allowDynamicInComponents` used to be
+ * declared here and in `meta.schema`. None was ever read by `create()`. The
+ * framework vocabulary the rule actually uses is the module-scope
+ * `DANGEROUS_TAGS`/attribute sets below; `frameworks` named a knob that was
+ * wired to nothing.
+ */
 export interface Options extends SecurityRuleOptions {
-  /** Trusted directive/component names */
-  trustedDirectives?: string[];
-
   /** Variables that contain user input */
   userInputVariables?: string[];
-
-  /** Frameworks to check for */
-  frameworks?: string[];
-
-  /** Allow dynamic directives in specific contexts */
-  allowDynamicInComponents?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -229,24 +227,10 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
-          trustedDirectives: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['ngIf', 'ngFor', 'ngClass', 'v-if', 'v-for', 'v-bind', 'v-on'], description: 'Template directives treated as safe'
-          },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
             default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
-          },
-          frameworks: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['angular', 'vue', 'react', 'svelte'], description: 'Template frameworks to analyse'
-          },
-          allowDynamicInComponents: {
-            type: 'boolean',
-            default: false, description: 'Allow dynamic directives inside component code'
           },
           trustedSanitizers: {
             type: 'array',
@@ -272,10 +256,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      trustedDirectives: ['ngIf', 'ngFor', 'ngClass', 'v-if', 'v-for', 'v-bind', 'v-on'],
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
-      frameworks: ['angular', 'vue', 'react', 'svelte'],
-      allowDynamicInComponents: false,
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -407,7 +388,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         if (left.type === 'MemberExpression' &&
             left.property.type === 'Identifier' &&
             left.property.name === 'innerHTML') {
-
           // A sanitizer call IS the documented fix for this defect, so reporting
           // `node.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [...] })` tells the
           // reader to do what they already did. Only skip when the config is not one of the
@@ -469,7 +449,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         // Check for template compilation functions
         if (callee.type === 'MemberExpression' &&
             callee.property.type === 'Identifier') {
-
           const methodName = callee.property.name;
           const objectName = callee.object.type === 'Identifier' ? callee.object.name : '';
 
@@ -480,7 +459,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
               (objectName === 'ejs' && methodName === 'render') ||
               (objectName === 'pug' && methodName === 'render') ||
               (objectName === 'mustache' && methodName === 'render')) {
-
             const args = node.arguments;
             if (args.length > 0) {
               const templateArg = args[0];

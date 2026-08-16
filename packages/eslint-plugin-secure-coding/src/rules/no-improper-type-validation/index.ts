@@ -35,12 +35,16 @@ type MessageIds =
   | 'missingNullCheck'
   | 'unreliableConstructorCheck';
 
+/**
+ * `safeTypeCheckFunctions` (default `['isArray', 'isString', 'isNumber',
+ * 'isObject', 'validateType', 'checkType']`) used to be declared here and in
+ * `meta.schema`, and was never read by `create()`. It looked like the
+ * allowlist a consumer would use to teach the rule about their own type
+ * guards; it did nothing.
+ */
 export interface Options extends SecurityRuleOptions {
   /** Variables that contain user input and should be validated */
   userInputVariables?: string[];
-
-  /** Safe type checking functions */
-  safeTypeCheckFunctions?: string[];
 
   /** Whether to allow instanceof in same-realm contexts */
   allowInstanceofSameRealm?: boolean;
@@ -112,7 +116,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         fix: 'Use Object.prototype.toString.call() or duck typing',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor',
       }),
-
     },
     schema: [
       {
@@ -122,11 +125,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
-          },
-          safeTypeCheckFunctions: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['isArray', 'isString', 'isNumber', 'isObject', 'validateType', 'checkType'], description: 'Function names that count as a type check'
           },
           allowInstanceofSameRealm: {
             type: 'boolean',
@@ -158,7 +156,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
-      safeTypeCheckFunctions: ['isArray', 'isString', 'isNumber', 'isObject', 'validateType', 'checkType'],
       allowInstanceofSameRealm: true,
       trustedSanitizers: [],
       trustedAnnotations: [],
@@ -351,7 +348,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           if ((left.type === 'Identifier' && isUserInput(left.name)) ||
               (right.type === 'Identifier' && isUserInput(right.name)) ||
               leftText.includes('null') || rightText.includes('null')) {
-
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
@@ -416,7 +412,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         // Check for safe type checking functions
         if (callee.type === 'MemberExpression' &&
             callee.property.type === 'Identifier') {
-
           const methodName = callee.property.name;
           const objectName = callee.object.type === 'Identifier' ? callee.object.name : '';
 
@@ -474,11 +469,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           // Check for incomplete null checks
           if ((testText.includes('!= null') || testText.includes('== null')) &&
               !testText.includes('!== undefined') && !testText.includes('=== undefined')) {
-
             // Check if this involves user input
             if ((test.left.type === 'Identifier' && isUserInput(test.left.name)) ||
                 (test.right.type === 'Identifier' && isUserInput(test.right.name))) {
-
               if (safetyChecker.isSafe(node, context)) {
                 return;
               }

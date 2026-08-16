@@ -19,6 +19,15 @@ import { createRule } from '@interlace/eslint-devkit';
 type MessageIds =
   | 'regexpReDoS';
 
+/**
+ * `additionalPatterns` used to be declared here, in `meta.schema` and in
+ * `defaultOptions`. `create()` never read it — not in this revision and not in
+ * any revision `git log -S` can find. Setting it did nothing, and because
+ * `additionalProperties: false` accepted it, a consumer got no signal either.
+ * Removed rather than implemented: inventing a second RegExp-constructor
+ * vocabulary would change detection on every repository that never asked for
+ * it, and this rule's numbers are published.
+ */
 export interface Options {
   /**
    * Allow literal string regex patterns — `new RegExp('^[a-z]+$')`.
@@ -27,8 +36,6 @@ export interface Options {
    */
   allowLiterals?: boolean;
   
-  /** Additional RegExp creation patterns to check */
-  additionalPatterns?: string[];
   
   /** Maximum allowed pattern length for dynamic regex */
   maxPatternLength?: number;
@@ -234,12 +241,6 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Allow literal string regex patterns'
           },
-          additionalPatterns: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Additional RegExp creation patterns to check'
-          },
           maxPatternLength: {
             type: 'number',
             default: 100,
@@ -254,7 +255,6 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowLiterals: true,
-      additionalPatterns: [],
       maxPatternLength: 100
     },
   ],

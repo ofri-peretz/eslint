@@ -20,6 +20,12 @@ import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'useEnvironmentVariable' | 'useSecretManager';
 
+/**
+ * `strategy` used to be declared here and in `meta.schema`, with an enum of
+ * `env`/`config`/`vault`/`auto`. `create()` never read it. It selected between
+ * the `strategyEnv`/`strategyConfig`/`strategyVault`/`strategyAuto`
+ * suggestions, which were themselves never reported and have been removed.
+ */
 export interface Options {
   /** Patterns to ignore (regex strings). Default: [] */
   ignorePatterns?: string[];
@@ -62,9 +68,6 @@ export interface Options {
     /** Regex pattern to match */
     pattern: string;
   }>;
-
-  /** Strategy for fixing hardcoded credentials: 'env', 'config', 'vault', 'auto' */
-  strategy?: 'env' | 'config' | 'vault' | 'auto';
 
   /** Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`). Default: true */
   allowPlaceholders?: boolean;
@@ -723,12 +726,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Custom credential patterns to detect',
           },
-          strategy: {
-            type: 'string',
-            enum: ['env', 'config', 'vault', 'auto'],
-            default: 'auto',
-            description: 'Strategy for fixing hardcoded credentials (auto = smart detection)'
-          },
           allowPlaceholders: {
             type: 'boolean',
             default: true,
@@ -750,7 +747,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectTokens: true,
       detectDatabaseStrings: true,
       customPatterns: [],
-      strategy: 'auto',
       allowPlaceholders: true,
     },
   ],
@@ -798,7 +794,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectDatabaseStrings,
       customPatterns,
     };
-
 
     /**
      * Variable / property names that hold UI labels and HTML attribute

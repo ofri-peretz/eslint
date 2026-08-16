@@ -19,6 +19,15 @@ import { createRule } from '@interlace/eslint-devkit';
 type MessageIds =
   | 'sensitiveDataExposure';
 
+/**
+ * `checkApiResponses` (default `true`) used to be declared here and in
+ * `meta.schema`, and was never read by `create()` — there is no API-response
+ * path in this rule at all; it visits `CallExpression` for loggers and
+ * `NewExpression` for `Error`, and nothing else. `meta.docs.description` still
+ * says "logs, responses, or error messages"; the third of those has never been
+ * true, and the description is left alone here only because rewording it is a
+ * separate, docs-wide change.
+ */
 export interface Options {
   /** Sensitive data patterns. Default: ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'card'] */
   sensitivePatterns?: string[];
@@ -29,8 +38,6 @@ export interface Options {
   /** Check error messages. Default: true */
   checkErrorMessages?: boolean;
   
-  /** Check API responses. Default: true */
-  checkApiResponses?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -253,11 +260,6 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Check error messages',
           },
-          checkApiResponses: {
-            type: 'boolean',
-            default: true,
-            description: 'Check API responses',
-          },
         },
         additionalProperties: false,
       },
@@ -268,7 +270,6 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       sensitivePatterns: ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
       checkConsoleLog: true,
       checkErrorMessages: true,
-      checkApiResponses: true,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
@@ -324,7 +325,6 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
       })();
 
       if (isLoggingCall && checkConsoleLog) {
-
         // Check if any argument contains sensitive data
         for (const arg of node.arguments) {
           if (arg.type === 'Literal' && typeof arg.value === 'string') {
@@ -528,5 +528,4 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
     };
   },
 });
-
 

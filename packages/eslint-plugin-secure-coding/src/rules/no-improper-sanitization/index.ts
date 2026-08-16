@@ -32,6 +32,14 @@ type MessageIds =
   | 'incompleteHtmlEscaping'
   | 'unsafeReplaceSanitization';
 
+/**
+ * `trustedLibraries` (default `['DOMPurify', 'he', 'validator',
+ * 'express-validator']`) used to be declared here and in `meta.schema`, and
+ * was never read by `create()`. It read as this rule's escape hatch — the one
+ * knob a consumer would reach for to stop it reporting their sanitizer — and
+ * it did nothing at all. `safeSanitizers`, immediately below, is the option
+ * that actually works.
+ */
 export interface Options extends SecurityRuleOptions {
   /** Safe sanitization functions */
   safeSanitizers?: string[];
@@ -41,9 +49,6 @@ export interface Options extends SecurityRuleOptions {
 
   /** Contexts that require different encoding */
   contexts?: string[];
-
-  /** Trusted sanitization libraries */
-  trustedLibraries?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -112,11 +117,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['html', 'url', 'sql', 'command', 'javascript', 'css'], description: 'Output contexts checked for a context-appropriate sanitizer'
           },
-          trustedLibraries: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['DOMPurify', 'he', 'validator', 'express-validator'], description: 'Libraries whose sanitizers are trusted'
-          },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
@@ -144,7 +144,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       safeSanitizers: ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'],
       dangerousChars: ['<', '>', '"', "'", '&'],
       contexts: ['html', 'url', 'sql', 'command', 'javascript', 'css'],
-      trustedLibraries: ['DOMPurify', 'he', 'validator', 'express-validator'],
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -324,7 +323,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         if (callee.type === 'MemberExpression' &&
             callee.property.type === 'Identifier' &&
             callee.property.name === 'replace') {
-
           // One decision per chain — see isMidChain.
           if (isMidChain(node)) {
             return;
@@ -380,7 +378,6 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         // Check for assignments to potentially dangerous properties
         if (left.type === 'MemberExpression' &&
             left.property.type === 'Identifier') {
-
           const propertyName = left.property.name.toLowerCase();
 
           if (['innerhtml', 'outerhtml', 'innertext', 'textcontent'].includes(propertyName)) {

@@ -71,7 +71,14 @@ function nameOf(node: TSESTree.Node): string {
     case AST_NODE_TYPES.TemplateLiteral:
       return node.quasis.map((q) => q.value.raw).join('');
     case AST_NODE_TYPES.MemberExpression:
-      return node.property.type === AST_NODE_TYPES.Identifier ? node.property.name : '';
+      if (node.property.type === AST_NODE_TYPES.Identifier) return node.property.name;
+      // `process.env['CLIENT_SECRET']` names the same slot as
+      // `process.env.CLIENT_SECRET`. Reading only Identifier properties made
+      // the evidence depend on bracket-versus-dot notation.
+      return node.property.type === AST_NODE_TYPES.Literal &&
+        typeof node.property.value === 'string'
+        ? node.property.value
+        : '';
     default:
       return '';
   }
@@ -89,6 +96,22 @@ export function storesACredential(node: TSESTree.CallExpression): boolean {
     if (argument.type === AST_NODE_TYPES.SpreadElement) return false;
     return namesACredential(nameOf(argument));
   });
+}
+
+/**
+ * Does this single expression name a credential?
+ *
+ * The node-level form of the test `storesACredential` runs over a call's
+ * arguments. `process.env.SESSION_TOKEN = value` is an assignment, not a call,
+ * so there is no argument list to walk — the evidence is the assignment target
+ * and the assigned expression, each judged on its own.
+ *
+ * Routed through the same `namesACredential` as every other caller on purpose:
+ * a second copy of the word list is how this module's vocabulary would start
+ * drifting between the rules that share it.
+ */
+export function expressionNamesACredential(node: TSESTree.Node): boolean {
+  return namesACredential(nameOf(node));
 }
 
 /**
@@ -119,7 +142,18 @@ function calleeEncrypts(name: string): boolean {
  * anything encrypted it.
  */
 export function isEncrypted(node: TSESTree.CallExpression): boolean {
-  const value = node.arguments[1];
+  return isEncryptedExpression(node.arguments[1]);
+}
+
+/**
+ * Is this expression the RESULT of an encryption call?
+ *
+ * Split out of `isEncrypted` so the environment sink can share it: there the
+ * value is the right-hand side of an assignment, not an argument, but the
+ * question is identical. `undefined` — a call with no second argument, an
+ * assignment the caller could not read — is not encrypted.
+ */
+export function isEncryptedExpression(value: TSESTree.Node | undefined): boolean {
   if (value?.type !== AST_NODE_TYPES.CallExpression) return false;
 
   const callee = value.callee;
@@ -157,6 +191,40 @@ export function isWebStorageWrite(node: TSESTree.CallExpression): boolean {
     object.type === AST_NODE_TYPES.MemberExpression &&
     object.property.type === AST_NODE_TYPES.Identifier &&
     CLIENT_STORES.has(object.property.name)
+  );
+}
+
+/**
+ * `process.env.X = …` / `process.env['X'] = …` — the environment as a store.
+ *
+ * The Node sink this pair of rules was missing entirely. `isWebStorageWrite`
+ * recognises `localStorage`, `sessionStorage` and `AsyncStorage`; none of the
+ * three exists in Node, so inside `eslint-plugin-node-security`
+ * `require-secure-credential-storage` had no reachable sink at all — it was a
+ * browser rule filed under Node, quiet on every server codebase it ever ran on.
+ *
+ * Writing a secret here is CWE-526: the value is inherited by every child
+ * process the app spawns, readable at `/proc/<pid>/environ`, captured verbatim
+ * by crash dumps and by the `process.env` dumps that error reporters send
+ * upstream. Reading `process.env.TOKEN` is fine and extremely common — only the
+ * WRITE is the finding, which is why this takes an AssignmentExpression rather
+ * than looking at member reads.
+ *
+ * Distinct from `no-env-injection`, which judges the environment variable's
+ * KEY for request taint and never looks at the value. A literal key holding a
+ * secret is invisible to it.
+ */
+export function isEnvironmentWrite(node: TSESTree.AssignmentExpression): boolean {
+  const target = node.left;
+  if (target.type !== AST_NODE_TYPES.MemberExpression) return false;
+  const object = target.object;
+  return (
+    object.type === AST_NODE_TYPES.MemberExpression &&
+    !object.computed &&
+    object.object.type === AST_NODE_TYPES.Identifier &&
+    object.object.name === 'process' &&
+    object.property.type === AST_NODE_TYPES.Identifier &&
+    object.property.name === 'env'
   );
 }
 

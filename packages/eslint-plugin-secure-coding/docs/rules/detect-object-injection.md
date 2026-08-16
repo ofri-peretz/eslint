@@ -108,7 +108,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | Option                | Type       | Default                                     | Description                                 |
 | --------------------- | ---------- | ------------------------------------------- | ------------------------------------------- |
 | `allowLiterals`       | `boolean`  | `false`                                     | Allow bracket notation with literal strings |
-| `additionalMethods`   | `string[]` | `[]`                                        | Additional object methods to check          |
 | `dangerousProperties` | `string[]` | `['__proto__', 'prototype', 'constructor']` | Properties to consider dangerous            |
 
 ## Examples
@@ -364,6 +363,4 @@ const obj = JSON.parse(userJson); // May have __proto__
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowLiterals` | `boolean` | `false` | Allow bracket notation with literal strings |
-| `additionalMethods` | `string[]` | `[]` | Additional object methods to check for injection |
 | `dangerousProperties` | `string[]` | `["__proto__","prototype","constructor"]` | Properties to consider dangerous |
-| `strategy` | `"validate"` \| `"whitelist"` \| `"freeze"` \| `"auto"` | `"auto"` | Strategy for fixing object injection (auto = smart detection) |

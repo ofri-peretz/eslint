@@ -34,13 +34,15 @@ type MessageIds =
   | 'missingTokenExpiration'
   | 'recoveryLoggingSensitiveData';
 
+/**
+ * `minTokenEntropy` (default 128) and `maxTokenLifetimeHours` (default 1) used
+ * to be declared here and in `meta.schema`. Neither was ever read by
+ * `create()`: the rule has no entropy estimator and no lifetime analysis, so
+ * both numbers were decoration. Removed rather than implemented — a bit-count
+ * threshold the rule cannot measure is worse than no threshold, because it
+ * reads as a guarantee.
+ */
 export interface Options extends SecurityRuleOptions {
-  /** Minimum token entropy bits */
-  minTokenEntropy?: number;
-
-  /** Maximum token lifetime in hours */
-  maxTokenLifetimeHours?: number;
-
   /** Recovery-related keywords */
   recoveryKeywords?: string[];
 
@@ -124,16 +126,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
-          minTokenEntropy: {
-            type: 'number',
-            minimum: 64,
-            default: 128, description: 'Minimum recovery-token entropy in bits'
-          },
-          maxTokenLifetimeHours: {
-            type: 'number',
-            minimum: 0.25,
-            default: 1, description: 'Maximum recovery-token lifetime in hours'
-          },
           recoveryKeywords: {
             type: 'array',
             items: { type: 'string' },
@@ -168,8 +160,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      minTokenEntropy: 128,
-      maxTokenLifetimeHours: 1,
       recoveryKeywords: ['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken'],
       secureTokenFunctions: ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'],
       trustedSanitizers: [],
@@ -500,7 +490,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
              callee.property.type === 'Identifier' &&
              ['log', 'info', 'warn', 'error'].includes(callee.property.name)) ||
             (callee.type === 'Identifier' && callee.name === 'logger')) {
-
           const args = node.arguments;
           for (const arg of args) {
              // Ignore literal strings (labels, messages) - focusing on sensitive variables

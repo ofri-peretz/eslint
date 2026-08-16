@@ -1090,3 +1090,86 @@ const inputType = \`(\${intentKey})\`;`,
     ],
   });
 });
+
+/**
+ * Every option in `meta.schema`, exercised so that setting it CHANGES the
+ * verdict.
+ *
+ * The bar is deliberately not "the option is mentioned in a test". A case that
+ * reports the same way with and without the setting executes the line and
+ * proves nothing about it — the branch could be deleted and the suite would
+ * stay green. Each pair below is the same source with and without one option,
+ * and the two halves disagree.
+ */
+describe('option branches', () => {
+  const SANITIZED =
+    "import ldapjs from 'ldapjs';\n" +
+    'const userInput = ldapClean(req.query.name);\n' +
+    'client.search(baseDN, userInput, options);';
+  const ANNOTATED =
+    "import ldapjs from 'ldapjs';\n" +
+    '// @ldap-reviewed\n' +
+    'const ldapQuery = req.query.filter;';
+  const BUILT_IN_ANNOTATION =
+    "import ldapjs from 'ldapjs';\n// @safe\nconst ldapQuery = req.query.filter;";
+
+  ruleTester.run('trustedSanitizers silences a custom escaper', noLdapInjection, {
+    valid: [{ code: SANITIZED, options: [{ trustedSanitizers: ['ldapClean'] }] }],
+    // …and without it, the very same source is reported. `ldapClean` is not in
+    // the devkit's built-in SANITIZATION_FUNCTIONS, and membership there is
+    // exact, so nothing but the option can account for the difference.
+    invalid: [{ code: SANITIZED, errors: [{ messageId: 'unescapedLdapInput' }] }],
+  });
+
+  ruleTester.run('trustedAnnotations honours a project marker', noLdapInjection, {
+    valid: [
+      { code: ANNOTATED, options: [{ trustedAnnotations: ['@ldap-reviewed'] }] },
+    ],
+    invalid: [{ code: ANNOTATED, errors: [{ messageId: 'ldapInjection' }] }],
+  });
+
+  ruleTester.run('strictMode ignores the safety checker', noLdapInjection, {
+    // `@safe` is a built-in SAFE_ANNOTATION, so this is quiet by default…
+    valid: [BUILT_IN_ANNOTATION],
+    // …and strictMode turns every suppression off, including that one.
+    invalid: [
+      {
+        code: BUILT_IN_ANNOTATION,
+        options: [{ strictMode: true }],
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+    ],
+  });
+
+  ruleTester.run('ldapFunctions redefines the sink set', noLdapInjection, {
+    // `lookup` is not an LDAP sink by default, so the interpolation is unseen…
+    valid: ["import ldapjs from 'ldapjs';\nclient.lookup(baseDN, `(cn=${req.query.name})`, options);"],
+    invalid: [
+      // …until the caller names it one.
+      {
+        code: "import ldapjs from 'ldapjs';\nclient.lookup(baseDN, `(cn=${req.query.name})`, options);",
+        options: [{ ldapFunctions: ['lookup'] }],
+        errors: [{ messageId: 'unescapedLdapInput' }],
+      },
+    ],
+  });
+
+  // The converse direction, and the more useful one to pin: the option
+  // REPLACES the sink set rather than extending it. A consumer who adds one
+  // method of their own silently loses all seven defaults — `client.search`,
+  // the canonical CWE-90 sink, stops being examined at all.
+  ruleTester.run('ldapFunctions replaces rather than extends', noLdapInjection, {
+    valid: [
+      {
+        code: "import ldapjs from 'ldapjs';\nclient.search(baseDN, `(cn=${req.query.name})`, options);",
+        options: [{ ldapFunctions: ['lookup'] }],
+      },
+    ],
+    invalid: [
+      {
+        code: "import ldapjs from 'ldapjs';\nclient.search(baseDN, `(cn=${req.query.name})`, options);",
+        errors: [{ messageId: 'unescapedLdapInput' }],
+      },
+    ],
+  });
+});
