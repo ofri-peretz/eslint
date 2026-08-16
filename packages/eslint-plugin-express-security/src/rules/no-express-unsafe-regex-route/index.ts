@@ -23,7 +23,7 @@ import {
   createRule,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeRegexRoute' | 'unsafeParamPattern' | 'refactorRoute';
+type MessageIds = 'unsafeRegexRoute' | 'unsafeParamPattern';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -94,7 +94,6 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1333',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       unsafeRegexRoute: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -117,14 +116,7 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
         fix: 'Use explicit path segments instead of :param+ or :param*. For example: /api/:id/details instead of /api/:path+',
         documentationLink: 'https://expressjs.com/en/guide/routing.html',
       }),
-      refactorRoute: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Refactor Route',
-        description: 'Refactor to use a simpler, non-vulnerable pattern',
-        severity: 'LOW',
-        fix: 'Use string routes with explicit path segments',
-        documentationLink: 'https://expressjs.com/en/guide/routing.html',
-      }),
+
     },
     schema: [
       {
@@ -194,12 +186,6 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
             context.report({
               node: routeArg,
               messageId: 'unsafeRegexRoute',
-              suggest: [
-                {
-                  messageId: 'refactorRoute',
-                  fix: () => null, // Manual fix required
-                },
-              ],
             });
           }
           return;
@@ -221,12 +207,6 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
               context.report({
                 node: routeArg,
                 messageId: 'unsafeRegexRoute',
-                suggest: [
-                  {
-                    messageId: 'refactorRoute',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }
@@ -239,12 +219,6 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
             context.report({
               node: routeArg,
               messageId: 'unsafeParamPattern',
-              suggest: [
-                {
-                  messageId: 'refactorRoute',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }

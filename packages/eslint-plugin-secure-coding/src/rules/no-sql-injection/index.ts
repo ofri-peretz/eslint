@@ -372,6 +372,38 @@ function effectiveExpression(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope | null,
 ): TSESTree.Node {
+  // A LOCAL query builder resolves to the string it returns.
+  //
+  //   const build = (t) => `SELECT * FROM logs WHERE tag = '${t}'`;
+  //   db.query(build(req.query.tag));            // was completely silent
+  //
+  // `isBuiltString` rejected the CallExpression before attribution ever ran, so
+  // the whole injection disappeared. Substituting the builder's returned
+  // template makes both gates see the real query, and `req.query.tag` is then
+  // attributed through the call's arguments as usual.
+  //
+  // Only when the callee resolves HERE and its body is visibly an interpolated
+  // string. An imported call — `escapeIdentifier(req.query.sort)` — does not
+  // resolve, so the documented fix stays quiet. Escapers come from libraries;
+  // builders are written in the file.
+  if (node.type === AST_NODE_TYPES.CallExpression) {
+    if (node.callee.type !== AST_NODE_TYPES.Identifier) return node;
+    const fn = resolveVariable(node.callee.name, scope);
+    const impl = fn === null ? null : singleAssignedInit(fn);
+    if (
+      impl === null ||
+      (impl.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        impl.type !== AST_NODE_TYPES.FunctionExpression)
+    ) {
+      return node;
+    }
+    const returned = impl.body;
+    return returned.type === AST_NODE_TYPES.TemplateLiteral ||
+      returned.type === AST_NODE_TYPES.BinaryExpression
+      ? returned
+      : node;
+  }
+
   if (node.type !== AST_NODE_TYPES.Identifier) return node;
   const variable = resolveVariable(node.name, scope);
   if (variable === null) return node;

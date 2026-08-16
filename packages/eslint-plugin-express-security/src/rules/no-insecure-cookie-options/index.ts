@@ -293,12 +293,6 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
                 data: {
                   issues: issues.join('; '),
                 },
-                suggest: [
-                  {
-                    messageId: 'addSecureFlags',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }

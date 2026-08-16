@@ -20,7 +20,7 @@ import {
   createRule,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'graphqlIntrospection' | 'disableIntrospection';
+type MessageIds = 'graphqlIntrospection';
 
 export interface Options {
   /** Allow introspection in test files. Default: true */
@@ -84,7 +84,6 @@ export const noGraphqlIntrospectionProduction = createRule<
       cwe: 'CWE-200',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       graphqlIntrospection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -97,15 +96,7 @@ export const noGraphqlIntrospectionProduction = createRule<
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html#introspection-graphiql',
       }),
-      disableIntrospection: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Disable Introspection in Production',
-        description: 'Disable GraphQL introspection for production',
-        severity: 'LOW',
-        fix: "introspection: process.env.NODE_ENV !== 'production'",
-        documentationLink:
-          'https://www.apollographql.com/docs/apollo-server/api/apollo-server/#introspection',
-      }),
+
     },
     schema: [
       {
@@ -189,12 +180,6 @@ export const noGraphqlIntrospectionProduction = createRule<
           context.report({
             node: configArg,
             messageId: 'graphqlIntrospection',
-            suggest: [
-              {
-                messageId: 'disableIntrospection',
-                fix: () => null,
-              },
-            ],
           });
         }
       },
@@ -223,12 +208,6 @@ export const noGraphqlIntrospectionProduction = createRule<
           context.report({
             node: configArg,
             messageId: 'graphqlIntrospection',
-            suggest: [
-              {
-                messageId: 'disableIntrospection',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

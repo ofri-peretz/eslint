@@ -21,7 +21,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingTimeoutHandling' | 'addTimeoutCheck';
+type MessageIds = 'missingTimeoutHandling';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -66,7 +66,6 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-400',
       cvss: 6,
     },
-    hasSuggestions: true,
     messages: {
       missingTimeoutHandling: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -80,16 +79,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html',
       }),
-      addTimeoutCheck: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Timeout Check',
-        description:
-          'Check remaining time before making external calls to prevent timeouts',
-        severity: 'LOW',
-        fix: "const remainingTime = context.getRemainingTimeInMillis(); if (remainingTime < 5000) { return { statusCode: 503 } }",
-        documentationLink:
-          'https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html',
-      }),
+
     },
     schema: [
       {
@@ -172,12 +162,6 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'missingTimeoutHandling',
-          suggest: [
-            {
-              messageId: 'addTimeoutCheck',
-              fix: () => null,
-            },
-          ],
         });
       }
 

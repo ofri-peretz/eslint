@@ -37,7 +37,7 @@ import { getProjectContext } from '../../utils/project-context';
 import { tokenize } from '../../utils/sensitive-names';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
-type MessageIds = 'missingThrottler' | 'addThrottler';
+type MessageIds = 'missingThrottler';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -150,7 +150,6 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-770',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingThrottler: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -163,15 +162,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
         fix: 'Add @UseGuards(ThrottlerGuard) or configure global ThrottlerModule',
         documentationLink: 'https://docs.nestjs.com/security/rate-limiting',
       }),
-      addThrottler: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Rate Limiting',
-        description:
-          'Configure ThrottlerModule to protect against DoS/brute-force attacks',
-        severity: 'LOW',
-        fix: 'npm i @nestjs/throttler && ThrottlerModule.forRoot({ ttl: 60, limit: 10 })',
-        documentationLink: 'https://docs.nestjs.com/security/rate-limiting',
-      }),
+
     },
     schema: [
       {
@@ -337,7 +328,6 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'missingThrottler',
           data: { name: methodName },
-          suggest: [{ messageId: 'addThrottler', fix: () => null }],
         });
       },
     };

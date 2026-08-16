@@ -44,7 +44,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'hostHeaderInLink' | 'useConfiguredOrigin';
+type MessageIds = 'hostHeaderInLink';
 
 export interface Options {
   /**
@@ -73,7 +73,6 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
   name: 'no-host-header-in-links',
   meta: {
     type: 'problem',
-    hasSuggestions: true,
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-host-header-in-links.md',
       description:
@@ -92,15 +91,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
         fix: 'Build absolute links from a server-side constant (e.g. process.env.PUBLIC_ORIGIN), never from request headers.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
       }),
-      useConfiguredOrigin: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use a configured origin',
-        description:
-          'Replace the header-derived host with a deployment constant such as process.env.PUBLIC_ORIGIN',
-        severity: 'LOW',
-        fix: "const origin = process.env.PUBLIC_ORIGIN; // 'https://app.example.com'",
-        documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
-      }),
+
     },
     schema: [
       {
@@ -285,7 +276,6 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'hostHeaderInLink',
         data: { source },
-        suggest: [{ messageId: 'useConfiguredOrigin', fix: () => null }],
       });
     }
 

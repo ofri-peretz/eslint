@@ -61,12 +61,16 @@ const REPO = path.resolve(__dirname, '..', '..', '..');
  * Mozilla's dedicated implementation of exactly this check.
  */
 /** Non-default options to score OUR rule under, when the default is deliberately conservative. */
-const RULE_OPTIONS = { 'secure-coding/no-sql-injection': [{ reportUnattributedInterpolation: true }] };
+const RULE_OPTIONS = {};
 
 const COMPETITORS = {
   // The competitors here are BOTH external plugins AND our own driver-specific
   // ones. The second group is the point: this rule is the complement of those,
   // so if they cover the same fixtures it is redundant.
+  'postgresql-security/no-unsafe-query': [
+    { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['sql-queries'] },
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
+  ],
   'secure-coding/no-sql-injection': [
     { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['sql-queries'] },
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },

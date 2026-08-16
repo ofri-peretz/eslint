@@ -21,7 +21,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'ssrfVulnerability' | 'useAllowlist';
+type MessageIds = 'ssrfVulnerability';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -79,7 +79,6 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-918',
       cvss: 9.1,
     },
-    hasSuggestions: true,
     messages: {
       ssrfVulnerability: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -93,15 +92,7 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/attacks/Server_Side_Request_Forgery',
       }),
-      useAllowlist: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use URL Allowlist',
-        description: 'Implement an allowlist for permitted URL domains/hosts',
-        severity: 'LOW',
-        fix: "const ALLOWED_HOSTS = ['api.trusted.com']; if (!ALLOWED_HOSTS.includes(new URL(url).host)) throw new Error('Invalid URL')",
-        documentationLink:
-          'https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html',
-      }),
+
     },
     schema: [
       {
@@ -338,12 +329,6 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
             data: {
               source: result.source,
             },
-            suggest: [
-              {
-                messageId: 'useAllowlist',
-                fix: () => null, // Complex fix requiring allowlist setup
-              },
-            ],
           });
         }
       },

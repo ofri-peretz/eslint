@@ -26,7 +26,7 @@ import {
   createRule,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingHelmet' | 'addHelmet';
+type MessageIds = 'missingHelmet';
 
 export interface Options {
   /** Allow missing helmet in test files. Default: false */
@@ -117,7 +117,6 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
       cvss: 7.5,
       confidence: 'high',
     },
-    hasSuggestions: true,
     messages: {
       missingHelmet: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -129,14 +128,7 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
         fix: "Add helmet middleware: app.use(helmet()). Install with 'npm install helmet'.",
         documentationLink: 'https://helmetjs.github.io/',
       }),
-      addHelmet: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Helmet',
-        description: 'Add helmet middleware for security headers',
-        severity: 'LOW',
-        fix: "import helmet from 'helmet'; app.use(helmet());",
-        documentationLink: 'https://helmetjs.github.io/',
-      }),
+
     },
     schema: [
       {
@@ -306,12 +298,6 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
           context.report({
             node: expressAppNode,
             messageId: 'missingHelmet',
-            suggest: [
-              {
-                messageId: 'addHelmet',
-                fix: () => null, // Manual fix required - need to add import and app.use()
-              },
-            ],
           });
         }
       },

@@ -15,7 +15,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
-type MessageIds = 'envLogging' | 'removeEnvLogging';
+type MessageIds = 'envLogging';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -37,7 +37,6 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-532',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       envLogging: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -48,14 +47,7 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
         fix: 'Remove process.env from log statements or log specific non-sensitive values',
         documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
       }),
-      removeEnvLogging: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Remove Env Logging',
-        description: 'Remove environment variable logging',
-        severity: 'LOW',
-        fix: 'Log specific values instead: console.log("Region:", process.env.AWS_REGION)',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
-      }),
+
     },
     schema: [
       {
@@ -145,7 +137,6 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
             context.report({
               node: arg,
               messageId: 'envLogging',
-              suggest: [{ messageId: 'removeEnvLogging', fix: () => null }],
             });
           }
           // process.env inside template literal or string concatenation
@@ -157,7 +148,6 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
               context.report({
                 node: arg,
                 messageId: 'envLogging',
-                suggest: [{ messageId: 'removeEnvLogging', fix: () => null }],
               });
             }
           }

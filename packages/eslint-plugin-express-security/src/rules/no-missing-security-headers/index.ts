@@ -18,10 +18,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 
 type MessageIds =
-  | 'missingSecurityHeader'
-  | 'addSecurityHeaders'
-  | 'useMiddleware'
-  | 'setHeader';
+  | 'missingSecurityHeader';
 
 export interface Options {
   /** Required security headers. Default: ['Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options'] */
@@ -165,7 +162,6 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-693',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingSecurityHeader: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -176,31 +172,7 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
         fix: 'Set security headers: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options',
         documentationLink: 'https://owasp.org/www-project-secure-headers/',
       }),
-      addSecurityHeaders: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Security Headers',
-        description: 'Add security headers middleware',
-        severity: 'LOW',
-        fix: 'Add Content-Security-Policy, X-Frame-Options headers',
-        documentationLink: 'https://owasp.org/www-project-secure-headers/',
-      }),
-      useMiddleware: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Helmet',
-        description: 'Use helmet.js for security headers',
-        severity: 'LOW',
-        fix: 'app.use(helmet())',
-        documentationLink: 'https://helmetjs.github.io/',
-      }),
-      setHeader: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Set Headers',
-        description: 'Set security headers manually',
-        severity: 'LOW',
-        fix: 'res.setHeader("X-Frame-Options", "DENY")',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers',
-      }),
+
     },
     schema: [
       {
@@ -302,20 +274,6 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
           data: {
             headers: missing.join(', '),
           },
-          suggest: [
-            {
-              messageId: 'addSecurityHeaders',
-              fix: () => null,
-            },
-            {
-              messageId: 'useMiddleware',
-              fix: () => null,
-            },
-            {
-              messageId: 'setHeader',
-              fix: () => null,
-            },
-          ],
         });
       }
     }

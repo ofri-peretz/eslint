@@ -419,3 +419,48 @@ ruleTester.run('no-sql-injection-corpus-locks', noSqlInjection, {
     },
   ],
 });
+
+/**
+ * Edge paths of the local-builder resolution.
+ *
+ * `effectiveExpression` now substitutes a LOCAL builder's returned template so
+ * `db.query(build(req.query.tag))` is seen as the query it is. These cover the
+ * ways that resolution correctly gives up — each one must stay quiet, because
+ * an unresolvable call is exactly the shape an imported escaper takes.
+ */
+ruleTester.run('no-sql-injection-builder-edges', noSqlInjection, {
+  valid: [
+    // Member callee: not a bare identifier, so nothing to resolve.
+    "import { db } from '../lib/db'; db.query(sqlkit.build(req.query.tag));",
+    // Callee is an undeclared global: resolveVariable finds no binding at all.
+    "import { db } from '../lib/db'; db.query(globalBuild(req.query.tag));",
+    // Callee resolves to nothing in this file - the imported-escaper shape.
+    "import { db } from '../lib/db'; import { esc } from 'pg-escape'; db.query(esc(req.query.tag));",
+    // Callee resolves, but not to a function.
+    "import { db } from '../lib/db'; const build = 'not a function'; db.query(build(req.query.tag));",
+    // Callee resolves to a function whose body is NOT an interpolated string.
+    "import { db } from '../lib/db'; const build = (t) => lookup(t); db.query(build(req.query.tag));",
+  ],
+  invalid: [
+    {
+      // The builder itself: resolved, and the injection surfaces.
+      //
+      // Needs the option, and that is worth stating precisely. Substituting the
+      // builder's body yields a template interpolating the builder's OWN
+      // parameter `t` — the call's argument `req.query.tag` is not carried into
+      // it. So the query is now visibly built, but its interpolated part is
+      // unattributable, which is exactly what `reportUnattributedInterpolation`
+      // governs. Resolution made the SHAPE visible; attribution across the call
+      // boundary is a separate, unsolved step.
+      code: "import { db } from '../lib/db'; const build = (t) => `SELECT * FROM logs WHERE tag = '${t}'`; db.query(build(req.query.tag));",
+      options: [{ reportUnattributedInterpolation: true }],
+      errors: [{ messageId: 'sqlInjection' }],
+    },
+    {
+      // Concatenating builder, the BinaryExpression arm.
+      code: "import { db } from '../lib/db'; const build = (t) => 'SELECT * FROM logs WHERE tag = ' + t; db.query(build(req.query.tag));",
+      options: [{ reportUnattributedInterpolation: true }],
+      errors: [{ messageId: 'sqlInjection' }],
+    },
+  ],
+});

@@ -16,7 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
-type MessageIds = 'hardcodedCredentials' | 'useCredentialProvider';
+type MessageIds = 'hardcodedCredentials';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -75,7 +75,6 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-798',
       cvss: 9.8,
     },
-    hasSuggestions: true,
     messages: {
       hardcodedCredentials: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -86,14 +85,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
         fix: 'Use credential provider chain: new {{clientName}}({ credentials: fromNodeProviderChain() })',
         documentationLink: 'https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html',
       }),
-      useCredentialProvider: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Credential Provider',
-        description: 'Use AWS credential provider chain instead of hardcoded credentials',
-        severity: 'LOW',
-        fix: 'import { fromNodeProviderChain } from "@aws-sdk/credential-providers"',
-        documentationLink: 'https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html',
-      }),
+
     },
     schema: [
       {
@@ -253,12 +245,6 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
           clientName,
           property: propertyName,
         },
-        suggest: [
-          {
-            messageId: 'useCredentialProvider',
-            fix: () => null, // Complex fix - just provide suggestion
-          },
-        ],
       });
     }
 

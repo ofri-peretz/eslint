@@ -16,7 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
-type MessageIds = 'permissiveCors' | 'useSpecificOrigins';
+type MessageIds = 'permissiveCors';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -35,7 +35,6 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-942',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       permissiveCors: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -46,14 +45,7 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
         fix: 'Use specific origins: httpCors({ origins: ["https://your-domain.com"] })',
         documentationLink: 'https://middy.js.org/docs/middlewares/http-cors',
       }),
-      useSpecificOrigins: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Specific Origins',
-        description: 'Configure allowed origins in httpCors middleware',
-        severity: 'LOW',
-        fix: 'httpCors({ origins: ["https://allowed-domain.com"] })',
-        documentationLink: 'https://middy.js.org/docs/middlewares/http-cors',
-      }),
+
     },
     schema: [
       {
@@ -114,12 +106,6 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
               context.report({
                 node: prop,
                 messageId: 'permissiveCors',
-                suggest: [
-                  {
-                    messageId: 'useSpecificOrigins',
-                    fix: () => null,
-                  },
-                ],
               });
             }
             // Check for array with wildcard
@@ -129,12 +115,6 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
                   context.report({
                     node: element,
                     messageId: 'permissiveCors',
-                    suggest: [
-                      {
-                        messageId: 'useSpecificOrigins',
-                        fix: () => null,
-                      },
-                    ],
                   });
                 }
               }
@@ -153,12 +133,6 @@ export const noPermissiveCorsMidly = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'permissiveCors',
-            suggest: [
-              {
-                messageId: 'useSpecificOrigins',
-                fix: () => null,
-              },
-            ],
           });
           return;
         }
