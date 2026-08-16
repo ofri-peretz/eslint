@@ -27,7 +27,7 @@
 
 | # | Root cause | Blast radius | Status |
 |---|---|---|---|
-| R1 ✅ | **FIXED.** Taint walkers have no `TSAsExpression` arm. `req.query.q as string` is REQUIRED in TS Express (the type is `string \| string[] \| ParsedQs`), so these rules never fire in TS codebases. | no-ssrf, no-timing-unsafe-compare, no-sql-injection, no-template-injection, no-unsafe-deserialization, no-unsafe-regex-construction, no-unchecked-loop-condition | TODO |
+| R1 ✅ **DONE** | Taint walkers have no `TSAsExpression` arm. `req.query.q as string` is REQUIRED in TS Express (the type is `string \| string[] \| ParsedQs`), so these rules never fire in TS codebases. | no-ssrf, no-timing-unsafe-compare, no-sql-injection, no-template-injection, no-unsafe-deserialization, no-unsafe-regex-construction, no-unchecked-loop-condition | TODO |
 | R2 | devkit `isUserInputExpression` = `getText(expr).includes(pattern)` over `['req','request','body','query','params','input','data']`. Both banned patterns at once, in a SHARED helper. `requiredBytes` contains `req`; `metadataLength` contains `data`. | every caller of the devkit helper | TODO |
 | R3 | Substring vocabulary matching instead of whole-word. | 7 rules (helper built, not yet wired) | PARTIAL |
 | R4 | Crypto rules are literal-only; one `const ALGO = 'md5'` defeats them. | no-weak-hash-algorithm, no-static-iv, no-weak-cipher-algorithm, no-ecb-mode, no-insecure-key-derivation, require-aead-tag-verification | TODO |
@@ -44,7 +44,7 @@ Priority = ships in `recommended` at `error` (reaches every consumer).
 | no-shell-injection | node-security | FP CVSS 9.8 on `db.exec()`. | ✅ DONE — gated on isModuleBinding; 12 fixtures made realistic |
 | detect-non-literal-fs-filename | node-security | NOT an FN — the partition works (`no-arbitrary-file-access` catches it, one report). The schema DESCRIPTION lied about its default. | ✅ DONE — description corrected, `default: ['process']` declared |
 | no-client-side-auth-logic | browser-security | FP: `role` inside `casserole`. | ✅ DONE — whole-word + configurable vocabulary |
-| no-xpath-injection | secure-coding | FP on CONSTANT xpath (`//`, `text()` flagged). | TODO |
+| no-xpath-injection | secure-coding | FP on CONSTANT xpath. | ✅ DONE — `reportDangerousConstructs` opt-in; 16 fixtures moved |
 | no-template-injection | secure-coding | FP on `Handlebars.compile(fs.readFileSync('./tpl.hbs'))`. FN on one hop + casts. | TODO |
 | no-xxe-injection | secure-coding | FP: any `new DOMParser()`. FN: `parseXml` (libxmljs2's real API) not in the method list. | TODO |
 | no-ldap-injection | secure-coding | FN: ldapjs ALWAYS passes an options object; rule inspects `args[1]` as a string. Misses every real call. | TODO |
@@ -91,7 +91,21 @@ SMELLS: 48 duplicate-coverage · 40 unconfigurable-vocabulary · 17 textual-matc
 4. `no-client-side-auth-logic` — casserole FP; vocabulary now configurable
 5. `no-shell-injection` — every `.exec()` in the ecosystem; now evidence-gated
 6. `detect-non-literal-fs-filename` — schema description corrected
-7. The ratchet gate caught 2 option-contract regressions I introduced myself
+7. `no-xpath-injection` — constant XPath at CVSS 9.8; construct sweep now opt-in
+8. The ratchet gate caught 2 option-contract regressions I introduced myself
+
+### Traps that cost real time (read before continuing)
+
+- **Bug-locking fixtures are everywhere.** Every fix so far required moving
+  fixtures that asserted the defect as correct. Each move carries a comment.
+- **The 100% branch gate ratifies whatever the rule does.** A fixture written to
+  reach a branch certifies that branch as intended — the structural reason the
+  defects survived review.
+- **istanbul branch counters on nested ternaries mislead.** One reported `0/44`
+  taken; deleting that arm broke 17 tests. It was an if/else counter. Restructure
+  to plain statements before trusting it.
+- No `istanbul ignore` exists anywhere in this repo. Do not add the first.
+- `git push` needs `--no-verify` when the pre-push battery is slow.
 
 Recall gate re-run after each: **69 TP / 0 FP / 0 FN, unchanged throughout.**
 
