@@ -34,14 +34,34 @@ describe('no-shell-injection coverage gaps', () => {
     invalid: [
       // Identifier + Literal → only the RIGHT operand matches (Literal)
       {
-        code: 'exec(userInput + " -la");',
+        code: 'import { exec } from "node:child_process";\nexec(userInput + " -la");',
         errors: [{ messageId: 'shellInjection' }],
       },
       // Identifier + TemplateLiteral → only the RIGHT operand matches (template)
       {
-        code: 'exec(userInput + `tail`);',
+        code: 'import { exec } from "node:child_process";\nexec(userInput + `tail`);',
         errors: [{ messageId: 'shellInjection' }],
       },
     ],
   });
+});
+
+/**
+ * Branch coverage for the two early returns AFTER the module-evidence gate.
+ *
+ * Both were reached incidentally by fixtures that imported nothing at all.
+ * Once the rule required a resolved child_process binding, those fixtures
+ * stopped reaching the gate — so the branches went uncovered, which is the
+ * honest signal that the old cases were never exercising what they appeared to.
+ */
+ruleTester.run('no-shell-injection-post-gate-branches', noShellInjection, {
+  valid: [
+    // Spread argument: nothing to inspect as a first arg.
+    'import { exec } from "node:child_process"; exec(...parts);',
+    // No arguments at all.
+    'import { exec } from "node:child_process"; exec();',
+    // Every interpolated part folds to a literal written in this file.
+    'import { execSync } from "node:child_process"; const dir = "/srv"; execSync(`ls ${dir}`);',
+  ],
+  invalid: [],
 });

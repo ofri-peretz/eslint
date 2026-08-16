@@ -39,12 +39,27 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons,
+  isModuleBinding,
+} from '@interlace/eslint-devkit';
 
 import { makeIsLiteralConstant } from '../../utils/constant-folding';
 
 type MessageIds = 'shellInjection';
-type RuleOptions = [];
+/**
+ * Only report when the callee resolves to `child_process`.
+ *
+ * The rule matched on the callee's NAME alone, so every `.exec()` in the
+ * ecosystem qualified — better-sqlite3's `db.exec(sql)` was reported as CWE-78
+ * at CVSS 9.8, in a rule shipping at `error` in `recommended` with no options
+ * to turn it off.
+ */
+export interface Options {
+  /** Require the callee to resolve to child_process. Default: `true`. */
+  requireModuleEvidence?: boolean;
+}
+
+type RuleOptions = [Options?];
 
 /** Shell-execution functions from child_process that run the first arg as a shell command. */
 const SHELL_EXEC_FUNCTIONS = new Set([
@@ -88,11 +103,28 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          requireModuleEvidence: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Only report when the callee resolves to child_process. Turning ' +
+              'this off restores the pre-2026-08 behaviour, where any callee ' +
+              'named exec/execSync/spawn was treated as a shell sink — which ' +
+              'reported better-sqlite3 db.exec(sql) as CWE-78 at CVSS 9.8.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  defaultOptions: [{ requireModuleEvidence: true }],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const isLiteralConstant = makeIsLiteralConstant(context.sourceCode);
+    const { requireModuleEvidence = true } = options;
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
@@ -111,6 +143,26 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
         }
 
         if (!fnName || !SHELL_EXEC_FUNCTIONS.has(fnName)) return;
+
+        // The name `exec` is not evidence that this is child_process.
+        //
+        // `fnName` comes from `callee.property.name`, so EVERY `.exec()` in the
+        // ecosystem matched: better-sqlite3's `db.exec(sql)`, knex, and any
+        // local helper. Probed on the shipped rule, this reported CVSS 9.8
+        // "Shell command injection" on a SQLite DDL statement — while
+        // detect-child-process, which does resolve the binding, stayed
+        // correctly quiet on the same file. The rule is `error` in
+        // `recommended` and had `schema: []`, so a consumer using better-sqlite3
+        // got a CRITICAL false positive with no way to configure it away.
+        //
+        // Same doctrine as the rest of this ecosystem: a rule decides on a
+        // resolved binding, never on a spelling.
+        if (
+          requireModuleEvidence &&
+          !isModuleBinding(callee, context.sourceCode.getScope(node), 'child_process')
+        ) {
+          return;
+        }
 
         const firstArg = node.arguments[0];
         if (!firstArg || firstArg.type === AST_NODE_TYPES.SpreadElement) return;
