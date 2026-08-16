@@ -1,0 +1,18 @@
+{
+  "rule": "node-security/detect-eval-with-expression",
+  "fixtures": 25,
+  "results": [
+    {
+      "name": "Interlace node-security/detect-eval-with-expression",
+      "tp": 14,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -155,6 +155,140 @@ describe('no-static-iv', () => {
     });
   });
 
+  /**
+   * Regression locks for the shapes the CWE-329 rule corpus proved were missed.
+   *
+   * Every `invalid` case here was SILENT on the shipped rule
+   * (benchmarks/rule-corpus/node-security__no-static-iv took the rule from
+   * 57.1% F1 to 96.6%). Every `valid` case is the remediation that sits closest
+   * to its neighbouring bug — the zero buffer that IS filled, the allocation
+   * that is NOT an IV — because the fixes for the misses are exactly the code
+   * that could start claiming those.
+   */
+  describe('Corpus regressions - CWE-329 shapes the rule used to miss', () => {
+    ruleTester.run('corpus regressions', noStaticIv, {
+      valid: [
+        // Buffer.alloc(16) overwritten by a CSPRNG before use. Identical
+        // allocation to the all-zero-IV bug; only the fill separates them.
+        {
+          code: 'const iv = Buffer.alloc(16);\nrandomFillSync(iv);\ncreateCipheriv("aes-256-cbc", key, iv);',
+        },
+        // The callback form of the same fill.
+        {
+          code: 'const iv = Buffer.alloc(16);\ncrypto.randomFill(iv, () => { crypto.createCipheriv("aes-256-cbc", key, iv); });',
+        },
+        // new Uint8Array(16) is zero-filled too, and getRandomValues fixes it.
+        {
+          code: 'const iv = new Uint8Array(16);\nwebcrypto.getRandomValues(iv);\ncreateCipheriv("aes-256-cbc", key, iv);',
+        },
+        // A `let` whose every write is a fresh randomBytes. The binding is
+        // mutable, but nothing static ever reaches the sink.
+        {
+          code: 'let iv = randomBytes(16);\niv = randomBytes(16);\ncreateCipheriv("aes-256-cbc", key, iv);',
+        },
+        // A `let` declared with no initializer and never written: no value to
+        // judge. `.every` over an empty candidate list would report here.
+        {
+          code: 'let iv;\ncreateCipheriv("aes-256-cbc", key, iv);',
+        },
+        // Buffer.alloc used for something that is not the IV.
+        {
+          code: 'const header = Buffer.alloc(16);\ncreateCipheriv("aes-256-cbc", key, randomBytes(16));',
+        },
+        // The static buffer is the KEY, not the IV — CWE-798, another rule.
+        {
+          code: 'createCipheriv("aes-256-cbc", Buffer.alloc(32), randomBytes(16));',
+        },
+        // A destructured binding target cannot be enumerated; no evidence.
+        {
+          code: 'const [iv] = pool;\ncreateCipheriv("aes-256-cbc", key, iv);',
+        },
+        // A non-typed-array constructor with a literal argument.
+        {
+          code: 'const iv = new Date(16);\ncreateCipheriv("aes-256-cbc", key, iv);',
+        },
+        // Buffer.concat is neither `from` nor `alloc`.
+        {
+          code: 'const iv = Buffer.concat([a, b]);\ncreateCipheriv("aes-256-cbc", key, iv);',
+        },
+        // A computed member that is not a string literal cannot be read.
+        {
+          code: 'crypto[methodName]("aes-256-cbc", key, "0123456789abcdef");',
+        },
+      ],
+      invalid: [
+        // The all-zero IV. `Buffer.alloc(16)` reads as allocation rather than
+        // as a hardcoded constant, which is why it is the commonest real one.
+        {
+          code: 'createCipheriv("aes-256-cbc", key, Buffer.alloc(16));',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        {
+          code: 'const iv = Buffer.alloc(16);\ncreateCipheriv("aes-256-cbc", key, iv);',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // The hex string hoisted to a named constant, Buffer.from at the call.
+        {
+          code: 'const IV_HEX = "0f1e2d3c4b5a69788796a5b4c3d2e1f0";\ncreateCipheriv("aes-256-cbc", key, Buffer.from(IV_HEX, "hex"));',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // A template literal with no expressions is a string constant; the
+        // quote character is not a security property.
+        {
+          code: 'createCipheriv("aes-256-cbc", key, Buffer.from(`00112233445566778899aabbccddeeff`, "hex"));',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // `new Uint8Array([...])` — the shape the old code's comment claimed
+        // to check while actually checking `Buffer.from([...])`.
+        {
+          code: 'const IV = new Uint8Array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);\ncreateCipheriv("aes-256-cbc", key, IV);',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        {
+          code: 'createCipheriv("aes-256-cbc", key, new Uint8Array(16));',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // A type-only cast must not hide the IV.
+        {
+          code: 'const IV = new Uint8Array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);\ncreateCipheriv("aes-256-cbc", key, IV as unknown as Buffer);',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // An aliased ESM import spells nothing recognisable at the call site.
+        // Only the resolved binding says this is crypto.
+        {
+          code: 'import { createCipheriv as makeCipher } from "node:crypto";\nmakeCipher("aes-256-cbc", key, Buffer.from([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]));',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // The CommonJS spelling of the same rename.
+        {
+          code: 'const { createCipheriv: mkCipher } = require("node:crypto");\nmkCipher("aes-256-cbc", key, Buffer.from("deadbeefdeadbeefdeadbeefdeadbeef", "hex"));',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // Computed member access: the property is a Literal with no `.name`.
+        {
+          code: 'crypto["createCipheriv"]("aes-256-cbc", key, "0123456789abcdef");',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // Optional chaining changes the node, not the bug.
+        {
+          code: 'crypto?.createCipheriv("aes-256-cbc", key, Buffer.alloc(16));',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // A `let` whose EVERY write is a fixed value. Mirrors the valid case
+        // above where every write is randomBytes.
+        {
+          code: 'let iv = Buffer.alloc(16);\nif (v2) { iv = Buffer.from("00112233445566778899aabbccddeeff", "hex"); }\ncreateCipheriv("aes-256-cbc", key, iv);',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // The decrypt half, via a namespace bound by require.
+        {
+          code: 'const cp = require("crypto");\ncp.createDecipheriv("aes-256-cbc", key, "abcdef0123456789");',
+          errors: [{ messageId: 'staticIv' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - Algorithm Variations', () => {
     ruleTester.run('invalid - various algorithms', noStaticIv, {
       valid: [],

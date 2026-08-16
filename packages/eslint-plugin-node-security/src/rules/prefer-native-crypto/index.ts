@@ -12,7 +12,109 @@
  * Native crypto is maintained by Node.js/browser vendors and is always up-to-date
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  isModuleBinding,
+} from '@interlace/eslint-devkit';
+
+import { resolveConstantString } from '../../utils/const-value';
+import { findVariable } from '../../utils/provenance';
+
+type SourceCode = TSESLint.SourceCode;
+
+/**
+ * Is this expression `createRequire(...)`?
+ *
+ * Resolved through the module binding, never through the callee's spelling, so
+ * `import { createRequire } from 'node:module'` and `module.createRequire(…)`
+ * answer the same.
+ *
+ * NOTE FOR A LATER PASS: this helper, `isRequireCallee` and
+ * `moduleSpecifierListener` are byte-identical to the copies in
+ * `rules/no-cryptojs/index.ts`. They belong in `utils/`, next to
+ * `const-value.ts` — every rule in this package that judges a dependency needs
+ * exactly this listener. They are duplicated here only because the change that
+ * introduced them was scoped to two rules.
+ */
+function isCreateRequireCall(
+  sourceCode: SourceCode,
+  node: TSESTree.Node | null | undefined,
+): boolean {
+  if (!node || node.type !== AST_NODE_TYPES.CallExpression) return false;
+  return isModuleBinding(node.callee, sourceCode.getScope(node), 'module', ['createRequire']);
+}
+
+/**
+ * Does this callee load a CommonJS module?
+ *
+ * Two things `callee.name === 'require'` got wrong, in opposite directions: an
+ * ESM file reaching a CommonJS-only package through
+ * `const load = createRequire(import.meta.url)` was invisible, and a file that
+ * declares its OWN `require` — a stub registry, a bundle evaluator — was
+ * reported for the spelling of a local function.
+ *
+ * Node's real CommonJS `require` is injected into the module wrapper and has no
+ * declaration in the file, so "the name resolves to nothing" is the normal
+ * positive case.
+ */
+function isRequireCallee(sourceCode: SourceCode, callee: TSESTree.Node): boolean {
+  if (callee.type !== AST_NODE_TYPES.Identifier) return false;
+  const def = findVariable(sourceCode, callee)?.defs[0];
+
+  if (def?.type === 'Variable' && isCreateRequireCall(sourceCode, def.node.init)) return true;
+
+  if (callee.name !== 'require') return false;
+  if (def === undefined) return true;
+  return (
+    def.type === 'Variable' &&
+    def.node.init?.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+    def.node.init?.type !== AST_NODE_TYPES.FunctionExpression
+  );
+}
+
+/**
+ * Every syntactic site where a module specifier enters a file.
+ *
+ * The rule used to visit `ImportDeclaration` and `require()` only, which is two
+ * of the six ways a dependency arrives. `import()`, `export … from`,
+ * `export * from` and TypeScript's `import x = require(…)` all bind the same
+ * package and all were silent.
+ */
+function moduleSpecifierListener(
+  sourceCode: SourceCode,
+  judge: (node: TSESTree.Node, specifier: string) => void,
+): TSESLint.RuleListener {
+  const fromExpression = (
+    report: TSESTree.Node,
+    source: TSESTree.Node | null | undefined,
+  ): void => {
+    if (!source) return;
+    const resolved = resolveConstantString(sourceCode, source);
+    if (resolved !== null) judge(report, resolved.value);
+  };
+
+  return {
+    ImportDeclaration: (node: TSESTree.ImportDeclaration) => fromExpression(node, node.source),
+    ImportExpression: (node: TSESTree.ImportExpression) => fromExpression(node, node.source),
+    ExportNamedDeclaration: (node: TSESTree.ExportNamedDeclaration) =>
+      fromExpression(node, node.source),
+    ExportAllDeclaration: (node: TSESTree.ExportAllDeclaration) =>
+      fromExpression(node, node.source),
+    TSImportEqualsDeclaration: (node: TSESTree.TSImportEqualsDeclaration) => {
+      if (node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference) {
+        fromExpression(node, node.moduleReference.expression);
+      }
+    },
+    CallExpression: (node: TSESTree.CallExpression) => {
+      if (node.arguments.length === 0) return;
+      if (!isRequireCallee(sourceCode, node.callee)) return;
+      fromExpression(node, node.arguments[0]);
+    },
+  };
+}
 
 type MessageIds =
   | 'preferNative'
@@ -46,8 +148,19 @@ const THIRD_PARTY_CRYPTO_LIBS = new Set([
   'js-sha512',
   'js-sha3',
   'js-md5',
+  'js-sha1',
   'blueimp-md5',
   'aes-js',
+  // The browserify-era digest packages. `md5`, `sha.js` and `hash.js` are the
+  // same thing as `js-md5`/`js-sha256` — a pure-JS reimplementation of a
+  // primitive `node:crypto` exposes — and were missing purely because the list
+  // was assembled from the `js-*` naming convention rather than from what the
+  // packages do. `crypto-browserify` deliberately stays OUT: it exists to stand
+  // in for `node:crypto` where `node:crypto` does not exist, so telling a
+  // bundle to "migrate to native crypto" would be advice it cannot take.
+  'md5',
+  'sha.js',
+  'hash.js',
 ]);
 
 /**
@@ -131,25 +244,7 @@ export const preferNativeCrypto = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (typeof node.source.value === 'string') {
-          checkSpecifier(node, node.source.value);
-        }
-      },
-
-      CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === AST_NODE_TYPES.Identifier &&
-          node.callee.name === 'require' &&
-          node.arguments.length === 1 &&
-          node.arguments[0].type === AST_NODE_TYPES.Literal &&
-          typeof node.arguments[0].value === 'string'
-        ) {
-          checkSpecifier(node, node.arguments[0].value);
-        }
-      },
-    };
+    return moduleSpecifierListener(context.sourceCode, checkSpecifier);
   },
 });
 

@@ -1,0 +1,18 @@
+{
+  "rule": "node-security/no-dynamic-command-string",
+  "fixtures": 32,
+  "results": [
+    {
+      "name": "Interlace node-security/no-dynamic-command-string",
+      "tp": 16,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

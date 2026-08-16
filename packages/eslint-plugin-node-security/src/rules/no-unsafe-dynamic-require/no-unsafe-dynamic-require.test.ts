@@ -215,4 +215,89 @@ describe('no-unsafe-dynamic-require', () => {
       ],
     });
   });
+
+  // ── Rule-corpus regressions ────────────────────────────────────────────
+  // benchmarks/rule-corpus/node-security__no-unsafe-dynamic-require
+  describe('Corpus regressions', () => {
+    ruleTester.run('corpus', noUnsafeDynamicRequire, {
+      valid: [
+        // A `const` bound to a literal is that literal, whatever it is called.
+        // webpack's resolver API names a specifier `request`, which collides
+        // with a taint ROOT — and the roots are matched by name.
+        `const request = './loaders/babel-loader.js'; const loader = require(request);`,
+        `const event = \`./handlers/build\`; require(event);`,
+        // A bare parameter is a caller-side fact. `readMock(filePath)` above is
+        // already silent; naming the same parameter `request` must not change
+        // the verdict.
+        `function resolveLoader(request) { return require(request); }`,
+        `const load = (ctx) => require(ctx);`,
+        // Every write is a literal the program wrote; the request picks a
+        // branch, never a path.
+        `function serializerFor(req) {
+           let serializer = './serializers/json';
+           if (req.headers.accept === 'application/xml') { serializer = './serializers/xml'; }
+           return require(serializer);
+         }`,
+        // Specifier out of the program's own config — unresolved, and
+        // unresolved is silent by default.
+        `const { adapter } = require('./config.json'); const store = require(adapter);`,
+        // import(): static, allowlisted, and opted out.
+        `const en = await import('./locales/en-US.json');`,
+        `const m = await import(\`./locales/en.json\`);`,
+        `const T = { csv: './csv' }; const m = await import(T[req.query.f]);`,
+        {
+          code: `const m = await import(req.params.name);`,
+          options: [{ allowDynamicImport: true }],
+        },
+        // Neither of these is the CJS loader.
+        `const mod = registry.load(req.query.name);`,
+        `const mod = obj[key](req.query.name);`,
+        `const mod = module.load(req.query.name);`,
+        // A callee that is neither an identifier nor a member expression.
+        `const mod = getRequire()(req.query.name);`,
+      ],
+      invalid: [
+        // The ESM spelling of the same loader. `allowDynamicImport` was
+        // declared, schema'd, defaulted to the stricter value — and never read,
+        // so this was silent in every configuration.
+        {
+          code: `router.post('/activate', async (req) => { const plugin = await import(req.params.name); });`,
+          errors: [{ messageId: 'unsafeDynamicImport' }],
+        },
+        {
+          code: `const mod = await import(moduleName);`,
+          options: [{ reportUnresolvedSpecifiers: true }],
+          errors: [{ messageId: 'unsafeDynamicImport' }],
+        },
+        // `module.require` is the same loader through the module object.
+        {
+          code: `const reporter = module.require(req.query.reporter);`,
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // `createRequire` is how ESM reaches the CJS loader — the same binding
+        // as `const load = require`, one call deeper.
+        {
+          code: `const requireCjs = createRequire(import.meta.url); const t = requireCjs(req.body.transform);`,
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // The const-resolution above must not swallow a const bound to taint.
+        {
+          code: `const request = req.query.name; const mod = require(request);`,
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // A `let` is not a constant: the last write before the call decides.
+        {
+          code: `let request = './a'; request = req.query.name; const mod = require(request);`,
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // The parameter carve-out is "unresolved", not "safe": the option that
+        // restores the sweep still reports it.
+        {
+          code: `function resolveLoader(request) { return require(request); }`,
+          options: [{ reportUnresolvedSpecifiers: true }],
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+      ],
+    });
+  });
 });

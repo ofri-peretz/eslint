@@ -64,6 +64,34 @@ describe('no-dynamic-command-string', () => {
       // the same identifier in a -c argv slot — is asserted below.
       { code: `exec(userCommand);` },
       { code: `execSync(userCommand);` },
+
+      // ── Rule-corpus regressions (benchmarks/rule-corpus/node-security__no-dynamic-command-string)
+      // A command line hoisted to a module constant is not assembled. Reporting
+      // every bare identifier in command position made `const BUILD = '…'` a
+      // false positive — the shape a repo reaches for to keep scripts in one place.
+      {
+        code: `const BUILD = 'npm ci && npm run build'; spawn('bash', ['-c', BUILD]);`,
+      },
+      {
+        code: `const SCRIPTS = { build: 'npm run build' }; spawn('sh', ['-c', SCRIPTS.build]);`,
+      },
+      {
+        code: `const SCRIPTS = Object.freeze({ build: 'npm run build' }); spawn('sh', ['-c', SCRIPTS.build]);`,
+      },
+      // Literal keys spell the same object.
+      {
+        code: `const SCRIPTS = { 'build': \`npm run build\` }; spawn('sh', ['-c', SCRIPTS.build]);`,
+      },
+      // A shell NAME in the argv vector is not a shell INVOCATION: no command
+      // flag follows it, and the `-c` here belongs to apt-get.
+      {
+        code: `spawn('apt-get', ['install', '-y', '-c', cacheDir, 'bash', 'zsh']);`,
+      },
+      // `bash <script>` reads a file; nothing on the argv is re-parsed.
+      { code: `spawn('bash', [scriptPath]);` },
+      // `let` can be rewritten between the declaration and the call, so its
+      // initializer proves nothing — deliberately still reported.
+      // (asserted in `invalid` below; kept here as the contrast note)
     ],
     invalid: [
       // bash -c with an interpolated command line
@@ -145,6 +173,133 @@ describe('no-dynamic-command-string', () => {
         code: 'runShell(`git clone ${url}`);',
         options: [{ extraCommandRunners: ['runShell'] }],
         errors: [{ messageId: 'commandStringInterpolation' as const }],
+      },
+
+      // ── Rule-corpus regressions (benchmarks/rule-corpus/node-security__no-dynamic-command-string)
+      // Every one of these was a false negative measured on the corpus: the
+      // injection is unchanged, only the spelling at the call site moved.
+      // The interpreter path behind a `const`.
+      {
+        code: 'const SHELL = \'/bin/bash\'; spawn(SHELL, [\'-c\', `.githooks/${hook} ${ref}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // The argv vector built one statement above the call.
+      {
+        code: 'const argv = [\'-c\', `pkill -TERM -P ${pid}`]; spawnSync(\'sh\', argv);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // Clustered POSIX options: `-lc` is `-l` plus `-c`, and CI runners write
+      // it that way so nvm/rbenv shims are on PATH.
+      {
+        code: 'spawn(\'bash\', [\'-lc\', `nvm use ${version} && ${script}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'spawn(\'sh\', [\'-euc\', `deploy ${env}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // execa's array form is safe because no shell is involved — unless the
+      // program you spawn IS the shell.
+      {
+        code: 'execa(\'bash\', [\'-c\', `psql -f migrations/${name}.sql`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'execaSync(\'bash\', [\'-c\', `psql -f migrations/${name}.sql`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // The shell inside the argument vector: sudo and docker exec forward the
+      // rest verbatim, so the re-parse is identical.
+      {
+        code: 'spawn(\'sudo\', [\'bash\', \'-c\', `useradd -m ${username}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'spawnSync(\'docker\', [\'exec\', \'-i\', box, \'sh\', \'-c\', `tail /var/log/${svc}.log`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // `promisify(execFile)` is the form Node's own docs show; a plain alias is
+      // the same hop without the wrapper.
+      {
+        code: 'const run = promisify(execFile); run(\'bash\', [\'-c\', `aws s3 sync s3://${bucket} .`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'const run = execFile; run(\'bash\', [\'-c\', `aws s3 sync s3://${bucket} .`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'const runLine = execaCommand; runLine(`git clone ${url}`);',
+        errors: [{ messageId: 'commandStringInterpolation' as const }],
+      },
+      // A `let` is not a constant: it can be rewritten before the call runs.
+      {
+        code: `let BUILD = 'npm ci'; spawn('bash', ['-c', BUILD]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // Const-object resolution stops where the evidence stops: a computed key,
+      // a non-literal value, a deeper path and a non-object initializer all mean
+      // "unknown", which for a command string is reported, not excused.
+      {
+        code: `const SCRIPTS = { build: 'npm run build' }; spawn('sh', ['-c', SCRIPTS[key]]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `const SCRIPTS = { build: userCommand }; spawn('sh', ['-c', SCRIPTS.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `const SCRIPTS = { [key]: 'npm run build' }; spawn('sh', ['-c', SCRIPTS.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `const SCRIPTS = { ...base }; spawn('sh', ['-c', SCRIPTS.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `const SCRIPTS = { other: 'npm run build' }; spawn('sh', ['-c', SCRIPTS.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `const SCRIPTS = Object.freeze(); spawn('sh', ['-c', SCRIPTS.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `const SCRIPTS = loadScripts(); spawn('sh', ['-c', SCRIPTS.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `const SCRIPTS = { 1: 'npm run build' }; spawn('sh', ['-c', SCRIPTS.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // A private field is a property that is not an identifier.
+      {
+        code: `class Runner {
+                 #script = 'npm run build';
+                 static go(other) { spawn('sh', ['-c', other.#script]); }
+               }`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: `spawn('sh', ['-c', config.scripts.build]);`,
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      // Alias resolution stops where the evidence stops, too.
+      {
+        code: 'const run = makeRunner(); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'const run = promisify(); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'const run = promisify(unrelated); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
+      },
+      {
+        code: 'const run = promisify(obj[method]); run(\'bash\', [\'-c\', `x ${y}`]); spawn(\'bash\', [\'-c\', `x ${y}`]);',
+        errors: [{ messageId: 'shellFlagInjection' as const }],
       },
     ],
   });

@@ -36,8 +36,14 @@ describe('utils/provenance coverage', () => {
         `const h1 = unknown; const h2 = h1; const h3 = h2; const h4 = h3;
          const h5 = h4; const h6 = h5; const h7 = h6; const h8 = h7;
          require(h8);`,
-        // Node types the reader does not model return false rather than throw.
+        // ConditionalExpression with a clean value in BOTH branches. The test
+        // is where the request would be, and the test is deliberately not
+        // walked: an attacker choosing between two of the author's own module
+        // strings has not chosen a module.
         'require(cond ? "a" : "b");',
+        'function boot(req) { return require(req.query.mode === "a" ? "./a" : "./b"); }',
+        // LogicalExpression with neither operand tainted.
+        'function boot(fallback) { return require(fallback || "./default"); }',
       ],
       invalid: [
         // AwaitExpression.
@@ -78,6 +84,36 @@ describe('utils/provenance coverage', () => {
         // A spread ARGUMENT of the require-wrapping call.
         {
           code: 'function boot(req) { return require(join(...req.body.parts)); }',
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // LOCK — LogicalExpression. `x || 'default'` is the defensive idiom
+        // every Node handler writes, and the reader used to fall through it to
+        // `default: return false`, answering "clean" for the single commonest
+        // way a request field is read. Deleting the `LogicalExpression` case
+        // turns all four of these green-as-valid.
+        {
+          code: 'function boot(req) { return require(req.query.mod || "./default"); }',
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // `??`, and with the taint on the RIGHT operand — both halves of the
+        // `left || right` disjunction have to be walked.
+        {
+          code: 'function boot(req) { return require(cached ?? req.body.mod); }',
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // `&&` returns its right operand, so the request is what lands.
+        {
+          code: 'function boot(req) { return require(req.query.mod && req.query.mod); }',
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // LOCK — ConditionalExpression, taint in the CONSEQUENT.
+        {
+          code: 'function boot(req) { return require(req.query.mod ? req.query.mod : "./default"); }',
+          errors: [{ messageId: 'unsafeDynamicRequire' }],
+        },
+        // …and in the ALTERNATE.
+        {
+          code: 'function boot(req) { return require(isDefault ? "./default" : req.query.mod); }',
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
       ],

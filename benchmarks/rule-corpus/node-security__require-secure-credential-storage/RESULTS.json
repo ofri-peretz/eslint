@@ -1,0 +1,30 @@
+{
+  "rule": "node-security/require-secure-credential-storage",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 25,
+  "vulnerable": 13,
+  "results": [
+    {
+      "name": "Interlace node-security/require-secure-credential-storage",
+      "tp": 8,
+      "fp": 3,
+      "fn": 5,
+      "precision": 0.7272727272727273,
+      "recall": 0.6153846153846154,
+      "f1": 0.6666666666666667,
+      "crashes": [],
+      "missed": [
+        "vulnerable/06-fake-local-encrypt.js",
+        "vulnerable/07-session-storage-cast.ts",
+        "vulnerable/08-store-alias.js",
+        "vulnerable/09-credentials-object-json.js",
+        "vulnerable/13-asyncstorage-multiset.js"
+      ],
+      "falsePositives": [
+        "safe/06-password-policy-config.js",
+        "safe/08-env-doc-url.js",
+        "safe/12-env-flag-defaults.js"
+      ]
+    }
+  ]
+}

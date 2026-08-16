@@ -1,0 +1,20 @@
+{
+  "rule": "node-security/no-unsafe-dynamic-require",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 24,
+  "vulnerable": 12,
+  "results": [
+    {
+      "name": "Interlace node-security/no-unsafe-dynamic-require",
+      "tp": 12,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -100,6 +100,66 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     { code: "obj.p = '/tmp/x'; fs.writeFileSync(obj.p, data);" },
     // A non-string literal reaching the same visitor.
     { code: 'const n = 42;' },
+
+    // ── FP locks from benchmarks/rule-corpus/node-security__no-data-in-temp-storage ──
+    //
+    // safe/07-mkdtemp-prefix-const.js. mkdtemp takes a PREFIX: Node appends six
+    // random characters and creates the directory 0700, so the resolved path is
+    // not predictable. Hoisting the prefix to a `const` is ordinary style and
+    // the rule reported it as a predictable temp path — i.e. it reported its own
+    // prescribed remediation. Reports on the unfixed rule.
+    {
+      code: "const fsp = require('node:fs/promises');\nconst PREFIX = path.join(os.tmpdir(), 'ingest-');\nconst dir = await fsp.mkdtemp(PREFIX);",
+    },
+    {
+      code: "const fs = require('fs');\nconst PREFIX = path.join(os.tmpdir(), 'ingest-');\nconst dir = fs.mkdtempSync(PREFIX);",
+    },
+    // safe/09-let-reassigned-to-project-path.js. The temp literal never reaches
+    // disk: every write to the binding before the sink replaces it. Reading the
+    // declarator instead of the last write reported a fix that was already
+    // applied. Reports on the unfixed rule.
+    {
+      code: "let dest = '/tmp/placeholder.json';\ndest = path.join(root, 'dist', 'manifest.json');\nfs.writeFileSync(dest, body);",
+    },
+    // safe/13-project-temp-not-shared.js — path.join literal segments are
+    // matched by segment, so `templates` is not `temp`.
+    { code: "fs.writeFileSync(path.join(outDir, 'templates', 'build.log'), lines);" },
+    // safe/10-temperature-path.js
+    { code: "fs.writeFileSync('./data/temperature-log.json', json);" },
+    // The receiver resolves to a module that is not fs.
+    {
+      code: "const zip = require('archiver');\nzip.writeFile('/tmp/x.zip', buf);",
+    },
+    // fs, but a path deeper than fs.promises — some other API that happens to
+    // share a method name.
+    {
+      code: "const fs = require('fs');\nfs.constants.writeFile('/tmp/x', d);",
+    },
+    // A computed member whose key is not a string literal is not knowable.
+    {
+      code: "const fs = require('fs');\nfs[method]('/tmp/x', d);",
+    },
+    // A randomised segment inside the template is the mitigation, exactly as it
+    // is inside path.join — the resolved path differs on every run.
+    { code: 'const p = `${os.tmpdir()}/${randomUUID()}.bin`;' },
+    { code: 'const p = `${os.tmpdir()}/${42}.bin`;' },
+    { code: 'const p = `/no/tmpdir/${here}`;' },
+    // A non-string path argument contributes no static run.
+    { code: 'fs.writeFileSync(42, data);' },
+    // A call in the path position that is not path.join/path.resolve, and the
+    // computed spelling of one — neither yields knowable segments.
+    { code: 'fs.writeFileSync(makePath(), data);' },
+    { code: "fs.writeFileSync(path[joiner]('/tmp', 'x'), data);" },
+    { code: "fs.writeFileSync(path.basename('/tmp', 'x'), data);" },
+    // A binding with no write before the use — a parameter decides its value at
+    // the call site, which is unresolved, not safe.
+    { code: 'function save(target, data) { fs.writeFileSync(target, data); }' },
+    // The module itself called as a function: a resolved binding whose export
+    // path is empty names no entry point.
+    { code: "const fs = require('fs');\nfs('/tmp/x', data);" },
+    // Concatenation with a non-constant operand is not a constant path.
+    { code: "const p = os.tmpdir() + suffix;" },
+    { code: "const p = base + '/state.json';" },
   ],
 
   invalid: [
@@ -144,6 +204,92 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     },
     {
       code: "const file = path.resolve(os.tmpdir(), 'report-cache.tmp');",
+      errors: [{ messageId: 'predictableTempPath' }],
+    },
+
+    // ── FN locks from benchmarks/rule-corpus/node-security__no-data-in-temp-storage ──
+    //
+    // The sink used to be `callee.object.name === 'fs'` with the method list
+    // `['writeFileSync', 'writeFile']`. Every case below writes to the same
+    // world-readable directory and every one of them was silent. Each is quiet
+    // on the unfixed rule.
+    //
+    // vulnerable/02 — destructured CJS import.
+    {
+      code: "const { writeFileSync } = require('node:fs');\nwriteFileSync('/tmp/oauth-refresh.json', body);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/07 — aliased named import.
+    {
+      code: "import { writeFileSync as write } from 'node:fs';\nwrite('/tmp/customer-export.json', body);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/03 — fs/promises, and a template whose static run is the path.
+    {
+      code: "import { writeFile } from 'node:fs/promises';\nawait writeFile(`/var/tmp/upload-${field}.part`, buf);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/05 — the fs.promises namespace.
+    {
+      code: "import fs from 'node:fs';\nawait fs.promises.writeFile('/tmp/api-token-cache.json', body);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/04 — append is the same data at rest as a write.
+    {
+      code: "import * as fs from 'node:fs';\nfs.appendFileSync('/tmp/auth-audit.log', line);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/08 — so is a stream.
+    {
+      code: "const fs = require('node:fs');\nconst out = fs.createWriteStream('/tmp/tenant-backup.zip');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/15 — fs-extra is a drop-in fs, and outputFile is its write.
+    {
+      code: "const fse = require('fs-extra');\nfse.outputFileSync('/tmp/tenant-export.json', body);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/11 — a computed member with a string-literal key names the
+    // export as precisely as dot notation.
+    {
+      code: "const fs = require('node:fs');\nfs['writeFileSync']('/tmp/diagnostics.json', body);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/12 — the write function hoisted into a const; the receiver
+    // never appears at the call site.
+    {
+      code: "const fs = require('fs');\nconst write = fs.writeFileSync;\nwrite('/tmp/license-key.txt', license);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/13 — path.join with a literal temp root.
+    {
+      code: "const fs = require('node:fs');\nfs.writeFileSync(path.join('/tmp', 'saml-assertion.xml'), body);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // vulnerable/06 — os.tmpdir() interpolated is the portable spelling of a
+    // hard-coded /tmp path, and just as constant.
+    {
+      code: 'fs.writeFileSync(`${os.tmpdir()}/billing-report.csv`, csv);',
+      errors: [{ messageId: 'predictableTempPath' }],
+    },
+    { code: 'const p = `${os.tmpdir()}/state.json`;', errors: [{ messageId: 'predictableTempPath' }] },
+    {
+      code: 'const p = `${os.tmpdir()}/${"cache"}/state.json`;',
+      errors: [{ messageId: 'predictableTempPath' }],
+    },
+    // vulnerable/14 — and so is concatenation.
+    { code: "const p = os.tmpdir() + '/agent-state.json';", errors: [{ messageId: 'predictableTempPath' }] },
+    { code: "const p = '/prefix' + (os.tmpdir() + '/agent-state.json');", errors: [{ messageId: 'predictableTempPath' }] },
+    // The mkdtemp exemption needs a resolvable binding AND the prefix in the
+    // first argument. An undeclared target resolves to nothing…
+    {
+      code: "tmpPrefix = path.join(os.tmpdir(), 'ingest-');",
+      errors: [{ messageId: 'predictableTempPath' }],
+    },
+    // …and a constant temp path passed as mkdtemp's SECOND argument is an
+    // encoding option, not the prefix it randomises.
+    {
+      code: "const fs = require('fs');\nconst P = path.join(os.tmpdir(), 'ingest-');\nfs.mkdtempSync(base, P);",
       errors: [{ messageId: 'predictableTempPath' }],
     },
   ],

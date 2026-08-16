@@ -42,6 +42,7 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import { constInitializerOf, resolveConstantString } from '../../utils/const-value';
 
 type MessageIds = 'shellFlagInjection' | 'commandStringInterpolation';
 
@@ -52,13 +53,22 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-/** child_process functions that take (command, argsArray). */
+/**
+ * Functions that take (command, argsArray).
+ *
+ * `execa`/`execaSync` are here for the same reason the child_process four are:
+ * their argument-array form is the API execa documents as the safe one, and it
+ * is safe exactly because no shell is involved — `execa('bash', ['-c', line])`
+ * puts the whole escape hatch back and passes review as "we use the array form".
+ */
 const ARGV_FUNCTIONS = new Set([
   'spawn',
   'spawnSync',
   'execFile',
   'execFileSync',
   'fork',
+  'execa',
+  'execaSync',
 ]);
 
 /**
@@ -103,14 +113,44 @@ const COMMAND_RUNNERS = new Set([
   '$.raw',
 ]);
 
+/**
+ * A POSIX shell option cluster whose LAST letter is `c`: `-lc`, `-euc`, `-xc`.
+ *
+ * Not a spelling variant — it is the same flag. `-c` takes the next argument,
+ * so in a cluster it must come last, which is what makes the shape decidable
+ * rather than a guess. CI runners write `bash -lc` constantly so that nvm and
+ * rbenv shims are on PATH, and matching only the exact string `-c` missed every
+ * one of them.
+ */
+const POSIX_COMMAND_CLUSTER = /^-[a-zA-Z]*c$/;
+
+/** Does this flag make the NEXT argv element a command line for `shell`? */
+function isCommandFlag(commandFlags: ReadonlySet<string>, flag: string): boolean {
+  if (commandFlags.has(flag)) return true;
+  return commandFlags === POSIX_COMMAND_FLAGS && POSIX_COMMAND_CLUSTER.test(flag);
+}
+
 /** The basename of a command path: '/bin/bash' → 'bash'. */
 function basename(command: string): string {
   const segments = command.split(/[\\/]/);
   return segments[segments.length - 1];
 }
 
+/** The command-flag dialect of a program path, or null if it is not a shell. */
+function shellDialect(command: string): { shell: string; flags: ReadonlySet<string> } | null {
+  const shell = basename(command);
+  const flags = SHELL_COMMAND_FLAGS[shell.toLowerCase()];
+  return flags ? { shell, flags } : null;
+}
+
 /**
- * A string assembled at runtime rather than written out in full.
+ * A string assembled at runtime rather than written out in full — SHAPE only.
+ *
+ * Callers must first ask `staticStringOf`, which resolves a `const` alias to
+ * the literal behind it. This test alone says "a bare identifier is assembled",
+ * which is true of `spawn('bash', ['-c', userCommand])` and false of
+ * `const BUILD = 'npm ci'; spawn('bash', ['-c', BUILD])` — and hoisting a
+ * command line to a module constant is ordinary style, not obfuscation.
  *
  * Deliberately stricter than `no-shell-injection`'s `isStringConcatOrTemplate`,
  * and NOT shared with it. That rule fires on `exec()` — where the whole first
@@ -217,40 +257,154 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
       ...COMMAND_RUNNERS,
       ...(extraCommandRunners ?? []),
     ]);
+    const { sourceCode } = context;
+
+    /**
+     * The string this expression is *proven* to evaluate to, or null.
+     *
+     * Two hops, both of them ordinary style rather than obfuscation: a `const`
+     * bound to a literal (`const SHELL = '/bin/bash'`) and a property of a
+     * `const` object literal (`const SCRIPTS = { build: 'npm run build' }`),
+     * including the `Object.freeze({…})` spelling. Anything else is null,
+     * which means *no evidence*, never *safe*.
+     */
+    function staticStringOf(node: TSESTree.Node): string | null {
+      const resolved = resolveConstantString(sourceCode, node);
+      if (resolved) return resolved.value;
+
+      if (node.type !== AST_NODE_TYPES.MemberExpression) return null;
+      if (node.computed) return null;
+      if (node.object.type !== AST_NODE_TYPES.Identifier) return null;
+      if (node.property.type !== AST_NODE_TYPES.Identifier) return null;
+
+      const init = constInitializerOf(sourceCode, node.object);
+      if (!init) return null;
+      // `Object.freeze({ … })` is the same object literal with a call around it.
+      const literal =
+        init.type === AST_NODE_TYPES.CallExpression &&
+        calleeName(init.callee) === 'freeze' &&
+        init.arguments[0]
+          ? init.arguments[0]
+          : init;
+      if (literal.type !== AST_NODE_TYPES.ObjectExpression) return null;
+
+      for (const property of literal.properties) {
+        if (property.type !== AST_NODE_TYPES.Property) continue;
+        if (property.computed) continue;
+        // `{ build: … }` and `{ 'build': … }` are the same property.
+        const key =
+          property.key.type === AST_NODE_TYPES.Identifier
+            ? property.key.name
+            : property.key.type === AST_NODE_TYPES.Literal &&
+                typeof property.key.value === 'string'
+              ? property.key.value
+              : null;
+        if (key !== node.property.name) continue;
+        return resolveConstantString(sourceCode, property.value)?.value ?? null;
+      }
+      return null;
+    }
+
+    /** A command string the program builds, as opposed to one it spells out. */
+    function isAssembled(node: TSESTree.Node): boolean {
+      if (staticStringOf(node) !== null) return false;
+      return isAssembledString(node);
+    }
+
+    /**
+     * The known function this callee ultimately names.
+     *
+     * `const run = promisify(execFile)` is the form Node's own documentation
+     * shows, and `const run = execFile` is the same aliasing one hop shorter.
+     * Both are resolved through the binding, never through the spelling of the
+     * local — `run` tells you nothing, its initializer tells you everything.
+     */
+    function canonicalName(callee: TSESTree.Node): string | null {
+      const direct = calleeName(callee);
+      if (direct !== null && (ARGV_FUNCTIONS.has(direct) || runners.has(direct))) {
+        return direct;
+      }
+      if (callee.type !== AST_NODE_TYPES.Identifier) return direct;
+
+      const init = constInitializerOf(sourceCode, callee);
+      if (!init) return direct;
+      const target =
+        init.type === AST_NODE_TYPES.CallExpression &&
+        calleeName(init.callee) === 'promisify'
+          ? init.arguments[0]
+          : init;
+      if (!target) return direct;
+      const resolved = calleeName(target);
+      if (resolved === null) return direct;
+      return ARGV_FUNCTIONS.has(resolved) || runners.has(resolved)
+        ? resolved
+        : direct;
+    }
+
+    /**
+     * Every position in this call from which a shell reads a command line.
+     *
+     * argv[0] is the obvious one. The other is a shell sitting INSIDE the
+     * argument vector, which is not an exotic shape — `sudo bash -c …` and
+     * `docker exec <id> sh -c …` are how provisioning and container tooling
+     * are normally written, and the re-parse is identical. The scan starts
+     * after the shell element so that a `-c` belonging to the outer program
+     * (`docker run -c <cpu-shares>`, `git -c user.name=…`) is never read as a
+     * command flag.
+     */
+    function shellPositions(
+      command: TSESTree.Node,
+      argv: TSESTree.ArrayExpression,
+    ): Array<{ shell: string; flags: ReadonlySet<string>; from: number }> {
+      const positions: Array<{ shell: string; flags: ReadonlySet<string>; from: number }> = [];
+      const commandText = staticStringOf(command);
+      const outer = commandText === null ? null : shellDialect(commandText);
+      if (outer) positions.push({ ...outer, from: 0 });
+
+      argv.elements.forEach((element, index) => {
+        if (!element) return;
+        const text = staticStringOf(element);
+        if (text === null) return;
+        const nested = shellDialect(text);
+        if (nested) positions.push({ ...nested, from: index + 1 });
+      });
+      return positions;
+    }
 
     /** spawn('bash', ['-c', <assembled>]) */
     function checkShellFlag(node: TSESTree.CallExpression, fn: string): void {
-      const command = node.arguments[0];
-      if (
-        !command ||
-        command.type !== AST_NODE_TYPES.Literal ||
-        typeof command.value !== 'string'
-      ) {
-        return;
-      }
-      const shell = basename(command.value);
-      const commandFlags = SHELL_COMMAND_FLAGS[shell.toLowerCase()];
-      if (!commandFlags) return;
-
-      const argv = node.arguments[1];
+      const argvNode = node.arguments[1];
+      // `const argv = ['-c', `pkill ${pid}`]; spawn('sh', argv)` — the vector
+      // hoisted one statement up is the same vector.
+      const argv =
+        argvNode?.type === AST_NODE_TYPES.Identifier
+          ? constInitializerOf(sourceCode, argvNode)
+          : argvNode;
       if (!argv || argv.type !== AST_NODE_TYPES.ArrayExpression) return;
 
-      for (let i = 0; i < argv.elements.length - 1; i += 1) {
-        const flag = argv.elements[i];
-        if (!flag || flag.type !== AST_NODE_TYPES.Literal) continue;
-        if (typeof flag.value !== 'string') continue;
-        if (!commandFlags.has(flag.value)) continue;
+      // An argv vector at index 1 means index 0 exists; the cast avoids a
+      // `command === undefined` branch that no input can reach.
+      const command = node.arguments[0] as TSESTree.Node;
 
-        const commandString = argv.elements[i + 1];
-        if (!commandString) continue;
-        if (!isAssembledString(commandString)) continue;
+      for (const { shell, flags, from } of shellPositions(command, argv)) {
+        for (let i = from; i < argv.elements.length - 1; i += 1) {
+          const flag = argv.elements[i];
+          if (!flag) continue;
+          const flagText = staticStringOf(flag);
+          if (flagText === null) continue;
+          if (!isCommandFlag(flags, flagText)) continue;
 
-        context.report({
-          node: commandString,
-          messageId: 'shellFlagInjection',
-          data: { fn, shell, flag: flag.value },
-        });
-        return;
+          const commandString = argv.elements[i + 1];
+          if (!commandString) continue;
+          if (!isAssembled(commandString)) continue;
+
+          context.report({
+            node: commandString,
+            messageId: 'shellFlagInjection',
+            data: { fn, shell, flag: flagText },
+          });
+          return;
+        }
       }
     }
 
@@ -261,8 +415,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
     ): void {
       const commandLine = node.arguments[0];
       if (!commandLine) return;
-      if (commandLine.type === AST_NODE_TYPES.Literal) return;
-      if (!isAssembledString(commandLine)) return;
+      if (!isAssembled(commandLine)) return;
 
       context.report({
         node: commandLine,
@@ -273,7 +426,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const fn = calleeName(node.callee);
+        const fn = canonicalName(node.callee);
         if (!fn) return;
         if (ARGV_FUNCTIONS.has(fn)) {
           checkShellFlag(node, fn);

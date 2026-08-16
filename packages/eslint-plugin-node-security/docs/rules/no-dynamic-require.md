@@ -135,7 +135,7 @@ processValue(getValue()); // Cross-file not tracked
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowContexts` | `string[]` | `[]` | Allow dynamic requires in specific contexts. |
-| `allowPatterns` | `string[]` | `[]` | Regex patterns for allowed dynamic require paths. |
+| `allowPatterns` | `string[]` | `[]` | Regex patterns matched against the source text of the require argument; a match suppresses the report. |
 
 ## Not a finding
 

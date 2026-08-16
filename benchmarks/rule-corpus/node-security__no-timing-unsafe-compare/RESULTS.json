@@ -1,0 +1,22 @@
+{
+  "rule": "node-security/no-timing-unsafe-compare",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 43,
+  "vulnerable": 25,
+  "results": [
+    {
+      "name": "Interlace node-security/no-timing-unsafe-compare",
+      "tp": 24,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1,
+      "recall": 0.96,
+      "f1": 0.9795918367346939,
+      "crashes": [],
+      "missed": [
+        "vulnerable/32-unrevealing-both-sides.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

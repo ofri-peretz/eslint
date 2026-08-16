@@ -21,7 +21,96 @@
  */
 import type { TSESLint, TSESTree, SecurityRuleOptions } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, createSafetyChecker } from '@interlace/eslint-devkit';
-import { bindingInit, findVariable } from '../../utils/provenance';
+import { constInitializerOf, resolveConstant } from '../../utils/const-value';
+import { bindingInit, findVariable, makeReadsTaintSource } from '../../utils/provenance';
+
+/**
+ * The Buffer read/write surface this rule bounds-checks.
+ *
+ * The list used to hold the little-endian spellings only — `readUInt16LE`,
+ * `readUInt32LE` and their `Int` siblings — with every `*BE` reader absent.
+ * Network byte order IS big-endian, so a protocol parser reaches for `*BE`
+ * almost exclusively, and the rule was blind to most real parsers:
+ * `ledger.readBigUInt64BE(Number(req.params.entry))` produced nothing.
+ *
+ * The READ surface is complete here. The write side is deliberately left as it
+ * was: writing past the end is CWE-787, a different weakness with a different
+ * fix, and this rule reports under CWE-126.
+ */
+const DEFAULT_BUFFER_METHODS: readonly string[] = [
+  'readUInt8', 'readInt8',
+  'readUInt16LE', 'readUInt16BE', 'readInt16LE', 'readInt16BE',
+  'readUInt32LE', 'readUInt32BE', 'readInt32LE', 'readInt32BE',
+  'readBigUInt64LE', 'readBigUInt64BE', 'readBigInt64LE', 'readBigInt64BE',
+  'readFloatLE', 'readFloatBE', 'readDoubleLE', 'readDoubleBE',
+  'readUIntLE', 'readUIntBE', 'readIntLE', 'readIntBE',
+  'writeUInt8', 'writeUInt16LE', 'writeUInt32LE',
+  'slice', 'subarray', 'copy',
+];
+
+/**
+ * Roots that carry an inbound request, per the shared provenance model.
+ *
+ * A VOCABULARY, not a protocol surface: `event`, `ctx` and `context` are
+ * ordinary English words that a great many programs use for something else,
+ * and this list is on the REPORTING path — it is what makes an index
+ * attacker-steerable. So it is the default of `untrustedSources` rather than a
+ * constant, exactly as `no-timing-unsafe-compare` already exposes the same
+ * list under the same option name. A consumer whose framework spells the
+ * request `koaCtx`, or whose `event` is a DOM event, can say so.
+ */
+const DEFAULT_UNTRUSTED_SOURCES: readonly string[] = [
+  'req', 'request', 'event', 'ctx', 'context',
+];
+
+/**
+ * Identifier spellings that conventionally name a Node Buffer.
+ *
+ * EXACT membership, not substring. `bufferTypes.some(t => name.includes(t))`
+ * made every identifier containing "buffer" a Buffer, so a `rowBuffer` built by
+ * `rows.map(…)` and a `lineBuffer` array of strings were both reported as
+ * buffer overreads — an out-of-range array read is `undefined`, not a
+ * disclosure of adjacent memory, so CWE-126 does not apply to either.
+ *
+ * The names that survive are the ones the rule's own history names as the
+ * false-negative target: a Buffer PARAMETER, whose type this file cannot see.
+ * `b` and `chunk` stay out (single-character names and stream-chunk arrays
+ * produce too many false positives), and so does anything longer that merely
+ * contains one of these.
+ *
+ * Also a vocabulary and also on the reporting path — a parameter named `bytes`
+ * is a Buffer by convention only, and a codebase where `bytes` is a count of
+ * bytes has no remedy but turning the rule off. So it is the default of
+ * `bufferParameterNames`. Setting it to `[]` disables the convention entirely
+ * and leaves only bindings this file can prove hold a Buffer.
+ */
+const DEFAULT_BUFFER_PARAMETER_NAMES: readonly string[] = [
+  'buf', 'buffer', 'bytes',
+];
+
+/**
+ * `fs.readFileSync(path)` with no encoding returns a Buffer.
+ *
+ * With an encoding — `readFileSync(p, 'utf8')` — it returns a string, so the
+ * argument shape decides, not the callee's name. Without this the commonest
+ * way a Buffer enters a program was invisible and
+ * `blob.slice(Number(req.query.start))` went unreported.
+ */
+function isBufferReturningRead(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+  const callee = node.callee;
+  const name =
+    callee.type === AST_NODE_TYPES.Identifier
+      ? callee.name
+      : callee.type === AST_NODE_TYPES.MemberExpression &&
+          !callee.computed &&
+          callee.property.type === AST_NODE_TYPES.Identifier
+        ? callee.property.name
+        : null;
+  // A second argument is an encoding or an options bag, and either can turn the
+  // result into a string. Only the unambiguous one-argument form counts.
+  return name === 'readFileSync' && node.arguments.length === 1;
+}
 
 /**
  * Eight more used to sit here — `bufferOverread`, `bufferLengthNotChecked`,
@@ -58,6 +147,27 @@ export interface Options extends SecurityRuleOptions {
 
   /** Additional function names to consider as buffer index validators */
   trustedSanitizers?: string[];
+
+  /**
+   * Identifier roots treated as carrying an inbound request, and therefore as
+   * attacker-steerable. Default: `['req', 'request', 'event', 'ctx',
+   * 'context']`.
+   *
+   * REPLACES the default list; pass the defaults back if you mean to extend
+   * it. Set it to `[]` and no index is ever classed as user-controlled from
+   * its root, which turns off the `userControlledBufferIndex` finding.
+   */
+  untrustedSources?: string[];
+
+  /**
+   * Parameter spellings treated as a Node Buffer when nothing else in the file
+   * proves the type. Default: `['buf', 'buffer', 'bytes']`.
+   *
+   * Matched as the WHOLE lower-cased name, never as a substring. REPLACES the
+   * default list. `[]` drops the convention and leaves only bindings whose
+   * initializer this rule can see.
+   */
+  bufferParameterNames?: string[];
 
   /** Additional JSDoc annotations to consider as safe markers */
   strictMode?: boolean;
@@ -147,7 +257,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           bufferMethods: {
             type: 'array',
             items: { type: 'string' },
-            default: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'subarray', 'copy'], description: 'Buffer read/write methods checked for bounds'
+            default: [...DEFAULT_BUFFER_METHODS], description: 'Buffer read/write methods checked for bounds'
           },
           boundsCheckFunctions: {
             type: 'array',
@@ -171,6 +281,20 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Additional JSDoc annotations to consider as safe markers',
           },
+          untrustedSources: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_UNTRUSTED_SOURCES],
+            description:
+              'Identifier roots treated as carrying an inbound request (default: req, request, event, ctx, context). Replaces the list; [] disables root-based taint.',
+          },
+          bufferParameterNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_BUFFER_PARAMETER_NAMES],
+            description:
+              'Parameter spellings treated as a Buffer when the type is not otherwise visible (default: buf, buffer, bytes). Whole-name match, never substring. Replaces the list; [] drops the convention.',
+          },
           strictMode: {
             type: 'boolean',
             default: false,
@@ -189,25 +313,37 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      bufferMethods: ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'subarray', 'copy'],
+      bufferMethods: [...DEFAULT_BUFFER_METHODS],
       boundsCheckFunctions: ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'],
       bufferTypes: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
+      untrustedSources: [...DEFAULT_UNTRUSTED_SOURCES],
+      bufferParameterNames: [...DEFAULT_BUFFER_PARAMETER_NAMES],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      bufferMethods = ['readUInt8', 'readUInt16LE', 'readUInt32LE', 'readInt8', 'readInt16LE', 'readInt32LE', 'writeUInt8', 'writeUInt16LE', 'writeUInt32LE', 'slice', 'subarray', 'copy'],
+      bufferMethods = [...DEFAULT_BUFFER_METHODS],
       boundsCheckFunctions = ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'],
       bufferTypes = ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
       reportUnvalidatedIndices = false,
+      untrustedSources = [...DEFAULT_UNTRUSTED_SOURCES],
+      bufferParameterNames = [...DEFAULT_BUFFER_PARAMETER_NAMES],
     }: Options = options;
+
+    // Lower-cased once, then matched whole. `isBufferType` compares against
+    // `node.name.toLowerCase()`, so a user who writes `bufferParameterNames:
+    // ['Buf']` must still match `buf` — folding here rather than at every call
+    // site is what makes the option behave the same way the built-ins do.
+    const bufferParameterSet: ReadonlySet<string> = new Set(
+      bufferParameterNames.map((name) => name.toLowerCase()),
+    );
 
     const sourceCode = context.sourceCode;
     const filename = context.filename;
@@ -263,9 +399,38 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       );
     };
 
-    // Pre-compute Sets for O(1) lookups (performance optimization)
-    const bufferTypesSet = new Set(bufferTypes.map(t => t.toLowerCase()));
-    const userControlledKeywords = new Set(['req', 'request', 'query', 'params', 'input', 'user', 'offset', 'index', 'body']);
+    /**
+     * "Can an attacker steer this value?" — the shared provenance model.
+     *
+     * What stood here instead was three overlapping name tests, all of them on
+     * a REPORTING path:
+     *
+     * ```ts
+     * varName.includes(keyword)                       // 'offset', 'index', 'user'…
+     * keywords.some(k => sourceCode.getText(init.object).includes(k))
+     * keywords.some(k => sourceCode.getText(indexNode).includes(k))
+     * ```
+     *
+     * The last two match printed SOURCE, which the repo's own rules forbid
+     * outright. All three answered "user-controlled" for values that are
+     * nothing of the sort: `const offset = 4; MAGIC[offset - 1]` and
+     * `const VERSION_INDEX = 0; LAYOUT[VERSION_INDEX]` were both reported as
+     * "Buffer accessed with user-controlled index" in files that contain no
+     * request, no socket and no parameter — rename the constant and the finding
+     * disappears, which is the definition of a name-inference false positive.
+     *
+     * `makeReadsTaintSource` decides by flow instead: request roots, request
+     * PROPERTY names wherever the receiver came from, one hop per binding,
+     * last-write-before-use for a reassigned `let`, and `unwrapTypeSyntax` so a
+     * TypeScript `as string` does not end the walk. Nothing was lost by
+     * deleting the name tests: an index that is a bare parameter was already
+     * exempted by `isIndexValidated`, so the name test could only ever fire on
+     * a LOCAL, whose provenance is exactly what this reader follows.
+     */
+    const readsTaintSource = makeReadsTaintSource(
+      sourceCode,
+      new Set(untrustedSources.map((source) => source.toLowerCase())),
+    );
 
     /**
      * Variables known to hold a buffer.
@@ -294,16 +459,15 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     const isBufferType = (node: TSESTree.Identifier): boolean => {
       const variable = findVariable(sourceCode, node);
       if (variable && bufferVars.has(variable)) return true;
-      const lowerName = node.name.toLowerCase();
-      for (const type of bufferTypesSet) {
-        if (lowerName.includes(type)) return true;
+      // A binding this file CAN see, and which is not a buffer, ends the
+      // question. `const rowBuffer = rows.map(…)` is an array however it is
+      // spelled, and the conventional-name fallback below exists only for the
+      // parameter case, where there is no initializer to look at.
+      if (variable !== null && variable.defs.length > 0) {
+        return variable.defs[0].type === 'Parameter' &&
+          bufferParameterSet.has(node.name.toLowerCase());
       }
-      // Conventional Buffer parameter names. `buf` and `bytes` are strong
-      // signals for Node Buffer parameters (the original FN target). `b`
-      // and `chunk` are intentionally excluded — single-char names and
-      // stream-chunk array variables produce too many FPs in real code.
-      if (lowerName === 'buf' || lowerName === 'bytes') return true;
-      return false;
+      return bufferParameterSet.has(node.name.toLowerCase());
     };
 
     /**
@@ -363,301 +527,246 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if index is user-controlled
-     * Uses Set-based keyword matching for O(1) lookups
+     * Can an attacker steer this index?
+     *
+     * One line, because the whole question is delegated to the shared
+     * provenance model. See `readsTaintSource` above for what the four
+     * hand-rolled name and printed-source tests that used to live here got
+     * wrong, and why deleting them costs no recall.
      */
-    const isUserControlledIndex = (indexNode: TSESTree.Node): boolean => {
-      // Direct MemberExpression: `req.query.length`, `req.body.size`,
-      // `event.queryStringParameters.limit`, etc. — walk the chain to
-      // check if the root identifier is a known taint source. Closes the
-      // audit FN where `buf.slice(0, req.query.length)` was bypassing
-      // detection because the arg was a MemberExpression, not an
-      // Identifier. See benchmarks/AUDIT_PATTERNS.md §3.6 ("taint-source
-      // breadth").
-      if (indexNode.type === 'MemberExpression') {
-        let walker: TSESTree.Node = indexNode;
-        while (walker.type === 'MemberExpression') {
-          walker = walker.object;
-        }
-        if (walker.type === 'Identifier') {
-          const root = walker.name.toLowerCase();
-          // Express / Lambda / Koa / Hono taint-source roots.
-          if (['req', 'request', 'event', 'ctx', 'context'].includes(root)) {
-            return true;
-          }
-          // Generic user-controlled keyword check on root name.
-          for (const keyword of userControlledKeywords) {
-            if (root.includes(keyword)) return true;
-          }
-        }
-      }
-
-      if (indexNode.type === 'Identifier') {
-        const varName = indexNode.name.toLowerCase();
-        // Check each part of the variable name against keywords Set
-        for (const keyword of userControlledKeywords) {
-          if (varName.includes(keyword)) return true;
-        }
-
-        // Trace variable definition
-        let currentScope: TSESLint.Scope.Scope | null = sourceCode.getScope(indexNode);
-        let variable: TSESLint.Scope.Variable | null = null;
-        while (currentScope) {
-          variable = currentScope.variables.find(v => v.name === indexNode.name) || null;
-          if (variable) break;
-          currentScope = currentScope.upper;
-        }
-
-        if (variable && variable.defs.length > 0) {
-             const def = variable.defs[0];
-             if (def.type === 'Variable' && def.node.init) {
-                 const init = def.node.init;
-                 
-                 // Check MemberExpression involving user keywords (e.g. req.body.index)
-                 if (init.type === 'MemberExpression') {
-                     const objectText = sourceCode.getText(init.object).toLowerCase();
-                     const propertyText = sourceCode.getText(init.property).toLowerCase();
-                     
-                     const keywords = ['req', 'request', 'query', 'params', 'input', 'user', 'body'];
-                     if (keywords.some(k => objectText.includes(k) || propertyText.includes(k))) {
-                         return true;
-                     }
-                 }
-                 
-                 // Check CallExpression with user-controlled arguments (Number(req.query.index), parseInt(), etc.)
-                 if (init.type === AST_NODE_TYPES.CallExpression) {
-                     // Check if callee is a type conversion function
-                     const typeConversionFunctions = ['number', 'parseint', 'parsefloat', 'string', 'boolean'];
-                     let isTypeConversion = false;
-                     
-                     if (init.callee.type === AST_NODE_TYPES.Identifier) {
-                         isTypeConversion = typeConversionFunctions.includes(init.callee.name.toLowerCase());
-                     }
-                     
-                     // If it's a type conversion, check if the argument is user-controlled
-                     if (isTypeConversion && init.arguments.length > 0) {
-                         return isUserControlledIndex(init.arguments[0]);
-                     }
-                 }
-                 
-                 // Recursive check for Identifier assignment
-                 if (init.type === 'Identifier' && init.name !== indexNode.name) {
-                     return isUserControlledIndex(init);
-                 }
-             }
-        }
-      }
-      
-      // Check CallExpression arguments (Number(req.query.index))
-      if (indexNode.type === AST_NODE_TYPES.CallExpression) {
-          const typeConversionFunctions = ['Number', 'parseInt', 'parseFloat', 'String', 'Boolean'];
-          if (indexNode.callee.type === AST_NODE_TYPES.Identifier &&
-              typeConversionFunctions.includes(indexNode.callee.name)) {
-              // Check if arguments are user-controlled
-              for (const arg of indexNode.arguments) {
-                  if (isUserControlledIndex(arg)) {
-                      return true;
-                  }
-              }
-          }
-      }
-      
-      // Check MemberExpression (req.query.index)
-      if (indexNode.type === AST_NODE_TYPES.MemberExpression) {
-          const text = sourceCode.getText(indexNode).toLowerCase();
-          const keywords = ['req.', 'request.', 'query.', 'params.', 'body.', 'input.', 'user.'];
-          if (keywords.some(k => text.includes(k))) {
-              return true;
-          }
-      }
-      
-      return false;
-    };
+    const isUserControlledIndex = (indexNode: TSESTree.Node): boolean =>
+      readsTaintSource(indexNode);
 
     /**
-     * Check if index has been validated
+     * Has this index been through something that bounds it?
+     *
+     * The previous implementation walked the index's ANCESTORS looking for
+     * `VariableDeclarator` with a matching name — but a use site is never
+     * inside its own declarator, so that walk could only ever succeed for
+     * `const i = f(i)`. In practice the function fell through to its second
+     * clause, "function parameters are assumed validated", and returned false
+     * for every local. The binding is now resolved through `bindingInit`,
+     * which is what the walk was reaching for.
      */
     const isIndexValidated = (indexNode: TSESTree.Node): boolean => {
-      // If it's a literal number, check if it's non-negative
-      if (indexNode.type === AST_NODE_TYPES.Literal && typeof indexNode.value === 'number') {
-        return indexNode.value >= 0;
+      if (indexNode.type === AST_NODE_TYPES.Literal) {
+        return typeof indexNode.value === 'number' && indexNode.value >= 0;
       }
+      if (isBoundsCheckCall(indexNode)) return true;
+      if (indexNode.type !== AST_NODE_TYPES.Identifier) return false;
 
-      // If it's an identifier, check if it comes from a bounds check function
-      if (indexNode.type === AST_NODE_TYPES.Identifier) {
-        let current: TSESTree.Node | undefined = indexNode;
+      // A parameter's value is decided by a caller this rule does not follow.
+      // Reporting every one of them made the finding a property of the rule's
+      // analysis depth rather than of the code.
+      const variable = findVariable(sourceCode, indexNode);
+      if (variable !== null && variable.defs[0]?.type === 'Parameter') return true;
 
-        // Walk up the AST to find where this variable was assigned
-        while (current) {
-          // Check if we're in a variable declaration
-          if (current.type === AST_NODE_TYPES.VariableDeclarator &&
-              current.id.type === AST_NODE_TYPES.Identifier &&
-              current.id.name === indexNode.name &&
-              current.init) {
-
-            const init = current.init;
-
-            // Check if assigned from a bounds check function
-            if (init.type === AST_NODE_TYPES.CallExpression &&
-                init.callee.type === AST_NODE_TYPES.Identifier &&
-                boundsCheckFunctions.includes(init.callee.name)) {
-              return true;
-            }
-
-            // Check if assigned from Math.min/max with buffer.length
-            if (init.type === AST_NODE_TYPES.CallExpression &&
-                init.callee.type === AST_NODE_TYPES.MemberExpression &&
-                init.callee.object.type === AST_NODE_TYPES.Identifier &&
-                init.callee.object.name === 'Math' &&
-                init.callee.property.type === AST_NODE_TYPES.Identifier &&
-                (init.callee.property.name === 'min' || init.callee.property.name === 'max')) {
-              return true;
-            }
-
-            break;
-          }
-
-          // Check if it's a parameter in a function - assume validated if it's a function param
-          if (current.type === AST_NODE_TYPES.FunctionDeclaration ||
-              current.type === AST_NODE_TYPES.FunctionExpression ||
-              current.type === AST_NODE_TYPES.ArrowFunctionExpression) {
-            const params = current.params;
-            for (const param of params) {
-              if (param.type === AST_NODE_TYPES.Identifier && param.name === indexNode.name) {
-                return true; // Function parameters are assumed validated
-              }
-            }
-          }
-
-          current = current.parent as TSESTree.Node;
-        }
-      }
-
-      // Check if it's a call to a bounds check function directly
-      if (indexNode.type === AST_NODE_TYPES.CallExpression &&
-          indexNode.callee.type === AST_NODE_TYPES.Identifier &&
-          boundsCheckFunctions.includes(indexNode.callee.name)) {
-        return true;
-      }
-
-      return false;
+      const init = bindingInit(sourceCode, indexNode);
+      return init !== undefined && isBoundsCheckCall(init);
     };
 
     /**
-     * Check if there's a bounds check in the current scope
+     * Is this expression a call that returns a bounded index?
+     *
+     * Either one of the project's configured bounds helpers, or `Math.min` /
+     * `Math.max` — the clamp idiom.
      */
-    const hasBoundsCheck = (bufferName: string, indexNode: TSESTree.Node): boolean => {
-      // Look for bounds checks in the current function scope
-      let current: TSESTree.Node | undefined = indexNode;
-
-      while (current) {
-        // Check if we're in a function
-        if (current.type === AST_NODE_TYPES.FunctionDeclaration ||
-            current.type === AST_NODE_TYPES.FunctionExpression ||
-            current.type === AST_NODE_TYPES.ArrowFunctionExpression) {
-          break;
-        }
-
-        // Look for if statements that check bounds
-        if (current.type === AST_NODE_TYPES.IfStatement) {
-          const condition = current.test;
-          const conditionText = sourceCode.getText(condition).toLowerCase();
-
-          // Check for bounds checking patterns
-          if (conditionText.includes(`${bufferName}.length`) &&
-              (conditionText.includes('<') || conditionText.includes('<=') ||
-               conditionText.includes('>') || conditionText.includes('>=') ||
-               conditionText.includes('&&') || conditionText.includes('||'))) {
-            return true;
-          }
-        }
-
-        // Look for variable declarations that might be bounds checks
-        if (current.type === AST_NODE_TYPES.VariableDeclaration) {
-          for (const declarator of current.declarations) {
-            if (declarator.init) {
-              const initText = sourceCode.getText(declarator.init).toLowerCase();
-              if (initText.includes(`${bufferName}.length`) &&
-                  (initText.includes('math.min') || initText.includes('math.max') ||
-                   initText.includes('mathmin') || initText.includes('mathmax'))) {
-                return true;
-              }
-            }
-          }
-        }
-
-        // Look for return statements or early returns that might indicate bounds checking
-        if (current.type === AST_NODE_TYPES.ReturnStatement && current.argument) {
-          const returnText = sourceCode.getText(current.argument).toLowerCase();
-          if (returnText.includes(`${bufferName}.length`)) {
-            return true;
-          }
-        }
-
-        current = current.parent as TSESTree.Node;
+    const isBoundsCheckCall = (node: TSESTree.Node): boolean => {
+      if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+      const callee = node.callee;
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        return boundsCheckFunctions.includes(callee.name);
       }
-
-      return false;
+      if (
+        callee.type !== AST_NODE_TYPES.MemberExpression ||
+        callee.computed ||
+        callee.property.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      return (
+        (callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'Math' &&
+          (callee.property.name === 'min' || callee.property.name === 'max')) ||
+        boundsCheckFunctions.includes(callee.property.name)
+      );
     };
 
     /**
-     * Check if index could be negative
+     * Is there a guard in scope comparing this index against the buffer's
+     * length?
+     *
+     * Structural, and it has to be: the previous version rendered the
+     * condition with `sourceCode.getText(...)` and asked whether the string
+     * contained `"<buffername>.length"` and one of `<`, `<=`, `>`, `>=`, `&&`,
+     * `||`. That matched a comment, a string literal, and any unrelated
+     * expression that happened to print those characters — and it keyed on the
+     * buffer's SPELLING, so a shadowed name in another scope satisfied it.
+     *
+     * The shape looked for now is a comparison one of whose sides mentions the
+     * index and the other of which reads `.length` on the SAME resolved
+     * buffer variable. `at + 4 > index.length` matches; `end > record.length`
+     * guarding a read of `start` does not, which is the whole point — a guard
+     * on the wrong variable is not a guard.
+     */
+    const hasBoundsCheck = (
+      buffer: TSESTree.Identifier,
+      indexNode: TSESTree.Node,
+    ): boolean => {
+      const guards: TSESTree.BinaryExpression[] = [];
+      collectComparisons(enclosingBody(indexNode), guards);
+      return guards.some(
+        (test) =>
+          (mentions(test.left, indexNode) && readsLengthOf(test.right, buffer)) ||
+          (mentions(test.right, indexNode) && readsLengthOf(test.left, buffer)),
+      );
+    };
+
+    /**
+     * Do these two identifiers name the same binding?
+     *
+     * Resolved variables are compared by identity, so shadowing is honoured.
+     * When NEITHER resolves — two undeclared globals — the name is all there
+     * is; comparing `null === null` would otherwise make every `.length` in
+     * the file a bounds check on every buffer in it.
+     */
+    const sameBinding = (a: TSESTree.Identifier, b: TSESTree.Identifier): boolean => {
+      const left = findVariable(sourceCode, a);
+      const right = findVariable(sourceCode, b);
+      if (left === null && right === null) return a.name === b.name;
+      return left === right;
+    };
+
+    /** The statement list this node sits in, or the whole program. */
+    const enclosingBody = (node: TSESTree.Node): TSESTree.Node => {
+      let current: TSESTree.Node | undefined = node.parent;
+      while (current) {
+        if (
+          current.type === AST_NODE_TYPES.FunctionDeclaration ||
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          current.type === AST_NODE_TYPES.Program
+        ) {
+          return current;
+        }
+        current = current.parent;
+      }
+      return node;
+    };
+
+    /** Every `<`/`<=`/`>`/`>=` comparison inside this subtree. */
+    const collectComparisons = (
+      node: TSESTree.Node,
+      out: TSESTree.BinaryExpression[],
+    ): void => {
+      if (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        ['<', '<=', '>', '>='].includes(node.operator)
+      ) {
+        out.push(node);
+      }
+      for (const key of Object.keys(node)) {
+        if (key === 'parent') continue;
+        const value = (node as unknown as Record<string, unknown>)[key];
+        for (const child of Array.isArray(value) ? value : [value]) {
+          if (
+            child !== null &&
+            typeof child === 'object' &&
+            typeof (child as TSESTree.Node).type === 'string'
+          ) {
+            collectComparisons(child as TSESTree.Node, out);
+          }
+        }
+      }
+    };
+
+    /** Does this expression mention the index (as itself or as a sub-term)? */
+    const mentions = (node: TSESTree.Node, indexNode: TSESTree.Node): boolean => {
+      if (indexNode.type !== AST_NODE_TYPES.Identifier) return false;
+      const walk = (current: TSESTree.Node): boolean => {
+        if (current.type === AST_NODE_TYPES.Identifier) {
+          return sameBinding(current, indexNode);
+        }
+        if (current.type === AST_NODE_TYPES.BinaryExpression) {
+          return walk(current.left as TSESTree.Node) || walk(current.right);
+        }
+        if (current.type === AST_NODE_TYPES.CallExpression) {
+          return current.arguments.some(
+            (argument) =>
+              argument.type !== AST_NODE_TYPES.SpreadElement && walk(argument),
+          );
+        }
+        return false;
+      };
+      return walk(node);
+    };
+
+    /** Is this `<buffer>.length` on the very variable being indexed? */
+    const readsLengthOf = (
+      node: TSESTree.Node,
+      buffer: TSESTree.Identifier,
+    ): boolean =>
+      node.type === AST_NODE_TYPES.MemberExpression &&
+      !node.computed &&
+      node.property.type === AST_NODE_TYPES.Identifier &&
+      node.property.name === 'length' &&
+      node.object.type === AST_NODE_TYPES.Identifier &&
+      sameBinding(node.object, buffer);
+
+    /**
+     * Is this index PROVABLY negative?
+     *
+     * It used to answer "yes" to any subtraction — "conservative: assume it
+     * could be negative" — which is proof by ignorance on a reporting path.
+     * `MAGIC[offset - 1]`, with `const offset = 4`, was reported as a negative
+     * buffer index in a file where the value is 3.
+     *
+     * Now the value has to be resolvable and actually below zero. Nothing real
+     * is lost: an unresolvable subtraction of a tainted value is still caught
+     * by the user-controlled arm, which is where it belongs.
      */
     const couldBeNegative = (indexNode: TSESTree.Node): boolean => {
-      // Check for literal negative numbers
-      // Check for literal negative numbers
-      if (indexNode.type === AST_NODE_TYPES.Literal && typeof indexNode.value === 'number') {
-        return indexNode.value < 0;
+      const value = constantNumber(indexNode, 0);
+      return value !== null && value < 0;
+    };
+
+    /**
+     * The number this expression evaluates to, or `null` when it cannot be
+     * decided.
+     *
+     * `const` aliases are followed through `constInitializerOf` rather than
+     * `resolveConstant`, because `const back = -5` binds a UnaryExpression and
+     * not a Literal — the one spelling a "negative index" check most needs to
+     * read. The depth cap terminates `const a = a`.
+     */
+    const constantNumber = (node: TSESTree.Node, depth: number): number | null => {
+      if (depth > 6) return null;
+      if (node.type === AST_NODE_TYPES.UnaryExpression) {
+        const inner = constantNumber(node.argument, depth + 1);
+        if (inner === null) return null;
+        return node.operator === '-' ? -inner : node.operator === '+' ? inner : null;
       }
-
-      // Check for unary minus expressions like -1, -10, etc.
-      if (indexNode.type === AST_NODE_TYPES.UnaryExpression &&
-          indexNode.operator === '-' &&
-          indexNode.argument.type === AST_NODE_TYPES.Literal &&
-          typeof indexNode.argument.value === 'number') {
-        return true; // -N is always negative for positive N
+      if (node.type === AST_NODE_TYPES.BinaryExpression) {
+        if (node.operator !== '-' && node.operator !== '+') return null;
+        const left = constantNumber(node.left as TSESTree.Node, depth + 1);
+        const right = constantNumber(node.right, depth + 1);
+        if (left === null || right === null) return null;
+        return node.operator === '-' ? left - right : left + right;
       }
-
-      // Check for binary expressions that could be negative like userInput - 10
-      if (indexNode.type === AST_NODE_TYPES.BinaryExpression && indexNode.operator === '-') {
-        // userInput - 10 could be negative, we can't be sure statically
-        return true; // Conservative: assume it could be negative
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        const init = constInitializerOf(sourceCode, node);
+        return init === null ? null : constantNumber(init, depth + 1);
       }
-
-      // For variables, we can't be sure, but we can check for obvious patterns
-      if (indexNode.type === AST_NODE_TYPES.Identifier) {
-        // Check if this variable is assigned a negative value somewhere
-        // This is a simplified check - in practice we'd need more sophisticated analysis
-        let current: TSESTree.Node | undefined = indexNode;
-
-        while (current) {
-          if (current.type === AST_NODE_TYPES.VariableDeclarator && current.init) {
-            if (current.init.type === AST_NODE_TYPES.Literal &&
-                typeof current.init.value === 'number' &&
-                current.init.value < 0) {
-              return true;
-            }
-            // Check for unary minus assignments
-            if (current.init.type === AST_NODE_TYPES.UnaryExpression &&
-                current.init.operator === '-' &&
-                current.init.argument.type === AST_NODE_TYPES.Literal &&
-                typeof current.init.argument.value === 'number') {
-              return true;
-            }
-          }
-          current = current.parent as TSESTree.Node;
-        }
-      }
-
-      return false;
+      const resolved = resolveConstant(sourceCode, node);
+      return resolved !== null && typeof resolved.value === 'number'
+        ? resolved.value
+        : null;
     };
 
     return {
       // Track buffer variable declarations
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type === AST_NODE_TYPES.Identifier && node.init) {
-          const varName = node.id.name;
-
           // Check if assigned a buffer type
           if (node.init.type === AST_NODE_TYPES.NewExpression &&
               node.init.callee.type === AST_NODE_TYPES.Identifier &&
@@ -665,8 +774,14 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             addBufferVar(node.id);
           }
 
+          // `fs.readFileSync(path)` with no encoding returns a Buffer, and it
+          // is the commonest way one enters a program at all.
+          if (isBufferReturningRead(node.init)) {
+            addBufferVar(node.id);
+          }
+
           // Check if assigned from Buffer.from() or Buffer.alloc()
-          if (node.init.type === AST_NODE_TYPES.CallExpression && 
+          if (node.init.type === AST_NODE_TYPES.CallExpression &&
               node.init.callee.type === AST_NODE_TYPES.MemberExpression &&
               node.init.callee.object.type === AST_NODE_TYPES.Identifier &&
               node.init.callee.object.name === 'Buffer' &&
@@ -693,10 +808,11 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             }
           }
 
-          // Check variable name patterns
-          if (bufferTypes.some(type => varName.toLowerCase().includes(type.toLowerCase()))) {
-            addBufferVar(node.id);
-          }
+          // A substring test on the DECLARED NAME used to sit here —
+          // `bufferTypes.some(t => varName.toLowerCase().includes(t))` — which
+          // registered `rowBuffer`, `lineBuffer` and `arrayBufferView` as
+          // buffers whatever they were initialized to. The initializer above is
+          // the evidence; the spelling is not.
         }
       },
 
@@ -704,7 +820,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         // Check for buffer[index] access
         if (node.computed && node.object.type === AST_NODE_TYPES.Identifier) {
-          const bufferName = node.object.name;
+          const buffer = node.object;
           const indexNode = node.property;
 
           // A write is CWE-787, not CWE-126 — a different rule's site.
@@ -729,7 +845,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             // Check for user-controlled indices without validation
             if (isUserControlledIndex(indexNode) && !isIndexValidated(indexNode)) {
               // Check if there's a bounds check in scope
-              if (!hasBoundsCheck(bufferName, indexNode)) {
+              if (!hasBoundsCheck(buffer, indexNode)) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -764,7 +880,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             // the sweep.
             if (
               reportUnvalidatedIndices &&
-              !hasBoundsCheck(bufferName, indexNode) &&
+              !hasBoundsCheck(buffer, indexNode) &&
               !isIndexValidated(indexNode)
             ) {
               if (safetyChecker.isSafe(node, context)) {
@@ -821,6 +937,13 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
               if (safetyChecker.isSafe(node, context) || passedTrustedSanitizer(arg)) {
                 continue;
               }
+              // A guard comparing this very offset against the buffer's own
+              // length is the remediation. It was consulted only for
+              // `buf[index]`, so the documented fix silenced the computed form
+              // and left the method form reporting.
+              if (hasBoundsCheck(callee.object, arg)) {
+                continue;
+              }
 
               context.report({
                 node: arg,
@@ -852,6 +975,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           for (const arg of args) {
             if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
               if (safetyChecker.isSafe(node, context) || passedTrustedSanitizer(arg)) {
+                continue;
+              }
+              if (hasBoundsCheck(callee.object, arg)) {
                 continue;
               }
 

@@ -10,7 +10,12 @@
  * @see https://cwe.mitre.org/data/definitions/522.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import {
   expressionNamesACredential,
   isEncrypted,
@@ -19,6 +24,7 @@ import {
   isWebStorageWrite,
   storesACredential,
 } from '../../utils/credential-evidence';
+import { constInitializerOf } from '../../utils/const-value';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected' | 'credentialInEnvironment';
@@ -28,7 +34,10 @@ export interface Options {}
 
 type RuleOptions = [Options?];
 
-export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds>({
+export const requireSecureCredentialStorage = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'require-secure-credential-storage',
   meta: {
     type: 'problem',
@@ -43,7 +52,8 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-312',
-        description: 'Enforce secure storage patterns for credentials detected - Credentials without encryption',
+        description:
+          'Enforce secure storage patterns for credentials detected - Credentials without encryption',
         severity: 'HIGH',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/312.html',
@@ -63,6 +73,44 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
   },
   defaultOptions: [],
   create(context) {
+    /**
+     * Is this expression the `process.env` OBJECT?
+     *
+     * `isEnvironmentWrite` recognises the literal `process.env.X = …` shape.
+     * Config modules almost universally hoist the object first —
+     * `const env = process.env` — and the write through that alias mutates the
+     * identical object, so recognising only the spelled-out form leaves the
+     * commonest real spelling silent. Resolved through the binding (`const`,
+     * single definition) rather than by trusting a variable named `env`.
+     */
+    function isProcessEnv(node: TSESTree.Node, depth = 0): boolean {
+      if (depth > 2) return false;
+      if (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        node.object.name === 'process' &&
+        node.property.type === AST_NODE_TYPES.Identifier &&
+        node.property.name === 'env'
+      ) {
+        return true;
+      }
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const init = constInitializerOf(context.sourceCode, node);
+      return init !== null && isProcessEnv(init, depth + 1);
+    }
+
+    /** `env.SERVICE_API_KEY = …` where `env` resolves to `process.env`. */
+    function isAliasedEnvironmentWrite(
+      node: TSESTree.AssignmentExpression,
+    ): boolean {
+      const target = node.left;
+      return (
+        target.type === AST_NODE_TYPES.MemberExpression &&
+        isProcessEnv(target.object)
+      );
+    }
+
     return {
       /**
        * A credential in `localStorage` / `sessionStorage`: readable by any script on
@@ -77,9 +125,50 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
        * `localStorage`. It is not, on its own, enough — see below.
        */
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isWebStorageWrite(node)) return;
-        if (!storesACredential(node) || isEncrypted(node)) return;
-        context.report({ node, messageId: 'violationDetected' });
+        if (isWebStorageWrite(node)) {
+          if (!storesACredential(node) || isEncrypted(node, context.sourceCode))
+            return;
+          context.report({ node, messageId: 'violationDetected' });
+          return;
+        }
+
+        /**
+         * `Object.assign(process.env, { DATABASE_PASSWORD: … })` — the batch
+         * spelling of the environment write, and the one a secrets loader
+         * actually uses because it publishes a whole map at once. It never
+         * forms an AssignmentExpression, so the handler below could not see it.
+         */
+        const callee = node.callee;
+        if (
+          callee.type !== AST_NODE_TYPES.MemberExpression ||
+          callee.computed ||
+          callee.object.type !== AST_NODE_TYPES.Identifier ||
+          callee.object.name !== 'Object' ||
+          callee.property.type !== AST_NODE_TYPES.Identifier ||
+          callee.property.name !== 'assign'
+        ) {
+          return;
+        }
+        const [target, ...sources] = node.arguments;
+        if (!target || !isProcessEnv(target)) return;
+        for (const source of sources) {
+          if (source.type !== AST_NODE_TYPES.ObjectExpression) continue;
+          for (const property of source.properties) {
+            if (property.type !== AST_NODE_TYPES.Property) continue;
+            if (isEncryptedExpression(property.value, context.sourceCode))
+              continue;
+            if (
+              !expressionNamesACredential(property.key) &&
+              !expressionNamesACredential(property.value)
+            ) {
+              continue;
+            }
+            context.report({
+              node: property,
+              messageId: 'credentialInEnvironment',
+            });
+          }
+        }
       },
 
       /**
@@ -101,8 +190,9 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
        * quiet.
        */
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (!isEnvironmentWrite(node)) return;
-        if (isEncryptedExpression(node.right)) return;
+        if (!isEnvironmentWrite(node) && !isAliasedEnvironmentWrite(node))
+          return;
+        if (isEncryptedExpression(node.right, context.sourceCode)) return;
         if (
           !expressionNamesACredential(node.left) &&
           !expressionNamesACredential(node.right)

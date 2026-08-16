@@ -145,4 +145,4 @@ The following patterns are **not detected** due to static analysis limitations:
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `packageManager` | `"npm"` \| `"yarn"` \| `"pnpm"` | — | Package manager whose lock file is required |
+| `packageManager` | `"any"` \| `"npm"` \| `"yarn"` \| `"pnpm"` | `"any"` | Package manager whose lock file is required. `any` accepts package-lock.json, yarn.lock or pnpm-lock.yaml — the right setting for a repo that has not standardised. |
