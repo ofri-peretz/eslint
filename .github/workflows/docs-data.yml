@@ -85,9 +85,22 @@ jobs:
       #
       # Reuses one branch, so repeated runs update a single open PR rather than
       # opening one per push to main.
+      #
+      # Opened with a PAT and set to auto-merge, because `github.token` made the
+      # PR unmergeable BY DESIGN: GitHub does not fire `on: pull_request`
+      # workflows for a PR created with GITHUB_TOKEN, so the required contexts
+      # never reported and the PR sat `BLOCKED` with ZERO checks forever. That
+      # is the same failure the note above describes, one step later — the sync
+      # succeeded, and its output was discarded anyway.
+      #
+      # This is NOT the bypass token the note rejects. Nothing about branch
+      # protection changes: the PR still runs every required check and still has
+      # to go green. The PAT only makes those checks RUN, and `--auto` merges the
+      # PR once they pass so nobody has to babysit a diff of generated JSON.
+      # `changesets-pr.yml` already uses exactly this pattern.
       - name: Open sync PR
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
           BRANCH: automated/docs-data-sync
           # Passed through env rather than interpolated into the script body —
           # `${{ }}` inside `run:` is substituted before the shell sees it, so
@@ -128,10 +141,19 @@ jobs:
           git commit -m "chore(docs): sync data [automated]"
           git push --force-with-lease="$BRANCH:$LEASE" origin "$BRANCH"
 
-          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
-            echo "Existing PR updated with the new sync commit."
+          PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')
+          if [ -n "$PR" ]; then
+            echo "Existing PR #$PR updated with the new sync commit."
           else
             gh pr create --base main --head "$BRANCH" \
               --title "chore(docs): sync generated data" \
               --body "Regenerated apps/docs/src/data/ (trigger: $TRIGGER). Opened by the Docs Data Sync workflow; contents come entirely from the apps/docs/scripts/sync-* scripts, so review the diff rather than hand-editing."
+            PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')
           fi
+
+          # Idempotent: re-asserting auto-merge on every run is harmless, and it
+          # re-arms the PR after a force-push resets its checks. Failure here is
+          # not fatal -- the PR still exists and can be merged by hand.
+          gh pr merge "$PR" --auto --squash || \
+            echo "::warning::Could not enable auto-merge on #$PR; merge it manually."
+
