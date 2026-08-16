@@ -52,6 +52,11 @@ type RuleOptions = [Options?];
  *
  * `top`, `self`, `parent`, `window.top`, `window.self` — compared against each
  * other, this is the canonical "am I framed?" check.
+ *
+ * @protocol-constant The complete set of HTML's WindowProxy-valued globals. A
+ * consumer who could shorten it would blind the rule to the frame-busting test
+ * spelled with the entry they removed, while it still claimed to check for one;
+ * widening it would read an ordinary object comparison as frame busting.
  */
 const FRAME_REFS = new Set(['top', 'self', 'parent', 'window']);
 
@@ -165,6 +170,11 @@ function hasDeclaration(
  * declaration is enough to distinguish a stylesheet from a sentence that
  * happens to contain a colon — `style='opacity: 0'` is a whole overlay in a
  * single declaration, and requiring two silenced it.
+ *
+ * @protocol-constant CSS property names from the CSS specification, used only to
+ * tell a style declaration from prose containing a colon. They are not a domain
+ * vocabulary and no consumer's codebase adds to them; editing the set changes
+ * what counts as CSS, which is not a decision a consumer should be making.
  */
 const CSS_PROPERTIES: ReadonlySet<string> = new Set([
   'position',
@@ -289,6 +299,12 @@ function originOf(url: string): string | null {
     : `${(match[1] ?? '').toLowerCase()}//${match[2].toLowerCase()}`;
 }
 
+/**
+ * @protocol-constant ESTree node type names — the three function forms the AST
+ * defines. This is the parser's own vocabulary, not the consumer's; a fourth
+ * spelling would be a parser change, and removing one would make the walk skip a
+ * function shape the language still has.
+ */
 const FUNCTION_TYPES = new Set([
   'FunctionDeclaration',
   'FunctionExpression',
@@ -544,6 +560,12 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     /** Does the file establish frame protection by header or meta tag? */
     let hasDeclaredFrameProtection = false;
 
+    /**
+     * @protocol-constant The three HTML elements that make a document a
+     * document. Fixed by the HTML specification — a page cannot declare a fourth
+     * — and it is what distinguishes a full document shell (which can be framed,
+     * so must bust out) from a component fragment (which cannot be framed alone).
+     */
     const DOCUMENT_SHELL_TAGS: ReadonlySet<string> = new Set([
       'html',
       'head',

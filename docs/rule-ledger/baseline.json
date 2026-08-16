@@ -218,8 +218,7 @@
       "duplicate-coverage"
     ],
     "browser-security/no-clickjacking": [
-      "textual-matching",
-      "unconfigurable-vocabulary"
+      "textual-matching"
     ],
     "browser-security/no-client-side-auth-logic": [
       "unconfigurable-vocabulary"
