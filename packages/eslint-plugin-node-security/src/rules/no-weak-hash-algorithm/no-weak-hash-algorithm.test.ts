@@ -473,6 +473,17 @@ describe('no-weak-hash-algorithm', () => {
         `const ALGO = 'sha256'; const signature = crypto.createHash(ALGO).update(token).digest('hex');`,
         // A `let` can be reassigned between the declaration and the call.
         `let algo = 'md5'; algo = negotiate(); const signature = crypto.createHash(algo).update(token).digest('hex');`,
+        // A literal that is neither a string nor a number is not an algorithm
+        // name. `null` and a regex reach `resolveConstantString` and must come
+        // back unresolved rather than throwing or stringifying.
+        `const signature = crypto.createHash(null).update(token).digest('hex');`,
+        `const signature = crypto.createHash(/md5/).update(token).digest('hex');`,
+        // Neither is a call. The argument is not a literal AND not an
+        // identifier, so there is nothing to resolve one hop through.
+        `const signature = crypto.createHash(pickAlgo()).update(token).digest('hex');`,
+        // A const alias bound to a non-string literal: the hop resolves, the
+        // value does not.
+        `const ALGO = null; const signature = crypto.createHash(ALGO).update(token).digest('hex');`,
         // No visible security use — the default classification still applies to
         // the const-held form, exactly as it does to the inline one.
         `const ALGO = 'md5'; const etag = crypto.createHash(ALGO).update(body).digest('hex');`,

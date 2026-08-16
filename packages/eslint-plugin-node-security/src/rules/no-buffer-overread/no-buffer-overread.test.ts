@@ -415,3 +415,173 @@ describe('no-buffer-overread', () => {
     });
   });
 });
+
+/**
+ * The four options no test had ever set, so their branches shipped unexecuted.
+ *
+ * Each is a PAIR on identical source: default verdict and configured verdict,
+ * opposite to each other. A case that came out the same either way would
+ * execute the line without proving the branch decides anything.
+ */
+describe('no-buffer-overread — options', () => {
+  ruleTester.run('bufferTypes', noBufferOverread, {
+    valid: [
+      // CONTROL: `MyBuf` is not a known buffer constructor, so `b` is never
+      // registered as a buffer and the indexed read is not judged.
+      'const b = new MyBuf(8); const byte = b[offset];',
+      // NARROWING: dropping `DataView` from the list stops the rule tracking
+      // it — proof the option REPLACES the built-in constructor names.
+      {
+        code: 'const b = new DataView(x); const byte = b[offset];',
+        options: [{ bufferTypes: ['Buffer'] }],
+      },
+    ],
+    invalid: [
+      // WIDENING: an in-house buffer wrapper, declared, makes the identical
+      // first valid case report.
+      {
+        code: 'const b = new MyBuf(8); const byte = b[offset];',
+        options: [{ bufferTypes: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView', 'MyBuf'] }],
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+      // CONTROL for narrowing: identical source, default constructor list.
+      {
+        code: 'const b = new DataView(x); const byte = b[offset];',
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+    ],
+  });
+
+  ruleTester.run('trustedSanitizers', noBufferOverread, {
+    valid: [
+      // The project's own clamp, named through the option, is accepted as a
+      // bounds check.
+      {
+        code: 'const userIndex = clampToLength(raw); const byte = buffer[userIndex];',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+      },
+    ],
+    invalid: [
+      // CONTROL: identical source, default list — `clampToLength` is not a
+      // sanitizer the devkit knows, so the index is unvalidated.
+      {
+        code: 'const userIndex = clampToLength(raw); const byte = buffer[userIndex];',
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+      // A DIFFERENT helper is still unvalidated: the option names one function,
+      // not a shape.
+      {
+        code: 'const userIndex = coerce(raw); const byte = buffer[userIndex];',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+      // A bare identifier index with no initializer at all — nothing to trace.
+      {
+        code: 'const byte = buffer[userIndex];',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+    ],
+  });
+
+  ruleTester.run('trustedSanitizers — shapes', noBufferOverread, {
+    valid: [
+      // A method call names the sanitizer through its property.
+      {
+        code: 'const userIndex = bounds.clampToLength(raw); const byte = buffer[userIndex];',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+      },
+      // An offset argument to a buffer method, not an index expression.
+      {
+        code: 'const userOffset = bounds.clampToLength(raw); buffer.readUInt32LE(userOffset);',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+      },
+      // A slice bound.
+      {
+        code: 'const buf = new Buffer(8); const userOffset = clampToLength(raw); buf.subarray(userOffset);',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+      },
+    ],
+    invalid: [
+      // A MemberExpression index reaches the helper and is not an Identifier,
+      // so there is no binding to trace — the option cannot exempt it.
+      {
+        code: 'const byte = buffer[req.query.offset];',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+      // A computed callee names nothing statically, so it is not the sanitizer.
+      {
+        code: 'const userIndex = helpers[kind](raw); const byte = buffer[userIndex];',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+      // The binding resolves to something that is not a call at all.
+      {
+        code: 'const userIndex = raw; const byte = buffer[userIndex];',
+        options: [{ trustedSanitizers: ['clampToLength'] }],
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+    ],
+  });
+
+  /**
+   * `reportUnvalidatedIndices` opens a SECOND report path, for indices that
+   * carry no user-controlled name. The sanitizer exemption has to hold there
+   * too — a project that turns on the sweep and names its own bounds helper
+   * should not then be told its helper is not a bounds check.
+   */
+  ruleTester.run('trustedSanitizers — under reportUnvalidatedIndices', noBufferOverread, {
+    valid: [
+      {
+        code: 'const idx = clampToLength(n); const byte = buffer[idx];',
+        options: [{ reportUnvalidatedIndices: true, trustedSanitizers: ['clampToLength'] }],
+      },
+    ],
+    invalid: [
+      // CONTROL: identical source and sweep, without the helper named.
+      {
+        code: 'const idx = clampToLength(n); const byte = buffer[idx];',
+        options: [{ reportUnvalidatedIndices: true }],
+        errors: [{ messageId: 'unsafeBufferAccess' }],
+      },
+    ],
+  });
+
+  ruleTester.run('trustedAnnotations', noBufferOverread, {
+    valid: [
+      // A project-specific review marker suppresses the finding.
+      {
+        code: '/** @audited-bounds */\nconst byte = buffer[offset];',
+        options: [{ trustedAnnotations: ['@audited-bounds'] }],
+      },
+    ],
+    invalid: [
+      // CONTROL: identical source, default annotations — `@audited-bounds` is
+      // not one of them.
+      {
+        code: '/** @audited-bounds */\nconst byte = buffer[offset];',
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+    ],
+  });
+
+  ruleTester.run('strictMode', noBufferOverread, {
+    valid: [
+      // `@sanitized` is a built-in safe annotation, so by DEFAULT this is
+      // silent. This is the control for the strictMode case below.
+      '/** @sanitized */\nconst byte = buffer[offset];',
+    ],
+    invalid: [
+      // `strictMode: true` makes `isSafe` return false unconditionally, so the
+      // annotation stops being believed and the identical source reports. The
+      // setting exists for an audit pass where "someone wrote @sanitized" is
+      // not evidence anyone checked.
+      {
+        code: '/** @sanitized */\nconst byte = buffer[offset];',
+        options: [{ strictMode: true }],
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+    ],
+  });
+});

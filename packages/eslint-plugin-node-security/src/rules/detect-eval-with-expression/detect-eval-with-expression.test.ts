@@ -3,7 +3,7 @@
  * Security: CWE-95 (Code Injection)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { detectEvalWithExpression } from './index';
 
@@ -153,8 +153,6 @@ describe('detect-eval-with-expression', () => {
           errors: [
             {
               messageId: 'useJsonParse',
-              // Note: Rule provides suggestions but fix returns null (no auto-fix)
-              // Test framework requires output for suggestions, so we don't test them here
             },
           ],
         },
@@ -171,7 +169,6 @@ describe('detect-eval-with-expression', () => {
           errors: [
             {
               messageId: 'useObjectAccess',
-              // Note: Rule provides suggestions but fix returns null (no auto-fix)
             },
           ],
         },
@@ -237,7 +234,6 @@ describe('detect-eval-with-expression', () => {
           errors: [
             {
               messageId: 'useTemplateLiteral',
-              // Note: Rule provides suggestions but fix returns null (no auto-fix)
             },
           ],
         },
@@ -638,5 +634,22 @@ describe('vm module code execution (CWE-94)', () => {
         errors: [{ messageId: 'vmCodeExecution' }],
       },
     ],
+  });
+
+  /**
+   * Lock: this rule offers no suggestions, and says so.
+   *
+   * It declared `hasSuggestions: true` while its only `suggest` entry had
+   * `fix: () => null` — a shape ESLint discards before the user sees it, so
+   * the flag advertised an affordance nobody ever received. The three cases
+   * above used to carry the comment "Rule provides suggestions but fix returns
+   * null (no auto-fix), so we don't test them here", which is a defect written
+   * down rather than fixed.
+   *
+   * If a real suggestion is ever added, this assertion is the thing that has to
+   * be updated deliberately — which is the point.
+   */
+  it('declares hasSuggestions: false, matching the absence of any suggest array', () => {
+    expect(detectEvalWithExpression.meta.hasSuggestions).toBe(false);
   });
 });

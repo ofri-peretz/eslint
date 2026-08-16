@@ -16,15 +16,24 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
+/**
+ * Three more used to sit here: `evalWithExpression`, `useFunctionConstructor`
+ * and `useSaferAlternative`. `selectStrategyMessage` is the only thing that
+ * decides a messageId in this rule, and it can return exactly six of the eight
+ * below — the three deleted were never among them. Nor could they have been
+ * emitted usefully: `evalWithExpression` interpolates `{{safeAlternative}}` and
+ * `useSaferAlternative` interpolates `{{alternative}}`, and no call site in
+ * this file passes either placeholder at the top level of `data`, so both would
+ * have rendered literal braces to the user. Deleted rather than wired, because
+ * there is no lost report path to restore — the six that are reachable already
+ * cover every pattern category.
+ */
 type MessageIds =
   | 'vmCodeExecution'
   | 'vm2CodeExecution'
-  | 'evalWithExpression'
   | 'useJsonParse'
   | 'useObjectAccess'
   | 'useTemplateLiteral'
-  | 'useFunctionConstructor'
-  | 'useSaferAlternative'
   | 'strategyRemove'
   | 'strategyRefactor'
   | 'strategyValidate';
@@ -250,7 +259,12 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       cvss: 9.8,
       confidence: 'high',
     },
-    hasSuggestions: true,
+    // `false`: no `context.report` in this file passes a `suggest` array. It was
+    // `true` while the rule's only suggestion had `fix: () => null`, which
+    // ESLint discards — so the flag advertised an affordance that reached no
+    // user. A consumer or an integration reading `hasSuggestions` is entitled
+    // to believe it.
+    hasSuggestions: false,
     messages: {
       vmCodeExecution: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -273,16 +287,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         severity: 'CRITICAL',
         fix: 'Stop using vm2. Run untrusted code out-of-process under an OS-level boundary (a separate process with dropped privileges, a container, or isolated-vm), or remove the need to execute caller-supplied source.',
         documentationLink: 'https://github.com/patriksimek/vm2/issues/533',
-      }),
-      // 🎯 Token optimization: 38% reduction (47→29 tokens) - compact format saves LLM processing
-      evalWithExpression: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'eval() with dynamic code',
-        cwe: 'CWE-95',
-        description: 'eval() with dynamic code',
-        severity: 'CRITICAL',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       useJsonParse: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -311,24 +315,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         // oxlint-disable-next-line no-template-curly-in-string
         fix: 'Replace eval() with template literals: `Hello ${name}`',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
-      }),
-      useFunctionConstructor: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unsafe eval() for function creation',
-        cwe: 'CWE-95',
-        description: 'Use Function constructor with validation instead of eval()',
-        severity: 'HIGH',
-        fix: 'Replace eval() with validated Function constructor',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
-      }),
-      useSaferAlternative: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unsafe eval() usage detected',
-        cwe: 'CWE-95',
-        description: 'eval() with dynamic code execution detected',
-        severity: 'HIGH',
-        fix: '{{alternative}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       strategyRemove: formatLLMMessage({
@@ -496,11 +482,25 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         const expression = extractExpression(node);
         const pattern = detectPattern(expression);
         const steps = generateRefactoringSteps(pattern);
-        const strategyMessageId = selectStrategyMessage(pattern);
 
+        // The `suggest:` array that used to hang off this report offered ONE
+        // suggestion, repeating the report's own messageId, with
+        // `fix: () => null`. ESLint discards a suggestion whose fixer returns
+        // null before it reaches the user, so nothing was ever offered and
+        // `hasSuggestions: true` overstated the rule. The suite even recorded
+        // the fact — "Rule provides suggestions but fix returns null (no
+        // auto-fix), so we don't test them here" — which is documenting a
+        // defect rather than mitigating it. The remediation text it carried is
+        // already in `data.safeAlternative` and `data.steps` of the report
+        // itself, which the user actually sees.
+        //
+        // `selectStrategyMessage(pattern)` is inlined rather than held in a
+        // local: at the report site the local told a reader nothing about which
+        // message this is, and any static reader of this file saw the VARIABLE
+        // name where a messageId belongs.
         context.report({
           node,
-          messageId: strategyMessageId,
+          messageId: selectStrategyMessage(pattern),
           data: {
             expression,
             patternCategory: pattern?.category || 'dynamic code execution',
@@ -508,16 +508,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
             steps,
             effort: pattern?.effort || '15-30 minutes'
           },
-          suggest: pattern ? [
-            {
-              messageId: strategyMessageId,
-              data: {
-                safeAlternative: pattern.safeAlternative,
-                alternative: pattern.safeAlternative
-              },
-              fix: () => null // Complex refactoring, cannot auto-fix safely
-            }
-          ] : undefined
         });
       }
 
@@ -528,11 +518,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
 
         const expression = extractExpression(node);
         const pattern = detectPattern(expression);
-        const strategyMessageId = selectStrategyMessage(pattern);
 
         context.report({
           node,
-          messageId: strategyMessageId,
+          messageId: selectStrategyMessage(pattern),
           data: {
             expression: `new Function(${expression})`,
             patternCategory: 'function constructor',
@@ -558,11 +547,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         const sourceCode = context.sourceCode;
         const expression = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
         const pattern = detectPattern(expression);
-        const strategyMessageId = selectStrategyMessage(pattern);
 
         context.report({
           node,
-          messageId: strategyMessageId,
+          messageId: selectStrategyMessage(pattern),
           data: {
             expression: `new Function(${expression})`,
             patternCategory: 'function constructor',

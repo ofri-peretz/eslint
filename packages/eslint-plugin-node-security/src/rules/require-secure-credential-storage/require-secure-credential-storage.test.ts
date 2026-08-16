@@ -122,6 +122,10 @@ ruleTester.run('require-secure-credential-storage — process.env', requireSecur
     'process.env.SESSION_SECRET = vault.encryptSync(s);',
     // A computed key with no readable name is no evidence.
     'process.env[dynamicKey] = value;',
+    // An assignment whose target is not a member expression at all. The
+    // AssignmentExpression visitor sees every assignment in the file, so this
+    // is the commonest thing it is handed.
+    'let sessionToken = 0; sessionToken = fetchToken();',
     // Not `process.env` — a lookalike object.
     'config.env.SESSION_TOKEN = t;',
     'process.argv.SECRET = s;',

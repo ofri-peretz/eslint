@@ -123,6 +123,12 @@ describe('no-static-iv', () => {
         { code: 'const iv = loadIv(); crypto.createCipheriv("aes-256-cbc", key, iv);' },
         // Buffer.from over a non-literal is not evidence of a static IV.
         { code: 'const iv = Buffer.from(process.env.IV, "hex"); crypto.createCipheriv("aes-256-cbc", key, iv);' },
+        // A DESTRUCTURED const binds no single name to a single initializer,
+        // so there is nothing to resolve. Unresolved, not safe.
+        { code: 'const { iv } = opts; crypto.createCipheriv("aes-256-cbc", key, iv);' },
+        // A `for…of` const has no initializer at all — the value comes from the
+        // iterable, one element at a time.
+        { code: 'for (const iv of ivs) { crypto.createCipheriv("aes-256-cbc", key, iv); }' },
       ],
       invalid: [
         // The archetype: a module-level hex IV reused for every encryption.

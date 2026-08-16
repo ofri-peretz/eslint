@@ -21,22 +21,30 @@
  */
 import type { TSESLint, TSESTree, SecurityRuleOptions } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, createSafetyChecker } from '@interlace/eslint-devkit';
-import { findVariable } from '../../utils/provenance';
+import { bindingInit, findVariable } from '../../utils/provenance';
 
+/**
+ * Eight more used to sit here — `bufferOverread`, `bufferLengthNotChecked`,
+ * `useSafeBufferAccess`, `validateBufferIndices`, `checkBufferBounds`,
+ * `strategyBoundsChecking`, `strategyInputValidation`, `strategySafeBuffers` —
+ * more dead metadata than live. Every `context.report` in this file names one
+ * of the five below.
+ *
+ * Two of the eight could not have been emitted usefully even if wired:
+ * `bufferOverread` interpolated `{{severity}}` and `{{safeAlternative}}`,
+ * placeholders no call site here supplies, so it would have rendered literal
+ * braces into the user's editor. The other six were severity-LOW INFO and
+ * STRATEGY notes whose text is already the `fix:` line of the five messages
+ * that fire — "Check 0 <= index < buffer.length", "Validate slice start/end
+ * indices", and so on. Nothing was lost by deleting them; a rule advertising
+ * thirteen messages and emitting five was simply describing itself wrongly.
+ */
 type MessageIds =
-  | 'bufferOverread'
   | 'unsafeBufferAccess'
   | 'missingBoundsCheck'
   | 'negativeBufferIndex'
   | 'userControlledBufferIndex'
-  | 'unsafeBufferSlice'
-  | 'bufferLengthNotChecked'
-  | 'useSafeBufferAccess'
-  | 'validateBufferIndices'
-  | 'checkBufferBounds'
-  | 'strategyBoundsChecking'
-  | 'strategyInputValidation'
-  | 'strategySafeBuffers';
+  | 'unsafeBufferSlice';
 
 export interface Options extends SecurityRuleOptions {
   /** Buffer methods to check for bounds safety */
@@ -86,15 +94,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-126',
     },
     messages: {
-      bufferOverread: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Buffer Overread',
-        cwe: 'CWE-126',
-        description: 'Buffer access beyond allocated bounds',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/126.html',
-      }),
       unsafeBufferAccess: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe Buffer Access',
@@ -140,63 +139,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         fix: 'Validate slice start/end indices',
         documentationLink: 'https://nodejs.org/api/buffer.html#bufslicestart-end',
       }),
-      bufferLengthNotChecked: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Buffer Length Not Checked',
-        cwe: 'CWE-126',
-        description: 'Buffer length not validated before access',
-        severity: 'MEDIUM',
-        fix: 'Check buffer.length before operations',
-        documentationLink: 'https://nodejs.org/api/buffer.html#buflength',
-      }),
-      useSafeBufferAccess: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe Buffer Access',
-        description: 'Use bounds-checked buffer access methods',
-        severity: 'LOW',
-        fix: 'Use buffer.read*() with offset validation or safe wrapper functions',
-        documentationLink: 'https://nodejs.org/api/buffer.html',
-      }),
-      validateBufferIndices: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Buffer Indices',
-        description: 'Validate buffer indices before use',
-        severity: 'LOW',
-        fix: 'Check 0 <= index < buffer.length',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/126.html',
-      }),
-      checkBufferBounds: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Check Buffer Bounds',
-        description: 'Always check buffer bounds',
-        severity: 'LOW',
-        fix: 'Validate buffer operations against buffer.length',
-        documentationLink: 'https://nodejs.org/api/buffer.html#buflength',
-      }),
-      strategyBoundsChecking: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Bounds Checking Strategy',
-        description: 'Implement comprehensive bounds checking',
-        severity: 'LOW',
-        fix: 'Validate all buffer indices and lengths before operations',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/126.html',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate user input used as buffer indices',
-        severity: 'LOW',
-        fix: 'Sanitize and validate all user input before buffer operations',
-        documentationLink: 'https://nodejs.org/api/buffer.html',
-      }),
-      strategySafeBuffers: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Safe Buffer Strategy',
-        description: 'Use safe buffer wrapper libraries',
-        severity: 'LOW',
-        fix: 'Use libraries that provide bounds-checked buffer operations',
-        documentationLink: 'https://www.npmjs.com/package/safe-buffer',
-      })
     },
     schema: [
       {
@@ -277,6 +219,49 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       trustedOrmPatterns: [],
       strictMode,
     });
+
+
+    /**
+     * Was this INDEX produced by one of the project's own bounds helpers?
+     *
+     * `trustedSanitizers` was plumbed into `createSafetyChecker` and could
+     * never fire: `safetyChecker.isSafe` is handed the buffer ACCESS —
+     * `buffer[i]`, `buf.readUInt32LE(off)` — and the devkit's sanitizer test
+     * only recognises a call or an identifier bound to one. The index, which
+     * is what the finding is actually about, was never examined. Setting the
+     * option changed nothing.
+     *
+     * CUSTOM names only, deliberately. Routing the index through the devkit's
+     * `isSanitizedInput` would also apply its built-in list, and that list
+     * contains `parseInt`, `Number` and `String` — none of which bounds-checks
+     * anything. `const off = parseInt(req.query.off); buf[off]` would have
+     * become "safe", trading this false positive for a false negative on the
+     * exact shape the rule exists to catch.
+     *
+     * One binding hop, through `bindingInit`, so `const safeOff =
+     * clamp(raw); buf[safeOff]` is recognised as well as `buf[clamp(raw)]`.
+     */
+    const passedTrustedSanitizer = (indexNode: TSESTree.Node): boolean => {
+      if (trustedSanitizers.length === 0) return false;
+      // An Identifier only. `isUserControlledIndex` answers `true` for exactly
+      // two shapes — an Identifier, or a MemberExpression with a tainted root —
+      // so nothing else ever reaches this function. A direct call as the index,
+      // `buf[clamp(x)]`, is not reported in the first place and needs no
+      // exemption here; a version of this helper that also matched a call
+      // directly carried a branch no input could take.
+      if (indexNode.type !== AST_NODE_TYPES.Identifier) return false;
+      const init = bindingInit(sourceCode, indexNode);
+      if (init === undefined || init.type !== AST_NODE_TYPES.CallExpression) return false;
+      const calleeNode = init.callee;
+      if (calleeNode.type === AST_NODE_TYPES.Identifier) {
+        return trustedSanitizers.includes(calleeNode.name);
+      }
+      return (
+        calleeNode.type === AST_NODE_TYPES.MemberExpression &&
+        calleeNode.property.type === AST_NODE_TYPES.Identifier &&
+        trustedSanitizers.includes(calleeNode.property.name)
+      );
+    };
 
     // Pre-compute Sets for O(1) lookups (performance optimization)
     const bufferTypesSet = new Set(bufferTypes.map(t => t.toLowerCase()));
@@ -748,6 +733,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
+                if (passedTrustedSanitizer(indexNode)) {
+                  return;
+                }
 
                 context.report({
                   node,
@@ -780,6 +768,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
               !isIndexValidated(indexNode)
             ) {
               if (safetyChecker.isSafe(node, context)) {
+                return;
+              }
+              if (passedTrustedSanitizer(indexNode)) {
                 return;
               }
 
@@ -827,7 +818,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           // Check slice arguments
           for (const arg of args) {
             if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
-              if (safetyChecker.isSafe(node, context)) {
+              if (safetyChecker.isSafe(node, context) || passedTrustedSanitizer(arg)) {
                 continue;
               }
 
@@ -860,7 +851,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           // Check offset/length arguments
           for (const arg of args) {
             if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
-              if (safetyChecker.isSafe(node, context)) {
+              if (safetyChecker.isSafe(node, context) || passedTrustedSanitizer(arg)) {
                 continue;
               }
 

@@ -17,12 +17,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, resolveModuleBinding } 
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'fsPathTraversal'
-  | 'usePathResolve'
-  | 'validatePath'
-  | 'useBasename'
-  | 'createSafeDir'
-  | 'whitelistExtensions';
+  | 'fsPathTraversal';
 
 export interface Options {
   /**
@@ -285,7 +280,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-22',
       confidence: 'medium',
     },
-    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 39% reduction (49→30 tokens) - template variables still work
       fsPathTraversal: formatLLMMessage({
@@ -297,47 +291,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         fix: '{{safePattern}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
       }),
-      usePathResolve: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use path.resolve',
-        description: 'Use path.resolve() to normalize paths',
-        severity: 'LOW',
-        fix: 'path.resolve(SAFE_DIR, userInput)',
-        documentationLink: 'https://nodejs.org/api/path.html#pathresolvepaths',
-      }),
-      validatePath: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Path',
-        description: 'Validate resolved path starts with allowed base',
-        severity: 'LOW',
-        fix: 'if (!resolved.startsWith(SAFE_DIR)) throw new Error()',
-        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
-      }),
-      useBasename: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use path.basename',
-        description: 'Use path.basename() to strip directory components',
-        severity: 'LOW',
-        fix: 'path.basename(userInput)',
-        documentationLink: 'https://nodejs.org/api/path.html#pathbasenamepath-suffix',
-      }),
-      createSafeDir: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Define Safe Directory',
-        description: 'Define SAFE_DIR constant',
-        severity: 'LOW',
-        fix: 'const SAFE_DIR = path.resolve(__dirname, "uploads")',
-        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
-      }),
-      whitelistExtensions: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Whitelist Extensions',
-        description: 'Whitelist allowed file extensions',
-        severity: 'LOW',
-        fix: 'const ALLOWED_EXT = [".txt", ".pdf"]; if (!ALLOWED_EXT.includes(ext)) throw',
-        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
-      })
-    },
+},
     schema: [
       {
         type: 'object',
@@ -383,13 +337,16 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: [],
             description: 'Additional fs methods to check'
-          },
-          allowedExtensions: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Allowed file extensions (e.g., [".txt", ".json"])'
           }
+          // `allowedExtensions` used to sit here. It was declared in the
+          // schema ONLY — absent from the `Options` interface, absent from
+          // `defaultOptions`, and read by nothing in `create()`. A consumer
+          // who set it got no suppression and no complaint. Deleted rather
+          // than implemented: this rule reports on paths whose provenance is
+          // ATTACKER-REACHABLE, and such a path's extension is by definition
+          // not known statically — `fs.readFileSync(process.argv[2])` has no
+          // extension to match. An option that could only ever fire on paths
+          // the rule already ignores is not a missing feature.
         },
         additionalProperties: false,
       },
@@ -1025,11 +982,6 @@ allowLiterals = false,
               safePattern: 'Use path.resolve() with validation',
               steps: 'Review file system access patterns',
             },
-            suggest: [
-              { messageId: 'validatePath', fix: () => null },
-              { messageId: 'usePathResolve', fix: () => null },
-              { messageId: 'whitelistExtensions', fix: () => null },
-            ],
           });
         }
         return;
@@ -1051,30 +1003,7 @@ allowLiterals = false,
           safePattern,
           steps,
           effort: operation?.effort || '15-20 minutes'
-        },
-        suggest: [
-          {
-            messageId: 'usePathResolve',
-            fix: () => null
-          },
-          {
-            messageId: 'validatePath',
-            fix: () => null
-          },
-          {
-            messageId: 'useBasename',
-            fix: () => null
-          },
-          {
-            messageId: 'createSafeDir',
-            fix: () => null
-          },
-          {
-            messageId: 'whitelistExtensions',
-            fix: () => null
-          }
-        ]
-      });
+        },});
     };
 
     return {
