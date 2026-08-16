@@ -518,6 +518,56 @@ function metadataContract(f: RuleFacts): Finding[] {
     });
   }
 
+  // EVERY option must ship an explicit default, and every hard-coded vocabulary
+  // must be reachable as an option.
+  //
+  // Two failures live here, and the second is the expensive one:
+  //
+  //   1. A schema property with no `default`. The rule still has a behaviour
+  //      when the option is unset — it is just written in the destructuring
+  //      instead of the contract, so the documented default and the real one
+  //      drift, and the generated docs cannot state what the rule does out of
+  //      the box.
+  //   2. A word list baked into the rule body with no option to override it.
+  //      This is how `role` came to match `casserole` in a consumer's codebase
+  //      with no way for them to turn it off short of disabling the rule. A
+  //      heuristic the user cannot tune is a heuristic the user must accept
+  //      whole — and every vocabulary is wrong for somebody's domain.
+  const optSchema = balancedBlock(f.metaBlock, /schema\s*:/, '[', ']');
+  const schemaProps = balancedBlock(optSchema, /properties\s*:/);
+  const noDefault = topLevelKeys(schemaProps).filter((opt) => {
+    const block = balancedBlock(schemaProps.slice(schemaProps.indexOf(`${opt}:`)), new RegExp(`^${opt}\\s*:`));
+    return block && !/\bdefault\s*:/.test(block);
+  });
+  if (noDefault.length) {
+    out.push({
+      id: 'option-without-default',
+      tier: 'defect',
+      category: 'metadata-contract',
+      detail: `option(s) with no explicit default in meta.schema: ${noDefault.join(', ')} — the real default lives only in the destructuring, so docs and behaviour drift.`,
+    });
+  }
+
+  // A module-scope word list that no option feeds. Heuristic, so a SMELL: some
+  // constant lists are genuine protocol facts (`RSA_PKCS1_PADDING`), not tunable
+  // vocabulary.
+  const vocabularies = [...f.code.matchAll(/const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[([^\]]{20,})\]/g)]
+    .filter(([, , body]) => (body.match(/'/g) ?? []).length >= 6)
+    .map(([, name]) => name)
+    .filter((name) => !optSchema.includes(name) && !f.createBody.includes(`${name} =`));
+  if (vocabularies.length && /includes\(|\.has\(|some\(/.test(f.createBody)) {
+    out.push({
+      id: 'unconfigurable-vocabulary',
+      tier: 'smell',
+      category: 'metadata-contract',
+      detail: `word list(s) no option can override: ${vocabularies.join(', ')} — if these decide a report, a consumer whose domain uses those words has no remedy but disabling the rule.`,
+      probe:
+        'check whether the list feeds a report path, and whether any schema option ' +
+        'extends or replaces it. A protocol constant is fine; a vocabulary of ' +
+        'English words is not.',
+    });
+  }
+
   // Options read by create() that the schema does not declare. ESLint validates
   // user config against the schema, so the user is told their setting is
   // invalid while the code that reads it sits right there.
@@ -674,6 +724,8 @@ export const CHECK_SUMMARY: Record<string, string> = {
   'missing-docs-url': 'No meta.docs.url — the finding gives the reader nowhere to go.',
   'no-doc-page': 'No docs/rules/<rule>.md behind the documented URL.',
   'schema-drift': 'An option create() honours that meta.schema rejects.',
+  'option-without-default': 'A schema option with no explicit default — docs and real behaviour drift.',
+  'unconfigurable-vocabulary': 'A baked-in word list no option can override or extend.',
   'nominal-inference-report': 'A name-substring test on a reporting path. Sound if it narrows proven evidence; a false-positive source if it decides alone.',
   'nominal-inference-suppress': 'A name-substring test that can silence a finding. Costs recall.',
   'textual-matching': 'A decision taken on printed source rather than the AST.',
