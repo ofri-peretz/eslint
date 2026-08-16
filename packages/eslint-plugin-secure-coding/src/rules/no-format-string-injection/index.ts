@@ -21,7 +21,7 @@
  * - Trusted formatting libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 // Temporarily remove complex imports to fix type issues
 // import {
@@ -32,7 +32,6 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'formatStringInjection'
-  | 'unsafeFormatSpecifier'
   | 'userControlledFormatString'
   | 'missingFormatValidation'
   | 'escapeFormatString';
@@ -90,15 +89,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
       }),
-      unsafeFormatSpecifier: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unsafe Format Specifier',
-        cwe: 'CWE-134',
-        description: 'User input may contain format specifiers',
-        severity: 'MEDIUM',
-        fix: 'Escape or validate user input before formatting',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
-      }),
+      // `unsafeFormatSpecifier` ("User input may contain format specifiers")
+      // was reported only where the format string was a constant literal —
+      // the case where a user's specifiers are NOT interpreted. With that
+      // report removed the message had no remaining path, so it is gone too.
       userControlledFormatString: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'User Controlled Format String',
@@ -331,6 +325,27 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     const dangerousVariables = new Set<string>();
 
     /**
+     * Is the format string a constant this file can read?
+     *
+     * CWE-134 is "the FORMAT STRING is attacker-controlled". It is not
+     * "an argument substituted into a constant format string is
+     * attacker-controlled" — `util.format` and `console.log` substitute
+     * arguments verbatim and never re-scan them for specifiers, so
+     * `util.format('%s', req.body.format)` prints the user's `%d` as the
+     * literal text `%d`. That call is the RECOMMENDED mitigation, and this
+     * rule used to report it (see the note at the CallExpression report
+     * site).
+     *
+     * Resolved through scope rather than by name, so `const fmt = 'User: %s'`
+     * one line up counts, and a parameter or a re-assigned binding does not.
+     */
+    const isStaticFormatString = (fmtNode: TSESTree.Node): boolean =>
+      isStaticExpression({
+        node: fmtNode,
+        scope: context.sourceCode.getScope(fmtNode),
+      });
+
+    /**
      * Check if input has been validated/sanitized
      */
     const isInputValidated = (inputNode: TSESTree.Node): boolean => {
@@ -522,17 +537,40 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           // console.log(userMessage) is equivalent to console.log("%s", userMessage) but is generally safe
           if (!hasSpecifiersInFormat && args.length === 2 && isConsoleMethod(node)) {
             // Don't report
-          } else if (hasSpecifiersInFormat && hasUserInputInArgs) {
+          } else if (
+            hasSpecifiersInFormat &&
+            hasUserInputInArgs &&
+            // THE FIX, and it removes a false positive this suite used to
+            // assert as correct behaviour.
+            //
+            // Three fixtures pinned the safe pattern as the vulnerability:
+            //
+            //   console.log('Format: %s', userMessage)
+            //   util.format('%s', req.body.format)
+            //   const formatStr = 'User: %s, Data: %j';
+            //   util.format(formatStr, user, data)
+            //
+            // In every one the format string is a constant and the untrusted
+            // value is an ARGUMENT. That is CWE-134's remediation, not
+            // CWE-134: substituted values are emitted verbatim, so a `%d`
+            // inside `req.body.format` reaches the output as the two
+            // characters `%d`. The offered suggestion made it worse — it
+            // rewrote the argument to `.replace(/%/g, '%%')`, doubling every
+            // literal percent sign in the user's data.
+            //
+            // A constant format string is now out of scope for this site.
+            // The genuine finding — an attacker-controlled format string — is
+            // still reported here when the first argument does not resolve to
+            // a constant, and by the `userControlledFormatString` path.
+            !isStaticFormatString(firstArg)
+          ) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
 
-            // Choose message ID based on format string type
-            const messageId = firstArg.type === 'Literal' ? 'unsafeFormatSpecifier' : 'missingFormatValidation';
-
             context.report({
               node: node,
-              messageId,
+              messageId: 'missingFormatValidation',
               data: {
                 filePath: filename,
                 line: String(node.loc?.start.line ?? 0),

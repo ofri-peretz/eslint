@@ -74,6 +74,15 @@ const output = sprintf(format, ...args);
 
 ```typescript
 util.format("User: %s, Age: %d", name, age);
+
+// Untrusted data as an ARGUMENT is the mitigation, not the vulnerability:
+// util.format substitutes values verbatim and never re-scans them, so a "%d"
+// inside req.body.format reaches the output as the two characters "%d".
+util.format("%s", req.body.format);
+
+// A const-bound literal is still a constant format string.
+const template = "User: %s, Data: %j";
+util.format(template, user, data);
 ```
 
 ## Configuration

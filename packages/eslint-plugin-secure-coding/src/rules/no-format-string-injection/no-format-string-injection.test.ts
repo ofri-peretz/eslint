@@ -119,33 +119,46 @@ describe('no-format-string-injection', () => {
     });
   });
 
-  describe('Invalid Code - Unsafe Format Specifiers', () => {
-    ruleTester.run('invalid - user input with format specifiers', noFormatStringInjection, {
-      valid: [],
+  /**
+   * These three were `invalid`, asserting `unsafeFormatSpecifier` — and every
+   * one of them is the CWE-134 REMEDIATION, not the vulnerability.
+   *
+   * `util.format`, `console.log` and `sprintf` substitute arguments verbatim;
+   * they do not re-scan a substituted value for specifiers. So with a constant
+   * format string, a `%d` sitting inside `req.body.format` reaches the output
+   * as the two characters `%d`. Passing untrusted data as an ARGUMENT is
+   * exactly what the rule's own message text tells people to do.
+   *
+   * The suggestion attached to those fixtures made it worse: rewriting the
+   * argument to `.replace(/%/g, "%%")` doubles every literal percent sign in
+   * the user's data, so `"50% off"` printed as `"50%% off"`.
+   *
+   * They are `valid` now, and the rule no longer reports a constant format
+   * string. The genuine finding is below.
+   */
+  describe('Constant format string, untrusted argument — the mitigation', () => {
+    ruleTester.run('valid - constant format, untrusted argument', noFormatStringInjection, {
+      valid: [
+        'console.log("Format: %s", userMessage);',
+        'util.format("%s", req.body.format);',
+        // Via a `const` binding one line up: still a constant this file can
+        // read, resolved through scope rather than by the variable's name.
+        'const formatStr = "User: %s, Data: %j"; util.format(formatStr, user, data);',
+      ],
       invalid: [
+        // The same call shape, with the format string no longer constant, is
+        // still reported — so the change above removed a false positive and
+        // not the detection.
         {
-          code: 'console.log("Format: %s", userMessage); // userMessage could contain %',
+          code: 'let formatStr = "User: %s"; formatStr = req.query.fmt; util.format(formatStr, user);',
           errors: [
             {
-              messageId: 'unsafeFormatSpecifier',
+              messageId: 'missingFormatValidation',
               suggestions: [
                 {
                   messageId: 'escapeFormatString',
-                  output: 'console.log("Format: %s", userMessage.replace(/%/g, "%%")); // userMessage could contain %',
-                },
-              ],
-            },
-          ],
-        },
-        {
-          code: 'util.format("%s", req.body.format); // Could contain % specifiers',
-          errors: [
-            {
-              messageId: 'unsafeFormatSpecifier',
-              suggestions: [
-                {
-                  messageId: 'escapeFormatString',
-                  output: 'util.format("%s", req.body.format.replace(/%/g, "%%")); // Could contain % specifiers',
+                  output:
+                    'let formatStr = "User: %s"; formatStr = req.query.fmt; util.format(formatStr, user.replace(/%/g, "%%"));',
                 },
               ],
             },
@@ -159,15 +172,21 @@ describe('no-format-string-injection', () => {
     ruleTester.run('invalid - unvalidated format strings', noFormatStringInjection, {
       valid: [],
       invalid: [
+        // The format string is a function PARAMETER, so nothing in this file
+        // establishes it is constant — which is the shape CWE-134 describes.
+        // Its former companion in this block, `const formatStr = 'User: %s,
+        // Data: %j'; util.format(formatStr, user, data)`, moved to the valid
+        // set: a `const`-bound literal is not attacker-controlled.
         {
-          code: 'const formatStr = "User: %s, Data: %j"; util.format(formatStr, user, data);',
+          code: 'function render(formatTemplate, user) { return util.format(formatTemplate, user); }',
           errors: [
             {
               messageId: 'missingFormatValidation',
               suggestions: [
                 {
                   messageId: 'escapeFormatString',
-                  output: 'const formatStr = "User: %s, Data: %j"; util.format(formatStr, user.replace(/%/g, "%%"), data);',
+                  output:
+                    'function render(formatTemplate, user) { return util.format(formatTemplate, user.replace(/%/g, "%%")); }',
                 },
               ],
             },
@@ -564,16 +583,48 @@ describe('no-format-string-injection', () => {
       invalid: [],
     });
 
-    ruleTester.run('valid - @safe-format suppresses unsafeFormatSpecifier and missingFormatValidation', noFormatStringInjection, {
+    // The format string here is a PARAMETER, so the call is reported without
+    // the annotation — see "Invalid Code - Missing Format Validation". This
+    // pins that `@safe-format` still turns it off.
+    //
+    // It used to use `console.log('Format: %s', userMessage)`, which is no
+    // longer reported with or without the annotation (constant format string),
+    // so the case had stopped proving the suppression works.
+    ruleTester.run('valid - @safe-format suppresses missingFormatValidation', noFormatStringInjection, {
       valid: [
         {
           code: `
-            /** @safe-format */
-            console.log("Format: %s", userMessage);
+            function render(formatTemplate, user) {
+              /** @safe-format */
+              util.format(formatTemplate, user);
+            }
           `,
         },
       ],
-      invalid: [],
+      invalid: [
+        {
+          code: `
+            function render(formatTemplate, user) {
+              util.format(formatTemplate, user);
+            }
+          `,
+          errors: [
+            {
+              messageId: 'missingFormatValidation',
+              suggestions: [
+                {
+                  messageId: 'escapeFormatString',
+                  output: `
+            function render(formatTemplate, user) {
+              util.format(formatTemplate, user.replace(/%/g, "%%"));
+            }
+          `,
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
 
     ruleTester.run('valid - @safe-format suppresses missingFormatValidation (dangerous Literal)', noFormatStringInjection, {
@@ -1027,13 +1078,17 @@ describe('no-format-string-injection', () => {
       expect(reports[0].data?.line).toBe('0');
     });
 
-    it('id 76: loc-fallback for unsafeFormatSpecifier report (no loc on CallExpression)', () => {
+    // Was "loc-fallback for unsafeFormatSpecifier". That message is gone and
+    // a constant `'%s'` in first position is no longer reported at all, so the
+    // fallback is now exercised through a NON-constant format string — an
+    // unresolvable identifier, which is what a parameter looks like here.
+    it('id 76: loc-fallback for missingFormatValidation report (no loc on CallExpression)', () => {
       const { listeners, reports } = createWithMockContext(noFormatStringInjection);
       (listeners.CallExpression as (n: unknown) => void)({
         type: 'CallExpression',
         callee: { type: 'Identifier', name: 'sprintf' },
         arguments: [
-          { type: 'Literal', value: '%s', raw: '"%s"' },
+          { type: 'Identifier', name: 'formatTemplate' },
           { type: 'Identifier', name: 'userInput' },
         ],
       });
