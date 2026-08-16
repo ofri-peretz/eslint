@@ -229,8 +229,35 @@ const US = mk({ 'secure-coding': sc, 'browser-security': bs, 'node-security': ns
 });
 const THEM = mk({ [competitorPrefix]: sec }, recommendedOf(sec, competitorPrefix));
 
-const count = async (engine, files, root) => {
+// Exactly the plugins each side registers above — anything else in a message is
+// the target repo's own config, not a finding. Kept next to the configs so the
+// two cannot drift apart.
+const US_PREFIXES = ['secure-coding', 'browser-security', 'node-security'];
+const THEM_PREFIXES = [competitorPrefix];
+
+/**
+ * Rules that belong to the plugin under test, by prefix.
+ *
+ * Target repos carry inline `/* eslint some-plugin/rule: error *\/` config comments.
+ * We register only the plugins being measured, so ESLint answers each one with
+ * "Definition for rule 'X' was not found" — and that message carries a `ruleId`,
+ * so a bare "count anything with a ruleId" tallied it as a FINDING. It showed up
+ * on BOTH sides with byte-identical counts (n8n-nodes-base 176, @typescript-eslint
+ * 161, …) because it is neither side's rule: it is ESLint complaining about a rule
+ * nobody defined.
+ *
+ * Measured: an uncleaned run reported us at 3,413 findings, of which at least 742
+ * were this, visible in the top ten alone. The published JSON carries a
+ * "Cleaned: counts only rules belonging to the plugins under test" note, so the
+ * artifact was corrected by hand while the runner that produced it was not — which
+ * is how four different finding counts ended up in circulation.
+ */
+const belongsToSuite = (ruleId, prefixes) =>
+  prefixes.some((prefix) => ruleId.startsWith(`${prefix}/`));
+
+const count = async (engine, files, root, prefixes) => {
   let findings = 0;
+  let foreign = 0;
   const byRule = {};
   for (const f of files) {
     let code;
@@ -243,23 +270,33 @@ const count = async (engine, files, root) => {
     } catch { continue; }
     for (const m of res[0]?.messages ?? []) {
       if (!m.ruleId) continue;
+      // A rule the suite does not own is the repo's own config leaking in, never
+      // a finding by the plugin under test.
+      if (!belongsToSuite(m.ruleId, prefixes)) {
+        foreign++;
+        continue;
+      }
       findings++;
       byRule[m.ruleId] = (byRule[m.ruleId] ?? 0) + 1;
     }
   }
-  return { findings, byRule };
+  return { findings, byRule, foreign };
 };
 
 const rows = [];
+// Reported rather than silently dropped: a large number here means the corpus is
+// full of inline rule configs, which is worth knowing when reading the totals.
+let foreignTotal = 0;
 const usRules = {}, themRules = {};
 for (const { repo, stars, surface } of selected) {
   const dir = clone(repo);
   const files = collect(dir);
-  const u = await count(US, files, dir);
-  const t = await count(THEM, files, dir);
+  const u = await count(US, files, dir, US_PREFIXES);
+  const t = await count(THEM, files, dir, THEM_PREFIXES);
   for (const [r, c] of Object.entries(u.byRule)) usRules[r] = (usRules[r] ?? 0) + c;
   for (const [r, c] of Object.entries(t.byRule)) themRules[r] = (themRules[r] ?? 0) + c;
   rows.push({ repo, stars, surface, files: files.length, us: u.findings, them: t.findings });
+  foreignTotal += u.foreign + t.foreign;
   if (!asJson) {
     console.log(`${repo.padEnd(32)} files ${String(files.length).padStart(5)}   them ${String(t.findings).padStart(6)}   us ${String(u.findings).padStart(6)}`);
   }
@@ -275,6 +312,10 @@ if (asJson) {
   console.log(`\nTOTAL  ${totalFiles} files   them ${totalThem}   us ${totalUs}`);
   console.log(`Per 1k files: them ${((totalThem / totalFiles) * 1000).toFixed(0)}   us ${((totalUs / totalFiles) * 1000).toFixed(0)}`);
   console.log(`\nLouder on ${rows.filter((r) => r.us > r.them).length} of ${rows.length} repos.`);
+  console.log(
+    `Excluded ${foreignTotal} "rule not found" messages from inline configs in the ` +
+      `target repos — they carry a ruleId but belong to neither plugin.`,
+  );
   console.log('\nOur top rules by volume:');
   Object.entries(usRules).sort((a, b) => b[1] - a[1]).slice(0, 10).forEach(([r, c]) => console.log(`  ${String(c).padStart(6)}  ${r}`));
   console.log(`\n${competitorArg} top rules by volume:`);
