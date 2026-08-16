@@ -111,8 +111,27 @@ function countCases(source: string): { valid: number; invalid: number } {
   return { valid: count('valid'), invalid: count('invalid') };
 }
 
+/**
+ * Corpus directories are zero-padded to three digits (`CWE-079`); rule metadata
+ * is not consistent (`CWE-79`, `CWE-16`, but also `CWE-020`). Looking the
+ * directory up by the raw string missed every unpadded rule and reported it as
+ * having no fixture — which inflated the headline "92 rules unmeasured" that
+ * was quoted to the maintainer.
+ */
+function corpusDirFor(cwe: string): string | null {
+  const m = /^CWE-(\d+)$/.exec(cwe);
+  if (!m) return null;
+  const n = m[1].replace(/^0+/, '');
+  for (const candidate of [`CWE-${n.padStart(3, '0')}`, `CWE-${n}`, cwe]) {
+    if (fs.existsSync(path.join(CORPUS, candidate))) return candidate;
+  }
+  return null;
+}
+
 function corpusCounts(cwe: string): { vulnerable: number; safe: number } {
-  const dir = path.join(CORPUS, cwe);
+  const resolved = corpusDirFor(cwe);
+  if (!resolved) return { vulnerable: 0, safe: 0 };
+  const dir = path.join(CORPUS, resolved);
   const n = (kind: string): number => {
     const d = path.join(dir, kind);
     if (!fs.existsSync(d)) return 0;

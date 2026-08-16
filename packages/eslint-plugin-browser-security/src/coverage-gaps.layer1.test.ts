@@ -436,10 +436,20 @@ ruleTester.run('no-http-urls (coverage)', noHttpUrls, {
 ruleTester.run('no-innerhtml (coverage)', noInnerhtml, {
   valid: [
     `x = y;`,
-    `el['innerHTML'] = userInput;`,
+    // `el['innerHTML'] = userInput;` USED TO LIVE HERE.
+    //
+    // It was added to cover the `property.type !== 'Identifier'` early return,
+    // and in doing so asserted that a computed write to innerHTML is safe. It
+    // is not — it is the same sink, and a one-line evasion of the whole rule.
+    // Mozilla's no-unsanitized and @microsoft/sdl both miss it too, measured on
+    // benchmarks/rule-corpus/browser-security__no-innerhtml.
+    //
+    // This is what a coverage-driven fixture costs: written to reach a branch,
+    // it certifies that branch's behaviour as intended. It is now an INVALID
+    // case below.
+    `el[dynamicProp] = userInput;`,
     `el.title = userInput;`,
     `write(userInput);`,
-    `document['write'](userInput);`,
     `document.getElementById('a');`,
     `document.write();`,
     // literal strings allowed by default
@@ -448,6 +458,17 @@ ruleTester.run('no-innerhtml (coverage)', noInnerhtml, {
     `document.write(DOMPurify.sanitize(userInput));`,
   ],
   invalid: [
+    {
+      // Computed property write — the same sink as `el.innerHTML = x`, and a
+      // one-line evasion. Was pinned as VALID by a coverage fixture.
+      code: `el['innerHTML'] = userInput;`,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      // Computed method call — likewise.
+      code: `document['write'](userInput);`,
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
     {
       code: `document.write(userHtml);`,
       errors: [{ messageId: 'dangerousInnerHTML' }],

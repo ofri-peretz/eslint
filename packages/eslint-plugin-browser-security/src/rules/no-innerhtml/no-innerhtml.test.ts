@@ -254,3 +254,146 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     },
   ],
 });
+
+/**
+ * REGRESSION LOCK — every shape found by the head-to-head corpus.
+ *
+ * `benchmarks/rule-corpus/browser-security__no-innerhtml/` scores this rule
+ * against Mozilla's no-unsanitized, @microsoft/sdl and sonarjs on the same 44
+ * files. Run it with:
+ *
+ *   npx tsx benchmarks/suites/ilb-rule-duel/run.mjs browser-security/no-innerhtml
+ *
+ * Every case below was a MEASURED defect, in the order it was found. The four
+ * marked ADVERSARIAL came from a second wave written deliberately against the
+ * already-tuned rule — the first wave reached 100% and that number meant
+ * nothing until the rule had been attacked by fixtures it had not been fitted to.
+ */
+ruleTester.run('no-innerhtml-corpus-locks', noInnerhtml, {
+  valid: [
+    // Folded through a const binding — was a false positive.
+    'const EMPTY_STATE = \'<p class="muted">Nothing yet</p>\'; el.innerHTML = EMPTY_STATE;',
+    'const cls = \'badge\'; el.innerHTML = `<span class="${cls}">New</span>`;',
+    // Entity-escaped inside a concatenation — the commonest hand-rolled defence.
+    'import escapeHtml from "escape-html"; el.innerHTML = "<b>" + escapeHtml(user.name) + "</b>";',
+    // An alias to an imported sanitiser is still sanitised.
+    'import DOMPurify from "dompurify"; const purify = DOMPurify.sanitize; el.innerHTML = purify(user.bio);',
+    // ADVERSARIAL: a `let` whose every write is a literal.
+    'let markup = \'<p>one</p>\'; markup = \'<p>two</p>\'; el.innerHTML = markup;',
+    // ADVERSARIAL: clearing a node, the most common innerHTML idiom of all.
+    'document.getElementById("list").innerHTML = "";',
+  ],
+  invalid: [
+    // Computed access — missed by this rule AND by every competitor measured.
+    {
+      code: 'const target = document.getElementById("out"); target["innerHTML"] = payload;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // createContextualFragment parses HTML exactly as innerHTML does.
+    {
+      code: 'const frag = document.createRange().createContextualFragment(userMarkup); host.append(frag);',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // ADVERSARIAL: a LOCAL function wearing a trusted sanitiser's name. This is
+    // the evasion a name-keyed allowlist invites, and it silenced the rule
+    // completely until the callee had to resolve to something imported.
+    {
+      code: 'const escapeHtml = (s) => s; el.innerHTML = escapeHtml(user.bio);',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // ADVERSARIAL: the sink name reached through a const.
+    {
+      code: 'const PROP = "innerHTML"; document.getElementById("out")[PROP] = payload;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // ADVERSARIAL: written without ever forming a member assignment.
+    {
+      code: 'Object.assign(document.getElementById("out"), { innerHTML: payload });',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      // Object.assign with the sink as a STRING-literal key.
+      code: 'Object.assign(el, { "innerHTML": payload });',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // ADVERSARIAL: a `let` reassigned from the network. The mirror of the valid
+    // `let` case above — the two differ only in WHAT the writes are.
+    {
+      code: 'let markup = "<p>loading</p>"; markup = await fetch("/api/html").then((r) => r.text()); el.innerHTML = markup;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // The trustedSanitizers option, exercised in its overridden state.
+    {
+      code: 'import DOMPurify from "dompurify"; el.innerHTML = DOMPurify.sanitize(dirty);',
+      options: [{ trustedSanitizers: ['myOwnSanitizer'] }],
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+  ],
+});
+
+/**
+ * Edge paths of the corpus fixes.
+ *
+ * Each of these covers a defensive branch added while closing a measured
+ * defect. They are deliberately in the rule's own suite rather than the corpus:
+ * the corpus tests the VULNERABILITY, these test the implementation's edges.
+ */
+ruleTester.run('no-innerhtml-edge-paths', noInnerhtml, {
+  valid: [
+    // Sanitiser reached through a nested object — callee.object is not a bare
+    // Identifier, so the qualified-name branch falls back to the property name.
+    {
+      code: 'el.innerHTML = lib.dom.sanitize(dirty);',
+      options: [{ trustedSanitizers: ['sanitize'] }],
+    },
+    // A computed key that is not statically known: nothing to resolve, so the
+    // rule cannot claim this is the innerHTML sink.
+    'el[keyFromServer] = value;',
+    // A computed key bound to a NON-string const: resolvable, but not a sink name.
+    'const IDX = 0; el[IDX] = value;',
+    // A numeric computed key: a Literal whose value is not a string.
+    'el[0] = value;',
+    // A key that is neither an Identifier nor a Literal.
+    'Object.assign(el, { [`k${suffix}`]: incoming });',
+    // Object.assign with a string-literal key that is not a sink.
+    'Object.assign(el, { "className": incoming });',
+    // Object.assign with a computed key — unnameable, so not claimed.
+    'Object.assign(el, { [dynamicKey]: incoming });',
+    // Computed METHOD name that is not statically known.
+    'document[methodFromConfig](value);',
+    // Object.assign whose second argument is not an object literal.
+    'Object.assign(el, propsFromServer);',
+    // Object.assign carrying a spread rather than a plain property.
+    'Object.assign(el, { ...defaults });',
+    // Object.assign to a property that is not a sink.
+    'Object.assign(el, { className: incoming });',
+    // A private field is a non-computed property that is NOT an Identifier, so
+    // the rule cannot name it and must not report. Not the DOM sink despite the
+    // spelling.
+    'class Box { #innerHTML; set(v) { this.#innerHTML = v; } }',
+    // An alias whose NAME is not itself in the sanitiser list — the only way to
+    // reach the alias-resolution branch, since the default list happens to
+    // contain `purify`.
+    'import DOMPurify from "dompurify"; const clean = DOMPurify.sanitize; el.innerHTML = clean(dirty);',
+  ],
+  invalid: [
+    // A `function` DECLARATION wearing a sanitiser name — the other half of the
+    // fake-sanitiser evasion; the corpus fixture uses an arrow.
+    {
+      code: 'function escapeHtml(s) { return s; } el.innerHTML = escapeHtml(user.bio);',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // An identifier with no resolvable write is unresolved provenance, not a
+    // proven constant.
+    {
+      code: 'el.innerHTML = neverAssigned;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      // DECLARED but never written: the binding resolves, and there is still
+      // nothing proving the value is a literal.
+      code: 'let markup; el.innerHTML = markup;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+  ],
+});
