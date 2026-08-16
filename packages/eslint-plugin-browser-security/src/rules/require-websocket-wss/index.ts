@@ -12,6 +12,31 @@
  * @see https://cwe.mitre.org/data/definitions/319.html
  * @see https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
  */
+/**
+ * ## Rule partition — cleartext transport (CWE-319)
+ *
+ * **This rule owns the `new WebSocket(…)` URL argument.** It is the only rule
+ * in the family that can FIX one — it ships `meta.fixable` plus a suggestion
+ * that rewrites `ws://` to `wss://` in place — so it gets the constructor and
+ * `no-insecure-websocket` stands down there. `no-insecure-websocket` keeps
+ * every `ws://` URL that is not at a constructor (a config constant, a JSX
+ * prop, an endpoint map). `no-unencrypted-transmission` dropped `ws://` from
+ * its defaults entirely.
+ *
+ * The boundary is `isWebSocketConstructorUrl` in
+ * `utils/transport-ownership.ts`, called by both sides rather than restated.
+ *
+ * Sole ownership means this rule must not be WEAKER than the sibling that
+ * stood down, so the two exemptions it was missing came across with the shape:
+ * `ws://example.com` is RFC 2606 reserved and can never resolve to a service,
+ * and loopback is now decided by the same `isLoopbackUrl` the rest of the
+ * family uses. The old local `isLocalhostUrl` substring-matched `://localhost`
+ * anywhere in the string, so `ws://evil.io/?next=://localhost` was exempt while
+ * `ws://[::1]:9000` — spelled with the brackets a URL actually needs — was not.
+ *
+ * Before the partition, `new WebSocket("ws://live.acme-corp.io")` drew three
+ * reports. It now draws one.
+ */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
@@ -19,6 +44,23 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import { isLoopbackUrl, isReservedExampleUrl } from '../../utils/loopback-hosts';
+
+/**
+ * URL schemes are ASCII case-insensitive, so `WS://legacy…` opens exactly the
+ * same cleartext channel. The rule tested `startsWith('ws://')`, which the
+ * shift key defeats — and the autofix had the same bug one level deeper:
+ * `url.replace('ws://', 'wss://')` does not match `'WS://'`, so a rule that
+ * merely detected the uppercase form would have offered a fix that changed
+ * nothing. Both are anchored here, and the fix normalises to the canonical
+ * lowercase `wss://`.
+ */
+const CLEARTEXT_WS_SCHEME = /^ws:\/\//i;
+
+/** Rewrite the scheme whatever case it was written in. */
+function toSecureScheme(url: string): string {
+  return url.replace(CLEARTEXT_WS_SCHEME, 'wss://');
+}
 
 type MessageIds = 'insecureWebsocket' | 'useWss';
 
@@ -99,16 +141,16 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Check if URL is localhost
+     * Is there no cleartext transmission to report for this URL?
+     *
+     * Loopback is gated by `allowLocalhost` because a team may genuinely want
+     * dev endpoints flagged. RFC 2606 reserved domains are NOT gated: they are
+     * guaranteed never to resolve to a real service, so there is no transmission
+     * to intercept under any setting.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    function isLocalhostUrl(url: string): boolean {
-      return (
-        url.includes('://localhost') ||
-        url.includes('://127.0.0.1') ||
-        url.includes('://0.0.0.0') ||
-        url.includes('://[::1]')
-      );
+    function isNonTransmitting(url: string): boolean {
+      return (allowLocalhost && isLoopbackUrl(url)) || isReservedExampleUrl(url);
     }
 
     /**
@@ -124,14 +166,13 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
       ) {
         const url = urlArg.value;
 
-        // Skip if localhost is allowed
-        if (allowLocalhost && isLocalhostUrl(url)) {
+        if (isNonTransmitting(url)) {
           return;
         }
 
         // Check for insecure ws:// protocol
-        if (url.startsWith('ws://')) {
-          const fixedUrl = url.replace('ws://', 'wss://');
+        if (CLEARTEXT_WS_SCHEME.test(url)) {
+          const fixedUrl = toSecureScheme(url);
           context.report({
             node: urlArg,
             messageId: 'insecureWebsocket',
@@ -149,15 +190,20 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
       // Check template literals
       if (urlArg.type === AST_NODE_TYPES.TemplateLiteral) {
         const firstQuasi = urlArg.quasis[0];
-        if (firstQuasi && firstQuasi.value.raw.startsWith('ws://')) {
-          // Skip localhost in template literals too
-          if (allowLocalhost && isLocalhostUrl(firstQuasi.value.raw)) {
+        if (firstQuasi && CLEARTEXT_WS_SCHEME.test(firstQuasi.value.raw)) {
+          // The authority the template actually writes down. When the next
+          // `${…}` supplies it there is no host to exempt, and the connection
+          // is cleartext whatever it resolves to, so it reports.
+          const authority = /^ws:\/\/([^/?#]*)/i.exec(firstQuasi.value.raw)?.[1];
+          if (authority !== undefined && authority !== '' && isNonTransmitting(`ws://${authority}`)) {
             return;
           }
 
           const sourceCode = context.sourceCode;
           const originalText = sourceCode.getText(urlArg);
-          const fixedText = originalText.replace('ws://', 'wss://');
+          // The template's text starts with a backtick, so the scheme is not at
+          // index 0 — anchor on the delimiter instead of the string start.
+          const fixedText = originalText.replace(/(?<=^.)ws:\/\//i, 'wss://');
 
           context.report({
             node: urlArg,

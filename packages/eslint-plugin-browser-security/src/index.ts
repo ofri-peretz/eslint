@@ -228,29 +228,44 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'browser-security/no-unsafe-eval-csp': 'error',
 
   // Migrated Rules
-  // NOTE: `detect-mixed-content` is intentionally NOT in `recommended`
-  // (removed 2026-08-13). Its entire predicate is "a string Literal starting
-  // with `http://`", which is a strict SUBSET of what `no-http-urls` already
-  // reports at `error` — same corpus sites, same two exemptions (XML namespace
-  // URIs, loopback origins), under a second CWE. Every finding it produced was
-  // therefore a second report of a line another rule had already claimed: one
-  // line, two severities, one underlying fact. That is the duplicate-reporting
-  // FP class the two CSRF rules were separated to avoid.
   //
-  // `no-http-urls` is strictly more capable: it reads template literals as well
-  // as literals (so `` `http://${host}` `` is judged), and it has `allowedHosts`
-  // / `allowedPorts` for projects with a real dev-server exception. Dropping
-  // this rule from the preset loses no coverage at all.
+  // `detect-mixed-content` was removed from `recommended` on 2026-08-13 because
+  // its entire predicate was "a string Literal starting with `http://`" — a
+  // strict SUBSET of what `no-http-urls` already reported at `error`, under a
+  // second CWE at a second severity. Every finding was a second report of a
+  // line another rule had already claimed: one line, two severities, one
+  // underlying fact.
   //
-  // Measured over the 8-repo corpus: 1 finding, shared with `no-http-urls` —
-  // `new URL(event.path, 'http://e.c')` in Shopify/cli
-  // `packages/theme/src/cli/utilities/theme-environment/server-utils.ts:4`,
-  // a parsing base whose origin is destructured away. Both rules now share
-  // `isDiscardedUrlBase` and both correctly ignore it, so the count is 0 either
-  // way — the demotion is about the duplication, not that finding.
+  // It is back, because the predicate was the bug rather than the rule. It now
+  // reports only a SUBRESOURCE position — `<img src>`, `<script src>`,
+  // `<link href>`, `<form action>`, `el.src =`, `setAttribute('src', …)`,
+  // `importScripts(…)` — which is what mixed content actually means and the one
+  // shape in this family a browser will BLOCK. `<a href="http://…">` is not it:
+  // a link is a navigation, nothing blocks it, and it stays with
+  // `no-http-urls`. `no-http-urls` stands down on the subresource shape via the
+  // shared `isSubresourcePosition`, so the preset still reports each line
+  // exactly once — and it now reports `` <img src={`http://cdn/${id}.png`} ``,
+  // a template whose authority is interpolated, which NO rule caught before.
   //
-  // Kept exported and opt-in-able: a team that wants CWE-311 reported
-  // separately from CWE-319 can enable it explicitly and accept the doubling.
+  // See `utils/transport-ownership.ts` for the whole family partition.
+  'browser-security/detect-mixed-content': 'error',
+  //
+  // `no-unencrypted-transmission` joins the preset for the same reason
+  // `detect-mixed-content` could return: it no longer restates a sibling.
+  //
+  // It was kept out because its defaults included `http://` and `ws://`, which
+  // made it a second (weaker) report on lines three other rules already owned.
+  // Those schemes are gone from its defaults, so what it contributes now is the
+  // NON-WEB cleartext protocols — `ftp:` `tcp:` `mongodb:` `redis:` `mysql:` —
+  // and nothing else in this plugin detects them at all.
+  //
+  // That gap was measured, not assumed: with the preset as it stood,
+  // `mongodb://user:pass@db.acme-corp.io:27017` drew ZERO findings. It is the
+  // most severe shape in the family — the wire is cleartext AND the credential
+  // is inline in the source — and it was the one nobody reported. See the
+  // preset lock in `require-https-only/transport-partition.matrix.test.ts`,
+  // which is what caught it.
+  'browser-security/no-unencrypted-transmission': 'error',
   'browser-security/no-allow-arbitrary-loads': 'error',
   // `no-clickjacking` is DEPRECATED (meta.replacedBy -> eslint-plugin-express-security/
   // require-helmet) and must not ship in `recommended`: a preset that turns on a rule we are

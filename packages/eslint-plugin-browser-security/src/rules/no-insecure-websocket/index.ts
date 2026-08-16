@@ -8,9 +8,44 @@
  * @fileoverview Require secure WebSocket connections (wss://)
  */
 
+/**
+ * ## Rule partition — cleartext transport (CWE-319)
+ *
+ * **This rule owns a `ws://` URL that is NOT at the constructor** — an endpoint
+ * in a config object, a constant, a JSX prop, anything a `new WebSocket(…)` may
+ * later read. `require-websocket-wss` owns the constructor argument itself.
+ *
+ * The constructor goes to the sibling because the sibling can FIX it: it ships
+ * `meta.fixable` plus a suggestion that rewrites `ws://` to `wss://` in place.
+ * This rule reported the identical line with nothing attached, so the pair cost
+ * the user a second diagnostic and returned nothing for it. Both rules are in
+ * `recommended`, so moving the shape loses no coverage in the default preset.
+ *
+ * Also stood down on `ws://`: `no-unencrypted-transmission`, which dropped the
+ * scheme from its defaults.
+ *
+ * The boundary is `isWebSocketConstructorUrl` in
+ * `utils/transport-ownership.ts`, called by both sides rather than restated.
+ *
+ * Before the partition, `new WebSocket("ws://live.acme-corp.io")` drew three
+ * reports. It now draws one.
+ */
+
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isNonTransmittingUrl } from '../../utils/loopback-hosts';
+import { isWebSocketConstructorUrl } from '../../utils/transport-ownership';
+import { isProtocolInspection } from '../../utils/protocol-inspection';
 import type { TSESTree } from '@interlace/eslint-devkit';
+
+/**
+ * URL schemes are ASCII case-insensitive, so `WS://legacy…` opens exactly the
+ * same cleartext channel. Both websocket rules tested `startsWith('ws://')`,
+ * which the shift key defeats — and legacy endpoints, the ones most likely to
+ * still be cleartext, are the ones most likely to be written that way. The
+ * `http` half of the family already anchored case-insensitively, so this was a
+ * split in what the family considered a URL.
+ */
+const CLEARTEXT_WS_SCHEME = /^ws:\/\//i;
 
 type MessageIds = 'violationDetected';
 
@@ -49,38 +84,27 @@ export const noInsecureWebsocket = createRule<RuleOptions, MessageIds>({
     }
     
     return {
-      NewExpression(node: TSESTree.NewExpression) {
-        // Check for new WebSocket('ws://...')
-        if (node.callee.type === 'Identifier' && node.callee.name === 'WebSocket') {
-          const urlArg = node.arguments[0];
-          
-          // Check literal string
-          if (urlArg && urlArg.type === 'Literal' && 
-              typeof urlArg.value === 'string' && 
-              urlArg.value.startsWith('ws://') &&
-              // `ws://localhost:1337` never leaves the machine, so there is no cleartext
-              // transmission to intercept. Shared with no-http-urls and
-              // no-unencrypted-transmission so the three agree on what "local" means.
-              !isNonTransmittingUrl(urlArg.value)) {
-            report(node);
-          }
-          
-          // Check template literal
-          if (urlArg && urlArg.type === 'TemplateLiteral') {
-            const text = context.sourceCode.getText(urlArg);
-            if (text.includes('ws://')) {
-              report(node);
-            }
-          }
-        }
-      },
-      
+      // The `new WebSocket(…)` visitor is gone, not disabled: the constructor
+      // argument belongs to `require-websocket-wss`, which reports the same
+      // line WITH an autofix. Two rules on one constructor was the whole
+      // duplicate.
       Literal(node: TSESTree.Literal) {
-        // Check for ws:// URLs in string literals
         if (
           typeof node.value === 'string' &&
-          node.value.startsWith('ws://') &&
-          !isNonTransmittingUrl(node.value)
+          CLEARTEXT_WS_SCHEME.test(node.value) &&
+          // A literal being EXAMINED is a guard, not a destination.
+          // `if (url.startsWith('ws://')) throw …` is code REFUSING a cleartext
+          // socket, and this rule reported it as the vulnerability — exactly
+          // backwards. `no-http-urls` and `no-unencrypted-transmission` have
+          // shared `isProtocolInspection` for this since the http sweep; this
+          // rule was simply never given it, so the family disagreed about
+          // whether a guard is a finding. Found by the corpus.
+          !isProtocolInspection(node, node.parent as TSESTree.Node) &&
+          // `ws://localhost:1337` never leaves the machine, so there is no cleartext
+          // transmission to intercept. Shared with no-http-urls and
+          // no-unencrypted-transmission so the three agree on what "local" means.
+          !isNonTransmittingUrl(node.value) &&
+          !isWebSocketConstructorUrl(node)
         ) {
           report(node);
         }

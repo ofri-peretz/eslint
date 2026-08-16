@@ -67,10 +67,17 @@ describe('no-unencrypted-transmission', () => {
         },
       ],
       invalid: [
+        // `http://` left this rule's DEFAULTS (it belongs to no-http-urls /
+        // require-https-only / detect-mixed-content), so these two locks now
+        // run under the explicit opt-in. The distinction they pin — receiver
+        // vs. argument, search operand vs. replacement — is a property of
+        // `isProtocolInspection` and has to stay covered wherever the scheme
+        // is enabled.
         {
           // The literal is the RECEIVER, not an argument — an http:// URL written
           // into source, which is the thing this rule is for.
           code: `const ok = 'http://legacy.example.com'.startsWith(prefix);`,
+          options: [{ insecureProtocols: ['http://'] }],
           errors: 1,
         },
 
@@ -78,6 +85,7 @@ describe('no-unencrypted-transmission', () => {
           // The replacement argument is content being written, not a search
           // operand — an insecure destination that must still report.
           code: `const fixed = url.replace(/^https:/, 'http://legacy.example.com');`,
+          options: [{ insecureProtocols: ['http://'] }],
           errors: 1,
         },
       ],
@@ -90,6 +98,7 @@ describe('no-unencrypted-transmission', () => {
       invalid: [
         {
           code: 'const url = "http://api.example.com";',
+          options: [{ insecureProtocols: ['http://'] }],
           errors: [
             {
               messageId: 'unencryptedTransmission',
@@ -112,6 +121,7 @@ describe('no-unencrypted-transmission', () => {
         },
         {
           code: 'fetch("http://api.example.com/data");',
+          options: [{ insecureProtocols: ['http://'] }],
           errors: [
             {
               messageId: 'unencryptedTransmission',
@@ -142,6 +152,7 @@ describe('no-unencrypted-transmission', () => {
       invalid: [
         {
           code: 'const ws = new WebSocket("ws://acmecorp.io");',
+          options: [{ insecureProtocols: ['ws://'] }],
           errors: [
             {
               messageId: 'unencryptedTransmission',
@@ -232,6 +243,7 @@ describe('no-unencrypted-transmission', () => {
         invalid: [
           {
             code: 'const url = `http://${host}/api`;',
+            options: [{ insecureProtocols: ['http://'] }],
             errors: [
               {
                 messageId: 'unencryptedTransmission',
@@ -248,6 +260,107 @@ describe('no-unencrypted-transmission', () => {
     );
   });
 
+  /*
+   * ── Family partition: `http://` and `ws://` are not this rule's ────────────
+   *
+   * Both left `DEFAULT_INSECURE_PROTOCOLS`. They belong to rules that say more
+   * about them:
+   *
+   *   http:// -> require-https-only / detect-mixed-content / no-http-urls
+   *   ws://   -> require-websocket-wss / no-insecure-websocket
+   *
+   * This rule kept the NON-WEB protocols, which nothing else in the package
+   * detects. Before the split it was one of three reports on
+   * `const API_BASE = "http://…"` and one of three on
+   * `new WebSocket("ws://…")`, contributing no fact the owner had not stated.
+   *
+   * The opt-in is deliberate and still tested above: listing `'http://'` in
+   * `insecureProtocols` restores the old behaviour for a project that wants
+   * the second opinion.
+   */
+  describe('Family partition', () => {
+    ruleTester.run(
+      'partition - web schemes are owned by siblings',
+      noUnencryptedTransmission,
+      {
+        valid: [
+          { code: 'const API_BASE = "http://api.acmecorp.io";' },
+          { code: 'fetch("http://api.acmecorp.io/v1/users");' },
+          { code: 'el.src = "http://cdn.acmecorp.io/a.js";' },
+          { code: 'const url = `http://${host}/api`;' },
+          { code: 'const ws = new WebSocket("ws://live.acmecorp.io");' },
+          { code: 'const SOCKETS = { live: "ws://live.acmecorp.io" };' },
+        ],
+        invalid: [
+          // FN GUARD — the non-web schemes must be untouched by the split.
+          // A connection string usually carries credentials too, which is why
+          // it is a materially different finding from a cleartext page asset.
+          {
+            code: 'const db = "mongodb://u:p@db.acmecorp.io:27017";',
+            errors: 1,
+          },
+          { code: 'const cache = "redis://cache.acmecorp.io:6379";', errors: 1 },
+          { code: 'const drop = "ftp://files.acmecorp.io/incoming";', errors: 1 },
+          { code: 'const sql = "mysql://u:p@db.acmecorp.io:3306/app";', errors: 1 },
+          { code: 'const raw = "tcp://metrics.acmecorp.io:2003";', errors: 1 },
+        ],
+      },
+    );
+  });
+
+  /*
+   * ── REGRESSION: defect the rule corpus proved ─────────────────────────────
+   * benchmarks/rule-corpus/browser-security__no-unencrypted-transmission/
+   *
+   * FP. The scheme was matched ANYWHERE in the string, so any sentence that
+   * mentions one reported — including the rule's own advice. A URL's scheme is
+   * at position 0 by definition, and every sibling in this family already
+   * anchored (`/^http:\/\//i`, `startsWith('ws://')`); this rule was the only
+   * one that did not, so the family disagreed about what counts as a URL.
+   */
+  describe('Corpus regression', () => {
+    ruleTester.run(
+      'regression - the scheme must START the value',
+      noUnencryptedTransmission,
+      {
+        valid: [
+          {
+            code: `const HELP = 'Connection strings must not use redis:// or mysql://; use the TLS variants.';`,
+          },
+          { code: `const msg = 'Switch ftp:// endpoints to ftps:// before release.';` },
+          // The remediation must not be reported as the defect: these START
+          // with the insecure scheme's letters, and a prefix test that stopped
+          // one character early would flag every correctly-secured DSN.
+          { code: `const cache = 'rediss://cache.acmecorp.io:6379';` },
+          { code: `const db = 'mongodb+srv://cluster.acmecorp.io/app';` },
+          { code: `const files = 'ftps://files.acmecorp.io/incoming';` },
+        ],
+        invalid: [
+          { code: `const M = 'mongodb://svc:pw@db.acmecorp.io:27017/orders';`, errors: 1 },
+          // Schemes are ASCII case-insensitive; this rule lowercases before
+          // matching and must keep doing so.
+          { code: `const M = 'MONGODB://svc:pw@db.acmecorp.io:27017/orders';`, errors: 1 },
+          // Leading whitespace is not prose.
+          { code: `const M = '  redis://cache.acmecorp.io:6379';`, errors: 1 },
+          // FN LOCK. A "the secure variant appears somewhere in the string"
+          // exemption used to sit in the matcher, compensating for the
+          // unanchored search. With the scheme anchored it was a pure false
+          // negative: an attacker-supplied query parameter that merely
+          // MENTIONED the secure scheme turned the rule off for that line.
+          {
+            code: `const u = 'http://evil.acmecorp.io/?next=https://ok.acmecorp.io';`,
+            options: [{ insecureProtocols: ['http://'] }],
+            errors: 1,
+          },
+          {
+            code: `const M = 'mongodb://db.acmecorp.io/?docs=mongodb+srv://cluster';`,
+            errors: 1,
+          },
+        ],
+      },
+    );
+  });
+
   describe('Options Coverage', () => {
     ruleTester.run(
       'options - allowInTests still blocks non-localhost',
@@ -258,7 +371,7 @@ describe('no-unencrypted-transmission', () => {
           {
             code: 'const url = "http://staging.example.com";',
             filename: 'example.spec.ts',
-            options: [{ allowInTests: true }],
+            options: [{ allowInTests: true, insecureProtocols: ['http://'] }],
             errors: [
               {
                 messageId: 'unencryptedTransmission',
@@ -325,9 +438,12 @@ describe('no-unencrypted-transmission', () => {
       {
         valid: [
           {
+            // Without `insecureProtocols` this would now pass because `http://`
+            // is not a default protocol any more — i.e. for the wrong reason,
+            // testing nothing about `allowInTests`.
             code: 'const url = `http://${host}/api`;',
             filename: 'transport.test.ts',
-            options: [{ allowInTests: true }],
+            options: [{ allowInTests: true, insecureProtocols: ['http://'] }],
           },
         ],
         invalid: [],

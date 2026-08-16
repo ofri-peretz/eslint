@@ -10,6 +10,35 @@
  * @see https://cwe.mitre.org/data/definitions/319.html
  */
 
+/**
+ * ## Rule partition — cleartext transport (CWE-319 / CWE-311)
+ *
+ * **This rule owns the general case**: any hardcoded `http://` URL that no
+ * more-specific sibling has claimed — a config constant, an object property, a
+ * `<a href>`, a template literal. It is the residual owner, so a shape only
+ * leaves this rule when another rule provably covers it.
+ *
+ * Defers to:
+ * - `require-https-only` — the URL argument of `fetch(…)` / `axios.<verb>(…)`.
+ *   A call site proves a request is made; that is the stronger finding.
+ * - `detect-mixed-content` — `http://` in a SUBRESOURCE position (`<img src>`,
+ *   `<script src>`, `el.src =`, `setAttribute('src', …)`, `importScripts`).
+ *   That is a load the browser will actually block, reported under CWE-311.
+ *   `<a href="http://…">` is NOT a subresource — a link is a navigation, no
+ *   browser blocks it — so anchors stay here.
+ *
+ * Owns against, and is not deferred to by:
+ * - `no-unencrypted-transmission`, which stood down on `http://` entirely.
+ *
+ * The boundary is `isRequestCallSiteUrl` / `isSubresourcePosition` in
+ * `utils/transport-ownership.ts`. Both sides of every deferral call the same
+ * function rather than restating the test, because two copies of a boundary
+ * drift and the drift shows up as a shape nobody reports.
+ *
+ * Before the partition, `const API_BASE = "http://api.acme-corp.io"` drew three
+ * reports and `fetch("http://api.acme-corp.io")` drew four. Each now draws one.
+ */
+
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   isXmlNamespaceUri,
@@ -18,6 +47,10 @@ import {
 } from '../../utils/namespace-uris';
 import { isReservedExampleUrl } from '../../utils/loopback-hosts';
 import { isProtocolInspection } from '../../utils/protocol-inspection';
+import {
+  isRequestCallSiteUrl,
+  isSubresourcePosition,
+} from '../../utils/transport-ownership';
 
 type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
 
@@ -221,6 +254,21 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // there is no URL object left to fetch. Shared with `detect-mixed-content`
       // so the two rules cannot disagree about it.
       if (isDiscardedUrlBase(node)) {
+        return;
+      }
+
+      // --- family partition ---------------------------------------------------
+      // A `fetch`/`axios` URL argument belongs to `require-https-only`, which
+      // can say a REQUEST is made rather than that a string exists. A
+      // subresource position belongs to `detect-mixed-content`, which can say
+      // the browser will BLOCK the load. Both siblings cover their shape
+      // totally — including the template-literal forms this rule reads — so
+      // standing down here loses nothing and stops one line drawing three
+      // findings under two CWEs.
+      if (
+        isRequestCallSiteUrl(node, context.sourceCode.getScope(node)) ||
+        isSubresourcePosition(node)
+      ) {
         return;
       }
 

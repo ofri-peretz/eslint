@@ -40,8 +40,12 @@
  * @see https://cwe.mitre.org/data/definitions/311.html
  */
 
-import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, isModuleBinding } from '@interlace/eslint-devkit';
+import { isGlobalObject } from './global-object';
+
+/** The Fetch API, matched exactly — bare or qualified by a global alias. */
+const FETCH_NAMES: ReadonlySet<string> = new Set(['fetch']);
 
 /** HTTP verbs axios exposes as methods. A closed API surface, matched exactly. */
 const AXIOS_HTTP_METHODS: ReadonlySet<string> = new Set([
@@ -87,24 +91,78 @@ function argumentAncestor(node: TSESTree.Node): TSESTree.Node {
  * finding, and `no-http-urls` / `no-unencrypted-transmission` /
  * `detect-mixed-content` all stand down on it.
  */
-export function isRequestCallSiteUrl(node: TSESTree.Node): boolean {
+export function isRequestCallSiteUrl(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   const argument = argumentAncestor(node);
   const call = argument.parent;
-  if (call?.type !== AST_NODE_TYPES.CallExpression || call.arguments[0] !== argument) {
+  return (
+    call?.type === AST_NODE_TYPES.CallExpression &&
+    call.arguments[0] === argument &&
+    isRequestCall(call, scope)
+  );
+}
+
+/**
+ * Is this call one of the request APIs `require-https-only` owns?
+ *
+ * Split out from `isRequestCallSiteUrl` so the OWNER can key on
+ * `CallExpression` while the rules that DEFER key on the string node they were
+ * already visiting. Same predicate, so the two cannot drift — and the owner no
+ * longer has to visit every `Literal` in the program to find the handful that
+ * sit in a `fetch`.
+ */
+export function isRequestCall(
+  call: TSESTree.CallExpression,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  const callee = call.callee;
+  // `fetch`, `window.fetch`, `self.fetch` and `globalThis.fetch` are the same
+  // function. Matching only the bare identifier made the qualified spellings
+  // invisible — and the qualified spelling is what instrumented, polyfilled and
+  // worker code actually writes (`self.fetch` is the ONLY one available inside
+  // a Worker). Found by the corpus: `window.fetch('http://metrics…')` fell
+  // through to `no-http-urls`, so a proven cleartext request was reported as a
+  // hardcoded string.
+  if (isGlobalObject(callee, FETCH_NAMES)) {
+    return true;
+  }
+  if (
+    callee.type !== AST_NODE_TYPES.MemberExpression ||
+    callee.computed ||
+    callee.property.type !== AST_NODE_TYPES.Identifier ||
+    !AXIOS_HTTP_METHODS.has(callee.property.name)
+  ) {
     return false;
   }
-  const callee = call.callee;
-  if (callee.type === AST_NODE_TYPES.Identifier) {
-    return callee.name === 'fetch';
+  return isAxiosClient(callee.object, scope);
+}
+
+/**
+ * Does this receiver denote the axios client?
+ *
+ * TWO independent signals, because either alone loses cases the other catches:
+ *
+ * 1. **A resolved module binding.** `import http from 'axios'` and
+ *    `const client = require('axios')` are the same client under a different
+ *    spelling, and a rule that matched the identifier missed both. Found by the
+ *    corpus: `http.get('http://api…')` — a plain import rename, not an exotic
+ *    shape — went unreported.
+ * 2. **The bare identifier `axios`.** The conventional spelling, and the only
+ *    signal available when the import is not in the file at all (a global
+ *    script tag, an ambient declaration, a snippet). This is exact membership
+ *    against a closed API surface, not a substring test.
+ *
+ * The two are unioned rather than one replacing the other: dropping (2) for the
+ * "purer" (1) would have silently un-reported every codebase that does not
+ * import axios in the same file, which is a recall loss dressed up as rigour.
+ */
+function isAxiosClient(receiver: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+  if (isModuleBinding(receiver, scope, 'axios')) {
+    return true;
   }
-  return (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
-    callee.object.type === AST_NODE_TYPES.Identifier &&
-    callee.object.name === 'axios' &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    AXIOS_HTTP_METHODS.has(callee.property.name)
-  );
+  return receiver.type === AST_NODE_TYPES.Identifier && receiver.name === 'axios';
 }
 
 /**
@@ -265,6 +323,36 @@ export function isSubresourcePosition(node: TSESTree.Node): boolean {
   return false;
 }
 
+/**
+ * `rel` values that make a `<link>` FETCH something.
+ *
+ * `<link rel="canonical" href="http://…">` declares an identity — it is
+ * metadata for crawlers and issues no request at all, so it cannot be mixed
+ * content and there is no remediation to offer. Same for `alternate`, `author`,
+ * `me`, `license`. Keying on the element+attribute pair alone reported every
+ * canonical tag in every server-rendered app, which is a false positive on a
+ * line that is not even a URL the browser touches.
+ *
+ * `rel` is a space-separated token list (`rel="shortcut icon"`), so any token
+ * matching is enough.
+ *
+ * @see https://html.spec.whatwg.org/multipage/links.html#linkTypes
+ */
+const FETCHING_LINK_RELS: ReadonlySet<string> = new Set([
+  'stylesheet',
+  'preload',
+  'modulepreload',
+  'prefetch',
+  'prerender',
+  'icon',
+  'apple-touch-icon',
+  'apple-touch-startup-image',
+  'mask-icon',
+  'manifest',
+  'preconnect',
+  'dns-prefetch',
+]);
+
 /** Does `attributeName` load a subresource on the element this attribute is on? */
 function isSubresourceJsxAttribute(
   attribute: TSESTree.JSXAttribute,
@@ -280,7 +368,45 @@ function isSubresourceJsxAttribute(
   // Host elements are lowercase; `<Image src=…>` is a component whose prop may
   // be anything at all, so there is no subresource to claim.
   const attributes = SUBRESOURCE_ATTRIBUTES.get(name.name);
-  return attributes !== undefined && attributes.has(attributeName);
+  if (attributes === undefined || !attributes.has(attributeName)) {
+    return false;
+  }
+  // `<link href>` is the one pair where the element and attribute are not
+  // enough: whether a request happens is decided by `rel`.
+  if (name.name === 'link') {
+    return hasFetchingRel(element);
+  }
+  return true;
+}
+
+/** Does this `<link>` carry a `rel` that causes a fetch? */
+function hasFetchingRel(element: TSESTree.JSXOpeningElement): boolean {
+  for (const attribute of element.attributes) {
+    if (
+      attribute.type !== AST_NODE_TYPES.JSXAttribute ||
+      attribute.name.type !== AST_NODE_TYPES.JSXIdentifier ||
+      attribute.name.name !== 'rel'
+    ) {
+      continue;
+    }
+    const value = attribute.value;
+    const rel =
+      value?.type === AST_NODE_TYPES.Literal && typeof value.value === 'string'
+        ? value.value
+        : undefined;
+    // A dynamic `rel={x}` is unknowable, and a missing one means the link does
+    // nothing. Both fail closed to "not a subresource": `no-http-urls` still
+    // reports the cleartext URL, so declining here costs the family no
+    // coverage, while guessing would cost every canonical tag.
+    if (rel === undefined) {
+      return false;
+    }
+    return rel
+      .toLowerCase()
+      .split(/\s+/)
+      .some((token) => FETCHING_LINK_RELS.has(token));
+  }
+  return false;
 }
 
 /** The static property name of a member expression, computed or not. */

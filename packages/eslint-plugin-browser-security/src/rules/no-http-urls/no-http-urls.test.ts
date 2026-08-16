@@ -106,7 +106,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // The namespace allowlist is by HOST, not substring: a real request to a
     // host whose PATH mentions w3.org is still a request.
     {
-      code: "fetch('http://cdn.acmecorp.io/w3.org/lib.js')",
+      code: "const lib = 'http://cdn.acmecorp.io/w3.org/lib.js'",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A non-namespace property key does not confer the exemption.
@@ -125,9 +125,9 @@ ruleTester.run('no-http-urls', noHttpUrls, {
       code: "const apiUrl = 'http://api.acmecorp.io/data'", 
       errors: [{ messageId: 'insecureHttpWithException' }] 
     },
-    { 
-      code: "fetch('http://insecure.acmecorp.io/api')", 
-      errors: [{ messageId: 'insecureHttpWithException' }] 
+    {
+      code: "const endpoint = 'http://insecure.acmecorp.io/api'",
+      errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // Template literals
     { 
@@ -162,14 +162,26 @@ jsxRuleTester.run('no-http-urls (jsx)', noHttpUrls, {
     { code: '<svg xmlns:xlink="http://acmecorp.io/ns" />' },
     // JSX spells the XLink namespace this way.
     { code: '<svg xmlnsXlink="http://acmecorp.io/ns" />' },
+
+    // --- deferred to `detect-mixed-content` ---------------------------------
+    // A SUBRESOURCE attribute is a load the browser will block, reported under
+    // CWE-311 by the sibling. `<img src>` was previously INVALID here, so the
+    // line drew two findings under two CWEs at two severities.
+    { code: '<img src="http://cdn.acmecorp.io/logo.png" />' },
+    { code: '<script src="http://cdn.acmecorp.io/a.js" />' },
+    { code: '<form action="http://forms.acmecorp.io/subscribe" />' },
   ],
   invalid: [
     // A non-namespace JSX attribute is an ordinary URL and still reports.
+    // `<a href>` is a NAVIGATION, not a subresource: no browser blocks it, so
+    // `detect-mixed-content` correctly declines it and it stays here.
     {
-      code: '<img src="http://cdn.acmecorp.io/logo.png" />',
+      code: '<a href="http://docs.acmecorp.io">docs</a>',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
-    // A spread attribute has no name to read, so no exemption is conferred.
+    // A spread attribute has no ELEMENT position to read, so it is not a
+    // subresource the sibling can claim — it stays here, and it is also why the
+    // namespace exemption is not conferred.
     {
       code: '<img {...{ src: "http://cdn.acmecorp.io/a.png" }} />',
       errors: [{ messageId: 'insecureHttpWithException' }],
@@ -288,6 +300,64 @@ ruleTester.run('lock: inspecting a protocol string is not using one', noHttpUrls
   ],
   invalid: [
     { code: "const u = 'http://api.acmecorp.io';", errors: 1 },
-    { code: "fetch('http://api.acmecorp.io/x');", errors: 1 },
+    // A fetch() URL argument is `require-https-only`'s, so the positive control
+    // for "an http:// string that is USED, not inspected" moved to a shape this
+    // rule still owns.
+    { code: "const u = { endpoint: 'http://api.acmecorp.io/x' };", errors: 1 },
+  ],
+});
+
+/*
+ * ── Family partition: the shapes this rule hands to a sibling ────────────────
+ *
+ * `no-http-urls` is the RESIDUAL owner of `http://` — it takes everything no
+ * more-specific rule has claimed. Two shapes are claimed:
+ *
+ *   fetch / axios URL argument  -> require-https-only   (a request is MADE)
+ *   subresource position        -> detect-mixed-content (the browser BLOCKS it)
+ *
+ * Each of these was previously reported here as well, so one line drew two or
+ * three findings under two CWEs. They are silent HERE and reported THERE; the
+ * cross-rule proof that exactly one rule fires on each lives in
+ * `require-https-only/transport-partition.matrix.test.ts`, because a RuleTester
+ * runs one rule and therefore cannot see a double.
+ */
+ruleTester.run('partition: deferred to a more specific sibling', noHttpUrls, {
+  valid: [
+    { code: "fetch('http://api.acmecorp.io/v1/users');" },
+    { code: "fetch('http://api.acmecorp.io/v1', { method: 'POST' });" },
+    { code: "axios.get('http://api.acmecorp.io/v1');" },
+    { code: "axios.post('http://api.acmecorp.io/v1/orders', cart);" },
+    { code: 'fetch(`http://api.acmecorp.io/v1/${id}`);' },
+    { code: "fetch('http://api.acmecorp.io' + path);" },
+    { code: "el.src = 'http://cdn.acmecorp.io/a.js';" },
+    { code: "el.setAttribute('src', 'http://cdn.acmecorp.io/a.js');" },
+    { code: "importScripts('http://cdn.acmecorp.io/sw.js');" },
+  ],
+  invalid: [
+    // FN GUARD — the deferral must be exact, not "anything near a fetch".
+    // A URL that is not the FIRST argument is not the request target, so no
+    // sibling claims it and this rule must keep it.
+    {
+      code: "fetch('/api', { headers: { referer: 'http://acmecorp.io' } });",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A request helper that is not fetch/axios is nobody else's shape.
+    {
+      code: "request.get('http://api.acmecorp.io/v1');",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // `axios` used as a bare callable is not one of the verb methods the
+    // sibling matches, so this rule stays responsible for it.
+    {
+      code: "axios({ url: 'http://api.acmecorp.io/v1' });",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // A hoisted constant that a fetch reads later: the literal is here, and
+    // the sibling never sees it.
+    {
+      code: "const BASE = 'http://api.acmecorp.io'; fetch(BASE);",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
   ],
 });
