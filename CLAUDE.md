@@ -7,6 +7,70 @@
 
 ---
 
+## A rule decides by evidence. Never by a name.
+
+**This is the first rule in this file because it is the defect class that reaches
+users.** People run these plugins in production. A rule that fires because a
+variable is *spelled* a certain way is a false positive in a stranger's codebase,
+and a maintainer who gets one stops trusting the whole ecosystem — the README's
+own FP/FN section explains exactly why that is fatal: an ignored tool has zero
+recall regardless of what it detects.
+
+**Forbidden in any reporting path:**
+
+```ts
+varName.includes('password')                    // no
+calleeName.includes(lib.toLowerCase())          // no
+WORDS.some((w) => identifier.includes(w))       // no — including behind a helper
+```
+
+Real findings this shipped, every one a name match reporting on evidence it did
+not have:
+
+- `no-ssrf` treated any parameter containing `url`, `user`, `input`, `param`,
+  `host`, `source`, `target` or `link` as attacker-controlled — so
+  `function connect(hostname)` and `function build(params)` were tainted
+- `no-xpath-injection` fired on `export const QueryValidateSchema = QueryInputSchema`
+- `display-name` reported **every named component in every React codebase**
+- `no-electron-security-issues` matched `'ui'` inside `benchmarks/s`**ui**`tes/`
+- `no-http-urls` reported `indexOf('http://')` — the guard itself
+- `require-secure-credential-storage` read `const key = fs.readFileSync('./ssl.key')`
+  as a stored credential
+
+**Use instead:** `isStaticExpression` for "can this change", scope analysis
+(`getScope`, `getDeclaredVariables`) for "what does this binding actually resolve
+to", and a proven sink for "does this value get there". Those are in
+`@interlace/eslint-devkit` precisely so no rule has to guess from a name.
+
+**Exact membership is not this.** `NAMES.has(node.name)` against a closed API
+surface is fine. Substring matching is what is banned.
+
+### The gate, and the two ways it has been defeated
+
+`npm run lint:name-inference` fails the build on a new site and on a stale
+registry entry. Both evasions have already happened, so check for them:
+
+1. **Behind a helper.** The check was intra-procedural: one function returned the
+   spelling, another substring-matched a word list against the string it was
+   handed, and no `.name` appeared near the test. `credential-evidence.ts` shipped
+   green that way. The gate now also flags a four-plus list of string literals fed
+   to `.some(w => x.includes(w))`, which catches the shape wherever the haystack
+   came from.
+2. **Writing the exception into the gate's own doc comment.** That is
+   *documenting* a defect, not mitigating it, and it is explicitly not acceptable
+   here. If a site is genuinely correct, register it with its direction and reason
+   — do not annotate the gate to look past it.
+
+**Direction matters when triaging.** A name match that SUPPRESSES (a
+`trustedLibraries` allowlist) costs recall. A name match that REPORTS costs a
+user's trust. Fix the reporting ones first.
+
+Every fix here needs a lock test that fails on the unfixed rule, and the CWE
+corpus recall gate re-run in the same session — precision work in this repo has
+bought recall loss before.
+
+---
+
 ## Regressions are the issue. Lock everything you fix.
 
 A fix is **not done** until a test would have caught the bug pre-deploy.

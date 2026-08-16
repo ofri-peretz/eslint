@@ -96,6 +96,15 @@ const NAME_BINDING = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?=([^;]*);)/g;
  */
 const TOKENISED = /\.split\(/;
 
+/**
+ * `const WORDS = ['password', 'token', …]` — a vocabulary of string literals.
+ *
+ * Four or more entries, because two or three literals are usually an enum or a
+ * pair of method names; a list this long is a dictionary someone intends to
+ * substring-match against an identifier.
+ */
+const WORD_LIST = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[\s*((?:'[^']*'|"[^"]*")\s*,\s*){3,}/g;
+
 /** `x.name.includes(` / `x.name.toLowerCase().includes(` — the inline form. */
 const INLINE_NAME_SUBSTRING = new RegExp(
   `\\.name(?:\\.toLowerCase\\(\\)|\\.toUpperCase\\(\\))?\\.(?:${SUBSTRING_METHODS})\\(`,
@@ -135,13 +144,42 @@ export function findNameSubstringSites(source: string): Site[] {
     ? new RegExp(`\\b(?:${[...nameBindings].join('|')})\\.(?:${SUBSTRING_METHODS})\\(`)
     : null;
 
+  // The interprocedural shape the header used to call a known blind spot, and
+  // route this file's own author around: rather than testing `node.name` here,
+  // a helper returns the spelling and a SECOND function substring-matches a word
+  // list against the string it was handed. No `.name` appears near the test, so
+  // every check above stays silent.
+  //
+  // `credential-evidence.ts` was exactly this and shipped green — the blind spot
+  // was written into this file's doc comment instead of being closed, which is
+  // the "documenting a defect is not mitigating it" mistake in its purest form.
+  //
+  // Catching the VOCABULARY instead of the haystack closes it without needing to
+  // follow values across functions: a four-plus list of string literals fed to
+  // `.some(w => x.includes(w))` is a dictionary lookup on a name whatever the
+  // haystack was called or wherever it came from.
+  const wordLists = new Set<string>();
+  WORD_LIST.lastIndex = 0;
+  let list: RegExpExecArray | null;
+  while ((list = WORD_LIST.exec(source)) !== null) wordLists.add(list[1]);
+
+  const vocabularySubstring = wordLists.size
+    ? new RegExp(
+        `\\b(?:${[...wordLists].join('|')})\\.(?:some|find|filter|every)\\([^)]*\\.(?:${SUBSTRING_METHODS})\\(`,
+      )
+    : null;
+
   const sites: Site[] = [];
   lines.forEach((raw, index) => {
     const text = raw.trim();
     // Prose in a comment describes this pattern constantly — including in this
     // file's own header — and must never count as a site.
     if (text.startsWith('//') || text.startsWith('*') || text.startsWith('/*')) return;
-    if (INLINE_NAME_SUBSTRING.test(raw) || boundSubstring?.test(raw)) {
+    if (
+      INLINE_NAME_SUBSTRING.test(raw) ||
+      boundSubstring?.test(raw) ||
+      vocabularySubstring?.test(raw)
+    ) {
       sites.push({ line: index + 1, text: text.slice(0, 120) });
     }
   });
@@ -163,6 +201,111 @@ interface RegistryEntry {
  * about it.
  */
 const REGISTERED: RegistryEntry[] = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // Surfaced 2026-08-16 when the vocabulary detector closed the helper blind
+  // spot. These were ALWAYS here — the gate could not see them because the
+  // substring test sits behind a word list rather than next to a `.name`.
+  // Registered so the list is tracked, not so it is accepted: every `report`
+  // entry below is a false positive waiting to reach a user, and CLAUDE.md
+  // schedules them ahead of the `suppress` ones.
+  // ═══════════════════════════════════════════════════════════════════════
+  // The remaining vercel-ai-security rules share one helper shape: a list of AI
+  // SDK entry points substring-matched against a callee to decide "is this an AI
+  // call". They are grouped here because they need ONE fix — resolve the import
+  // from `ai` / `@ai-sdk/*` once, in a shared util, the way node-security now
+  // resolves child_process — not seven separate patches.
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/require-audit-logging/index.ts',
+    direction: 'suppress',
+    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/require-error-handling/index.ts',
+    direction: 'suppress',
+    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/require-output-validation/index.ts',
+    direction: 'suppress',
+    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/require-rag-content-validation/index.ts',
+    direction: 'suppress',
+    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/require-request-timeout/index.ts',
+    direction: 'suppress',
+    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/require-tool-schema/index.ts',
+    direction: 'suppress',
+    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/require-validated-prompt/index.ts',
+    direction: 'suppress',
+    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-ssrf/index.ts',
+    direction: 'report',
+    reason:
+      'USER_INPUT_SUBSTRINGS ["url","endpoint","uri","href","link","target","dest","source",' +
+      '"host","user","input","param"] substring-matched against a PARAMETER NAME to decide the ' +
+      'value is attacker-controlled. `function connect(hostname)`, `function build(params)` and ' +
+      '`function render(sourceMap)` are all tainted by spelling. This is taint analysis replaced ' +
+      'by a dictionary, and it is the highest-volume false positive source in the registry.',
+  },
+  {
+    file: 'eslint-plugin-mongodb-security/src/rules/no-operator-injection/index.ts',
+    direction: 'report',
+    reason:
+      'userInputPatterns substring-matched against the printed text of a value to decide it is ' +
+      'user input. Same defect as no-ssrf, one layer further from the AST.',
+  },
+  {
+    file: 'eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/index.ts',
+    direction: 'report',
+    reason:
+      'authKeywords substring-matched against an object key. `role` matches `roleplayEnabled`, ' +
+      '`admin` matches `adminDashboardUrl` — neither is auth logic.',
+  },
+  {
+    file: 'eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/index.ts',
+    direction: 'report',
+    reason:
+      'Three sites matching recoveryKeywords / strongRecoveryPatterns / weakPatterns against ' +
+      'printed text. The rule decides both the finding AND its own exemption from spelling.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/no-dynamic-system-prompt/index.ts',
+    direction: 'suppress',
+    reason:
+      'aiSDKFunctions substring-matched against a callee to decide whether this is an AI SDK ' +
+      'call at all. Loose matching here GATES the rule on, so it widens what reports — but the ' +
+      'names (generateText, streamText) are distinctive enough that the practical risk is a ' +
+      'missed call, not a false one. Resolve the import instead.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/no-hardcoded-api-keys/index.ts',
+    direction: 'suppress',
+    reason: 'providerFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/no-sensitive-in-prompt/index.ts',
+    direction: 'suppress',
+    reason: 'aiSDKFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
+  },
+  {
+    file: 'eslint-plugin-vercel-ai-security/src/rules/no-unsafe-output-handling/index.ts',
+    direction: 'report',
+    reason:
+      'dangerousFunctions substring-matched against a callee to decide the sink is dangerous. ' +
+      '`exec` matches `execute`, `eval` matches `evaluate` — both ordinary method names.',
+  },
   // ── direction: report — a wrong guess ships a false positive ──────────
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-pii-in-logs/index.ts',
