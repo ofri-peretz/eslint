@@ -71,10 +71,16 @@ ruleTester.run('no-eval', noEval, {
     // reported them here as well, at the identical range.
 
     // okta-signin-widget generate-phone-codes.js:20 — remote metadata evalled.
-    // A TRUE positive, now reported once instead of twice.
-    { code: `eval(data);` },
+    // A TRUE positive, reported once instead of twice.
+    //
+    // `deferDynamicPayloads` is now REQUIRED to make these valid. They were
+    // unconditional, which meant a consumer installing browser-security without
+    // node-security got no eval coverage at all — the partition assumed a plugin
+    // that is not a dependency. Handing the deferral to the user turns "silently
+    // uncovered" into "covered unless you say otherwise".
+    { code: `eval(data);`, options: [{ deferDynamicPayloads: true }] },
     // The generic dynamic case.
-    { code: `eval(userInput);` },
+    { code: `eval(userInput);`, options: [{ deferDynamicPayloads: true }] },
     // underscore-min.js:1033 / speedscope demangle-cpp — dynamic Function body.
     { code: `const o = new Function(a, '_', i);` },
     { code: `const fn = new Function('return ' + userInput);` },
@@ -143,6 +149,44 @@ ruleTester.run('no-eval', noEval, {
     // setInterval with string
     {
       code: `setInterval('tick()', 500);`,
+      errors: [{ messageId: 'dangerousEval' }],
+    },
+  ],
+});
+
+/**
+ * REGRESSION LOCK — browser-security must cover eval() on its own.
+ *
+ * The payload partition with `node-security/detect-eval-with-expression` was
+ * applied unconditionally, and eslint-plugin-browser-security does not depend
+ * on eslint-plugin-node-security. For anyone installing this plugin alone the
+ * rule was exactly inverted:
+ *
+ *   eval(userInput);   QUIET      <- the actual vulnerability
+ *   eval("2 + 2");     CVSS 9.8   <- a constant
+ *
+ * A rule cannot see which other plugins are enabled, so the partition is now
+ * the user's declaration via `deferDynamicPayloads`, off by default.
+ *
+ * This block FAILS on the pre-fix rule: the invalid case was QUIET.
+ */
+ruleTester.run('no-eval-self-sufficient-by-default', noEval, {
+  valid: [
+    // The partition, opted into explicitly by a user who runs both plugins.
+    {
+      code: 'eval(userInput);',
+      options: [{ deferDynamicPayloads: true }],
+    },
+  ],
+  invalid: [
+    {
+      code: 'eval(userInput);',
+      errors: [{ messageId: 'dangerousEval' }],
+    },
+    {
+      // Still ours under the partition — a static payload has nothing to attribute.
+      code: 'eval("2 + 2");',
+      options: [{ deferDynamicPayloads: true }],
       errors: [{ messageId: 'dangerousEval' }],
     },
   ],

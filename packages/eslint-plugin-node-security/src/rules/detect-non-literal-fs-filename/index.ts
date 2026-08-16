@@ -345,8 +345,27 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           taintSources: {
             type: 'array',
             items: { type: 'string' },
+            // Stated in the schema, not only in the destructuring. A default
+            // that lives only in `create()` cannot be read by the docs
+            // generator or by a user inspecting the rule's contract.
+            default: ['process'],
             description:
-              'Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process)',
+              // The default is `['process']` ALONE. This description used to
+              // claim `req, request, ctx, event, process`, which is what the
+              // rule would need to catch an Express path traversal by itself —
+              // and an audit read the description, probed the Express shape,
+              // found silence, and filed it as a flagship false negative.
+              //
+              // It is not one. Request-sourced paths are `no-arbitrary-file-access`'s
+              // partition; probing both rules on
+              // `fs.readFileSync(`/srv/${req.params.name}.html`)` yields exactly
+              // one report, from that rule, at `error`. The docs were wrong, not
+              // the detection.
+              'Identifier roots treated as attacker-reachable. Default: [\'process\'] ' +
+              '(process.argv and process.env). Request roots (req/request/ctx/event) ' +
+              'are deliberately NOT included — no-arbitrary-file-access owns those, ' +
+              'and listing them here would double-report one line at two severities. ' +
+              'Add them only if you run this rule without that one.',
           },
           reportUnresolvedPaths: {
             type: 'boolean',

@@ -8,7 +8,9 @@
  * @fileoverview Prevent authentication logic in client code
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons,
+  nameHasAnyWord,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -35,7 +37,40 @@ function isFlagComparand(node: TSESTree.Node): boolean {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+/**
+ * The default vocabulary, exported so consumers can extend rather than replace it.
+ *
+ * Matched by WHOLE WORD (see `nameHasAnyWord`), not substring — `role` used to
+ * match `casserole`.
+ */
+export const DEFAULT_AUTH_KEYWORDS = [
+  'admin',
+  'authenticated',
+  'authorized',
+  'isAdmin',
+  'isAuthenticated',
+  'role',
+] as const;
+
+/**
+ * The credential property names compared in a client-side password check.
+ */
+export const DEFAULT_CREDENTIAL_PROPERTIES = ['password', 'secret', 'token'] as const;
+
+export interface Options {
+  /**
+   * Storage keys whose presence indicates a client-side authorization decision.
+   * Matched whole-word against the key's camel/snake/kebab segments.
+   * Default: {@link DEFAULT_AUTH_KEYWORDS}
+   */
+  authKeywords?: string[];
+
+  /**
+   * Property names treated as credentials in an equality comparison.
+   * Matched exactly. Default: {@link DEFAULT_CREDENTIAL_PROPERTIES}
+   */
+  credentialProperties?: string[];
+}
 
 type RuleOptions = [Options?];
 
@@ -60,15 +95,47 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/602.html',
       })
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          authKeywords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_AUTH_KEYWORDS],
+            description:
+              'Storage keys indicating a client-side authorization decision, ' +
+              'matched whole-word against the key segments.',
+          },
+          credentialProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_CREDENTIAL_PROPERTIES],
+            description:
+              'Property names treated as credentials in an equality comparison.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [
+    {
+      authKeywords: [...DEFAULT_AUTH_KEYWORDS],
+      credentialProperties: [...DEFAULT_CREDENTIAL_PROPERTIES],
+    },
+  ],
+  create(context, [options = {}]) {
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
     
-    const authKeywords = ['admin', 'authenticated', 'authorized', 'isAdmin', 'isAuthenticated', 'role'];
+    // A vocabulary the consumer cannot reach is a vocabulary they must accept
+    // whole — and every word list is wrong for somebody's domain.
+    const {
+      authKeywords = [...DEFAULT_AUTH_KEYWORDS],
+      credentialProperties = [...DEFAULT_CREDENTIAL_PROPERTIES],
+    } = options;
     
     return {
       IfStatement(node: TSESTree.IfStatement) {
@@ -82,8 +149,22 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
           
           const keyArg = node.test.arguments[0];
           if (keyArg && keyArg.type === 'Literal') {
-            const key = String(keyArg.value).toLowerCase();
-            if (authKeywords.some(kw => key.includes(kw))) {
+            // NOT lowercased. `nameHasAnyWord` segments on camelCase, and
+            // lowercasing first destroys the only boundary in `isAdmin` —
+            // "isadmin" has no word break, so `admin` stops matching and the
+            // rule goes silent on its single most important key. The helper
+            // lowercases each segment itself.
+            const key = String(keyArg.value);
+            // WHOLE WORD, not substring. `key.includes('role')` reported
+            // `localStorage.getItem("recipe-casserole-draft")` — `role` lives
+            // inside `casserole` — and this rule ships at `error` in
+            // `recommended`, so that finding reached every consumer of the
+            // preset with a CRITICAL severity and no way to configure it away.
+            //
+            // `nameHasAnyWord` segments the key on camel/snake/kebab/digit
+            // boundaries, so `isAdmin`, `user-role` and `auth_token` still
+            // match while `casserole` and `authorship` no longer do.
+            if (nameHasAnyWord(key, authKeywords)) {
               report(node);
             }
           }
@@ -95,7 +176,7 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
           const checkMember = (expr: TSESTree.Expression) => {
             if (expr.type === 'MemberExpression' && 
                 expr.property.type === 'Identifier' &&
-                ['password', 'secret', 'token'].includes(expr.property.name)) {
+                credentialProperties.includes(expr.property.name)) {
               return true;
             }
             return false;

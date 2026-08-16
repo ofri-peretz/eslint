@@ -28,6 +28,25 @@ export interface Options {
 
   /** Allow Function constructor. Default: false */
   allowFunctionConstructor?: boolean;
+
+  /**
+   * Hand a DYNAMIC `eval(x)` payload to `node-security/detect-eval-with-expression`
+   * instead of reporting it here. Default: `false`.
+   *
+   * The partition documented at the top of this file is correct *within* an
+   * ecosystem install, and it was applied unconditionally — which made this rule
+   * exactly inverted for anyone who installs browser-security alone:
+   *
+   *   eval(userInput);   QUIET      ← the actual vulnerability
+   *   eval("2 + 2");     CVSS 9.8   ← a constant
+   *
+   * eslint-plugin-browser-security does not depend on eslint-plugin-node-security,
+   * so a browser-only consumer had NO eval coverage whatsoever while being told
+   * their arithmetic was critical. A rule cannot see which other plugins are
+   * enabled, so this has to be the user's declaration: default self-sufficient,
+   * opt in to the partition when both plugins are installed.
+   */
+  deferDynamicPayloads?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -137,6 +156,15 @@ export const noEval = createRule<RuleOptions, MessageIds>({
             description:
               'Allow `new Function(...)` while still reporting `eval()`',
           },
+          deferDynamicPayloads: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Let node-security/detect-eval-with-expression own dynamic eval() ' +
+              'payloads. Enable when both plugins are installed, to avoid one ' +
+              'line being reported twice. Off by default so browser-security ' +
+              'covers eval() on its own.',
+          },
         },
         additionalProperties: false,
       },
@@ -152,7 +180,11 @@ export const noEval = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = false, allowFunctionConstructor = false } =
+    const {
+      allowInTests = false,
+      allowFunctionConstructor = false,
+      deferDynamicPayloads = false,
+    } =
       options as Options;
 
     const filename = context.filename;
@@ -197,7 +229,12 @@ export const noEval = createRule<RuleOptions, MessageIds>({
             // A dynamic `eval(…)` payload belongs to
             // `detect-eval-with-expression` — see the partition note above.
             // `execScript` is unknown to that rule, so it stays here either way.
-            if (callee.name === 'eval' && !ownsPayload(node)) {
+            // Only defer when the user says the other plugin is present.
+            if (
+              deferDynamicPayloads &&
+              callee.name === 'eval' &&
+              !ownsPayload(node)
+            ) {
               return;
             }
             context.report({
