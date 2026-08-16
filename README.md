@@ -250,7 +250,7 @@ sides:
 
 |                                  | Interlace | eslint-plugin-security |
 | :------------------------------- | --------: | ---------------------: |
-| Findings                         |     1,283 |                 23,325 |
+| Findings                         |     1,375 |                 23,325 |
 | Measured precision               |   **67%** |                    20% |
 | Findings you read per real issue |   **1.5** |                    5.0 |
 

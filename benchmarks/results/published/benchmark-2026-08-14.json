@@ -20,7 +20,7 @@
   "configuration": {
     "ruleSet": "recommended vs recommended (80 Interlace rules vs 14)",
     "severity": "error",
-    "optionsPassed": "none — all rules on documented defaults",
+    "optionsPassed": "none \u2014 all rules on documented defaults",
     "typeAware": false,
     "overrideConfigFile": true,
     "excluded": [
@@ -409,7 +409,7 @@
         "repo": "helmetjs/helmet",
         "url": "https://github.com/helmetjs/helmet",
         "stars": 10716,
-        "surface": "security headers — the reference implementation",
+        "surface": "security headers \u2014 the reference implementation",
         "commit": "9315aac37eb69d8dd3fe81c67febcebe60d7e97e",
         "commitDate": "2026-07-27T23:16:21-05:00",
         "filesLinted": 17,
@@ -456,7 +456,7 @@
     ]
   },
   "labelledCorpus": {
-    "description": "benchmarks/corpus — 34 CWE classes, 76 vulnerable + 67 safe fixtures, authored by Interlace",
+    "description": "benchmarks/corpus \u2014 34 CWE classes, 76 vulnerable + 67 safe fixtures, authored by Interlace",
     "leaderboard": [
       {
         "plugin": "interlace",
@@ -533,7 +533,7 @@
     ]
   },
   "caveats": [
-    "realSource findings are VOLUME, not correctness. Measured precision on a stratified sample is approximately 45 percent (see BENCHMARK-RESULTS.md B2).",
+    "realSource findings are VOLUME, not correctness. Measured precision on a stratified 22-finding sample is approximately 67 percent (12 TP / 6 FP / 4 undecidable; the 67 percent excludes the undecidable, counting them against gives 55 percent). See BENCHMARK-RESULTS.md B2.",
     "labelledCorpus fixtures were authored by Interlace. A high score there is a regression gate, not an independent claim.",
     "False negatives on real source are not measurable without ground truth and are not reported.",
     "Quieter is measured against eslint-plugin-security only. Against eslint-plugin-no-unsanitized, Interlace reports MORE (184 vs 127 per 1k files)."

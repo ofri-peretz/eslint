@@ -48,7 +48,7 @@ author · `INT` internal — committed runner, our own fixtures; a regression ga
 | B2 | **Measured precision**, hand-labelled stratified sample | **≈67%** (12 TP / 6 FP / 4 undecidable of 22) | ≈20% (3 TP / 12 FP / 1 undecidable of 16) | **Interlace** | PUB |
 | B2a | — **prior** sample (20 findings), same sampling method, before the 2026-08-14 precision work | ≈47% (8 TP / 9 FP / 3 undecidable of 20) | — | — | PUB |
 | B2b | **TP / FP / FN, labelled corpus** (`ilb-juliet`) | **69 / 0 / 0 — F1 100%** | 10 / 7 / 59 — F1 23.3% | **Interlace** | INT |
-| B3 | Findings per 1,000 files, 20 OSS projects | **54** | 985 | **Interlace** | VOL |
+| B3 | Findings per 1,000 files, 20 OSS projects | **58** | 985 | **Interlace** | VOL |
 | B4 | Louder on N of 20 projects | **0 of 20** | 20 of 20 | **Interlace** | VOL |
 | B5 | Output concentrated in a single rule | 18% (`no-http-urls`) | **87%** (`detect-object-injection`) | **Interlace** | PUB |
 | B6 | Fires on the other side's `valid` cases | 15/105 (was 23) | 0/105 | eslint-plugin-security | PUB |
@@ -175,8 +175,16 @@ Every point of that move came from removing name-matching rather than adding ana
 | `no-improper-sanitization` | shell metacharacters (`\| ; ( ) $`) in an HTML-escaping character list | 24 → 9 |
 | `no-http-urls` | reported `indexOf('http://')` — the guard that checks for http | 245 → 229 |
 
-Total across 20 projects: **1,351 → 1,283 findings**. Corpus false positives stayed at 0/67,
-parity at 51/51 and detection at 73/76 throughout — the reductions are noise, not coverage.
+Across 20 projects this batch moved **1,351 → 1,283 findings**. Corpus false positives stayed
+at 0/67, parity at 51/51 and detection at 73/76 throughout — the reductions are noise, not
+coverage.
+
+Read those two as a **delta for this batch of rules**, not as the ecosystem total. The
+canonical figure is **1,375**, from
+[`benchmark-2026-08-14.json`](./benchmarks/results/published/benchmark-2026-08-14.json),
+which counts a wider plugin set than the three these fixes touched. Every headline number in
+this document traces to that artifact; where a section quotes a narrower run it says so
+here.
 
 A second pass read all 23 of the cases where our rules fire on `eslint-plugin-security`'s
 own `valid` corpus. Eight were genuine false positives and are fixed; the rest are scope
@@ -219,16 +227,16 @@ open-source projects, 2.37M SLOC:
 
 | | Interlace | eslint-plugin-security |
 |---|---|---|
-| Findings | 981 | 21,557 |
-| **Measured precision** | **47%** | 20% |
-| True positives (estimated) | 461 | **4,311** |
-| False positives (estimated) | **520** | 17,246 |
-| Findings per 1k SLOC | **0.41** | 9.09 |
-| True positives per 1k SLOC | 0.19 | **1.82** |
-| **Noise per 1k SLOC** | **0.22** | 7.27 — **33× more** |
-| **Findings read per real issue** | **2.1** | 5.0 |
+| Findings | 1,375 | 23,325 |
+| **Measured precision** | **67%** | 20% |
+| True positives (estimated) | 921 | **4,665** |
+| False positives (estimated) | **454** | 18,660 |
+| Findings per 1k SLOC | **0.58** | 9.84 |
+| True positives per 1k SLOC | 0.39 | **1.97** |
+| **Noise per 1k SLOC** | **0.19** | 7.87 — **41× more** |
+| **Findings read per real issue** | **1.5** | 5.0 |
 
-**They find more real issues in absolute terms.** 4,311 against 461, because they fire 22×
+**They find more real issues in absolute terms.** 4,665 against 921, because they fire 17×
 more often. We do not dispute that and it belongs in any honest comparison. The trade we
 make is deliberate: you read two findings to get one real one, and carry a thirty-third of
 the noise doing it.
