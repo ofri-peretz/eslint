@@ -109,13 +109,77 @@ SMELLS: 48 duplicate-coverage · 40 unconfigurable-vocabulary · 17 textual-matc
 
 Recall gate re-run after each: **69 TP / 0 FP / 0 FN, unchanged throughout.**
 
-## Remaining scope
+## OPEN ITEMS — exact, executable, nothing inferred
 
-- [ ] R1–R5 root causes
-- [ ] P0 rules (10)
-- [ ] P1 rules (~28)
-- [ ] Duplicate-coverage pairs (13)
-- [ ] Test-suite bug-locking fixtures
-- [ ] browser-security sweep (agent still running)
-- [ ] The other ~30 plugins in this repo
-- [ ] Docs + one PR
+State captured at commit a00c6a86 + agent work in flight.
+
+### Ledger right now
+
+DEFECTS: 46 no-corpus-fixture · 2 unexercised-option · 1 orphan-message ·
+1 fixable-without-fixer · 1 unasserted-message
+SMELLS: 43 duplicate-coverage · 42 unconfigurable-vocabulary ·
+16 nominal-inference-report · plus textual-matching / dynamic-regexp /
+unguarded-recursion / whole-program-text
+
+`no-corpus-fixture` was 75 and is falling as agents land corpora. The four
+small defects are NEW — introduced by in-flight agent edits, so re-run the
+ledger before acting; they may already be gone.
+
+### 1. Finish the corpus sweep
+
+Four agents were mid-flight. Check `benchmarks/rule-corpus/` (29 dirs at
+capture) against the ledger, then for every rule still lacking one run the
+process in [[rule-to-state-of-the-art-process]]. **Phase 4, the adversarial
+wave, is the one that matters** — a first-pass 100% means nothing.
+
+### 2. Commit in-flight work
+
+`packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-query/` had
+uncommitted edits and its suite was RED at capture. Verify before committing.
+Use `git commit -- <paths>` — a bare `git add -A` swept other agents' work into
+the wrong commit twice in this session.
+
+### 3. no-graphql-injection — a working fix, reverted unfinished
+
+`graphql.execute(query, root, context, variables)` reports FOUR findings; three
+are false. `root`/`context` are the server's objects and `variables` is the
+parameterisation mechanism — flagging it says the fix is the bug.
+
+Do NOT decide by argument position (graphql-js and Apollo differ). Decide by
+provenance: an injected document resolves to a template or `+` concatenation,
+an options object does not. Resolve the binding and require a built string.
+Verified working; reverted only because the fixture rewrites did not fit in
+the session. Three fixtures need updating, incl. one asserting 4 errors.
+
+### 4. The transport duplicate cluster
+
+`fetch("http://api.example.com")` draws FOUR reports: require-https-only,
+no-http-urls, no-unencrypted-transmission, detect-mixed-content. One line must
+yield one report. Partition by ownership as the innerHTML family does, and add
+a partition-matrix test.
+
+### 5. Verify, do not trust, the agent reports
+
+For each agent claim, re-probe before relaying. In this session agents were
+right about most things and wrong about at least two:
+- "detect-non-literal-fs-filename misses every Express path traversal" — FALSE,
+  the sibling catches it; the schema DESCRIPTION was wrong
+- "the ledger returns the wrong plugin" — FALSE, a transient read of a
+  half-written file
+
+### 6. Known-unfinished quality items
+
+- `postgresql-security/no-unsafe-query`: 6/8, F1 75%. Misses `db.execute(...)`
+  and the local-builder shape. The worked fix is in
+  `secure-coding/no-sql-injection`'s `effectiveExpression`.
+- 43 duplicate-coverage smells, unprobed since the plugins changed.
+- 42 unconfigurable-vocabulary smells.
+- Commit attribution on PR #574 is unreliable — three agents, one worktree.
+  Use separate worktrees next time.
+
+### 7. The standing bar
+
+Only TWO rules have numbers behind them: `no-innerhtml` (100% F1 vs Mozilla
+81.6%) and `no-sql-injection` (8/8 with the option; SDK plugins catch 0/8).
+Everything else has been FIXED, not VERIFIED. Those are different claims, and
+the plugins are not ready to promote until more of them are the second kind.
