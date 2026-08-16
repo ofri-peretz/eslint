@@ -9,3 +9,4 @@ export * from '../ast/ast-utils';
 export * from './static-expression';
 export * from './module-binding';
 export * from './identifier-words';
+export * from './type-syntax';

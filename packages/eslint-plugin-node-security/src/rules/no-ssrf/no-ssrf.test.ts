@@ -285,3 +285,31 @@ describe('no-ssrf', () => {
     });
   });
 });
+
+/**
+ * REGRESSION LOCK — TypeScript casts must not hide taint.
+ *
+ * `req.query.x` is typed `string | string[] | ParsedQs | undefined` by Express,
+ * so a TypeScript handler CANNOT pass it where a string is expected without
+ * `as string`. Every taint walker in this repo dispatched on `node.type` and
+ * fell through to its null/false default for `TSAsExpression`, so this rule
+ * reported NOTHING on TypeScript Express code while its suite stayed green —
+ * there was not one cast anywhere in these tests.
+ *
+ * The cast is erased at compile time and changes no value, so unwrapping it is
+ * always sound for provenance. Fixed by `unwrapTypeSyntax` in @interlace/eslint-devkit.
+ *
+ * This block FAILS on the pre-fix rule. Verify with:
+ *   git stash && npx vitest run <this file>   # expect a failure
+ */
+ruleTester.run('no-ssrf-ts-cast-taint', noSsrf, {
+  valid: [
+    `const r = await fetch('https://api.example.com/health' as string);`,
+  ],
+  invalid: [
+    {
+      code: `app.get('/proxy', async (req, res) => { const r = await fetch(req.query.url as string); res.send(await r.text()); });`,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+  ],
+});

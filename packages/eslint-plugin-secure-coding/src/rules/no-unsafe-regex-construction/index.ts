@@ -15,7 +15,7 @@
  * @see https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, unwrapTypeSyntax } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -88,6 +88,16 @@ type RuleOptions = [Options?];
  */
 function taintSource(node: TSESTree.Node, depth = 0): string | null {
   if (depth > 6) return null;
+
+  // `req.query.q as string` reads exactly what `req.query.q` reads — the cast is
+  // erased at compile time. Without this line the whole walker falls through to
+  // `return null`, and since Express types `req.query.q` as
+  // `string | string[] | ParsedQs | undefined`, a TypeScript handler CANNOT pass
+  // it to `new RegExp` without the cast. The rule therefore reported nothing at
+  // all on TypeScript Express code — the majority of its audience — while
+  // passing every test, because no test in this suite was written with a cast.
+  const unwrapped = unwrapTypeSyntax(node);
+  if (unwrapped !== node) return taintSource(unwrapped, depth + 1);
 
   if (node.type === 'TemplateLiteral') {
     for (const expression of node.expressions) {

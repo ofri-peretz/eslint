@@ -859,3 +859,26 @@ describe('detect-child-process — coverage completion', () => {
     });
   });
 });
+
+/**
+ * REGRESSION LOCK — TypeScript casts must not hide taint (shared provenance.ts).
+ *
+ * `req.query.url` is typed `string | string[] | ParsedQs | undefined` by Express,
+ * so a TypeScript handler CANNOT concatenate it without `as string`. The shared
+ * taint reader `makeReadsTaintSource` dispatched on `node.type` and fell through
+ * to `default: return false` for `TSAsExpression`, so every rule built on it was
+ * blind to the shape its TypeScript users must write.
+ *
+ * This case FAILS on the pre-fix provenance.ts.
+ */
+ruleTester.run('detect-child-process-ts-cast-taint', detectChildProcess, {
+  valid: [
+    'const { exec } = require("child_process"); exec("git status" as string);',
+  ],
+  invalid: [
+    {
+      code: 'const { exec } = require("child_process"); app.get("/r", (req, res) => { exec("git clone " + (req.query.url as string)); });',
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+  ],
+});

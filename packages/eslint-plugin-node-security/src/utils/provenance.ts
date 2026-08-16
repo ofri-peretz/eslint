@@ -23,7 +23,7 @@
  * `no-buffer-overread` report on identifiers it had never seen declared.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, unwrapTypeSyntax } from '@interlace/eslint-devkit';
 
 type SourceCode = TSESLint.SourceCode;
 
@@ -70,7 +70,9 @@ export function bindingInit(
   if (!variable || variable.defs.length !== 1) return undefined;
   const def = variable.defs[0];
   if (def.type !== 'Variable') return undefined;
-  return def.node.init ?? undefined;
+  // `const u = req.query.url as string` must hand back the member expression,
+  // not the cast wrapper, or every caller has to know about type syntax.
+  return def.node.init ? unwrapTypeSyntax(def.node.init) : undefined;
 }
 
 /**
@@ -131,6 +133,19 @@ export function makeReadsTaintSource(
 ): (node: TSESTree.Node) => boolean {
   const reads = (node: TSESTree.Node, depth: number): boolean => {
     if (depth > 6) return false;
+
+    // `req.query.url as string` reads exactly what `req.query.url` reads — the
+    // cast is erased at compile time. Without this, the switch below falls
+    // through to `default: return false`.
+    //
+    // The cast is not stylistic. Express types `req.query.url` as
+    // `string | string[] | ParsedQs | undefined`, so a TypeScript handler MUST
+    // write it to compile. The omission silenced no-ssrf and
+    // no-timing-unsafe-compare on every TypeScript Express codebase, while
+    // their suites stayed green — neither suite contained a single `as string`.
+    const bare = unwrapTypeSyntax(node);
+    if (bare !== node) return reads(bare, depth + 1);
+
     switch (node.type) {
       case AST_NODE_TYPES.Identifier: {
         if (roots.has(node.name.toLowerCase())) return true;

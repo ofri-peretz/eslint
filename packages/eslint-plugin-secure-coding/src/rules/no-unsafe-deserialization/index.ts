@@ -24,7 +24,9 @@
  * - Trusted deserialization libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule,
+  unwrapTypeSyntax,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -340,6 +342,14 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
      * Check if input comes from untrusted source
      */
     const isUntrustedInput = (inputNode: TSESTree.Node): boolean => {
+    // `x as string` reads exactly what `x` reads — the cast is erased at compile
+    // time. Without this the walker falls through to its null/false default, and
+    // Express types `req.query.q` as `string | string[] | ParsedQs | undefined`,
+    // so a TypeScript handler MUST write the cast to compile. Every suite here
+    // was written without one, which is why the gap survived review.
+      const bare = unwrapTypeSyntax(inputNode);
+      if (bare !== inputNode) return isUntrustedInput(bare);
+
       // Concatenations and template literals carry their operands' trust:
       // `setTimeout("alert(" + userCode + ")", 100)` is implied eval on
       // untrusted input even though the argument node itself is a

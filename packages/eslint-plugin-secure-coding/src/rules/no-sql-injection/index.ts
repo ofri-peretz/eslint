@@ -17,6 +17,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'sqlInjection';
@@ -250,6 +251,14 @@ function attributedSource(
   depth = 0,
 ): string | null {
   if (depth > 5) return null;
+
+  // `x as string` reads exactly what `x` reads — the cast is erased at compile
+  // time. Without this the walker falls through to its null/false default, and
+  // Express types `req.query.q` as `string | string[] | ParsedQs | undefined`,
+  // so a TypeScript handler MUST write the cast to compile. Every suite here
+  // was written without one, which is why the gap survived review.
+  const bare = unwrapTypeSyntax(node);
+  if (bare !== node) return attributedSource(bare, scope, depth + 1);
 
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     for (const expression of node.expressions) {
