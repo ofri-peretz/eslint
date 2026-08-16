@@ -26,6 +26,7 @@
     "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
     "lint:taxonomy": "tsx scripts/lint-plugin-taxonomy.ts",
+    "rule-ledger": "tsx scripts/build-rule-ledger.ts",
     "lint:name-inference": "tsx scripts/lint-name-inference.ts",
     "lint:workflows": "node scripts/lint-workflows.ts",
     "lint:publish": "node scripts/lint-publish-warnings.ts",
