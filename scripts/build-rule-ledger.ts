@@ -178,6 +178,20 @@ export function buildLedger(plugins: string[], only?: Set<string>): RuleEntry[] 
 
     for (const f of facts) {
       if (only && !only.has(`${plugin}/${f.rule}`)) continue;
+      // A per-rule corpus counts as coverage too.
+      //
+      // `benchmarks/corpus/<CWE>/` is a CALIBRATED instrument: every published
+      // figure — detection 76/76, FP 0/67, the six-plugin leaderboard — is
+      // measured against it, so adding fixtures there silently restates all of
+      // them. Per-rule corpora live in `benchmarks/rule-corpus/` instead, are
+      // scored by the duel harness against named competitors, and leave the
+      // competitive numbers untouched.
+      const ruleCorpus = path.join(REPO_ROOT, 'benchmarks', 'rule-corpus', `${plugin}__${f.rule}`);
+      const ruleCorpusVulnerable = fs.existsSync(path.join(ruleCorpus, 'vulnerable'))
+        ? fs.readdirSync(path.join(ruleCorpus, 'vulnerable')).filter((x) => /\.[jt]sx?$/.test(x)).length
+        : 0;
+      if (ruleCorpusVulnerable > 0) f.corpusVulnerable += ruleCorpusVulnerable;
+
       const findings = auditRule(f);
       const meta = readMeta(f.source);
       entries.push({
