@@ -23,6 +23,7 @@ Internal repository documentation. User-facing rule docs live under `apps/docs/`
 
 - [`roadmaps/`](./roadmaps/) — multi-quarter rule and feature roadmaps (OWASP LLM 2025, OWASP Agentic 2026).
 - [`research/`](./research/) — reference notes and source material that backs the roadmaps.
+- [`planning/`](./planning/) — internal planning & strategy docs (expansion, hardening, parity, adoption, benchmark methodology). Working documents for maintainers, not user-facing.
 
 ## Cross-references
 

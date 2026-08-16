@@ -72,7 +72,7 @@ export const rules: Record<
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-jwt-security',
-    version: '3.0.0',
+    version: '3.0.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

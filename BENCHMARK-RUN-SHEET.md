@@ -3,7 +3,7 @@
 **Prepared:** 2026-08-13. **Purpose:** a fresh session should be able to run the full
 benchmark and produce the presentation without re-deriving anything.
 
-Criteria: [BENCHMARK-CRITERIA.md](./BENCHMARK-CRITERIA.md) · Results: [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md) · Open work: [PERFECTION-PLAN.md](./PERFECTION-PLAN.md)
+Criteria: [BENCHMARK-CRITERIA.md](./BENCHMARK-CRITERIA.md) · Results: [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./docs/planning/BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md) · Open work: [PERFECTION-PLAN.md](./PERFECTION-PLAN.md)
 
 ---
 

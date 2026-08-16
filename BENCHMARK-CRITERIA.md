@@ -1,7 +1,7 @@
 # Benchmark criteria — what we measure, why, and what may be published
 
 **Created:** 2026-08-13
-**Companion to:** [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md) (results) and [PERFECTION-PLAN.md](./PERFECTION-PLAN.md) (open work)
+**Companion to:** [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./docs/planning/BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md) (results) and [PERFECTION-PLAN.md](./PERFECTION-PLAN.md) (open work)
 
 This file defines the criteria. The results file reports them. Keep them separate — a
 criterion that gets rewritten to match a result it produced is not a criterion.
