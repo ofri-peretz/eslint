@@ -46,6 +46,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
+          # The push below has to use the same token the PR is opened with.
+          # `actions/checkout` persists whatever it is given into the local git
+          # config, defaulting to `github.token` — so setting GH_TOKEN for the
+          # `gh` CLI alone is not enough: `git push` would still authenticate as
+          # GITHUB_TOKEN, the resulting `synchronize` event would fire no
+          # workflows, and the PR's checks would go stale on every run after the
+          # first. `--auto` then has nothing to merge on. Needs `contents: write`
+          # on whichever PAT resolves; without one this falls back to
+          # `github.token` and behaves exactly as it does today.
+          token: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
@@ -86,12 +96,14 @@ jobs:
       # Reuses one branch, so repeated runs update a single open PR rather than
       # opening one per push to main.
       #
-      # Opened with a PAT and set to auto-merge, because `github.token` made the
-      # PR unmergeable BY DESIGN: GitHub does not fire `on: pull_request`
-      # workflows for a PR created with GITHUB_TOKEN, so the required contexts
-      # never reported and the PR sat `BLOCKED` with ZERO checks forever. That
-      # is the same failure the note above describes, one step later — the sync
-      # succeeded, and its output was discarded anyway.
+      # Opened with a PAT where one is configured, and set to auto-merge,
+      # because `github.token` made the PR unmergeable BY DESIGN: GitHub does
+      # not fire `on: pull_request` workflows for a PR created with
+      # GITHUB_TOKEN, so the required contexts never reported and the PR sat
+      # `BLOCKED` with ZERO checks forever. That is the same failure the note
+      # above describes, one step later — the sync succeeded, and its output was
+      # discarded anyway. With no PAT set, every line here still works and the
+      # old behaviour returns; nothing depends on the fallback being a PAT.
       #
       # This is NOT the bypass token the note rejects. Nothing about branch
       # protection changes: the PR still runs every required check and still has
@@ -141,14 +153,31 @@ jobs:
           git commit -m "chore(docs): sync data [automated]"
           git push --force-with-lease="$BRANCH:$LEASE" origin "$BRANCH"
 
-          PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')
+          # `--base main --limit 1` and `.[0].number // empty`: a bare
+          # `--head "$BRANCH"` lookup does not filter by base and can return
+          # several numbers, which would put a multi-line value into $PR and make
+          # every later `gh pr` call nonsense.
+          find_pr() {
+            gh pr list --head "$BRANCH" --base main --state open --limit 1 \
+              --json number --jq '.[0].number // empty'
+          }
+
+          PR=$(find_pr)
           if [ -n "$PR" ]; then
             echo "Existing PR #$PR updated with the new sync commit."
           else
             gh pr create --base main --head "$BRANCH" \
               --title "chore(docs): sync generated data" \
               --body "Regenerated apps/docs/src/data/ (trigger: $TRIGGER). Opened by the Docs Data Sync workflow; contents come entirely from the apps/docs/scripts/sync-* scripts, so review the diff rather than hand-editing."
-            PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')
+            PR=$(find_pr)
+          fi
+
+          # Fail loudly rather than carrying an empty $PR into `gh pr merge`,
+          # where it would be swallowed by the `|| echo` below and reported as a
+          # successful sync that quietly enabled nothing.
+          if [ -z "$PR" ]; then
+            echo "::error::Pushed $BRANCH but could not resolve its PR number."
+            exit 1
           fi
 
           # Idempotent: re-asserting auto-merge on every run is harmless, and it
