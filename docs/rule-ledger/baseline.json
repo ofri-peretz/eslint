@@ -225,7 +225,6 @@
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-cookie-auth-tokens": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-credentials-in-query-params": [],
@@ -239,7 +238,6 @@
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-http-urls": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-incomplete-url-sanitization": [
@@ -252,11 +250,9 @@
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-insecure-websocket": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-jwt-in-storage": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-missing-cors-check": [
@@ -278,30 +274,24 @@
       "duplicate-coverage"
     ],
     "browser-security/no-sensitive-cookie-js": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-data-in-analytics": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-data-in-cache": [
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-indexeddb": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-localstorage": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-sessionstorage": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-tracking-without-consent": [
-      "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-unencrypted-transmission": [

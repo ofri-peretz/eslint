@@ -104,6 +104,12 @@ export interface RuleFacts {
   nameDebt: 'report' | 'suppress' | null;
   /** Sibling rules in the same plugin, for overlap checks. */
   siblings: { rule: string; cwe: string; selectors: string[] }[];
+  /**
+   * Contents of every `*partition*.test.ts` in the plugin. A committed matrix
+   * asserting exactly one report per shape IS `duplicate-coverage`'s own probe,
+   * so it settles that smell — see the check.
+   */
+  partitionMatrices: string[];
   selectors: string[];
   /** docs/rules/<rule>.md exists. */
   hasDocPage: boolean;
@@ -866,13 +872,31 @@ function placement(f: RuleFacts): Finding[] {
       f.cwe !== '—' &&
       s.selectors.some((sel) => f.selectors.includes(sel)),
   );
-  if (overlap.length) {
+  // A PARTITION MATRIX settles it, because it IS this check's own probe, run and
+  // committed. The smell is shape-based — same CWE, overlapping visitor keys —
+  // and a correctly partitioned family trips it BY CONSTRUCTION: the storage
+  // rules all carry CWE-922 and all visit CallExpression/AssignmentExpression,
+  // and they were measured at 0 double reports across 93 fixtures × 7 rules.
+  //
+  // Recording that as accepted debt would have been worse than the smell: a
+  // future reader would believe the partition does not exist, and the work that
+  // built it would look undone. Baselining buries a finding; baselining a
+  // REFUTED finding buries the refutation.
+  //
+  // So the escape is evidence, not annotation — a `*partition*.test.ts` in the
+  // family that names this rule and asserts exactly one report per shape. Unlike
+  // a doc tag it cannot go stale silently: if the partition breaks, the matrix
+  // goes red before this check has to say anything.
+  const settledByMatrix = f.partitionMatrices.some((m) => m.includes(f.rule));
+  if (overlap.length && !settledByMatrix) {
     out.push({
       id: 'duplicate-coverage',
       tier: 'smell',
       category: 'placement',
       detail: `same CWE and overlapping visitor keys as: ${overlap.map((o) => o.rule).join(', ')} — a single line may produce two findings.`,
-      probe: 'lint one vulnerable fixture with both rules on and count the reports.',
+      probe:
+        'lint one vulnerable fixture with both rules on and count the reports. If it is ' +
+        'exactly one, commit that as a *partition*.test.ts naming both rules and this clears.',
     });
   }
 
@@ -1023,5 +1047,17 @@ export function collectFacts(
     });
 
   const siblings = raw.map((r) => ({ rule: r.rule, cwe: r.cwe, selectors: r.selectors }));
-  return raw.map((r) => ({ ...r, siblings, ...extras(r.rule, r.cwe) }));
+  // Read once per plugin, not once per rule: a matrix lives in whichever rule's
+  // directory its author picked, and it names every rule in the family.
+  const partitionMatrices = fs
+    .readdirSync(rulesDir)
+    .flatMap((rule) => {
+      const dir = path.join(rulesDir, rule);
+      if (!fs.statSync(dir).isDirectory()) return [];
+      return fs
+        .readdirSync(dir)
+        .filter((f) => /partition.*\.test\.ts$/.test(f))
+        .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'));
+    });
+  return raw.map((r) => ({ ...r, siblings, partitionMatrices, ...extras(r.rule, r.cwe) }));
 }
