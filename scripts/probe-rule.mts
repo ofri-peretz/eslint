@@ -58,6 +58,14 @@ function parseArgs(argv: string[]): Probe {
   let options: unknown[] = [];
   let json = false;
 
+  // A rule spec is `plugin/rule` — lowercase, hyphenated, no spaces. Testing
+  // merely for a '/' silently ate any snippet containing one: every URL, path,
+  // regex, JSX closing tag and `//` comment. Those probes died with "give a code
+  // snippet" instead of running, and `--` did not rescue them because it skipped
+  // the token without switching modes.
+  const RULE_SPEC = /^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/;
+  let codeOnly = false;
+
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') json = true;
@@ -65,9 +73,9 @@ function parseArgs(argv: string[]): Probe {
     else if (a === '--file') {
       filename = path.resolve(argv[++i]);
       code = fs.readFileSync(filename, 'utf8');
-    } else if (a === '--') continue;
-    else if (a.includes('/') && code === null && !a.startsWith('-')) rules.push(a);
-    else if (!a.startsWith('-')) code = a;
+    } else if (a === '--') codeOnly = true;
+    else if (!codeOnly && code === null && RULE_SPEC.test(a)) rules.push(a);
+    else code = a;
   }
   if (!rules.length) throw new Error('give at least one <plugin>/<rule>');
   if (code === null) throw new Error('give a code snippet, or --file <path>');
