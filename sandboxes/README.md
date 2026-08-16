@@ -28,4 +28,4 @@ or dropping a sandbox is a change to one directory. It is enforced by
 
 | Provider | Overlay | Notes |
 |---|---|---|
-| Base44 | [`base44/`](./base44/) | Reads `.base44/environment.json` at the repo root — its platform requires that path. The overlay maps `BASE44_PUBLIC_HOST_SUFFIX` to `DEV_ALLOWED_ORIGINS`. |
+| Base44 | [`base44/`](./base44/) — [setup and verification](./base44/README.md) | Reads `.base44/environment.json` at the repo root; its platform requires that path. The overlay maps `BASE44_PUBLIC_HOST_SUFFIX` to `DEV_ALLOWED_ORIGINS`. |

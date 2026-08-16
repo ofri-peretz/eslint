@@ -525,7 +525,9 @@ replacing it:
 docker compose -f compose.dev.yml -f sandboxes/<provider>/compose.override.yml up
 ```
 
-See [`sandboxes/`](./sandboxes/). The rule is a location, not a prohibition: a
+See [`sandboxes/`](./sandboxes/) for the set we support and how each is run —
+today that is [Base44](./sandboxes/base44/README.md). The rule is a location, not
+a prohibition: a
 provider's name, env-var spelling and port scheme may appear **in its own
 overlay** and nowhere else — not in `apps/docs/next.config.mjs`, not in
 `compose.dev.yml`, not in the `Dockerfile`. Anything a sandbox needs from the app
