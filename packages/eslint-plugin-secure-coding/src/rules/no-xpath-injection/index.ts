@@ -44,6 +44,21 @@ type MessageIds =
   | 'strategySafeConstruction';
 
 export interface Options extends SecurityRuleOptions {
+  /**
+   * Also report CONSTANT XPath containing ordinary axis syntax (`//`, `text()`,
+   * `..`, `/*`). Default: `false`.
+   *
+   * These are not vulnerabilities. `//` is the descendant axis and appears in
+   * essentially every XPath ever written; a constant expression has nothing to
+   * inject into. With this on, `xpath.select("//users/user[@active=1]", doc)`
+   * reports CWE-643 at CVSS 9.8 — which is what the rule did unconditionally,
+   * at `error` in `recommended`.
+   *
+   * `xpathInjection`, the messageId that requires a dynamic expression, is
+   * unaffected and still reports.
+   */
+  reportDangerousConstructs?: boolean;
+
   /** XPath-related function names to check */
   xpathFunctions?: string[];
 
@@ -222,6 +237,15 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          reportDangerousConstructs: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Also report constant XPath containing ordinary axis syntax ' +
+              '(//, text(), .., /*). These are not vulnerabilities; a constant ' +
+              'expression has nothing to inject into. Off by default because ' +
+              'it reported essentially every XPath in existence at CVSS 9.8.',
+          },
           xpathFunctions: {
             type: 'array',
             items: { type: 'string' },
@@ -305,6 +329,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
+      reportDangerousConstructs = false,
       xpathFunctions = [
         'evaluate',
         'selectSingleNode',
@@ -388,14 +413,29 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
      */
     function isXpathSinkCall(call: TSESTree.CallExpression): boolean {
       const callee = call.callee;
-      const name =
-        callee.type === AST_NODE_TYPES.Identifier
-          ? callee.name
-          : callee.type === AST_NODE_TYPES.MemberExpression &&
-              callee.property.type === AST_NODE_TYPES.Identifier
-            ? callee.property.name
-            : null;
-      return name !== null && xpathFunctions.includes(name);
+      // Plain statements rather than a nested ternary.
+      //
+      // As a `? :` chain, istanbul attributed the whole nested alternate to one
+      // cond-expr and reported it 0/44 taken — yet deleting that arm broke 17
+      // tests, so it was plainly being executed. The counter was misleading, and
+      // a coverage number nobody can act on is worse than none.
+      //
+      // Also drops the old `name !== null &&` guard: `xpathFunctions.includes('')`
+      // is false for any configured list, so it was a condition no input could
+      // exercise.
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        return xpathFunctions.includes(callee.name);
+      }
+      // Returned as one expression rather than an `if` plus a trailing
+      // `return false`. Every caller arrives with either an Identifier or a
+      // MemberExpression callee, so that trailing statement was unreachable —
+      // istanbul flagged it, and the 100% gate would otherwise have demanded a
+      // test for a case the code cannot receive.
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
+        xpathFunctions.includes(callee.property.name)
+      );
     }
 
     function reachesXpathSink(node: TSESTree.Node): boolean {
@@ -494,6 +534,20 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     const containsDangerousXpath = (xpathText: string): boolean => {
+      // OFF BY DEFAULT — see `reportDangerousConstructs`.
+      //
+      // Every pattern below is ordinary XPath. `//` is the descendant axis and
+      // appears in essentially every XPath ever written; `text()` is how you
+      // read a node's content. Probed on the shipped rule,
+      // `xpath.select("//users/user[@active=1]", doc)` — a constant with no
+      // interpolation anywhere — reported CWE-643 at CVSS 9.8.
+      //
+      // This rule's own header already states the principle: "A constant string
+      // has nothing to inject into." The `xpathInjection` messageId, which
+      // requires a dynamic expression, is the one that carries the finding, and
+      // it still fires on the interpolated case.
+      if (!reportDangerousConstructs) return false;
+
       // Dangerous XPath patterns that allow traversal or injection
       const dangerousPatterns = [
         /\.\./, // Parent directory traversal

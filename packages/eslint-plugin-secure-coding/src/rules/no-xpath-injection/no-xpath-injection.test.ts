@@ -35,6 +35,7 @@ describe('no-xpath-injection', () => {
         // The safe-annotation escape hatch, now reached only when the string
         // does flow to an evaluator.
         {
+          options: [{ reportDangerousConstructs: true }],
           code: '/** @xpath-safe */\nconst q = `//users/..`;\ndocument.evaluate(q, doc);',
         },
         // reachesXpathSink: parent is neither a call, a declarator, nor a
@@ -103,7 +104,7 @@ describe('no-xpath-injection', () => {
         {
           // Template quasis are string content too — same expression, backticks.
           code: "function q(req) { const x = `//user[name='` + req.query.n + `']`; doc.evaluate(x); }",
-          errors: 2,
+          errors: 1,
         },
       ],
     });
@@ -151,6 +152,11 @@ describe('no-xpath-injection', () => {
       invalid: [
         {
           code: 'const xpath = "//users/user/..";',
+          // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
+          // strings, and `//` is the descendant axis, present in essentially
+          // every XPath. Reporting them at CVSS 9.8 by default is what made
+          // this rule fire on correct code.
+          options: [{ reportDangerousConstructs: true }],
           errors: [
             {
               messageId: 'dangerousXpathExpression',
@@ -159,6 +165,11 @@ describe('no-xpath-injection', () => {
         },
         {
           code: 'const query = "/root/*";',
+          // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
+          // strings, and `//` is the descendant axis, present in essentially
+          // every XPath. Reporting them at CVSS 9.8 by default is what made
+          // this rule fire on correct code.
+          options: [{ reportDangerousConstructs: true }],
           errors: [
             {
               messageId: 'dangerousXpathExpression',
@@ -167,6 +178,11 @@ describe('no-xpath-injection', () => {
         },
         {
           code: 'const xpathWithWildcard = "//user[*]";',
+          // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
+          // strings, and `//` is the descendant axis, present in essentially
+          // every XPath. Reporting them at CVSS 9.8 by default is what made
+          // this rule fire on correct code.
+          options: [{ reportDangerousConstructs: true }],
           errors: [
             {
               messageId: 'dangerousXpathExpression',
@@ -210,6 +226,11 @@ describe('no-xpath-injection', () => {
         invalid: [
           {
             code: 'const userXPath = "//users/user/..";',
+            // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
+            // strings, and `//` is the descendant axis, present in essentially
+            // every XPath. Reporting them at CVSS 9.8 by default is what made
+            // this rule fire on correct code.
+            options: [{ reportDangerousConstructs: true }],
             errors: [
               {
                 messageId: 'dangerousXpathExpression',
@@ -239,6 +260,7 @@ describe('no-xpath-injection', () => {
       valid: [
         // Safe annotations
         {
+          options: [{ reportDangerousConstructs: true }],
           code: `
             /** @xpath-safe */
             const xpath = \`//user[@id="\${userId}"]\`;
@@ -305,6 +327,7 @@ describe('no-xpath-injection', () => {
       valid: [],
       invalid: [
         {
+          options: [{ reportDangerousConstructs: true }],
           code: `
             function searchUsers(searchTerm) {
               // DANGEROUS: Direct interpolation
@@ -342,6 +365,7 @@ describe('no-xpath-injection', () => {
           ],
         },
         {
+          options: [{ reportDangerousConstructs: true }],
           code: `
             // XPath injection with attribute traversal
             const maliciousQuery = req.params.id; // Could be "../../../etc/passwd"
@@ -400,6 +424,7 @@ describe('no-xpath-injection', () => {
         valid: [
           // Helper function with safe annotation
           {
+            options: [{ reportDangerousConstructs: true }],
             code: `
             /** @xpath-safe */
             function safeQuery() {
@@ -413,7 +438,7 @@ describe('no-xpath-injection', () => {
           // Direct function call (not method) - Invalid because // is dangerous pattern
           {
             code: 'select("//user")',
-            options: [{ xpathFunctions: ['select'] }],
+            options: [{ xpathFunctions: ['select'], reportDangerousConstructs: true }],
             errors: [{ messageId: 'dangerousXpathExpression' }],
           },
           // Function parameter as input
@@ -460,6 +485,7 @@ describe('no-xpath-injection', () => {
         },
         // Annotated statement
         {
+          options: [{ reportDangerousConstructs: true }],
           code: `
             /** @xpath-safe */
             const xpath = "//user[@name='" + userInput + "']";
@@ -489,14 +515,17 @@ describe('no-xpath-injection', () => {
         // id 22: isXpathInputValidated true arm — validation function wraps the template
         { code: 'validateXPath(`/users/user[@id="${userInput}"]`)' },
         // id 31: XPath call with zero args → early return
-        { code: 'document.evaluate()' },
+        { options: [{ reportDangerousConstructs: true }],
+          code: 'document.evaluate()' },
         // id 35: dangerous literal XPath but @xpath-safe annotation
         {
+          options: [{ reportDangerousConstructs: true }],
           code: `/** @xpath-safe */
 document.evaluate("//users/..", document);`,
         },
         // id 42: untrusted identifier XPath but @xpath-safe annotation
         {
+          options: [{ reportDangerousConstructs: true }],
           code: `/** @xpath-safe */
 document.evaluate(userQuery, document);`,
         },
@@ -507,9 +536,11 @@ document.evaluate(userQuery, document);`,
         // id 49: CSS selector template literal → skip early return
         { code: 'const t = `[data-id="foo"]`' },
         // id 51+52: query-string template literal → skip early return
-        { code: 'const t = `?id=123`' },
+        { options: [{ reportDangerousConstructs: true }],
+          code: 'const t = `?id=123`' },
         // id 62 true arm: dangerous XPath template but @xpath-safe annotation
         {
+          options: [{ reportDangerousConstructs: true }],
           code: `/** @xpath-safe */
 const xpath = \`//users/..\``,
         },
@@ -521,22 +552,38 @@ const xpath = \`//users/..\``,
       invalid: [
         // id 11 arm 1: containsXpathInterpolation second arm ('..+..' pattern)
         {
+          options: [{ reportDangerousConstructs: true }],
           code: "const xpath = `//node[@id='a+b']`; document.evaluate(xpath, doc);",
           errors: [{ messageId: 'dangerousXpathExpression' }],
         },
         // id 11 arm 2: containsXpathInterpolation third arm ("..+.." pattern)
         {
           code: 'const xpath = `//node[@id="a+b"]`; document.evaluate(xpath, doc);',
+          // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
+          // strings, and `//` is the descendant axis, present in essentially
+          // every XPath. Reporting them at CVSS 9.8 by default is what made
+          // this rule fire on correct code.
+          options: [{ reportDangerousConstructs: true }],
           errors: [{ messageId: 'dangerousXpathExpression' }],
         },
         // id 55 false arm + id 62 false arm: no interpolation, dangerous XPath template
         {
           code: 'const xpath = `//users/..`; document.evaluate(xpath, doc);',
+          // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
+          // strings, and `//` is the descendant axis, present in essentially
+          // every XPath. Reporting them at CVSS 9.8 by default is what made
+          // this rule fire on correct code.
+          options: [{ reportDangerousConstructs: true }],
           errors: [{ messageId: 'dangerousXpathExpression' }],
         },
         // isXpathSinkCall via a bare Identifier callee.
         {
           code: 'select(`//users/..`);',
+          // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
+          // strings, and `//` is the descendant axis, present in essentially
+          // every XPath. Reporting them at CVSS 9.8 by default is what made
+          // this rule fire on correct code.
+          options: [{ reportDangerousConstructs: true }],
           errors: [{ messageId: 'dangerousXpathExpression' }],
         },
         // reachesXpathSink walks out through a concatenation.
@@ -547,7 +594,6 @@ const xpath = \`//users/..\``,
           code: 'document.evaluate(`//users/..` + suffix, doc);',
           errors: [
             { messageId: 'xpathInjection' },
-            { messageId: 'dangerousXpathExpression' },
           ],
         },
         // Moved from `valid` (was "id 21: destructured param"). A destructured parameter
@@ -569,7 +615,12 @@ const xpath = \`//users/..\``,
   // Layer 2 — mock context for node.loc?.start.line ?? 0 fallback
   describe('Layer 2 - mock context', () => {
     it('CallExpression dangerousXpathExpression falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noXpathInjection);
+      const { listeners, reports } = createWithMockContext(noXpathInjection, {
+        // `dangerousXpathExpression` is opt-in now — a CONSTANT XPath containing
+        // `//` is ordinary syntax, not a vulnerability. These tests exercise the
+        // loc-fallback inside that report path, so they must enable it.
+        options: [{ reportDangerousConstructs: true }],
+      });
       const callExpression = listeners.CallExpression as (n: unknown) => void;
 
       callExpression({
@@ -625,6 +676,10 @@ const xpath = \`//users/..\``,
     it('TemplateLiteral dangerousXpathExpression falls back to line 0 when loc is missing', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         sourceText: '`//users/..`',
+        // Opt-in: a constant XPath containing `//` is ordinary syntax. This
+        // test covers the loc-fallback inside that report path, so it enables
+        // the path explicitly.
+        options: [{ reportDangerousConstructs: true }],
       });
       const templateLiteral = listeners.TemplateLiteral as (n: unknown) => void;
 
@@ -653,6 +708,10 @@ const xpath = \`//users/..\``,
     it('TemplateLiteral with no parent reaches no sink and is not reported', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         sourceText: '`//users/..`',
+        // Opt-in: a constant XPath containing `//` is ordinary syntax. This
+        // test covers the loc-fallback inside that report path, so it enables
+        // the path explicitly.
+        options: [{ reportDangerousConstructs: true }],
       });
       const templateLiteral = listeners.TemplateLiteral as (n: unknown) => void;
 
@@ -669,6 +728,10 @@ const xpath = \`//users/..\``,
     it('TemplateLiteral declared but unresolvable in scope is not reported', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection, {
         sourceText: '`//users/..`',
+        // Opt-in: a constant XPath containing `//` is ordinary syntax. This
+        // test covers the loc-fallback inside that report path, so it enables
+        // the path explicitly.
+        options: [{ reportDangerousConstructs: true }],
       });
       const templateLiteral = listeners.TemplateLiteral as (n: unknown) => void;
 
@@ -707,7 +770,12 @@ const xpath = \`//users/..\``,
     });
 
     it('VariableDeclarator dangerousXpathExpression falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noXpathInjection);
+      const { listeners, reports } = createWithMockContext(noXpathInjection, {
+        // `dangerousXpathExpression` is opt-in now — a CONSTANT XPath containing
+        // `//` is ordinary syntax, not a vulnerability. These tests exercise the
+        // loc-fallback inside that report path, so they must enable it.
+        options: [{ reportDangerousConstructs: true }],
+      });
       const variableDeclarator = listeners.VariableDeclarator as (
         n: unknown,
       ) => void;
@@ -817,6 +885,7 @@ describe('corpus regression — URIs, cache keys and file paths are not XPath', 
       },
       {
         name: 'a parent axis inside a real XPath literal still reports',
+        options: [{ reportDangerousConstructs: true }],
         code: `const xpathQuery = "//users/user/..";`,
         errors: [{ messageId: 'dangerousXpathExpression' }],
       },
@@ -928,4 +997,100 @@ describe('no-xpath-injection: constants and destinations', () => {
       },
     ],
   });
+});
+
+/**
+ * REGRESSION LOCK — a constant XPath is not a vulnerability.
+ *
+ * `containsDangerousXpath` swept for `//`, `text()`, `..` and `/*` in the
+ * PRINTED text. Every one of those is ordinary XPath — `//` is the descendant
+ * axis and appears in essentially every XPath ever written. Probed on the
+ * shipped rule at `error` in `recommended`:
+ *
+ *   xpath.select("//users/user[@active=1]", doc)  ->  CWE-643, CVSS 9.8
+ *
+ * The rule's own header already stated the principle it was violating:
+ * "A constant string has nothing to inject into."
+ *
+ * `xpathInjection`, which requires a dynamic expression, is untouched and still
+ * reports — including through one variable hop. The valid case below FAILS on
+ * the pre-fix rule.
+ */
+ruleTester.run('no-xpath-injection-constant-is-not-a-finding', noXpathInjection, {
+  valid: [
+    'xpath.select("//users/user[@active=1]", doc);',
+    'const q = "//catalog/book/title/text()"; doc.evaluate(q);',
+  ],
+  invalid: [
+    {
+      code: 'xpath.select("//users/user[@name=" + req.query.n + "]", doc);',
+      errors: [{ messageId: 'xpathInjection' }],
+    },
+    {
+      // Through one binding hop — the shape a real handler writes.
+      code: 'function q(req) { const x = "//user[name=" + req.query.n + "]"; doc.evaluate(x); }',
+      errors: [{ messageId: 'xpathInjection' }],
+    },
+    {
+      // The old behaviour, restored explicitly by a consumer who wants it.
+      code: 'xpath.select("//users/user[@active=1]", doc);',
+      options: [{ reportDangerousConstructs: true }],
+      errors: [{ messageId: 'dangerousXpathExpression' }],
+    },
+  ],
+});
+
+/**
+ * Coverage for `reachesXpathSink`'s final `return false`.
+ *
+ * Reached when a constant XPath string sits in a position that is neither a
+ * sink argument, nor a declarator whose binding reaches a sink, nor a
+ * concatenation/template to keep walking. It went uncovered once
+ * `dangerousXpathExpression` became opt-in, because the fixtures that used to
+ * reach it did so without ever enabling that path.
+ */
+ruleTester.run('no-xpath-injection-sink-walk-terminates', noXpathInjection, {
+  valid: [
+    {
+      // Declared, never passed to an evaluator: nothing to reach.
+      code: 'const q = "//users/user/.."; console.log(q);',
+      options: [{ reportDangerousConstructs: true }],
+    },
+    {
+      // In an object property — not a call argument, not a declarator init.
+      code: 'const cfg = { selector: "//users/.." }; ship(cfg);',
+      options: [{ reportDangerousConstructs: true }],
+    },
+    {
+      // Returned directly: the walk hits a ReturnStatement, which is none of
+      // the handled parent types, so `reachesXpathSink` falls through.
+      code: 'function sel() { return `//users/..`; }',
+      options: [{ reportDangerousConstructs: true }],
+    },
+    {
+      // Declared then reassigned — the binding exists but no reference is a
+      // sink argument.
+      code: 'let q = `//users/..`; q = other; use(q);',
+      options: [{ reportDangerousConstructs: true }],
+    },
+    {
+      // Computed member callee: `isXpathSinkCall` cannot name it, so the
+      // `callee.property.type === Identifier` arm falls to null. Covers the
+      // last branch of that ternary.
+      code: 'const q = "//users/.."; api["evaluate"](q);',
+      options: [{ reportDangerousConstructs: true }],
+    },
+    {
+      // Computed callee taking the constant DIRECTLY, so isXpathSinkCall is
+      // reached with a MemberExpression whose property is not an Identifier.
+      code: 'api["evaluate"]("//users/..");',
+      options: [{ reportDangerousConstructs: true }],
+    },
+    {
+      // Callee that is neither Identifier nor MemberExpression at all.
+      code: '(getEvaluator())("//users/..");',
+      options: [{ reportDangerousConstructs: true }],
+    },
+  ],
+  invalid: [],
 });
