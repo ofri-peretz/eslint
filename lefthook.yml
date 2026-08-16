@@ -26,6 +26,21 @@ pre-commit:
       # files or the manifest change. See scripts/ilb-plugin-scope-audit.ts.
       glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,.agent/plugin-rule-manifest.json}'
       run: npm run --silent ilb:scope-audit
+    rule-audit:
+      # Ratchet over the per-rule defect taxonomy (scripts/rule-audit.ts): a rule
+      # may not acquire a check it did not already carry, and a NEW rule must be
+      # clean. Baseline: docs/rule-ledger/baseline.json.
+      #
+      # Same glob as scope-audit, for the same reason — a commit with no rule
+      # source in it cannot change a rule's findings, so it pays nothing. When
+      # the glob does match, --changed audits only the rules in the diff
+      # (~80ms) rather than all 121 (~340ms); the rest is tsx startup.
+      #
+      # This is the FAST path and it is deliberately incomplete: editing a
+      # shared util can change a rule this glob never sees. CI runs the full
+      # gate, which is what actually holds the line.
+      glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,packages/eslint-plugin-*/src/utils/**/*.ts}'
+      run: npm run --silent rule-audit:gate -- --changed
     tests-affected:
       run: |
         if git rev-parse --verify --quiet origin/main >/dev/null; then

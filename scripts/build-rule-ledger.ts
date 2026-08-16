@@ -130,7 +130,13 @@ function nameDebtIndex(): Map<string, 'report' | 'suppress'> {
   return out;
 }
 
-export function buildLedger(plugins: string[]): RuleEntry[] {
+/**
+ * @param only - when given, audit ONLY these `plugin/rule` keys. The pre-commit
+ *   gate passes the diff's rules here; without it the "fast path" re-audited all
+ *   121 rules and merely filtered the comparison, making --changed SLOWER than a
+ *   full run.
+ */
+export function buildLedger(plugins: string[], only?: Set<string>): RuleEntry[] {
   const debt = nameDebtIndex();
   const entries: RuleEntry[] = [];
 
@@ -152,6 +158,7 @@ export function buildLedger(plugins: string[]): RuleEntry[] {
     });
 
     for (const f of facts) {
+      if (only && !only.has(`${plugin}/${f.rule}`)) continue;
       const findings = auditRule(f);
       const meta = readMeta(f.source);
       entries.push({
