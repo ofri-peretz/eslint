@@ -115,3 +115,65 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
     },
   ],
 });
+
+// ── Adversarial-corpus regression locks ───────────────────────────────────
+//
+// Every case here FAILS on the pre-corpus rule. A second wave of fixtures
+// aimed at a rule that had just scored 100% took it to 76.9% recall and found
+// three defects: a readable fake validator, React Navigation's own
+// array-indexed state shape, and a blanket blindness to optional chaining.
+ruleTester.run('no-unvalidated-deeplinks — adversarial', noUnvalidatedDeeplinks, {
+  valid: [
+    // A validator whose source we do NOT have still defers. The fix is to stop
+    // trusting names, not to stop trusting everything.
+    `import { toAllowedDeepLink } from './deeplinks';
+     Linking.addEventListener('url', (event) => { Linking.openURL(toAllowedDeepLink(event.url)); });`,
+    // `routerParams` / `paramsHistory` are not `route.params` — segment
+    // membership, not substring.
+    `Linking.openURL(config.routerParams.help);`,
+    // Optional chaining on a hardcoded link stays quiet.
+    `const SUPPORT = 'https://help.acme-corp.io'; Linking?.openURL(SUPPORT);`,
+  ],
+  invalid: [
+    // A LOCAL identity function wearing a validator's name.
+    {
+      code: `const toAllowedDeepLink = (u) => u;
+             Linking.addEventListener('url', (event) => { Linking.openURL(toAllowedDeepLink(event.url)); });`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // React Navigation's navigation state reaches the deep-link params through
+    // an ARRAY INDEX. The old member walk aborted at the first `[…]`.
+    {
+      code: `function resume(state) { const current = state.routes[state.index]; Linking.openURL(current.params.next); }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // Optional chaining wraps the expression in a ChainExpression; not
+    // unwrapping it was a blanket false negative.
+    {
+      code: `Linking.addEventListener('url', (event) => { Linking?.openURL(event?.url); });`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // FALSE-NEGATIVE DIRECTION: the same defect with the parameter renamed.
+    // The verdict comes from the enclosing call site, not the spelling.
+    {
+      code: `Linking.addEventListener('url', (q) => { Linking.openURL(q.url); });`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});
+
+// ── memberPath refusals ───────────────────────────────────────────────────
+ruleTester.run('no-unvalidated-deeplinks — refusals', noUnvalidatedDeeplinks, {
+  valid: [
+    // A binding chain deeper than the resolution budget is refused rather than
+    // walked. Each hop resolves one initialiser; five is already generous for
+    // a member path.
+    `const a = s.routes[0]; const b = a; const c = b; const d = c; const e = d;
+     const f = e; Linking.openURL(f.params.next);`,
+    // A chain rooted in something that is not an identifier.
+    "Linking.openURL(getState().route.params.next);",
+    // `params` without a `route`/`routes` segment before it.
+    'Linking.openURL(config.params.helpUrl);',
+  ],
+  invalid: [],
+});

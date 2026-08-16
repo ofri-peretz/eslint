@@ -6,71 +6,61 @@
 
 /**
  * ESLint Rule: no-sensitive-cookie-js
- * Detects storing sensitive data (tokens, passwords) in cookies via JavaScript
+ * Detects storing non-bearer secrets (passwords, keys, regulated identifiers)
+ * in cookies via JavaScript
  * CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag
+ *
+ * ## Rule partition
+ *
+ * **Owns:** a `document.cookie` write whose **cookie NAME** names a
+ * **non-bearer** secret by whole word — `password`, `secret`, `api key`,
+ * `private key`, `ssn`, `credit card`, `cvv`, `seed phrase`, …
+ *
+ * **Defers to:**
+ * - `no-cookie-auth-tokens` — bearer credentials (`token`, `jwt`, `bearer`,
+ *   `auth`, `session`, `sid`, `credential`). Structural: the bearer check runs
+ *   first and returns, before the user's `sensitivePatterns` are consulted, so
+ *   configuring `'token'` here cannot resurrect the double report.
+ *   `document.cookie = 'access_token=abc; Secure; SameSite=Strict'` used to
+ *   produce two reports at CVSS 8.5 and 8.1 for one defect; it now produces one.
+ * - `require-cookie-secure-attrs` — complementary (missing attribute, CWE-614/352).
+ *
+ * ## What was wrong before
+ *
+ * `extractCookieKey` was applied to `value.left` of a `BinaryExpression`, which
+ * is itself a `BinaryExpression` as soon as there are three terms — so the most
+ * common real spelling was a false negative:
+ *
+ * ```js
+ * document.cookie = 'api_key=' + key + '; Path=/';   // silent
+ * ```
  *
  * @see https://cwe.mitre.org/data/definitions/1004.html
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
 import {
-  AST_NODE_TYPES,
-  createRule,
-  formatLLMMessage,
-  MessageIcons,
-} from '@interlace/eslint-devkit';
+  cookieNameFrom,
+  isCookieDeletion,
+  isDocumentCookieTarget,
+  namesBearerCredential,
+  namesNonBearerSecret,
+  NON_BEARER_SECRET_TERMS,
+  staticCookieText,
+} from '../../utils/sensitive-value-evidence';
 
 type MessageIds = 'sensitiveCookieJs';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Sensitive key patterns to detect. Default includes common token/password patterns */
+  /** Whole-word terms to treat as sensitive. REPLACES the default vocabulary. */
   sensitivePatterns?: string[];
 }
 
 type RuleOptions = [Options?];
-
-const DEFAULT_SENSITIVE_PATTERNS = [
-  'token',
-  'jwt',
-  'access_token',
-  'accessToken',
-  'refresh_token',
-  'refreshToken',
-  'id_token',
-  'idToken',
-  'auth',
-  'session',
-  'sessionId',
-  'session_id',
-  'password',
-  'passwd',
-  'secret',
-  'api_key',
-  'apiKey',
-  'private_key',
-  'privateKey',
-  'credential',
-  'bearer',
-];
-
-/**
- * Check if cookie key matches sensitive patterns
- */
-function isSensitiveKey(key: string, patterns: string[]): boolean {
-  const lowerKey = key.toLowerCase();
-  return patterns.some((pattern) => lowerKey.includes(pattern.toLowerCase()));
-}
-
-/**
- * Parse cookie string to extract key
- * e.g., "token=abc123; Secure" -> "token"
- */
-function extractCookieKey(cookieString: string): string | null {
-  const match = cookieString.match(/^([^=]+)=/);
-  return match ? match[1].trim() : null;
-}
 
 export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-cookie-js',
@@ -79,7 +69,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-cookie-js.md',
       description:
-        'Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript',
+        'Disallow storing sensitive data (passwords, keys, regulated identifiers) in cookies via JavaScript',
       cwe: 'CWE-1004',
       cvss: 8.1,
     },
@@ -93,11 +83,10 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
         description:
           'Setting "{{key}}" cookie via document.cookie makes it accessible to XSS attacks. Sensitive cookies should be set server-side with HttpOnly flag.',
         severity: 'HIGH',
-        fix: 'Set authentication cookies server-side with HttpOnly, Secure, and SameSite flags.',
+        fix: 'Set the value server-side with HttpOnly, Secure and SameSite flags — or do not put it in a cookie at all.',
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
       }),
-
     },
     schema: [
       {
@@ -110,7 +99,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
           sensitivePatterns: {
             type: 'array',
             items: { type: 'string' },
-            default: DEFAULT_SENSITIVE_PATTERNS,
+            default: [...NON_BEARER_SECRET_TERMS],
           },
         },
         additionalProperties: false,
@@ -120,20 +109,15 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInTests: true,
-      sensitivePatterns: DEFAULT_SENSITIVE_PATTERNS,
+      sensitivePatterns: [...NON_BEARER_SECRET_TERMS],
     },
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const {
-      allowInTests = true,
-      sensitivePatterns = DEFAULT_SENSITIVE_PATTERNS,
-    } = options as Options;
-
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const { allowInTests = true, sensitivePatterns = [...NON_BEARER_SECRET_TERMS] } = options as Options;
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -141,69 +125,24 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check for document.cookie = "..."
-        if (node.left.type !== AST_NODE_TYPES.MemberExpression) {
-          return;
-        }
+        if (!isDocumentCookieTarget(node.left)) return;
 
-        const obj = node.left.object;
-        const prop = node.left.property;
+        const text = staticCookieText(node.right, context.sourceCode);
+        // `document.cookie = 'api_key=; Max-Age=0'` is a clear-down, not a leak.
+        if (text === null || isCookieDeletion(text)) return;
 
-        // Check if it's document.cookie
-        if (
-          obj.type !== AST_NODE_TYPES.Identifier ||
-          obj.name !== 'document'
-        ) {
-          return;
-        }
+        const name = cookieNameFrom(text);
+        if (name === null) return;
 
-        if (
-          prop.type !== AST_NODE_TYPES.Identifier ||
-          prop.name !== 'cookie'
-        ) {
-          return;
-        }
+        // Structural deferral to no-cookie-auth-tokens, before user patterns.
+        if (namesBearerCredential(name)) return;
+        if (!namesNonBearerSecret(name, sensitivePatterns)) return;
 
-        // Check the assigned value
-        const value = node.right;
-        let cookieKey: string | null = null;
-
-        // String literal: document.cookie = "token=abc"
-        if (
-          value.type === AST_NODE_TYPES.Literal &&
-          typeof value.value === 'string'
-        ) {
-          cookieKey = extractCookieKey(value.value);
-        }
-
-        // Template literal: document.cookie = `token=${value}`
-        if (value.type === AST_NODE_TYPES.TemplateLiteral) {
-          const firstQuasi = value.quasis[0];
-          if (firstQuasi) {
-            cookieKey = extractCookieKey(firstQuasi.value.raw);
-          }
-        }
-
-        // Binary expression: document.cookie = "token=" + value
-        if (value.type === AST_NODE_TYPES.BinaryExpression) {
-          const left = value.left;
-          if (
-            left.type === AST_NODE_TYPES.Literal &&
-            typeof left.value === 'string'
-          ) {
-            cookieKey = extractCookieKey(left.value);
-          }
-        }
-
-        if (cookieKey && isSensitiveKey(cookieKey, sensitivePatterns)) {
-          context.report({
-            node,
-            messageId: 'sensitiveCookieJs',
-            data: {
-              key: cookieKey,
-            },
-          });
-        }
+        context.report({
+          node,
+          messageId: 'sensitiveCookieJs',
+          data: { key: name },
+        });
       },
     };
   },

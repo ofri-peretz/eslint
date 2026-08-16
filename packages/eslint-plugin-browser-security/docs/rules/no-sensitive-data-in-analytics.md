@@ -66,9 +66,24 @@ analytics.track('Profile Update', {
 analytics.track('page_view', { page: '/home' })
 ```
 
-## ⚙️ Configuration
+## ⚙️ Options
 
-This rule has no configuration options.
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sensitiveFields` | `string[]` | `["email","ssn","credit card","card number","creditcard","cardnumber","password","passwd","phone","address","dob","birthdate","passport","national id"]` | Field names treated as PII, matched whole-word against the payload key segments |
+
+`sensitiveFields` **replaces** the built-in vocabulary — restate the defaults you
+still want. Entries are matched as whole camel/snake/kebab segments, never as
+substrings, so a two-word entry matches all three spellings of a compound key:
+
+```jsonc
+{
+  "browser-security/no-sensitive-data-in-analytics": ["error", {
+    // `loyaltyTier`, `loyalty_tier` and `LOYALTY-TIER` all match.
+    "sensitiveFields": ["email", "ssn", "password", "loyalty tier"]
+  }]
+}
+```
 
 ## Known False Negatives
 

@@ -131,29 +131,44 @@ ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
 });
 
 /**
- * `analyticsMethods` REPLACES the sink list. The rule's own docs listed
- * non-standard analytics clients as a known false negative whose only
- * mitigation was manual review; this is that mitigation.
+ * `analyticsMethods` EXTENDS the closed vendor surface in
+ * `utils/analytics-sinks.ts`; it no longer REPLACES it.
+ *
+ * Two things changed and both are recall. `analytics.screen` is a real Segment
+ * method that sends a real screen view, so a test asserting it VALID was
+ * pinning a false negative — screen views are tracking. And the replace
+ * semantics let a config silence `analytics.track`, which is the one call this
+ * rule exists for; a consumer who wants that should disable the rule, not
+ * quietly blind it. What the option is genuinely for is a team's own wrapper
+ * verbs, and that still works.
  */
 ruleTester.run('option: analyticsMethods', noTrackingWithoutConsent, {
   valid: [
-    // `screen` is not a default sink.
-    { code: "analytics.screen('Checkout')" },
-    // …and `track` stops being one when the list is replaced.
+    // A method no vendor ships and nobody configured.
+    { code: "analytics.emit('Checkout')" },
+    // …and one that IS configured, inside a consent gate.
     {
-      code: "analytics.track('event')",
-      options: [{ analyticsMethods: ['screen'] }],
+      code: "if (hasConsent) { analytics.emit('Checkout') }",
+      options: [{ analyticsMethods: ['emit'] }],
     },
   ],
   invalid: [
-    // Same two snippets, verdicts swapped.
+    // A custom wrapper verb, named by the consumer.
     {
-      code: "analytics.screen('Checkout')",
-      options: [{ analyticsMethods: ['screen'] }],
+      code: "analytics.emit('Checkout')",
+      options: [{ analyticsMethods: ['emit'] }],
       errors: [{ messageId: 'violationDetected' }],
     },
+    // FN lock: `screen` is a real Segment method and is now a default sink.
+    // The old suite asserted this exact snippet was acceptable.
+    {
+      code: "analytics.screen('Checkout')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // A config cannot switch off the call the rule exists for.
     {
       code: "analytics.track('event')",
+      options: [{ analyticsMethods: ['emit'] }],
       errors: [{ messageId: 'violationDetected' }],
     },
   ],
@@ -181,6 +196,53 @@ ruleTester.run('option: consentIdentifiers', noTrackingWithoutConsent, {
     {
       code: "if (hasConsent) { analytics.track('event') }",
       options: [{ consentIdentifiers: ['privacyOk'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});
+
+// ── Adversarial-corpus regression locks ───────────────────────────────────
+//
+// The corpus took this rule from 100% to 75% recall by writing the SAME
+// ungated tracking call through vendors it could not see. The sink surface is
+// now shared with `no-sensitive-data-in-analytics` — a complementary pair with
+// different sink lists is just two rules with different blind spots.
+ruleTester.run('no-tracking-without-consent — adversarial', noTrackingWithoutConsent, {
+  valid: [
+    // The gate reached through a call, and through a nested property — the two
+    // shapes every consent-management platform actually produces.
+    "if (hasAnalyticsConsent()) { analytics.track('Signup'); }",
+    "if (preferences.gdpr.analytics) { gtag('event', 'page_view'); }",
+    // A shipment tracker is not an analytics client.
+    "shipment.track('parcel-993');",
+    // The gated GTM push.
+    "if (cookiesAccepted) { window.dataLayer.push({ event: 'page_view' }); }",
+  ],
+  invalid: [
+    // `window.analytics` is the spelling Segment's own snippet installs.
+    {
+      code: "window.analytics.track('Signup Completed');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // GTM's transport is `dataLayer.push`, which is neither `analytics.*` nor
+    // `gtag` — the rule's docs called this a known FN with no mitigation.
+    {
+      code: "window.dataLayer.push({ event: 'page_view', page: location.pathname });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // The consent flag is READ and never branched on.
+    {
+      code: "const hasConsent = readConsentCookie(); log(hasConsent); analytics.track('Signup');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // The early-return guard with its sense backwards.
+    {
+      code: "function boot() { if (gdprConsent) return; analytics.track('Booted'); }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // FALSE-NEGATIVE DIRECTION: innocuous identifiers, same ungated call.
+    {
+      code: "function z9() { analytics.track('e7'); } z9();",
       errors: [{ messageId: 'violationDetected' }],
     },
   ],

@@ -349,3 +349,190 @@ describe('no-missing-csrf-protection', () => {
     });
   });
 });
+
+/**
+ * Regression lock — CSRF protection is recognised by its MODULE, not by its
+ * spelling.
+ *
+ * The check was `sourceCode.getText(arg).toLowerCase().includes(pattern)` over
+ * a word list, and it was wrong in both directions at once:
+ *
+ * - a logger configured to REDACT the token header matched, and switched the
+ *   rule off for every route in the file;
+ * - a middleware named `csrfMetrics` that only increments a counter matched,
+ *   and suppressed a real finding;
+ * - the CORRECT remediation with the import renamed did NOT match, so the rule
+ *   reported the file that had applied its own fix.
+ *
+ * Every case below fails on the unfixed rule.
+ */
+ruleTester.run('lock: CSRF middleware resolves to a module', noMissingCsrfProtection, {
+  valid: [
+    // The remediation with the import renamed — only the local name differs.
+    {
+      code: `const express = require('express'); const guard = require('csurf'); const app = express(); const protect = guard({ cookie: true }); app.post('/transfer', protect, handler);`,
+    },
+    // Mounted globally under a renamed binding.
+    {
+      code: `const express = require('express'); const shield = require('csurf'); const app = express(); app.use(shield({ cookie: true })); app.post('/transfer', handler);`,
+    },
+    // ESM, default import.
+    {
+      code: `import express from 'express'; import csurf from 'csurf'; const app = express(); app.post('/x', csurf(), handler);`,
+    },
+    // A hand-rolled verifier whose name is on the configured list, matched
+    // EXACTLY rather than as a substring.
+    {
+      code: `const express = require('express'); const app = express(); app.use(verifyCsrfToken); app.post('/transfer', handler);`,
+    },
+  ],
+  invalid: [
+    // Redacting the token header is a privacy measure, not a defence.
+    {
+      code: `const express = require('express'); const app = express(); app.use(pino({ redact: ['req.headers["x-csrf-token"]'] })); app.post('/transfer', handler);`,
+      errors: 1,
+    },
+    // Counting is not verifying: `csrfMetrics` is not `csrf`.
+    {
+      code: `const express = require('express'); const app = express(); app.put('/api/profile', csrfMetrics, handler);`,
+      errors: 1,
+    },
+  ],
+});
+
+/**
+ * Regression lock — `router.route(path).get(…).post(…)`.
+ *
+ * This is the idiom Express's own documentation leads with, and the receiver
+ * of `.post` is the `.get(…)` call rather than the `.route(…)` call. The
+ * shared receiver helper stops at a verb, so the whole chained form registered
+ * no route at all — a POST handler with no CSRF protection, silently.
+ */
+ruleTester.run('lock: chained route registrations', noMissingCsrfProtection, {
+  valid: [
+    // A chain on something that is NOT a proven Express router proves nothing.
+    { code: `promise.then(onOk).post(onDone);` },
+    // The chained form WITH protection.
+    {
+      code: `const express = require('express'); const csrf = require('csurf'); const r = express.Router(); r.route('/invoices').get(list).post(csrf(), create);`,
+    },
+  ],
+  invalid: [
+    {
+      code: `const express = require('express'); const r = express.Router(); r.route('/invoices').get(list).post(create);`,
+      errors: 1,
+    },
+    {
+      code: `const express = require('express'); const r = express.Router(); r.route('/x').all(log).get(read).put(write);`,
+      errors: 1,
+    },
+    // Middleware passed as an array, which Express accepts.
+    {
+      code: `const express = require('express'); const app = express(); app.post('/admin/users', [requireAuth, rateLimit], handler);`,
+      errors: 1,
+    },
+  ],
+});
+
+/** Edge shapes the chain walk and the module resolution must survive. */
+ruleTester.run('edge shapes', noMissingCsrfProtection, {
+  valid: [
+    // A computed method is not a route registration.
+    { code: `const express = require('express'); const app = express(); app['post']('/x', h);` },
+    // A chain whose root is not a `.route(…)` call.
+    { code: `const express = require('express'); const app = express(); app.listen(3000).post(h);` },
+    // A `.route(…)` on something that is not a proven Express receiver.
+    { code: `mystery.route('/x').get(a).post(b);` },
+    // A chained registration with no handler at all.
+    { code: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).post();` },
+    // A safe verb in the chain.
+    { code: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).head(b);` },
+    // The namespaced middleware.
+    {
+      code: `const express = require('express'); const lusca = require('lusca'); const app = express(); app.use(lusca.csrf()); app.post('/x', h);`,
+    },
+    // An ignorePattern that matches the call text.
+    {
+      code: `const express = require('express'); const app = express(); app.post('/webhooks/stripe', h);`,
+      options: [{ ignorePatterns: ['/webhooks/'] }],
+    },
+    // An invalid regex in ignorePatterns falls back to a substring test.
+    {
+      code: `const express = require('express'); const app = express(); app.post('/x(', h);`,
+      options: [{ ignorePatterns: ['x('] }],
+    },
+    // Test files, when allowed.
+    {
+      code: `const express = require('express'); const app = express(); app.post('/x', h);`,
+      filename: 'routes.test.ts',
+      options: [{ allowInTests: true }],
+    },
+    // A custom pattern list REPLACES the defaults.
+    {
+      code: `const express = require('express'); const app = express(); app.use(ourGuard); app.post('/x', h);`,
+      options: [{ csrfMiddlewarePatterns: ['ourGuard'] }],
+    },
+    // A custom protected-method list.
+    {
+      code: `const express = require('express'); const app = express(); app.post('/x', h);`,
+      options: [{ protectedMethods: ['put'] }],
+    },
+    // A top-level statement that is not an expression, and a `use` on
+    // something unrelated — neither mounts CSRF, and neither may crash.
+    {
+      code: `const express = require('express'); const app = express(); const x = 1; other.use(thing); app.get('/x', h);`,
+    },
+  ],
+  invalid: [
+    // A custom protected-method list, on the method it names.
+    {
+      code: `const express = require('express'); const app = express(); app.put('/x', '/x', h);`,
+      options: [{ protectedMethods: ['put'] }],
+      errors: 1,
+    },
+    // The suggestion for the chained form inserts before the first handler.
+    {
+      code: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).post(b);`,
+      errors: [
+        {
+          messageId: 'missingCsrfProtection',
+          suggestions: [
+            {
+              messageId: 'addCsrfValidation',
+              output: `const express = require('express'); const r = express.Router(); r.route('/x').get(a).post(csrf(), b);`,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
+
+/**
+ * The alias walk is BOUNDED.
+ *
+ * `isModuleBinding` follows a `require`/`import` chain itself, so the bound
+ * here only governs the NAME-list fallback — a hand-rolled verifier reached
+ * through a chain of plain aliases. Past the bound the rule reports rather
+ * than assuming a protection it can no longer see, which is the safe
+ * direction.
+ */
+ruleTester.run('bounded middleware resolution', noMissingCsrfProtection, {
+  valid: [
+    // Two aliases — inside the bound.
+    {
+      code: `const express = require('express'); const b = verifyCsrfToken; const app = express(); app.use(b); app.post('/x', h);`,
+    },
+    // The module chain is followed by the resolver regardless of alias depth.
+    {
+      code: `const express = require('express'); const a = require('csurf'); const b = a; const c = b; const d = c; const e = d; const app = express(); app.post('/x', e(), h);`,
+    },
+  ],
+  invalid: [
+    // Five plain aliases before the recognised name — past the bound.
+    {
+      code: `const express = require('express'); const a = verifyCsrfToken; const b = a; const c = b; const d = c; const e = d; const app = express(); app.use(e); app.post('/x', h);`,
+      errors: 1,
+    },
+  ],
+});

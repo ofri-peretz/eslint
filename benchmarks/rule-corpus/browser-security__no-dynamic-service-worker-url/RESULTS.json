@@ -1,0 +1,18 @@
+{
+  "rule": "browser-security/no-dynamic-service-worker-url",
+  "fixtures": 23,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-dynamic-service-worker-url",
+      "tp": 12,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

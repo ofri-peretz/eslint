@@ -34,6 +34,20 @@
  *    fixed by the first operand; nothing appended later can retarget it. So a
  *    concatenation is steerable only when its leftmost operand is, and a
  *    template literal only when it opens with an interpolation.
+ * 4. **A URL parser is not a sanitiser.** `new URLSearchParams(location.search)`
+ *    and `new URL(location.href)` are *containers*: they hold the inbound text,
+ *    they do not neutralise it. Treating every call as opaque (idea 3's
+ *    deliberate conservatism) made the single commonest open-redirect source in
+ *    front-end code — `new URLSearchParams(location.search).get('next')` —
+ *    invisible to every rule in this family at once. Constructor and reader are
+ *    now matched as a pair, so the *content* of the container is what decides,
+ *    never the spelling of the variable it was stored in.
+ *
+ *    The CONTAINER itself is deliberately not steerable — only what is read out
+ *    of it. `const { origin } = new URL(location.href)` binds the one property
+ *    that carries nothing an attacker chose, and a container that answered
+ *    "steerable" on its own turned that line into a finding in every consumer
+ *    whose own binding resolution does not distinguish a pattern from a name.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { resolveInitializer } from './resolve-binding';
@@ -97,11 +111,8 @@ function isRequestInput(node: TSESTree.MemberExpression): boolean {
   let current: TSESTree.Node = node;
   let sawInputProp = false;
   while (current.type === 'MemberExpression') {
-    if (
-      !current.computed &&
-      current.property.type === 'Identifier' &&
-      REQUEST_INPUT_PROPS.has(current.property.name)
-    ) {
+    const property = staticProperty(current);
+    if (property !== null && REQUEST_INPUT_PROPS.has(property)) {
       sawInputProp = true;
     }
     current = current.object;
@@ -120,7 +131,7 @@ function isRequestInput(node: TSESTree.MemberExpression): boolean {
  * call as opaque would have made stripping the leading `#` a sanitiser. None
  * of these can constrain the origin of the result.
  */
-const STEERABILITY_PRESERVING_METHODS: ReadonlySet<string> = new Set([
+export const STEERABILITY_PRESERVING_METHODS: ReadonlySet<string> = new Set([
   'slice',
   'substring',
   'substr',
@@ -135,19 +146,62 @@ const STEERABILITY_PRESERVING_METHODS: ReadonlySet<string> = new Set([
 ]);
 
 /** Global decoders that likewise pass control straight through. */
-const STEERABILITY_PRESERVING_FUNCTIONS: ReadonlySet<string> = new Set([
+export const STEERABILITY_PRESERVING_FUNCTIONS: ReadonlySet<string> = new Set([
   'decodeURI',
   'decodeURIComponent',
   'unescape',
   'String',
 ]);
 
+/**
+ * The property name of a member access, however it is spelled.
+ *
+ * `location['search']` is the same read as `location.search`, and every member
+ * test in this family compared `property.type === 'Identifier'` first — so one
+ * bracket made the source disappear from all five rules at once.
+ */
+function staticProperty(node: TSESTree.MemberExpression): string | null {
+  if (!node.computed) {
+    return node.property.type === 'Identifier' ? node.property.name : null;
+  }
+  return node.property.type === 'Literal' &&
+    typeof node.property.value === 'string'
+    ? node.property.value
+    : null;
+}
+
+/**
+ * The initialiser a name is bound to, but only when the binding is a plain
+ * identifier.
+ *
+ * `resolveInitializer` hands back the whole initialiser for a destructuring
+ * declaration, so `const { origin } = new URL(location.href)` resolved `origin`
+ * to the `URL` — and once a `URL` container became steerable in its own right,
+ * that turned the one same-origin property into a finding. A pattern binds a
+ * PART of the initialiser, and this file cannot say which part.
+ */
+export function resolveBoundInitializer(
+  identifier: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+): TSESTree.Expression | undefined {
+  const init = resolveInitializer(identifier, sourceCode);
+  if (init === undefined) return undefined;
+  const declarator = init.parent;
+  if (
+    declarator?.type === 'VariableDeclarator' &&
+    declarator.id.type !== 'Identifier'
+  ) {
+    return undefined;
+  }
+  return init;
+}
+
 /** A member read that yields attacker-supplied URL text. */
 function isSteerableMember(node: TSESTree.MemberExpression): boolean {
-  if (node.computed || node.property.type !== 'Identifier') {
+  const property = staticProperty(node);
+  if (property === null) {
     return isRequestInput(node);
   }
-  const property = node.property.name;
   if (STEERABLE_LOCATION_PROPS.has(property) && isLocationObject(node.object)) {
     return true;
   }
@@ -163,6 +217,150 @@ function isSteerableMember(node: TSESTree.MemberExpression): boolean {
   return isRequestInput(node);
 }
 
+/* -------------------------------------------------------------------------- */
+/* URL containers — the parser is not a sanitiser                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What kind of URL object an expression denotes, or `null` for anything else.
+ *
+ * `'url'` is a `URL` built over inbound text; `'params'` is a `URLSearchParams`
+ * over it. The two are tracked separately because they answer the origin
+ * question differently: a `URL` stringifies back to a full absolute URL and so
+ * IS steerable on its own, while a `URLSearchParams` stringifies to a query
+ * string that can never set a scheme or a host — only the values *read out* of
+ * it can.
+ */
+type UrlContainerKind = 'url' | 'params';
+
+const URL_CONSTRUCTORS: ReadonlySet<string> = new Set(['URL']);
+const PARAMS_CONSTRUCTORS: ReadonlySet<string> = new Set(['URLSearchParams']);
+
+/** Readers that hand back one attacker-chosen value out of a `URLSearchParams`. */
+const PARAMS_READERS: ReadonlySet<string> = new Set(['get', 'getAll']);
+
+/** Methods that stringify a `URL` back to the absolute URL it was built from. */
+const URL_STRINGIFIERS: ReadonlySet<string> = new Set([
+  'toString',
+  'toJSON',
+  'valueOf',
+]);
+
+/**
+ * Is this identifier the environment's global of that name, rather than a local
+ * of the author's?
+ *
+ * `class URL { … }` or `function URLSearchParams(…)` in the file under lint is
+ * not the WHATWG constructor, and reading it as one would be exactly the
+ * spelling-based verdict this file exists to avoid.
+ */
+function isUnshadowedGlobal(
+  node: TSESTree.Node,
+  names: ReadonlySet<string>,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (node.type !== 'Identifier' || !names.has(node.name)) return false;
+  for (
+    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+    scope !== null;
+    scope = scope.upper
+  ) {
+    const variable = scope.variables.find((v) => v.name === node.name);
+    // A global-scope entry with no definition is the environment's.
+    if (variable !== undefined) return variable.defs.length === 0;
+  }
+  return true;
+}
+
+/**
+ * `new URLSearchParams(location.search)`, `new URL(location.href)`,
+ * `new URL(location.href).searchParams`, and any `const` alias of those.
+ *
+ * The constructor argument must itself be steerable. `new URLSearchParams({q: 1})`
+ * and `new URL('/x', 'https://fixed.example')` hold nothing an attacker wrote,
+ * so they are not containers of anything and return `null`.
+ */
+function urlContainerKind(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+  seen: Set<string>,
+): UrlContainerKind | null {
+  switch (node.type) {
+    case 'NewExpression': {
+      const [argument] = node.arguments;
+      if (argument === undefined || argument.type === 'SpreadElement') {
+        return null;
+      }
+      if (!isAttackerSteerableUrl(argument, sourceCode, seen)) return null;
+      if (isUnshadowedGlobal(node.callee, PARAMS_CONSTRUCTORS, sourceCode)) {
+        return 'params';
+      }
+      if (isUnshadowedGlobal(node.callee, URL_CONSTRUCTORS, sourceCode)) {
+        return 'url';
+      }
+      return null;
+    }
+
+    case 'MemberExpression': {
+      // `new URL(location.href).searchParams` — a params view onto a URL.
+      if (staticProperty(node) !== 'searchParams') {
+        return null;
+      }
+      return urlContainerKind(node.object, sourceCode, seen) === 'url'
+        ? 'params'
+        : null;
+    }
+
+    case 'Identifier': {
+      if (seen.has(node.name)) return null;
+      seen.add(node.name);
+      const init = resolveBoundInitializer(node, sourceCode);
+      return init === undefined
+        ? null
+        : urlContainerKind(init, sourceCode, seen);
+    }
+
+    default:
+      return null;
+  }
+}
+
+/**
+ * `params.get('next')` — the value an attacker put in one query key, and
+ * `parsed.pathname` / `parsed.toString()` — the readable parts of a `URL`.
+ */
+function isUrlContainerRead(
+  node: TSESTree.CallExpression | TSESTree.MemberExpression,
+  sourceCode: TSESLint.SourceCode,
+  seen: Set<string>,
+): boolean {
+  // A COPY of the cycle guard, never the caller's own.
+  //
+  // `seen` records the identifiers already being resolved on the current path.
+  // Asking "is this receiver a URL container?" walks the same bindings, and
+  // answering "no" left their names in the caller's set — so the very next
+  // question about the same binding short-circuited to `false`.
+  // `const raw = window.location.hash; const t = raw.slice(1); location.replace(t)`
+  // stopped being a finding, because the container probe on `raw` poisoned the
+  // passthrough walk that ran immediately after it.
+  const probe = new Set(seen);
+  if (node.type === 'CallExpression') {
+    const callee = node.callee;
+    if (callee.type !== 'MemberExpression') return false;
+    const reader = staticProperty(callee);
+    if (reader === null) return false;
+    const kind = urlContainerKind(callee.object, sourceCode, probe);
+    if (kind === 'params') return PARAMS_READERS.has(reader);
+    return kind === 'url' && URL_STRINGIFIERS.has(reader);
+  }
+  const property = staticProperty(node);
+  return (
+    property !== null &&
+    STEERABLE_LOCATION_PROPS.has(property) &&
+    urlContainerKind(node.object, sourceCode, probe) === 'url'
+  );
+}
+
 /**
  * True when `node` evaluates to a URL whose **origin** an attacker can choose.
  *
@@ -176,12 +374,17 @@ export function isAttackerSteerableUrl(
 ): boolean {
   switch (node.type) {
     case 'MemberExpression':
-      return isSteerableMember(node);
+      // `new URL(location.href).pathname` — `//evil.test` is a legal pathname,
+      // and assigning it navigates off-origin.
+      return (
+        isSteerableMember(node) || isUrlContainerRead(node, sourceCode, seen)
+      );
+
 
     case 'Identifier': {
       if (seen.has(node.name)) return false;
       seen.add(node.name);
-      const init = resolveInitializer(node, sourceCode);
+      const init = resolveBoundInitializer(node, sourceCode);
       return (
         init !== undefined && isAttackerSteerableUrl(init, sourceCode, seen)
       );
@@ -205,6 +408,11 @@ export function isAttackerSteerableUrl(
 
     // `location.hash.slice(1)`, `decodeURIComponent(location.search)`.
     case 'CallExpression': {
+      // Checked FIRST: `parsedUrl.toString()` is both a container read and a
+      // passthrough-method call, and the passthrough branch would recurse into
+      // the container — which is deliberately not steerable on its own — and
+      // answer "no" before the container read was ever considered.
+      if (isUrlContainerRead(node, sourceCode, seen)) return true;
       const callee = node.callee;
       if (
         callee.type === 'MemberExpression' &&
@@ -241,9 +449,9 @@ export function isAttackerSteerableUrl(
       );
 
     default:
-      // Literals, call results, `new URL(…)`, spreads. A value *passed into* a
-      // function is not the value that comes back out, so call expressions are
-      // deliberately opaque rather than transparent.
+      // Literals, spreads, `new Something(…)` that is not a URL container. A
+      // value *passed into* an unknown function is not the value that comes
+      // back out, so those call expressions stay opaque.
       return false;
   }
 }

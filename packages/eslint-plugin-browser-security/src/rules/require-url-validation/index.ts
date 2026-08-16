@@ -6,11 +6,45 @@
 
 /**
  * @fileoverview Enforce URL validation before navigation
+ *
+ * ## Rule partition
+ *
+ * This rule owns the navigations that do **not** write the current document's
+ * `Location`:
+ *
+ * | Sink | Owner |
+ * |---|---|
+ * | `window.open(x)` — opens a NEW browsing context | **require-url-validation** |
+ * | `router.push(x)` / `router.replace(x)`, router resolved to `useRouter()` | **require-url-validation** |
+ * | any write to a `Location` or its `.href`; `location.assign/replace(x)`; `.redirect(x)` | `no-insecure-redirects` |
+ * | `Linking.openURL(x)`, `navigation.navigate(x)` | `no-unvalidated-deeplinks` |
+ * | a credential embedded in the URL string | `no-password-in-url` |
+ *
+ * The line used to run between `window.location.href = x` and
+ * `location.href = x` — the same defect under two rule IDs, decided by the
+ * spelling of the receiver rather than by which API it is. Everything that
+ * navigates *this* document moved to `no-insecure-redirects`; what is left
+ * here is the navigation that opens somewhere else.
+ *
+ * A `router` that was not obtained from a routing package's `useRouter()` is a
+ * deliberate false negative. `push` and `replace` are `Array` and `String`
+ * methods, so accepting them on any receiver would report
+ * `queue.push(location.hash)` as an open redirect — reporting on a spelling is
+ * the one thing this repo will not do.
+ *
+ * Locked by `../no-insecure-redirects/url-navigation-partition.matrix.test.ts`.
  */
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { isAttackerSteerableUrl } from '../../utils/url-taint';
+import {
+  isGuardedDestination,
+  isOriginEqualityGuard,
+  isRelativePathGuard,
+  isRouterObject,
+  isSteerableUrlValue,
+} from '../../utils/navigation-targets';
+import { isAnchoredHostGuard } from '../../utils/regexp-anchoring';
 
 type MessageIds = 'violationDetected';
 
@@ -50,55 +84,80 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
       context.report({ node, messageId: 'violationDetected' });
     }
 
+    /** The same three provable guards `no-insecure-redirects` accepts. */
+    const provesSafeDestination = (test: TSESTree.Node): boolean =>
+      isAnchoredHostGuard(test, sourceCode) ||
+      isRelativePathGuard(test, sourceCode) ||
+      isOriginEqualityGuard(test, sourceCode);
+
     /**
-     * `<obj>.<name>` with a plain identifier base and no computed key.
+     * The globals that own a `window.open`.
      *
-     * Kept deliberately shallow. `window.location.href = x` and
-     * `location.assign(x)` belong to `no-insecure-redirects`; widening the base
-     * here to any `Location` object would make both rules report the same line.
+     * DELIBERATELY NOT CONFIGURABLE. The ledger's `unconfigurable-vocabulary`
+     * check flags this list; it is a false alarm. These five are the complete
+     * set of `WindowProxy`-valued globals defined by the HTML specification —
+     * the only receivers on which `open` IS `Window.open`. The list is what
+     * stops `stream.open(path)` and `db.open(name)` from being read as
+     * navigations, so widening it would manufacture exactly the
+     * name-inference false positive the rule's header refuses; narrowing it
+     * would let `top.open(userUrl)` through unreported.
      */
-    function isMember(
-      node: TSESTree.Node,
-      object: string,
-      property: string,
-    ): boolean {
-      return (
-        node.type === 'MemberExpression' &&
-        !node.computed &&
-        node.object.type === 'Identifier' &&
-        node.object.name === object &&
-        node.property.type === 'Identifier' &&
-        node.property.name === property
-      );
+    const OPENERS: ReadonlySet<string> = new Set([
+      'window',
+      'self',
+      'globalThis',
+      'top',
+      'parent',
+    ]);
+
+    /**
+     * `<receiver>.<method>(…)` with a static key — the method name resolved,
+     * the receiver handed back for the caller to identify.
+     */
+    function calleeParts(
+      node: TSESTree.CallExpression,
+    ): { object: TSESTree.Node; method: string } | null {
+      const callee = node.callee;
+      if (callee.type !== 'MemberExpression' || callee.computed) return null;
+      if (callee.property.type !== 'Identifier') return null;
+      return { object: callee.object, method: callee.property.name };
     }
 
-    return {
-      AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // `window.location = x` and `location.href = x` are both whole-page
-        // navigations. What decides the verdict is whether an attacker chose
-        // the ORIGIN of `x` — not whether `x` happens to be spelled as a
-        // variable. A hardcoded `const SUPPORT = 'https://help.example.com'`
-        // is an Identifier and is not a redirect; `location.search` is a
-        // MemberExpression and is the textbook one.
-        if (
-          isMember(node.left, 'window', 'location') ||
-          isMember(node.left, 'location', 'href')
-        ) {
-          if (isAttackerSteerableUrl(node.right, sourceCode)) {
-            report(node);
-          }
-        }
-      },
+    // There is no `AssignmentExpression` visitor on purpose: every write that
+    // navigates is a `Location` write, and those are `no-insecure-redirects`'.
 
+    return {
       CallExpression(node: TSESTree.CallExpression) {
-        // `window.open(url)` opens the target in a new browsing context — same
-        // open-redirect sink, same question about the argument.
-        if (isMember(node.callee, 'window', 'open')) {
-          const urlArg = node.arguments[0];
-          if (urlArg && isAttackerSteerableUrl(urlArg, sourceCode)) {
-            report(node);
-          }
+        const parts = calleeParts(node);
+        if (parts === null) return;
+        const urlArg = node.arguments[0];
+        if (urlArg === undefined) return;
+
+        // `window.open(url)` opens the target in a NEW browsing context. The
+        // question is the same as for a redirect: did an attacker choose the
+        // origin of the argument?
+        const isOpen =
+          parts.method === 'open' &&
+          parts.object.type === 'Identifier' &&
+          OPENERS.has(parts.object.name);
+
+        // `router.push(next)` in a Next.js / React Router / Vue Router app is
+        // a full navigation and accepts an absolute URL. The router must be
+        // RESOLVED to a routing package's `useRouter()` — see the header.
+        const isRouterNavigation =
+          (parts.method === 'push' || parts.method === 'replace') &&
+          isRouterObject(parts.object, sourceCode);
+
+        if (!isOpen && !isRouterNavigation) return;
+        if (!isSteerableUrlValue(urlArg, sourceCode)) return;
+        // The rule's NAME is `require-url-validation`, and until the corpus
+        // was written it had no idea what validation looked like: an exact
+        // allowlist and a relative-path guard — the two remediations its own
+        // message asks for — were both reported at HIGH severity.
+        if (isGuardedDestination(node, urlArg, sourceCode, provesSafeDestination)) {
+          return;
         }
+        report(node);
       },
     };
   },

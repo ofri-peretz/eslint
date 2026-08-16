@@ -59,7 +59,7 @@ sessionStorage.setItem('searchQuery', query);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `additionalPatterns` | `string[]` | — | Extra key-name patterns to treat as sensitive |
+| `additionalPatterns` | `string[]` | `[]` | Extra whole-word key terms to treat as sensitive |
 
 
 ```json

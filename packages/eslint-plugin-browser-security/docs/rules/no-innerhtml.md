@@ -113,7 +113,7 @@ container.appendChild(div);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `trustedSanitizers` | `string[]` | `["DOMPurify.sanitize","sanitize","sanitizeHtml","xss","purify"]` | Extra function names to treat as sanitizers |
+| `trustedSanitizers` | `string[]` | `["DOMPurify.sanitize","sanitize","sanitizeHtml","xss","purify","escapeHtml","escapeHTML","escape"]` | Extra function names to treat as sanitizers |
 | `allowLiteralStrings` | `boolean` | `true` | Allow innerHTML with literal strings |
 
 ```json

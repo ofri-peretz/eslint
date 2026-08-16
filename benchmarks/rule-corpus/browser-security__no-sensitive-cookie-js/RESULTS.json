@@ -1,0 +1,20 @@
+{
+  "rule": "browser-security/no-sensitive-cookie-js",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 21,
+  "vulnerable": 11,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-sensitive-cookie-js",
+      "tp": 11,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

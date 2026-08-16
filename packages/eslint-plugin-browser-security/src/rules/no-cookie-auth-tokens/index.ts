@@ -6,63 +6,62 @@
 
 /**
  * ESLint Rule: no-cookie-auth-tokens
- * Detects storing auth tokens in cookies via JavaScript (should use HttpOnly)
+ * Detects storing bearer credentials in cookies via JavaScript (should be HttpOnly)
  * CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag
+ *
+ * ## Rule partition
+ *
+ * **Owns:** a `document.cookie` write — bare, `window.document`-qualified or
+ * computed — whose **cookie NAME** names a bearer credential by whole word
+ * (`token`, `jwt`, `bearer`, `auth`, `session`, `sid`, `credential`). A cookie
+ * a script can write is a cookie a script can read, so the credential is not
+ * HttpOnly by construction.
+ *
+ * **Defers to:**
+ * - `no-sensitive-cookie-js` — cookie names that denote a NON-bearer secret
+ *   (`password`, `api key`, `ssn`, …). The two vocabularies are disjoint, so
+ *   one realistic line produces exactly one report.
+ * - `require-cookie-secure-attrs` — complementary, not duplicate: it reports the
+ *   missing `Secure`/`SameSite` attribute on ANY cookie, including one this rule
+ *   has already flagged. Different CWE (614/352 vs 1004), different remediation.
+ * - `no-jwt-in-storage` — the same credential written to Web Storage.
+ *
+ * ## What was wrong before
+ *
+ * The auth vocabulary was matched with `/access/i.test(wholeCookieString)`, so
+ * `document.cookie = 'lastAccessed=2026-01-01'` was a CWE-1004 finding, and so
+ * was any cookie whose *value* happened to contain one of the words. The test is
+ * now whole-word membership against the cookie NAME only.
  *
  * @see https://cwe.mitre.org/data/definitions/1004.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
 import {
-  AST_NODE_TYPES,
-  createRule,
-  formatLLMMessage,
-  MessageIcons,
-} from '@interlace/eslint-devkit';
+  cookieNameFrom,
+  isCookieDeletion,
+  isDocumentCookieTarget,
+  BEARER_CREDENTIAL_TERMS,
+  namesBearerCredential,
+  staticCookieText,
+} from '../../utils/sensitive-value-evidence';
 
 type MessageIds = 'authTokenInCookie';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
+
+  /**
+   * Whole words that name a bearer credential. REPLACES the default
+   * vocabulary (`BEARER_CREDENTIAL_TERMS`), which is what this rule reported on
+   * before the list was configurable.
+   */
+  bearerPatterns?: string[];
 }
 
 type RuleOptions = [Options?];
-
-// Auth token patterns
-const AUTH_PATTERNS = [
-  /token/i,
-  /jwt/i,
-  /auth/i,
-  /session/i,
-  /bearer/i,
-  /access/i,
-  /refresh/i,
-  /credential/i,
-];
-
-function isAuthToken(cookieString: string): boolean {
-  return AUTH_PATTERNS.some((p) => p.test(cookieString));
-}
-
-/**
- * Extract string parts from a binary expression (concatenation)
- * e.g., 'accessToken=' + token => 'accessToken='
- */
-function extractStringParts(node: TSESTree.BinaryExpression): string {
-  const parts: string[] = [];
-
-  function traverse(n: TSESTree.Node): void {
-    if (n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string') {
-      parts.push(n.value);
-    } else if (n.type === AST_NODE_TYPES.BinaryExpression && n.operator === '+') {
-      traverse(n.left);
-      traverse(n.right);
-    }
-  }
-
-  traverse(node);
-  return parts.join('');
-}
 
 export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
   name: 'no-cookie-auth-tokens',
@@ -82,30 +81,42 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
         owasp: 'A02:2021',
         cvss: 8.5,
         description:
-          'Setting auth token in document.cookie makes it accessible to XSS attacks. Use HttpOnly cookies set by the server.',
+          'Setting the "{{key}}" cookie from JavaScript means it is not HttpOnly, so any XSS can read the credential and replay it.',
         severity: 'HIGH',
-        fix: 'Set auth cookies from server with HttpOnly flag.',
+        fix: 'Set auth cookies from the server with the HttpOnly flag.',
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#httponly-attribute',
       }),
-
     },
     schema: [
       {
         type: 'object',
-        properties: { allowInTests: { type: 'boolean', default: true } },
+        properties: {
+          allowInTests: { type: 'boolean', default: true },
+          bearerPatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...BEARER_CREDENTIAL_TERMS],
+            description:
+              'Whole words that name a bearer credential. Replaces the default vocabulary.',
+          },
+        },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true }],
+  defaultOptions: [
+    { allowInTests: true, bearerPatterns: [...BEARER_CREDENTIAL_TERMS] },
+  ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const {
+      allowInTests = true,
+      bearerPatterns = BEARER_CREDENTIAL_TERMS,
+    } = options as Options;
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -113,36 +124,22 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check for document.cookie = ...
-        if (
-          node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.object.type === AST_NODE_TYPES.Identifier &&
-          node.left.object.name === 'document' &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          node.left.property.name === 'cookie'
-        ) {
-          let cookieValue = '';
+        if (!isDocumentCookieTarget(node.left)) return;
 
-          if (
-            node.right.type === AST_NODE_TYPES.Literal &&
-            typeof node.right.value === 'string'
-          ) {
-            cookieValue = node.right.value;
-          } else if (node.right.type === AST_NODE_TYPES.TemplateLiteral) {
-            // Check template literal quasis
-            cookieValue = node.right.quasis.map((q) => q.value.raw).join('');
-          } else if (node.right.type === AST_NODE_TYPES.BinaryExpression) {
-            // Handle string concatenation: 'accessToken=' + token
-            cookieValue = extractStringParts(node.right);
-          }
+        const text = staticCookieText(node.right, context.sourceCode);
+        // `document.cookie = 'sid=; Max-Age=0'` is a logout, not a leak.
+        if (text === null || isCookieDeletion(text)) return;
 
-          if (cookieValue && isAuthToken(cookieValue)) {
-            context.report({
-              node,
-              messageId: 'authTokenInCookie',
-            });
-          }
+        const name = cookieNameFrom(text);
+        if (name === null || !namesBearerCredential(name, bearerPatterns)) {
+          return;
         }
+
+        context.report({
+          node,
+          messageId: 'authTokenInCookie',
+          data: { key: name },
+        });
       },
     };
   },

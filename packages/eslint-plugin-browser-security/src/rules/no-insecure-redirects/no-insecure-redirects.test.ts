@@ -33,14 +33,6 @@ describe('no-insecure-redirects', () => {
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
         },
-        // Validated with validateUrl
-        {
-          code: `
-            const url = req.query.url;
-            validateUrl(url);
-            res.redirect(url);
-          `,
-        },
         // Validated with isValidUrl
         {
           code: `
@@ -59,16 +51,36 @@ describe('no-insecure-redirects', () => {
             }
           `,
         },
-        // Validated with startsWith check
+      ],
+      invalid: [
+        // ---- Two cases that used to be asserted as VALID ------------------
+        // Both were suppressed by a text scan over the previous five sibling
+        // statements, and both are open redirects.
+        //
+        // A bare `validateUrl(url);` DISCARDS its result. Whatever the
+        // function does, nothing in this program acts on the answer — and the
+        // suppression did not depend on the function existing, only on it
+        // being spelled from a four-name allowlist.
+        {
+          code: `
+            const url = req.query.url;
+            validateUrl(url);
+            res.redirect(url);
+          `,
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+        // The same no-op shape, and the check itself is not a check:
+        // `startsWith('https://')` constrains the SCHEME and says nothing at
+        // all about the host, so `https://evil.test` passes it.
         {
           code: `
             const url = req.params.url;
             url.startsWith('https://');
             res.redirect(url);
           `,
+          errors: [{ messageId: 'insecureRedirect' }],
         },
       ],
-      invalid: [],
     });
   });
 
@@ -655,4 +667,103 @@ describe('no-insecure-redirects — anchored guards', () => {
       },
     ],
   });
+});
+
+// ── Adversarial-corpus regression locks ───────────────────────────────────
+//
+// Every case here FAILS on the pre-corpus rule. They were found by writing a
+// second wave of fixtures aimed at breaking a rule that had just scored 100%,
+// which took it back to 93.8% and surfaced five defects — four in the
+// suppression path, one in the taint path.
+const adversarialTester = new RuleTester({
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module' },
+});
+
+adversarialTester.run('no-insecure-redirects — adversarial', noInsecureRedirects, {
+  valid: [
+    // The three guards that PROVE something. All must stay quiet, or the
+    // fixes below are just a rule that reports everything.
+    `const n = new URLSearchParams(location.search).get('next');
+     location.assign(n && n.startsWith('/') && !n.startsWith('//') ? n : '/');`,
+    `const n = new URLSearchParams(location.search).get('next');
+     const p = new URL(n, location.origin);
+     if (p.origin === 'https://app.acme-corp.io') { window.location.href = n; }`,
+    `const ALLOWED = new Set(['/a', '/b']);
+     const n = new URLSearchParams(location.search).get('next');
+     if (ALLOWED.has(n)) { window.location.href = n; }`,
+    // An UNREADABLE predicate handed the target still defers — the fix is to
+    // stop trusting names, not to stop trusting everything.
+    `import { isValidUrl } from './url';
+     const n = location.hash; if (isValidUrl(n)) { location.assign(n); }`,
+    // A genuinely opaque helper is still opaque.
+    `location.assign(sanitizeRedirect(location.search));`,
+  ],
+  invalid: [
+    // A prefix check is not an origin check: `https://app.acme.io.evil.test`.
+    {
+      code: `const n = location.hash; if (n.startsWith('https://app.acme.io')) { location.assign(n); }`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+    // A LOCAL function wearing an allowlisted validator's name, returning its
+    // input unchanged. Readable source beats a blessed spelling.
+    {
+      code: `const isSafeUrl = (u) => u; const n = location.hash; if (isSafeUrl(n)) { location.assign(n); }`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+    // Containment is not an origin check either.
+    {
+      code: `const n = document.referrer; if (n.includes('app.acme.io')) { location.replace(n); }`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+    // An unrelated `.includes(` five lines up used to suppress the finding,
+    // because the scan compared sibling statements as TEXT.
+    {
+      code: `const flags = ['beta']; const on = flags.includes('beta'); const n = location.hash; window.location.href = n;`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+    // A readable identity helper passes the value straight through.
+    {
+      code: `function normalize(v) { return v; } const n = new URLSearchParams(location.search).get('next'); location.assign(normalize(n));`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+    // FALSE-NEGATIVE DIRECTION: the same defect with every telling identifier
+    // renamed. Detection must survive, or the rule is deciding by spelling.
+    {
+      code: `const b = new URLSearchParams(window.location.search); const q = b.get('r'); window.location.href = q;`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — the cycle guard is per-question, not per-walk.
+ *
+ * `utils/url-taint.ts` answers two questions about the same receiver in a row:
+ * "is this a URL container?" and "is this a passthrough of something tainted?".
+ * They shared one `seen` set, so the first question left the binding's name in
+ * the guard and the second short-circuited to `false`. Both shapes below are
+ * SILENT on that version and both are ordinary front-end code.
+ */
+ruleTester.run('lock: container probe does not poison the binding walk', noInsecureRedirects, {
+  valid: [
+    // `origin` is the one URL property that carries nothing an attacker chose.
+    // A destructure resolves to the WHOLE initialiser, so widening the helper
+    // to see containers made this a finding until the resolver refused patterns.
+    `const { origin } = new URL(location.href); location.assign(origin + '/done');`,
+    `const { host } = new URL(location.href); location.replace(host);`,
+  ],
+  invalid: [
+    {
+      code: `const raw = window.location.hash; const trimmed = raw.slice(1); location.replace(trimmed);`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+    {
+      code: `const raw = new URLSearchParams(location.search).get('next'); const target = raw.trim(); location.replace(target);`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+    {
+      code: `const parsed = new URL(location.href); location.assign(parsed.toString());`,
+      errors: [{ messageId: 'insecureRedirect' }],
+    },
+  ],
 });

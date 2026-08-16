@@ -445,12 +445,36 @@ ruleTester.run('lock: trustedSources is an origin allowlist', noClickjacking, {
  * Every option, set to a value that changes the verdict on the SAME code.
  * A case that passes either way proves nothing about the option.
  */
-const OVERLAY = 'const banner = "<div style=\'position: absolute; top: 0; left: 0\'></div>";';
+/**
+ * NOTE — this constant USED to be
+ *
+ *   "<div style='position: absolute; top: 0; left: 0'></div>"
+ *
+ * and it was asserted INVALID: a `transparentFrameOverlay` finding on an
+ * element that is fully visible. That is an ordinary full-bleed element — a
+ * hero, a scrim, a sticky header — and the test pinned the rule to reporting
+ * it. A clickjacking overlay is dangerous precisely because it is present in
+ * the hit-test tree and INVISIBLE, so that it swallows the click meant for
+ * what is underneath; position alone carries none of that. The test asserted
+ * the defect as correct, so the fixture is now an actually-invisible overlay
+ * and the visible one is asserted VALID below.
+ */
+const OVERLAY =
+  'const banner = "<div style=\'position: absolute; top: 0; left: 0; opacity: 0\'></div>";';
 
 ruleTester.run('options change the verdict', noClickjacking, {
   valid: [
     // detectTransparentOverlays: off silences the overlay report.
     { code: OVERLAY, options: [{ detectTransparentOverlays: false }] },
+    // A VISIBLE full-bleed element is not an overlay at any option setting.
+    {
+      code: 'const banner = "<div style=\'position: absolute; top: 0; left: 0\'></div>";',
+    },
+    // Nor is one removed from layout: `display: none` receives no clicks, so
+    // it cannot swallow one.
+    {
+      code: 'const bar = "<div style=\'position: absolute; top: 0; left: 0; display: none\'></div>";',
+    },
     // trustedAnnotations: a JSDoc marker the project defines.
     {
       code: '/** @overlay-reviewed */\nconst banner = "<div style=\'opacity: 0\'></div>";',
@@ -518,6 +542,256 @@ ruleTester.run('frame-busting is read from the AST', noClickjacking, {
     {
       code: 'if (top.location && a2 && a3 && a4 && a5 && a6 && a7 && a8 && a9 && a10) { x(); } const f = <html><body /></html>;',
       errors: [{ messageId: 'missingFrameBusting' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — an overlay is decided by ITS DECLARATIONS, not by whether
+ * the author happened to write the word "style" or "css" nearby.
+ *
+ * The CSS gate was `text.includes('style=') || text.includes('css')`, which is
+ * a test of phrasing. A styled-components block, an emotion rule and a plain
+ * style string name neither word, so every CSS-in-JS overlay in the corpus was
+ * invisible.
+ */
+ruleTester.run('lock: CSS is recognised by parsing it', noClickjacking, {
+  valid: [
+    // Prose with colons is not CSS.
+    { code: `const t = 'Transparency: we show you every fee, up front.';` },
+    { code: `const r = 'Contrast ratio: 4.5:1 minimum';` },
+    // A fade-in is on its way to being VISIBLE.
+    {
+      code: 'const css = `.skeleton { position: absolute; top: 0; opacity: 0; transition: opacity 0.3s ease-in; }`;',
+    },
+  ],
+  invalid: [
+    // A styled-components overlay: no "style", no "css", still an overlay.
+    {
+      code: 'const Capture = styled.div`position: fixed; inset: 0; opacity: 0;`;',
+      errors: [{ messageId: 'transparentFrameOverlay' }],
+    },
+    // A plain style string with a negative z-index.
+    {
+      code: `const style = 'position: absolute; top: 0; left: 0; z-index: -1';`,
+      errors: [{ messageId: 'transparentFrameOverlay' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — `window.`-prefixed frame references.
+ *
+ * The receiver had to be a bare Identifier, so `window.top.location = url`
+ * matched at NEITHER level: the outer node was skipped for its shape, and the
+ * inner `window.top` only ever found a MemberExpression above it, never the
+ * assignment. And the guard check accepted only the window comparison while
+ * `hasFrameBusting` also accepted the LOCATION comparison — so a file could be
+ * recognised as frame-busting and have its frame-busting reported.
+ */
+ruleTester.run('lock: window-prefixed frame references', noClickjacking, {
+  valid: [
+    // The location-comparison guard, with the redirect in a callback that
+    // cannot escape it. Both halves are the remediation.
+    {
+      code: `if (window.top.location !== window.self.location) { setTimeout(() => { top.location = self.location; }, 0); }`,
+    },
+  ],
+  invalid: [
+    {
+      code: `function escapeFrame() { window.top.location = 'https://app.example/home'; }`,
+      errors: [{ messageId: 'frameManipulation' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — an iframe's origin is folded through scope.
+ *
+ * Only an inline string literal was read, so the hard-coded embeds were seen
+ * and the configurable ones — the ones a deployment can point anywhere — were
+ * not. Resolution must decide the verdict in BOTH directions: the same shape
+ * resolving to a relative path stays quiet.
+ */
+ruleTester.run('lock: iframe src resolves through scope', noClickjacking, {
+  valid: [
+    { code: `const P = '/preview/document'; const el = <iframe src={P} />;` },
+    {
+      code: `const P = ['/a', '/b']; const el = <iframe src={P[1]} />;`,
+    },
+    // Unfoldable: a rule that cannot read the origin must not guess at it.
+    { code: `const el = <iframe src={props.src} />;` },
+  ],
+  invalid: [
+    {
+      code: `const O = 'https://widgets.partner.example/embed'; const el = <iframe src={O} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+    {
+      code: `const E = ['https://a.example/w', 'https://b.example/w']; const el = <iframe src={E[1]} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+  ],
+});
+
+/** Edge shapes the iframe-src folding must survive. */
+ruleTester.run('edge shapes: src folding', noClickjacking, {
+  valid: [
+    // Non-string and unfoldable expressions.
+    { code: `const el = <iframe src={42} />;` },
+    { code: `const el = <iframe src={a + b} />;` },
+    { code: `const N = 42; const el = <iframe src={N} />;` },
+    // A re-assigned binding has no single knowable value.
+    { code: `let u = '/a'; u = 'https://evil.example'; const el = <iframe src={u} />;` },
+    // A computed index that is not a number.
+    { code: `const A = ['https://evil.example']; const el = <iframe src={A[k]} />;` },
+    // An index past the end of the array.
+    { code: `const A = ['https://evil.example']; const el = <iframe src={A[5]} />;` },
+    // A hole in the array.
+    { code: `const A = [, 'https://evil.example']; const el = <iframe src={A[0]} />;` },
+    // The array reached through an unresolvable name.
+    { code: `const el = <iframe src={unknownTable[0]} />;` },
+    // A member expression that is not computed.
+    { code: `const el = <iframe src={config.embedUrl} />;` },
+    // An iframe with no src at all, and one with an empty src.
+    { code: `const el = <iframe title="x" />;` },
+    { code: `const el = <iframe src="" />;` },
+    // An explicitly trusted absolute origin.
+    {
+      code: `const el = <iframe src="https://trusted.example/w" />;`,
+      options: [{ trustedSources: ['https://trusted.example'] }],
+    },
+    // A protocol-relative URL is absolute, and is NOT same-origin — but with
+    // the origin explicitly trusted it is allowed.
+    {
+      code: `const el = <iframe src="//trusted.example/w" />;`,
+      options: [{ trustedSources: ['//trusted.example'] }],
+    },
+  ],
+  invalid: [
+    // A nested constant chain.
+    {
+      code: `const A = 'https://evil.example/w'; const B = A; const el = <iframe src={B} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+    // A protocol-relative URL can leave the origin, so 'self' does not cover it.
+    {
+      code: `const el = <iframe src="//evil.example/w" />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+    // A trusted entry that is not a URL and does not match the source.
+    {
+      code: `const el = <iframe src="https://evil.example/w" />;`,
+      options: [{ trustedSources: ['not-a-url'] }],
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+  ],
+});
+
+/** Edge shapes the CSS parser and the animation exclusion must survive. */
+ruleTester.run('edge shapes: css parsing', noClickjacking, {
+  valid: [
+    // A colon with no recognised CSS property either side.
+    { code: `const s = 'note: remember to check this';` },
+    // An animation on the property that made it look invisible.
+    { code: `const s = 'visibility: hidden; transition: visibility 0.2s;';` },
+    { code: `const s = 'opacity: 0; animation: fade-in 1s;';` },
+    // An animation on a DIFFERENT property does not excuse invisibility —
+    // asserted invalid below; here the animation names nothing relevant and
+    // the element is visible.
+    { code: `const s = 'opacity: 1; transition: transform 0.2s;';` },
+    // `!important` and a trailing comma are stripped from the value.
+    { code: `const s = 'opacity: 0.5 !important; position: absolute;';` },
+  ],
+  invalid: [
+    // An animation on an unrelated property leaves the invisibility standing.
+    {
+      code: `const s = 'opacity: 0; transition: transform 0.2s;';`,
+      errors: [{ messageId: 'transparentFrameOverlay' }],
+    },
+    // `!important` stripped, still fully transparent.
+    {
+      code: `const s = 'position: absolute; opacity: 0 !important;';`,
+      errors: [{ messageId: 'transparentFrameOverlay' }],
+    },
+  ],
+});
+
+/**
+ * The folds are BOUNDED. A chain longer than the bound resolves to nothing
+ * rather than looping, and the same chain inside the bound still resolves.
+ */
+ruleTester.run('bounded folding', noClickjacking, {
+  valid: [
+    // Six hops — past the bound, so the origin is unreadable.
+    {
+      code: `const a = 'https://evil.example/w'; const b = a; const c = b; const d = c; const e = d; const f = e; const el = <iframe src={f} />;`,
+    },
+    // A deep array chain, likewise past the bound.
+    {
+      code: `const a = ['https://evil.example/w']; const b = a; const c = b; const d = c; const e = d; const el = <iframe src={e[0]} />;`,
+    },
+  ],
+  invalid: [
+    // Three hops — inside the bound.
+    {
+      code: `const a = 'https://evil.example/w'; const b = a; const c = b; const el = <iframe src={c} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+    // An array reached through one alias.
+    {
+      code: `const a = ['https://evil.example/w']; const b = a; const el = <iframe src={b[0]} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+  ],
+});
+
+/** The array fold accepts only what it can prove. */
+ruleTester.run('array folding shapes', noClickjacking, {
+  valid: [
+    // The container is a call result, not a foldable array.
+    { code: `const el = <iframe src={getTable()[0]} />;` },
+    // The container folds to something that is not an array.
+    { code: `const T = { a: 1 }; const el = <iframe src={T[0]} />;` },
+  ],
+  invalid: [
+    // A nested table, folded twice.
+    {
+      code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[0][0]} />;`,
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+  ],
+});
+
+/** The nested-table fold, in both directions. */
+ruleTester.run('nested table folding', noClickjacking, {
+  valid: [
+    { code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[0][k]} />;` },
+    { code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[9][0]} />;` },
+    { code: `const T = [[, 'https://evil.example/w']]; const el = <iframe src={T[0][0]} />;` },
+    { code: `const T = [['/preview']]; const el = <iframe src={T[0][0]} />;` },
+  ],
+  invalid: [],
+});
+
+/** A nested table indexed by something unreadable. */
+ruleTester.run('unreadable nested index', noClickjacking, {
+  valid: [{ code: `const T = [['https://evil.example/w']]; const el = <iframe src={T[k][0]} />;` }],
+  invalid: [],
+});
+
+/** The overlay option also governs template literals. */
+ruleTester.run('overlay option covers templates', noClickjacking, {
+  valid: [
+    {
+      code: 'const t = `position: absolute; top: 0; opacity: 0`;',
+      options: [{ detectTransparentOverlays: false }],
+    },
+  ],
+  invalid: [
+    {
+      code: 'const t = `position: absolute; top: 0; opacity: 0`;',
+      errors: [{ messageId: 'transparentFrameOverlay' }],
     },
   ],
 });

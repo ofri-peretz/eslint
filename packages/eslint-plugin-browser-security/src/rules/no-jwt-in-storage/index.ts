@@ -6,8 +6,28 @@
 
 /**
  * ESLint Rule: no-jwt-in-storage
- * Detects storing JWT tokens in localStorage/sessionStorage
+ * Detects storing bearer credentials (JWTs, access/refresh tokens, session ids)
+ * in Web Storage.
  * CWE-922: Insecure Storage of Sensitive Information
+ *
+ * ## Rule partition
+ *
+ * **Owns:** a write to Web Storage — `localStorage` or `sessionStorage`, bare,
+ * `window.`/`self.`/`globalThis.`-qualified, computed (`storage['setItem']`) or
+ * optional-chained — whose evidence is a **bearer credential**: either the
+ * resolved key names one by whole word (`token`, `jwt`, `bearer`, `auth`,
+ * `session`, `sid`, `credential`), or the stored value is provably a JWT.
+ *
+ * **Defers to:**
+ * - `no-sensitive-localstorage` — non-bearer secrets (`password`, `api key`,
+ *   `ssn`, …) written to `localStorage`.
+ * - `no-sensitive-sessionstorage` — the same, written to `sessionStorage`.
+ * - `no-sensitive-indexeddb` — anything reached through IndexedDB.
+ * - `no-sensitive-data-in-cache` — anything reached through the Cache Storage API.
+ * - `no-cookie-auth-tokens` — bearer credentials written to `document.cookie`.
+ *
+ * Before this partition, `sessionStorage.setItem('access_token', t)` produced
+ * three reports at CVSS 8.1, 7.5 and 5.5 for one defect. It now produces one.
  *
  * @see https://cwe.mitre.org/data/definitions/922.html
  * @see https://auth0.com/docs/secure/security-guidance/data-security/token-storage
@@ -19,65 +39,36 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { resolveGlobalObject } from '../../utils/global-object';
+import {
+  hasProvableJwtValue,
+  memberName,
+  BEARER_CREDENTIAL_TERMS,
+  namesBearerCredential,
+  resolveKeyText,
+  resolveStorageArea,
+} from '../../utils/sensitive-value-evidence';
 
 type MessageIds = 'jwtInStorage';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
+
+  /**
+   * Whole words that name a bearer credential. REPLACES the default
+   * vocabulary (`BEARER_CREDENTIAL_TERMS`), which is what this rule reported on
+   * before the list was configurable.
+   */
+  bearerPatterns?: string[];
 }
 
 type RuleOptions = [Options?];
 
-// JWT detection patterns (keys) - these are regex patterns with word boundary semantics
-const JWT_KEY_PATTERNS = [
-  /^jwt$/i,                    // exact 'jwt'
-  /^token$/i,                  // exact 'token'  
-  /^access[_-]?token$/i,       // access_token, accessToken, access-token
-  /^refresh[_-]?token$/i,      // refresh_token, refreshToken
-  /^id[_-]?token$/i,           // id_token, idToken
-  /^bearer$/i,                 // exact 'bearer'
-  /^auth[_-]?token$/i,         // auth_token, authToken
-  /token$/i,                   // ends with 'token' (authToken, jwtToken, etc.)
-  /^jwt[_-]?/i,                // starts with 'jwt' (jwt_value, jwtData, etc.)
-  /[_-]jwt$/i,                 // ends with '_jwt' or '-jwt'
-];
-
-// JWT structure regex: base64.base64.base64
-const JWT_VALUE_REGEX = /^eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+$/;
-
-// Exclude patterns - known false positives
-const EXCLUDE_PATTERNS = [
-  /count$/i,                   // tokenCount, refreshTokenCount
-  /length$/i,                  // tokenLength
-  /size$/i,                    // tokenSize
-  /limit$/i,                   // tokenLimit
-  /max$/i,                     // maxToken, tokenMax
-  /min$/i,                     // minToken, tokenMin
-  /num$/i,                     // tokenNum, numToken
-  /index$/i,                   // tokenIndex
-  /position$/i,                // tokenPosition
-];
-
-/**
- * Check if key suggests JWT storage (with false positive filtering)
- */
-function isJwtKey(key: string): boolean {
-  // First check exclusion patterns
-  if (EXCLUDE_PATTERNS.some((pattern) => pattern.test(key))) {
-    return false;
-  }
-  // Then check if it matches any JWT pattern
-  return JWT_KEY_PATTERNS.some((pattern) => pattern.test(key));
-}
-
-/**
- * Check if value looks like a JWT
- */
-function isJwtValue(value: string): boolean {
-  return JWT_VALUE_REGEX.test(value);
-}
+/** The two Web Storage areas. Exact membership, never a substring. */
+const WEB_STORAGE: ReadonlySet<string> = new Set([
+  'localStorage',
+  'sessionStorage',
+]);
 
 export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
   name: 'no-jwt-in-storage',
@@ -86,25 +77,24 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-jwt-in-storage.md',
       description:
-        'Disallow storing JWT tokens in localStorage or sessionStorage',
+        'Disallow storing JWTs and other bearer credentials in localStorage or sessionStorage',
       cwe: 'CWE-922',
       cvss: 8.1,
     },
     messages: {
       jwtInStorage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'JWT in Browser Storage',
+        issueName: 'Bearer Credential in Browser Storage',
         cwe: 'CWE-922',
         owasp: 'A02:2021',
         cvss: 8.1,
         description:
-          'Storing JWT "{{key}}" in {{storage}} exposes it to XSS attacks. Any malicious script can steal the token and impersonate the user.',
+          'Storing bearer credential "{{key}}" in {{storage}} exposes it to XSS attacks. Any malicious script can steal the token and impersonate the user.',
         severity: 'HIGH',
         fix: 'Store JWTs in HttpOnly cookies set by the server.',
         documentationLink:
           'https://auth0.com/docs/secure/security-guidance/data-security/token-storage',
       }),
-
     },
     schema: [
       {
@@ -114,127 +104,96 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: true,
           },
+          bearerPatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...BEARER_CREDENTIAL_TERMS],
+            description:
+              'Whole words that name a bearer credential. Replaces the default vocabulary.',
+          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true }],
+  defaultOptions: [
+    { allowInTests: true, bearerPatterns: [...BEARER_CREDENTIAL_TERMS] },
+  ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const {
+      allowInTests = true,
+      bearerPatterns = BEARER_CREDENTIAL_TERMS,
+    } = options as Options;
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};
     }
 
-    const storageObjects = new Set(['localStorage', 'sessionStorage']);
+    /**
+     * Report when the key names a bearer credential OR the value is provably a
+     * JWT. `key` is the string the code actually WRITES — resolved through the
+     * binding — not the spelling of the constant that holds it.
+     */
+    function check(
+      node: TSESTree.Node,
+      storage: string,
+      key: string | null,
+      valueNode: TSESTree.Node | undefined,
+    ): void {
+      const jwtValue =
+        valueNode !== undefined &&
+        hasProvableJwtValue(valueNode, context.sourceCode);
+
+      if (
+        !jwtValue &&
+        (key === null || !namesBearerCredential(key, bearerPatterns))
+      ) {
+        return;
+      }
+
+      context.report({
+        node,
+        messageId: 'jwtInStorage',
+        data: { key: key ?? '<dynamic>', storage },
+      });
+    }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+        if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
+        if (memberName(callee, context.sourceCode) !== 'setItem') return;
 
-        // Check for localStorage.setItem() or sessionStorage.setItem(),
-        // however the global is spelled — `window.localStorage.setItem(...)`
-        // is the same sink and used to be invisible. See utils/global-object.
-        if (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          callee.property.name === 'setItem'
-        ) {
-          const storage = resolveGlobalObject(callee.object, storageObjects);
-          if (storage === null) return;
+        const storage = resolveStorageArea(callee.object, context.sourceCode, WEB_STORAGE);
+        if (storage === null) return;
 
-          const keyArg = node.arguments[0];
-          const valueArg = node.arguments[1];
+        const keyArg = node.arguments[0];
+        const key =
+          keyArg === undefined
+            ? null
+            : resolveKeyText(keyArg, context.sourceCode);
 
-          if (!keyArg) return;
-
-          let keyValue: string | null = null;
-          let hasJwtValue = false;
-
-          // Check key
-          if (
-            keyArg.type === AST_NODE_TYPES.Literal &&
-            typeof keyArg.value === 'string'
-          ) {
-            keyValue = keyArg.value;
-          } else if (keyArg.type === AST_NODE_TYPES.Identifier) {
-            keyValue = keyArg.name;
-          }
-
-          // Check value for JWT pattern
-          if (
-            valueArg &&
-            valueArg.type === AST_NODE_TYPES.Literal &&
-            typeof valueArg.value === 'string'
-          ) {
-            hasJwtValue = isJwtValue(valueArg.value);
-          }
-
-          // Flag if key suggests JWT or value looks like JWT
-          if (
-            (keyValue && isJwtKey(keyValue)) ||
-            hasJwtValue
-          ) {
-            context.report({
-              node,
-              messageId: 'jwtInStorage',
-              data: {
-                key: keyValue || '<dynamic>',
-                storage,
-              },
-            });
-          }
-        }
+        check(node, storage, key, node.arguments[1]);
       },
 
-      // Also check direct assignment: localStorage['token'] = jwt
+      // `localStorage['token'] = jwt` and `localStorage.token = jwt`.
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (node.left.type !== AST_NODE_TYPES.MemberExpression) {
-          return;
-        }
+        if (node.left.type !== AST_NODE_TYPES.MemberExpression) return;
 
-        const storage = resolveGlobalObject(node.left.object, storageObjects);
-        if (storage === null) {
-          return;
-        }
+        const storage = resolveStorageArea(node.left.object, context.sourceCode, WEB_STORAGE);
+        if (storage === null) return;
 
-        let keyValue: string | null = null;
-        let hasJwtValue = false;
+        // `localStorage.token = v` — the identifier IS the key.
+        // `localStorage[K] = v` — the identifier HOLDS the key, so resolve it.
+        const key = node.left.computed
+          ? resolveKeyText(node.left.property, context.sourceCode)
+          : memberName(node.left);
 
-        // Check key
-        if (
-          node.left.property.type === AST_NODE_TYPES.Literal &&
-          typeof node.left.property.value === 'string'
-        ) {
-          keyValue = node.left.property.value;
-        } else if (node.left.property.type === AST_NODE_TYPES.Identifier) {
-          keyValue = node.left.property.name;
-        }
-
-        // Check value for JWT pattern
-        if (
-          node.right.type === AST_NODE_TYPES.Literal &&
-          typeof node.right.value === 'string'
-        ) {
-          hasJwtValue = isJwtValue(node.right.value);
-        }
-
-        if ((keyValue && isJwtKey(keyValue)) || hasJwtValue) {
-          context.report({
-            node,
-            messageId: 'jwtInStorage',
-            data: {
-              key: keyValue || '<dynamic>',
-              storage,
-            },
-          });
-        }
+        check(node, storage, key, node.right);
       },
     };
   },

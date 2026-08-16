@@ -1,0 +1,20 @@
+{
+  "rule": "browser-security/no-unsafe-eval-csp",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 25,
+  "vulnerable": 14,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-unsafe-eval-csp",
+      "tp": 14,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

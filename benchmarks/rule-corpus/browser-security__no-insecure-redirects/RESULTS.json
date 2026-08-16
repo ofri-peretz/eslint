@@ -1,0 +1,20 @@
+{
+  "rule": "browser-security/no-insecure-redirects",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 31,
+  "vulnerable": 17,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-insecure-redirects",
+      "tp": 17,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

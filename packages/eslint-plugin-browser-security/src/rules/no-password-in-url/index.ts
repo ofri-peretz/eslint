@@ -38,6 +38,63 @@ type RuleOptions = [Options?];
  */
 const HTTP_URL = /https?:\/\/([^/?#\s'"`<>]*)/gi;
 
+/**
+ * A stand-in for a value we cannot read, chosen so it cannot be mistaken for
+ * a URL delimiter. U+0001 is not `/`, `?`, `#`, `@`, `:` or whitespace, so
+ * folding an interpolation into it preserves the STRUCTURE of the URL while
+ * saying nothing about the content.
+ */
+const OPAQUE = '\u0001';
+
+/**
+ * The URL text an expression builds, with unknown parts folded to a placeholder.
+ *
+ * The rule visited `Literal` and nothing else, so three ways of writing the
+ * identical credentialled URL were invisible:
+ *
+ * ```js
+ * const A = `https://svc:s3cr3t@host/api`;          // template, no expressions
+ * fetch(`https://svc:${password}@host/api`);        // the secret interpolated
+ * fetch('https://svc:s3cr3t' + '@' + HOST + '/api'); // split so no literal has it
+ * ```
+ *
+ * What makes a URL CWE-521 is the **userinfo position**, and that position
+ * survives all three. Folding to a placeholder keeps the delimiters — which is
+ * all the authority parse needs — without ever inspecting or guessing the
+ * value that will land there.
+ *
+ * Returns `null` when nothing string-shaped can be recovered.
+ */
+function foldUrlText(node: TSESTree.Node, depth = 0): string | null {
+  if (depth > 8) return null;
+  switch (node.type) {
+    case 'Literal':
+      return typeof node.value === 'string' ? node.value : null;
+
+    case 'TemplateLiteral': {
+      let text = '';
+      node.quasis.forEach((quasi, index) => {
+        text += quasi.value.cooked;
+        if (index < node.expressions.length) {
+          text += foldUrlText(node.expressions[index], depth + 1) ?? OPAQUE;
+        }
+      });
+      return text;
+    }
+
+    case 'BinaryExpression': {
+      if (node.operator !== '+') return null;
+      const left = foldUrlText(node.left as TSESTree.Node, depth + 1);
+      const right = foldUrlText(node.right, depth + 1);
+      if (left === null && right === null) return null;
+      return (left ?? OPAQUE) + (right ?? OPAQUE);
+    }
+
+    default:
+      return null;
+  }
+}
+
 /** Does any URL in this string carry `user:password@` in its authority? */
 function hasUserinfoPassword(value: string): boolean {
   for (const match of value.matchAll(HTTP_URL)) {
@@ -85,12 +142,35 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
       });
     }
     
+    /**
+     * Is this node a PIECE of a larger string expression?
+     *
+     * The outermost node is the one that owns the report. Without this, one
+     * `'https://u:p@host' + path` would report twice — once for the whole
+     * concatenation and once for the literal inside it — and this repo has
+     * already shipped a rule pinning two errors from one line as correct.
+     */
+    function isNestedStringPart(node: TSESTree.Node): boolean {
+      const parent = node.parent;
+      return (
+        parent !== undefined &&
+        ((parent.type === 'BinaryExpression' && parent.operator === '+') ||
+          parent.type === 'TemplateLiteral')
+      );
+    }
+
+    function check(node: TSESTree.Node) {
+      if (isNestedStringPart(node)) return;
+      const text = foldUrlText(node);
+      if (text !== null && hasUserinfoPassword(text)) {
+        report(node);
+      }
+    }
+
     return {
-      Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string' && hasUserinfoPassword(node.value)) {
-          report(node);
-        }
-      },
-};
+      Literal: check,
+      TemplateLiteral: check,
+      BinaryExpression: check,
+    };
   },
 });

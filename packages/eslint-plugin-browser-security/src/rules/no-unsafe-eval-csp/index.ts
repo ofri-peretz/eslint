@@ -18,6 +18,11 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import {
+  cspSourceKeyword,
+  isCspSourceListElement,
+  policyGrantsKeyword,
+} from '../../utils/csp-directive';
 
 type MessageIds = 'unsafeEval';
 
@@ -75,32 +80,55 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const UNSAFE_EVAL_PATTERN = /'unsafe-eval'/gi;
+    const UNSAFE_EVAL = 'unsafe-eval';
+    const sourceCode = context.sourceCode;
 
     /**
-     * Check a string value for unsafe-eval
+     * Does this string, read as a POLICY, grant `'unsafe-eval'`?
+     *
+     * This used to be `/'unsafe-eval'/gi.test(value)` against a module-level
+     * regex, which was wrong three ways and measurably so:
+     *
+     * - `/g` makes `.test()` STATEFUL. `lastIndex` survives every call, so a
+     *   file with four identical unsafe policies reported two of them, and a
+     *   short policy linted after a long one in the same process reported
+     *   none. ESLint lints a whole project through one Linter, so this leaked
+     *   between files as well as within them.
+     * - Substring, not token. It could only ever see a policy that had already
+     *   been serialised WITH apostrophes, missing every builder that quotes on
+     *   output — see utils/csp-directive.
+     * - No notion of context, so the build guard that REFUSES the directive
+     *   and the docs page that explains why were both findings.
      */
-    function checkForUnsafeEval(node: TSESTree.Node, value: string): void {
-      if (UNSAFE_EVAL_PATTERN.test(value)) {
-        context.report({
-          node,
-          messageId: 'unsafeEval',
-        });
+    function checkPolicyText(node: TSESTree.Node, value: string): void {
+      if (policyGrantsKeyword(value, UNSAFE_EVAL)) {
+        context.report({ node, messageId: 'unsafeEval' });
       }
     }
 
     return {
-      // Check string literals
       Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string') {
-          checkForUnsafeEval(node, node.value);
+        if (typeof node.value !== 'string') return;
+
+        // A whole serialised policy: `script-src 'self' 'unsafe-eval'`.
+        checkPolicyText(node, node.value);
+
+        // A single source expression sitting in a directive's source list —
+        // quoted or bare. Only reported where a source actually belongs, which
+        // is proven from the AST, never from the string's spelling.
+        if (
+          cspSourceKeyword(node.value) === UNSAFE_EVAL &&
+          isCspSourceListElement(node, sourceCode)
+        ) {
+          context.report({ node, messageId: 'unsafeEval' });
         }
       },
 
-      // Check template literals
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const value = node.quasis.map((q) => q.value.raw).join('');
-        checkForUnsafeEval(node, value);
+        // The literal chunks only, joined by a space so an interpolation
+        // cannot weld two tokens into one. `${a}${b}` must not read as a
+        // single directive name.
+        checkPolicyText(node, node.quasis.map((q) => q.value.raw).join(' '));
       },
     };
   },

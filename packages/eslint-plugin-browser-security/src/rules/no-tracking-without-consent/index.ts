@@ -6,10 +6,45 @@
 
 /**
  * @fileoverview Require consent before tracking
+ *
+ * ## Rule partition
+ *
+ * Shares CWE-359 and its call sites with `no-sensitive-data-in-analytics`, and
+ * the duplicate ledger flags the two as duplicate coverage. They are
+ * COMPLEMENTARY, not duplicate:
+ *
+ * | Question | Owner |
+ * |---|---|
+ * | Is the call reached without a consent decision? | **no-tracking-without-consent** |
+ * | Is a PII field in the payload? | `no-sensitive-data-in-analytics` |
+ *
+ * Both single-owner cells of the 2×2 are populated — a gated call carrying an
+ * email reports only there, an ungated call carrying a plan name reports only
+ * here — so neither rule is a subset of the other. Where both fire it is two
+ * findings with two different fixes: gating the tracker still ships the email
+ * to the vendor, and stripping the email still tracks a user who refused.
+ * Locked by `../no-sensitive-data-in-analytics/analytics-partition.matrix.test.ts`.
+ *
+ * The two rules SHARE their sink surface (`utils/analytics-sinks.ts`). They
+ * did not, and the divergence was a coverage hole rather than a partition:
+ * `window.analytics.track(…)` — the spelling Segment's own installation
+ * snippet produces — and GTM's `dataLayer.push(…)` were invisible here while
+ * the PII rule saw them.
+ *
+ * ## Known limit
+ *
+ * `if (shouldShowConsentBanner) { analytics.page('Consent Banner Shown'); }`
+ * is a FALSE NEGATIVE and is left as one. The identifier contains `consent` as
+ * a whole word and decides whether to RENDER the banner, not whether consent
+ * was given, and there is no AST evidence that separates the two. The
+ * direction is what makes it acceptable: this name test only ever SILENCES,
+ * so getting it wrong costs recall rather than a stranger's trust — and
+ * `consentIdentifiers` is the escape hatch.
  */
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { isAnalyticsTransmission } from '../../utils/analytics-sinks';
 
 type MessageIds = 'violationDetected';
 
@@ -44,12 +79,9 @@ function normalize(name: string): string {
 }
 
 /**
- * Analytics APIs whose calls are the sink.
- *
- * Segment's client surface. Configurable via `analyticsMethods` because it is
- * not closed — `analytics.screen` and `analytics.group` exist, and the rule's
- * own docs listed non-standard libraries as a known false negative whose only
- * mitigation was "review it by hand".
+ * Extra methods accepted on the `analytics` client, on top of the closed
+ * vendor surface in `utils/analytics-sinks.ts`. Configurable because a team's
+ * own wrapper may name its verbs anything.
  */
 const DEFAULT_ANALYTICS_METHODS = ['track', 'identify', 'page'];
 
@@ -109,7 +141,7 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
       analyticsMethods = DEFAULT_ANALYTICS_METHODS,
     } = options as Options;
     const words = consentIdentifiers.map(normalize);
-    const methods = new Set(analyticsMethods);
+    const methods = analyticsMethods;
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
@@ -275,18 +307,13 @@ export const noTrackingWithoutConsent = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const isAnalyticsCall =
-          node.callee.type === 'MemberExpression' &&
-          !node.callee.computed &&
-          node.callee.object.type === 'Identifier' &&
-          node.callee.object.name === 'analytics' &&
-          node.callee.property.type === 'Identifier' &&
-          methods.has(node.callee.property.name);
-
-        const isGtagCall =
-          node.callee.type === 'Identifier' && node.callee.name === 'gtag';
-
-        if ((isAnalyticsCall || isGtagCall) && !isConsentGranted(node)) {
+        // The sink surface is SHARED with `no-sensitive-data-in-analytics`.
+        // A complementary pair with different sink lists is not complementary,
+        // it is two rules with different blind spots — and this one's were
+        // `window.analytics.track(…)`, the spelling Segment's own snippet
+        // installs, and `dataLayer.push(…)`, which is how every Google Tag
+        // Manager container on the web sends its events.
+        if (isAnalyticsTransmission(node, methods) && !isConsentGranted(node)) {
           report(node);
         }
       },

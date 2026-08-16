@@ -1,0 +1,20 @@
+{
+  "rule": "browser-security/no-jwt-in-storage",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 32,
+  "vulnerable": 18,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-jwt-in-storage",
+      "tp": 18,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

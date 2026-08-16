@@ -1,0 +1,18 @@
+{
+  "rule": "browser-security/no-eval",
+  "fixtures": 25,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-eval",
+      "tp": 14,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

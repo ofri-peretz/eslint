@@ -10,42 +10,74 @@
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { isAttackerSteerableUrl } from '../../utils/url-taint';
+import {
+  identityArgumentIndex,
+  isSteerableUrlValue,
+} from '../../utils/navigation-targets';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds = 'violationDetected';
 
 /**
- * The dotted path of a non-computed member chain, root identifier first.
+ * The dotted path of a member chain, root identifier first, resolved through
+ * bindings.
  *
  * `props.route.params.next` → `['props','route','params','next']`.
- * Returns `null` for anything computed or rooted in a non-identifier, because
- * those cannot be matched against a closed API surface.
+ *
+ * A COMPUTED segment contributes nothing but does not abort the walk, which is
+ * what React Navigation's own idiom requires:
+ *
+ * ```js
+ * const current = state.routes[state.index];   // ['state','routes']
+ * current.params.next                          // ['state','routes','params','next']
+ * ```
+ *
+ * The old walk returned `null` at the first `[…]`, so the navigation state —
+ * the shape the library's own docs use to resume a deep link — was invisible.
+ * Resolving the root identifier is what stitches the two halves together, and
+ * it is scope resolution, not a guess from the spelling `current`.
  */
-function memberPath(node: TSESTree.Node): string[] | null {
+function memberPath(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+  depth = 0,
+): string[] | null {
+  if (depth > 4) return null;
   const parts: string[] = [];
   let current: TSESTree.Node = node;
   while (current.type === 'MemberExpression') {
-    if (current.computed || current.property.type !== 'Identifier') return null;
-    parts.unshift(current.property.name);
+    if (!current.computed && current.property.type === 'Identifier') {
+      parts.unshift(current.property.name);
+    }
     current = current.object;
   }
   if (current.type !== 'Identifier') return null;
+  const init = resolveInitializer(current, sourceCode);
+  if (init !== undefined) {
+    const base = memberPath(init, sourceCode, depth + 1);
+    if (base !== null) return [...base, ...parts];
+  }
   parts.unshift(current.name);
   return parts;
 }
 
 /**
- * `route.params.x`, `props.route.params.x`.
+ * `route.params.x`, `props.route.params.x`, `state.routes[i].params.x`.
  *
  * React Navigation parses the inbound deep link and hands its parameters to
- * the screen as `route.params`. Whoever crafted the link chose those values.
+ * the screen as `route.params`; the navigation state exposes the same thing as
+ * `routes[index].params`. Whoever crafted the link chose those values.
+ *
+ * Exact segment membership against React Navigation's closed API surface — not
+ * a substring test, so `routerParams` and `paramsHistory` do not match.
  */
-function isRouteParam(node: TSESTree.Node): boolean {
-  const path = memberPath(node);
+function isRouteParam(node: TSESTree.Node, sourceCode: TSESLint.SourceCode): boolean {
+  const path = memberPath(node, sourceCode);
   if (path === null) return false;
   for (let i = 0; i + 2 < path.length; i += 1) {
-    if (path[i] === 'route' && path[i + 1] === 'params') return true;
+    if ((path[i] === 'route' || path[i] === 'routes') && path[i + 1] === 'params') {
+      return true;
+    }
   }
   return false;
 }
@@ -132,8 +164,31 @@ function isDeepLinkSteerable(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  if (isAttackerSteerableUrl(node, sourceCode)) return true;
-  if (isRouteParam(node)) return true;
+  // `event?.url` and `Linking?.openURL(…)` wrap the expression in a
+  // ChainExpression. Not unwrapping it made optional chaining — which Expo
+  // codebases use precisely because `Linking` is undefined on web — a blanket
+  // false negative for this rule.
+  if (node.type === 'ChainExpression') {
+    return isDeepLinkSteerable(node.expression, sourceCode);
+  }
+  if (isSteerableUrlValue(node, sourceCode)) return true;
+  if (isRouteParam(node, sourceCode)) return true;
+
+  // A local helper we can READ to be the identity function passes the deep
+  // link straight through. `safe/04` is the same shape with a validator whose
+  // source we do not have; the difference is whether we can see it constrain
+  // nothing, not what it is called.
+  if (node.type === 'CallExpression') {
+    const index = identityArgumentIndex(node, sourceCode);
+    if (index !== null) {
+      const argument = node.arguments[index];
+      return (
+        argument !== undefined &&
+        argument.type !== 'SpreadElement' &&
+        isDeepLinkSteerable(argument, sourceCode)
+      );
+    }
+  }
 
   // `await Linking.getInitialURL()`.
   if (node.type === 'AwaitExpression') {
@@ -234,7 +289,7 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
             node.callee.property.name === 'navigate') {
 
           const urlArg = node.arguments[0];
-          if (urlArg && isAttackerSteerableUrl(urlArg, context.sourceCode)) {
+          if (urlArg && isSteerableUrlValue(urlArg, context.sourceCode)) {
             report(node);
           }
         }

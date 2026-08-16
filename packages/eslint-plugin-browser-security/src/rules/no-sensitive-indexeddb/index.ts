@@ -9,6 +9,25 @@
  * Detects storing sensitive data in IndexedDB
  * CWE-922: Insecure Storage of Sensitive Information
  *
+ * ## Rule partition
+ *
+ * **Owns:** IndexedDB. Two shapes, both proven structurally:
+ * 1. `db.createObjectStore(name)` — `createObjectStore` exists on `IDBDatabase`
+ *    and nowhere else in the browser API surface, so the call itself is the
+ *    proof of medium.
+ * 2. `store.add(obj)` / `store.put(obj)` where `store` **resolves back** to an
+ *    `objectStore()` / `createObjectStore()` call. Before that resolution the
+ *    rule reported every `.add`/`.put` in the program — `jobQueue.add({ credentials })`
+ *    is a job queue, not a database.
+ *
+ * **Defers to:** `no-jwt-in-storage`, `no-sensitive-localstorage`,
+ * `no-sensitive-sessionstorage` (Web Storage) and `no-sensitive-data-in-cache`
+ * (Cache Storage). Those media never reach this rule's sinks, so the deferral is
+ * a consequence of the sink test rather than an extra guard.
+ *
+ * Bearer credentials are in scope here — `no-jwt-in-storage` only covers Web
+ * Storage, so deferring them would be a false negative rather than a partition.
+ *
  * @see https://cwe.mitre.org/data/definitions/922.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -19,32 +38,33 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
+import {
+  isIdbWrapperDatabase,
+  isIndexedDbStoreReceiver,
+  memberName,
+  namesBearerCredential,
+  namesNonBearerSecret,
+  NON_BEARER_SECRET_TERMS,
+  resolveKeyText,
+} from '../../utils/sensitive-value-evidence';
+
 type MessageIds = 'sensitiveInIndexedDB';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
+  /** Extra whole-word terms to treat as sensitive */
+  additionalPatterns?: string[];
 }
 
 type RuleOptions = [Options?];
 
-// Sensitive store/key patterns
-const SENSITIVE_PATTERNS = [
-  /password/i,
-  /secret/i,
-  /apikey/i,
-  /api[_-]?key/i,
-  /private[_-]?key/i,
-  /auth[_-]?token/i,
-  /access[_-]?token/i,
-  /credential/i,
-  /ssn/i,
-  /credit[_-]?card/i,
-  /encryption[_-]?key/i,
-];
-
-function isSensitive(name: string): boolean {
-  return SENSITIVE_PATTERNS.some((p) => p.test(name));
+/** Any secret at all — IndexedDB has no sibling rule to split the vocabulary with. */
+function isSensitive(name: string, extra: readonly string[]): boolean {
+  return (
+    namesNonBearerSecret(name, [...NON_BEARER_SECRET_TERMS, ...extra]) ||
+    namesBearerCredential(name)
+  );
 }
 
 export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
@@ -65,30 +85,40 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
         owasp: 'A02:2021',
         cvss: 7.5,
         description:
-          'Creating IndexedDB store "{{name}}" for sensitive data. IndexedDB is accessible to XSS attacks.',
+          'Storing "{{name}}" in IndexedDB. IndexedDB is readable by any script on the origin, so an XSS reads it.',
         severity: 'HIGH',
         fix: 'Encrypt sensitive data before storing or use server-side storage.',
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#local-storage',
       }),
-
     },
     schema: [
       {
         type: 'object',
-        properties: { allowInTests: { type: 'boolean', default: true } },
+        properties: {
+          allowInTests: { type: 'boolean', default: true },
+          additionalPatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description:
+              'Extra terms that name a secret, added to the built-in vocabulary rather than ' +
+              'replacing it. Matched as whole words against the store or key name, never as a ' +
+              'substring — so `token` does not match `tokenizer`. Use this for domain secrets ' +
+              'the built-in list cannot know about, e.g. `entitlementGrant`.',
+          },
+        },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true }],
+  defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const { allowInTests = true, additionalPatterns = [] } = options as Options;
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -96,49 +126,73 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        // Check for db.createObjectStore('sensitiveStore')
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return;
+        const method = memberName(node.callee, context.sourceCode);
+
+        // 1. db.createObjectStore('vault') — the method name IS the medium proof.
+        if (method === 'createObjectStore') {
+          const nameArg = node.arguments[0];
+          if (nameArg === undefined) return;
+          const storeName = resolveKeyText(nameArg, context.sourceCode);
+          if (storeName !== null && isSensitive(storeName, additionalPatterns)) {
+            context.report({
+              node,
+              messageId: 'sensitiveInIndexedDB',
+              data: { name: storeName },
+            });
+          }
+          return;
+        }
+
+        // 2. store.add({…}) / store.put({…}) — only when `store` resolves to an
+        //    IDBObjectStore. `.add`/`.put` alone prove nothing.
+        //    3. db.put(storeName, {…}) — the `idb` package's shape, which is
+        //    how most production code touches IndexedDB.
+        if (method !== 'add' && method !== 'put') return;
+
+        const receiver = node.callee.object;
+        const viaWrapper = isIdbWrapperDatabase(receiver, context.sourceCode);
         if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'createObjectStore'
+          !viaWrapper &&
+          !isIndexedDbStoreReceiver(receiver, context.sourceCode)
         ) {
-          const storeNameArg = node.arguments[0];
-          if (
-            storeNameArg &&
-            storeNameArg.type === AST_NODE_TYPES.Literal &&
-            typeof storeNameArg.value === 'string'
-          ) {
-            if (isSensitive(storeNameArg.value)) {
+          return;
+        }
+
+        if (viaWrapper) {
+          // The first argument is the store NAME, the second the record.
+          const storeArg = node.arguments[0];
+          if (storeArg !== undefined) {
+            const storeName = resolveKeyText(storeArg, context.sourceCode);
+            if (
+              storeName !== null &&
+              isSensitive(storeName, additionalPatterns)
+            ) {
               context.report({
                 node,
                 messageId: 'sensitiveInIndexedDB',
-                data: { name: storeNameArg.value },
+                data: { name: storeName },
               });
             }
           }
         }
 
-        // Check for store.add/put with sensitive key names
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          (node.callee.property.name === 'add' || node.callee.property.name === 'put')
-        ) {
-          const dataArg = node.arguments[0];
-          if (dataArg && dataArg.type === AST_NODE_TYPES.ObjectExpression) {
-            for (const prop of dataArg.properties) {
-              if (
-                prop.type === AST_NODE_TYPES.Property &&
-                prop.key.type === AST_NODE_TYPES.Identifier &&
-                isSensitive(prop.key.name)
-              ) {
-                context.report({
-                  node,
-                  messageId: 'sensitiveInIndexedDB',
-                  data: { name: prop.key.name },
-                });
-              }
-            }
+        const dataArg = viaWrapper ? node.arguments[1] : node.arguments[0];
+        if (dataArg === undefined) return;
+        if (dataArg.type !== AST_NODE_TYPES.ObjectExpression) return;
+
+        for (const prop of dataArg.properties) {
+          if (prop.type !== AST_NODE_TYPES.Property) continue;
+          const key =
+            prop.key.type === AST_NODE_TYPES.Identifier
+              ? prop.key.name
+              : resolveKeyText(prop.key, context.sourceCode);
+          if (key !== null && isSensitive(key, additionalPatterns)) {
+            context.report({
+              node,
+              messageId: 'sensitiveInIndexedDB',
+              data: { name: key },
+            });
           }
         }
       },

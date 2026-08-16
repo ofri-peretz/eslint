@@ -6,115 +6,117 @@
 
 /**
  * ESLint Rule: no-unescaped-url-parameter
- * Detects unescaped URL parameters
- * CWE-79: Cross-site Scripting (XSS)
- * 
+ * CWE-79 / CWE-116: untrusted text interpolated into a URL without encoding.
+ *
+ * ## What this rule was, and why it was wrong in BOTH directions
+ *
+ * It decided everything from `sourceCode.getText()`. A node was "a URL" when
+ * its printed source matched a `https?://` regex or a `url =` regex, and an
+ * interpolation was "user input" when its printed source matched `\binput\b`,
+ * `\bparam\b`, `\burl\b`, `\bnext\b` or `\bredirect\b`, case-insensitively.
+ * Both directions failed, measurably:
+ *
+ * ```js
+ * `…/items?price=${input.toFixed(2)}`   // reported — a NUMBER, `input` ⊂ the text
+ * const PARAM = 'static'; `…?q=${PARAM}`// reported — a compile-time constant
+ *
+ * new URLSearchParams(location.search).get('q')  // MISSED
+ * document.getElementById('q').value             // MISSED
+ * export function search(q) { … }                // MISSED
+ * ```
+ *
+ * Every genuinely attacker-controlled source was invisible while two provably
+ * safe values were reported. That is the exact defect class CLAUDE.md opens
+ * with, and it shipped to users.
+ *
+ * ## What it is now
+ *
+ * Two structural questions, both answered from the AST and from scope:
+ *
+ * 1. **Is this an encoding position?** `url-shape.ts` assembles the URL's
+ *    static *value* from cooked quasis and string literals and records where
+ *    each interpolation lands. Only holes in the path, query or fragment
+ *    qualify — a hole in the authority chooses the host, which is an open
+ *    redirect and belongs to `no-insecure-redirects` / `require-url-validation`.
+ * 2. **Is the value untrusted?** `untrusted-text.ts` proves it: a `location`
+ *    read, a `URLSearchParams`/`URL` container read, a `req.query`/`body`/
+ *    `params` member, a DOM `value`/`textContent` on a resolved element, a
+ *    `FormData` field, or a parameter of an EXPORTED function. Unknown calls
+ *    stay opaque, which is what makes `encodeURIComponent(q)` and
+ *    `input.toFixed(2)` clean without either being named.
+ *
+ * ## Partition
+ *
+ * | Sink | Owner |
+ * |---|---|
+ * | untrusted text in the path/query/fragment of a URL | **no-unescaped-url-parameter** |
+ * | untrusted text choosing the scheme or host | `no-insecure-redirects`, `require-url-validation` |
+ * | any write to a `Location`, `location.assign/replace`, `.redirect(x)` | `no-insecure-redirects` |
+ * | `window.open(x)`, `router.push(x)` | `require-url-validation` |
+ * | a credential embedded in the URL string | `no-password-in-url` |
+ *
+ * The `AssignmentExpression` visitor this rule used to carry — which matched
+ * `objectName.includes('location')` — is gone: every `Location` write is
+ * `no-insecure-redirects`', and duplicating it reported the same defect twice
+ * under two CWEs.
+ *
  * @see https://cwe.mitre.org/data/definitions/79.html
- * @see https://owasp.org/www-community/attacks/xss/
+ * @see https://cwe.mitre.org/data/definitions/116.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  compileUserPatterns,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
+import { carriesUntrustedText } from './untrusted-text';
+import { isEncodingPosition, urlKind, urlShape } from './url-shape';
 
 type MessageIds = 'unescapedUrlParameter';
 
 export interface Options {
   /** Allow unescaped URL parameters in test files. Default: false */
   allowInTests?: boolean;
-  
-  /** Trusted URL construction libraries. Default: ['url', 'querystring'] */
+
+  /**
+   * Modules whose exports produce already-encoded URL text. Resolved through
+   * the import graph, so a value merely *named* `url` no longer qualifies.
+   * Default: ['url', 'querystring']
+   */
   trustedLibraries?: string[];
-  
+
   /** Additional safe patterns to ignore. Default: [] */
   ignorePatterns?: string[];
 }
 
 type RuleOptions = [Options?];
 
-/**
- * Check if a node is inside a URL encoding function call
- */
-function isInsideEncodingCall(
-  node: TSESTree.Node,
-  sourceCode: TSESLint.SourceCode,
-  trustedLibraries: string[]
-): boolean {
-  let current: TSESTree.Node | null = node;
-  
-  while (current) {
-    if (current.type === 'CallExpression') {
-      const callee = current.callee;
-      
-      // Check for encodeURIComponent, encodeURI
-      if (callee.type === 'Identifier') {
-        const calleeName = callee.name;
-        if (['encodeURIComponent', 'encodeURI', 'escape'].includes(calleeName)) {
-          return true;
-        }
-      }
-      
-      // Check if it's a trusted library call
-      if (callee.type === 'MemberExpression') {
-        const object = callee.object;
-        if (object.type === 'Identifier') {
-          const objectName = object.name.toLowerCase();
-          if (trustedLibraries.some(lib => objectName.includes(lib.toLowerCase()))) {
-            return true;
-          }
-        }
-      }
-    }
-    
-    // Traverse up the AST
-    if ('parent' in current && current.parent) {
-      current = current.parent as TSESTree.Node;
-    } else {
-      break;
-    }
-  }
-  
-  return false;
-}
+const DEFAULT_TRUSTED_LIBRARIES: readonly string[] = ['url', 'querystring'];
 
 /**
- * Check if a string matches any ignore pattern
+ * Calls that take a URL and do something with it.
+ *
+ * Only consulted for RELATIVE text (`/api/search?q=…`): a string starting with
+ * a slash is a URL only in context, whereas `https://…` is one wherever it is
+ * written. Without this the rule would have to report every path-shaped string
+ * in a program.
  */
-function matchesIgnorePattern(text: string, ignorePatterns: string[]): boolean {
-  return ignorePatterns.some(pattern => {
-    try {
-      const regex = new RegExp(pattern, 'i');
-      return regex.test(text);
-    } catch {
-      return false;
-    }
-  });
-}
-
-/**
- * Check if a node is a URL construction pattern
- */
-function isUrlConstruction(node: TSESTree.Node, sourceCode: TSESLint.SourceCode): boolean {
-  let text = sourceCode.getText(node);
-
-  // For template literals, combine raw strings to improve pattern detection
-  if (node.type === 'TemplateLiteral') {
-    text = node.quasis.map(q => q.value.raw).join('');
-  }
-  
-  // Check for URL construction patterns
-  const urlPatterns = [
-    /\bhttps?:\/\//,  // HTTP/HTTPS URLs
-    /\bnew\s+URL\s*\(/,
-    /\burl\s*[=:]\s*/,  // url = or url:
-    /\burl\s*\+/,  // url +
-    /\bwindow\.location/,
-    /\blocation\.href/,
-    /\bwindow\.open\s*\(/,
-    /\?[^=]+=/,  // Query parameters
-  ];
-  
-  return urlPatterns.some(pattern => pattern.test(text));
-}
+const URL_SINK_FUNCTIONS: ReadonlySet<string> = new Set(['fetch']);
+const URL_SINK_CONSTRUCTORS: ReadonlySet<string> = new Set(['URL', 'Request']);
+/** `xhr.open(method, url)` — the URL is the SECOND argument. */
+const XHR_OPEN_URL_INDEX = 1;
+/** JSX attributes whose value the browser resolves as a URL. */
+const URL_ATTRIBUTES: ReadonlySet<string> = new Set([
+  'href',
+  'src',
+  'action',
+  'formAction',
+  'poster',
+]);
+const HTTP_CLIENT_MODULES: ReadonlySet<string> = new Set(['axios', 'ky']);
 
 export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
   name: 'no-unescaped-url-parameter',
@@ -136,7 +138,6 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/79.html',
       }),
-
     },
     schema: [
       {
@@ -151,7 +152,8 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: ['url', 'querystring'],
-            description: 'Trusted URL construction libraries',
+            description:
+              'Modules whose exports produce already-encoded URL text',
           },
           ignorePatterns: {
             type: 'array',
@@ -173,226 +175,199 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       allowInTests = false,
-      trustedLibraries = ['url', 'querystring'],
+      trustedLibraries = DEFAULT_TRUSTED_LIBRARIES,
       ignorePatterns = [],
-    } = options as Options;
+    } = options;
 
-    const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile =
+      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
+    if (isTestFile) return {};
+
     const sourceCode = context.sourceCode;
+    const trusted: ReadonlySet<string> = new Set(trustedLibraries);
+    // `compileUserPattern`, not a bare `new RegExp`. The try/catch that used to
+    // sit here handled an INVALID pattern but not a pathological one: a user
+    // ignorePattern like `(a+)+$` compiles fine and then stalls the whole lint
+    // run on a long identifier. The devkit helper screens the shape first,
+    // degrades to a substring match instead of throwing, and resets `lastIndex`
+    // per call so a /g pattern cannot answer differently on its second use.
+    const ignoreRegexes = compileUserPatterns(ignorePatterns, 'i');
 
-    function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
-      if (isTestFile) {
-        return;
-      }
-
-      // Check if this is a URL construction
-      if (!isUrlConstruction(node, sourceCode)) {
-        return;
-      }
-
-      // Check each expression in the template
-      for (const expression of node.expressions) {
-        const text = sourceCode.getText(expression);
-        
-        // Check if it matches any ignore pattern
-        if (matchesIgnorePattern(text, ignorePatterns)) {
-          continue;
-        }
-
-        // Check if it's already encoded
-        if (isInsideEncodingCall(expression, sourceCode, trustedLibraries)) {
-          continue;
-        }
-
-        // Check if it's a user input pattern
-        const userInputPatterns = [
-          /\breq\.(query|params|body|headers|cookies)/,
-          /\brequest\.(query|params|body)/,
-          /\buserInput\b/i,
-          /\binput\b/i,
-          /\bsearchParams\b/,
-          /\bparam\b/i, // Generic param variable
-        ];
-
-        // Check both the expression text and the full template literal
-        // This catches nested patterns like req.query.id
-        const fullText = sourceCode.getText(node);
-        const exprText = sourceCode.getText(expression);
-        const isUserInput = userInputPatterns.some(pattern => pattern.test(text)) || 
-                           userInputPatterns.some(pattern => pattern.test(fullText)) ||
-                           userInputPatterns.some(pattern => pattern.test(exprText)) ||
-                           // Also check for nested member expressions like req.query.id
-                           (expression.type === 'MemberExpression' && 
-                            userInputPatterns.some(pattern => {
-                              // Check the full expression including nested properties
-                              return pattern.test(exprText);
-                            }));
-
-        if (isUserInput) {
-          context.report({
-            node: expression,
-            messageId: 'unescapedUrlParameter',
-            data: {
-              parameter: text,
-              safeAlternative: `Use encodeURIComponent() or URLSearchParams: const url = \`https://example.com?q=\${encodeURIComponent(${text})}\`;`,
-            },
-          });
-        }
-      }
+    /**
+     * Was this value produced by a module the user declared trusted?
+     *
+     * Resolved through the import graph with `resolveModuleBinding`. The
+     * previous implementation lowercased the receiver's identifier and
+     * substring-matched the library list against it, so `urlBuilder`,
+     * `myUrls` and `curlOptions` all silenced the rule while a genuine
+     * `import { format } from 'url'` under any local alias did not.
+     */
+    function isTrustedLibraryCall(node: TSESTree.Node): boolean {
+      if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+      const binding = resolveModuleBinding(
+        node.callee,
+        sourceCode.getScope(node),
+      );
+      if (binding === undefined) return false;
+      const module = binding.module.replace(/^node:/, '');
+      return trusted.has(module);
     }
 
-    function checkBinaryExpression(node: TSESTree.BinaryExpression) {
-      if (isTestFile) {
-        return;
-      }
-
-      // Check for string concatenation in URL construction
-      if (node.operator === '+') {
-        if (!isUrlConstruction(node, sourceCode)) {
-          return;
-        }
-
-        // Check right side (usually the parameter)
-        if (node.right.type !== 'Literal') {
-          const rightText = sourceCode.getText(node.right);
-          
-          // Check if it matches any ignore pattern
-          if (matchesIgnorePattern(rightText, ignorePatterns)) {
-            return;
-          }
-
-          // Check if it's already encoded
-          if (isInsideEncodingCall(node.right, sourceCode, trustedLibraries)) {
-            return;
-          }
-
-          // Check if it's a user input pattern
-          const userInputPatterns = [
-            /\breq\.(query|params|body)/,
-            /\brequest\.(query|params|body)/,
-            /\buserInput\b/,
-            /\binput\b/,
-          ];
-
-          const isUserInput = userInputPatterns.some(pattern => pattern.test(rightText));
-
-          if (isUserInput) {
-            context.report({
-              node: node.right,
-              messageId: 'unescapedUrlParameter',
-              data: {
-                parameter: rightText,
-                safeAlternative: `Use encodeURIComponent(): ${sourceCode.getText(node.left)} + encodeURIComponent(${rightText})`,
-              },
-            });
-          }
-        }
-      }
+    /** `axios.get(url)` / `ky(url)` on a resolved module binding. */
+    function isHttpClientCall(node: TSESTree.CallExpression): boolean {
+      const binding = resolveModuleBinding(
+        node.callee,
+        sourceCode.getScope(node),
+      );
+      return binding !== undefined && HTTP_CLIENT_MODULES.has(binding.module);
     }
 
-    function isUserControlled(node: TSESTree.Node, visited = new Set<string>()): boolean {
-      const text = sourceCode.getText(node);
-      
-      const patterns = [
-        /\breq\.(query|params|body|headers|cookies)/,
-        /\brequest\.(query|params|body)/,
-        /\buserInput\b/i,
-        /\binput\b/i,
-        /\bsearchParams\b/,
-        /\bparam\b/i,
-        /\breturnUrl\b/i,
-        /\burl\b/i,
-        /\bredirect\b/i,
-        /\bnext\b/i,
-      ];
-      
-      if (patterns.some(p => p.test(text))) return true;
-
-      // Trace identifiers
-      if (node.type === 'Identifier') {
-        if (visited.has(node.name)) return false;
-        visited.add(node.name);
-
-        const scope = sourceCode.getScope(node);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const variable = scope.variables.find((v: any) => v.name === node.name);
-        
-        if (variable && variable.defs.length > 0) {
-          const def = variable.defs[0];
-          if (def.type === 'Variable' && def.node.init) {
-             const init = def.node.init;
-             // Check if init is constructed from other user inputs
-             if (isUserControlled(init, visited)) return true;
-             
-             // Check if init is a TemplateLiteral containing user inputs in expressions
-             if (init.type === 'TemplateLiteral') {
-                 return init.expressions.some(expr => isUserControlled(expr, visited));
-             }
-             
-             // Check if init is BinaryExpression (concatenation)
-             if (init.type === 'BinaryExpression') {
-                 return isUserControlled(init.left, visited) || isUserControlled(init.right, visited);
-             }
-          }
-        }
+    /** Is `name` the environment's global rather than a local binding? */
+    function isUnshadowedGlobal(
+      node: TSESTree.Node,
+      names: ReadonlySet<string>,
+    ): boolean {
+      if (node.type !== AST_NODE_TYPES.Identifier || !names.has(node.name)) {
+        return false;
       }
-      return false;
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+        scope !== null;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (variable !== undefined) return variable.defs.length === 0;
+      }
+      return true;
+    }
+
+    /** Does `node` sit directly in a position the browser reads as a URL? */
+    function isUrlSinkPosition(node: TSESTree.Node): boolean {
+      const parent = node.parent;
+
+      if (parent?.type === AST_NODE_TYPES.JSXExpressionContainer) {
+        const attribute = parent.parent;
+        return (
+          attribute?.type === AST_NODE_TYPES.JSXAttribute &&
+          attribute.name.type === AST_NODE_TYPES.JSXIdentifier &&
+          URL_ATTRIBUTES.has(attribute.name.name)
+        );
+      }
+
+      if (parent?.type === AST_NODE_TYPES.NewExpression) {
+        return (
+          parent.arguments[0] === node &&
+          isUnshadowedGlobal(parent.callee, URL_SINK_CONSTRUCTORS)
+        );
+      }
+
+      if (parent?.type !== AST_NODE_TYPES.CallExpression) return false;
+      if (
+        parent.arguments[0] === node &&
+        isUnshadowedGlobal(parent.callee, URL_SINK_FUNCTIONS)
+      ) {
+        return true;
+      }
+      if (parent.arguments[0] === node && isHttpClientCall(parent)) return true;
+      // `xhr.open('GET', url)`
+      return (
+        parent.arguments[XHR_OPEN_URL_INDEX] === node &&
+        parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+        !parent.callee.computed &&
+        parent.callee.property.type === AST_NODE_TYPES.Identifier &&
+        parent.callee.property.name === 'open'
+      );
+    }
+
+    /**
+     * `const url = `/api?q=${q}`; fetch(url);` — one hop, resolved through
+     * scope. The URL text and the sink are almost never on the same line in
+     * real code, and a rule that only understood the inline form would miss
+     * the shape people actually write.
+     */
+    function reachesUrlSink(node: TSESTree.Node): boolean {
+      if (isUrlSinkPosition(node)) return true;
+      const declarator = node.parent;
+      if (
+        declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
+        declarator.init !== node ||
+        declarator.id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      return sourceCode.getDeclaredVariables(declarator).some(
+        (variable) =>
+          // The initialiser is itself a write; a second one means the value
+          // that reaches the sink is no longer the URL this template built.
+          variable.references.filter((r) => r.isWrite()).length === 1 &&
+          variable.references.some(
+            (reference) =>
+              !reference.isWrite() && isUrlSinkPosition(reference.identifier),
+          ),
+      );
+    }
+
+    /**
+     * Every `+` chain is analysed once, from its outermost node.
+     *
+     * `parent` is asserted rather than tested: only `Program` has none, and a
+     * template or a `+` is never the root. A runtime guard here would be a
+     * branch no input can reach.
+     */
+    function isInnerConcatenation(node: TSESTree.Node): boolean {
+      const parent = node.parent as TSESTree.Node;
+      return (
+        parent.type === AST_NODE_TYPES.BinaryExpression &&
+        parent.operator === '+'
+      );
+    }
+
+    function check(node: TSESTree.Node): void {
+      const shape = urlShape(node, sourceCode);
+      const kind = urlKind(shape.text);
+      if (kind === null) return;
+      if (kind === 'relative' && !reachesUrlSink(node)) return;
+
+      for (const hole of shape.holes) {
+        if (!isEncodingPosition(shape, hole)) continue;
+        if (isTrustedLibraryCall(hole.expression)) continue;
+        const text = sourceCode.getText(hole.expression);
+        if (ignoreRegexes.some((regex) => regex.test(text))) continue;
+        if (!carriesUntrustedText(hole.expression, sourceCode)) continue;
+
+        context.report({
+          node: hole.expression,
+          messageId: 'unescapedUrlParameter',
+          data: {
+            parameter: text,
+            safeAlternative: `Wrap it: encodeURIComponent(${text}) — or build the query with URLSearchParams.`,
+          },
+        });
+      }
     }
 
     return {
-      TemplateLiteral: checkTemplateLiteral,
-      BinaryExpression: checkBinaryExpression,
-      AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (isTestFile) return;
-
-        // Check for window.location = ... or window.location.href = ...
-        const left = node.left;
-        let isLocationAssignment = false;
-        
-        if (left.type === 'MemberExpression') {
-             const objectName = left.object.type === 'Identifier' ? left.object.name : 
-                              (left.object.type === 'MemberExpression' ? sourceCode.getText(left.object) : '');
-             const propName = left.property.type === 'Identifier' ? left.property.name : '';
-             
-             if ((objectName === 'window' && propName === 'location') ||
-                 (propName === 'href' && objectName.includes('location'))) {
-                 isLocationAssignment = true;
-             }
-        } else if (left.type === 'Identifier' && left.name === 'location') {
-             // In browser location = ... is valid
-             isLocationAssignment = true;
+      TemplateLiteral(node: TSESTree.TemplateLiteral) {
+        // A template inside a `+` chain is analysed as part of that chain, so
+        // its holes are not offered twice.
+        if (isInnerConcatenation(node)) return;
+        // A tagged template is whatever the tag makes of it; `sql`…`` and
+        // `css`…`` are not URLs, and the tag function is opaque.
+        const parent = node.parent as TSESTree.Node;
+        if (parent.type === AST_NODE_TYPES.TaggedTemplateExpression) {
+          return;
         }
-
-        if (isLocationAssignment) {
-            const right = node.right;
-            const rightText = sourceCode.getText(right);
-            
-            // Skip TemplateLiteral and BinaryExpression as they are covered by their own visitors
-            if (right.type === 'TemplateLiteral' || right.type === 'BinaryExpression') {
-                return;
-            }
-
-            if (matchesIgnorePattern(rightText, ignorePatterns)) return;
-            if (isInsideEncodingCall(right, sourceCode, trustedLibraries)) return;
-
-             if (isUserControlled(right)) {
-                 context.report({
-                    node: right,
-                    messageId: 'unescapedUrlParameter',
-                    data: {
-                      parameter: rightText,
-                      safeAlternative: 'Validate and encode URL before redirecting',
-                    }
-                 });
-             }
-        }
-      }
+        check(node);
+      },
+      BinaryExpression(node: TSESTree.BinaryExpression) {
+        if (node.operator !== '+') return;
+        if (isInnerConcatenation(node)) return;
+        check(node);
+      },
     };
   },
 });
-

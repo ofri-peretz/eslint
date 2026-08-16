@@ -1,0 +1,18 @@
+{
+  "rule": "browser-security/no-websocket-eval",
+  "fixtures": 21,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-websocket-eval",
+      "tp": 11,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

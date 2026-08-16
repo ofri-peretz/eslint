@@ -114,7 +114,7 @@ await fetch('/api/auth/login', {
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `sensitivePatterns` | `string[]` | `["token","jwt","access_token","accessToken","refresh_token","refreshToken","id_token","idToken","auth","session","sessionId","session_id","password","passwd","secret","api_key","apiKey","private_key","privateKey","credential","bearer"]` | Patterns to detect as sensitive |
+| `sensitivePatterns` | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code"]` | Patterns to detect as sensitive |
 
 
 ```json
