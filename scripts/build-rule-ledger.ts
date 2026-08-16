@@ -32,10 +32,13 @@
  *   tsx scripts/build-rule-ledger.ts                     # all three core plugins
  *   tsx scripts/build-rule-ledger.ts --plugin=node-security
  *   tsx scripts/build-rule-ledger.ts --json
+ *   tsx scripts/build-rule-ledger.ts --dossier            # per-rule decision record
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+
+import { auditRule, collectFacts, CHECK_SUMMARY, type Finding } from './rule-audit.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -60,7 +63,16 @@ export interface RuleEntry {
   corpusSafe: number;
   /** Registered name-inference debt, and which way it fails. */
   nameDebt: 'report' | 'suppress' | null;
-  /** Blocking problems, in priority order. */
+  /**
+   * Every check that fired, from scripts/rule-audit.ts.
+   *
+   * Split by TIER when you read this, always. `defects` are facts about the
+   * artifact; `smells` are patterns that need a behavioural probe and have
+   * already, once, been miscounted as defects in a summary that reached the
+   * user. Never total the two together.
+   */
+  findings: Finding[];
+  /** Convenience: findings.filter(tier === 'defect').map(detail). */
   gaps: string[];
 }
 
@@ -123,66 +135,308 @@ export function buildLedger(plugins: string[]): RuleEntry[] {
   const entries: RuleEntry[] = [];
 
   for (const plugin of plugins) {
-    const rulesDir = path.join(PACKAGES, `eslint-plugin-${plugin}`, 'src', 'rules');
-    if (!fs.existsSync(rulesDir)) continue;
-
-    for (const rule of fs.readdirSync(rulesDir).sort()) {
-      const ruleDir = path.join(rulesDir, rule);
-      if (!fs.statSync(ruleDir).isDirectory()) continue;
-      const index = path.join(ruleDir, 'index.ts');
-      if (!fs.existsSync(index)) continue;
-
-      const source = fs.readFileSync(index, 'utf8');
-      const meta = readMeta(source);
-
+    const facts = collectFacts(PACKAGES, plugin, (rule, cwe) => {
+      const dir = path.join(PACKAGES, `eslint-plugin-${plugin}`, 'src', 'rules', rule);
       const tests = fs
-        .readdirSync(ruleDir)
+        .readdirSync(dir)
         .filter((f) => f.endsWith('.test.ts'))
-        .map((f) => fs.readFileSync(path.join(ruleDir, f), 'utf8'))
+        .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'))
         .join('\n');
       const cases = tests ? countCases(tests) : { valid: 0, invalid: 0 };
-      const corpus = corpusCounts(meta.cwe);
+      return {
+        validCases: cases.valid,
+        invalidCases: cases.invalid,
+        corpusVulnerable: corpusCounts(cwe).vulnerable,
+        nameDebt: debt.get(`eslint-plugin-${plugin}/src/rules/${rule}/index.ts`) ?? null,
+      };
+    });
 
-      const relative = `eslint-plugin-${plugin}/src/rules/${rule}/index.ts`;
-      const nameDebt = debt.get(relative) ?? null;
-
-      const gaps: string[] = [];
-      // Ordered by what actually reaches a user.
-      if (nameDebt === 'report') {
-        gaps.push('DECIDES BY NAME (reports) — false positives ship to users');
-      }
-      if (cases.valid === 0) {
-        gaps.push('no valid cases — nothing asserts when this rule must stay quiet');
-      }
-      if (cases.invalid === 0) {
-        gaps.push('no invalid cases — nothing asserts what it catches');
-      }
-      if (corpus.vulnerable === 0) {
-        gaps.push(`no corpus fixture for ${meta.cwe} — unmeasured by the benchmark`);
-      }
-      if (nameDebt === 'suppress') {
-        gaps.push('decides by name (suppresses) — costs recall, not trust');
-      }
-      if (meta.cwe === '—') {
-        gaps.push('no CWE in metadata — cannot appear in CWE coverage claims');
-      }
-
+    for (const f of facts) {
+      const findings = auditRule(f);
+      const meta = readMeta(f.source);
       entries.push({
-        rule,
+        rule: f.rule,
         plugin,
-        cwe: meta.cwe,
+        cwe: f.cwe,
         severity: meta.severity,
         recommended: meta.recommended,
-        invalidCases: cases.invalid,
-        validCases: cases.valid,
-        corpusVulnerable: corpus.vulnerable,
-        corpusSafe: corpus.safe,
-        nameDebt,
-        gaps,
+        invalidCases: f.invalidCases,
+        validCases: f.validCases,
+        corpusVulnerable: f.corpusVulnerable,
+        corpusSafe: corpusCounts(f.cwe).safe,
+        nameDebt: f.nameDebt,
+        findings,
+        // DEFECTS ONLY. A smell in this list would be counted in the summary
+        // line, and that is precisely how "16 rules decide by name" — a claim
+        // that survived no probe and turned out to be false for all sixteen —
+        // reached the user on 2026-08-16. Smells stay in `findings`, and the
+        // dossier prints them under their own heading, with their probe.
+        gaps: findings.filter((x) => x.tier === 'defect').map((x) => x.detail),
       });
     }
   }
   return entries;
+}
+
+/**
+ * The rationale attached to a RuleTester case.
+ *
+ * Every `code:` in these suites is preceded by the comment explaining WHY the case
+ * exists — "Traversal literal assigned to a variable with no archive-ish name",
+ * "entry-named variable assigned from entry.name (tracked, no report)". Those
+ * comments ARE the decision record; they were just never readable in one place.
+ *
+ * Read as text rather than parsed: the shapes vary (block comments, `name:` keys,
+ * bare `//` runs) and a parser strict enough to be correct would miss the loose
+ * ones, which are the majority.
+ */
+function extractCases(source: string, key: 'valid' | 'invalid'): string[] {
+  const out: string[] = [];
+  const re = new RegExp(`${key}\\s*:\\s*\\[`, 'g');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) {
+    let depth = 1;
+    let i = m.index + m[0].length;
+    const start = i;
+    while (i < source.length && depth > 0) {
+      if (source[i] === '[') depth++;
+      else if (source[i] === ']') depth--;
+      i++;
+    }
+    const block = source.slice(start, i);
+    const lines = block.split('\n');
+    let pending: string[] = [];
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (line.startsWith('//')) {
+        pending.push(line.replace(/^\/\/\s?/, ''));
+        continue;
+      }
+      const named = /^name:\s*['"`](.+?)['"`]/.exec(line);
+      if (named) {
+        pending.push(named[1]);
+        continue;
+      }
+      if (/^code\s*:/.test(line)) {
+        const snippet = line.replace(/^code\s*:\s*/, '').replace(/[,`]$/, '').slice(0, 90);
+        // Sanitise before wrapping in a code span. These snippets are sliced out
+        // of real test files, so they carry template-literal backticks and the
+        // ragged edges of a 90-char cut — both of which produce markdownlint
+        // MD038/MD039 errors and fail the commit hook on a purely generated file.
+        const span = snippet.replace(/`/g, "'").replace(/\s+/g, ' ').trim();
+        if (!span) continue;
+        out.push(pending.length ? `${pending.join(' ')} — \`${span}\`` : `\`${span}\``);
+        pending = [];
+        continue;
+      }
+      if (line === '' || line === '},' || line === '{') pending = [];
+    }
+  }
+  return out;
+}
+
+/**
+ * Make author prose safe to embed in a linted markdown file.
+ *
+ * These dossiers are generated, but they land in a repo whose pre-commit hook
+ * runs markdownlint over everything — so a rule whose doc comment contains
+ * `<h1>` or a code span with a ragged edge blocks the commit, in a file no
+ * human wrote. Fixing it at the source (editing 121 doc comments to please a
+ * markdown linter) would be the tail wagging the dog.
+ */
+function sanitizeProse(text: string): string {
+  return text
+    .replace(/`([^`\n]*)`/g, (_, inner: string) => (inner.trim() ? `\`${inner.trim()}\`` : ''))
+    .replace(/<(\/?[A-Za-z][\w-]*)/g, '&lt;$1')
+    // Doc comments indent their bullet lists for readability inside the `*`
+    // gutter. Lifted verbatim into markdown that becomes a top-level list at
+    // the wrong indent (MD007).
+    .replace(/^ {1,3}([-*] )/gm, '$1');
+}
+
+/** The rule's own header comment — the WHY, in the author's words. */
+function ruleDoc(source: string): string {
+  const m = /\/\*\*([\s\S]*?)\*\//g.exec(source.slice(source.indexOf('*/') + 2));
+  if (!m) return '';
+  return m[1]
+    .split('\n')
+    .map((l) => l.replace(/^\s*\*\s?/, '').trimEnd())
+    .join('\n')
+    .trim();
+}
+
+function writeDossiers(entries: RuleEntry[]): void {
+  const outDir = path.join(REPO_ROOT, 'docs', 'rule-ledger');
+  fs.mkdirSync(outDir, { recursive: true });
+
+  for (const e of entries) {
+    const ruleDir = path.join(PACKAGES, `eslint-plugin-${e.plugin}`, 'src', 'rules', e.rule);
+    const source = fs.readFileSync(path.join(ruleDir, 'index.ts'), 'utf8');
+    const tests = fs
+      .readdirSync(ruleDir)
+      .filter((f) => f.endsWith('.test.ts'))
+      .map((f) => fs.readFileSync(path.join(ruleDir, f), 'utf8'))
+      .join('\n');
+
+    const tp = extractCases(tests, 'invalid');
+    const guards = extractCases(tests, 'valid');
+
+    const lines = [
+      `# \`${e.plugin}/${e.rule}\``,
+      '',
+      `**${e.cwe}** · severity ${e.severity} · ${e.invalidCases} catch cases · ${e.validCases} quiet cases`,
+      '',
+      '> Generated by `npm run rule-ledger -- --dossier`. Every line below is read from',
+      '> the rule and its tests — edit those, not this file.',
+      '',
+    ];
+
+    const defects = e.findings.filter((f) => f.tier === 'defect');
+    const smells = e.findings.filter((f) => f.tier === 'smell');
+
+    lines.push(
+      '## Audit',
+      '',
+      `${defects.length} defect(s), ${smells.length} smell(s). A defect is a fact about this`,
+      'rule\'s files. A smell is a pattern that co-occurs with a defect class and **proves',
+      'nothing on its own** — each carries the probe that would settle it. Do not add the',
+      'two together, and do not report a smell as a finding until its probe has been run.',
+      '',
+    );
+
+    if (defects.length) {
+      lines.push('### Defects — established', '');
+      for (const d of defects) lines.push(`- **\`${d.id}\`** (${d.category}) — ${d.detail}`);
+      lines.push('');
+    }
+    if (smells.length) {
+      lines.push('### Smells — unproven, each with its probe', '');
+      for (const s of smells) {
+        lines.push(`- **\`${s.id}\`** (${s.category}) — ${s.detail}${s.probe ? ` **Probe:** ${s.probe}` : ''}`);
+      }
+      lines.push('');
+    }
+    if (!e.findings.length) {
+      lines.push('No check fired. That means no KNOWN gap — it is not evidence of correctness.', '');
+    }
+
+    const why = ruleDoc(source);
+    if (why) lines.push('## Why this rule exists', '', sanitizeProse(why), '');
+
+    lines.push(
+      '## True positives — what it catches',
+      '',
+      `${tp.length} asserted case(s). These are the claims; each is only as good as the case.`,
+      '',
+    );
+    for (const c of tp) lines.push(`- ${c}`);
+
+    lines.push(
+      '',
+      '## False-positive guards — what it must NOT flag',
+      '',
+      `${guards.length} asserted case(s). A rule with few of these has not been argued with.`,
+      '',
+    );
+    for (const c of guards) lines.push(`- ${c}`);
+
+    lines.push(
+      '',
+      '## Not covered',
+      '',
+      e.corpusVulnerable === 0
+        ? `No \`benchmarks/corpus/${e.cwe}/\` fixture, so this rule contributes nothing to the` +
+          ' published detection or false-positive figures. It is untested by the benchmark.'
+        : `Corpus: ${e.corpusVulnerable} vulnerable, ${e.corpusSafe} safe fixtures under \`${e.cwe}\`.`,
+      '',
+    );
+
+    fs.writeFileSync(path.join(outDir, `${e.plugin}__${e.rule}.md`), lines.join('\n') + '\n');
+  }
+  writeIndex(entries, outDir);
+  console.log(`Wrote ${entries.length} dossiers to docs/rule-ledger/`);
+}
+
+/**
+ * The worklist. One row per CHECK, not per rule — because "101 rules carry a
+ * defect" is not a task anyone can pick up, whereas "46 rules ship a suggestion
+ * ESLint discards" is.
+ */
+function writeIndex(entries: RuleEntry[], outDir: string): void {
+  const byCheck = new Map<string, { tier: string; category: string; detail: string; rules: string[] }>();
+  for (const e of entries) {
+    for (const f of e.findings) {
+      const row = byCheck.get(f.id) ?? { tier: f.tier, category: f.category, detail: f.detail, rules: [] };
+      row.rules.push(`${e.plugin}/${e.rule}`);
+      byCheck.set(f.id, row);
+    }
+  }
+  const sorted = [...byCheck].sort((a, b) => b[1].rules.length - a[1].rules.length);
+  const tier = (t: string) => sorted.filter(([, r]) => r.tier === t);
+
+  const lines = [
+    '# Rule ledger — per-rule decision records',
+    '',
+    `${entries.length} rules across ${new Set(entries.map((e) => e.plugin)).size} plugins.`,
+    'Generated by `npm run rule-ledger -- --dossier`. Do not edit by hand.',
+    '',
+    '## How to read this',
+    '',
+    'Findings come in two tiers, and **they must never be added together**.',
+    '',
+    '| Tier | Means | Action |',
+    '| --- | --- | --- |',
+    '| **Defect** | A fact about the rule\'s files. Countable, falsifiable by reading them. | Fix it. |',
+    '| **Smell** | A pattern that co-occurs with a defect class and proves nothing alone. | Run the probe in the dossier, *then* decide. |',
+    '',
+    'This distinction is not pedantry. On 2026-08-16 a summary asserted "16 rules decide',
+    'by name — false positives ship to users" from pattern presence alone. All 16 were then',
+    'probed with benign snippets whose only trigger was a matching identifier; every one',
+    'stayed quiet. The claim was false, and acting on it would have meant rewriting 16',
+    'healthy rules. A smell reported as a defect is how that happens.',
+    '',
+    'Nothing here proves a rule *correct*. `display-name` once had green tests asserting a',
+    'false positive as expected behaviour. Coverage is not correctness.',
+    '',
+    '## Defects — established, ranked by reach',
+    '',
+    '| Count | Check | Category | What it means |',
+    '| ---: | --- | --- | --- |',
+  ];
+  for (const [id, r] of tier('defect')) {
+    lines.push(`| ${r.rules.length} | \`${id}\` | ${r.category} | ${CHECK_SUMMARY[id] ?? r.detail} |`);
+  }
+  lines.push(
+    '',
+    '## Smells — unproven; each dossier carries its probe',
+    '',
+    '| Count | Check | Category | What it means |',
+    '| ---: | --- | --- | --- |',
+  );
+  for (const [id, r] of tier('smell')) {
+    lines.push(`| ${r.rules.length} | \`${id}\` | ${r.category} | ${CHECK_SUMMARY[id] ?? r.detail} |`);
+  }
+
+  lines.push('', '## Affected rules, by check', '');
+  for (const [id, r] of sorted) {
+    lines.push(`### \`${id}\` — ${r.tier}, ${r.rules.length} rule(s)`, '');
+    for (const rule of r.rules) {
+      lines.push(`- [\`${rule}\`](${rule.replace('/', '__')}.md)`);
+    }
+    lines.push('');
+  }
+
+  const clean = entries.filter((e) => e.findings.length === 0);
+  lines.push(
+    '## Nothing flagged',
+    '',
+    `${clean.length} rule(s). No check fired — which is not the same as verified.`,
+    '',
+    ...clean.map((e) => `- [\`${e.plugin}/${e.rule}\`](${e.plugin}__${e.rule}.md)`),
+    '',
+  );
+
+  fs.writeFileSync(path.join(outDir, 'README.md'), lines.join('\n') + '\n');
 }
 
 function main(): void {
@@ -191,39 +445,63 @@ function main(): void {
   const plugins = pluginArg ? [pluginArg] : DEFAULT_PLUGINS;
   const entries = buildLedger(plugins);
 
+  if (args.includes('--dossier')) {
+    writeDossiers(entries);
+    return;
+  }
+
   if (args.includes('--json')) {
     console.log(JSON.stringify({ generated: new Date().toISOString().slice(0, 10), entries }, null, 2));
     return;
   }
 
+  // Tally by check id, split by tier. The per-check breakdown is the actionable
+  // view: "12 rules have an untested fixer" is a work item; "47 rules have gaps"
+  // is not.
+  const tally = new Map<string, { tier: string; category: string; rules: string[] }>();
+  for (const e of entries) {
+    for (const f of e.findings) {
+      const row = tally.get(f.id) ?? { tier: f.tier, category: f.category, rules: [] };
+      row.rules.push(`${e.plugin}/${e.rule}`);
+      tally.set(f.id, row);
+    }
+  }
+
   for (const plugin of plugins) {
     const rows = entries.filter((e) => e.plugin === plugin);
     if (!rows.length) continue;
-    const clean = rows.filter((r) => r.gaps.length === 0).length;
-    const reports = rows.filter((r) => r.nameDebt === 'report').length;
-    const noValid = rows.filter((r) => r.validCases === 0).length;
-    const noCorpus = rows.filter((r) => r.corpusVulnerable === 0).length;
+    const clean = rows.filter((r) => r.findings.length === 0).length;
+    const withDefects = rows.filter((r) => r.gaps.length > 0).length;
 
     console.log(`\n══ eslint-plugin-${plugin} — ${rows.length} rules`);
-    console.log(
-      `   ${clean} with no known gap · ${reports} decide by name (report) · ` +
-        `${noValid} with no valid cases · ${noCorpus} with no corpus fixture`,
-    );
-    console.log(`   ${'rule'.padEnd(42)} ${'CWE'.padEnd(9)} inv/val  corpus  gaps`);
+    console.log(`   ${clean} with nothing flagged · ${withDefects} with at least one DEFECT`);
+    console.log(`   ${'rule'.padEnd(42)} ${'CWE'.padEnd(9)} inv/val  corpus  def/smell`);
     for (const r of rows.sort((a, b) => b.gaps.length - a.gaps.length)) {
       const corpus = `${r.corpusVulnerable}v/${r.corpusSafe}s`;
-      const flag = r.nameDebt === 'report' ? '⛔' : r.gaps.length ? '⚠️ ' : '✅';
+      const smells = r.findings.length - r.gaps.length;
+      const flag = r.gaps.length ? '⚠️ ' : smells ? '· ' : '✅';
       console.log(
         `   ${flag} ${r.rule.padEnd(40)} ${r.cwe.padEnd(9)} ` +
           `${String(r.invalidCases).padStart(3)}/${String(r.validCases).padEnd(3)} ` +
-          `${corpus.padEnd(7)} ${r.gaps[0] ?? ''}`,
+          `${corpus.padEnd(7)} ${r.gaps.length}/${smells}  ${r.gaps[0]?.slice(0, 60) ?? ''}`,
       );
     }
   }
 
+  console.log('\n══ by check — DEFECTS (facts about the artifact)');
+  for (const [id, row] of [...tally].filter(([, r]) => r.tier === 'defect').sort((a, b) => b[1].rules.length - a[1].rules.length)) {
+    console.log(`   ${String(row.rules.length).padStart(3)}  ${id.padEnd(26)} ${row.category}`);
+  }
+  console.log('\n══ by check — SMELLS (unproven; each needs its probe run)');
+  for (const [id, row] of [...tally].filter(([, r]) => r.tier === 'smell').sort((a, b) => b[1].rules.length - a[1].rules.length)) {
+    console.log(`   ${String(row.rules.length).padStart(3)}  ${id.padEnd(26)} ${row.category}`);
+  }
+
   const all = entries.length;
-  const clean = entries.filter((e) => e.gaps.length === 0).length;
-  console.log(`\nTOTAL ${clean}/${all} rules with no known gap.`);
+  const clean = entries.filter((e) => e.findings.length === 0).length;
+  const defective = entries.filter((e) => e.gaps.length > 0).length;
+  console.log(`\nTOTAL ${all} rules · ${defective} carry a defect · ${clean} carry nothing at all.`);
+  console.log('Nothing flagged ≠ correct. No check here proves a rule right.');
 }
 
 if (process.argv[1] && import.meta.url.startsWith('file:') && process.argv[1].endsWith('build-rule-ledger.ts')) {
