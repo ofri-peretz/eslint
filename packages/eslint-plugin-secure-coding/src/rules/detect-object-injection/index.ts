@@ -66,6 +66,20 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * The ECMAScript typed-array constructors.
+ *
+ * Used to prove that `buf[i]` indexes a fixed-width numeric buffer, which has
+ * no prototype chain to pollute.
+ *
+ * @protocol-constant This is the TypedArray constructor list from the
+ * ECMAScript specification (Table "The TypedArray Constructors"), not a
+ * vocabulary — the names are fixed by the language, and a host that adds one
+ * adds it to the spec, not to a consumer's domain. Letting a consumer edit it
+ * would let them delete `Uint8Array` and re-assert the false positive on
+ * `bytes[i]` this set exists to close, or add an ordinary class name and
+ * silence the rule on every index into it.
+ */
 const TYPED_ARRAY_CTORS = new Set([
   'Int8Array', 'Uint8Array', 'Uint8ClampedArray',
   'Int16Array', 'Uint16Array',
@@ -82,22 +96,29 @@ interface ObjectInjectionPattern {
   dangerous: boolean;
   vulnerability: 'prototype-pollution' | 'property-injection' | 'method-injection';
   safeAlternative: string;
-  example: { bad: string; good: string };
-  effort: string;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
 }
 
+/**
+ * Message metadata for the three property names prototype pollution travels
+ * through. This table does NOT decide whether to report — that decision is the
+ * `dangerousProperties` option — it only selects the risk level and the
+ * `vulnerability` / `safeAlternative` wording of a finding already made.
+ *
+ * @protocol-constant `__proto__`, `prototype` and `constructor` are the
+ * ECMAScript object model's own prototype-chain accessors, not words a domain
+ * chooses; there is no fourth. A consumer who could edit this table could not
+ * change what is reported, only relabel a critical prototype-pollution finding
+ * as low risk, or attach the wrong remediation to it — which is worse than the
+ * finding they were trying to tune, and `dangerousProperties` is already the
+ * supported knob for the report itself.
+ */
 const OBJECT_INJECTION_PATTERNS: ObjectInjectionPattern[] = [
   {
     pattern: '__proto__',
     dangerous: true,
     vulnerability: 'prototype-pollution',
     safeAlternative: 'Object.create(null) or Map',
-    example: {
-      bad: 'obj[userInput] = value; // if userInput is "__proto__"',
-      good: 'const map = new Map(); map.set(userInput, value);'
-    },
-    effort: '15-20 minutes',
     riskLevel: 'critical'
   },
   {
@@ -105,11 +126,6 @@ const OBJECT_INJECTION_PATTERNS: ObjectInjectionPattern[] = [
     dangerous: true,
     vulnerability: 'prototype-pollution',
     safeAlternative: 'Avoid prototype manipulation',
-    example: {
-      bad: 'obj[userInput] = value; // if userInput is "prototype"',
-      good: 'if (!obj.hasOwnProperty(userInput)) obj[userInput] = value;'
-    },
-    effort: '10-15 minutes',
     riskLevel: 'high'
   },
   {
@@ -117,11 +133,6 @@ const OBJECT_INJECTION_PATTERNS: ObjectInjectionPattern[] = [
     dangerous: true,
     vulnerability: 'method-injection',
     safeAlternative: 'Validate property names against whitelist',
-    example: {
-      bad: 'obj[userInput] = value; // if userInput is "constructor"',
-      good: 'const ALLOWED_KEYS = [\'name\', \'age\', \'email\']; if (ALLOWED_KEYS.includes(userInput)) obj[userInput] = value;'
-    },
-    effort: '10-15 minutes',
     riskLevel: 'medium'
   }
 ];
@@ -955,6 +966,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Array-iteration methods whose callback receives the ELEMENT first. Exact
      * membership against a closed API surface, not a substring test.
+     *
+     * @protocol-constant These are the `Array.prototype` iteration methods
+     * whose callback signature the ECMAScript specification fixes as
+     * `(element, index, array)`; the set is a property of the language, not of
+     * a consumer's codebase. Adding a name here asserts a callback signature
+     * that the named method does not have, so the first parameter would be
+     * read as an element when it is really an index — and removing one
+     * re-asserts the false positive on `arr.forEach((el) => el[k])` that the
+     * set was added to close.
      */
     const ELEMENT_FIRST_ITERATORS: ReadonlySet<string> = new Set([
       'forEach',

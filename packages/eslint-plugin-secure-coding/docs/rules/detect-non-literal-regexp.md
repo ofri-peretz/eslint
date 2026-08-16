@@ -283,7 +283,7 @@ obj[method](userInput);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowLiterals` | `boolean` | `false` | Allow literal string regex patterns |
-| `maxPatternLength` | `number` | `100` | Maximum allowed length for a DYNAMIC pattern before it reports for dynamic regex |
+| `maxPatternLength` | `number` | `100` | Maximum allowed pattern length for dynamic regex |
 
 ## Not a finding
 

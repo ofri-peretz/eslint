@@ -106,6 +106,8 @@ util.format(template, user, data);
 | `formatFunctions` | `string[]` | `["util.format","console.log","console.error","console.warn","sprintf","printf","vsprintf"]` | Functions whose first argument is a format string |
 | `formatSpecifiers` | `string[]` | `["%s","%d","%i","%f","%j","%o","%O","%c","%%"]` | Format specifiers recognised in a format string |
 | `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data","userInput"]` | Variable names treated as user-controlled input |
+| `userInputAliases` | `string[]` | `["user","userinput","userdata","userparam","userparams","usermessage","usertemplate","userformat","uservar"]` | The user-input name family recognised on top of `userInputVariables`, compared case-insensitively as a whole name or a whole dotted segment — never as a substring. Replaces the built-in list. |
+| `additionalUserInputAliases` | `string[]` | `[]` | Extra user-input aliases, on top of `userInputAliases`. |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as format string sanitizers |
 
 ## Error Message Format

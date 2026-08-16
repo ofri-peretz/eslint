@@ -43,7 +43,11 @@ const fileUsesAstTooling = createModuleEvidence({
   ],
 });
 
-type MessageIds = 'insecureComparison' | 'useStrictEquality' | 'timingUnsafeComparison';
+type MessageIds =
+  | 'insecureComparison'
+  | 'useStrictEquality'
+  | 'useTimingSafeEqual'
+  | 'timingUnsafeComparison';
 
 export interface Options {
   /** Allow insecure comparison in test files. Default: false */
@@ -59,8 +63,28 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-comparison',
   meta: {
     type: 'problem',
-    deprecated: true,
-    replacedBy: ['node-security/no-timing-unsafe-compare'],
+    // NOT deprecated, and the pointer that said otherwise was losing users a
+    // whole weakness class.
+    //
+    // This rule reported two things: CWE-208 (comparing a secret with an
+    // operator that short-circuits, leaking timing) and CWE-697 (`==` coercing
+    // types before it compares). It was marked `deprecated` with
+    // `replacedBy: ['node-security/no-timing-unsafe-compare']`, which covers the
+    // FIRST of those and nothing else — probed: `no-timing-unsafe-compare` is
+    // QUIET on `if (userRole == "admin")`.
+    //
+    // And this is the ONLY rule in the ecosystem carrying CWE-697 — verified by
+    // grepping every plugin. So a user who did as they were told, disabled this
+    // and enabled the replacement, silently lost type-coercion detection
+    // entirely, with the deprecation notice reassuring them nothing was missing.
+    // A wrong `replacedBy` is worse than none: it converts a considered
+    // migration into a coverage hole.
+    //
+    // The CWE-208 half does overlap `node-security/no-timing-unsafe-compare`,
+    // which is the better implementation of it. That is a real partition
+    // question, but it is answered by narrowing this rule's timing head, not by
+    // retiring the only owner of a different weakness. Recorded in
+    // RULE-QUALITY-PROGRAM.md.
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-insecure-comparison.md',
       description: 'Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities',
@@ -88,6 +112,23 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         fix: 'Replace == with === and != with !==',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality',
+      }),
+      /**
+       * The timing finding's own suggestion, because reusing `useStrictEquality`
+       * for it mislabelled the rewrite. That suggestion's fix replaces the
+       * comparison with `crypto.timingSafeEqual(...)`, but its text said "Use
+       * strict equality operator / Replace == with ===" — so a user was told to
+       * do the very thing the finding above it warns about (`===` is what leaks
+       * the timing), and the code they actually got was something else entirely.
+       * A mislabelled rewrite on a security rule is worse than no suggestion.
+       */
+      useTimingSafeEqual: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use A Constant-Time Comparison',
+        description: 'Compare secrets in constant time, not with an operator that short-circuits',
+        severity: 'LOW',
+        fix: 'Rewrite as crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))',
+        documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
       timingUnsafeComparison: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -440,9 +481,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           },
           suggest: [
             {
-              messageId: 'useStrictEquality', // This messageId usage might be wrong for timing safe output, but kept for now or reused?
-               // Wait, previous code used useStrictEquality as suggest?
-               // Ah, the previous code had a fix/suggest structure.
+              messageId: 'useTimingSafeEqual',
               fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(node, example),
             },
           ],

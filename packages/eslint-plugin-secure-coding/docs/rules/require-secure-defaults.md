@@ -168,3 +168,14 @@ const options = {
 - [CWE-1188: Insecure Default Initialization](https://cwe.mitre.org/data/definitions/1188.html)
 - [OWASP Secure Product Design - Secure by Default](https://owasp.org/www-project-secure-product-design/docs/Design_Principles#secure-by-default)
 - [NIST Security by Design Principles](https://csrc.nist.gov/publications/detail/sp/800-160/vol-1/final)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `insecureWhenFalse` | `string[]` | `["strictSSL","httpOnly","requireTLS","sslValidate"]` | Config keys whose `false` value is the insecure one. Replaces the built-in list; matched as an exact key name, never a substring. |
+| `additionalInsecureWhenFalse` | `string[]` | `[]` | Extra keys where `false` is insecure, on top of `insecureWhenFalse`. |
+| `insecureWhenTrue` | `string[]` | `["tlsAllowInvalidCertificates","tlsAllowInvalidHostnames","allowInvalidCertificates","ignoreHTTPSErrors"]` | Config keys whose `true` value accepts the insecure thing. Replaces the built-in list. |
+| `additionalInsecureWhenTrue` | `string[]` | `[]` | Extra keys where `true` is insecure, on top of `insecureWhenTrue`. |
+| `cookieAttributes` | `string[]` | `["httpOnly","sameSite","maxAge","expires","domain","path","signed","partitioned","priority"]` | Keys that exist on a cookie and nowhere else. Used only as corroborating structure for `secure: false`. Replaces the built-in list. |
+| `additionalCookieAttributes` | `string[]` | `[]` | Extra cookie attribute names, on top of `cookieAttributes`. |

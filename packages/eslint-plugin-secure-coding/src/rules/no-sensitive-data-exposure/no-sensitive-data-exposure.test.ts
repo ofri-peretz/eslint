@@ -913,3 +913,47 @@ describe('Regression - a label announces a value, a sentence does not', () => {
     });
   });
 });
+
+/**
+ * `descriptorSegments` — the suppression vocabulary, made overridable.
+ *
+ * `DESCRIPTOR_SEGMENTS` is fourteen English words that decide whether a
+ * credential-ish NAME is suppressed (`apiKeyMsg` describes an API key; it does
+ * not hold one). A consumer whose domain suffix is spelled differently, or one
+ * for whom `pattern` really does hold the secret, had no remedy but disabling
+ * the rule. The list is now a DEFAULT that `descriptorSegments` replaces and
+ * `additionalDescriptorSegments` extends.
+ *
+ * Every QUIET case is paired with a positive control on the SAME snippet.
+ */
+ruleTester.run('descriptorSegments and its additional variant', noSensitiveDataExposure, {
+  valid: [
+    {
+      name: 'DEFAULT: `msg` is a built-in descriptor segment, so apiKeyMsg is silent',
+      code: 'export function f(apiKeyMsg) { console.log(apiKeyMsg); }',
+    },
+    {
+      name: 'additionalDescriptorSegments extends the built-ins: `blurb` now suppresses',
+      code: 'export function f(apiKeyBlurb) { console.log(apiKeyBlurb); }',
+      options: [{ additionalDescriptorSegments: ['blurb'] }],
+    },
+  ],
+  invalid: [
+    {
+      name: 'positive control: the same sink reports when the name is not a descriptor',
+      code: 'export function f(apiKey) { console.log(apiKey); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      name: 'descriptorSegments REPLACES the built-ins: an empty list suppresses nothing',
+      code: 'export function f(apiKeyMsg) { console.log(apiKeyMsg); }',
+      options: [{ descriptorSegments: [] }],
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      name: 'DEFAULT: `blurb` is not a built-in descriptor segment',
+      code: 'export function f(apiKeyBlurb) { console.log(apiKeyBlurb); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+  ],
+});

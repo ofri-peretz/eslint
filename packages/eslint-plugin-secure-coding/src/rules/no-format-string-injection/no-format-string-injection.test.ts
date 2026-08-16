@@ -1408,3 +1408,54 @@ ruleTester.run('coverage: assignment target must be a binding', noFormatStringIn
   valid: ['const obj = {}; obj.fmt = req.query.f; util.format(obj.fmt2, token);'],
   invalid: [],
 });
+
+/**
+ * The `user*` alias family is an option, and its default is exactly what
+ * shipped.
+ *
+ * Probed both directions before these were written:
+ *   util.format(userTemplate, 1)     reports userControlledFormatString
+ *   util.format(tenantTemplate, 1)   QUIET
+ * so the alias list is the only thing moving in every case below.
+ */
+ruleTester.run('options: userInputAliases is configurable, default unchanged', noFormatStringInjection, {
+  valid: [
+    // ---- replacing the list drops the built-in aliases --------------------
+    // A CMS where `userTemplate` is a template BELONGING TO a user record, not
+    // a template supplied BY one. Narrowing the family is the remedy; before
+    // the option existed it was disable-the-rule.
+    {
+      code: 'const util = require("util"); export function f(userTemplate) { return util.format(userTemplate, 1); }',
+      options: [{ userInputAliases: ['userinput'] }],
+    },
+    // Extending never removes: a name in neither list stays quiet.
+    {
+      code: 'const util = require("util"); export function f(tenantTemplate) { return util.format(tenantTemplate, 1); }',
+      options: [{ additionalUserInputAliases: ['callerTemplate'] }],
+    },
+  ],
+  invalid: [
+    // ---- the default is unchanged ----------------------------------------
+    // Positive control for the replacing case above.
+    {
+      code: 'const util = require("util"); export function f(userTemplate) { return util.format(userTemplate, 1); }',
+      options: [{}],
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+
+    // ---- extending the list adds coverage ---------------------------------
+    // A codebase whose request-supplied format string is spelled
+    // `callerTemplate`. Matched as a WHOLE name, exactly like the built-ins.
+    {
+      code: 'const util = require("util"); export function f(callerTemplate) { return util.format(callerTemplate, 1); }',
+      options: [{ additionalUserInputAliases: ['callerTemplate'] }],
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+    // Full replacement widens as well as narrows.
+    {
+      code: 'const util = require("util"); export function f(callerTemplate) { return util.format(callerTemplate, 1); }',
+      options: [{ userInputAliases: ['callerTemplate'] }],
+      errors: [{ messageId: 'userControlledFormatString' }],
+    },
+  ],
+});

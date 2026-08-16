@@ -62,6 +62,16 @@ type RuleOptions = [Options?];
  * APIs whose whole purpose is to mint an unguessable value. A call to one
  * inside a recovery function is positive evidence that a credential exists,
  * however the result is named.
+ *
+ * @protocol-constant Every entry is a published CSPRNG call signature:
+ * `randomBytes`, `randomUUID` and `randomInt` from `node:crypto`,
+ * `getRandomValues` from the Web Crypto API, `nanoid` from nanoid and `uuidv4`
+ * from uuid. The set exists precisely so the rule stops guessing from the
+ * variable's spelling — it is the evidence that replaced a name test, so making
+ * it a tunable vocabulary would put the guess back. A consumer who could edit
+ * it could drop `randomBytes` and make the canonical
+ * `const token = crypto.randomBytes(32)` recovery flow invisible to the rule,
+ * or add an ordinary helper and have every call to it read as a credential.
  */
 const CREDENTIAL_GENERATORS: ReadonlySet<string> = new Set([
   'randomBytes',

@@ -15,8 +15,35 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+export interface Options {
+  /**
+   * Option keys whose `false` value is the insecure one. REPLACES the built-in
+   * list. Default: DEFAULT_INSECURE_WHEN_FALSE
+   */
+  insecureWhenFalse?: string[];
+
+  /** Extra keys where `false` is insecure, ON TOP of the built-ins. Default: [] */
+  additionalInsecureWhenFalse?: string[];
+
+  /**
+   * Option keys whose `true` value ACCEPTS the insecure thing. REPLACES the
+   * built-in list. Default: DEFAULT_INSECURE_WHEN_TRUE
+   */
+  insecureWhenTrue?: string[];
+
+  /** Extra keys where `true` is insecure, ON TOP of the built-ins. Default: [] */
+  additionalInsecureWhenTrue?: string[];
+
+  /**
+   * Keys that exist on a cookie and nowhere else, used only as corroborating
+   * structure for `secure: false`. REPLACES the built-in list.
+   * Default: DEFAULT_COOKIE_ATTRIBUTES
+   */
+  cookieAttributes?: string[];
+
+  /** Extra cookie attribute names, ON TOP of the built-ins. Default: [] */
+  additionalCookieAttributes?: string[];
+}
 
 type RuleOptions = [Options?];
 
@@ -28,8 +55,13 @@ type RuleOptions = [Options?];
  * substring test. `httpOnly` and `requireTLS` exist on nothing but a cookie and
  * a mail transport respectively; `strictSSL` and `sslValidate` on nothing but a
  * TLS client.
+ *
+ * These are library option names, not a protocol: every HTTP/TLS/mail client in
+ * the ecosystem spells its own switch differently, and the list can never be
+ * complete. So it is the DEFAULT of `insecureWhenFalse`, extensible through
+ * `additionalInsecureWhenFalse`, rather than a fact the consumer must accept.
  */
-const FALSE_IS_INSECURE = new Set(['strictSSL', 'httpOnly', 'requireTLS', 'sslValidate']);
+const DEFAULT_INSECURE_WHEN_FALSE = ['strictSSL', 'httpOnly', 'requireTLS', 'sslValidate'];
 
 /**
  * The same idea inverted: keys where `true` is the value that ACCEPTS the
@@ -37,12 +69,12 @@ const FALSE_IS_INSECURE = new Set(['strictSSL', 'httpOnly', 'requireTLS', 'sslVa
  * that are positive booleans, and a rule that only tested `=== false` could not
  * see any of them.
  */
-const TRUE_IS_INSECURE = new Set([
+const DEFAULT_INSECURE_WHEN_TRUE = [
   'tlsAllowInvalidCertificates',
   'tlsAllowInvalidHostnames',
   'allowInvalidCertificates',
   'ignoreHTTPSErrors',
-]);
+];
 
 /**
  * `secure: false` is NOT evidence of an insecure default on its own, and this
@@ -60,8 +92,15 @@ const TRUE_IS_INSECURE = new Set([
  */
 const CORROBORATION_REQUIRED = new Set(['secure']);
 
-/** Attributes that exist on a cookie and nowhere else in a config object. */
-const COOKIE_ATTRIBUTES = new Set([
+/**
+ * Attributes that exist on a cookie and nowhere else in a config object.
+ *
+ * Not a closed protocol set, which is why it is configurable: RFC 6265 defines
+ * six of these, `sameSite` and `partitioned` come from later drafts, and
+ * `signed` is Express's, not the wire format's at all. A consumer whose cookie
+ * serialiser spells one differently gets no corroboration and no finding.
+ */
+const DEFAULT_COOKIE_ATTRIBUTES = [
   'httpOnly',
   'sameSite',
   'maxAge',
@@ -71,7 +110,7 @@ const COOKIE_ATTRIBUTES = new Set([
   'signed',
   'partitioned',
   'priority',
-]);
+];
 
 /** The option keys under which a cookie's own attribute bag is nested. */
 const COOKIE_CONTAINER_KEYS = new Set(['cookie', 'cookies']);
@@ -133,7 +172,10 @@ const propertyKey = (node: TSESTree.Property): string | undefined => {
  * Structural only: sibling keys of the same object literal, or the key this
  * object is the value of. No identifier spelling is consulted.
  */
-const hasCookieContext = (property: TSESTree.Property): boolean => {
+const hasCookieContext = (
+  property: TSESTree.Property,
+  cookieAttributes: ReadonlySet<string>,
+): boolean => {
   // A Property's parent is an ObjectExpression or an ObjectPattern, and both
   // carry `properties`. No guard: in a pattern the value is a binding, never
   // the literal `false`, so this is only ever reached from an object literal.
@@ -143,7 +185,7 @@ const hasCookieContext = (property: TSESTree.Property): boolean => {
     if (sibling === property) continue;
     if (sibling.type !== AST_NODE_TYPES.Property) continue;
     const siblingKey = propertyKey(sibling);
-    if (siblingKey !== undefined && COOKIE_ATTRIBUTES.has(siblingKey)) return true;
+    if (siblingKey !== undefined && cookieAttributes.has(siblingKey)) return true;
   }
 
   const owner = object.parent;
@@ -176,22 +218,93 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/1188.html',
       })
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          insecureWhenFalse: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_INSECURE_WHEN_FALSE,
+            description:
+              'Config keys whose `false` value is the insecure one. Replaces the built-in list; matched as an exact key name, never a substring.',
+          },
+          additionalInsecureWhenFalse: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra keys where `false` is insecure, on top of `insecureWhenFalse`.',
+          },
+          insecureWhenTrue: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_INSECURE_WHEN_TRUE,
+            description:
+              'Config keys whose `true` value accepts the insecure thing. Replaces the built-in list.',
+          },
+          additionalInsecureWhenTrue: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra keys where `true` is insecure, on top of `insecureWhenTrue`.',
+          },
+          cookieAttributes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_COOKIE_ATTRIBUTES,
+            description:
+              'Keys that exist on a cookie and nowhere else. Used only as corroborating structure for `secure: false`. Replaces the built-in list.',
+          },
+          additionalCookieAttributes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra cookie attribute names, on top of `cookieAttributes`.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [
+    {
+      insecureWhenFalse: DEFAULT_INSECURE_WHEN_FALSE,
+      additionalInsecureWhenFalse: [],
+      insecureWhenTrue: DEFAULT_INSECURE_WHEN_TRUE,
+      additionalInsecureWhenTrue: [],
+      cookieAttributes: DEFAULT_COOKIE_ATTRIBUTES,
+      additionalCookieAttributes: [],
+    },
+  ],
+  create(context, [options = {}]) {
+    const {
+      insecureWhenFalse = DEFAULT_INSECURE_WHEN_FALSE,
+      additionalInsecureWhenFalse = [],
+      insecureWhenTrue = DEFAULT_INSECURE_WHEN_TRUE,
+      additionalInsecureWhenTrue = [],
+      cookieAttributes = DEFAULT_COOKIE_ATTRIBUTES,
+      additionalCookieAttributes = [],
+    } = options as Options;
+
+    // Exact membership, as before — the option changes WHICH names are watched,
+    // never HOW they are matched. A configurable substring test would be the
+    // defect this rule's key sets exist to avoid.
+    const falseIsInsecure = new Set([...insecureWhenFalse, ...additionalInsecureWhenFalse]);
+    const trueIsInsecure = new Set([...insecureWhenTrue, ...additionalInsecureWhenTrue]);
+    const cookieKeys = new Set([...cookieAttributes, ...additionalCookieAttributes]);
+
     return {
       Property(node: TSESTree.Property) {
         const key = propertyKey(node);
         if (key === undefined) return;
 
         const insecure =
-          (FALSE_IS_INSECURE.has(key) && isLiteral(node.value, false)) ||
-          (TRUE_IS_INSECURE.has(key) && isLiteral(node.value, true)) ||
+          (falseIsInsecure.has(key) && isLiteral(node.value, false)) ||
+          (trueIsInsecure.has(key) && isLiteral(node.value, true)) ||
           (VERIFICATION_CALLBACKS.has(key) && isNoopCallback(node.value)) ||
           (CORROBORATION_REQUIRED.has(key) &&
             isLiteral(node.value, false) &&
-            hasCookieContext(node));
+            hasCookieContext(node, cookieKeys));
 
         if (insecure) {
           context.report({ node, messageId: 'violationDetected' });

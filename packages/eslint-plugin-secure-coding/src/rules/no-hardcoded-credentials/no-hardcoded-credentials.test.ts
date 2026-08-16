@@ -1709,3 +1709,72 @@ describe('isPublishableKeyValue', () => {
     ).toBe(false);
   });
 });
+
+/**
+ * `placeholderWords` — the suppression vocabulary, made overridable.
+ *
+ * `DEFAULT_PLACEHOLDER_WORDS` is fifteen English words that decide whether a
+ * secret-shaped value is dismissed as a stand-in. A consumer whose house
+ * convention is spelled differently, or one for whom `sample` or `example`
+ * names a real value, had no remedy but disabling the rule. The list is now a
+ * DEFAULT that `placeholderWords` replaces and `additionalPlaceholderWords`
+ * extends. Both still match a WHOLE token — never a substring.
+ *
+ * Every QUIET case is paired with a positive control on the SAME snippet.
+ */
+describe('placeholderWords is overridable', () => {
+  ruleTester.run('placeholderWords and its additional variant', noHardcodedCredentials, {
+    valid: [
+      {
+        name: 'DEFAULT: `changeme` is a built-in placeholder word',
+        code: `const password = 'changeme-1234abcd';`,
+      },
+      {
+        name: 'additionalPlaceholderWords extends the built-ins',
+        code: `const password = 'fillmein-1234abcd';`,
+        options: [{ additionalPlaceholderWords: ['fillmein'] }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'placeholderWords REPLACES the built-ins: an empty list suppresses nothing',
+        code: `const password = 'changeme-1234abcd';`,
+        options: [{ placeholderWords: [] }],
+        errors: [
+          {
+            messageId: 'useEnvironmentVariable',
+            suggestions: [
+              {
+                messageId: 'useEnvironmentVariable',
+                output: `const password = process.env.PASSWORD || 'changeme-1234abcd';`,
+              },
+              {
+                messageId: 'useSecretManager',
+                output: `const password = await getSecret('password');`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'DEFAULT: `fillmein` is not a built-in placeholder word',
+        code: `const password = 'fillmein-1234abcd';`,
+        errors: [
+          {
+            messageId: 'useEnvironmentVariable',
+            suggestions: [
+              {
+                messageId: 'useEnvironmentVariable',
+                output: `const password = process.env.PASSWORD || 'fillmein-1234abcd';`,
+              },
+              {
+                messageId: 'useSecretManager',
+                output: `const password = await getSecret('password');`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+});

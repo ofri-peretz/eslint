@@ -1235,3 +1235,88 @@ describe('no-ldap-injection — remaining structural arms', () => {
     ],
   });
 });
+
+/**
+ * The file gate's PACKAGE list and the request-root vocabulary are options, and
+ * their defaults are exactly what shipped.
+ *
+ * `SEARCH_METHODS` is deliberately NOT an option and has no cases here: it is
+ * the ldapjs call signature (which parameter slot holds a filter), not a
+ * vocabulary, and a method the caller adds through `ldapFunctions` already
+ * falls through to the grammar check rather than assuming the slot.
+ *
+ * Probed both directions before these were written, on the shape where each
+ * list is the ONLY evidence:
+ *   ldapjs   + c.search(req.query.dn, "(uid=jdoe)")     reports ldapInjection
+ *   @acme/ldap + the same call                          QUIET (gate closed)
+ *   ldapjs   + c.search(event.query.dn, "(uid=jdoe)")   QUIET (not a root)
+ */
+ruleTester.run('options: package gate and request roots are configurable', noLdapInjection, {
+  valid: [
+    // ---- the default is unchanged ----------------------------------------
+    // An empty bag still closes the gate on a non-LDAP package and still
+    // declines `event` as a request root.
+    {
+      code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+      options: [{}],
+    },
+    {
+      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
+      options: [{}],
+    },
+
+    // ---- replacing a list drops the built-in evidence ---------------------
+    // `ldapjs` audited off the gate list: nothing in the file is examined.
+    {
+      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+      options: [{ ldapPackages: ['ldapts'] }],
+    },
+    // A codebase where `req` is an ordinary domain noun and the real request
+    // object is something else.
+    {
+      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+      options: [{ requestRoots: ['httpRequest'] }],
+    },
+    // Extending never removes: a package and a root in neither list stay quiet.
+    {
+      code: 'import ldap from "@other/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+      options: [{ additionalLdapPackages: ['@acme/ldap'] }],
+    },
+  ],
+  invalid: [
+    // ---- the default is unchanged ----------------------------------------
+    // Positive control for the two replacing cases above.
+    {
+      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+      options: [{}],
+      errors: [{ messageId: 'ldapInjection' }],
+    },
+
+    // ---- extending a list adds coverage -----------------------------------
+    // A house wrapper around ldapjs. Before this option EVERY finding in that
+    // repository was suppressed by the gate, silently.
+    {
+      code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+      options: [{ additionalLdapPackages: ['@acme/ldap'] }],
+      errors: [{ messageId: 'ldapInjection' }],
+    },
+    // A Lambda handler's request object is `event`, which is on no framework's
+    // convention list.
+    {
+      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
+      options: [{ additionalRequestRoots: ['event'] }],
+      errors: [{ messageId: 'ldapInjection' }],
+    },
+    // Full replacement widens as well as narrows.
+    {
+      code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+      options: [{ ldapPackages: ['@acme/ldap'] }],
+      errors: [{ messageId: 'ldapInjection' }],
+    },
+    {
+      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
+      options: [{ requestRoots: ['event'] }],
+      errors: [{ messageId: 'ldapInjection' }],
+    },
+  ],
+});

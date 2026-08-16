@@ -71,6 +71,16 @@ export interface Options {
 
   /** Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`). Default: true */
   allowPlaceholders?: boolean;
+
+  /**
+   * Words that mark a value as a self-evident stand-in rather than a secret,
+   * matched as a WHOLE token inside the value. REPLACES the built-in list.
+   * Default: DEFAULT_PLACEHOLDER_WORDS
+   */
+  placeholderWords?: string[];
+
+  /** Extra placeholder words, ON TOP of `placeholderWords`. Default: [] */
+  additionalPlaceholderWords?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -305,12 +315,18 @@ export function isSecretShaped(value: string, minLength: number): boolean {
  * Words that only ever appear in a value a developer expects to replace.
  * Matched as whole words inside the string, so `changeme`, `change-me`,
  * `YOUR_API_KEY`, and `<your-secret-here>` are all covered.
+ *
+ * Fifteen English words deciding whether a finding is suppressed, so this is a
+ * DEFAULT rather than a fixed surface: a house convention spelled differently
+ * (`fillmein`, `nopass`) is added through `additionalPlaceholderWords`, and a
+ * codebase where `sample` or `example` names a real value drops it through
+ * `placeholderWords`. Neither changes that the comparison is whole-token.
  */
-const PLACEHOLDER_WORDS = new Set([
+const DEFAULT_PLACEHOLDER_WORDS = [
   'changeme', 'change', 'replaceme', 'replace', 'yours', 'your',
   'placeholder', 'example', 'sample', 'dummy', 'todo', 'tbd',
   'redacted', 'notreal', 'xxx',
-]);
+];
 
 /**
  * True when the value is a self-evident stand-in rather than a secret.
@@ -328,7 +344,10 @@ const PLACEHOLDER_WORDS = new Set([
  * Verified against benchmarks/corpus/CWE-798/safe/test-placeholder-values.js,
  * where `secret: '<your-secret-here>'` was reported at CVSS 9.8.
  */
-export function isPlaceholderValue(value: string): boolean {
+export function isPlaceholderValue(
+  value: string,
+  words: ReadonlySet<string>,
+): boolean {
   const trimmed = value.trim();
   if (trimmed.length === 0) return false;
 
@@ -344,7 +363,7 @@ export function isPlaceholderValue(value: string): boolean {
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
-  return tokens.some(token => PLACEHOLDER_WORDS.has(token));
+  return tokens.some(token => words.has(token));
 }
 
 /**
@@ -416,6 +435,18 @@ const SECRET_SIDE_SLOT =
  * one of these vendors also issues a server-side credential — Bugsnag has a
  * personal auth token, Sentry an auth token, PostHog a personal API key — and
  * those live in differently-named slots that these patterns do not match.
+ *
+ * @protocol-constant Each entry restates one vendor's published contract — the
+ * npm specifiers that prove their SDK is loaded, and the slot name that vendor
+ * documents as safe to ship to a browser (Sentry's DSN, Segment's write key,
+ * Firebase's web API key). It is a set of third-party API facts rather than a
+ * word list about a domain, and it exists to close a false positive: these keys
+ * ARE hard-coded in client code on purpose. A consumer who could edit it gets
+ * both failure directions at once — deleting an entry re-asserts the very false
+ * positive it was written to close, and adding one turns the allowlist into a
+ * way to name any vendor and have a genuine server-side secret in a
+ * `<vendor>Key` slot go unreported. Widening it is a change to the plugin, made
+ * against the vendor's own documentation, not a consumer setting.
  */
 const PUBLISHABLE_VENDORS: ReadonlyArray<{
   vendor: string;
@@ -732,6 +763,19 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             description:
               'Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`)',
           },
+          placeholderWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_PLACEHOLDER_WORDS,
+            description:
+              'Words that mark a value as a self-evident stand-in rather than a secret, matched as a WHOLE token inside the value and never as a substring. Replaces the built-in list. Read only when `allowPlaceholders` is true.',
+          },
+          additionalPlaceholderWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra placeholder words, on top of `placeholderWords`.',
+          },
         },
         additionalProperties: false,
       },
@@ -748,6 +792,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectDatabaseStrings: true,
       customPatterns: [],
       allowPlaceholders: true,
+      placeholderWords: DEFAULT_PLACEHOLDER_WORDS,
+      additionalPlaceholderWords: [],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -762,7 +808,14 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectDatabaseStrings = true,
       customPatterns = [],
       allowPlaceholders = true,
+      placeholderWords = DEFAULT_PLACEHOLDER_WORDS,
+      additionalPlaceholderWords = [],
     }: Options = options;
+
+    const placeholderWordSet: ReadonlySet<string> = new Set([
+      ...placeholderWords,
+      ...additionalPlaceholderWords,
+    ]);
 
     const filename = context.filename;
     const isTestFile = allowInTests && (
@@ -1131,7 +1184,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // Self-evident placeholders are not secrets. Gated to non-structural
       // findings only: a JWT, an `sk_live_` key, or a DB connection string
       // keeps its shape whatever words it contains, so those still report.
-      const isPlaceholder = allowPlaceholders && isPlaceholderValue(value);
+      const isPlaceholder = allowPlaceholders && isPlaceholderValue(value, placeholderWordSet);
       if (isPlaceholder && confidence !== 'structural') {
         finalIsCredential = false;
       }

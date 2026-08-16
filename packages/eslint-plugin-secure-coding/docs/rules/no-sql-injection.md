@@ -158,6 +158,17 @@ Without this rule, that code is uncovered.
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `reportUnattributedInterpolation` | `boolean` | `false` | Report SQL built by interpolation even when the interpolated value cannot be traced to a request in this file (a property of `this`, a property of a non-request object, a helper return). Parameterise either way. Set false to report only attributable taint. |
+| `treatParametersAsUntrusted` | `boolean` | `true` | Treat a function parameter spliced into statement text as an untrusted inlet — nothing in this file constrains what a caller passes. Set false to report only values traceable to a request within the linted file. |
+| `requestRoots` | `string[]` | `["req","request","ctx","event"]` | Identifier roots that denote an inbound request. Matched exactly. |
+| `requestProperties` | `string[]` | `["query","params","body","headers","cookies","url","path"]` | Request properties that carry caller-supplied data. Matched exactly. |
+| `sinkMethods` | `string[]` | `["query","execute"]` | Method names that execute a raw SQL string. Matched exactly against the called member name. |
+| `queryTextProperties` | `string[]` | `["text","sql"]` | Properties of a driver query-config object that hold the statement text. Matched exactly. |
+| `transparentCalls` | `string[]` | `["String"]` | Ambient global calls that pass their argument through unchanged, so taint survives them. Matched exactly, and only when the file declares no binding of that name. |
+
+
 ### `reportUnattributedInterpolation` (default: `false`)
 
 Report SQL built by interpolation even when the value cannot be traced to a

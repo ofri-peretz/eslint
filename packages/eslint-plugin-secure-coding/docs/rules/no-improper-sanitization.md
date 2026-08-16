@@ -114,7 +114,7 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `safeSanitizers` | `string[]` | `["DOMPurify.sanitize","he.encode","encodeURIComponent","encodeURI","escape"]` | Sanitizer calls treated as sufficient |
-| `dangerousChars` | `string[]` | `` ["<",">","\"","'","&","`","$","{","}","\|",";","(",")"] `` | Characters a sanitizer is expected to handle |
+| `dangerousChars` | `string[]` | `["<",">","\"","'","&"]` | Characters a sanitizer is expected to handle |
 | `contexts` | `string[]` | `["html","url","sql","command","javascript","css"]` | Output contexts checked for a context-appropriate sanitizer |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as sanitizers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |

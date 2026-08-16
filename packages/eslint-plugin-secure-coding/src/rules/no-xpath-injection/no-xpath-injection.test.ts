@@ -1256,3 +1256,59 @@ ruleTester.run('lock - corpus-proved defects', noXpathInjection, {
     },
   ],
 });
+
+/**
+ * The evaluator PACKAGE list is an option, and its default is exactly what
+ * shipped.
+ *
+ * The list only decides a BARE call — `select(expr, doc)` — where the resolved
+ * import is the whole of the evidence: as a member call the receiver
+ * disambiguates, and a literal XPath expression carries its own syntax. So
+ * every case here is a bare call on a dynamic expression, and each is paired
+ * with the same code under `options: [{}]`.
+ *
+ * Probed both directions before it was written: `import { select } from "xpath"`
+ * reports `unvalidatedXpathInput`; the identical call with the import changed to
+ * `@ngrx/store` is QUIET. The import is the only thing that moves.
+ */
+ruleTester.run('options: xpathPackages is configurable, default unchanged', noXpathInjection, {
+  valid: [
+    // ---- replacing the list drops the built-in evidence -------------------
+    // `xpath` audited off the list: the bare `select` has nothing left to make
+    // it an evaluator, which is exactly the NgRx shape locked above.
+    {
+      code: 'import { select } from "xpath"; export function f(doc, name) { return select(name, doc); }',
+      options: [{ xpathPackages: ['xpath.js'] }],
+    },
+    // Extending never removes: a package in neither list stays quiet.
+    {
+      code: 'import { select } from "@ngrx/store"; export function f(doc, name) { return select(name, doc); }',
+      options: [{ additionalXpathPackages: ['@acme/xml'] }],
+    },
+  ],
+  invalid: [
+    // ---- the default is unchanged ----------------------------------------
+    // Positive control for the replacing case above: with an EMPTY option bag
+    // the same bare call still reports.
+    {
+      code: 'import { select } from "xpath"; export function f(doc, name) { return select(name, doc); }',
+      options: [{}],
+      errors: [{ messageId: 'unvalidatedXpathInput' }],
+    },
+
+    // ---- extending the list adds coverage ---------------------------------
+    // A house wrapper that re-exports `xpath.select`. The sink is identical;
+    // only the specifier differs, and npm can never enumerate it.
+    {
+      code: 'import { select } from "@acme/xml"; export function f(doc, name) { return select(name, doc); }',
+      options: [{ additionalXpathPackages: ['@acme/xml'] }],
+      errors: [{ messageId: 'unvalidatedXpathInput' }],
+    },
+    // Full replacement widens as well as narrows.
+    {
+      code: 'import { select } from "@acme/xml"; export function f(doc, name) { return select(name, doc); }',
+      options: [{ xpathPackages: ['@acme/xml'] }],
+      errors: [{ messageId: 'unvalidatedXpathInput' }],
+    },
+  ],
+});

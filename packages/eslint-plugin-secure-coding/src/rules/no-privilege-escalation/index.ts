@@ -40,6 +40,35 @@ export interface Options {
   
   /** Additional patterns to ignore. Default: [] */
   ignorePatterns?: string[];
+
+  /**
+   * Property names whose assignment is an authorisation decision. REPLACES the
+   * built-in list; compared case-insensitively as an exact property name.
+   * Default: DEFAULT_PRIVILEGE_PROPERTIES
+   */
+  privilegeProperties?: string[];
+
+  /** Extra privilege property names, ON TOP of the built-ins. Default: [] */
+  additionalPrivilegeProperties?: string[];
+
+  /**
+   * Privilege operations, matched as WHOLE WORDS or whole consecutive phrases
+   * of a callee name. REPLACES the built-in list.
+   * Default: DEFAULT_PRIVILEGE_TERMS
+   */
+  privilegeTerms?: string[];
+
+  /** Extra privilege operation terms, ON TOP of the built-ins. Default: [] */
+  additionalPrivilegeTerms?: string[];
+
+  /**
+   * Verbs that count only when they are the WHOLE callee name. REPLACES the
+   * built-in list. Default: DEFAULT_BARE_PRIVILEGE_VERBS
+   */
+  barePrivilegeVerbs?: string[];
+
+  /** Extra bare privilege verbs, ON TOP of the built-ins. Default: [] */
+  additionalBarePrivilegeVerbs?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -80,8 +109,13 @@ const DEFAULT_USER_INPUT_PATTERNS = [
  * `logger.level = req.body.level`, a Pino verbosity endpoint validated against
  * Pino's own closed set, was reported as privilege escalation. The four that
  * remain have no common non-authorisation sense.
+ *
+ * Four English words, so it is a default rather than a fact: a codebase where
+ * `access` names a file-access mode wants it out, and one whose ACL field is
+ * `entitlement` wants that in. Both are options; neither changes that the
+ * comparison is exact, never a substring.
  */
-const PRIVILEGE_PROPERTIES = new Set(['role', 'permission', 'privilege', 'access']);
+const DEFAULT_PRIVILEGE_PROPERTIES = ['role', 'permission', 'privilege', 'access'];
 
 /**
  * Privilege operations, matched as WHOLE WORDS or whole consecutive phrases.
@@ -91,7 +125,7 @@ const PRIVILEGE_PROPERTIES = new Set(['role', 'permission', 'privilege', 'access
  * req.body.promotion)` and a funding portal's `createGrantApplication(req.body)`
  * were both reported as ACL writes.
  */
-const PRIVILEGE_TERMS = [
+const DEFAULT_PRIVILEGE_TERMS = [
   'setRole',
   'updateRole',
   'elevate',
@@ -114,14 +148,18 @@ const PRIVILEGE_TERMS = [
  * are the WHOLE name, `grant(user, req.body.permission)`, and not when they
  * merely modify a domain noun.
  */
-const BARE_PRIVILEGE_VERBS = new Set(['grant', 'promote', 'revoke']);
+const DEFAULT_BARE_PRIVILEGE_VERBS = ['grant', 'promote', 'revoke'];
 
-function isPrivilegeOperationName(name: string): boolean {
-  if (nameHasAnyWord(name, PRIVILEGE_TERMS)) {
+function isPrivilegeOperationName(
+  name: string,
+  privilegeTerms: readonly string[],
+  bareVerbs: ReadonlySet<string>,
+): boolean {
+  if (nameHasAnyWord(name, privilegeTerms)) {
     return true;
   }
   const words = identifierWords(name);
-  return words.length === 1 && BARE_PRIVILEGE_VERBS.has(words[0]);
+  return words.length === 1 && bareVerbs.has(words[0]);
 }
 
 /**
@@ -370,6 +408,45 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Additional patterns to ignore',
           },
+          privilegeProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_PRIVILEGE_PROPERTIES,
+            description:
+              'Property names whose assignment is an authorisation decision, compared case-insensitively as an exact name. Replaces the built-in list.',
+          },
+          additionalPrivilegeProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra privilege property names, on top of `privilegeProperties`.',
+          },
+          privilegeTerms: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_PRIVILEGE_TERMS,
+            description:
+              'Privilege operations, matched as whole words or whole consecutive phrases of a callee name — never as a substring. Replaces the built-in list.',
+          },
+          additionalPrivilegeTerms: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra privilege operation terms, on top of `privilegeTerms`.',
+          },
+          barePrivilegeVerbs: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_BARE_PRIVILEGE_VERBS,
+            description:
+              'Verbs that count only when they are the WHOLE callee name, because their ordinary English sense dominates otherwise. Replaces the built-in list.',
+          },
+          additionalBarePrivilegeVerbs: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra bare privilege verbs, on top of `barePrivilegeVerbs`.',
+          },
         },
         additionalProperties: false,
       },
@@ -382,6 +459,12 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       roleCheckPatterns: DEFAULT_ROLE_CHECK_PATTERNS,
       userInputPatterns: [],
       ignorePatterns: [],
+      privilegeProperties: DEFAULT_PRIVILEGE_PROPERTIES,
+      additionalPrivilegeProperties: [],
+      privilegeTerms: DEFAULT_PRIVILEGE_TERMS,
+      additionalPrivilegeTerms: [],
+      barePrivilegeVerbs: DEFAULT_BARE_PRIVILEGE_VERBS,
+      additionalBarePrivilegeVerbs: [],
     },
   ],
   create(
@@ -394,7 +477,26 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       roleCheckPatterns = DEFAULT_ROLE_CHECK_PATTERNS,
       userInputPatterns: additionalUserInputPatterns = [],
       ignorePatterns = [],
+      privilegeProperties = DEFAULT_PRIVILEGE_PROPERTIES,
+      additionalPrivilegeProperties = [],
+      privilegeTerms = DEFAULT_PRIVILEGE_TERMS,
+      additionalPrivilegeTerms = [],
+      barePrivilegeVerbs = DEFAULT_BARE_PRIVILEGE_VERBS,
+      additionalBarePrivilegeVerbs = [],
     } = options as Options;
+
+    // The property comparison has always been against a lower-cased key, so a
+    // user writing `accessLevel` must be folded the same way or their entry
+    // would never match anything.
+    const privilegeProps = new Set(
+      [...privilegeProperties, ...additionalPrivilegeProperties].map((name) =>
+        name.toLowerCase(),
+      ),
+    );
+    const privilegeOperationTerms = [...privilegeTerms, ...additionalPrivilegeTerms];
+    const bareVerbs = new Set([...barePrivilegeVerbs, ...additionalBarePrivilegeVerbs]);
+    const isPrivilegeOperationCallee = (name: string): boolean =>
+      isPrivilegeOperationName(name, privilegeOperationTerms, bareVerbs);
 
     const filename = context.filename;
     // Guarded: a user pattern reaches `new RegExp` here. Measured before this
@@ -476,7 +578,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         const propertyName = assignedPropertyName(node.left)?.toLowerCase();
 
         // Check if it's a role/permission related property
-        if (propertyName !== undefined && PRIVILEGE_PROPERTIES.has(propertyName)) {
+        if (propertyName !== undefined && privilegeProps.has(propertyName)) {
           const text = sourceCode.getText(node);
 
           // Check if it matches any ignore pattern
@@ -515,14 +617,14 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       let operationName = '';
 
       if (callee.type === 'Identifier') {
-        if (isPrivilegeOperationName(callee.name)) {
+        if (isPrivilegeOperationCallee(callee.name)) {
           isPrivilegeOperation = true;
           operationName = callee.name;
         }
       }
 
       if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
-        if (isPrivilegeOperationName(callee.property.name)) {
+        if (isPrivilegeOperationCallee(callee.property.name)) {
           isPrivilegeOperation = true;
           operationName = callee.property.name.toLowerCase();
         }
@@ -565,7 +667,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         if (prop.type === 'Property' && prop.key.type === 'Identifier') {
           const keyName = prop.key.name.toLowerCase();
           
-          if (PRIVILEGE_PROPERTIES.has(keyName)) {
+          if (privilegeProps.has(keyName)) {
             const text = sourceCode.getText(prop);
             if (matchesIgnorePattern(text, ignorePatterns)) continue;
 

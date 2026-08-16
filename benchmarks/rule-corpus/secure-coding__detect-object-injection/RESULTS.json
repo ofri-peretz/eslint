@@ -1,6 +1,8 @@
 {
   "rule": "secure-coding/detect-object-injection",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
   "fixtures": 19,
+  "vulnerable": 10,
   "results": [
     {
       "name": "Interlace secure-coding/detect-object-injection",

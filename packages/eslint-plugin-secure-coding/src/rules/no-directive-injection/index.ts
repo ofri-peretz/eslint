@@ -54,12 +54,27 @@ type RuleOptions = [Options?];
 /**
  * Elements DOMPurify strips because allowing them defeats sanitization
  * outright: each can execute script or retarget every relative URL on the page.
+ *
+ * @protocol-constant These are HTML element names from the WHATWG spec, matched
+ * against the string values a caller passes to DOMPurify's own `ADD_TAGS` /
+ * `ALLOWED_TAGS` configuration — a closed markup surface, not a vocabulary a
+ * consumer's domain can collide with. The rule exists to report exactly the
+ * moment one of these five is re-allowed, so a consumer who could edit the set
+ * could delete `script` and keep a green lint run on `ADD_TAGS: ['script']`,
+ * which is the single configuration this rule was written to catch.
  */
 const DANGEROUS_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'base']);
 
 /**
  * Attributes that carry executable or navigable content. Every `on*` handler is
  * covered separately by prefix, since the list of DOM events is open-ended.
+ *
+ * @protocol-constant These are HTML/SVG attribute names from the WHATWG and SVG
+ * specifications, matched against the values a caller passes to DOMPurify's
+ * `ADD_ATTR` / `ALLOWED_ATTR` — the spec decides what they mean, not the
+ * consuming codebase. Making them editable would let a consumer re-allow
+ * `srcdoc` or `formaction`, the two attributes that turn a sanitized document
+ * back into an execution sink, and silence the rule on its own canonical shape.
  */
 const DANGEROUS_ATTRS = new Set(['srcdoc', 'formaction', 'xlink:href']);
 

@@ -108,8 +108,12 @@ function onLoginFailure(req) {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `loggerNames` | `string[]` | `[]` | Additional receiver names whose level methods write a log line |
-| `requestRoots` | `string[]` | `[]` | Additional identifier roots that denote an inbound request |
+| `loggerReceivers` | `string[]` | `["console","log","logger","winston","pino","bunyan"]` | Receiver names whose level methods write a log line, compared as an exact name and never as a substring. Replaces the built-in list. |
+| `loggerNames` | `string[]` | `[]` | Additional receiver names whose level methods write a log line, on top of `loggerReceivers` |
+| `requestRootNames` | `string[]` | `["req","request","ctx","event","message"]` | Identifier roots that denote an inbound request, matched as the exact ROOT of a member chain. Replaces the built-in list. |
+| `requestRoots` | `string[]` | `[]` | Additional identifier roots that denote an inbound request, on top of `requestRootNames` |
+| `requestProperties` | `string[]` | `["query","params","body","headers","url","path","cookies","data"]` | Request properties that carry caller-supplied data, matched as a whole segment of the member chain. Replaces the built-in list. |
+| `additionalRequestProperties` | `string[]` | `[]` | Extra request properties, on top of `requestProperties` — hapi's `request.payload` belongs here |
 
 ## Error Message Format
 

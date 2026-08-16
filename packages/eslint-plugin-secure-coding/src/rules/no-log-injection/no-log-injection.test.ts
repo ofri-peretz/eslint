@@ -205,6 +205,50 @@ describe('no-log-injection', () => {
         code: "logger.info('id=' + payload.body.id);",
         options: [{ loggerNames: ['audit'] }],
       },
+
+      // ---------------------------------------------------------------
+      // Vocabulary defaults, pinned
+      //
+      // Each of these is the QUIET half of a pair whose positive control
+      // sits in `invalid` below. They exist so that adding, removing or
+      // reordering an entry in DEFAULT_LOGGER_RECEIVERS /
+      // DEFAULT_REQUEST_ROOTS / DEFAULT_REQUEST_PROPERTIES cannot happen
+      // silently.
+      // ---------------------------------------------------------------
+      {
+        name: 'DEFAULT: `audit` is not a built-in logger receiver',
+        code: 'audit.info("user=" + req.body.username);',
+      },
+      {
+        name: 'DEFAULT: `payload` is not a built-in request root',
+        code: 'logger.info("id=" + payload.body.id);',
+      },
+      {
+        name: "DEFAULT: `payload` is not a built-in request property (hapi's request.payload)",
+        code: 'logger.info("u=" + request.payload.name);',
+      },
+
+      // ---------------------------------------------------------------
+      // Vocabulary overridden — the REPLACE direction, which is the one a
+      // consumer has no other remedy for. Each drops an entry the default
+      // carries, and the matching `invalid` case proves the same code
+      // reports without the option.
+      // ---------------------------------------------------------------
+      {
+        name: 'loggerReceivers REPLACES the built-ins: `logger` is no longer a sink',
+        code: 'logger.info("user=" + req.body.username);',
+        options: [{ loggerReceivers: ['audit'] }],
+      },
+      {
+        name: 'requestRootNames REPLACES the built-ins: `req` is no longer a request',
+        code: 'logger.info("user=" + req.body.username);',
+        options: [{ requestRootNames: ['payload'] }],
+      },
+      {
+        name: 'requestProperties REPLACES the built-ins: `body` no longer carries caller data',
+        code: 'logger.info("user=" + req.body.username);',
+        options: [{ requestProperties: ['payload'] }],
+      },
     ],
 
     invalid: [
@@ -337,6 +381,44 @@ describe('no-log-injection', () => {
         options: [{ requestRoots: ['payload'] }],
         errors: [
           { messageId: 'logInjection', data: { source: 'payload.body.id' } },
+        ],
+      },
+
+      // ---------------------------------------------------------------
+      // The POSITIVE CONTROLS for the three "REPLACES the built-ins"
+      // valid cases above. Identical code, no options: the rule reports.
+      // Silence there therefore means the option was honoured, not that
+      // the snippet was unreachable to begin with.
+      // ---------------------------------------------------------------
+      {
+        name: 'DEFAULT: logger + req.body reports with no options at all',
+        code: 'logger.info("user=" + req.body.username);',
+        errors: [
+          { messageId: 'logInjection', data: { source: 'req.body.username' } },
+        ],
+      },
+      {
+        name: 'loggerReceivers REPLACES the built-ins: the replacement is a sink',
+        code: 'audit.info("user=" + req.body.username);',
+        options: [{ loggerReceivers: ['audit'] }],
+        errors: [
+          { messageId: 'logInjection', data: { source: 'req.body.username' } },
+        ],
+      },
+      {
+        name: 'requestRootNames REPLACES the built-ins: the replacement is a request',
+        code: 'logger.info("id=" + payload.body.id);',
+        options: [{ requestRootNames: ['payload'] }],
+        errors: [
+          { messageId: 'logInjection', data: { source: 'payload.body.id' } },
+        ],
+      },
+      {
+        name: "additionalRequestProperties adds hapi's request.payload",
+        code: 'logger.info("u=" + request.payload.name);',
+        options: [{ additionalRequestProperties: ['payload'] }],
+        errors: [
+          { messageId: 'logInjection', data: { source: 'request.payload.name' } },
         ],
       },
     ],

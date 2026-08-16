@@ -148,6 +148,48 @@ ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
         '}',
       ].join('\n'),
     },
+
+    // ---- OPTIONS: the default is unchanged --------------------------------
+    // An empty option bag must behave exactly like no option bag. The invalid
+    // block below carries the matching positive control.
+    {
+      code: "'use client'; export function render(post) { if (post.published) { document.title = post.title; } }",
+      options: [{}],
+    },
+
+    // ---- OPTIONS: replacing a default ------------------------------------
+    // A design-system codebase where `role` is the ARIA attribute and nothing
+    // else. Narrowing the claim vocabulary is the remedy; before the option
+    // existed it was disable-the-rule.
+    {
+      code: "'use client'; export function render(el) { if (el.role === 'button') { focus(el); } }",
+      options: [{ authProperties: ['isAdmin'] }],
+    },
+    // The file's only browser evidence is `document`, which is no longer
+    // browser evidence once the list is replaced.
+    {
+      code: "export function render(user) { if (user.role === 'admin') { document.title = 'x'; } }",
+      options: [{ browserGlobals: ['chrome'] }],
+    },
+    // An in-house server framework, declared server-only. The import proves the
+    // file never reaches a browser, so the guard in it IS the server-side
+    // enforcement CWE-602 asks for.
+    {
+      code: "'use client'; import { router } from '@acme/server-kit'; export function h(user) { if (user.role === 'admin') { drop(); } }",
+      options: [{ additionalServerModules: ['@acme/server-kit'] }],
+    },
+    // The same via a full replacement of the module list.
+    {
+      code: "'use client'; import { router } from '@acme/server-kit'; export function h(user) { if (user.role === 'admin') { drop(); } }",
+      options: [{ serverModules: ['@acme/server-kit'] }],
+    },
+    // Replacing the module list can also REMOVE a built-in: with `express` no
+    // longer server-only the express file is judged on browser evidence, and
+    // it has none, so it still stays quiet.
+    {
+      code: "import express from 'express'; export function h(req, res) { if (req.user.role === 'admin') { res.send('ok'); } }",
+      options: [{ serverModules: [] }],
+    },
   ],
 
   invalid: [
@@ -210,6 +252,43 @@ ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
     // Read straight out of storage the user owns.
     {
       code: "const profile = JSON.parse(localStorage.getItem('profile')); if (profile.permissions) { mountDangerZone(); }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+
+    // ---- OPTIONS: the default is unchanged --------------------------------
+    // Positive control for the `options: [{}]` valid case: an empty bag still
+    // reports everything the built-in lists report.
+    {
+      code: "'use client'; export function render(session) { if (session.user.isAdmin) { impersonate(); } }",
+      options: [{}],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+
+    // ---- OPTIONS: extending a default adds coverage -----------------------
+    // The corpus's documented false negative — a client-side gate on
+    // `user.accessLevel` — now has a remedy that is not "fork the rule".
+    {
+      code: "'use client'; export function render(user) { if (user.accessLevel > 3) { showAdmin(); } }",
+      options: [{ additionalAuthProperties: ['accessLevel'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // A browser-extension global as the runtime evidence. `chrome` is not in
+    // the built-in list, so this file was previously judged to run nowhere.
+    {
+      code: "export function render(user) { if (user.role === 'admin') { chrome.tabs.create({ url: '/admin' }); } }",
+      options: [{ additionalBrowserGlobals: ['chrome'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // Full replacement of the browser-global list, same effect.
+    {
+      code: "export function render(user) { if (user.role === 'admin') { chrome.tabs.create({ url: '/admin' }); } }",
+      options: [{ browserGlobals: ['chrome'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // Full replacement of the claim vocabulary, widening rather than narrowing.
+    {
+      code: "'use client'; export function render(user) { if (user.tier === 'staff') { showAdmin(); } }",
+      options: [{ authProperties: ['tier'] }],
       errors: [{ messageId: 'violationDetected' }],
     },
   ],

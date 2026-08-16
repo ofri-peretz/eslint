@@ -37,7 +37,17 @@ export interface Options {
   
   /** Check error messages. Default: true */
   checkErrorMessages?: boolean;
-  
+
+  /**
+   * Trailing name segments that describe a secret rather than hold one, so a
+   * credential-ish name ending in one is NOT reported. Compared as the whole
+   * final segment of the name, never as a substring. REPLACES the built-in
+   * list. Default: DESCRIPTOR_SEGMENTS
+   */
+  descriptorSegments?: string[];
+
+  /** Extra descriptor segments, ON TOP of `descriptorSegments`. Default: [] */
+  additionalDescriptorSegments?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -156,12 +166,19 @@ function literalLabelsValue(text: string, patterns: string[]): string | null {
  * `apiKeyMsg` holds ". The given SID indicates an API Key which requires …".
  * A credential-ish name is necessary but not sufficient — the same reasoning
  * `no-hardcoded-credentials` applies to values, applied to names.
+ *
+ * Fourteen English words deciding whether a finding is suppressed, so this is a
+ * DEFAULT rather than a fixed surface: a codebase whose descriptor suffix is
+ * spelled something else (`passwordCopy`, `tokenBlurb`) adds it through
+ * `additionalDescriptorSegments`, and one where `pattern` or `notice` really
+ * does hold the credential drops it through `descriptorSegments`. Neither
+ * changes that the comparison is against the whole final segment of the name.
  */
-const DESCRIPTOR_SEGMENTS = new Set([
+const DESCRIPTOR_SEGMENTS = [
   'msg', 'message', 'error', 'err', 'label', 'prompt', 'hint',
   'description', 'desc', 'regex', 'pattern', 'placeholder',
   'warning', 'notice',
-]);
+];
 
 /**
  * Does an IDENTIFIER (or property name) name a secret it actually holds?
@@ -169,7 +186,11 @@ const DESCRIPTOR_SEGMENTS = new Set([
  * Only for names — never for prose. A string literal's words are checked by
  * `literalCarriesSecret`, which asks a different question.
  */
-function identifierNamesSecret(name: string, patterns: string[]): string | null {
+function identifierNamesSecret(
+  name: string,
+  patterns: string[],
+  descriptors: ReadonlySet<string>,
+): string | null {
   const matched = containsSensitiveData(name, patterns);
   if (!matched) return null;
   const last = name
@@ -179,7 +200,7 @@ function identifierNamesSecret(name: string, patterns: string[]): string | null 
     .filter(Boolean)
     .slice(-1)
     .join('');
-  return DESCRIPTOR_SEGMENTS.has(last) ? null : matched;
+  return descriptors.has(last) ? null : matched;
 }
 
 /**
@@ -192,7 +213,8 @@ function identifierNamesSecret(name: string, patterns: string[]): string | null 
  */
 function memberCarriesSecret(
   node: TSESTree.MemberExpression,
-  patterns: string[]
+  patterns: string[],
+  descriptors: ReadonlySet<string>,
 ): string | null {
   const prop = node.property;
   // `node.computed` is the whole distinction. In `user.password` the property
@@ -206,7 +228,7 @@ function memberCarriesSecret(
     : prop.type === AST_NODE_TYPES.Identifier
       ? prop.name
       : null;
-  const fromProp = propName ? identifierNamesSecret(propName, patterns) : null;
+  const fromProp = propName ? identifierNamesSecret(propName, patterns, descriptors) : null;
   if (fromProp) return fromProp;
   // The object-name fallback must not fire through a property that cannot
   // carry the value. `token.length` is a number and `buffer.byteLength` is a
@@ -218,13 +240,24 @@ function memberCarriesSecret(
   // array or a TypedArray is its size, in every codebase.
   if (propName && VALUE_FREE_PROPERTIES.has(propName)) return null;
   return node.object.type === AST_NODE_TYPES.Identifier
-    ? identifierNamesSecret(node.object.name, patterns)
+    ? identifierNamesSecret(node.object.name, patterns, descriptors)
     : null;
 }
 
 /**
  * Properties whose value is a measurement of the receiver rather than the
  * receiver's contents. Exact membership against a fixed language surface.
+ *
+ * @protocol-constant These four are ECMAScript's own size accessors —
+ * `String`/`Array`/`TypedArray.prototype.length`, `Map`/`Set.prototype.size`,
+ * and `byteLength` / `byteOffset` on `ArrayBuffer` and the typed-array views.
+ * The language, not the codebase, guarantees that each yields a number that
+ * cannot be replayed as the credential its receiver holds, so this is a
+ * statement about the platform rather than a vocabulary. Making it editable
+ * would let a consumer delete `length` and re-assert the false positive it was
+ * added for — `logger.debug('token length', token.length)` reported as a
+ * credential leak — or add a property that really does carry the secret
+ * (`.value`, `.raw`) and silence every genuine finding reached through it.
  */
 const VALUE_FREE_PROPERTIES = new Set(['length', 'size', 'byteLength', 'byteOffset']);
 
@@ -300,6 +333,19 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Check error messages',
           },
+          descriptorSegments: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DESCRIPTOR_SEGMENTS,
+            description:
+              'Trailing name segments that describe a secret rather than hold one, so `apiKeyMsg` and `passwordError` are not reported. Compared as the whole FINAL segment of the name, never as a substring. Replaces the built-in list.',
+          },
+          additionalDescriptorSegments: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra descriptor segments, on top of `descriptorSegments`.',
+          },
         },
         additionalProperties: false,
       },
@@ -310,6 +356,8 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       sensitivePatterns: ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
       checkConsoleLog: true,
       checkErrorMessages: true,
+      descriptorSegments: DESCRIPTOR_SEGMENTS,
+      additionalDescriptorSegments: [],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
@@ -317,8 +365,14 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
 sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
       checkConsoleLog = true,
       checkErrorMessages = true,
-    
+      descriptorSegments = DESCRIPTOR_SEGMENTS,
+      additionalDescriptorSegments = [],
 }: Options = options || {};
+
+    const descriptors: ReadonlySet<string> = new Set([
+      ...descriptorSegments,
+      ...additionalDescriptorSegments,
+    ]);
 
     /**
      * Receivers whose log methods write to a log stream. Exact membership on a
@@ -448,7 +502,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
                 ? property.key.value
                 : null;
           const pattern = keyName
-            ? identifierNamesSecret(keyName, sensitivePatterns)
+            ? identifierNamesSecret(keyName, sensitivePatterns, descriptors)
             : null;
           if (!pattern) continue;
           if (
@@ -524,7 +578,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         return namedValueExposure(value.expression, seen);
       }
       if (value.type === AST_NODE_TYPES.Identifier) {
-        const pattern = identifierNamesSecret(value.name, sensitivePatterns);
+        const pattern = identifierNamesSecret(value.name, sensitivePatterns, descriptors);
         if (pattern) return { node: value, pattern };
         const init = resolveBindingInit(value);
         const viaBinding = init ? namedValueExposure(init, seen) : null;
@@ -533,7 +587,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         return viaBinding ? { node: value, pattern: viaBinding.pattern } : null;
       }
       if (value.type === AST_NODE_TYPES.MemberExpression) {
-        const pattern = memberCarriesSecret(value, sensitivePatterns);
+        const pattern = memberCarriesSecret(value, sensitivePatterns, descriptors);
         return pattern ? { node: value, pattern } : null;
       }
       return null;

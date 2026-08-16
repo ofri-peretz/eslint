@@ -66,6 +66,34 @@ export interface Options {
 
   /** Functions that validate/sanitize XML input */
   xmlValidationFunctions?: string[];
+
+  /**
+   * Module specifiers whose parsers can resolve an external entity, matched
+   * against a RESOLVED import binding. REPLACES the built-in list.
+   * Default: DEFAULT_XML_MODULES
+   */
+  xmlModules?: string[];
+
+  /** Extra XML package specifiers, ON TOP of the built-ins. Default: [] */
+  additionalXmlModules?: string[];
+
+  /**
+   * Method names that only ever parse XML, whatever the receiver. REPLACES the
+   * built-in list. Default: DEFAULT_XML_PARSE_METHODS
+   */
+  xmlParseMethods?: string[];
+
+  /** Extra XML-only parse method names, ON TOP of the built-ins. Default: [] */
+  additionalXmlParseMethods?: string[];
+
+  /**
+   * Parser option keys whose `true` value turns entity expansion ON. REPLACES
+   * the built-in list. Default: DEFAULT_DANGEROUS_PARSER_OPTIONS
+   */
+  dangerousParserOptions?: string[];
+
+  /** Extra entity-expansion option keys, ON TOP of the built-ins. Default: [] */
+  additionalDangerousParserOptions?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -91,8 +119,13 @@ const DEFAULT_XML_VALIDATION_FUNCTIONS = [
  *
  * Exact module specifiers, matched against a RESOLVED import binding — this is
  * what the file actually loaded, not what something is called.
+ *
+ * A published package list is never finished: an in-house wrapper around
+ * libxmljs re-exports the same sink under a private specifier and is invisible
+ * here. `additionalXmlModules` is that wrapper's remedy; `xmlModules` is the
+ * remedy for a consumer who has audited one of these off the list.
  */
-const XML_MODULES = new Set([
+const DEFAULT_XML_MODULES = [
   'libxmljs',
   'libxmljs2',
   'xml2js',
@@ -102,7 +135,7 @@ const XML_MODULES = new Set([
   'xmldom',
   'node-expat',
   'xpath',
-]);
+];
 
 /**
  * Method names that only ever parse XML, on every library that ships one.
@@ -111,8 +144,12 @@ const XML_MODULES = new Set([
  * `csv-parse` all own it, and this rule reported CWE-611 on `JSON.parse`
  * before the receiver was checked at all. A bare `parse` is a sink only when
  * its receiver resolves to an XML package.
+ *
+ * "On every library that ships one" is a claim about the libraries known TODAY.
+ * A consumer whose parser spells it `readXmlDocument` extends the list rather
+ * than losing the check.
  */
-const XML_PARSE_METHODS = new Set([
+const DEFAULT_XML_PARSE_METHODS = [
   'parseFromString',
   'parseString',
   'parseStringPromise',
@@ -120,16 +157,16 @@ const XML_PARSE_METHODS = new Set([
   'parseXmlAsync',
   'parseXmlString',
   'parseXML',
-]);
+];
 
 /** Option keys whose enabled value turns entity expansion ON. */
-const DANGEROUS_PARSER_OPTIONS = new Set([
+const DEFAULT_DANGEROUS_PARSER_OPTIONS = [
   'resolveExternals',
   'expandEntityReferences',
   'noent',
   'processEntities',
   'dtdload',
-]);
+];
 
 /**
  * The statically knowable name of a parser-option key.
@@ -148,12 +185,15 @@ const optionKey = (prop: TSESTree.ObjectLiteralElement): string | undefined => {
 /**
  * Check if parser options enable dangerous features
  */
-const hasDangerousParserOptions = (optionsNode: TSESTree.Node | undefined): boolean => {
+const hasDangerousParserOptions = (
+  optionsNode: TSESTree.Node | undefined,
+  dangerousKeys: ReadonlySet<string>,
+): boolean => {
   if (optionsNode?.type !== AST_NODE_TYPES.ObjectExpression) return false;
 
   for (const prop of optionsNode.properties) {
     const key = optionKey(prop);
-    if (key === undefined || !DANGEROUS_PARSER_OPTIONS.has(key)) continue;
+    if (key === undefined || !dangerousKeys.has(key)) continue;
     // `prop` is a Property here — `optionKey` returns undefined for anything else.
     const { value } = prop as TSESTree.Property;
     if (value.type === AST_NODE_TYPES.Literal && value.value === true) return true;
@@ -238,6 +278,46 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
             default: DEFAULT_XML_VALIDATION_FUNCTIONS,
             description: 'Function names that count as XML input validation',
           },
+          xmlModules: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_XML_MODULES,
+            description:
+              'Module specifiers whose parsers can resolve an external entity, matched against a resolved import binding. Replaces the built-in list.',
+          },
+          additionalXmlModules: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra XML package specifiers, on top of `xmlModules`.',
+          },
+          xmlParseMethods: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_XML_PARSE_METHODS,
+            description:
+              'Method names that only ever parse XML, matched as an exact method name whatever the receiver. Replaces the built-in list.',
+          },
+          additionalXmlParseMethods: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra XML-only parse method names, on top of `xmlParseMethods`.',
+          },
+          dangerousParserOptions: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_DANGEROUS_PARSER_OPTIONS,
+            description:
+              'Parser option keys whose `true` value turns entity expansion ON. Replaces the built-in list.',
+          },
+          additionalDangerousParserOptions: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description:
+              'Extra entity-expansion option keys, on top of `dangerousParserOptions`.',
+          },
         },
         additionalProperties: false,
       },
@@ -247,6 +327,12 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     {
       safeParserOptions: DEFAULT_SAFE_PARSER_OPTIONS,
       xmlValidationFunctions: DEFAULT_XML_VALIDATION_FUNCTIONS,
+      xmlModules: DEFAULT_XML_MODULES,
+      additionalXmlModules: [],
+      xmlParseMethods: DEFAULT_XML_PARSE_METHODS,
+      additionalXmlParseMethods: [],
+      dangerousParserOptions: DEFAULT_DANGEROUS_PARSER_OPTIONS,
+      additionalDangerousParserOptions: [],
     },
   ],
   create(
@@ -259,7 +345,20 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     const {
       safeParserOptions = DEFAULT_SAFE_PARSER_OPTIONS,
       xmlValidationFunctions = DEFAULT_XML_VALIDATION_FUNCTIONS,
+      xmlModules = DEFAULT_XML_MODULES,
+      additionalXmlModules = [],
+      xmlParseMethods = DEFAULT_XML_PARSE_METHODS,
+      additionalXmlParseMethods = [],
+      dangerousParserOptions = DEFAULT_DANGEROUS_PARSER_OPTIONS,
+      additionalDangerousParserOptions = [],
     } = options!;
+
+    const xmlPackages = new Set([...xmlModules, ...additionalXmlModules]);
+    const parseMethods = new Set([...xmlParseMethods, ...additionalXmlParseMethods]);
+    const dangerousKeys = new Set([
+      ...dangerousParserOptions,
+      ...additionalDangerousParserOptions,
+    ]);
 
     const filename = context.filename;
     const sourceCode = context.sourceCode;
@@ -272,7 +371,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     /** Does this expression resolve to something exported by an XML package? */
     const resolvesToXmlModule = (node: TSESTree.Node): boolean => {
       const binding = resolveModuleBinding(node, sourceCode.getScope(node));
-      return binding !== undefined && XML_MODULES.has(binding.module);
+      return binding !== undefined && xmlPackages.has(binding.module);
     };
 
     /**
@@ -326,12 +425,12 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         callee.type === AST_NODE_TYPES.MemberExpression &&
         !callee.computed &&
         callee.property.type === AST_NODE_TYPES.Identifier &&
-        XML_PARSE_METHODS.has(callee.property.name)
+        parseMethods.has(callee.property.name)
       ) {
         return true;
       }
 
-      if (hasDangerousParserOptions(node.arguments[1])) return true;
+      if (hasDangerousParserOptions(node.arguments[1], dangerousKeys)) return true;
 
       if (resolvesToXmlModule(callee)) return true;
 
@@ -403,7 +502,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         const constructionOptions = construction?.arguments[0];
 
         // Entity expansion switched ON, at either site.
-        if (hasDangerousParserOptions(callOptions)) {
+        if (hasDangerousParserOptions(callOptions, dangerousKeys)) {
           context.report({
             node: callOptions as TSESTree.Node,
             messageId: 'externalEntityEnabled',
@@ -412,7 +511,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (hasDangerousParserOptions(constructionOptions)) {
+        if (hasDangerousParserOptions(constructionOptions, dangerousKeys)) {
           context.report({
             node: node.callee,
             messageId: 'unsafeXmlParser',

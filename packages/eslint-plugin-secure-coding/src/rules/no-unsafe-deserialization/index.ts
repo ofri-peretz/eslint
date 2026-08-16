@@ -47,6 +47,25 @@ export interface Options extends SecurityRuleOptions {
 
   /** Functions that validate input before deserialization */
   validationFunctions?: string[];
+
+  /**
+   * js-yaml schema exports that make `load` inert. REPLACES the built-in list.
+   * Default: DEFAULT_SAFE_YAML_SCHEMAS
+   */
+  safeYamlSchemas?: string[];
+
+  /** Extra safe js-yaml schema exports, ON TOP of the built-ins. Default: [] */
+  additionalSafeYamlSchemas?: string[];
+
+  /**
+   * Packages whose parse entry point cannot execute code or instantiate a type
+   * the payload names. REPLACES the built-in list.
+   * Default: DEFAULT_NON_EXECUTING_PACKAGES
+   */
+  nonExecutingPackages?: string[];
+
+  /** Extra non-executing packages, ON TOP of the built-ins. Default: [] */
+  additionalNonExecutingPackages?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -113,23 +132,30 @@ const ALWAYS_UNSAFE_MODULES: ReadonlySet<string> = new Set([
 /**
  * js-yaml schemas that define no JS-instantiating tag. Pinning one of these
  * makes `load` inert — it is what `safeLoad` did before v4 removed it.
- * `DEFAULT_SCHEMA` is deliberately absent: it is safe in v4 and was not in v3,
- * and the rule cannot see which major is installed.
+ * `DEFAULT_SCHEMA` is deliberately absent from the DEFAULT: it is safe in v4
+ * and was not in v3, and the rule cannot see which major is installed.
+ *
+ * That last sentence is the reason this is an option and not a constant. A
+ * repository pinned to js-yaml v4 KNOWS which major is installed, and
+ * `yaml.load(x, { schema: yaml.DEFAULT_SCHEMA })` is safe there — but the rule
+ * cannot know it, so before the option the only remedy on that line was a
+ * disable comment. Set `additionalSafeYamlSchemas: ['DEFAULT_SCHEMA']` on a
+ * v4-pinned repo instead.
  */
-const SAFE_YAML_SCHEMAS: ReadonlySet<string> = new Set([
+const DEFAULT_SAFE_YAML_SCHEMAS = [
   'JSON_SCHEMA',
   'CORE_SCHEMA',
   'FAILSAFE_SCHEMA',
-]);
+];
 
-const NON_EXECUTING_PACKAGES: ReadonlySet<string> = new Set([
+const DEFAULT_NON_EXECUTING_PACKAGES = [
   'yaml',
   'bson',
   'cbor',
   'msgpackr',
   '@msgpack/msgpack',
   'protobufjs',
-]);
+];
 
 /**
  * True when the expression can only evaluate to a string, i.e. the argument
@@ -234,6 +260,32 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Disable all false positive detection (strict mode)',
           },
+          safeYamlSchemas: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_SAFE_YAML_SCHEMAS,
+            description:
+              'js-yaml schema exports that make `load` inert, matched against a resolved js-yaml binding. Add DEFAULT_SCHEMA on a repository pinned to js-yaml v4. Replaces the built-in list.',
+          },
+          additionalSafeYamlSchemas: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra safe js-yaml schema exports, on top of `safeYamlSchemas`.',
+          },
+          nonExecutingPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_NON_EXECUTING_PACKAGES,
+            description:
+              'Packages whose parse entry point cannot execute code or instantiate a payload-named type, matched against a resolved import binding. Replaces the built-in list.',
+          },
+          additionalNonExecutingPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra non-executing packages, on top of `nonExecutingPackages`.',
+          },
         },
         additionalProperties: false,
       },
@@ -246,6 +298,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
+      safeYamlSchemas: DEFAULT_SAFE_YAML_SCHEMAS,
+      additionalSafeYamlSchemas: [],
+      nonExecutingPackages: DEFAULT_NON_EXECUTING_PACKAGES,
+      additionalNonExecutingPackages: [],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -256,7 +312,17 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
+      safeYamlSchemas = DEFAULT_SAFE_YAML_SCHEMAS,
+      additionalSafeYamlSchemas = [],
+      nonExecutingPackages = DEFAULT_NON_EXECUTING_PACKAGES,
+      additionalNonExecutingPackages = [],
     }: Options = options;
+
+    const safeSchemas = new Set([...safeYamlSchemas, ...additionalSafeYamlSchemas]);
+    const inertPackages = new Set([
+      ...nonExecutingPackages,
+      ...additionalNonExecutingPackages,
+    ]);
 
     const sourceCode = context.sourceCode;
     const filename = context.filename;
@@ -307,7 +373,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         );
         return (
           schema?.module === 'js-yaml' &&
-          SAFE_YAML_SCHEMAS.has(schema.path.at(-1) ?? '')
+          safeSchemas.has(schema.path.at(-1) ?? '')
         );
       });
     };
@@ -330,7 +396,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         if (sinks && binding.path.some((segment) => sinks.has(segment))) {
           return !pinsSafeYamlSchema(node);
         }
-        if (NON_EXECUTING_PACKAGES.has(binding.module)) return false;
+        if (inertPackages.has(binding.module)) return false;
       }
 
       // Check for dangerous function calls

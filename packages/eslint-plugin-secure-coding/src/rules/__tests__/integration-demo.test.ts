@@ -109,7 +109,7 @@ describe('Demo Gaps Reproduction', () => {
           errors: [{ 
             messageId: 'timingUnsafeComparison',
             suggestions: [{
-              messageId: 'useStrictEquality',
+              messageId: 'useTimingSafeEqual',
               output: `
             export function insecure_noInsecureComparison(providedToken: string, expectedToken: string) {
               if (crypto.timingSafeEqual(Buffer.from(providedToken), Buffer.from(expectedToken))) {

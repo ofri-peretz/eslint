@@ -46,6 +46,24 @@ export interface Options extends SecurityRuleOptions {
 
   /** Functions that validate LDAP input */
   ldapValidationFunctions?: string[];
+
+  /**
+   * Package specifiers whose import opens the file gate. REPLACES the built-in
+   * list. Default: DEFAULT_LDAP_PACKAGES
+   */
+  ldapPackages?: string[];
+
+  /** Extra LDAP client packages, ON TOP of the built-ins. Default: [] */
+  additionalLdapPackages?: string[];
+
+  /**
+   * Identifiers that name a framework request object, matched as the ROOT of a
+   * member chain. REPLACES the built-in list. Default: DEFAULT_REQUEST_ROOTS
+   */
+  requestRoots?: string[];
+
+  /** Extra request-object root names, ON TOP of the built-ins. Default: [] */
+  additionalRequestRoots?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -121,8 +139,16 @@ export function looksLikeLdapFilterGrammar(staticText: string): boolean {
  * alternative is a CWE-90 finding on every repository that has never spoken
  * LDAP in its life.
  */
-/** The LDAP client packages, shared by the file gate and by local-binding resolution. */
-const LDAP_PACKAGES = new Set([
+/**
+ * The LDAP client packages, shared by the file gate and by local-binding
+ * resolution.
+ *
+ * This list is the whole of the file gate: a repository whose LDAP client is a
+ * house wrapper around ldapjs imports a specifier that appears on no npm list,
+ * so EVERY finding in that repository is suppressed and there is no signal that
+ * anything was skipped. `additionalLdapPackages` is that repository's remedy.
+ */
+const DEFAULT_LDAP_PACKAGES = [
   'ldapjs',
   'ldapts',
   'ldapauth-fork',
@@ -133,7 +159,7 @@ const LDAP_PACKAGES = new Set([
   'activedirectory',
   'activedirectory2',
   'node-ldap',
-]);
+];
 
 const LDAP_SCOPES = new Set(['@ldapjs']);
 
@@ -143,14 +169,29 @@ const LDAP_SCOPES = new Set(['@ldapjs']);
  * an entry, `modify` a change, `compare` an attribute name. Treating argument 1 as a
  * filter for all of them reported `client.bind(dn, password, cb)` — the canonical
  * ldapjs authentication call, straight out of its README — as an LDAP injection.
+ *
+ * @protocol-constant Not a vocabulary — the ldapjs/ldapts CALL SIGNATURE. Which
+ * parameter slot holds a filter is a fact about the API, and a user who could
+ * edit this set could re-assert "argument 1 of `bind` is a filter", which is the
+ * exact measured false positive the set exists to close.
+ *
+ * It costs nothing either, because extension is already handled soundly
+ * elsewhere: a method added through `ldapFunctions` falls through to
+ * `checkConstructedFilter`, which judges argument 1 on its own filter grammar
+ * rather than assuming the slot. See the CallExpression visitor.
  */
 const SEARCH_METHODS = new Set(['search', 'searchAsync', 'searchPaginated']);
 
 /**
  * Framework request objects, matched as the ROOT IDENTIFIER of a member chain.
  * Exact membership against a closed set, not a substring of the printed expression.
+ *
+ * Four naming conventions, not an API: a Lambda handler's request object is
+ * `event`, a Hapi handler's is `request` (covered) and a house middleware may
+ * pass anything at all. Extending is the coverage remedy; replacing is the
+ * remedy for a codebase where `ctx` is an ordinary domain context.
  */
-const REQUEST_ROOTS = new Set(['req', 'request', 'ctx', 'httpRequest']);
+const DEFAULT_REQUEST_ROOTS = ['req', 'request', 'ctx', 'httpRequest'];
 
 const DEFAULT_LDAP_FUNCTIONS = [
   'search',
@@ -183,10 +224,6 @@ const DEFAULT_VALIDATION_FUNCTIONS = [
   'checkLdapFilter',
 ];
 
-const fileImportsLdapClient = createModuleEvidence({
-  packages: [...LDAP_PACKAGES],
-  scopes: [...LDAP_SCOPES],
-});
 
 
 
@@ -288,6 +325,33 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Disable all false positive detection (strict mode)',
           },
+          ldapPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_LDAP_PACKAGES,
+            description:
+              'Package specifiers whose import opens the file gate. Nothing in a file is examined unless one of these is loaded. Replaces the built-in list.',
+          },
+          additionalLdapPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description:
+              'Extra LDAP client packages, on top of `ldapPackages` — a house wrapper around ldapjs belongs here.',
+          },
+          requestRoots: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_REQUEST_ROOTS,
+            description:
+              'Identifiers naming a framework request object, matched as the exact ROOT of a member chain — never as a substring of the printed expression. Replaces the built-in list.',
+          },
+          additionalRequestRoots: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra request-object root names, on top of `requestRoots`.',
+          },
         },
         additionalProperties: false,
       },
@@ -301,6 +365,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
+      ldapPackages: DEFAULT_LDAP_PACKAGES,
+      additionalLdapPackages: [],
+      requestRoots: DEFAULT_REQUEST_ROOTS,
+      additionalRequestRoots: [],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -312,7 +380,21 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
+      ldapPackages = DEFAULT_LDAP_PACKAGES,
+      additionalLdapPackages = [],
+      requestRoots = DEFAULT_REQUEST_ROOTS,
+      additionalRequestRoots = [],
     }: Options = options;
+
+    const ldapPackageSet = new Set([...ldapPackages, ...additionalLdapPackages]);
+    const requestRootSet = new Set([...requestRoots, ...additionalRequestRoots]);
+    // Built per run rather than at module scope, because the package list is now
+    // an option. The devkit probe is a closure over the specifier set, so it has
+    // to be constructed after the options are read.
+    const fileImportsLdapClient = createModuleEvidence({
+      packages: [...ldapPackageSet],
+      scopes: [...LDAP_SCOPES],
+    });
 
     const sourceCode = context.sourceCode;
     const filename = context.filename;
@@ -350,7 +432,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       };
       const isLdapSource = (raw: unknown): boolean =>
         typeof raw === 'string' &&
-        (LDAP_PACKAGES.has(raw) || [...LDAP_SCOPES].some((scope) => raw.startsWith(`${scope}/`)));
+        (ldapPackageSet.has(raw) || [...LDAP_SCOPES].some((scope) => raw.startsWith(`${scope}/`)));
 
       for (const statement of program.body) {
         if (statement.type === 'ImportDeclaration' && isLdapSource(statement.source.value)) {
@@ -670,7 +752,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       let current: TSESTree.Node = node;
       while (current.type === 'MemberExpression') current = current.object;
       if (current.type !== 'Identifier') return false;
-      if (REQUEST_ROOTS.has(current.name)) return true;
+      if (requestRootSet.has(current.name)) return true;
       // `const { query } = req; … query.filter` — the root was destructured out of a
       // request one statement earlier. Resolved through the SCOPE; a bare, undeclared
       // `query.filter` proves nothing and stays unreported.
@@ -685,7 +767,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           if (def.type !== 'Variable') return false;
           const init = def.node.init ? unwrap(def.node.init) : undefined;
           if (!init) return false;
-          if (init.type === 'Identifier') return REQUEST_ROOTS.has(init.name);
+          if (init.type === 'Identifier') return requestRootSet.has(init.name);
           return init.type === 'MemberExpression' && isUntrustedRequestChain(init);
         });
       }

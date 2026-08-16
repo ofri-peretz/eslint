@@ -51,6 +51,17 @@ export interface Options {
   /** Variables that contain user input */
   userInputVariables?: string[];
 
+  /**
+   * The `user*` name family this rule treats as user input on top of
+   * `userInputVariables`. REPLACES the built-in list; compared
+   * case-insensitively as a WHOLE name or a whole dotted SEGMENT.
+   * Default: DEFAULT_USER_INPUT_ALIASES
+   */
+  userInputAliases?: string[];
+
+  /** Extra aliases, ON TOP of the built-ins. Default: [] */
+  additionalUserInputAliases?: string[];
+
   /** Additional function names to consider as sanitizers */
   trustedSanitizers?: string[];
 
@@ -72,6 +83,42 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * The `user*` name family this rule treats as user input, on top of whatever
+ * `userInputVariables` declares.
+ *
+ * WHOLE NAMES, never substrings. The predicate was
+ * `lowerName.includes(input.toLowerCase())` over `userInputVariables`, and that
+ * list contains `data`, `params`, `request` and `input` — so the following were
+ * measured being reported as attacker-controlled format strings, one probe
+ * each:
+ *
+ *   console.error(paymentData, orderId)      // `data` ⊂ paymentData
+ *   console.info(validationParams, reqId)    // `params` ⊂ validationParams
+ *   util.format(metadata, id)                // `data` ⊂ metadata
+ *
+ * None of the three is user input, and none is even a format string. Exact
+ * membership against a declared list is a contract an option can honour; a
+ * substring of one is a coincidence of spelling.
+ *
+ * Nine English spellings of one convention, so this is a DEFAULT: a codebase
+ * that names the request object something else extends it through
+ * `additionalUserInputAliases`, and one where `user` is an ordinary domain noun
+ * — a user RECORD, not a user's INPUT — drops it through `userInputAliases`.
+ * Neither changes that the comparison is whole-name.
+ */
+const DEFAULT_USER_INPUT_ALIASES = [
+  'user',
+  'userinput',
+  'userdata',
+  'userparam',
+  'userparams',
+  'usermessage',
+  'usertemplate',
+  'userformat',
+  'uservar',
+];
 
 export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-format-string-injection',
@@ -145,6 +192,19 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
           },
+          userInputAliases: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_USER_INPUT_ALIASES,
+            description:
+              'The user-input name family recognised on top of `userInputVariables`, compared case-insensitively as a whole name or a whole dotted segment — never as a substring. Replaces the built-in list.',
+          },
+          additionalUserInputAliases: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra user-input aliases, on top of `userInputAliases`.',
+          },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
@@ -161,6 +221,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+      userInputAliases: DEFAULT_USER_INPUT_ALIASES,
+      additionalUserInputAliases: [],
       trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
     },
   ],
@@ -169,6 +231,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+      userInputAliases: DEFAULT_USER_INPUT_ALIASES,
+      additionalUserInputAliases: [],
       trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
     };
 
@@ -176,6 +240,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     const {
       formatSpecifiers,
       userInputVariables,
+      userInputAliases,
+      additionalUserInputAliases,
       trustedSanitizers,
     } = options;
     const filename = context.filename;
@@ -212,41 +278,19 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Is this identifier one the project declared as user input?
      *
-     * WHOLE NAMES, never substrings. This was
-     * `lowerName.includes(input.toLowerCase())` over the `userInputVariables`
-     * list, and the list contains `data`, `params`, `request` and `input` — so
-     * the following were measured being reported as attacker-controlled format
-     * strings, in one probe each:
-     *
-     *   console.error(paymentData, orderId)      // `data` ⊂ paymentData
-     *   console.info(validationParams, reqId)    // `params` ⊂ validationParams
-     *   util.format(metadata, id)                // `data` ⊂ metadata
-     *
-     * None of the three is user input, and none of the three is even a format
-     * string. Exact membership against a declared list is a contract the option
-     * can honour ("variable names treated as user-controlled input"); a
-     * substring of one is a coincidence of spelling.
+     * Two vocabularies, both matched as WHOLE NAMES and both configurable:
+     * `userInputVariables` (the project's own declarations) and
+     * `userInputAliases` / `additionalUserInputAliases` (the `user*` family,
+     * documented on `DEFAULT_USER_INPUT_ALIASES` above).
      */
-    const USER_INPUT_ALIASES: ReadonlySet<string> = new Set([
-      'user',
-      'userinput',
-      'userdata',
-      'userparam',
-      'userparams',
-      'usermessage',
-      'usertemplate',
-      'userformat',
-      'uservar',
-    ]);
-
     const declaredUserInput: ReadonlySet<string> = new Set(
-      userInputVariables.map((name) => name.toLowerCase()),
+      [...userInputVariables, ...userInputAliases, ...additionalUserInputAliases].map((name) =>
+        name.toLowerCase(),
+      ),
     );
 
-    const isUserInput = (varName: string): boolean => {
-      const lowerName = varName.toLowerCase();
-      return declaredUserInput.has(lowerName) || USER_INPUT_ALIASES.has(lowerName);
-    };
+    const isUserInput = (varName: string): boolean =>
+      declaredUserInput.has(varName.toLowerCase());
 
     /**
      * The same question for a dotted path, asked one SEGMENT at a time.

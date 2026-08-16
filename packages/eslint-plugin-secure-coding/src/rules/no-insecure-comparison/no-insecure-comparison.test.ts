@@ -299,7 +299,7 @@ describe('no-insecure-comparison', () => {
               data: { operator: '===' },
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output:
                     'if (crypto.timingSafeEqual(Buffer.from(token), Buffer.from(userToken))) {}',
                 },
@@ -315,7 +315,7 @@ describe('no-insecure-comparison', () => {
               data: { operator: '!==' },
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output:
                     'if (crypto.timingSafeEqual(Buffer.from(apiKey), Buffer.from(storedSecret))) {}',
                 },
@@ -332,7 +332,7 @@ describe('no-insecure-comparison', () => {
               data: { operator: '===' },
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output:
                     'if (crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(expectedPassword))) {}',
                 },
@@ -443,7 +443,7 @@ describe('no-insecure-comparison', () => {
               messageId: 'timingUnsafeComparison',
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output: `
             const expected = config.callback.token;
             if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(expected))) {}
@@ -464,7 +464,7 @@ describe('no-insecure-comparison', () => {
               messageId: 'timingUnsafeComparison',
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output: `
             const { token: t } = session;
             if (crypto.timingSafeEqual(Buffer.from(t), Buffer.from(presented))) {}
@@ -482,7 +482,7 @@ describe('no-insecure-comparison', () => {
               messageId: 'timingUnsafeComparison',
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output: `if (crypto.timingSafeEqual(Buffer.from(req.headers['x-api-key']), Buffer.from(config['apiKey']))) {}`,
                 },
               ],
@@ -498,7 +498,7 @@ describe('no-insecure-comparison', () => {
               messageId: 'timingUnsafeComparison',
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output: `if (crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(process.env.SERVICE_API_KEY))) {}`,
                 },
               ],
@@ -516,7 +516,7 @@ describe('no-insecure-comparison', () => {
               messageId: 'timingUnsafeComparison',
               suggestions: [
                 {
-                  messageId: 'useStrictEquality',
+                  messageId: 'useTimingSafeEqual',
                   output: `
             const reference = isProd ? PRODUCTION_CREDENTIAL : SANDBOX_CREDENTIAL;
             if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(reference))) {}
@@ -889,7 +889,7 @@ describe('namesIn resolution arms', () => {
             messageId: 'timingUnsafeComparison',
             suggestions: [
               {
-                messageId: 'useStrictEquality',
+                messageId: 'useTimingSafeEqual',
                 output:
                   'const { session: { token: t } } = state; if (crypto.timingSafeEqual(Buffer.from(t), Buffer.from(presented))) {}',
               },
@@ -905,7 +905,7 @@ describe('namesIn resolution arms', () => {
             messageId: 'timingUnsafeComparison',
             suggestions: [
               {
-                messageId: 'useStrictEquality',
+                messageId: 'useTimingSafeEqual',
                 output:
                   'const [first] = list; const value = credentials.get(first); if (crypto.timingSafeEqual(Buffer.from(value), Buffer.from(presented))) {}',
               },
@@ -921,7 +921,7 @@ describe('namesIn resolution arms', () => {
             messageId: 'timingUnsafeComparison',
             suggestions: [
               {
-                messageId: 'useStrictEquality',
+                messageId: 'useTimingSafeEqual',
                 output:
                   'if (crypto.timingSafeEqual(Buffer.from(presented as string), Buffer.from(session.token as string))) {}',
               },
@@ -936,7 +936,7 @@ describe('namesIn resolution arms', () => {
             messageId: 'timingUnsafeComparison',
             suggestions: [
               {
-                messageId: 'useStrictEquality',
+                messageId: 'useTimingSafeEqual',
                 output: 'if (crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(session.token!))) {}',
               },
             ],
@@ -952,7 +952,7 @@ describe('namesIn resolution arms', () => {
             messageId: 'timingUnsafeComparison',
             suggestions: [
               {
-                messageId: 'useStrictEquality',
+                messageId: 'useTimingSafeEqual',
                 output: 'let v = a; v = b; if (crypto.timingSafeEqual(Buffer.from(v), Buffer.from(session.token))) {}',
               },
             ],

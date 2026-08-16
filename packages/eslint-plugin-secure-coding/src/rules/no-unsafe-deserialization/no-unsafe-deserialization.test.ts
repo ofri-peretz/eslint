@@ -812,3 +812,84 @@ ruleTester.run('lock - corpus-proved defects', noUnsafeDeserialization, {
     },
   ],
 });
+
+/**
+ * The two module vocabularies are options, and the defaults are exactly what
+ * shipped.
+ *
+ * Probed all four directions before these were written:
+ *   yaml.load(x, { schema: yaml.DEFAULT_SCHEMA })  reports unsafeYamlParsing
+ *   yaml.load(x, { schema: yaml.JSON_SCHEMA })     QUIET
+ *   YAML.parse(x) from 'yaml'                      QUIET
+ *   YAML.parse(x) from '@acme/yaml'                reports unsafeYamlParsing
+ * so in every case below the vocabulary is the only thing that moves.
+ */
+ruleTester.run('options: module vocabularies are configurable', noUnsafeDeserialization, {
+  valid: [
+    // ---- extending the safe-schema list ----------------------------------
+    // The documented gap: on a repository PINNED to js-yaml v4, DEFAULT_SCHEMA
+    // defines no JS-instantiating tag and `load` under it is inert. The rule
+    // cannot see the installed major; the repository can. Before this option
+    // the only remedy on that line was a disable comment.
+    {
+      code: 'import yaml from "js-yaml"; export const c = yaml.load(req.body.doc, { schema: yaml.DEFAULT_SCHEMA });',
+      options: [{ additionalSafeYamlSchemas: ['DEFAULT_SCHEMA'] }],
+    },
+    // Full replacement, same effect.
+    {
+      code: 'import yaml from "js-yaml"; export const c = yaml.load(req.body.doc, { schema: yaml.DEFAULT_SCHEMA });',
+      options: [{ safeYamlSchemas: ['DEFAULT_SCHEMA'] }],
+    },
+    // ---- extending the non-executing package list ------------------------
+    // A house wrapper around eemeli/yaml: the same pure YAML 1.2 parser, one
+    // specifier the ecosystem cannot enumerate.
+    {
+      code: 'import YAML from "@acme/yaml"; export const c = YAML.parse(req.body.doc);',
+      options: [{ additionalNonExecutingPackages: ['@acme/yaml'] }],
+    },
+    {
+      code: 'import YAML from "@acme/yaml"; export const c = YAML.parse(req.body.doc);',
+      options: [{ nonExecutingPackages: ['@acme/yaml'] }],
+    },
+    // ---- the default is unchanged ----------------------------------------
+    // An empty bag still recognises the built-in safe schema and the built-in
+    // inert package.
+    {
+      code: 'import yaml from "js-yaml"; export const c = yaml.load(req.body.doc, { schema: yaml.JSON_SCHEMA });',
+      options: [{}],
+    },
+    {
+      code: 'import YAML from "yaml"; export const c = YAML.parse(req.body.doc);',
+      options: [{}],
+    },
+  ],
+  invalid: [
+    // ---- the default is unchanged ----------------------------------------
+    // Positive control for the two `options: [{}]` valid cases above: without
+    // the safe schema, and without the inert package, the same shapes report.
+    {
+      code: 'import yaml from "js-yaml"; export const c = yaml.load(req.body.doc, { schema: yaml.DEFAULT_SCHEMA });',
+      options: [{}],
+      errors: [{ messageId: 'unsafeYamlParsing' }],
+    },
+    {
+      code: 'import YAML from "@acme/yaml"; export const c = YAML.parse(req.body.doc);',
+      options: [{}],
+      errors: [{ messageId: 'unsafeYamlParsing' }],
+    },
+
+    // ---- replacing a list can also NARROW it ------------------------------
+    // A repository that has audited `JSON_SCHEMA` off its own safe list gets
+    // the finding back. The option is a full override in both directions.
+    {
+      code: 'import yaml from "js-yaml"; export const c = yaml.load(req.body.doc, { schema: yaml.JSON_SCHEMA });',
+      options: [{ safeYamlSchemas: ['FAILSAFE_SCHEMA'] }],
+      errors: [{ messageId: 'unsafeYamlParsing' }],
+    },
+    {
+      code: 'import YAML from "yaml"; export const c = YAML.parse(req.body.doc);',
+      options: [{ nonExecutingPackages: ['bson'] }],
+      errors: [{ messageId: 'unsafeYamlParsing' }],
+    },
+  ],
+});

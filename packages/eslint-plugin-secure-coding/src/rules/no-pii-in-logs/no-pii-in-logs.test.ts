@@ -154,3 +154,84 @@ ruleTester.run('coverage - a binding that is not a declarator or pattern propert
   ],
   invalid: [],
 });
+
+/**
+ * The three vocabularies are options, and the default is exactly what shipped.
+ *
+ * Every `options: [{}]` case here is paired with the SAME code un-optioned in
+ * the suites above, so a default that silently changed would show up as a
+ * disagreement between the two rather than as a uniformly quiet rule.
+ */
+ruleTester.run('options: vocabularies are configurable, defaults unchanged', noPiiInLogs, {
+  valid: [
+    // ---- the default is unchanged ----------------------------------------
+    { code: 'console.log(device.microphoneEnabled)', options: [{}] },
+    { code: "console.error('Validation failed - email: must be a valid address')", options: [{}] },
+
+    // ---- replacing a vocabulary silences the built-ins --------------------
+    // A telephony product logs `phone` fields all day and they are the device,
+    // not a person. Narrowing the term list is the remedy.
+    { code: 'console.log(handset.phoneNumber)', options: [{ piiTerms: ['ssn'] }] },
+    // A codebase that ships nothing but `console.debug` to its log pipeline
+    // and treats `console.log` as local scratch output.
+    { code: 'console.log(user.email)', options: [{ consoleMethods: ['debug'] }] },
+    // With the label list replaced, `email:` no longer announces its sibling.
+    { code: "console.log('email:', value)", options: [{ piiLabels: ['ssn:'] }] },
+    // Extending never removes: a term that is not in either list stays quiet.
+    { code: 'console.log(user.nickname)', options: [{ additionalPiiTerms: ['passport'] }] },
+    { code: 'console.table(user.email)', options: [{ additionalConsoleMethods: ['debug'] }] },
+    { code: "console.log('nickname:', value)", options: [{ additionalPiiLabels: ['dob:'] }] },
+  ],
+  invalid: [
+    // ---- the default is unchanged ----------------------------------------
+    // Positive control for the `options: [{}]` valid cases: an empty bag still
+    // reports what the built-in vocabularies report.
+    {
+      code: 'console.log(customer.phoneNumber)',
+      options: [{}],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "console.log('email:', contactValue)",
+      options: [{}],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+
+    // ---- extending a vocabulary adds coverage -----------------------------
+    // A passport number is PII and is not in the default five.
+    {
+      code: 'console.log("KYC", applicant.passportNumber)',
+      options: [{ additionalPiiTerms: ['passport'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // `console.debug` reaches the same pipeline on a service that ships debug.
+    {
+      code: 'console.debug(user.email)',
+      options: [{ additionalConsoleMethods: ['debug'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // A label the built-ins do not carry. Compared case-insensitively after
+    // trimming, exactly like the built-ins.
+    {
+      code: 'console.log("DOB: ", record.value)',
+      options: [{ additionalPiiLabels: ['dob:'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // Full replacement widens just as well as it narrows.
+    {
+      code: 'console.log(applicant.passportNumber)',
+      options: [{ piiTerms: ['passport'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: 'console.debug(user.email)',
+      options: [{ consoleMethods: ['debug'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: 'console.log("dob:", record.value)',
+      options: [{ piiLabels: ['dob:'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});

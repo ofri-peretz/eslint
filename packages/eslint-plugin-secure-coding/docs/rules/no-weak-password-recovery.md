@@ -160,10 +160,9 @@ if (!reset || reset.expiresAt < Date.now()) {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `recoveryKeywords` | `string[]` | `["reset","password","recovery","forgot","token","resetToken"]` | Identifier keywords that mark password-recovery code |
 | `secureTokenFunctions` | `string[]` | `["crypto.randomBytes","crypto.randomUUID","randomBytes","generateSecureToken"]` | Functions that generate cryptographically secure tokens |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as secure |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `trustedAnnotations` | `string[]` | `["secure-recovery","rate-limited"]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format

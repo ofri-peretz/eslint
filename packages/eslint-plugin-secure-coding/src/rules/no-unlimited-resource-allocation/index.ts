@@ -287,6 +287,18 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
      *    `new Set()` allocates a constant, and `Buffer.alloc(512)` is bounded.
      * 3. It is in the loop's BODY, not its init. `for (var e = Array(t), u = 0; …)`
      *    runs once, however dynamic `t` is.
+     *
+     * @protocol-constant Every entry is a built-in global: the ECMAScript
+     * collection constructors (`Array`, `Map`, `Set`, `WeakMap`, `WeakSet`) and
+     * Node's `Buffer` allocation API (`Buffer.alloc`, `Buffer.allocUnsafe`,
+     * `Buffer.allocUnsafeSlow`, and `Buffer` itself). Those are the only calls
+     * in the language that take a size argument and reserve memory for it, so
+     * the set is closed by the platform rather than curated from a domain — a
+     * consumer's own allocator is a wrapper around one of these, and the
+     * wrapped call is where the loop bound is missing. Making it editable would
+     * let a consumer delete `Buffer.allocUnsafe` and silence CWE-770 on exactly
+     * the unbounded per-iteration allocation the rule exists to find, or add an
+     * ordinary factory and report every `new Thing(n)` inside a loop.
      */
     const ALLOCATORS: ReadonlySet<string> = new Set([
       'Buffer.alloc', 'Buffer.allocUnsafe', 'Buffer.allocUnsafeSlow',

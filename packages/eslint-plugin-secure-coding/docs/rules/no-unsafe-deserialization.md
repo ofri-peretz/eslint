@@ -139,6 +139,10 @@ const obj = safeDeserialize(userInput);
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe deserializers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| `safeYamlSchemas` | `string[]` | `["JSON_SCHEMA","CORE_SCHEMA","FAILSAFE_SCHEMA"]` | js-yaml schema exports that make `load` inert, matched against a resolved js-yaml binding. Add DEFAULT_SCHEMA on a repository pinned to js-yaml v4. Replaces the built-in list. |
+| `additionalSafeYamlSchemas` | `string[]` | `[]` | Extra safe js-yaml schema exports, on top of `safeYamlSchemas`. |
+| `nonExecutingPackages` | `string[]` | `["yaml","bson","cbor","msgpackr","@msgpack/msgpack","protobufjs"]` | Packages whose parse entry point cannot execute code or instantiate a payload-named type, matched against a resolved import binding. Replaces the built-in list. |
+| `additionalNonExecutingPackages` | `string[]` | `[]` | Extra non-executing packages, on top of `nonExecutingPackages`. |
 
 ## Error Message Format
 

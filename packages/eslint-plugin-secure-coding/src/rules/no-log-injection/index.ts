@@ -28,11 +28,43 @@ import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-de
 type MessageIds = 'logInjection';
 
 export interface Options {
-  /** Extra receiver names to treat as a logger (e.g. `audit`, `tracer`). Default: [] */
+  /**
+   * Receiver names whose level methods write a log line. REPLACES the built-in
+   * list. Default: DEFAULT_LOGGER_RECEIVERS
+   */
+  loggerReceivers?: string[];
+
+  /**
+   * Extra receiver names to treat as a logger (e.g. `audit`, `tracer`), ON TOP
+   * of `loggerReceivers`. Default: []
+   */
   loggerNames?: string[];
 
-  /** Extra identifier roots that denote an inbound request. Default: [] */
+  /**
+   * Identifier roots that denote an inbound request, matched as the exact ROOT
+   * of a member chain. REPLACES the built-in list.
+   * Default: DEFAULT_REQUEST_ROOTS
+   */
+  requestRootNames?: string[];
+
+  /**
+   * Extra identifier roots that denote an inbound request, ON TOP of
+   * `requestRootNames`. Default: []
+   */
   requestRoots?: string[];
+
+  /**
+   * Request properties that carry caller-supplied data, matched as whole
+   * property names on the chain. REPLACES the built-in list.
+   * Default: DEFAULT_REQUEST_PROPERTIES
+   */
+  requestProperties?: string[];
+
+  /**
+   * Extra request properties, ON TOP of `requestProperties` — hapi's `payload`
+   * belongs here. Default: []
+   */
+  additionalRequestProperties?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -48,17 +80,36 @@ type RuleOptions = [Options?];
  * ecosystem's two conventions (`fastify.log`, `this.logger`, pino/winston
  * instances); the named libraries cover the case where the module export is
  * used directly.
+ *
+ * Six names deciding whether a call is a log sink, so this is a DEFAULT rather
+ * than a fixed surface: a house logger reached as `audit.info(...)` is added
+ * through `loggerNames`, and a codebase where `log` is an ordinary domain noun
+ * drops it through `loggerReceivers`. Neither changes that the comparison is
+ * exact membership, never a substring — `dialog`, `catalog` and `blog` all
+ * contain "log" and none of them is a logger.
  */
-const DEFAULT_LOGGER_RECEIVERS: ReadonlySet<string> = new Set([
+const DEFAULT_LOGGER_RECEIVERS = [
   'console',
   'log',
   'logger',
   'winston',
   'pino',
   'bunyan',
-]);
+];
 
-/** Methods that emit a record rather than configure the logger. */
+/**
+ * Methods that emit a record rather than configure the logger.
+ *
+ * @protocol-constant This is a published method surface, not a vocabulary:
+ * `log`, `info`, `warn`, `error`, `debug` and `trace` are the WHATWG console
+ * standard's printing methods, and `fatal`, `verbose` and `silly` complete the
+ * level APIs of pino, bunyan and winston's npm levels — the three libraries
+ * this rule names. It is also only ever read AFTER the receiver has been proven
+ * a logger, so a domain method that happens to be spelled `error` is never
+ * reached through it. A consumer who could edit it could delete `error` or
+ * `warn` and go green on `logger.error('user: ' + req.body.name)`, the exact
+ * shape CWE-117 is about; a receiver they own belongs in `loggerReceivers`.
+ */
 const LOG_LEVEL_METHODS: ReadonlySet<string> = new Set([
   'log',
   'info',
@@ -77,17 +128,31 @@ const LOG_LEVEL_METHODS: ReadonlySet<string> = new Set([
  * Mirrors `no-unsafe-regex-construction`'s set — the two rules answer the same
  * question ("can a caller steer this value?") and must not disagree about what
  * a request looks like.
+ *
+ * Five English words standing in for provenance, so this is a DEFAULT: a
+ * framework that names its request object something else is added through
+ * `requestRoots`, and a codebase where `event` or `message` is an ordinary
+ * domain noun drops it through `requestRootNames`. Neither changes that the
+ * root is compared by exact name.
  */
-const REQUEST_ROOTS: ReadonlySet<string> = new Set([
+const DEFAULT_REQUEST_ROOTS = [
   'req',
   'request',
   'ctx',
   'event',
   'message',
-]);
+];
 
-/** Properties of a request that carry caller-supplied data. */
-const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
+/**
+ * Properties of a request that carry caller-supplied data.
+ *
+ * A DEFAULT and not a fixed surface: the list is curated from the Express, Koa
+ * and Fastify request objects plus the Lambda proxy event, so a framework whose
+ * body lives elsewhere — hapi's `request.payload` — needs
+ * `additionalRequestProperties`, and a codebase that must narrow it has
+ * `requestProperties`. Membership is exact, per chain segment.
+ */
+const DEFAULT_REQUEST_PROPERTIES = [
   'query',
   'params',
   'body',
@@ -96,7 +161,7 @@ const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
   'path',
   'cookies',
   'data',
-]);
+];
 
 /**
  * The request field this member expression reads, or `null`.
@@ -113,6 +178,7 @@ const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
 function requestFieldOf(
   node: TSESTree.Node,
   roots: ReadonlySet<string>,
+  requestProperties: ReadonlySet<string>,
 ): string | null {
   if (node.type !== 'MemberExpression') return null;
 
@@ -133,7 +199,7 @@ function requestFieldOf(
 
   if (root.type !== 'Identifier') return null;
   if (!roots.has(root.name)) return null;
-  if (!properties.some((p) => REQUEST_PROPERTIES.has(p))) return null;
+  if (!properties.some((p) => requestProperties.has(p))) return null;
   return `${root.name}.${properties.join('.')}`;
 }
 
@@ -182,6 +248,7 @@ function attributableSource(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
   roots: ReadonlySet<string>,
+  requestProperties: ReadonlySet<string>,
 ): string | null {
   if (node.type === 'Identifier') {
     const variable = findLocalVariable(scope, node.name);
@@ -190,9 +257,9 @@ function attributableSource(
     if (!definition || definition.type !== 'Variable' || !definition.node.init) {
       return null;
     }
-    return requestFieldOf(definition.node.init, roots);
+    return requestFieldOf(definition.node.init, roots, requestProperties);
   }
-  return requestFieldOf(node, roots);
+  return requestFieldOf(node, roots, requestProperties);
 }
 
 /** Is this argument a *message* — text being assembled — rather than a value? */
@@ -268,26 +335,63 @@ export const noLogInjection = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          loggerReceivers: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_LOGGER_RECEIVERS,
+            description:
+              'Receiver names whose level methods write a log line, compared as an exact name and never as a substring. Replaces the built-in list.',
+          },
           loggerNames: {
             type: 'array',
             items: { type: 'string' },
             default: [],
             description:
-              'Additional receiver names whose level methods write a log line',
+              'Additional receiver names whose level methods write a log line, on top of `loggerReceivers`',
+          },
+          requestRootNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_REQUEST_ROOTS,
+            description:
+              'Identifier roots that denote an inbound request, matched as the exact ROOT of a member chain. Replaces the built-in list.',
           },
           requestRoots: {
             type: 'array',
             items: { type: 'string' },
             default: [],
             description:
-              'Additional identifier roots that denote an inbound request',
+              'Additional identifier roots that denote an inbound request, on top of `requestRootNames`',
+          },
+          requestProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_REQUEST_PROPERTIES,
+            description:
+              'Request properties that carry caller-supplied data, matched as a whole segment of the member chain. Replaces the built-in list.',
+          },
+          additionalRequestProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description:
+              "Extra request properties, on top of `requestProperties` — hapi's `request.payload` belongs here",
           },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ loggerNames: [], requestRoots: [] }],
+  defaultOptions: [
+    {
+      loggerReceivers: DEFAULT_LOGGER_RECEIVERS,
+      loggerNames: [],
+      requestRootNames: DEFAULT_REQUEST_ROOTS,
+      requestRoots: [],
+      requestProperties: DEFAULT_REQUEST_PROPERTIES,
+      additionalRequestProperties: [],
+    },
+  ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // Read the raw user options rather than the defaults-merged second
     // parameter: the merge always produces both keys, so a `?? []` on the
@@ -295,10 +399,17 @@ export const noLogInjection = createRule<RuleOptions, MessageIds>({
     const options: Options = context.options[0] ?? {};
 
     const receivers = new Set([
-      ...DEFAULT_LOGGER_RECEIVERS,
+      ...(options.loggerReceivers ?? DEFAULT_LOGGER_RECEIVERS),
       ...(options.loggerNames ?? []),
     ]);
-    const roots = new Set([...REQUEST_ROOTS, ...(options.requestRoots ?? [])]);
+    const roots = new Set([
+      ...(options.requestRootNames ?? DEFAULT_REQUEST_ROOTS),
+      ...(options.requestRoots ?? []),
+    ]);
+    const requestProperties = new Set([
+      ...(options.requestProperties ?? DEFAULT_REQUEST_PROPERTIES),
+      ...(options.additionalRequestProperties ?? []),
+    ]);
     const sourceCode = context.sourceCode;
 
     /** `console.info(…)`, `this.logger.warn(…)`, `fastify.log.error(…)`. */
@@ -330,6 +441,7 @@ export const noLogInjection = createRule<RuleOptions, MessageIds>({
               operand,
               sourceCode.getScope(operand),
               roots,
+              requestProperties,
             );
             if (source === null) continue;
 

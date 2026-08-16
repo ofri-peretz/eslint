@@ -66,6 +66,16 @@ export interface Options extends SecurityRuleOptions {
 
   /** Functions that validate/sanitize XPath input */
   xpathValidationFunctions?: string[];
+
+  /**
+   * Module specifiers whose exports evaluate an XPath expression, matched
+   * against a RESOLVED import binding. REPLACES the built-in list.
+   * Default: DEFAULT_XPATH_PACKAGES
+   */
+  xpathPackages?: string[];
+
+  /** Extra XPath package specifiers, ON TOP of the built-ins. Default: [] */
+  additionalXpathPackages?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -154,25 +164,28 @@ function looksLikeXpath(text: string): boolean {
  *
  * Both reported CWE-643 at CVSS 9.8 in files containing no XML at all. The
  * import is the evidence; the name never was.
+ *
+ * Six published specifiers, so it is a DEFAULT and not a fact about the world:
+ * a house wrapper that re-exports `xpath.select` under a private specifier
+ * carries the same sink and is not on any list npm can enumerate.
+ * `additionalXpathPackages` is that wrapper's remedy.
  */
-const XPATH_PACKAGES = [
+const DEFAULT_XPATH_PACKAGES = [
   'xpath',
   'xmldom-xpath',
   'xpath.js',
   'libxmljs',
   'libxmljs2',
   '@xmldom/xmldom',
-] as const;
+];
 
 function isXpathModuleExport(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
+  xpathPackages: ReadonlySet<string>,
 ): boolean {
   const binding = resolveModuleBinding(node, scope);
-  return (
-    binding !== undefined &&
-    (XPATH_PACKAGES as readonly string[]).includes(binding.module)
-  );
+  return binding !== undefined && xpathPackages.has(binding.module);
 }
 
 export const noXpathInjection = createRule<RuleOptions, MessageIds>({
@@ -288,6 +301,19 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Disable all false positive detection (strict mode)',
           },
+          xpathPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_XPATH_PACKAGES,
+            description:
+              'Module specifiers whose exports evaluate an XPath expression, matched against a resolved import binding. Replaces the built-in list.',
+          },
+          additionalXpathPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra XPath package specifiers, on top of `xpathPackages`.',
+          },
         },
         additionalProperties: false,
       },
@@ -295,6 +321,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
+      xpathPackages: DEFAULT_XPATH_PACKAGES,
+      additionalXpathPackages: [],
       xpathFunctions: [
         'evaluate',
         'selectSingleNode',
@@ -324,6 +352,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       reportDangerousConstructs = false,
+      xpathPackages = DEFAULT_XPATH_PACKAGES,
+      additionalXpathPackages = [],
       xpathFunctions = [
         'evaluate',
         'selectSingleNode',
@@ -342,6 +372,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       trustedAnnotations = [],
       strictMode = false,
     }: Options = options;
+
+    const xpathPackageSet = new Set([...xpathPackages, ...additionalXpathPackages]);
 
     const sourceCode = context.sourceCode;
     const filename = context.filename;
@@ -422,7 +454,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // A bare call needs the IMPORT as evidence — see `isXpathModuleExport`.
         return (
           xpathFunctions.includes(callee.name) &&
-          isXpathModuleExport(callee, sourceCode.getScope(callee))
+          isXpathModuleExport(callee, sourceCode.getScope(callee), xpathPackageSet)
         );
       }
       // Returned as one expression rather than an `if` plus a trailing
@@ -523,7 +555,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       if (
         callee.type === 'Identifier' &&
         xpathFunctions.includes(callee.name) &&
-        isXpathModuleExport(callee, sourceCode.getScope(callee))
+        isXpathModuleExport(callee, sourceCode.getScope(callee), xpathPackageSet)
       ) {
         return true;
       }

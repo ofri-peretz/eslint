@@ -185,3 +185,5 @@ obj[method](userInput);
 | `sensitivePatterns` | `string[]` | `["password","passwd","secret","token","access_token","auth_token","ssn","credit_card","creditcard","api_key","apikey","secret_key","private_key","encryption_key"]` | Sensitive data patterns |
 | `checkConsoleLog` | `boolean` | `true` | Check console.log statements |
 | `checkErrorMessages` | `boolean` | `true` | Check error messages |
+| `descriptorSegments` | `string[]` | `["msg","message","error","err","label","prompt","hint","description","desc","regex","pattern","placeholder","warning","notice"]` | Trailing name segments that describe a secret rather than hold one, so `apiKeyMsg` and `passwordError` are not reported. Compared as the whole FINAL segment of the name, never as a substring. Replaces the built-in list. |
+| `additionalDescriptorSegments` | `string[]` | `[]` | Extra descriptor segments, on top of `descriptorSegments`. |

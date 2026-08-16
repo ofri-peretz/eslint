@@ -147,6 +147,45 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     { code: 'const o = { [attribute]: true, secure: false };' },
     // The enclosing key is computed, so it does not name a cookie either.
     { code: 'const o = { [section]: { secure: false } };' },
+
+    // ---- OPTIONS: the default is unchanged --------------------------------
+    // An empty option bag must behave exactly like no option bag at all. If a
+    // key set ever stopped defaulting to its built-in list, these two would
+    // start reporting nothing while the un-optioned cases above still passed.
+    { code: 'const config = { secure: true, httpOnly: true }', options: [{}] },
+    { code: 'renderViewer(document, { secure: false, watermark: null });', options: [{}] },
+
+    // ---- OPTIONS: replacing a default silences the built-ins --------------
+    // The consumer's domain uses `httpOnly` for something else. Replacing the
+    // list is the remedy; before the option existed the only remedy was
+    // disabling the rule.
+    {
+      code: "res.cookie('sid', id, { httpOnly: false });",
+      options: [{ insecureWhenFalse: ['verifyPeer'] }],
+    },
+    {
+      code: 'mongoose.connect(url, { tlsAllowInvalidCertificates: true });',
+      options: [{ insecureWhenTrue: ['acceptAnyCert'] }],
+    },
+    // With no cookie attribute in the replaced list, `sameSite` no longer
+    // corroborates and bare `secure: false` is not evidence of anything.
+    {
+      code: "const options = { secure: false, sameSite: 'lax' };",
+      options: [{ cookieAttributes: ['partitioned'] }],
+    },
+    // Extending never removes anything, so a benign key stays benign.
+    {
+      code: 'const o = { verifyPeer: true };',
+      options: [{ additionalInsecureWhenFalse: ['verifyPeer'] }],
+    },
+    {
+      code: 'const o = { acceptAnyCert: false };',
+      options: [{ additionalInsecureWhenTrue: ['acceptAnyCert'] }],
+    },
+    {
+      code: 'const o = { secure: false, sameParty: true };',
+      options: [{ cookieAttributes: [], additionalCookieAttributes: ['priority'] }],
+    },
   ],
 
   invalid: [
@@ -240,6 +279,58 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     },
     {
       code: 'const o = { checkServerIdentity: () => { return null; } };',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+
+    // ---- OPTIONS: the default is unchanged --------------------------------
+    // The positive control for the `options: [{}]` valid cases above: an empty
+    // bag must still report everything the built-in lists report.
+    {
+      code: 'const agent = new https.Agent({ strictSSL: false });',
+      options: [{}],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: 'app.use(session({ cookie: { secure: false } }));',
+      options: [{}],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+
+    // ---- OPTIONS: extending a default adds coverage -----------------------
+    // An internal TLS client whose switch is spelled `verifyPeer`. Invisible
+    // before, and the built-ins keep working alongside it.
+    {
+      code: 'const o = { verifyPeer: false, strictSSL: false };',
+      options: [{ additionalInsecureWhenFalse: ['verifyPeer'] }],
+      errors: [{ messageId: 'violationDetected' }, { messageId: 'violationDetected' }],
+    },
+    {
+      code: 'const o = { acceptAnyCert: true, ignoreHTTPSErrors: true };',
+      options: [{ additionalInsecureWhenTrue: ['acceptAnyCert'] }],
+      errors: [{ messageId: 'violationDetected' }, { messageId: 'violationDetected' }],
+    },
+    // A custom cookie serialiser's own attribute, corroborating `secure: false`
+    // where no built-in attribute is present.
+    {
+      code: 'const o = { secure: false, sameParty: true };',
+      options: [{ additionalCookieAttributes: ['sameParty'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // Replacing a list can also WIDEN it — the option is a full override in
+    // both directions.
+    {
+      code: 'const o = { verifyPeer: false };',
+      options: [{ insecureWhenFalse: ['verifyPeer'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: 'const o = { acceptAnyCert: true };',
+      options: [{ insecureWhenTrue: ['acceptAnyCert'] }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "const o = { secure: false, priority: 'high' };",
+      options: [{ cookieAttributes: ['priority'] }],
       errors: [{ messageId: 'violationDetected' }],
     },
   ],

@@ -1,6 +1,8 @@
 {
   "rule": "secure-coding/no-missing-authentication",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
   "fixtures": 23,
+  "vulnerable": 12,
   "results": [
     {
       "name": "Interlace secure-coding/no-missing-authentication",

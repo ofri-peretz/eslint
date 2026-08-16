@@ -99,3 +99,16 @@ why the input cannot be attacker-controlled.
 
 - [`no-directive-injection`](./no-directive-injection.md)
 - [`no-format-string-injection`](./no-format-string-injection.md)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `templateEngines` | `string[]` | `["Handlebars","handlebars","ejs","pug","jade","mustache","Mustache","nunjucks","swig","dust","Dust","doT","consolidate"]` | Receiver names that denote a server-side template engine, compared as an exact identifier name and never as a substring. Replaces the built-in list. |
+| `additionalTemplateEngines` | `string[]` | `[]` | Extra template-engine receiver names, on top of `templateEngines` — an alias import such as `hbs` belongs here. |
+| `requestRoots` | `string[]` | `["req","request","ctx","event","message"]` | Identifier roots that denote an inbound request, matched as the exact ROOT of a member chain. Replaces the built-in list. |
+| `additionalRequestRoots` | `string[]` | `[]` | Extra request-object root names, on top of `requestRoots`. |
+| `requestProperties` | `string[]` | `["query","params","body","headers","url","path","cookies","data"]` | Request properties that carry caller-supplied data, matched as a whole segment of the member chain. Replaces the built-in list. |
+| `additionalRequestProperties` | `string[]` | `[]` | Extra request properties, on top of `requestProperties` — hapi's `request.payload` belongs here. |
+| `untrustedNameWords` | `string[]` | `["user","untrusted","attacker","external","remote","client","payload","input"]` | Words with which an author states a value came from outside, compared as a WHOLE word of the split identifier and never as a substring. Replaces the built-in list. |
+| `additionalUntrustedNameWords` | `string[]` | `[]` | Extra untrusted-provenance words, on top of `untrustedNameWords`. |

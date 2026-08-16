@@ -36,8 +36,22 @@ export interface Options {
   /** Route handler patterns to check. Default: ['get', 'post', 'put', 'delete', 'patch', 'all'] */
   routeHandlerPatterns?: string[];
   
-  /** Additional patterns to ignore. Default: [] */
+  /**
+   * Route paths that need no authentication. REPLACES the built-in list, and
+   * supplying it also widens matching to the whole registration text.
+   * Default: DEFAULT_PUBLIC_ROUTE_PATTERNS
+   */
   ignorePatterns?: string[];
+
+  /**
+   * Object names that denote an HTTP application or router, matched as WHOLE
+   * WORDS and used only when the binding cannot be resolved to a framework
+   * factory call. REPLACES the built-in list. Default: ROUTER_NAME_WORDS
+   */
+  routerNameWords?: string[];
+
+  /** Extra router-object name words, ON TOP of `routerNameWords`. Default: [] */
+  additionalRouterNameWords?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -115,6 +129,12 @@ const DEFAULT_ROUTE_HANDLER_PATTERNS = [
  * `wrapper` and of `dataMapper`, so `wrapper.get(key)` on an LRU cache and
  * `dataMapper.delete(id)` on a persistence layer were both reported as
  * unauthenticated HTTP routes — in files that import no HTTP server at all.
+ *
+ * Nine English words standing in for evidence, so this is a DEFAULT rather than
+ * a fixed surface: a codebase where `server` or `route` is an ordinary domain
+ * noun drops it through `routerNameWords`, and one whose routers are called
+ * something else adds to it through `additionalRouterNameWords`. Neither
+ * changes that the comparison is whole-word.
  */
 const ROUTER_NAME_WORDS = [
   'app',
@@ -127,8 +147,35 @@ const ROUTER_NAME_WORDS = [
   'hapi',
 ];
 
-/** Factories whose return value IS an application or router. */
+/**
+ * Factories whose return value IS an application or router.
+ *
+ * @protocol-constant These are the exported factory call signatures of the Node
+ * HTTP frameworks themselves — `express()`, `fastify()`, `polka()`,
+ * `restify()`, `connect()`, `new Koa()`, `Router()`. They are the EVIDENCE path
+ * that replaced name inference: `const api = express.Router()` is a router
+ * whatever the binding is called, which is the whole reason `ROUTER_NAME_WORDS`
+ * is only a fallback. Turning the evidence into a tunable vocabulary would put
+ * the guess back — a consumer who deleted `express` would lose the one signal
+ * that resolves `const api = express()` and fall through to spelling, and one
+ * who added an ordinary factory would have every object it returns treated as
+ * an unauthenticated HTTP router. A house framework belongs in
+ * `routerNameWords`, which is the supported knob.
+ */
 const ROUTER_FACTORY_NAMES = new Set(['express', 'Router', 'fastify', 'polka', 'restify', 'connect', 'Koa']);
+
+/**
+ * Members whose call returns an application, router or server.
+ *
+ * @protocol-constant The member half of the same framework API surface —
+ * `express.Router()`, `app.router()`, `http.createServer()`, `restify.Server()`
+ * — published by those libraries and Node's own `http`/`https` modules. It is
+ * read only to resolve a binding to a factory CALL, never to judge a name, so
+ * it is a set of call signatures rather than a vocabulary. A consumer who could
+ * edit it could drop `createServer` and make every `http.createServer()` route
+ * invisible to the rule, or add a member and have an unrelated builder's result
+ * reported as an unauthenticated route.
+ */
 const ROUTER_FACTORY_MEMBERS = new Set(['Router', 'router', 'Server', 'server', 'createServer']);
 
 /**
@@ -343,8 +390,22 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
           ignorePatterns: {
             type: 'array',
             items: { type: 'string' },
+            default: DEFAULT_PUBLIC_ROUTE_PATTERNS,
+            description:
+              'Route paths that are public by definition and need no authentication. Replaces the built-in list; supplying it also widens matching from the route path to the whole registration text.',
+          },
+          routerNameWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ROUTER_NAME_WORDS,
+            description:
+              'Object names that denote an HTTP application or router, compared as WHOLE WORDS and never as a substring. Read only when the binding cannot be resolved to a framework factory call. Replaces the built-in list.',
+          },
+          additionalRouterNameWords: {
+            type: 'array',
+            items: { type: 'string' },
             default: [],
-            description: 'Additional patterns to ignore',
+            description: 'Extra router-object name words, on top of `routerNameWords`.',
           },
           testFilePattern: {
             type: 'string',
@@ -363,6 +424,8 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       authMiddlewarePatterns: DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns: DEFAULT_ROUTE_HANDLER_PATTERNS,
       ignorePatterns: DEFAULT_PUBLIC_ROUTE_PATTERNS,
+      routerNameWords: ROUTER_NAME_WORDS,
+      additionalRouterNameWords: [],
     },
   ],
   create(
@@ -375,7 +438,11 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       authMiddlewarePatterns = DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns = DEFAULT_ROUTE_HANDLER_PATTERNS,
       ignorePatterns = DEFAULT_PUBLIC_ROUTE_PATTERNS,
+      routerNameWords = ROUTER_NAME_WORDS,
+      additionalRouterNameWords = [],
     } = options as Options;
+
+    const routerWords = [...routerNameWords, ...additionalRouterNameWords];
 
     const filename = context.filename;
     // Guarded: a user pattern reaches `new RegExp` here. Measured before this
@@ -432,7 +499,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      return nameHasAnyWord(object.name, ROUTER_NAME_WORDS);
+      return nameHasAnyWord(object.name, routerWords);
     }
 
     /**

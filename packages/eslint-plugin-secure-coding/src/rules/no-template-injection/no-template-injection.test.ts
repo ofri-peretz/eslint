@@ -200,3 +200,98 @@ ruleTester.run('no-template-injection-ts-cast-taint', noTemplateInjection, {
     },
   ],
 });
+
+/**
+ * The four tunable word lists, each with a REPLACE and an extend option.
+ *
+ * This rule shipped with `schema: []` — no options at all — while four English
+ * word lists decided every finding: which receiver is a template engine, which
+ * identifier is a request, which property carries caller data, and which name
+ * claims untrusted provenance. A consumer whose domain used those words had no
+ * remedy but disabling the rule.
+ *
+ * Every valid case below is paired with a positive control in `invalid` on the
+ * SAME snippet, because a QUIET probe proves nothing on its own.
+ */
+ruleTester.run('vocabulary options', noTemplateInjection, {
+  valid: [
+    {
+      name: 'templateEngines REPLACES the built-ins: Handlebars is no longer an engine',
+      code: 'function f(req){ Handlebars.compile(req.body.tpl); }',
+      options: [{ templateEngines: ['hbs'] }],
+    },
+    {
+      name: 'DEFAULT: `hbs` is not a built-in engine name',
+      code: 'function f(req){ hbs.compile(req.body.tpl); }',
+    },
+    {
+      name: 'requestRoots REPLACES the built-ins: `req` is no longer a request',
+      code: 'function f(req){ Handlebars.compile(req.body.tpl); }',
+      options: [{ requestRoots: ['httpRequest'] }],
+    },
+    {
+      name: 'DEFAULT: `httpRequest` is not a built-in request root',
+      code: 'function f(httpRequest){ Handlebars.compile(httpRequest.body.tpl); }',
+    },
+    {
+      name: 'requestProperties REPLACES the built-ins: `body` no longer carries caller data',
+      code: 'function f(req){ Handlebars.compile(req.body.tpl); }',
+      options: [{ requestProperties: ['state'] }],
+    },
+    {
+      name: "DEFAULT: `state` is not a built-in request property (hapi's request.state)",
+      code: 'function f(req){ Handlebars.compile(req.state.tpl); }',
+    },
+    {
+      name: 'untrustedNameWords REPLACES the built-ins: `user` no longer states provenance',
+      code: 'function f(userTemplate){ Handlebars.compile(userTemplate); }',
+      options: [{ untrustedNameWords: ['tainted'] }],
+    },
+    {
+      name: 'DEFAULT: `tainted` is not a built-in provenance word',
+      code: 'function f(taintedTemplate){ Handlebars.compile(taintedTemplate); }',
+    },
+  ],
+  invalid: [
+    {
+      name: 'DEFAULT: Handlebars.compile(req.body.tpl) reports with no options at all',
+      code: 'function f(req){ Handlebars.compile(req.body.tpl); }',
+      errors: [{ messageId: 'templateInjection' }],
+    },
+    {
+      name: 'templateEngines REPLACES the built-ins: the replacement is an engine',
+      code: 'function f(req){ hbs.compile(req.body.tpl); }',
+      options: [{ templateEngines: ['hbs'] }],
+      errors: [{ messageId: 'templateInjection' }],
+    },
+    {
+      name: 'additionalTemplateEngines extends the built-ins',
+      code: 'function f(req){ hbs.compile(req.body.tpl); }',
+      options: [{ additionalTemplateEngines: ['hbs'] }],
+      errors: [{ messageId: 'templateInjection' }],
+    },
+    {
+      name: 'additionalRequestRoots extends the built-ins',
+      code: 'function f(httpRequest){ Handlebars.compile(httpRequest.body.tpl); }',
+      options: [{ additionalRequestRoots: ['httpRequest'] }],
+      errors: [{ messageId: 'templateInjection' }],
+    },
+    {
+      name: "additionalRequestProperties adds hapi's request.state",
+      code: 'function f(req){ Handlebars.compile(req.state.tpl); }',
+      options: [{ additionalRequestProperties: ['state'] }],
+      errors: [{ messageId: 'templateInjection' }],
+    },
+    {
+      name: 'DEFAULT: `user` states provenance, with no options at all',
+      code: 'function f(userTemplate){ Handlebars.compile(userTemplate); }',
+      errors: [{ messageId: 'templateInjection' }],
+    },
+    {
+      name: 'additionalUntrustedNameWords extends the built-ins',
+      code: 'function f(taintedTemplate){ Handlebars.compile(taintedTemplate); }',
+      options: [{ additionalUntrustedNameWords: ['tainted'] }],
+      errors: [{ messageId: 'templateInjection' }],
+    },
+  ],
+});

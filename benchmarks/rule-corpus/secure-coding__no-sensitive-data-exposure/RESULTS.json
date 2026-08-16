@@ -1,6 +1,8 @@
 {
   "rule": "secure-coding/no-sensitive-data-exposure",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
   "fixtures": 27,
+  "vulnerable": 14,
   "results": [
     {
       "name": "Interlace secure-coding/no-sensitive-data-exposure",

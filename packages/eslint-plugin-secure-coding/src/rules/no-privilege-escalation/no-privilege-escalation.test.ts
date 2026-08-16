@@ -602,3 +602,98 @@ ruleTester.run('coverage - computed keys and braceless guards', noPrivilegeEscal
     },
   ],
 });
+
+/**
+ * The three privilege vocabularies are options, and the default is exactly what
+ * shipped.
+ *
+ * Each `options: [{}]` case restates a case from the suites above, so a default
+ * that drifted would show as a disagreement between the two rather than as a
+ * uniformly quiet rule.
+ */
+ruleTester.run('options: privilege vocabularies are configurable', noPrivilegeEscalation, {
+  valid: [
+    // ---- the default is unchanged ----------------------------------------
+    { code: 'user[key] = req.body.role;', options: [{}] },
+    { code: 'logger.level = req.body.level;', options: [{}] },
+
+    // ---- replacing a vocabulary silences the built-ins --------------------
+    // A file-system product where `.access` is a mode, not an ACL.
+    {
+      code: 'handle.access = req.body.access;',
+      options: [{ privilegeProperties: ['role'] }],
+    },
+    // A chess engine that really does call its ACL-free helper `setRole`.
+    {
+      code: 'engine.setRole(piece, req.body.role_);',
+      options: [{ privilegeTerms: ['elevate'], barePrivilegeVerbs: [] }],
+    },
+    // `grant(...)` as a funding-domain verb rather than an ACL write.
+    {
+      code: 'grant(application, req.body.amount);',
+      options: [{ barePrivilegeVerbs: ['revoke'] }],
+    },
+    // Extending never removes: a name in neither list stays quiet.
+    {
+      code: 'user.nickname = req.body.nickname;',
+      options: [{ additionalPrivilegeProperties: ['entitlement'] }],
+    },
+    {
+      code: 'archivePost(req.body.id);',
+      options: [{ additionalPrivilegeTerms: ['impersonate user'] }],
+    },
+    {
+      code: 'archive(req.body.id);',
+      options: [{ additionalBarePrivilegeVerbs: ['impersonate'] }],
+    },
+  ],
+  invalid: [
+    // ---- the default is unchanged ----------------------------------------
+    // Positive control for the `options: [{}]` valid cases above.
+    {
+      code: 'user.role = req.body.role;',
+      options: [{}],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+    {
+      code: 'grant(user, req.body.permission);',
+      options: [{}],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+
+    // ---- extending a vocabulary adds coverage -----------------------------
+    // An entitlement field is exactly the decision this rule polices and is
+    // not in the default four.
+    {
+      code: 'account.entitlement = req.body.entitlement;',
+      options: [{ additionalPrivilegeProperties: ['entitlement'] }],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+    {
+      code: 'impersonateUser(req.body.targetId);',
+      options: [{ additionalPrivilegeTerms: ['impersonate user'] }],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+    {
+      code: 'impersonate(req.body.targetId);',
+      options: [{ additionalBarePrivilegeVerbs: ['impersonate'] }],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+    // Full replacement widens as well as narrows.
+    {
+      code: 'account.entitlement = req.body.entitlement;',
+      options: [{ privilegeProperties: ['entitlement'] }],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+    {
+      code: 'impersonateUser(req.body.targetId);',
+      options: [{ privilegeTerms: ['impersonate user'] }],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+    {
+      code: 'impersonate(req.body.targetId);',
+      options: [{ barePrivilegeVerbs: ['impersonate'] }],
+      errors: [{ messageId: 'privilegeEscalation' }],
+    },
+  ],
+});

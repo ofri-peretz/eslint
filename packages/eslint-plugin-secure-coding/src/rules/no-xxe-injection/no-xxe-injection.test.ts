@@ -352,3 +352,101 @@ ruleTester.run('option: xmlValidationFunctions REPLACES the defaults', noXxeInje
     },
   ],
 });
+
+/**
+ * The three sink vocabularies — packages, XML-only method names, and the
+ * entity-expansion option keys — are options, and the default is exactly what
+ * shipped.
+ *
+ * Each replacing case is paired with the SAME code under `options: [{}]`, so a
+ * default that silently changed shows up as a disagreement between the two
+ * rather than as a uniformly quiet rule.
+ */
+ruleTester.run('options: sink vocabularies are configurable', noXxeInjection, {
+  valid: [
+    // ---- replacing a vocabulary silences the built-ins --------------------
+    // `libxmljs` audited off the package list: the receiver is no longer an
+    // XML package, and `parseXml` is no longer an XML-only method name.
+    {
+      code: 'const libxml = require("libxmljs"); libxml.parseXml(req.body);',
+      options: [{ xmlModules: ['node-expat'], xmlParseMethods: ['parseFromString'] }],
+    },
+    // The method list replaced on its own: an unresolvable receiver was only
+    // ever a sink because of the method name.
+    {
+      code: 'getParser().parseString(req.body);',
+      options: [{ xmlParseMethods: ['parseFromString'] }],
+    },
+    // With `noent` off the dangerous-key list it no longer makes an
+    // unresolvable call an XML parse at all.
+    {
+      code: 'configure(opts, { noent: true });',
+      options: [{ dangerousParserOptions: ['dtdload'] }],
+    },
+    // Extending never removes: a key in neither list is still nothing.
+    {
+      code: 'configure(opts, { verbose: true });',
+      options: [{ additionalDangerousParserOptions: ['loadExternalDtd'] }],
+    },
+  ],
+  invalid: [
+    // ---- the default is unchanged ----------------------------------------
+    // Positive control: the three cases above, with an EMPTY option bag, still
+    // report. If any default had drifted these would go quiet while the
+    // un-optioned suites above stayed green.
+    {
+      code: 'const libxml = require("libxmljs"); libxml.parseXml(req.body);',
+      options: [{}],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+    {
+      code: 'getParser().parseString(req.body);',
+      options: [{}],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+    {
+      code: 'configure(opts, { noent: true });',
+      options: [{}],
+      errors: [{ messageId: 'externalEntityEnabled' }],
+    },
+
+    // ---- extending a vocabulary adds coverage -----------------------------
+    // An in-house wrapper that re-exports libxmljs under a private specifier.
+    // Invisible before: the binding resolves to `@acme/xml`, which was in no
+    // list, and `readDocument` is not an XML-only method name either.
+    {
+      code: 'import { readDocument } from "@acme/xml"; readDocument(req.body);',
+      options: [{ additionalXmlModules: ['@acme/xml'] }],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+    {
+      code: 'getParser().readXmlDocument(req.body);',
+      options: [{ additionalXmlParseMethods: ['readXmlDocument'] }],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+    // A parser whose entity switch is spelled `loadExternalDtd`. Naming it is
+    // itself the statement that XML is being parsed, so this reports on the
+    // option key alone — exactly as the built-in keys do.
+    {
+      code: 'configure(opts, { loadExternalDtd: true });',
+      options: [{ additionalDangerousParserOptions: ['loadExternalDtd'] }],
+      errors: [{ messageId: 'externalEntityEnabled' }],
+    },
+    // Full replacement widens as well as narrows.
+    {
+      code: 'import { readDocument } from "@acme/xml"; readDocument(req.body);',
+      options: [{ xmlModules: ['@acme/xml'] }],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+    {
+      code: 'getParser().readXmlDocument(req.body);',
+      options: [{ xmlParseMethods: ['readXmlDocument'] }],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
+    {
+      code: 'configure(opts, { loadExternalDtd: true });',
+      options: [{ dangerousParserOptions: ['loadExternalDtd'] }],
+      errors: [{ messageId: 'externalEntityEnabled' }],
+    },
+  ],
+});

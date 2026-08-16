@@ -748,3 +748,74 @@ ruleTester.run('coverage - router factory and middleware-name edge shapes', noMi
     },
   ],
 });
+
+/**
+ * `routerNameWords` — the name-fallback vocabulary, made overridable.
+ *
+ * `ROUTER_NAME_WORDS` is nine English words that decide whether an unresolvable
+ * binding is an HTTP router. A consumer whose domain calls something `server`
+ * or `route` had no remedy but disabling the rule, so the list is now a DEFAULT
+ * that `routerNameWords` replaces and `additionalRouterNameWords` extends.
+ *
+ * Every QUIET case below is paired with a positive control on the SAME snippet,
+ * because silence on its own proves nothing.
+ */
+ruleTester.run('routerNameWords and its additional variant', noMissingAuthentication, {
+  valid: [
+    {
+      // Positive control: the invalid case "DEFAULT: `app` is a router word".
+      name: 'routerNameWords REPLACES the built-ins: `app` is no longer a router',
+      code: 'app.get("/admin/accounts", (req, res) => { res.json(1); });',
+      options: [{ routerNameWords: ['gateway'] }],
+    },
+    {
+      name: 'DEFAULT: `gateway` is not a built-in router word',
+      code: 'gateway.get("/admin/accounts", (req, res) => { res.json(1); });',
+    },
+  ],
+  invalid: [
+    {
+      name: 'DEFAULT: `app` is a router word, with no options at all',
+      code: 'app.get("/admin/accounts", (req, res) => { res.json(1); });',
+      errors: [{ messageId: 'missingAuthentication' }],
+    },
+    {
+      name: 'routerNameWords REPLACES the built-ins: the replacement is a router',
+      code: 'gateway.get("/admin/accounts", (req, res) => { res.json(1); });',
+      options: [{ routerNameWords: ['gateway'] }],
+      errors: [{ messageId: 'missingAuthentication' }],
+    },
+    {
+      name: 'additionalRouterNameWords extends the built-ins',
+      code: 'gateway.get("/admin/accounts", (req, res) => { res.json(1); });',
+      options: [{ additionalRouterNameWords: ['gateway'] }],
+      errors: [{ messageId: 'missingAuthentication' }],
+    },
+  ],
+});
+
+/**
+ * `ignorePatterns` REPLACES `DEFAULT_PUBLIC_ROUTE_PATTERNS`, and always did —
+ * the schema said `default: []`, which was a lie the generated Options table
+ * repeated. These pin the real default so it cannot drift back.
+ */
+ruleTester.run('ignorePatterns default is the public-route list', noMissingAuthentication, {
+  valid: [
+    {
+      name: 'DEFAULT: /login is public by definition, with no options at all',
+      code: 'app.post("/login", (req, res) => { res.json(1); });',
+    },
+    {
+      name: 'DEFAULT: /healthz is public by definition, with no options at all',
+      code: 'app.get("/healthz", (req, res) => { res.json(1); });',
+    },
+  ],
+  invalid: [
+    {
+      name: 'a supplied ignorePatterns REPLACES the built-in list, so /login reports',
+      code: 'app.post("/login", (req, res) => { res.json(1); });',
+      options: [{ ignorePatterns: ['/webhooks/'] }],
+      errors: [{ messageId: 'missingAuthentication' }],
+    },
+  ],
+});
