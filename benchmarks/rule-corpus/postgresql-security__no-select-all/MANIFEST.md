@@ -84,7 +84,7 @@ and the apostrophe in `don't` does the same. Neither order works.
 - **Migrations and admin scripts get no exemption.** There is no AST evidence
   that a file is a migration; the only signal is its path, and deciding a
   verdict from a path substring is name inference by another route. It also
-  produced [cwd-dependent verdicts][cwd] the last time this ecosystem tried it.
+  produced cwd-dependent verdicts the last time this ecosystem tried it.
 
 [cwd]: the same file reporting differently from two directories
 

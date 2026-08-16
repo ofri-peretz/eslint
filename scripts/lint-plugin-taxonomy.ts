@@ -135,12 +135,15 @@ const GRANDFATHERED: Grandfathered[] = [
   },
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-directive-injection/index.ts',
-    tokens: ['angular', 'vue', 'react', 'svelte', 'handlebars', 'ejs', 'pug', 'mustache'],
-    reason: 'Template-directive sinks are per-framework. Splits into the framework plugins at the next major.',
+    tokens: ['vue', 'handlebars', 'ejs', 'pug', 'mustache'],
+    reason:
+      'Template-directive sinks are per-framework. Splits into the framework plugins at the ' +
+      'next major. `angular`, `react` and `svelte` came off the list on 2026-08-16 — the rule ' +
+      'no longer names them in code, only in prose explaining what it does not gate on.',
   },
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts',
-    tokens: ['express', 'fastify', 'koa', 'hapi'],
+    tokens: ['express', 'fastify', 'koa', 'hapi', 'restify'],
     reason: 'Route detection keys off HTTP-framework router names. Belongs in express-security / nestjs-security.',
   },
   {
@@ -148,11 +151,12 @@ const GRANDFATHERED: Grandfathered[] = [
     tokens: ['multer'],
     reason: 'The multer() branch is Express middleware. Rest of the rule is platform-level and stays.',
   },
-  {
-    file: 'eslint-plugin-secure-coding/src/rules/no-format-string-injection/index.ts',
-    tokens: ['mustache', 'handlebars', 'ejs', 'pug'],
-    reason: 'NOT a gate — safeFormatLibraries is a suppression allowlist; the rule fires without any of them installed.',
-  },
+  // `no-format-string-injection` was here for `safeFormatLibraries`, a suppression
+  // allowlist naming mustache/handlebars/ejs/pug. That list became the
+  // `safeFormatLibraries` OPTION on 2026-08-16, so the names live in a schema
+  // default rather than baked into the rule, and the entry went stale. Deleted
+  // rather than left standing: the taxonomy gate fails on a stale allowlist
+  // precisely so this record cannot outlive the debt it describes.
   {
     file: 'eslint-plugin-browser-security/src/rules/no-missing-cors-check/index.ts',
     tokens: ['cors'],
@@ -181,13 +185,74 @@ const GRANDFATHERED: Grandfathered[] = [
   },
   {
     file: 'eslint-plugin-node-security/src/rules/prefer-native-crypto/index.ts',
-    tokens: ['bcryptjs'],
+    tokens: ['bcryptjs', 'argon2', 'bcrypt'],
     reason: 'Sanctioned exception — steers AWAY from a dependency toward node:crypto. Same family as detect-suspicious-dependencies.',
   },
   {
     file: 'eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/index.ts',
     tokens: ['csurf'],
     reason: 'csurf is Express middleware and express-security already ships require-csrf-protection. Third browser-security/express-security overlap; retire the browser-security copy at the next major.',
+  },
+
+  // ── Named by RESOLVING an import, not by gating on one (2026-08-16) ──────
+  //
+  // These arrived with the name-inference sweep and are the OPPOSITE of the
+  // defect this gate exists to catch. Each rule used to match a receiver by its
+  // SPELLING — `axios` anywhere in an identifier, `multer` as a callee name — so
+  // `import http from 'axios'` was missed and a local `multer` helper was
+  // reported. Resolving the specifier through `isModuleBinding` fixed both
+  // directions, and naming the package is unavoidable when the package IS the
+  // evidence.
+  //
+  // Verified platform rules, not SDK-gated: probed with the library absent and
+  // each still reports — `no-http-urls` on a bare `const API = 'http://…'`,
+  // `prefer-native-crypto` on `CryptoJS.SHA256(x)`. The specifier is one branch
+  // of an allowlist beside `fetch`, `XMLHttpRequest` and friends; delete it and
+  // the rule loses that one shape, not its reason to exist.
+  {
+    file: 'eslint-plugin-browser-security/src/rules/no-http-urls/index.ts',
+    tokens: ['axios'],
+    reason: 'Resolves the axios import so a renamed binding still counts as a request. Fires on any hardcoded http:// with axios absent.',
+  },
+  {
+    file: 'eslint-plugin-browser-security/src/rules/detect-mixed-content/index.ts',
+    tokens: ['axios'],
+    reason: 'Same axios resolution, for the subresource half of the transport partition. Fires on <img src="http://…"> with axios absent.',
+  },
+  {
+    file: 'eslint-plugin-browser-security/src/rules/no-unencrypted-transmission/index.ts',
+    tokens: ['axios'],
+    reason: 'Same axios resolution. Its own territory is ftp/mongodb/redis/mysql schemes, which no SDK is involved in.',
+  },
+  {
+    file: 'eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/index.ts',
+    tokens: ['axios'],
+    reason: 'axios is one sink among fetch/Request/xhr.open/JSX href. The rule reports a relative URL reaching any of them.',
+  },
+  {
+    file: 'eslint-plugin-browser-security/src/rules/require-mime-type-validation/index.ts',
+    tokens: ['multer'],
+    reason: 'Resolves the receiver back to a real multer() call BEFORE consulting its method names — that resolution is what closed the FP where any x.single(...) was an upload.',
+  },
+  {
+    file: 'eslint-plugin-browser-security/src/rules/no-sensitive-data-in-analytics/index.ts',
+    tokens: ['passport'],
+    reason: 'passport appears in the sensitive-field vocabulary (a passport NUMBER is PII), not as a gate on the passport package. A vocabulary collision with an npm name, not an SDK dependency.',
+  },
+  {
+    file: 'eslint-plugin-secure-coding/src/rules/no-pii-in-logs/index.ts',
+    tokens: ['passport'],
+    reason: 'Same collision: `passport` is a PII term in the configurable piiTerms default, not a package gate.',
+  },
+  {
+    file: 'eslint-plugin-secure-coding/src/rules/require-backend-authorization/index.ts',
+    tokens: ['@nestjs/common', 'express', 'fastify', 'koa'],
+    reason: 'serverModules distinguishes server code from browser code so the rule does not demand backend authorization in a React component. Recognising a server is the precondition, not the finding.',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-math-random-crypto/index.ts',
+    tokens: ['react'],
+    reason: 'react appears in a non-crypto-context exemption (a render key is not a secret), not as a gate. The rule reports Math.random() in a crypto sink with react absent.',
   },
 ];
 

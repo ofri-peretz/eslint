@@ -85,13 +85,13 @@ const CASES: Case[] = [
   { cwe: 'CWE-916', plugin: 'node-security', rule: 'no-insecure-key-derivation', vulnerable: 'pbkdf2-1000-iterations.js', safe: 'pbkdf2-600k-iterations.js' },
   { cwe: 'CWE-079', plugin: 'browser-security', rule: 'no-unescaped-url-parameter', vulnerable: 'url-param-unescaped.js', safe: 'url-param-encoded.js' },
   {
+    // `safeFixtureStillReports` removed 2026-08-16: the rule accepted only string
+    // LITERALS, so the guarded form reported identically to the unguarded write and
+    // nothing short of hardcoding the destination satisfied it. That finding is
+    // gone, and this test is what caught that it had gone — it fails when a
+    // documented false positive is fixed, which is the right way round.
     cwe: 'CWE-601', plugin: 'browser-security', rule: 'require-url-validation',
     vulnerable: 'location-assign-unvalidated.js', safe: 'location-assign-allowlisted.js',
-    safeFixtureStillReports:
-      'The rule is named require-url-validation and does not recognise validation. Its only ' +
-      'accepted forms are string LITERALS assigned to window.location — every non-literal ' +
-      'reports, so `if (isAllowedHost(url)) { window.location = url }` is reported identically ' +
-      'to the unguarded assignment. There is no edit short of hardcoding the URL that satisfies it.',
   },
   { cwe: 'CWE-434', plugin: 'browser-security', rule: 'require-mime-type-validation', vulnerable: 'multer-no-filter.js', safe: 'multer-with-filter.js' },
   { cwe: 'CWE-294', plugin: 'jwt-security', rule: 'require-issued-at', vulnerable: 'jwt-no-timestamp.js', safe: 'jwt-default-iat.js' },

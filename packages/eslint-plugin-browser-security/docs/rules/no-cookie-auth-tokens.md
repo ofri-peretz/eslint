@@ -68,6 +68,7 @@ document.cookie = 'locale=en-US';
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `bearerPatterns` | `string[]` | `["jwt","token","bearer","auth","authorization","session","sid","credential","credentials"]` | Whole words that name a bearer credential. Replaces the default vocabulary. |
 
 
 ```json

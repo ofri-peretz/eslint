@@ -56,7 +56,7 @@ very little: the fixtures were written from the vulnerability, but not written t
 | 2 | `vulnerable/09-aliased-constructor.js` | FN — `const NativeRegExp = RegExp; new NativeRegExp(p)` invisible | same helper resolves a single-definition `const` alias to its initialiser, recursively (depth-bounded) |
 | 3 | `safe/07-let-with-literal-branches.js` | FP — `isConstantBinding` demanded the `const` KEYWORD, so a `let` whose every write is a string literal read as attacker-controlled | the keyword check is gone; every write reference must itself be build-time constant. A write with no inspectable expression (`for (x of unknown)`) leaves the binding unproven and still reports |
 | 4 | `safe/08-for-of-const-pattern-list.js` | FP — a `for (const s of CONST_LIST)` binding has `declarator.init === null`, so the check gave up on a provably closed value set | when `init` is null, the binding is constant iff its declaration is the `left` of a `ForOfStatement` whose `right` is build-time constant |
-| 5 | `safe/09-string-raw-source.js` | FP — `String.raw\`…\`` is a `TaggedTemplateExpression`, a node type `isBuildTimeConstant` did not handle | added, gated on the tag resolving to the real `String.raw` intrinsic and every substitution being constant |
+| 5 | `safe/09-string-raw-source.js` | FP — a `String.raw` tagged template is a `TaggedTemplateExpression`, a node type that `isBuildTimeConstant` did not handle | added, gated on the tag resolving to the real `String.raw` intrinsic and every substitution being constant |
 
 Every fix is a resolution or an AST shape. No fix reads a spelling: fixture
 `vulnerable/10-innocuous-identifier-names.js` is fixture 02 with every identifier

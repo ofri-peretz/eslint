@@ -37,5 +37,5 @@ Written after the rule reached 100%. It found three more real defects:
   independently on `no-transaction-on-pool`.
 
 The rule's own coverage suite also caught the new SQL-shape gate costing recall
-on `let q = 'SELECT 1'; q += ` AND id = ${id}``, so a bare projection with no
+on an append builder (`q += ' AND id = ' + id`), so a bare projection with no
 FROM clause is recognised too.
