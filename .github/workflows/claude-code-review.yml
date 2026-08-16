@@ -30,7 +30,22 @@ permissions:
 jobs:
   review:
     # Skip draft PRs -- review once a PR is opened or marked ready for review.
-    if: github.event.pull_request.draft == false
+    #
+    # Also skip PRs opened by a bot. `claude-code-action` refuses non-human
+    # actors outright ("Workflow initiated by non-human actor: github-actions
+    # (type: Bot). Add bot to allowed_bots list...") and exits 1, so on a bot PR
+    # this job does not decline to review -- it FAILS. That turned every
+    # Changesets release PR red and blocked the publish, which is the one place
+    # a red check must never be waved through.
+    #
+    # Skipping rather than adding the bot to `allowed_bots` is deliberate: a
+    # version-bump PR is generated from changesets that were already reviewed on
+    # the PR that introduced them. There is nothing there for a reviewer to find,
+    # and paying for the review would be spending the monthly credit to read a
+    # diff of version numbers.
+    if: >-
+      github.event.pull_request.draft == false
+      && github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
