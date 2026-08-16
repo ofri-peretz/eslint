@@ -1,7 +1,7 @@
 /**
  * ilb:real-source — noise measured on code WE DID NOT WRITE.
  *
- * Every other number in BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md is measured on fixtures we
+ * Every other number in docs/planning/BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md is measured on fixtures we
  * authored (benchmarks/corpus) or on the competitor's own RuleTester snippets. Neither
  * predicts what a maintainer sees when they install the plugin. This does.
  *
@@ -66,7 +66,7 @@ const REPOS = [
 /**
  * ADOPTION TIER — the repos we would actually open a PR against.
  *
- * Drawn from ADOPTION-TARGET-NETWORK.md (131 qualified targets). The bar here is NOT star
+ * Drawn from docs/planning/ADOPTION-TARGET-NETWORK.md (131 qualified targets). The bar here is NOT star
  * count: the whole list tops out at 1,480 stars. It is "a maintainer who might say yes",
  * which is a different and, for the campaign, more useful question than "what does
  * mainstream JS look like". A PR to LavaMoat lands or does not land on how we read HERE,

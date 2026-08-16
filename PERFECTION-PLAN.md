@@ -1,7 +1,7 @@
 # Perfection plan — closing every measured gap vs `eslint-plugin-security`
 
 **Created:** 2026-08-13
-**Baseline:** [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md) (re-measured 2026-08-13)
+**Baseline:** [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./docs/planning/BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md) (re-measured 2026-08-13)
 **Living tracker** — update the status column in place; do not fork a second copy.
 
 Every gap below was **measured**, not assumed, and every one carries the command that

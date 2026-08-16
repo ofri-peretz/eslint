@@ -2,7 +2,7 @@
 
 **Measured 2026-08-13** · `eslint-plugin-secure-coding@4.1.0` + `eslint-plugin-browser-security@1.3.2` + `eslint-plugin-node-security@4.12.0` · vs `eslint-plugin-security@4.0.1` · ESLint 10.8.1 · Node 24
 
-Criteria: [BENCHMARK-CRITERIA.md](./BENCHMARK-CRITERIA.md) · **Exact configuration and rule lists: [BENCHMARK-METHODOLOGY.md](./BENCHMARK-METHODOLOGY.md)** · Full write-up: [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md)
+Criteria: [BENCHMARK-CRITERIA.md](./BENCHMARK-CRITERIA.md) · **Exact configuration and rule lists: [BENCHMARK-METHODOLOGY.md](./BENCHMARK-METHODOLOGY.md)** · Full write-up: [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./docs/planning/BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md)
 
 ---
 
