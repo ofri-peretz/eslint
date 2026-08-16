@@ -60,4 +60,54 @@ describe('no-ecb-mode', () => {
       },
     ],
   });
+
+  /**
+   * FN lock — the mode name held in a `const`.
+   *
+   * Hoisting `'aes-256-ecb'` to a module constant is ordinary style, and until
+   * `utils/const-value` existed it silenced this rule completely: the check was
+   * `algorithmArg.type === 'Literal'` and an `Identifier` fell straight through.
+   * Every case below is QUIET on the pre-fix rule.
+   *
+   * The suggestion rewrites the DECLARATION, not the use site — replacing
+   * `MODE` with `"aes-256-gcm"` at the call would leave `const MODE =
+   * 'aes-256-ecb'` in the file, still wrong and now unused.
+   */
+  ruleTester.run('no-ecb-mode — algorithm held in a const', noEcbMode, {
+    valid: [
+      // A `let` can be reassigned between the declaration and the call, so its
+      // initializer proves nothing about the value that arrives. Unresolved,
+      // not safe — and unresolved stays quiet by design.
+      { code: 'let mode = "aes-256-ecb"; mode = pickMode(); crypto.createCipheriv(mode, key, iv);' },
+      // A const holding a safe mode must not start reporting.
+      { code: 'const MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);' },
+      // Two definitions — no single provenance to read.
+      { code: 'var MODE = "aes-256-ecb"; var MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);' },
+    ],
+    invalid: [
+      {
+        code: 'const MODE = "aes-256-ecb"; crypto.createCipheriv(MODE, key, iv);',
+        errors: [{ messageId: 'ecbMode', suggestions: [
+          { messageId: 'useGcm', output: 'const MODE = "aes-256-gcm"; crypto.createCipheriv(MODE, key, iv);' },
+          { messageId: 'useCbc', output: 'const MODE = "aes-256-cbc"; crypto.createCipheriv(MODE, key, iv);' },
+        ] }],
+      },
+      // Backticks spell the same constant as quotes.
+      {
+        code: 'const MODE = `aes-128-ecb`; crypto.createDecipheriv(MODE, key, iv);',
+        errors: [{ messageId: 'ecbMode', suggestions: [
+          { messageId: 'useGcm', output: 'const MODE = "aes-128-gcm"; crypto.createDecipheriv(MODE, key, iv);' },
+          { messageId: 'useCbc', output: 'const MODE = "aes-128-cbc"; crypto.createDecipheriv(MODE, key, iv);' },
+        ] }],
+      },
+      // An inner `const` shadows an outer one; scope analysis, not a name map.
+      {
+        code: 'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-ecb"; return createCipheriv(MODE, key, iv); }',
+        errors: [{ messageId: 'ecbMode', suggestions: [
+          { messageId: 'useGcm', output: 'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-gcm"; return createCipheriv(MODE, key, iv); }' },
+          { messageId: 'useCbc', output: 'const MODE = "aes-256-gcm"; function enc() { const MODE = "aes-256-cbc"; return createCipheriv(MODE, key, iv); }' },
+        ] }],
+      },
+    ],
+  });
 });

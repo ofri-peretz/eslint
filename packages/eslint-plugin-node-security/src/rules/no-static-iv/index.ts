@@ -13,10 +13,15 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { constInitializerOf } from '../../utils/const-value';
 
-type MessageIds =
-  | 'staticIv'
-  | 'useRandomBytes';
+// `useRandomBytes` used to sit here too: an INFO message with a fix string, on
+// a rule declaring `hasSuggestions: false` and calling `context.report` with no
+// `suggest` array. Nothing could ever have emitted it, and the advice it
+// carried ("Generate IV dynamically using crypto.randomBytes(16)") is already
+// the `fix:` line of `staticIv`. Deleted rather than wired, since there is no
+// report path to restore — there never was one.
+type MessageIds = 'staticIv';
 
 export interface Options {
   /** Allow static IVs in test files. Default: false */
@@ -54,14 +59,6 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
         fix: 'Generate IV dynamically using crypto.randomBytes(16)',
         documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#initialization-vectors',
       }),
-      useRandomBytes: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use randomBytes',
-        description: 'Generate IV dynamically for each encryption operation',
-        severity: 'LOW',
-        fix: 'const iv = crypto.randomBytes(16);',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptorandombytessize-callback',
-      }),
     },
     schema: [
       {
@@ -91,32 +88,6 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
     const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
-    // Track variables assigned from randomBytes
-    const randomIvVariables = new Set<string>();
-
-    function checkVariableDeclarator(node: TSESTree.VariableDeclarator) {
-      // Track: const iv = crypto.randomBytes(16)
-      if (
-        node.id.type === AST_NODE_TYPES.Identifier &&
-        node.init?.type === AST_NODE_TYPES.CallExpression
-      ) {
-        const init = node.init;
-        if (
-          init.callee.type === AST_NODE_TYPES.MemberExpression &&
-          init.callee.property.type === AST_NODE_TYPES.Identifier &&
-          init.callee.property.name === 'randomBytes'
-        ) {
-          randomIvVariables.add(node.id.name);
-        }
-        if (
-          init.callee.type === AST_NODE_TYPES.Identifier &&
-          init.callee.name === 'randomBytes'
-        ) {
-          randomIvVariables.add(node.id.name);
-        }
-      }
-    }
-
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
 
@@ -134,27 +105,40 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    function checkIvArgument(ivArg: TSESTree.CallExpressionArgument) {
+    /**
+     * Judge the IV, reporting at `site` — the node the reader is looking at.
+     *
+     * `value` and `site` differ when the IV is held in a `const`: the evidence
+     * lives at the declaration, the finding belongs at the `createCipheriv`
+     * call. Hoisting the IV to a constant is the *normal* way this bug is
+     * written, and until this hop existed the rule was silent on it. The old
+     * code even said so, in an empty `if (ivArg.type === Identifier)` block
+     * whose comment read "we don't report variables as we can't always
+     * determine their source" — a defect described rather than fixed. We can
+     * determine the source whenever it is a single-assignment `const`, and the
+     * cases where we cannot still fall through silently.
+     */
+    function checkIvValue(value: TSESTree.Node, site: TSESTree.Node) {
       // Check for string literal IV
-      if (ivArg.type === AST_NODE_TYPES.Literal && typeof ivArg.value === 'string') {
-        const value = ivArg.value;
-        if (STATIC_IV_PATTERNS.some(p => p.test(value)) || value.length >= 8) {
-          reportStaticIv(ivArg);
+      if (value.type === AST_NODE_TYPES.Literal && typeof value.value === 'string') {
+        const text = value.value;
+        if (STATIC_IV_PATTERNS.some(p => p.test(text)) || text.length >= 8) {
+          reportStaticIv(site);
         }
       }
 
       // Check for Buffer.from('static')
       if (
-        ivArg.type === AST_NODE_TYPES.CallExpression &&
-        ivArg.callee.type === AST_NODE_TYPES.MemberExpression &&
-        ivArg.callee.object.type === AST_NODE_TYPES.Identifier &&
-        ivArg.callee.object.name === 'Buffer' &&
-        ivArg.callee.property.type === AST_NODE_TYPES.Identifier &&
-        (ivArg.callee.property.name === 'from' || ivArg.callee.property.name === 'alloc')
+        value.type === AST_NODE_TYPES.CallExpression &&
+        value.callee.type === AST_NODE_TYPES.MemberExpression &&
+        value.callee.object.type === AST_NODE_TYPES.Identifier &&
+        value.callee.object.name === 'Buffer' &&
+        value.callee.property.type === AST_NODE_TYPES.Identifier &&
+        (value.callee.property.name === 'from' || value.callee.property.name === 'alloc')
       ) {
-        const firstArg = ivArg.arguments[0];
+        const firstArg = value.arguments[0];
         if (firstArg?.type === AST_NODE_TYPES.Literal && typeof firstArg.value === 'string') {
-          reportStaticIv(ivArg);
+          reportStaticIv(site);
         }
         // Check for new Uint8Array([...])
         if (firstArg?.type === AST_NODE_TYPES.ArrayExpression) {
@@ -162,17 +146,22 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
             (el: TSESTree.Expression | TSESTree.SpreadElement | null): boolean => el?.type === AST_NODE_TYPES.Literal && typeof el.value === 'number'
           );
           if (allLiterals) {
-            reportStaticIv(ivArg);
+            reportStaticIv(site);
           }
         }
       }
+    }
 
-      // Check for variable reference that's NOT from randomBytes
+    function checkIvArgument(ivArg: TSESTree.CallExpressionArgument) {
       if (ivArg.type === AST_NODE_TYPES.Identifier) {
-        // If we've tracked this variable as coming from randomBytes, it's OK
-        // Otherwise, we can't be sure - only flag if we have evidence it's static
-        // For now, we don't report variables as we can't always determine their source
+        // `const iv = crypto.randomBytes(16)` resolves to a call this function
+        // does not recognise as static, so the randomBytes case needs no
+        // special-casing here — it simply produces no evidence.
+        const init = constInitializerOf(context.sourceCode, ivArg);
+        if (init !== null) checkIvValue(init, ivArg);
+        return;
       }
+      checkIvValue(ivArg, ivArg);
     }
 
     function reportStaticIv(node: TSESTree.Node) {
@@ -183,7 +172,6 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      VariableDeclarator: checkVariableDeclarator,
       CallExpression: checkCallExpression,
     };
   },

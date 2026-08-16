@@ -98,6 +98,57 @@ describe('no-static-iv', () => {
     });
   });
 
+  /**
+   * FN lock — the IV held in a `const`.
+   *
+   * The rule used to carry an empty `if (ivArg.type === Identifier) { }` block
+   * whose comment read "we don't report variables as we can't always determine
+   * their source". That is the bug written down as the spec: hoisting the IV to
+   * a module constant is exactly how CWE-329 appears in real code, and it made
+   * the rule silent. Every invalid case below is QUIET on the pre-fix rule.
+   *
+   * "Can't ALWAYS determine" is not "can never determine" — a single-assignment
+   * `const` is decidable, and everything else still falls through silently, as
+   * the valid cases pin.
+   */
+  describe('Invalid Code - IV hoisted to a const', () => {
+    ruleTester.run('invalid - const-held IVs', noStaticIv, {
+      valid: [
+        // Already covered above, repeated here as the direct control: the same
+        // const shape carrying randomBytes must stay quiet.
+        { code: 'const iv = crypto.randomBytes(16); crypto.createCipheriv("aes-256-cbc", key, iv);' },
+        // A `let` can be reassigned between declaration and use.
+        { code: 'let iv = "0123456789abcdef"; iv = crypto.randomBytes(16); crypto.createCipheriv("aes-256-cbc", key, iv);' },
+        // No initializer to read.
+        { code: 'const iv = loadIv(); crypto.createCipheriv("aes-256-cbc", key, iv);' },
+        // Buffer.from over a non-literal is not evidence of a static IV.
+        { code: 'const iv = Buffer.from(process.env.IV, "hex"); crypto.createCipheriv("aes-256-cbc", key, iv);' },
+      ],
+      invalid: [
+        // The archetype: a module-level hex IV reused for every encryption.
+        {
+          code: 'const IV = "0123456789abcdef";\ncrypto.createCipheriv("aes-256-cbc", key, IV);',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // Buffer.from over a hardcoded hex string, hoisted.
+        {
+          code: 'const IV = Buffer.from("00112233445566778899aabbccddeeff", "hex");\ncrypto.createDecipheriv("aes-256-cbc", key, IV);',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // Buffer.from over a byte-array literal, hoisted.
+        {
+          code: 'const IV = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);\ncreateCipheriv("aes-256-cbc", key, IV);',
+          errors: [{ messageId: 'staticIv' }],
+        },
+        // An inner const shadows an outer one — scope analysis, not a name map.
+        {
+          code: 'const IV = crypto.randomBytes(16);\nfunction enc() { const IV = "abcdefghijklmnop"; return createCipheriv("aes-256-cbc", key, IV); }',
+          errors: [{ messageId: 'staticIv' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - Algorithm Variations', () => {
     ruleTester.run('invalid - various algorithms', noStaticIv, {
       valid: [],

@@ -14,12 +14,17 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { resolveConstant } from '../../utils/const-value';
 
-type MessageIds =
-  | 'insufficientIterations'
-  | 'useMinIterations'
-  | 'useScrypt'
-  | 'useArgon2';
+// `useScrypt` and `useArgon2` used to sit here too, as INFO messages with no
+// report path: the single `context.report` offers exactly one suggestion,
+// `useMinIterations`. Wiring them would mean a suggestion that rewrites
+// `crypto.pbkdf2(pw, salt, n, len, digest, cb)` into `crypto.scrypt(…)` — a
+// different signature and a different output length, which is not a mechanical
+// fix ESLint may apply. Their advice already survives in the `fix:` line of
+// `insufficientIterations` ("…or use scrypt/Argon2"), so they are deleted
+// rather than kept as dead metadata.
+type MessageIds = 'insufficientIterations' | 'useMinIterations';
 
 export interface Options {
   /** Minimum PBKDF2 iterations. Default: 100000 */
@@ -60,22 +65,6 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
         fix: 'crypto.pbkdf2(password, salt, {{minimum}}, keylen, digest)',
         documentationLink: 'https://nodejs.org/api/crypto.html#cryptopbkdf2password-salt-iterations-keylen-digest-callback',
       }),
-      useScrypt: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use scrypt',
-        description: 'scrypt is memory-hard and resistant to GPU/ASIC attacks',
-        severity: 'LOW',
-        fix: 'crypto.scrypt(password, salt, keylen)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptoscryptpassword-salt-keylen-options-callback',
-      }),
-      useArgon2: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Argon2',
-        description: 'Argon2id is the winner of the Password Hashing Competition',
-        severity: 'LOW',
-        fix: 'argon2.hash(password, { type: argon2.argon2id })',
-        documentationLink: 'https://github.com/ranisalt/node-argon2',
-      }),
     },
     schema: [
       {
@@ -115,30 +104,34 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
         // pbkdf2(password, salt, iterations, keylen, digest, callback)
         // iterations is the 3rd argument (index 2)
         const iterationsArg = node.arguments[2];
-        
-        if (iterationsArg?.type === AST_NODE_TYPES.Literal && typeof iterationsArg.value === 'number') {
-          const iterations = iterationsArg.value;
-          
-          if (iterations < minIterations) {
-            context.report({
-              node: iterationsArg,
-              messageId: 'insufficientIterations',
-              data: {
-                actual: String(iterations),
-                minimum: String(minIterations),
+        if (iterationsArg === undefined) return;
+
+        // `const ROUNDS = 1000; crypto.pbkdf2(pw, salt, ROUNDS, …)` runs 1000
+        // rounds exactly as the inline number does — see `utils/const-value`.
+        const resolved = resolveConstant(context.sourceCode, iterationsArg);
+        if (resolved === null || typeof resolved.value !== 'number') return;
+        const iterations = resolved.value;
+        if (iterations >= minIterations) return;
+
+        // Report at the call, raise the number where it is written.
+        const target = resolved.source;
+        context.report({
+          node: iterationsArg,
+          messageId: 'insufficientIterations',
+          data: {
+            actual: String(iterations),
+            minimum: String(minIterations),
+          },
+          suggest: [
+            {
+              messageId: 'useMinIterations',
+              data: { minimum: String(minIterations) },
+              fix: (fixer: TSESLint.RuleFixer) => {
+                return fixer.replaceText(target, String(minIterations));
               },
-              suggest: [
-                {
-                  messageId: 'useMinIterations',
-                  data: { minimum: String(minIterations) },
-                  fix: (fixer: TSESLint.RuleFixer) => {
-                    return fixer.replaceText(iterationsArg, String(minIterations));
-                  },
-                },
-              ],
-            });
-          }
-        }
+            },
+          ],
+        });
       }
     }
 
