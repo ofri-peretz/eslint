@@ -397,3 +397,59 @@ ruleTester.run('no-innerhtml-edge-paths', noInnerhtml, {
     },
   ],
 });
+
+/**
+ * PARTITION LOCK — every sink shape must be reported by EXACTLY ONE rule.
+ *
+ * The innerHTML family divides work by taint SOURCE: a payload this package can
+ * attribute (postMessage, FileReader, Worker, WebSocket) belongs to the
+ * source-specific rule, everything else belongs here. That only works if the
+ * sibling can actually reach the sink SHAPE.
+ *
+ * Adding computed access, `Object.assign` and `createContextualFragment` to
+ * this rule silently broke it: those shapes are not modelled by the siblings,
+ * so deferring on an attributed source meant NOBODY reported them. Probed with
+ * all five family rules enabled, each produced ZERO findings.
+ *
+ * Widening one rule's sink list opened a hole in another rule's coverage. Any
+ * change to this rule's sinks must re-run the family matrix:
+ *
+ *   npx tsx scripts/probe-rule.mts \
+ *     browser-security/no-innerhtml browser-security/no-postmessage-innerhtml \
+ *     browser-security/no-websocket-innerhtml browser-security/no-worker-message-innerhtml \
+ *     browser-security/no-filereader-innerhtml -- '<snippet>'
+ *
+ * The cases below are the shapes this rule must KEEP owning even when the
+ * source is attributed. They report here precisely because no sibling can.
+ */
+ruleTester.run('no-innerhtml-partition-holes', noInnerhtml, {
+  valid: [
+    // Plain dotted assignment with an attributed source: the sibling owns it.
+    'window.addEventListener("message", (e) => { el.innerHTML = e.data; });',
+    // insertAdjacentHTML is modelled by the siblings too.
+    'window.addEventListener("message", (e) => { el.insertAdjacentHTML("beforeend", e.data); });',
+  ],
+  invalid: [
+    {
+      // FileReader: `payloadSource` does NOT attribute `e.target.result` in
+      // this shape, and `no-filereader-innerhtml` is quiet on it — verified by
+      // probing each rule alone. So this rule owns it, and coverage is intact.
+      // Recorded because the obvious assumption (the source rule owns anything
+      // touching a reader) is wrong, and asserting it would have pinned a hole.
+      code: 'reader.onload = (e) => { el.innerHTML = e.target.result; };',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'window.addEventListener("message", (e) => { Object.assign(el, { innerHTML: e.data }); });',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'window.addEventListener("message", (e) => { el["innerHTML"] = e.data; });',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    {
+      code: 'window.addEventListener("message", (e) => { host.append(document.createRange().createContextualFragment(e.data)); });',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+  ],
+});

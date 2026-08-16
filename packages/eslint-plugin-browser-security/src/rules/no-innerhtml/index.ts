@@ -456,12 +456,30 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       reportNode: TSESTree.Node,
       sinkName: string,
       taintedNode: TSESTree.Node,
+      /**
+       * Can a source-specific sibling rule see this sink SHAPE?
+       *
+       * The partition ("exactly one rule owns a site") only works if the other
+       * rule can actually reach the site. `no-postmessage-innerhtml` and its
+       * siblings match a plain dotted assignment; they do not model
+       * `Object.assign(el, { innerHTML })`, computed access, or
+       * `createContextualFragment`.
+       *
+       * When those shapes were added here, deferring on an attributed source
+       * meant NOBODY reported them — probed with all five family rules enabled,
+       * `window.addEventListener('message', e => Object.assign(el, { innerHTML: e.data }))`
+       * produced zero findings. Widening one rule's sink list silently opened a
+       * hole in another's coverage, which is the failure mode a partition
+       * invites and the reason to re-probe the whole family after touching any
+       * member of it.
+       */
+      siblingCanSee = true,
     ) {
       // Owned by a source-specific rule? Then this is not ours. The two tests
       // are complements — a source rule reports only what it can attribute, we
       // report only what it cannot — so exactly one rule reports any value.
       // Before this, both did, at the identical range, in `recommended`.
-      if (payloadSource(taintedNode) !== undefined) return;
+      if (siblingCanSee && payloadSource(taintedNode) !== undefined) return;
       // Allow constant HTML if configured. A no-argument call on a template
       // compiled from constant strings emits a fixed document, so it belongs
       // to the same category as a literal and rides the same switch — see
@@ -530,7 +548,8 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        reportSink(node, sinkName, node.right);
+        // A computed key is invisible to the source-specific siblings.
+        reportSink(node, sinkName, node.right, !node.left.computed);
       },
 
       // element.insertAdjacentHTML(position, htmlString) — same XSS class
@@ -566,7 +585,8 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
                     ? String(prop.key.value)
                     : null;
               if (key !== null && dangerousProperties.has(key)) {
-                reportSink(node, key, prop.value as TSESTree.Node);
+                // Object.assign is invisible to the siblings.
+                reportSink(node, key, prop.value as TSESTree.Node, false);
               }
             }
           }
@@ -587,7 +607,16 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         // (`(position, html)`) and the only argument for write/writeln.
         const tainted = node.arguments[node.arguments.length - 1];
         if (!tainted) return;
-        reportSink(node, property.name, tainted);
+        // `createContextualFragment` is a sink only this rule models; the
+        // source-specific siblings handle insertAdjacentHTML and document.write
+        // but not this one, so deferring on an attributed source would leave it
+        // unreported by everybody.
+        reportSink(
+          node,
+          property.name,
+          tainted,
+          property.name !== 'createContextualFragment',
+        );
       },
     };
   },
