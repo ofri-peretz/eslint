@@ -176,5 +176,5 @@ console.log(`cache lives in ${cacheDir}`);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `tempPaths` | `string[]` | — | Custom list of temporary paths to flag |
-| `ignoreFiles` | `string[]` | — | List of files or patterns to ignore |
+| `tempPaths` | `string[]` | `["/tmp","/var/tmp","temp/","/temp"]` | Temporary path prefixes to flag. Replaces the built-in list rather than extending it. |
+| `ignoreFiles` | `string[]` | `[]` | List of files or patterns to ignore |

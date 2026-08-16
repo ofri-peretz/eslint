@@ -267,13 +267,6 @@ const REGISTERED: RegistryEntry[] = [
       'user input. Same defect as no-ssrf, one layer further from the AST.',
   },
   {
-    file: 'eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/index.ts',
-    direction: 'report',
-    reason:
-      'authKeywords substring-matched against an object key. `role` matches `roleplayEnabled`, ' +
-      '`admin` matches `adminDashboardUrl` — neither is auth logic.',
-  },
-  {
     file: 'eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/index.ts',
     direction: 'report',
     reason:
@@ -308,30 +301,6 @@ const REGISTERED: RegistryEntry[] = [
   },
   // ── direction: report — a wrong guess ships a false positive ──────────
   {
-    file: 'eslint-plugin-secure-coding/src/rules/no-pii-in-logs/index.ts',
-    direction: 'report',
-    reason:
-      'piiProps ["email","ssn","password","creditcard","phone"] substring-matched against a ' +
-      'property name. `phone` matches `phoneBookLength`, `ssn` matches `assnCount`. The ' +
-      'property is read but never resolved to a value, so the rule asserts PII from spelling alone.',
-  },
-  {
-    file: 'eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts',
-    direction: 'report',
-    reason:
-      'routerLikeNames substring-matched against an object name — `app` matches `appleCount`, ' +
-      '`route` matches `routeDistance`. Already grandfathered in lint-plugin-taxonomy.ts for ' +
-      'gating on HTTP-framework names; this is the same rule failing the same way one level down.',
-  },
-  {
-    file: 'eslint-plugin-secure-coding/src/rules/detect-weak-password-validation/index.ts',
-    direction: 'report',
-    reason:
-      'varName.includes("password"|"pwd"|"pass") decides that a variable holds a password. ' +
-      '`pass` matches `passenger`, `passthrough`, `bypassCount` — and the rule then judges the ' +
-      'validation applied to it.',
-  },
-  {
     file: 'eslint-plugin-secure-coding/src/rules/no-hardcoded-session-tokens/index.ts',
     direction: 'report',
     reason:
@@ -340,31 +309,11 @@ const REGISTERED: RegistryEntry[] = [
       'is never examined for whether it is actually a credential.',
   },
   {
-    file: 'eslint-plugin-secure-coding/src/rules/no-ldap-injection/index.ts',
-    direction: 'report',
-    reason:
-      'varName.includes("user"|"input"|"filter") stands in for taint. `user` matches `userAgent` ' +
-      'and `usernameLabel`; neither is attacker-controlled by virtue of the spelling.',
-  },
-  {
     file: 'eslint-plugin-secure-coding/src/rules/no-format-string-injection/index.ts',
     direction: 'report',
     reason:
       'varName.includes("format"|"template"|"pattern") to decide a value is a format string. ' +
       'The rule has a real sink path; this branch bypasses it.',
-  },
-  {
-    file: 'eslint-plugin-secure-coding/src/rules/no-privilege-escalation/index.ts',
-    direction: 'report',
-    reason: 'Role/permission vocabulary substring-matched against identifier spellings.',
-  },
-  {
-    file: 'eslint-plugin-browser-security/src/rules/no-sensitive-data-in-analytics/index.ts',
-    direction: 'report',
-    reason:
-      'sensitiveFields substring-matched against an object key. Closer to defensible than the ' +
-      'others here — an analytics payload key IS the data name — but `key.includes(f)` still ' +
-      'means `emailPreferencesOptOut` reads as an email address.',
   },
   {
     file: 'eslint-plugin-lambda-security/src/rules/no-hardcoded-credentials-sdk/index.ts',
@@ -379,33 +328,11 @@ const REGISTERED: RegistryEntry[] = [
       'object, before judging its CORS headers.',
   },
   {
-    file: 'eslint-plugin-node-security/src/rules/no-buffer-overread/index.ts',
-    direction: 'report',
-    reason:
-      'Three sites: a type vocabulary and a user-controlled-keyword vocabulary, both substring- ' +
-      'matched against a variable name, standing in for the wire-derived-length analysis the ' +
-      'rule does elsewhere and does properly.',
-  },
-  {
     file: 'eslint-plugin-node-security/src/rules/no-zip-slip/index.ts',
     direction: 'report',
     reason:
       'varName.includes("entry"|"file"|"path") to identify an archive entry. Also carries a ' +
       'suppress-direction site (safeLibraries) — the report direction is the one that matters.',
-  },
-  {
-    file: 'eslint-plugin-postgresql-security/src/rules/no-transaction-on-pool/index.ts',
-    direction: 'report',
-    reason:
-      'objectName.toLowerCase().includes("pool") decides a receiver is a pg Pool. `poolingConfig` ' +
-      'and `carpoolClient` qualify. The exact `=== "pool"` arm beside it is fine; the substring arm is not.',
-  },
-  {
-    file: 'eslint-plugin-postgresql-security/src/rules/prevent-double-release/index.ts',
-    direction: 'report',
-    reason:
-      'name.includes("released"|"done"|"closed") to model release state. This is control-flow ' +
-      'state inferred from a variable spelling.',
   },
   {
     file: 'eslint-plugin-express-security/src/rules/require-rate-limiting/index.ts',
@@ -415,13 +342,6 @@ const REGISTERED: RegistryEntry[] = [
       '#517, which raises the cost of a wrong guess here — first candidate for resolution work.',
   },
   {
-    file: 'eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/index.ts',
-    direction: 'report',
-    reason:
-      'objectName.includes("location") to identify the Location interface, alongside a ' +
-      'suppress-direction trustedLibraries site.',
-  },
-  {
     file: 'eslint-plugin-secure-coding/src/rules/no-xpath-injection/index.ts',
     direction: 'report',
     reason:
@@ -429,15 +349,6 @@ const REGISTERED: RegistryEntry[] = [
       'for taint. `req` matches `requiredFields` and `prereqList`; `user` matches `userAgent`. ' +
       'The rule was rebuilt around a real XPath sink in #490 and its concatenation branch now ' +
       'gates correctly — this taint arm is the last part still reasoning from spelling.',
-  },
-  {
-    file: 'eslint-plugin-secure-coding/src/rules/no-xxe-injection/index.ts',
-    direction: 'report',
-    reason:
-      'Both directions in one function, and they compound. Suppress: varName.includes("clean"| ' +
-      '"safe"|"validated"|"sanitized") treats a value as trusted — `unsafeXml` contains "safe", ' +
-      'so it is silently trusted, the inversion of the intent. Report: varName.includes("req"| ' +
-      '"body"|"query"|"xml"|"data") treats it as untrusted, and `data` matches `metadata`.',
   },
 
   // ── direction: suppress — a wrong guess costs a detection, silently ───

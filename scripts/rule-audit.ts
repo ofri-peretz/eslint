@@ -84,6 +84,18 @@ export interface RuleFacts {
   createBody: string;
   /** The `meta` object literal, comments removed. */
   metaBlock: string;
+  /**
+   * Constants declared `@protocol-constant <reason>` — a fixed API surface, not
+   * a tunable vocabulary. Resolved from the RAW source, because `code` has had
+   * its comments stripped and the tag with them.
+   */
+  protocolConstants: Set<string>;
+  /**
+   * `src/utils/*` files this rule imports, one hop, comments stripped in `code`.
+   * `reachable` is the constants the rule can actually get to through the
+   * bindings it imports — see reachableConstants.
+   */
+  utils: { file: string; raw: string; code: string; reachable: Set<string> }[];
   validCases: number;
   invalidCases: number;
   cwe: string;
@@ -109,6 +121,57 @@ export interface RuleFacts {
  * String literals are preserved: a rule's word lists live in them and are real
  * evidence. Only `//` and block comments go.
  */
+/**
+ * Blank the CONTENTS of string and template literals, keeping their delimiters.
+ *
+ * `unconfigurable-vocabulary` scans for `const NAME = [...]`, and `stripComments`
+ * deliberately preserves strings because word lists live in them. The result was
+ * that a declaration quoted INSIDE a string counted as a declaration:
+ * `detect-object-injection` carries `good: 'const ALLOWED_KEYS = [\'name\'…]'` as
+ * documentation, and the audit charged the rule with a constant that does not
+ * exist — unfixable by definition, since there is nothing there to tag or
+ * configure.
+ *
+ * That is the audit deciding on PRINTED SOURCE, which is the exact defect its own
+ * `textual-matching` check reports on rules. A checker that commits the fault it
+ * polices has no standing, so the vocabulary scan runs over this instead.
+ *
+ * Delimiters survive so the `>= 6 quote characters` heuristic still counts the
+ * entries of a REAL list.
+ */
+export function blankStringContents(src: string): string {
+  let out = '';
+  let i = 0;
+  let quote: string | null = null;
+  while (i < src.length) {
+    const c = src[i];
+    if (quote) {
+      if (c === '\\') {
+        out += ' ';
+        i += 2;
+        continue;
+      }
+      if (c === quote) {
+        quote = null;
+        out += c;
+      } else {
+        out += c === '\n' ? '\n' : ' ';
+      }
+      i++;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      quote = c;
+      out += c;
+      i++;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
 export function stripComments(src: string): string {
   let out = '';
   let i = 0;
@@ -201,6 +264,129 @@ function createBody(code: string): string {
   }
   const brace = code.indexOf('{', i);
   return brace === -1 ? '' : balancedBlock(code.slice(brace), /^/);
+}
+
+/** A reason shorter than this is a silencer wearing a tag. */
+const PROTOCOL_CONSTANT_MIN_REASON = 24;
+
+/**
+ * The `src/utils/*` files a rule imports, read alongside it.
+ *
+ * Without this the audit reads `src/rules/<rule>/index.ts` and nothing else, and
+ * **moving a word list one directory over cleared `unconfigurable-vocabulary`
+ * for free.** That is worse than a missed finding: the gate reported the rule as
+ * FIXED while the debt was merely relocated, so the ratchet recorded a repair
+ * that had not happened. It was caught on `no-eval`, whose sink lists moved to
+ * `src/utils/dynamic-code-sinks.ts` and whose finding vanished with them.
+ *
+ * It is the same hole in a second gate: `lint:name-inference` was defeated by
+ * moving the match behind a helper, this one by moving the list into a util. A
+ * per-rule checker cannot see cross-rule code, and cross-rule code is where the
+ * shared assumptions live — so it is exactly where a wrong one does most damage.
+ *
+ * One hop only, and only within the plugin. A util's own imports are somebody
+ * else's subject; following them would attribute a devkit finding to all 121
+ * rules at once, which is noise rather than a brain per rule.
+ */
+function importedUtilSources(
+  ruleDir: string,
+): { file: string; raw: string; code: string; reachable: Set<string> }[] {
+  const out: { file: string; raw: string; code: string; reachable: Set<string> }[] = [];
+  const index = path.join(ruleDir, 'index.ts');
+  if (!fs.existsSync(index)) return out;
+  const src = fs.readFileSync(index, 'utf8');
+  const seen = new Set<string>();
+  for (const m of src.matchAll(/import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'((?:\.\.?\/)+utils\/[\w./-]+)'/g)) {
+    const specifiers = m[1]
+      .split(',')
+      .map((s) => s.trim().split(/\s+as\s+/)[0].trim())
+      .filter(Boolean);
+    for (const candidate of [`${m[2]}.ts`, path.join(m[2], 'index.ts')]) {
+      const resolved = path.resolve(ruleDir, candidate);
+      if (seen.has(resolved) || !fs.existsSync(resolved)) continue;
+      seen.add(resolved);
+      const raw = fs.readFileSync(resolved, 'utf8');
+      const code = stripComments(raw);
+      out.push({ file: path.basename(resolved), raw, code, reachable: reachableConstants(code, specifiers) });
+      break;
+    }
+  }
+  return out;
+}
+
+/**
+ * SCREAMING_CASE constants a rule can actually reach through the bindings it imports.
+ *
+ * Without this the audit charged a rule with every constant in every util it
+ * imported, which is a different wrong answer from the one it replaced:
+ * `require-cookie-secure-attrs` imports three cookie-text helpers and was billed
+ * for four credential vocabularies it never consults. Acting on that would have
+ * added an option for a list the rule does not read — dishonest configuration
+ * surface, and worse than the smell it was meant to fix, because a real option
+ * that changes nothing is a promise to the consumer that we do not keep.
+ *
+ * So: start from the imported specifiers, walk to the top-level functions they
+ * name, and follow calls to other top-level functions in the same file. Whatever
+ * constants that closure mentions are reachable; the rest belong to somebody else.
+ * `seen` bounds it — these utils call each other in cycles.
+ */
+export function reachableConstants(utilCode: string, specifiers: string[]): Set<string> {
+  const bodies = new Map<string, string>();
+  for (const m of utilCode.matchAll(/(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*[(<]/g)) {
+    bodies.set(m[1], balancedBlock(utilCode.slice(m.index ?? 0), /\{/));
+  }
+  for (const m of utilCode.matchAll(/(?:export\s+)?const\s+(\w+)\s*(?::[^=]+)?=\s*(?:async\s*)?\(/g)) {
+    if (!bodies.has(m[1])) bodies.set(m[1], utilCode.slice(m.index ?? 0, (m.index ?? 0) + 4000));
+  }
+
+  const constants = new Set<string>();
+  const seen = new Set<string>();
+  const queue = [...specifiers];
+  while (queue.length) {
+    const name = queue.shift() as string;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const body = bodies.get(name);
+    if (!body) continue;
+    for (const ref of body.matchAll(/\b([A-Za-z_$][\w$]*)\b/g)) {
+      const id = ref[1];
+      if (/^[A-Z][A-Z0-9_]*$/.test(id)) constants.add(id);
+      else if (bodies.has(id) && !seen.has(id)) queue.push(id);
+    }
+  }
+  return constants;
+}
+
+/**
+ * Names of constants declared `@protocol-constant <reason>` in the doc comment
+ * DIRECTLY above them.
+ *
+ * Reads the RAW source, not `RuleFacts.code` — that one is `stripComments`ed, so
+ * every tag is gone by the time a check runs. Resolving to NAMES rather than
+ * offsets is what makes that safe: an offset into the stripped text does not
+ * point at the same thing in the original.
+ *
+ * "Directly above" is load-bearing — only whitespace may sit between the comment
+ * and the declaration, so a tag cannot drift onto the next constant down the
+ * file. That is the difference between a claim about one list and a claim that
+ * silently covers lists nobody reviewed.
+ *
+ * The reason is required. A bare `@protocol-constant` is precisely the silencer
+ * `unconfigurable-vocabulary` exists to surface, so it does NOT clear the check:
+ * the tag has to say why the set is a fixed API rather than a vocabulary, and a
+ * reviewer reads that sentence in the diff that introduces it.
+ */
+export function protocolConstantNames(rawSource: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of rawSource.matchAll(
+    /\/\*\*([\s\S]*?)\*\/\s*(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*[:=]/g,
+  )) {
+    const tag = /@protocol-constant\b([\s\S]*?)(?=\n\s*\*\s*@\w|$)/.exec(m[1]);
+    if (!tag) continue;
+    const reason = tag[1].replace(/^\s*\*+/gm, ' ').replace(/\s+/g, ' ').trim();
+    if (reason.length >= PROTOCOL_CONSTANT_MIN_REASON) out.add(m[2]);
+  }
+  return out;
 }
 
 /**
@@ -410,7 +596,18 @@ function testAdequacy(f: RuleFacts): Finding[] {
   // spelling made the audit claim a rule "produces a fix but declares neither
   // fixable nor hasSuggestions — ESLint will throw", about a file containing no
   // fixer at all.
-  const hasFixer = /\bfix\s*(?:\(\s*\w|:\s*(?:\(|function|async))/.test(f.createBody);
+  //
+  // The narrow spelling then failed the other way. `no-deprecated-buffer` writes
+  // `{ fix: fixTo(node, callee, method) }` — a named FACTORY returning the fix
+  // function — so `fix:` is followed by an identifier and the audit reported
+  // `fixable-without-fixer` against a rule whose fixer works: verified live
+  // through `verifyAndFix`, `new Buffer(1024)` -> `Buffer.alloc(1024)`. Extracting
+  // that factory is what made the rule "gain" the check.
+  //
+  // So: a call (`fixTo(`) and a bare-parameter arrow (`fixer =>`) both count. A
+  // prose value still does not — `fix: 'Atomic group…'` opens with a quote, and
+  // `fix: null` is followed by neither `(` nor `=>`.
+  const hasFixer = /\bfix\s*(?:\(\s*\w|:\s*(?:\(|function|async|\w+\s*\(|\w+\s*=>))/.test(f.createBody);
   const declaresFixable = /\bfixable\s*:/.test(f.metaBlock);
   if (declaresFixable && !hasFixer) {
     out.push({
@@ -519,7 +716,7 @@ function metadataContract(f: RuleFacts): Finding[] {
   }
 
   // EVERY option must ship an explicit default, and every hard-coded vocabulary
-  // must be reachable as an option.
+  // must be reachable as an option — unless it is declared a protocol constant.
   //
   // Two failures live here, and the second is the expensive one:
   //
@@ -551,11 +748,47 @@ function metadataContract(f: RuleFacts): Finding[] {
   // A module-scope word list that no option feeds. Heuristic, so a SMELL: some
   // constant lists are genuine protocol facts (`RSA_PKCS1_PADDING`), not tunable
   // vocabulary.
-  const vocabularies = [...f.code.matchAll(/const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[([^\]]{20,})\]/g)]
-    .filter(([, , body]) => (body.match(/'/g) ?? []).length >= 6)
-    .map(([, name]) => name)
-    .filter((name) => !optSchema.includes(name) && !f.createBody.includes(`${name} =`));
-  if (vocabularies.length && /includes\(|\.has\(|some\(/.test(f.createBody)) {
+  //
+  // That distinction had no way to be EXPRESSED, and the gap was expensive. The
+  // check's only clearing condition is textual — the name appears in the schema,
+  // or is reassigned in `create()` — so the sole way to silence it was to make
+  // the list configurable. For `CIPHERIV_FACTORIES`, `CACHE_WRITE_METHODS` or
+  // ldapjs's `SEARCH_METHODS` that is the WRONG answer twice over: it lets a
+  // consumer delete the entries the rule exists to find (silencing it on exactly
+  // the shapes it was written for), and for a call-signature set it lets them
+  // re-assert the false positive the set was created to close. The alternative,
+  // baselining, buries the finding permanently.
+  //
+  // So a declaration may carry `@protocol-constant <reason>` in the doc comment
+  // DIRECTLY above it. This is deliberately not an entry in this file: annotating
+  // the gate to look past a site is the evasion CLAUDE.md names, and it hides the
+  // claim from the diff that introduces it. At the site, a reviewer sees the
+  // justification next to the list. The reason is required and must be
+  // substantive — a bare tag is a silencer, and silencers are what this check is
+  // for.
+  const VOCAB = /const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[([^\]]{20,})\]/g;
+  const named = (where: string) => (m: RegExpMatchArray) => ({ name: m[1], body: m[2], where });
+  // Over blanked strings — see blankStringContents. A declaration quoted inside a
+  // doc example is not a declaration, and charging a rule with one is unfixable:
+  // there is nothing there to tag or to make configurable.
+  const vocabularies = [
+    ...[...blankStringContents(f.code).matchAll(VOCAB)].map(named('')),
+    // Utils the rule imports — see importedUtilSources. Attributed to the file
+    // they live in, because "make this configurable" is a different job in a
+    // shared util than in one rule: the option has to be threaded from every
+    // consumer, and naming the file is what makes that visible.
+    ...f.utils.flatMap((u) =>
+      [...blankStringContents(u.code).matchAll(VOCAB)]
+        .filter((m) => u.reachable.has(m[1]))
+        .map(named(` (${u.file})`)),
+    ),
+  ]
+    .filter((v) => (v.body.match(/'/g) ?? []).length >= 6)
+    .filter((v) => !f.protocolConstants.has(v.name))
+    .filter((v) => !optSchema.includes(v.name) && !f.createBody.includes(`${v.name} =`))
+    .map((v) => `${v.name}${v.where}`);
+  const usesMembership = /includes\(|\.has\(|some\(/.test(f.createBody) || f.utils.length > 0;
+  if (vocabularies.length && usesMembership) {
     out.push({
       id: 'unconfigurable-vocabulary',
       tier: 'smell',
@@ -768,6 +1001,7 @@ export function collectFacts(
       const metaBlock = balancedBlock(code, /meta\s*:/);
       const body = createBody(code);
       const cwe = /cwe:\s*'([^']+)'/.exec(code)?.[1] ?? '—';
+      const utils = importedUtilSources(dir);
       return {
         plugin,
         rule,
@@ -777,6 +1011,11 @@ export function collectFacts(
         testCode: stripComments(tests),
         metaBlock,
         createBody: body,
+        utils,
+        protocolConstants: new Set([
+          ...protocolConstantNames(source),
+          ...utils.flatMap((u) => [...protocolConstantNames(u.raw)]),
+        ]),
         cwe,
         selectors: visitorSelectors(body),
         hasDocPage: fs.existsSync(path.join(pkg, 'docs', 'rules', `${rule}.md`)),

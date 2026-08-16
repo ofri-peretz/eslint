@@ -93,11 +93,11 @@ app.get('/health', healthCheck);
 
 ## Options
 
-| Option           | Type       | Default | Description                                       |
-| ---------------- | ---------- | ------- | ------------------------------------------------- |
-| `criticalPaths`  | `string[]` | —       | Path fragments that mark a route as critical      |
-| `publicPaths`    | `string[]` | —       | Path fragments that are public by design          |
-| `authMiddleware` | `string[]` | —       | Extra middleware names accepted as authentication |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `criticalPaths` | `string[]` | — | Path fragments that mark a route as critical |
+| `publicPaths` | `string[]` | — | Path fragments that are public by design |
+| `authMiddleware` | `string[]` | — | Extra middleware names accepted as authentication |
 
 ```json
 {

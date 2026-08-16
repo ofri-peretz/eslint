@@ -142,6 +142,7 @@ line away; a silent hole in code-injection coverage is neither.
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
 | `allowFunctionConstructor` | `boolean` | `false` | Allow `new Function(...)` while still reporting `eval()` |
+| `deferDynamicPayloads` | `boolean` | `false` | Let node-security/detect-eval-with-expression own dynamic eval() payloads. Enable when both plugins are installed, to avoid one line being reported twice. Off by default so browser-security covers eval() on its own. |
 
 ```json
 {

@@ -201,8 +201,31 @@ async function main() {
     results.push({ name: `${entry.name} [${Object.keys(rules).join(', ')}]`, ...score(linter, rules, 'them', files, tsParser) });
   }
 
+  // Write RESULTS.json ALWAYS, next to the corpus it scored.
+  //
+  // This runner used to only print. Every RESULTS.json in the tree was therefore
+  // hand-transcribed by whoever ran it, and one of them claimed 93.3% for a rule
+  // that scored 76.9% at HEAD — a published number that had drifted from the
+  // measurement it named, with nothing in CI able to notice. A results file that
+  // is a BYPRODUCT of running the bench cannot drift from it; one that is an act
+  // of authorship always eventually does.
+  //
+  // It is written before the report prints, so a crash in the formatting below
+  // still leaves the measurement on disk.
+  const payload = {
+    rule: ruleId,
+    generatedBy: 'benchmarks/suites/ilb-rule-duel/run.mjs',
+    fixtures: files.length,
+    vulnerable: files.filter((f) => f.expectReport).length,
+    results,
+  };
+  const corpusDir = path.join(REPO, 'benchmarks', 'rule-corpus', ruleId.replace('/', '__'));
+  if (fs.existsSync(corpusDir)) {
+    fs.writeFileSync(path.join(corpusDir, 'RESULTS.json'), `${JSON.stringify(payload, null, 2)}\n`);
+  }
+
   if (asJson) {
-    console.log(JSON.stringify({ rule: ruleId, fixtures: files.length, results }, null, 2));
+    console.log(JSON.stringify(payload, null, 2));
     return;
   }
 

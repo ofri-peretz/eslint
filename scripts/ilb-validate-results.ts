@@ -140,15 +140,33 @@ function validateResultFile(filePath) {
  */
 const METHODOLOGY_HASH_SINCE = '2026-08-03'; // the field landed 2026-08-02; same-day results predate it
 
+/**
+ * Per-bench overrides, for suites whose RUNNER did not emit the receipt when
+ * the field landed globally. The date a field exists is not the date a given
+ * producer started writing it, and a result cannot honestly acquire provenance
+ * after the fact — backfilling a hash onto a run nobody can reproduce would
+ * manufacture exactly the "looks verifiable" receipt the strict branch below
+ * exists to reject. So the discriminator is: when did THIS bench's runner start
+ * emitting it. Anything from that date forward is held strictly.
+ */
+const METHODOLOGY_HASH_SINCE_BY_BENCH = {
+  // Runner gained captureMethodology() on 2026-08-16; the 08-09..08-15 runs
+  // predate it and are never regenerated.
+  'ILB-CWE-Corpus': '2026-08-16',
+  // Orphaned suite — no npm script points at it; its last run is 2026-08-14.
+  'ILB-Juliet': '2026-08-16',
+};
+
 function checkMethodologyReceipt(parsed, issues, locationLabel) {
   const { methodologyHash: hash, methodologyPaths: paths } = parsed;
 
   if (hash === undefined && paths === undefined) {
+    const since = METHODOLOGY_HASH_SINCE_BY_BENCH[parsed.bench] ?? METHODOLOGY_HASH_SINCE;
     const msg = `${locationLabel}: missing "methodologyHash" — methodologyCommit alone does not survive squash-merge, see benchmarks/lib/methodology.ts`;
     const predatesField =
-      typeof parsed.timestamp !== 'string' || parsed.timestamp.slice(0, 10) < METHODOLOGY_HASH_SINCE;
+      typeof parsed.timestamp !== 'string' || parsed.timestamp.slice(0, 10) < since;
     if (!predatesField) issues.push(msg);
-    else if (STRICT) issues.push(`${msg} (warning — pre-${METHODOLOGY_HASH_SINCE} file)`);
+    else if (STRICT) issues.push(`${msg} (warning — pre-${since} file)`);
     return;
   }
 

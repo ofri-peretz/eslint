@@ -112,7 +112,7 @@ execa('git', ['clone', url]);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `extraCommandRunners` | `string[]` | — | Extra functions that accept a full command line without escaping |
+| `extraCommandRunners` | `string[]` | `[]` | Extra functions that accept a full command line without escaping. Added to the built-in runners, not a replacement for them. |
 
 ```json
 {

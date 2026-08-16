@@ -93,12 +93,16 @@ const filter = `(uid=${ldap.escape.filterValue(userId)})`;
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `ldapFunctions` | `string[]` | `["search","bind","modify","add","delete","compare","searchAsync"]` | LDAP client methods treated as query sinks |
-| `ldapEscapeFunctions` | `string[]` | `["escape.filterValue","escape.dnValue","filterEscape","dnEscape"]` | Function names that escape LDAP filter or DN values |
+| `ldapFunctions` | `string[]` | `["search","searchAsync","searchPaginated","bind","modify","modifyDN","add","del","delete","compare"]` | LDAP client methods treated as query sinks |
+| `ldapEscapeFunctions` | `string[]` | `["escape.filterValue","escape.dnValue","filterValue","dnValue","filterEscape","dnEscape"]` | Function names that escape LDAP filter or DN values |
 | `ldapValidationFunctions` | `string[]` | `["validateLdapInput","sanitizeLdapFilter","cleanLdapValue","checkLdapFilter"]` | Function names that count as LDAP input validation |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as LDAP sanitizers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| `ldapPackages` | `string[]` | `["ldapjs","ldapts","ldapauth-fork","passport-ldapauth","ldap-authentication","ldap-escape","ldap-filter","activedirectory","activedirectory2","node-ldap"]` | Package specifiers whose import opens the file gate. Nothing in a file is examined unless one of these is loaded. Replaces the built-in list. |
+| `additionalLdapPackages` | `string[]` | `[]` | Extra LDAP client packages, on top of `ldapPackages` — a house wrapper around ldapjs belongs here. |
+| `requestRoots` | `string[]` | `["req","request","ctx","httpRequest"]` | Identifiers naming a framework request object, matched as the exact ROOT of a member chain — never as a substring of the printed expression. Replaces the built-in list. |
+| `additionalRequestRoots` | `string[]` | `[]` | Extra request-object root names, on top of `requestRoots`. |
 
 ## Error Message Format
 

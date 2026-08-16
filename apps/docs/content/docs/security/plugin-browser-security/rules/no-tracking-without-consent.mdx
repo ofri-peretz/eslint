@@ -200,3 +200,10 @@ myTracker.track('test'); // ❌ NOT DETECTED (as safe)
 - [GDPR Articles 6 & 7 (Consent)](https://gdpr-info.eu/art-6-gdpr/)
 - [Segment.js - Managing User Consent](https://segment.com/docs/privacy/consent-management/)
 - [Google Analytics - User Consent State](https://developers.google.com/analytics/devguides/collection/ga4/consent)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `consentIdentifiers` | `string[]` | `["consent","gdpr","optin","cookiesaccepted","trackingallowed"]` | Words that mark an identifier as a consent flag; replaces the default vocabulary |
+| `analyticsMethods` | `string[]` | `["track","identify","page"]` | Method names on an analytics client that count as a tracking call |

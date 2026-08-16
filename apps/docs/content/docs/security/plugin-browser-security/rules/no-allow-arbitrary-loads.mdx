@@ -166,3 +166,9 @@ const config = { NSAllowsArbitraryLoads: enableInsecure };
 **Category:** Mobile Security  
 **Type:** Problem  
 **Recommended:** Yes
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `insecureLoadKeys` | `string[]` | `["NSAllowsArbitraryLoads","NSAllowsArbitraryLoadsInWebContent","NSAllowsArbitraryLoadsForMedia","NSAllowsLocalNetworking","NSExceptionAllowsInsecureHTTPLoads","NSThirdPartyExceptionAllowsInsecureHTTPLoads"]` | Configuration keys that disable transport security; replaces the Apple ATS vocabulary |

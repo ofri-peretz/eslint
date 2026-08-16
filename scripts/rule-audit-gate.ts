@@ -76,11 +76,19 @@ function currentRules(only?: Set<string>): Record<string, string[]> {
 }
 
 /**
- * Rules whose own directory changed, from the staged diff.
+ * Rules whose findings the staged diff could have changed.
  *
- * Deliberately NOT "rules whose findings could have changed". A shared util
- * edit can alter a rule that this list misses — which is why CI runs the full
- * gate and this mode exists only to keep the commit hook off the critical path.
+ * This used to be "rules whose own directory changed", with a note that a shared
+ * util edit could alter a rule the list misses. That gap is no longer acceptable,
+ * because the audit now READS the `src/utils/*` a rule imports — so a util edit
+ * does not merely *maybe* change a rule's findings, it is one of the main ways
+ * they change. A pre-commit gate blind to exactly the edits with the widest blast
+ * radius is a gate that passes hardest when it matters most.
+ *
+ * A touched util therefore pulls in every rule in its plugin. That is broader than
+ * the true import set, and deliberately so: resolving imports here would duplicate
+ * `importedUtilSources` and could drift from it, and the whole-plugin audit costs
+ * milliseconds. Wrong in the safe direction.
  */
 function changedRules(): string[] {
   const diff = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], {
@@ -88,9 +96,19 @@ function changedRules(): string[] {
     encoding: 'utf8',
   });
   const hits = new Set<string>();
+  const wholePlugins = new Set<string>();
   for (const file of diff.split('\n')) {
-    const m = /^packages\/eslint-plugin-([^/]+)\/src\/rules\/([^/]+)\//.exec(file);
-    if (m && PLUGINS.includes(m[1])) hits.add(`${m[1]}/${m[2]}`);
+    const rule = /^packages\/eslint-plugin-([^/]+)\/src\/rules\/([^/]+)\//.exec(file);
+    if (rule && PLUGINS.includes(rule[1])) hits.add(`${rule[1]}/${rule[2]}`);
+    const util = /^packages\/eslint-plugin-([^/]+)\/src\/utils\//.exec(file);
+    if (util && PLUGINS.includes(util[1])) wholePlugins.add(util[1]);
+  }
+  for (const plugin of wholePlugins) {
+    const dir = path.join(REPO_ROOT, 'packages', `eslint-plugin-${plugin}`, 'src', 'rules');
+    if (!fs.existsSync(dir)) continue;
+    for (const rule of fs.readdirSync(dir)) {
+      if (fs.existsSync(path.join(dir, rule, 'index.ts'))) hits.add(`${plugin}/${rule}`);
+    }
   }
   return [...hits];
 }
@@ -119,7 +137,16 @@ function main(): void {
   // quality" half of the ratchet.
   const scope = args.includes('--changed') ? changedRules() : null;
   if (scope && scope.length === 0) {
-    console.log('rule-audit: no rule files changed.');
+    // Say what was NOT done. This exits 0 having audited nothing, and read as a
+    // bare green it is indistinguishable from a clean full run — two agents in
+    // one session took it for one, because `--changed` reads the STAGED diff and
+    // nothing they had written was staged. A gate that passes silently when it
+    // checked nothing trains people to trust it exactly when it is least earned.
+    console.log(
+      'rule-audit --changed: nothing staged under packages/eslint-plugin-*/src/{rules,utils}/ — ' +
+        'AUDITED NOTHING, which is not the same as passing. Run the full gate to actually check: ' +
+        'npx tsx scripts/rule-audit-gate.ts',
+    );
     return;
   }
 
