@@ -73,6 +73,7 @@ const eslint = new ESLint({
 });
 
 const byClass = {};
+const validFires = [];
 for (const c of cases) {
   const cls = c.rule.replace(/ \(.*\)| in comment-line/, '');
   byClass[cls] ??= { detected: 0, invalid: 0, fired: 0, valid: 0, rules: new Set() };
@@ -86,7 +87,13 @@ for (const c of cases) {
     fired.forEach((m) => b.rules.add(m.ruleId));
   } else {
     b.valid++;
-    if (fired.length) b.fired++;
+    if (fired.length) {
+      b.fired++;
+      // Which of our rules fires on a case the competitor calls safe, and on what
+      // line. Without this the 23/105 is a number with no handle on it — you cannot
+      // tell a name-match false positive from a genuine second-axis finding.
+      validFires.push({ cls, rules: fired.map((m) => `${m.ruleId}:${m.line}`), code: (c.code ?? '').trim() });
+    }
   }
 }
 
@@ -134,6 +141,15 @@ const liveTotals = Object.entries(summary).reduce(
 );
 const excluded = Object.entries(summary).filter(([k]) => wontFix[k]);
 const excludedCases = excluded.reduce((a, [k]) => a + declined(k), 0);
+
+if (process.argv.includes('--list-valid-fires')) {
+  console.log(`\nOUR rules firing on THEIR valid cases (${validFires.length}):\n`);
+  for (const v of validFires) {
+    console.log(`  ${v.cls}`);
+    console.log(`    ${v.rules.join('  ')}`);
+    console.log(`    ${v.code.split('\n').join('\n    ')}\n`);
+  }
+}
 
 console.log(
   `\nRAW parity      ${totals.detected}/${totals.invalid} (${((totals.detected / totals.invalid) * 100).toFixed(1)}%)` +

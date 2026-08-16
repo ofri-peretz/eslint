@@ -221,3 +221,48 @@ headline row won except adoption, docs completeness, and tarball size.
 | 3 | 3.1–3.3 docs + CI gate | ☐ |
 | 4 | 4.x scorecard | ☐ |
 | 5 | 5.1–5.4 re-derive carried claims | ☐ |
+
+
+---
+
+## 2026-08-14 — phase 2 close-out
+
+Measured after every change, with the suite that owns each number.
+
+| | recommended (177 rules) | all rules (276) |
+|---|---|---|
+| Detection, labelled corpus | **76/76** | **76/76** |
+| False positives, safe corpus | **0/67** | 1/67 |
+
+The single finding under all-rules is `CWE-327/safe/verify-allowlist.js`, caught by
+three **opt-in** JWT hardening rules (issuer, audience, maxAge). The fixture is safe for
+CWE-327, which is what it is labelled for. That is a second-axis finding, not a defect,
+and the fixture is left alone — `benchmarks/corpus` is a calibrated instrument.
+
+Competitor parity, on `eslint-plugin-security`'s own RuleTester suite:
+
+| | before | after |
+|---|---|---|
+| Weighted parity | 51/51 | **51/51** |
+| Raw parity | 51/84 | **51/84** |
+| Fires on their `valid` cases | 23/105 | **15/105** |
+
+All 23 were read by hand. Eight were genuine false positives and are fixed. The
+remaining 15 are scope differences where our finding stands: 11 non-literal `spawn`
+(they treat shell-free spawn as safe; a `spawn(str)` still runs an attacker-named
+binary), 3 `eval` of a literal, 1 `new Buffer`.
+
+### What still needs a decision, not an implementation
+
+- **Six deprecated rules are still exported.** Each carries a working `replacedBy` and
+  none ship in `recommended`. Removing them is a breaking change across several plugins,
+  so it is a major-version call rather than something to slip into this PR.
+- **Real-source absolute numbers must be re-run against npm after release.** A run
+  against the local build reports different totals than the published JSON, because the
+  local dist carries rules the published versions do not. Per
+  [BENCHMARK-PUBLISHING-PLAN.md](./BENCHMARK-PUBLISHING-PLAN.md) §5 the order is
+  merge → release → re-run → publish. Nothing in `BENCHMARK-RESULTS.md` has been
+  restated from a local run.
+- **E5, "what a false positive looks like", is still open on both sides.** Neither we
+  nor the incumbent tell a reader how to recognise one. The rules fixed here now carry
+  that knowledge in code comments; surfacing it in `docs/rules/*.md` is the next step.

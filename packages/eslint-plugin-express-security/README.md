@@ -31,6 +31,45 @@ This plugin provides Comprehensive security rules for Express.js applications, m
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+## Why these rules are quiet
+
+**Noise creates apathy, and apathy is not a security posture.** A linter that reports
+a thousand things a week gets switched off in a month, and the real finding goes with
+it. So every rule here is built to be worth reading: we would rather miss a finding
+than spend your attention on one that was never real.
+
+That is a trade, and it is made deliberately. It costs recall, and we measure what it
+costs rather than assuming it is free.
+
+## How the rules decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — not on an identifier that happens to contain
+`query`, a method called `setItem`, or a file whose path contains `key`. Every one of
+those was a real false positive in this ecosystem, found by reading our own output on
+open-source projects and fixed with a test that fails on the unfixed rule.
+
+Where a rule has known false-positive shapes, its page carries a **Not a finding**
+section: what it deliberately stays quiet on, and what to check first when it fires
+and you disagree.
+
+## What you get
+
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
+`recommended`, and read the findings. If one of them is wrong,
+[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
+bug here, not a tuning exercise for you.
+
+How that is measured, on which projects, and where it falls short:
+[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
+
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security). 📚
@@ -91,29 +130,29 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-client-controlled-authorization](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-client-controlled-authorization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-863 | A01:2021 |  | This rule detects access decisions taken on request-supplied role, permission or identity values — the chec… | 🟢 |  |  |  |  |  |
-| [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-cors-credentials-wildcard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-942 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-client-controlled-authorization](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-client-controlled-authorization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-863 | A01:2021 |  | This rule detects access decisions taken on request-supplied role, permission or identity values — the chec… | 🟢 |  | ⚠️ |  |  |  |
+| [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-cors-credentials-wildcard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-942 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
 | [no-disabled-helmet-protections](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-disabled-helmet-protections?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-693 | A05:2021 |  | This rule detects helmet options that switch a shipped security-header default off, leaving a mounted helme… | 🟢 | 💼 |  |  |  |  |
-| [no-error-details-in-response](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-error-details-in-response?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-209 | A04:2021 |  | Disallow sending caught error objects, stack traces, or spreads of them in HTTP responses. | 🟢 |  |  |  |  |  |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-489 | A05:2021 |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
-| [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-express-unsafe-regex-route?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-1333 |  |  | This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns | 🟢 |  |  |  |  |  |
-| [no-graphql-introspection-production](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-graphql-introspection-production?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-200 |  |  | This rule detects GraphQL servers with introspection enabled in production | 🟢 |  |  |  |  |  |
-| [no-host-header-in-links](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-host-header-in-links?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-640 | A07:2021 |  | Disallow building absolute URLs (password-reset and verification links) from the Host or X-Forwarded-Host r… | 🟢 |  |  |  |  |  |
-| [no-idor-resource-access](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-idor-resource-access?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-639 | A01:2021 |  | This rule detects a resource fetched by an identifier taken straight from the request inside a handler that… | 🟢 |  |  |  |  |  |
+| [no-error-details-in-response](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-error-details-in-response?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-209 | A04:2021 |  | Disallow sending caught error objects, stack traces, or spreads of them in HTTP responses. | 🟢 | 💼 |  |  |  |  |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-exposed-debug-endpoints?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-489 | A05:2021 |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 | 💼 |  |  |  |  |
+| [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-express-unsafe-regex-route?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-1333 |  |  | This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns | 🟢 | 💼 |  |  |  |  |
+| [no-graphql-introspection-production](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-graphql-introspection-production?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-200 |  |  | This rule detects GraphQL servers with introspection enabled in production | 🟢 |  | ⚠️ |  |  |  |
+| [no-host-header-in-links](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-host-header-in-links?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-640 | A07:2021 |  | Disallow building absolute URLs (password-reset and verification links) from the Host or X-Forwarded-Host r… | 🟢 | 💼 |  |  |  |  |
+| [no-idor-resource-access](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-idor-resource-access?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-639 | A01:2021 |  | This rule detects a resource fetched by an identifier taken straight from the request inside a handler that… | 🟢 |  | ⚠️ |  |  |  |
 | [no-insecure-cookie-options](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-insecure-cookie-options?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-614 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
 | [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-942 |  |  | Detects overly permissive CORS configurations in Express.js applications | 🟢 | 💼 |  |  |  |  |
 | [no-permissive-trust-proxy](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-permissive-trust-proxy?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-348 | A05:2021 |  | This rule detects unconditional 'trust proxy' settings, which make req.ip whatever the caller says it is an… | 🟢 | 💼 |  |  |  |  |
-| [no-sensitive-data-in-query](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-sensitive-data-in-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-598 | A04:2021 |  | Disallow reading sensitive-named parameters (password, token, secret, apiKey, ...) from req.query. | 🟢 |  |  |  |  |  |
-| [no-static-root-exposure](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-static-root-exposure?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-548 | A05:2021 |  | Disallow express.static() roots that expose the application directory and any serve-index usage | 🟢 |  |  |  |  |  |
+| [no-sensitive-data-in-query](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-sensitive-data-in-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-598 | A04:2021 |  | Disallow reading sensitive-named parameters (password, token, secret, apiKey, ...) from req.query. | 🟢 |  | ⚠️ |  |  |  |
+| [no-static-root-exposure](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-static-root-exposure?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-548 | A05:2021 |  | Disallow express.static() roots that expose the application directory and any serve-index usage | 🟢 | 💼 |  |  |  |  |
 | [no-unsafe-csp-directives](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-unsafe-csp-directives?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-79 | A03:2021 |  | This rule detects Content-Security-Policy directives that hand back the protection the header exists to pro… | 🟢 | 💼 |  |  |  |  |
-| [no-user-controlled-render-locals](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-user-controlled-render-locals?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-73 | A03:2021 |  | Disallow res.render() with locals or view names sourced wholesale from req.body / req.query / req.params | 🟢 |  |  |  |  |  |
-| [require-case-insensitive-path-guard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-case-insensitive-path-guard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-178 | A01:2021 |  | This rule detects path-based authorization guards that compare req.path case-sensitively, which case-insens… | 🟢 |  |  |  |  |  |
-| [require-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-csrf-protection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-352 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
-| [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-400 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-user-controlled-render-locals](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-user-controlled-render-locals?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-73 | A03:2021 |  | Disallow res.render() with locals or view names sourced wholesale from req.body / req.query / req.params | 🟢 | 💼 |  |  |  |  |
+| [require-case-insensitive-path-guard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-case-insensitive-path-guard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-178 | A01:2021 |  | This rule detects path-based authorization guards that compare req.path case-sensitively, which case-insens… | 🟢 |  | ⚠️ |  |  |  |
+| [require-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-csrf-protection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-352 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  | ⚠️ |  |  |  |
+| [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-400 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  | ⚠️ |  |  |  |
 | [require-helmet](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-helmet?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-693 |  |  | This rule detects Express.js applications that are missing the helmet middleware | 🟢 | 💼 |  |  |  |  |
-| [require-query-type-guard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-query-type-guard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-843 | A03:2021 |  | This rule detects string methods called on req.query values without a type guard — Express query values can… | 🟢 |  |  |  |  |  |
-| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-770 |  |  | This rule detects Express.js applications missing rate limiting middleware | 🟢 | 💼 |  |  |  |  |
-| [require-route-authentication](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-route-authentication?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-306 | A07:2021 |  | This rule detects routes that expose a critical function — credentials, accounts, payments, configuration —… | 🟢 |  |  |  |  |  |
+| [require-query-type-guard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-query-type-guard?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-843 | A03:2021 |  | This rule detects string methods called on req.query values without a type guard — Express query values can… | 🟢 |  | ⚠️ |  |  |  |
+| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-770 |  |  | This rule detects Express.js applications missing rate-limiting middleware | 🟢 | 💼 |  |  |  |  |
+| [require-route-authentication](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-route-authentication?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-306 | A07:2021 |  | This rule detects routes that expose a critical function — credentials, accounts, payments, configuration —… | 🟢 |  | ⚠️ |  |  |  |
 | [require-strict-transport-security](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-strict-transport-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-express-security) | CWE-319 | A02:2021 |  | This rule detects HSTS configurations that leave a downgrade window open — the header disabled, a max-age b… | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 

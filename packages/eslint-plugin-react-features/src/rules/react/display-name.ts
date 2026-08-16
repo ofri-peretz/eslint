@@ -6,15 +6,36 @@
 
 /**
  * ESLint Rule: display-name
- * Enforce component display names
+ *
+ * Reports components React cannot name.
+ *
+ * A component's display name is what appears in React DevTools, in error
+ * boundaries and in component stack traces. React infers it from
+ * `Function.name` or `Class.name`, so `function Profile() {}` and
+ * `const Profile = () => {}` are already named — there is nothing to fix and
+ * nothing to report. Only a component with no binding to take a name from
+ * renders as `Anonymous`, and only that is worth a diagnostic.
+ *
+ * The three shapes that actually lose their name:
+ *   - `export default () => <div />`      — no identifier anywhere
+ *   - `export default class extends Component {}`
+ *   - `memo(() => <div />)` / `forwardRef(...)` not bound to a variable
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'displayName';
 
 type RuleOptions = [];
+
+/** Functions React wraps without giving the inner component a name of its own. */
+const REACT_WRAPPERS = new Set(['memo', 'forwardRef']);
+
+type FunctionNode =
+  | TSESTree.FunctionDeclaration
+  | TSESTree.FunctionExpression
+  | TSESTree.ArrowFunctionExpression;
 
 export const displayName = createRule<RuleOptions, MessageIds>({
   name: 'display-name',
@@ -28,60 +49,128 @@ export const displayName = createRule<RuleOptions, MessageIds>({
     messages: {
       displayName: formatLLMMessage({
         icon: MessageIcons.WARNING,
-        issueName: 'Missing Display Name',
-        description: 'Component missing display name',
+        issueName: 'Anonymous Component',
+        description:
+          'Component has no name React can infer, so it renders as "Anonymous" in DevTools and stack traces',
         severity: 'LOW',
-        fix: 'Add displayName static property or named export',
-        documentationLink: 'https://react.dev/learn/components-and-props#displaying-a-custom-component',
+        fix: 'Assign it to a named variable, name the function, or set a displayName',
+        documentationLink:
+          'https://react.dev/learn/components-and-props#displaying-a-custom-component',
       }),
     },
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const report = (node: TSESTree.Node): void => {
+      context.report({ node, messageId: 'displayName' });
+    };
+
     return {
-      // Check class components
-      ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node)) {
-          const hasDisplayName = hasDisplayNameProperty(node);
-          if (!hasDisplayName) {
-            context.report({
-              node: node.id || node,
-              messageId: 'displayName',
-            });
-          }
+      /**
+       * `export default () => <div />` — the one function position with no
+       * identifier anywhere in the chain. A named `export default function
+       * Profile()` carries its own name and is skipped.
+       */
+      ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
+        const declaration = node.declaration;
+        if (!isFunctionNode(declaration) || declaration.id) return;
+        if (containsJSX(declaration.body)) report(declaration);
+      },
+
+      /**
+       * `memo(() => <div />)` with nowhere to take a name from. When the call
+       * is assigned — `const Row = memo(() => <div />)` — React reads the name
+       * off the binding, so nothing is reported.
+       */
+      CallExpression(node: TSESTree.CallExpression) {
+        if (!isReactWrapperCall(node) || hasInferableName(node)) return;
+        const inner = node.arguments[0];
+        if (inner && isFunctionNode(inner) && !inner.id && containsJSX(inner.body)) {
+          report(inner);
         }
       },
 
-      // Check function components
-      'VariableDeclarator, FunctionDeclaration'(node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration) {
-        const component = getComponentFromDeclaration(node);
-        if (component && isReactComponentFunction(component) && !hasDisplayNameInScope()) {
-          context.report({
-            node: getComponentNameNode(node),
-            messageId: 'displayName',
-          });
-        }
+      /**
+       * An anonymous class component. A named `class Profile extends Component`
+       * is named by `Class.name`, so `static displayName` is optional there.
+       */
+      'ClassDeclaration, ClassExpression'(
+        node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+      ) {
+        if (node.id || !isReactComponent(node)) return;
+        if (hasDisplayNameProperty(node) || hasInferableName(node)) return;
+        report(node);
       },
     };
   },
 });
 
 /**
- * Check if class declaration is a React component
+ * Does an identifier exist that React can read a name from?
+ *
+ * Wrapper calls are transparent: `const Row = memo(forwardRef(fn))` names the
+ * component via `Row`, so the walk steps out through them before looking for
+ * a binding.
  */
-function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
+function hasInferableName(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node | undefined = node.parent;
+  while (current && isReactWrapperCall(current)) {
+    current = current.parent;
+  }
+  switch (current?.type) {
+    case AST_NODE_TYPES.VariableDeclarator:
+      return current.id.type === AST_NODE_TYPES.Identifier;
+    // `Table.Row = memo(...)`, `{ Row: memo(...) }`, `static Row = memo(...)`
+    case AST_NODE_TYPES.AssignmentExpression:
+    case AST_NODE_TYPES.Property:
+    case AST_NODE_TYPES.PropertyDefinition:
+      return true;
+    default:
+      return false;
+  }
+}
+
+/** `memo(...)`, `React.memo(...)`, `forwardRef(...)`, `React.forwardRef(...)`. */
+function isReactWrapperCall(node: TSESTree.Node): node is TSESTree.CallExpression {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+  const callee = node.callee;
+  if (callee.type === AST_NODE_TYPES.Identifier) {
+    return REACT_WRAPPERS.has(callee.name);
+  }
+  return (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.property.type === AST_NODE_TYPES.Identifier &&
+    REACT_WRAPPERS.has(callee.property.name)
+  );
+}
+
+function isFunctionNode(node: TSESTree.Node): node is FunctionNode {
+  return (
+    node.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node.type === AST_NODE_TYPES.FunctionExpression ||
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression
+  );
+}
+
+/**
+ * Check if a class extends a React component base
+ */
+function isReactComponent(
+  node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+): boolean {
   if (!node.superClass) return false;
 
-  if (node.superClass.type === 'Identifier') {
+  if (node.superClass.type === AST_NODE_TYPES.Identifier) {
     return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
   }
 
-  if (node.superClass.type === 'MemberExpression') {
+  if (node.superClass.type === AST_NODE_TYPES.MemberExpression) {
     return (
-      node.superClass.object.type === 'Identifier' &&
+      node.superClass.object.type === AST_NODE_TYPES.Identifier &&
       node.superClass.object.name === 'React' &&
-      node.superClass.property.type === 'Identifier' &&
-      (node.superClass.property.name === 'Component' || node.superClass.property.name === 'PureComponent')
+      node.superClass.property.type === AST_NODE_TYPES.Identifier &&
+      (node.superClass.property.name === 'Component' ||
+        node.superClass.property.name === 'PureComponent')
     );
   }
 
@@ -89,13 +178,15 @@ function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
 }
 
 /**
- * Check if class has displayName property
+ * Check if class has a static displayName property
  */
-function hasDisplayNameProperty(node: TSESTree.ClassDeclaration): boolean {
+function hasDisplayNameProperty(
+  node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+): boolean {
   for (const member of node.body.body) {
     if (
-      member.type === 'PropertyDefinition' &&
-      member.key.type === 'Identifier' &&
+      member.type === AST_NODE_TYPES.PropertyDefinition &&
+      member.key.type === AST_NODE_TYPES.Identifier &&
       member.key.name === 'displayName' &&
       member.static
     ) {
@@ -106,84 +197,34 @@ function hasDisplayNameProperty(node: TSESTree.ClassDeclaration): boolean {
 }
 
 /**
- * Get component from declaration
+ * Does this subtree render JSX anywhere?
+ *
+ * No `visited` set and no null guard: an AST minus its `parent` back-reference
+ * is a finite tree, so the walk terminates on its own. Both were defensive
+ * cruft that no real parse could reach, and the only way to keep them at 100%
+ * coverage was a hand-built fake node.
  */
-function getComponentFromDeclaration(node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration): TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | TSESTree.FunctionDeclaration | null {
-  if (node.type === 'FunctionDeclaration') {
-    return node;
-  }
-
-  if (node.type === 'VariableDeclarator' && node.init) {
-    if (node.init.type === 'FunctionExpression' || node.init.type === 'ArrowFunctionExpression') {
-      return node.init;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Check if function is a React component
- */
-function isReactComponentFunction(node: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | TSESTree.FunctionDeclaration): boolean {
-  // Simple heuristic: check if function returns JSX or contains JSX
-  const body = node.type === 'FunctionDeclaration' ? node.body : node.body;
-  return containsJSX(body);
-}
-
-/**
- * Check if component has displayName in scope
- */
-function hasDisplayNameInScope(): boolean {
-  // Check for assignment to displayName after component declaration
-  // This is a simplified check - in practice, you'd want to check the scope
-  return false; // For now, always require explicit displayName
-}
-
-/**
- * Get component name node for reporting
- */
-function getComponentNameNode(node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration): TSESTree.Node {
-  if (node.type === 'FunctionDeclaration') {
-    return node.id || node;
-  }
-  return node.id || node;
-}
-
-/**
- * Check if node contains JSX
- */
-function containsJSX(node: TSESTree.Node | null | undefined, visited = new Set<TSESTree.Node>()): boolean {
-  if (!node) return false;
-  
-  if (visited.has(node)) return false;
-  visited.add(node);
-  
-  if (node.type === 'JSXElement' || node.type === 'JSXFragment') {
+function containsJSX(node: TSESTree.Node): boolean {
+  if (node.type === AST_NODE_TYPES.JSXElement || node.type === AST_NODE_TYPES.JSXFragment) {
     return true;
   }
 
-  // Skip non-child keys to avoid circular references
-  const skipKeys = new Set(['parent', 'range', 'loc', 'start', 'end', 'tokens', 'comments']);
-
   for (const key in node) {
-    if (skipKeys.has(key)) continue;
-    
+    // `parent` is the one edge that points back up; following it would loop.
+    if (key === 'parent') continue;
+
     const child = (node as unknown as Record<string, unknown>)[key];
-    if (child && typeof child === 'object') {
-      if (Array.isArray(child)) {
-        for (const item of child) {
-          if (item && typeof item === 'object' && 'type' in item) {
-            if (containsJSX(item as TSESTree.Node, visited)) {
-              return true;
-            }
-          }
-        }
-      } else if ('type' in child) {
-        if (containsJSX(child as TSESTree.Node, visited)) {
-          return true;
+    if (!child || typeof child !== 'object') continue;
+
+    if (Array.isArray(child)) {
+      for (const item of child) {
+        // Array holes are null, and `range` is a pair of numbers.
+        if (item && typeof item === 'object' && 'type' in item) {
+          if (containsJSX(item as TSESTree.Node)) return true;
         }
       }
+    } else if ('type' in child) {
+      if (containsJSX(child as TSESTree.Node)) return true;
     }
   }
 

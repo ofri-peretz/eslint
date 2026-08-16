@@ -267,3 +267,27 @@ ruleTester.run('lock: reserved example domains are not endpoints', noHttpUrls, {
     { code: "const u = 'http://notexample.com';", errors: 1 },
   ],
 });
+
+/**
+ * Regression lock — a literal being EXAMINED is a guard, not a destination.
+ *
+ * `canonic_module_name.indexOf('http://') !== -1` is pm2 deciding whether a module spec is
+ * a remote URL. Reporting it flags the security check as the vulnerability, which is exactly
+ * backwards. Shares `isProtocolInspection` with `no-unencrypted-transmission` so the two
+ * cannot disagree about what counts as inspection.
+ */
+ruleTester.run('lock: inspecting a protocol string is not using one', noHttpUrls, {
+  valid: [
+    { code: "if (name.indexOf('http://') !== -1) { install(name); }" },
+    { code: "if (url.startsWith('http://')) { reject(url); }" },
+    { code: "if (proto === 'http://') { upgrade(); }" },
+    { code: "const isHttp = spec.includes('http://');" },
+    { code: "spec.split('http://');" },
+    // `replace` writes its SECOND argument, so only the search operand is inspection.
+    { code: "url.replace('http://', 'https://');" },
+  ],
+  invalid: [
+    { code: "const u = 'http://api.acmecorp.io';", errors: 1 },
+    { code: "fetch('http://api.acmecorp.io/x');", errors: 1 },
+  ],
+});

@@ -101,26 +101,30 @@ describe('display-name: superclass shapes and anonymous components', () => {
   ruleTester.run('display-name', displayName, {
     valid: [
       {
-        name: 'non-React member superclass is not a component (L79 false → L88)',
-        code: 'class A extends Something.Else { m() {} }',
+        name: 'non-React member superclass is not a component',
+        code: 'export default class extends Something.Else { m() {} };',
       },
       {
-        name: 'call-expression superclass is not a component (L88)',
-        code: 'class B extends mixin() { m() {} }',
+        name: 'call-expression superclass is not a component',
+        code: 'export default class extends mixin() { m() {} };',
       },
       {
-        name: 'regex literal + array hole in body do not look like JSX (L176/L182 false arms)',
-        code: 'function util() { const r = /x/; const a = [1, , 2]; return r && a; }',
+        name: 'regex literal + array hole in body do not look like JSX (containsJSX false arms)',
+        code: 'export default () => { const r = /x/; const a = [1, , 2]; return r && a; };',
+      },
+      {
+        name: 'a named class takes its name from Class.name',
+        code: 'class C extends React.Component { render() { return null; } }',
       },
     ],
     invalid: [
       {
-        name: 'React.Component class without displayName (L79 member path)',
-        code: 'class C extends React.Component { render() { return null; } }',
+        name: 'anonymous React.Component subclass (member superclass path)',
+        code: 'export default class extends React.Component { render() { return <div />; } };',
         errors: [{ messageId: 'displayName' }],
       },
       {
-        name: 'anonymous default function component reports on node itself (L148 || fallback)',
+        name: 'anonymous default function component reports on the function node',
         code: 'export default function () { return <div />; }',
         errors: [{ messageId: 'displayName' }],
       },

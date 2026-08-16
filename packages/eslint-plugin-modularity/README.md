@@ -29,6 +29,45 @@ This plugin provides Modularity rules — module boundaries, circular dependency
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+## Why these rules are quiet
+
+**Noise creates apathy, and apathy is not a security posture.** A linter that reports
+a thousand things a week gets switched off in a month, and the real finding goes with
+it. So every rule here is built to be worth reading: we would rather miss a finding
+than spend your attention on one that was never real.
+
+That is a trade, and it is made deliberately. It costs recall, and we measure what it
+costs rather than assuming it is free.
+
+## How the rules decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — not on an identifier that happens to contain
+`query`, a method called `setItem`, or a file whose path contains `key`. Every one of
+those was a real false positive in this ecosystem, found by reading our own output on
+open-source projects and fixed with a test that fails on the unfixed rule.
+
+Where a rule has known false-positive shapes, its page carries a **Not a finding**
+section: what it deliberately stays quiet on, and what to check first when it fires
+and you disagree.
+
+## What you get
+
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
+`recommended`, and read the findings. If one of them is wrong,
+[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
+bug here, not a tuning exercise for you.
+
+How that is measured, on which projects, and where it falls short:
+[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
+
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity). 📚
@@ -170,12 +209,12 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the… | 🟢 |  |  |  | 💡 |  |
-| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Enforce domain-specific naming conventions with business context | 🟢 |  |  |  | 💡 |  |
-| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-mutable-exports?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Disallow mutable let/var declarations on exported bindings | 🟢 |  |  |  |  |  |
+| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the… | 🟢 |  | ⚠️ |  | 💡 |  |
+| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities. | 🟢 | 💼 |  |  | 💡 |  |
+| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Enforce domain-specific naming conventions with business context | 🟢 |  | ⚠️ |  | 💡 |  |
+| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities. | 🟢 | 💼 |  |  | 💡 |  |
+| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities. | 🟢 | 💼 |  |  | 💡 |  |
+| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-mutable-exports?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Disallow mutable let/var declarations on exported bindings | 🟢 |  | ⚠️ |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 

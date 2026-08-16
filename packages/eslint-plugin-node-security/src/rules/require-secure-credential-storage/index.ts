@@ -10,7 +10,12 @@
  * @see https://cwe.mitre.org/data/definitions/522.html
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  isEncrypted,
+  isWebStorageWrite,
+  storesACredential,
+} from '../../utils/credential-evidence';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -28,7 +33,7 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-secure-credential-storage.md',
       description: 'Enforce secure storage patterns for credentials',
       cwe: 'CWE-312',
-      cvss: 7.5,
+      cvss: 5.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -46,22 +51,18 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
   defaultOptions: [],
   create(context) {
     return {
+      /**
+       * A credential in `localStorage` / `sessionStorage`: readable by any script on
+       * the origin, and it survives the tab. This rule used to fire on any `.setItem`
+       * or `.writeFile` at all, with no evidence a credential was involved, and
+       * `require-storage-encryption` carried a byte-identical implementation — so every
+       * match was reported twice. Disk writes now belong to that rule; this one owns
+       * Web Storage. See utils/credential-evidence.ts.
+       */
       CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          ['setItem', 'writeFile'].includes(node.callee.property.name)
-        ) {
-          // Check for encryption wrapper
-          const hasEncryption = node.arguments.some(arg =>
-            arg.type === AST_NODE_TYPES.CallExpression &&
-            arg.callee.type === AST_NODE_TYPES.Identifier &&
-            arg.callee.name.includes('encrypt')
-          );
-          if (!hasEncryption) {
-            context.report({ node, messageId: 'violationDetected' });
-          }
-        }
+        if (!isWebStorageWrite(node)) return;
+        if (!storesACredential(node) || isEncrypted(node)) return;
+        context.report({ node, messageId: 'violationDetected' });
       },
     };
   },

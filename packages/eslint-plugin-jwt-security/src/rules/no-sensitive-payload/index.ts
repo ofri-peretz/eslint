@@ -34,7 +34,7 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
       description:
         'Prevent storing sensitive data in JWT payload which is only base64-encoded',
       cwe: 'CWE-359',
-      cvss: 5,
+      cvss: 5.3,
     },
     fixable: undefined,
     hasSuggestions: false,

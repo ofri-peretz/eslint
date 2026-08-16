@@ -54,13 +54,13 @@ describe('no-unlimited-resource-allocation', () => {
         },
         // Static path construction - should NOT be flagged as unlimited resource
         {
-          code: `fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
+          code: `import path from 'path'; fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
         },
         // Same static path construction, but using `path.resolve` instead of
         // `path.join` - exercises the `pathArg.callee.property.name === 'resolve'`
         // side of that binary-expr (only `'join'` was previously exercised).
         {
-          code: `fs.readFileSync(path.resolve(__dirname, 'data', 'users.json'));`,
+          code: `import path from 'path'; fs.readFileSync(path.resolve(__dirname, 'data', 'users.json'));`,
         },
         // Buffer.alloc with a spread element as its (only) argument -
         // exercises the true side of `sizeArg.type === 'SpreadElement'` in

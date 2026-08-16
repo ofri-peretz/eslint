@@ -31,6 +31,45 @@ This plugin provides Security validation for JSON Web Tokens (JWT) implementatio
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+## Why these rules are quiet
+
+**Noise creates apathy, and apathy is not a security posture.** A linter that reports
+a thousand things a week gets switched off in a month, and the real finding goes with
+it. So every rule here is built to be worth reading: we would rather miss a finding
+than spend your attention on one that was never real.
+
+That is a trade, and it is made deliberately. It costs recall, and we measure what it
+costs rather than assuming it is free.
+
+## How the rules decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — not on an identifier that happens to contain
+`query`, a method called `setItem`, or a file whose path contains `key`. Every one of
+those was a real false positive in this ecosystem, found by reading our own output on
+open-source projects and fixed with a test that fails on the unfixed rule.
+
+Where a rule has known false-positive shapes, its page carries a **Not a finding**
+section: what it deliberately stays quiet on, and what to check first when it fires
+and you disagree.
+
+## What you get
+
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
+`recommended`, and read the findings. If one of them is wrong,
+[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
+bug here, not a tuning exercise for you.
+
+How that is measured, on which projects, and where it falls short:
+[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
+
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-jwt?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security). 📚
@@ -105,19 +144,19 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-algorithm-confusion](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-confusion?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-347 |  |  | This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used wit… | 🟢 |  |  |  |  |  |
-| [no-algorithm-none](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-none?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-347 |  |  | This rule detects attempts to use the none algorithm which completely bypasses JWT signature verification | 🟢 |  |  |  |  |  |
-| [no-decode-without-verify](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-decode-without-verify?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-345 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [no-hardcoded-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-hardcoded-secret?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-798 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [no-sensitive-payload](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-sensitive-payload?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-359 |  |  | JWT payloads are NOT encrypted, only base64-encoded | 🟢 |  |  |  |  |  |
-| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-timestamp-manipulation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-294 |  |  | This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation | 🟢 |  |  |  |  |  |
-| [no-weak-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-weak-secret?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-326 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-algorithm-whitelist?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-757 |  |  | This rule enforces explicit algorithm specification in verify() calls | 🟢 |  |  |  |  |  |
-| [require-audience-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-audience-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-287 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-expiration](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-expiration?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-613 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-issued-at](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issued-at?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-294 |  |  | This rule ensures tokens have the iat claim for freshness validation | 🟢 |  |  |  |  |  |
-| [require-issuer-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issuer-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-287 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-max-age](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-max-age?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-294 |  |  | This rule mandates maxAge in verify operations | 🟢 |  |  |  |  |  |
+| [no-algorithm-confusion](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/no-algorithm-confusion?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-347 |  |  | This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used wit… | 🟢 | 💼 |  |  |  |  |
+| [no-algorithm-none](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/no-algorithm-none?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-347 |  |  | This rule detects attempts to use the none algorithm which completely bypasses JWT signature verification | 🟢 | 💼 |  |  |  |  |
+| [no-decode-without-verify](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/no-decode-without-verify?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-345 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-secret](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/no-hardcoded-secret?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-798 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [no-sensitive-payload](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/no-sensitive-payload?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-359 |  |  | JWT payloads are NOT encrypted, only base64-encoded | 🟢 |  | ⚠️ |  |  |  |
+| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/no-timestamp-manipulation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-294 |  |  | This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation | 🟢 | 💼 |  |  |  |  |
+| [no-weak-secret](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/no-weak-secret?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-326 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/require-algorithm-whitelist?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-757 |  |  | This rule enforces explicit algorithm specification in verify() calls | 🟢 | 💼 |  |  |  |  |
+| [require-audience-validation](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/require-audience-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-287 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-expiration](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/require-expiration?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-613 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [require-issued-at](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/require-issued-at?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-294 |  |  | This rule ensures tokens have the iat claim for freshness validation | 🟢 |  |  |  |  |  |
+| [require-issuer-validation](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/require-issuer-validation?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-287 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-max-age](https://eslint.interlace.tools/docs/security/plugin-jwt-security/rules/require-max-age?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security) | CWE-294 |  |  | This rule mandates maxAge in verify operations | 🟢 |  |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 

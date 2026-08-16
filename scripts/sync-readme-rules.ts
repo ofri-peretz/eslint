@@ -368,6 +368,103 @@ export interface ProcessOptions {
   typeMap: Map<string, TypeStatus>;
 }
 
+
+const DOCTRINE_START = '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->';
+const DOCTRINE_END = '<!-- AUTO-GENERATED:DOCTRINE:END -->';
+
+/**
+ * The why / how / what block, generated into every plugin README.
+ *
+ * It is ecosystem-wide, so it is generated rather than hand-copied: thirty
+ * hand-maintained copies of one position drift, and a doctrine that says different
+ * things in different packages is not a doctrine. The `## Philosophy` prose it replaces
+ * was already identical in every plugin and said nothing a reader could act on.
+ *
+ * Deliberately carries NO ecosystem totals — per BENCHMARK-PUBLISHING-PLAN.md §1, rule
+ * counts and benchmark figures in a plugin README read as inflated the moment someone
+ * counts the rule table below it. Numbers live in one place and everything else links.
+ */
+function renderDoctrine(): string {
+  return [
+    DOCTRINE_START,
+    '',
+    '## Why these rules are quiet',
+    '',
+    '**Noise creates apathy, and apathy is not a security posture.** A linter that reports',
+    'a thousand things a week gets switched off in a month, and the real finding goes with',
+    'it. So every rule here is built to be worth reading: we would rather miss a finding',
+    'than spend your attention on one that was never real.',
+    '',
+    'That is a trade, and it is made deliberately. It costs recall, and we measure what it',
+    'costs rather than assuming it is free.',
+    '',
+    '## How the rules decide',
+    '',
+    '**Evidence, not names.** A rule fires on what the code *does*, resolved through the',
+    "AST and ESLint's own scope analysis — not on an identifier that happens to contain",
+    '`query`, a method called `setItem`, or a file whose path contains `key`. Every one of',
+    'those was a real false positive in this ecosystem, found by reading our own output on',
+    'open-source projects and fixed with a test that fails on the unfixed rule.',
+    '',
+    'Where a rule has known false-positive shapes, its page carries a **Not a finding**',
+    'section: what it deliberately stays quiet on, and what to check first when it fires',
+    'and you disagree.',
+    '',
+    '## What you get',
+    '',
+    'The rules below. Security rules carry a CWE mapping and, where one is assigned, a',
+    'CVSS score; every rule carries a fix on its message — in prose for a human and as',
+    'structured JSON for an agent. Install it, enable',
+    '`recommended`, and read the findings. If one of them is wrong,',
+    '[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a',
+    'bug here, not a tuning exercise for you.',
+    '',
+    'How that is measured, on which projects, and where it falls short:',
+    '[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)',
+    'and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).',
+    '',
+    DOCTRINE_END,
+  ].join('\n');
+}
+
+/**
+ * Insert or refresh the doctrine block, immediately after `## Philosophy`.
+ *
+ * `## Philosophy` stays. It is the brand statement, and `readme-structure-lock.test.ts`
+ * requires it verbatim in every package — the first version of this replaced it and
+ * turned that gate red across 26 READMEs. The two say different things: Philosophy is
+ * who Interlace is, the doctrine is why these rules are quiet, how they decide, and what
+ * you get.
+ *
+ * Returns the README unchanged when there is no Philosophy section and no existing
+ * block, rather than guessing where it belongs — a README with its own structure is not
+ * something to rewrite blind.
+ */
+export function spliceDoctrine(readme: string): { content: string; modified: boolean } {
+  const block = renderDoctrine();
+
+  const start = readme.indexOf(DOCTRINE_START);
+  const end = readme.indexOf(DOCTRINE_END);
+
+  // Any pairing other than both-present-in-order is a corrupt file, and each broken
+  // shape corrupts it differently if waved through: an END before START makes the
+  // second slice run backwards over the block, and an orphan END leaves a stray marker
+  // behind a freshly inserted one. Refuse all of them rather than guess.
+  if (start !== -1 || end !== -1) {
+    if (start === -1) throw new Error('DOCTRINE:END without a matching START');
+    if (end === -1) throw new Error('DOCTRINE:START without a matching END');
+    if (end < start) throw new Error('DOCTRINE:END appears before DOCTRINE:START');
+    const content = readme.slice(0, start) + block + readme.slice(end + DOCTRINE_END.length);
+    return { content, modified: content !== readme };
+  }
+
+  const philosophy = readme.match(/^## Philosophy\n[\s\S]*?(?=^## )/m);
+  if (!philosophy) return { content: readme, modified: false };
+
+  const content = readme.replace(philosophy[0], `${philosophy[0]}${block}\n\n`);
+  return { content, modified: content !== readme };
+}
+
 export interface ProcessResult {
   slug: string;
   ruleCount: number;
@@ -429,6 +526,11 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   let result: { content: string; modified: boolean };
   try {
     result = spliceTable(readme, table);
+    const withDoctrine = spliceDoctrine(result.content);
+    result = {
+      content: withDoctrine.content,
+      modified: result.modified || withDoctrine.modified,
+    };
   } catch (e) {
     return {
       slug: entry.slug,

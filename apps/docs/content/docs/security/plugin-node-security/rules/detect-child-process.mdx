@@ -403,3 +403,19 @@ execFile('cmd', [], { env: { PATH: userInput } });
 | `strategy` | `"validate"` \| `"sanitize"` \| `"restrict"` \| `"auto"` | `"auto"` | Strategy for fixing command injection (auto = smart detection) |
 | `taintSources` | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process) |
 | `reportUnresolvedCommands` | `boolean` | `false` | Report a command whose provenance cannot be resolved. Restores the pre-inversion "any dynamic argument is dangerous" behaviour. |
+
+## Not a finding
+
+Shapes this rule deliberately stays quiet on, and why. Each is measured, not assumed.
+
+| Code | Why it is silent |
+| --- | --- |
+| `spawn('ls')` | A literal command names the binary. Nothing a request sends can change which program runs. |
+| `var cp = require('child_process');`<br />`function fn () { var cp = /re/; cp.exec(s); }` | The inner `cp` is a RegExp. The module binding is resolved through scope analysis, not matched by name, so an inner declaration of the same name does not inherit the alias. |
+| `function run (cp, req) { cp.exec(req.query.q); }` | `cp` is a parameter. Whatever it is, it is not the module. |
+| `cp.exec(process.env.DEPLOY_CMD)` | Environment configuration is set by whoever runs the process, not by a request. Set `taintSources` if your threat model differs. |
+
+**If it fires and you disagree**, the useful question is which of the two halves is
+wrong: the sink (is this really `child_process`?) or the taint (can a request reach that
+argument?). `reportUnresolvedCommands` turns on the stricter "any dynamic argument"
+behaviour if you would rather triage more.

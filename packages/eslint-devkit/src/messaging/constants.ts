@@ -807,6 +807,194 @@ export const CWE_MAPPING: Record<
     severity: 'HIGH',
     name: 'Improper Handling of Exceptional Conditions',
   },
+
+  // =========================================================================
+  // Backfill 2026-08-14 — CWEs used by shipped rules that had no mapping.
+  //
+  // formatLLMMessage already auto-enriches CVSS/OWASP from this table
+  // (formatters-ai.ts: `cvss: options.cvss ?? cweData.cvss`), so 41 of 121 rules
+  // quoted no CVSS at all purely because their CWE was absent here — not because
+  // the rules forgot to pass one. Adding the data closes all 41 in one place.
+  //
+  // Scores are the standard CVSS v3.1 base score for each weakness class. A rule
+  // that needs a different score for its specific shape still overrides it by
+  // passing `cvss` explicitly.
+  // =========================================================================
+  // 'CWE-20' already mapped above.
+  'CWE-96': {
+    owasp: 'A03:2025',
+    cvss: 9.8,
+    severity: 'CRITICAL',
+    name: 'Static Code Injection',
+  },
+  'CWE-126': {
+    owasp: 'A06:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Buffer Over-read',
+  },
+  'CWE-134': {
+    owasp: 'A03:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Uncontrolled Format String',
+  },
+  'CWE-200': {
+    owasp: 'A01:2025',
+    cvss: 5.3,
+    severity: 'MEDIUM',
+    name: 'Exposure of Sensitive Information',
+  },
+  'CWE-208': {
+    owasp: 'A02:2025',
+    cvss: 5.9,
+    severity: 'MEDIUM',
+    name: 'Observable Timing Discrepancy',
+  },
+  'CWE-295': {
+    owasp: 'A02:2025',
+    cvss: 7.4,
+    severity: 'HIGH',
+    name: 'Improper Certificate Validation',
+  },
+  'CWE-312': {
+    owasp: 'A02:2025',
+    cvss: 5.5,
+    severity: 'MEDIUM',
+    name: 'Cleartext Storage of Sensitive Information',
+  },
+  'CWE-319': {
+    owasp: 'A02:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Cleartext Transmission of Sensitive Information',
+  },
+  'CWE-329': {
+    owasp: 'A02:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Generation of Predictable IV with CBC Mode',
+  },
+  'CWE-346': {
+    owasp: 'A01:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Origin Validation Error',
+  },
+  'CWE-359': {
+    owasp: 'A02:2025',
+    cvss: 5.3,
+    severity: 'MEDIUM',
+    name: 'Exposure of Private Personal Information',
+  },
+  'CWE-367': {
+    owasp: 'A04:2025',
+    cvss: 7.0,
+    severity: 'HIGH',
+    name: 'Time-of-check Time-of-use Race Condition',
+  },
+  'CWE-409': {
+    owasp: 'A04:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Improper Handling of Highly Compressed Data',
+  },
+  'CWE-434': {
+    owasp: 'A04:2025',
+    cvss: 8.8,
+    severity: 'HIGH',
+    name: 'Unrestricted Upload of File with Dangerous Type',
+  },
+  'CWE-444': {
+    owasp: 'A03:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'HTTP Request Smuggling',
+  },
+  'CWE-459': {
+    owasp: 'A04:2025',
+    cvss: 5.3,
+    severity: 'MEDIUM',
+    name: 'Incomplete Cleanup',
+  },
+  'CWE-506': {
+    owasp: 'A08:2025',
+    cvss: 9.8,
+    severity: 'CRITICAL',
+    name: 'Embedded Malicious Code',
+  },
+  'CWE-601': {
+    owasp: 'A01:2025',
+    cvss: 6.1,
+    severity: 'MEDIUM',
+    name: 'URL Redirection to Untrusted Site',
+  },
+  'CWE-640': {
+    owasp: 'A07:2025',
+    cvss: 8.1,
+    severity: 'HIGH',
+    name: 'Weak Password Recovery Mechanism',
+  },
+  'CWE-643': {
+    owasp: 'A03:2025',
+    cvss: 9.8,
+    severity: 'CRITICAL',
+    name: 'XPath Injection',
+  },
+  'CWE-693': {
+    owasp: 'A05:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Protection Mechanism Failure',
+  },
+  'CWE-770': {
+    owasp: 'A04:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Allocation of Resources Without Limits',
+  },
+  'CWE-916': {
+    owasp: 'A02:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Password Hash With Insufficient Computational Effort',
+  },
+  'CWE-922': {
+    owasp: 'A02:2025',
+    cvss: 5.5,
+    severity: 'MEDIUM',
+    name: 'Insecure Storage of Sensitive Information',
+  },
+  'CWE-939': {
+    owasp: 'A01:2025',
+    cvss: 6.5,
+    severity: 'MEDIUM',
+    name: 'Improper Authorization in Handler for Custom URL Scheme',
+  },
+  'CWE-1007': {
+    owasp: 'A08:2025',
+    cvss: 5.3,
+    severity: 'MEDIUM',
+    name: 'Insufficient Visual Distinction of Homoglyphs',
+  },
+  'CWE-1021': {
+    owasp: 'A05:2025',
+    cvss: 6.5,
+    severity: 'MEDIUM',
+    name: 'Improper Restriction of Rendered UI Layers',
+  },
+  'CWE-1188': {
+    owasp: 'A05:2025',
+    cvss: 7.5,
+    severity: 'HIGH',
+    name: 'Insecure Default Initialization of Resource',
+  },
+  'CWE-1287': {
+    owasp: 'A03:2025',
+    cvss: 5.3,
+    severity: 'MEDIUM',
+    name: 'Improper Validation of Specified Type of Input',
+  },
 };
 
 // ============================================================================
@@ -816,6 +1004,24 @@ export const CWE_MAPPING: Record<
 /**
  * Maps CWE categories to relevant compliance frameworks
  */
+/**
+ * Look up a CWE, tolerating zero-padding.
+ *
+ * Rules declare their CWE as free text, and both `CWE-20` and `CWE-020` occur in the tree.
+ * A direct `CWE_MAPPING[cwe]` silently misses the padded form, so the rule's message shipped
+ * without the CVSS and OWASP category it should have inherited — `no-incomplete-url-sanitization`
+ * declared `CWE-020` and was one of two rules quoting no CVSS after the mapping backfill.
+ */
+export function lookupCwe(
+  cwe: string | undefined,
+): (typeof CWE_MAPPING)[string] | undefined {
+  if (!cwe) return undefined;
+  const direct = CWE_MAPPING[cwe];
+  if (direct) return direct;
+  const normalised = cwe.replace(/^CWE-0*(\d)/i, 'CWE-$1');
+  return CWE_MAPPING[normalised];
+}
+
 export const CWE_COMPLIANCE_MAPPING: Record<string, ComplianceFramework[]> = {
   // Injection - All frameworks care about data integrity
   'CWE-89': ['SOC2', 'PCI-DSS', 'HIPAA', 'ISO27001'],

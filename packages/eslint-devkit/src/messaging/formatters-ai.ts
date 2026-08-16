@@ -38,10 +38,10 @@ import type {
   AgentMessageOptions,
 } from './types';
 import {
-  CWE_MAPPING,
   CWE_COMPLIANCE_MAPPING,
   OWASP_DETAILS,
   severityToCVSS,
+  lookupCwe,
 } from './constants';
 import {
   resolveAIMode,
@@ -189,7 +189,7 @@ function enrichFromCWE(
 ): EnterpriseMessageOptions {
   if (!options.cwe) return options;
 
-  const cweData = CWE_MAPPING[options.cwe];
+  const cweData = lookupCwe(options.cwe);
   if (!cweData) return options;
 
   return {

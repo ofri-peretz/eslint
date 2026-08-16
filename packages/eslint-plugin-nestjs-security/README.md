@@ -31,6 +31,45 @@ This plugin provides Security rules tailored for NestJS applications (Controller
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+## Why these rules are quiet
+
+**Noise creates apathy, and apathy is not a security posture.** A linter that reports
+a thousand things a week gets switched off in a month, and the real finding goes with
+it. So every rule here is built to be worth reading: we would rather miss a finding
+than spend your attention on one that was never real.
+
+That is a trade, and it is made deliberately. It costs recall, and we measure what it
+costs rather than assuming it is free.
+
+## How the rules decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — not on an identifier that happens to contain
+`query`, a method called `setItem`, or a file whose path contains `key`. Every one of
+those was a real false positive in this ecosystem, found by reading our own output on
+open-source projects and fixed with a test that fails on the unfixed rule.
+
+Where a rule has known false-positive shapes, its page carries a **Not a finding**
+section: what it deliberately stays quiet on, and what to check first when it fires
+and you disagree.
+
+## What you get
+
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
+`recommended`, and read the findings. If one of them is wrong,
+[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
+bug here, not a tuning exercise for you.
+
+How that is measured, on which projects, and where it falls short:
+[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
+
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security). 📚
@@ -174,20 +213,18 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 |  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-
-| Rule                                                                                                                                                                                                                              |   CWE   |  OWASP   | CVSS | Description                                                                                                  | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----: | :------: | :--: | :----------------------------------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
-| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                 | CWE-200 | A01:2021 |      | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not…  | 🟢  |     | ⚠️  |     |     |     |
-| [no-hybrid-app-config-loss](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-hybrid-app-config-loss?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                 | CWE-20  | A03:2021 |      | Detect connectMicroservice() without inheritAppConfig, which silently drops every global pipe and guard fro… | 🟢  | 💼  |     |     |     |     |
-| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)               | CWE-20  | A03:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:    | 🟡  |     | ⚠️  |     |     |     |
-| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                               | CWE-942 | A05:2021 |      | Flags CORS configured to accept any origin — a bare enableCors(), origin '*', or the reflecting origin true. | 🟢  | 💼  |     |     |     |     |
-| [no-res-bypass-serialization](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-res-bypass-serialization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)             | CWE-200 | A01:2021 |      | This rule detects route handlers that inject @Res() without passthrough and then write an object, which sil… | 🟢  |     | ⚠️  |     |     |     |
-| [no-unguarded-swagger](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-unguarded-swagger?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                           | CWE-200 | A01:2021 |      | This rule detects SwaggerModule.setup() running unconditionally in an application bootstrap, which publishe… | 🟢  |     | ⚠️  |     |     |     |
-| [no-unsafe-multer-filename](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-unsafe-multer-filename?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                 | CWE-22  | A01:2021 |      | Flags a multer diskStorage filename callback that stores an upload under the name the client chose.          | 🟢  | 💼  |     |     |     |     |
-| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                                       | CWE-306 | A01:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:    | 🟢  | 💼  |     |     |     |     |
-| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security)                                 | CWE-770 | A05:2021 |      | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢  |     | ⚠️  |     |     |     |
-| [require-validation-pipe-whitelist](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-915 | A03:2021 |      | Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of rea… | 🟢  | 💼  |     |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-200 | A01:2021 |  | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not… | 🟢 |  | ⚠️ |  |  |  |
+| [no-hybrid-app-config-loss](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-hybrid-app-config-loss?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | Detect connectMicroservice() without inheritAppConfig, which silently drops every global pipe and guard fro… | 🟢 | 💼 |  |  |  |  |
+| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟡 |  | ⚠️ |  |  |  |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-permissive-cors?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-942 | A05:2021 |  | Flags CORS configured to accept any origin — a bare enableCors(), origin '*', or the reflecting origin true. | 🟢 | 💼 |  |  |  |  |
+| [no-res-bypass-serialization](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-res-bypass-serialization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-200 | A01:2021 |  | This rule detects route handlers that inject @Res() without passthrough and then write an object, which sil… | 🟢 |  | ⚠️ |  |  |  |
+| [no-unguarded-swagger](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-unguarded-swagger?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-200 | A01:2021 |  | This rule detects SwaggerModule.setup() running unconditionally in an application bootstrap, which publishe… | 🟢 |  | ⚠️ |  |  |  |
+| [no-unsafe-multer-filename](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-unsafe-multer-filename?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-22 | A01:2021 |  | Flags a multer diskStorage filename callback that stores an upload under the name the client chose. | 🟢 | 💼 |  |  |  |  |
+| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-306 | A01:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-770 | A05:2021 |  | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢 |  | ⚠️ |  |  |  |
+| [require-validation-pipe-whitelist](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-nestjs-security) | CWE-915 | A03:2021 |  | Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of rea… | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 
 ## 🔗 Related ESLint Plugins

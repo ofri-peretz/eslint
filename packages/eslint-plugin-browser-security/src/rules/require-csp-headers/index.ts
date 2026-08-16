@@ -26,7 +26,7 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-csp-headers.md',
       description: 'Require Content Security Policy headers',
       cwe: 'CWE-1021',
-      cvss: 5,
+      cvss: 6.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

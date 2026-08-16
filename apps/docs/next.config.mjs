@@ -16,6 +16,23 @@ const config = {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
   },
   reactStrictMode: true,
+
+  // Extra hostnames the DEV server will accept, comma-separated.
+  //
+  // Next blocks unknown hosts in dev, which breaks any remote sandbox that
+  // serves the preview through its own hostname. Vendor-neutral on purpose: a
+  // sandbox sets `DEV_ALLOWED_ORIGINS` to whatever host it uses and nothing in
+  // this repo learns that vendor's name, its env-var spelling, or its port
+  // scheme. The alternative on offer wired one vendor's variable and a
+  // hardcoded `3000-` prefix straight into this file.
+  //
+  // Dev-only, and empty by default: unset, this is exactly the stock behaviour,
+  // and `npm run dev` on localhost:3000 never needs it.
+  allowedDevOrigins: (process.env.DEV_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+
   // No `output: 'standalone'`. Nothing consumes .next/standalone (the repo's
   // Dockerfile ships the ESLint CLI, not this app), and under Vercel's
   // current builder a standalone build never emits

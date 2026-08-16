@@ -47,7 +47,7 @@ export interface Options {
   /** Allow missing rate limiting in test files. Default: false */
   allowInTests?: boolean;
 
-  /** Alternative rate limiting middleware names. Default: [] */
+  /** Alternative rate-limiting middleware names. Default: [] */
   alternativeMiddleware?: string[];
 
   /**
@@ -93,7 +93,7 @@ const RATE_LIMIT_PACKAGES = [
 ];
 
 /**
- * Check if a node is a rate limiting middleware usage
+ * Check if a node is a rate-limiting middleware usage
  */
 function isRateLimitMiddleware(
   node: TSESTree.CallExpression,
@@ -132,7 +132,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-rate-limiting.md',
       description:
-        'Require rate limiting middleware in Express.js applications',
+        'Require rate-limiting middleware in Express.js applications',
       cwe: 'CWE-770',
       cvss: 7.5,
     },
@@ -151,7 +151,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
       addRateLimiting: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Add Rate Limiting',
-        description: 'Add rate limiting middleware to protect against abuse',
+        description: 'Add rate-limiting middleware to protect against abuse',
         severity: 'LOW',
         fix: "import rateLimit from 'express-rate-limit'; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }));",
         documentationLink: 'https://www.npmjs.com/package/express-rate-limit',

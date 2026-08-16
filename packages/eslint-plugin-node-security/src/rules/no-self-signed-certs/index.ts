@@ -33,7 +33,7 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-self-signed-certs.md',
       description: 'Disallow rejectUnauthorized: false in TLS options',
       cwe: 'CWE-295',
-      cvss: 9.5,
+      cvss: 7.4,
     },
     hasSuggestions: true,
     messages: {

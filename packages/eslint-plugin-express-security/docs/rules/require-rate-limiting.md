@@ -1,6 +1,6 @@
 ---
 title: require-rate-limiting
-description: This rule detects Express.js applications missing rate limiting middleware
+description: This rule detects Express.js applications missing rate-limiting middleware
 tags: ['security', 'express']
 category: security
 severity: medium
@@ -8,11 +8,11 @@ cwe: CWE-770
 autofix: false
 ---
 
-> Require rate limiting middleware to prevent DDoS and brute-force attacks
+> Require rate-limiting middleware to prevent DDoS and brute-force attacks
 
 <!-- @rule-summary -->
 
-This rule detects Express.js applications missing rate limiting middleware
+This rule detects Express.js applications missing rate-limiting middleware
 <!-- @/rule-summary -->
 
 **Severity:** 🟡 Warning  

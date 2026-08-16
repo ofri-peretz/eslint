@@ -641,3 +641,25 @@ describe('corpus regressions', () => {
     ],
   });
 });
+
+/**
+ * Regression lock — HTML characters only.
+ *
+ * `dangerousChars` also carried the SHELL metacharacters ` $ { } | ; ( ) in a rule whose
+ * messages are `incompleteHtmlEscaping` and `unsafeReplaceSanitization`. A pipe needs no
+ * escaping in HTML, so `chalk.green(name + ' | ')` was reported as unescaped markup — as was
+ * any literal containing a semicolon, parenthesis or brace, which is most of them. Shell
+ * metacharacters belong to the command-injection rules, which have their own lists.
+ */
+ruleTester.run('lock: dangerousChars is HTML, not shell', noImproperSanitization, {
+  valid: [
+    { code: "process.stdout.write(chalk.green(name + ' | '));" },
+    { code: "const s = 'a; b(c)';" },
+    { code: "const s = prefix + '${}';" },
+    { code: 'const s = tag + "`" + value;' },
+  ],
+  invalid: [
+    // Real HTML characters still report.
+    { code: 'el.innerHTML = "<div>" + userInput + "</div>";', errors: 2 },
+  ],
+});

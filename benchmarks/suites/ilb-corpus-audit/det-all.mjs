@@ -1,55 +1,38 @@
-// Local-source FP audit: which safe/ fixtures still fire, and from which rule.
-// Run: node fp-audit.mjs
-import { ESLint } from 'eslint';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const CORPUS = path.resolve(HERE, '../../corpus');
-const PKGS = path.resolve(HERE, '../../../packages');
+/**
+ * Detection on the labelled corpus: how many `vulnerable/` fixtures are caught,
+ * and by which rule. Each fixture carries a "This MUST be detected" comment.
+ *
+ * Reported under both presets — `recommended` is what a consumer installs,
+ * `all` is the maximal configuration. Quoting the second as if it were the
+ * first overstates coverage. See harness.mjs.
+ *
+ * Run: node det-all.mjs
+ */
+import { fixtures, lint, makeEslint, ruleCount } from './harness.mjs';
 
+const vulnerable = fixtures('vulnerable');
 
+for (const preset of ['recommended', 'all']) {
+  const eslint = makeEslint(preset);
+  const byRule = {};
+  const missed = [];
+  let caught = 0;
 
+  for (const fixture of vulnerable) {
+    const msgs = await lint(eslint, fixture);
+    if (!msgs.length) {
+      missed.push(`${fixture.dir}/${fixture.file}`);
+      continue;
+    }
+    caught++;
+    for (const m of msgs) byRule[m.ruleId] = (byRule[m.ruleId] ?? 0) + 1;
+  }
 
-const load = async (p) => (await import(`${PKGS}/${p}/dist/src/index.js`)).default;
-const sc = await load('eslint-plugin-secure-coding');
-const bs = await load('eslint-plugin-browser-security');
-const ns = await load('eslint-plugin-node-security');
-const jwt = await load('eslint-plugin-jwt-security');
-const mongo = await load('eslint-plugin-mongodb-security');
-const a11y = await load('eslint-plugin-react-a11y');
-const exp = await load('eslint-plugin-express-security');
-const tsp = (await import('@typescript-eslint/parser')).default;
-
-const all = (p, pre) => Object.fromEntries(Object.keys(p.rules).map((r) => [`${pre}/${r}`, 'error']));
-const eslint = new ESLint({
-  overrideConfigFile: true,
-  overrideConfig: [
-    { files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
-      languageOptions: { ecmaVersion: 'latest', sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } },
-      plugins: { 'secure-coding': sc, 'browser-security': bs, 'node-security': ns, 'jwt-security': jwt, 'mongodb-security': mongo, 'react-a11y': a11y, 'express-security': exp },
-      rules: { ...all(sc, 'secure-coding'), ...all(bs, 'browser-security'), ...all(ns, 'node-security'), ...all(jwt, 'jwt-security'), ...all(mongo, 'mongodb-security'), ...all(a11y, 'react-a11y'), ...all(exp, 'express-security') } },
-    { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tsp } },
-  ],
-});
-
-const byRule = {};
-let files = 0, safe = 0;
-for (const dir of fs.readdirSync(CORPUS).sort()) {
-  const d = path.join(CORPUS, dir, 'vulnerable');
-  if (!fs.existsSync(d)) continue;
-  for (const f of fs.readdirSync(d).filter((x) => /\.[jt]sx?$/.test(x))) {
-    safe++;
-    const res = await eslint.lintText(fs.readFileSync(path.join(d, f), 'utf8'), { filePath: `case${path.extname(f)}` });
-    const msgs = (res[0]?.messages ?? []).filter((m) => m.ruleId);
-    if (!msgs.length) continue;
-    files++;
-    console.log(`${dir}/safe/${f}`);
-    msgs.forEach((m) => {
-      byRule[m.ruleId] = (byRule[m.ruleId] ?? 0) + 1;
-      console.log(`    ${m.ruleId}  L${m.line}`);
-    });
+  const pct = ((caught / vulnerable.length) * 100).toFixed(1);
+  console.log(`\n══ ${preset}  (${ruleCount(preset)} rules)`);
+  console.log(`DETECT ${caught}/${vulnerable.length} (${pct}%)`);
+  if (missed.length) {
+    console.log('\nundetected:');
+    missed.forEach((m) => console.log(`  ${m}`));
   }
 }
-console.log(`\nFP ${files}/${safe} (${((files / safe) * 100).toFixed(1)}%)\n`);
-Object.entries(byRule).sort((a, b) => b[1] - a[1]).forEach(([r, c]) => console.log(`  ${String(c).padStart(3)}  ${r}`));

@@ -41,10 +41,10 @@ import type {
   PerformanceMessageOptions,
 } from './types-v2';
 import {
-  CWE_MAPPING,
   CWE_COMPLIANCE_MAPPING,
   OWASP_DETAILS,
   severityToCVSS,
+  lookupCwe,
 } from './constants';
 
 // ============================================================================
@@ -136,7 +136,7 @@ function renderDocs(docs?: string): string {
 function enrichSecurity(options: SecurityMessageOptions): SecurityMessageOptions {
   if (!options.cwe) return options;
 
-  const cweData = CWE_MAPPING[options.cwe];
+  const cweData = lookupCwe(options.cwe);
   if (!cweData) return options;
 
   return {

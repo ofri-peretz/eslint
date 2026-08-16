@@ -113,7 +113,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | -------------------- | ---------- | ------- | ----------------------------------- |
 | `allowLiterals`      | `boolean`  | `false` | Allow literal string regex patterns |
 | `additionalPatterns` | `string[]` | `[]`    | Additional RegExp creation patterns |
-| `maxPatternLength`   | `number`   | `100`   | Maximum allowed pattern length      |
+| `maxPatternLength`   | `number`   | `100`   | Maximum allowed length for a DYNAMIC pattern before it reports      |
 
 ## Examples
 
@@ -285,4 +285,23 @@ obj[method](userInput);
 | ------ | ---- | ------- | ----------- |
 | `allowLiterals` | `boolean` | `false` | Allow literal string regex patterns |
 | `additionalPatterns` | `string[]` | `[]` | Additional RegExp creation patterns to check |
-| `maxPatternLength` | `number` | `100` | Maximum allowed pattern length for dynamic regex |
+| `maxPatternLength` | `number` | `100` | Maximum allowed length for a DYNAMIC pattern before it reports for dynamic regex |
+
+## Not a finding
+
+The boundary is **static resolvability**, not proven attacker control. A pattern is
+accepted when this file can prove it cannot change; anything whose provenance is
+unresolved — a parameter, an import, `config.pattern` — reports, because a rule cannot
+show from one file that a value is safe. That is deliberately conservative in the
+reporting direction.
+
+| Code | Why it is silent |
+| --- | --- |
+| `const source = 'ab+c'; new RegExp(source)` | Resolves to a constant. |
+| `const EXTS = ['png','jpg']; new RegExp(EXTS.join('\|'))` | Constant-preserving methods over a constant array. |
+| `const P = '^v'; new RegExp(P + '\\d+')` | Concatenation of constants. |
+| `for (let i = 0; i < 3; i++) new RegExp('{' + i + '}')` | The loop drives the counter. |
+
+**If it fires**, the pattern reaches a name this file cannot resolve, or a
+constant-preserving chain deeper than the walk follows. A parameter could be anything,
+which is the case the rule exists for.

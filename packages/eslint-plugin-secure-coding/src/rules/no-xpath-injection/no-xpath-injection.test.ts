@@ -216,21 +216,18 @@ describe('no-xpath-injection', () => {
               },
             ],
           },
+          // Both used to assert with NO XPath string and NO evaluator anywhere — a match on
+          // the declaration name plus a match on the initialiser name, and nothing else.
+          // That pair reported `const QueryValidateSchema = QueryInputSchema` (a Zod schema)
+          // as CWE-643 on real source. The declaration must now reach an evaluator, and the
+          // report lands there.
           {
-            code: 'const xpathQuery = req.params.query;',
-            errors: [
-              {
-                messageId: 'xpathInjection',
-              },
-            ],
+            code: 'const xpathQuery = req.params.query; doc.evaluate(xpathQuery, doc);',
+            errors: [{ messageId: 'unvalidatedXpathInput' }],
           },
           {
-            code: 'let searchPath = userInput;',
-            errors: [
-              {
-                messageId: 'xpathInjection',
-              },
-            ],
+            code: 'let searchPath = userInput; xpath.select(searchPath, doc);',
+            errors: [{ messageId: 'unvalidatedXpathInput' }],
           },
         ],
       },
@@ -337,10 +334,8 @@ describe('no-xpath-injection', () => {
               res.json(result);
             });
           `,
+          // One defect, one finding: the declaration no longer reports alongside the sink.
           errors: [
-            {
-              messageId: 'xpathInjection',
-            },
             {
               messageId: 'xpathInjection',
             },
@@ -353,10 +348,8 @@ describe('no-xpath-injection', () => {
             const xpath = \`//user[@id='\${maliciousQuery}']\`;
             const node = xml.evaluate(xpath, xmlDoc);
           `,
+          // One defect, one finding: the declaration no longer reports alongside the sink.
           errors: [
-            {
-              messageId: 'xpathInjection',
-            },
             {
               messageId: 'unsafeXpathConcatenation',
             },
@@ -390,9 +383,6 @@ describe('no-xpath-injection', () => {
           // the same string was injection to one path and invisible to the
           // other. Both now use XPATH_SYNTAX.
           errors: [
-            {
-              messageId: 'xpathInjection',
-            },
             {
               messageId: 'unsafeXpathConcatenation',
             },
@@ -496,10 +486,6 @@ describe('no-xpath-injection', () => {
       valid: [
         // id 15: non-req MemberExpression init → isUntrustedXpathInput second-inner-if false arm
         { code: 'const xpathQuery = foo.bar;' },
-        // id 21: destructured param → param.type !== Identifier → false arm
-        {
-          code: 'function f({id}) { document.evaluate("//user[@name=" + id + "]", document); }',
-        },
         // id 22: isXpathInputValidated true arm — validation function wraps the template
         { code: 'validateXPath(`/users/user[@id="${userInput}"]`)' },
         // id 31: XPath call with zero args → early return
@@ -554,9 +540,22 @@ const xpath = \`//users/..\``,
           errors: [{ messageId: 'dangerousXpathExpression' }],
         },
         // reachesXpathSink walks out through a concatenation.
+        // Two DISTINCT findings, not a duplicate: `xpathInjection` says a dynamic value
+        // reaches an evaluator, `dangerousXpathExpression` says the literal carries
+        // parent-axis traversal. Different information, different fixes.
         {
           code: 'document.evaluate(`//users/..` + suffix, doc);',
-          errors: [{ messageId: 'dangerousXpathExpression' }],
+          errors: [
+            { messageId: 'xpathInjection' },
+            { messageId: 'dangerousXpathExpression' },
+          ],
+        },
+        // Moved from `valid` (was "id 21: destructured param"). A destructured parameter
+        // concatenated into an XPath string and handed to `document.evaluate` IS injection.
+        // It was only "valid" because `id` is not in the taint-NAME list.
+        {
+          code: 'function f({id}) { document.evaluate("//user[@name=" + id + "]", document); }',
+          errors: 1,
         },
         // id 69+70: leftUntrusted = true (untrusted identifier on left of +)
         {
@@ -723,7 +722,7 @@ const xpath = \`//users/..\``,
       expect(reports[0].data?.line).toBe('0');
     });
 
-    it('VariableDeclarator xpathInjection falls back to line 0 when loc is missing', () => {
+    it('VariableDeclarator declaration path stays silent without a sink', () => {
       const { listeners, reports } = createWithMockContext(noXpathInjection);
       const variableDeclarator = listeners.VariableDeclarator as (
         n: unknown,
@@ -735,8 +734,12 @@ const xpath = \`//users/..\``,
         init: { type: 'Identifier', name: 'userInput', parent: undefined },
       });
 
-      expect(reports).toHaveLength(1);
-      expect(reports[0].data?.line).toBe('0');
+      // The declaration path now requires the declared variable to reach an evaluator, so a
+      // bare identifier-to-identifier mock reports nothing. That name-only branch is exactly
+      // what reported `const QueryValidateSchema = QueryInputSchema` as CWE-643 on real
+      // source. The loc fallback it used to cover is now hoisted and shared with the literal
+      // branch, which the mock above exercises.
+      expect(reports).toHaveLength(0);
     });
   });
 });
@@ -816,6 +819,112 @@ describe('corpus regression — URIs, cache keys and file paths are not XPath', 
         name: 'a parent axis inside a real XPath literal still reports',
         code: `const xpathQuery = "//users/user/..";`,
         errors: [{ messageId: 'dangerousXpathExpression' }],
+      },
+    ],
+  });
+});
+
+/**
+ * Regression lock — evidence, not names. Both defects found by hand-reading real findings
+ * across 20 open-source projects.
+ *
+ * FALSE POSITIVE: two name matchers stacked. The declaration name had to contain
+ * xpath/query/path and the initialiser's name had to contain query/params/input/user/search,
+ * so `const QueryValidateSchema = QueryInputSchema` — a Zod schema, in a file that has never
+ * seen XPath — was reported as CWE-643. Neither name says the value is an XPath expression.
+ *
+ * FALSE NEGATIVE: `xpath.select("//user[@id='" + id + "']", doc)` was silent because `id` is
+ * not in the taint-NAME list — while the string looksLikeXpath, the sink is proven, and part
+ * of the expression is dynamic. Three independent facts, and the rule wanted a fourth that
+ * was only ever a name.
+ */
+ruleTester.run('lock: evidence, not names', noXpathInjection, {
+  valid: [
+    { code: 'export const QueryValidateSchema = QueryInputSchema;' },
+    { code: 'const queryPath = userQuery;' },
+    { code: 'const xpathQuery = req.params.query;' },
+    // A lookalike string that never reaches an evaluator.
+    { code: 'const p = "//u[@id=\'" + id + "\']";' },
+  ],
+  invalid: [
+    { code: 'xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
+    { code: 'const xpathVar = userInput; document.evaluate(xpathVar, document);', errors: 1 },
+    // Destructuring bails out of the declaration path, but the sink still recognises the
+    // argument — locks the early return without pretending the code is safe.
+    { code: 'const { xpathQuery } = opts; doc.evaluate(xpathQuery, doc);', errors: 1 },
+  ],
+});
+
+/**
+ * Regression lock — `select` needs an XPath receiver.
+ *
+ * `select` is xpath-npm's API and also Mongoose's projection method, Knex's column picker
+ * and jQuery's. Matching it on the property name alone made `mq.select(projection)` and
+ * `builder().select(field)` XPath sinks — the largest remaining false-positive shape for
+ * this rule after the name-matching fix. `evaluate`, `selectSingleNode` and `selectNodes`
+ * name nothing else in common use and stay unconditional.
+ */
+ruleTester.run('lock: the select sink needs an xpath receiver', noXpathInjection, {
+  valid: [
+    { code: 'mq.select(projection);' },
+    { code: 'builder().select(field);' },
+    { code: 'knex("users").select(col);' },
+    // A member receiver that is not xpath-shaped.
+    { code: 'db.query.select(userInput);' },
+  ],
+  invalid: [
+    { code: 'xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
+    // Namespaced receiver: `lib.xpath.select(...)`.
+    { code: 'lib.xpath.select("//user[@id=\'" + id + "\']", doc);', errors: 1 },
+    { code: 'xml.selectNodes(userQuery);', errors: 1 },
+  ],
+});
+
+/**
+ * Regression lock — two false positives a reviewer found in the rule this branch set out
+ * to fix, both confirmed by measurement before being believed.
+ *
+ * 1. `dynamicAtSink` tested `operand.type !== Literal` as a stand-in for "can change".
+ *    They are not the same question — it is the same substitution this rule was
+ *    criticised for making with NAMES. `const id = '42'` is provably constant and
+ *    reported at a real sink.
+ *
+ * 2. `hasUntrusted` reported a concatenation with no evaluator anywhere in the file.
+ *    Requiring a sink outright was too blunt: a bare `const q = "..." + userInput` with
+ *    no use at all is unresolved provenance, not proven safety — the variable is almost
+ *    certainly evaluated in another module. Silence now needs positive evidence that
+ *    every use goes somewhere harmless.
+ */
+describe('no-xpath-injection: constants and destinations', () => {
+  ruleTester.run('evidence on both halves', noXpathInjection, {
+    valid: [
+      // A provably constant operand cannot be steered, even at a genuine sink.
+      { code: `const id = '42'; xpath.select("//user[@id='" + id + "']", doc);` },
+      { code: `const ID = '42'; const q = "//user[@id='" + ID + "']"; xpath.select(q, doc);` },
+      // Built from a request, then demonstrably handed somewhere harmless.
+      { code: `const s = '//u[@id=' + req.params.id + ']'; console.log(s);` },
+      { code: `const s = '//u[@id=' + req.params.id + ']'; res.send(s);` },
+    ],
+    invalid: [
+      // Declared and never used: destination unknown, which is not safety.
+      {
+        code: `const q = "/users/user[name='" + userInput + "']";`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      // Every use classified, and one of them is a sink.
+      {
+        code: `const q = "//u[@id='" + req.params.id + "']"; console.log(q); xpath.select(q, doc);`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      // Inline at the sink.
+      {
+        code: `xpath.select("//user[@id='" + req.params.id + "']", doc);`,
+        errors: [{ messageId: 'xpathInjection' }],
+      },
+      // A non-constant local at a sink is still dynamic — `userId` resolves to nothing.
+      {
+        code: `xpath.select("//user[@id='" + userId + "']", doc);`,
+        errors: [{ messageId: 'xpathInjection' }],
       },
     ],
   });

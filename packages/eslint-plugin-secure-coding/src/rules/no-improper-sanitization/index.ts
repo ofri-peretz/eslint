@@ -189,10 +189,17 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'], description: 'Sanitizer calls treated as sufficient'
           },
+          // HTML-escaping characters only. This list used to also carry the SHELL
+          // metacharacters ` $ { } | ; ( ) — in a rule whose messages are
+          // `incompleteHtmlEscaping` and `unsafeReplaceSanitization`. A pipe needs no
+          // escaping in HTML, so `chalk.green(name + ' | ')` was reported as unescaped
+          // markup, as was any literal containing a semicolon, parenthesis or brace.
+          // Shell metacharacters are the business of the command-injection rules, which
+          // have their own lists.
           dangerousChars: {
             type: 'array',
             items: { type: 'string' },
-            default: ['<', '>', '"', "'", '&', '`', '$', '{', '}', '|', ';', '(', ')'], description: 'Characters a sanitizer is expected to handle'
+            default: ['<', '>', '"', "'", '&'], description: 'Characters a sanitizer is expected to handle'
           },
           contexts: {
             type: 'array',
@@ -229,7 +236,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       safeSanitizers: ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'],
-      dangerousChars: ['<', '>', '"', "'", '&', '`', '$', '{', '}', '|', ';', '(', ')'],
+      dangerousChars: ['<', '>', '"', "'", '&'],
       contexts: ['html', 'url', 'sql', 'command', 'javascript', 'css'],
       trustedLibraries: ['DOMPurify', 'he', 'validator', 'express-validator'],
       trustedSanitizers: [],
@@ -241,7 +248,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       safeSanitizers = ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'],
-      dangerousChars = ['<', '>', '"', "'", '&', '`', '$', '{', '}', '|', ';', '(', ')'],
+      dangerousChars = ['<', '>', '"', "'", '&'],
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,

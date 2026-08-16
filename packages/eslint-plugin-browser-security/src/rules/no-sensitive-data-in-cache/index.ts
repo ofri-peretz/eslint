@@ -28,7 +28,7 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-data-in-cache.md',
       description: 'Prevent caching sensitive data without encryption',
       cwe: 'CWE-200',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     messages: {
       violationDetected: formatLLMMessage({

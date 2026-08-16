@@ -11,6 +11,11 @@
  */
 
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  isEncrypted,
+  isFileWrite,
+  storesACredential,
+} from '../../utils/credential-evidence';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -28,7 +33,7 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-storage-encryption.md',
       description: 'Require encryption for persistent storage',
       cwe: 'CWE-312',
-      cvss: 7.5,
+      cvss: 5.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -46,21 +51,17 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      
+      /**
+       * A credential written to disk in the clear. Previously this fired on every
+       * `.writeFile` and `.setItem` in the file — `writeFile(sitemapPath, sitemap)`
+       * included — and duplicated `require-secure-credential-storage` exactly. Web
+       * Storage now belongs to that rule; this one owns the filesystem, and both
+       * require evidence that what is being stored is a credential.
+       */
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type === 'MemberExpression' &&
-            node.callee.property.type === 'Identifier' &&
-            ['setItem', 'writeFile'].includes(node.callee.property.name)) {
-          // Check for encryption wrapper
-          const hasEncryption = node.arguments.some(arg =>
-            arg.type === 'CallExpression' &&
-            arg.callee.type === 'Identifier' &&
-            arg.callee.name.includes('encrypt')
-          );
-          if (!hasEncryption) {
-            context.report({ node, messageId: 'violationDetected' });
-          }
-        }
+        if (!isFileWrite(node)) return;
+        if (!storesACredential(node) || isEncrypted(node)) return;
+        context.report({ node, messageId: 'violationDetected' });
       },
     };
   },

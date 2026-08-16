@@ -487,5 +487,53 @@ describe('alt-text', () => {
       invalid: [],
     });
   });
-});
 
+  /**
+   * Regression lock — `next/image` is resolved from its IMPORT, not from a name list.
+   *
+   * It is the dominant image component in every Next.js app and was invisible unless the
+   * consumer set `{ img: ['Image'] }` — a default nobody sets, on the framework most likely
+   * to need it. Resolving the import catches `import Pic from 'next/image'` too, while an
+   * unrelated `<Image>` from a charting library stays out of scope.
+   */
+  describe('next/image resolved from the import', () => {
+    ruleTester.run('next-image-from-import', altText, {
+      valid: [
+        {
+          code: "import Image from 'next/image';\nconst H = () => <Image src={s} alt='hero' />;",
+        },
+        // A same-named component from an unrelated module is not an image.
+        {
+          code: "import Image from 'some-chart-lib';\nconst H = () => <Image src={s} />;",
+        },
+        // A namespace import binds the module, not a component.
+        {
+          code: "import * as NS from 'next/image';\nconst H = () => <NS src={s} />;",
+        },
+        // DEFAULT import only. `next/image` also exports `getImageProps`, a helper that
+        // returns props rather than rendering — aliasing it to `Image` does not make it
+        // an image component.
+        {
+          code: "import { getImageProps as Image } from 'next/image';\nconst H = () => <Image src={s} />;",
+        },
+      ],
+      invalid: [
+        {
+          code: "import Image from 'next/image';\nconst H = () => <Image src={s} width={8} height={4} />;",
+          errors: 1,
+        },
+        // Renamed default import — the local name is irrelevant, the module is what counts.
+        {
+          code: "import Pic from 'next/image';\nconst H = () => <Pic src={s} />;",
+          errors: 1,
+        },
+        // Legacy and future paths ship in real Next.js codebases.
+        {
+          code: "import Image from 'next/legacy/image';\nconst H = () => <Image src={s} />;",
+          errors: 1,
+        },
+
+      ],
+    });
+  });
+});

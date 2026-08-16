@@ -28,7 +28,7 @@ export const detectSuspiciousDependencies = createRule<RuleOptions, MessageIds>(
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-suspicious-dependencies.md',
       description: 'Detect typosquatting in package names',
       cwe: 'CWE-506',
-      cvss: 7.5,
+      cvss: 9.8,
     },
     messages: {
       violationDetected: formatLLMMessage({

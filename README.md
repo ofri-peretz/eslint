@@ -250,14 +250,15 @@ sides:
 
 | | Interlace | eslint-plugin-security |
 | :-- | --: | --: |
-| Findings | 981 | 21,557 |
-| Measured precision | **47%** | 20% |
-| False positives per 1k SLOC | **0.22** | 7.27 |
-| Findings you read per real issue | **2.1** | 5.0 |
+| Findings | 1,283 | 23,325 |
+| Measured precision | **67%** | 20% |
+| Findings you read per real issue | **1.5** | 5.0 |
 
-They find more real issues in absolute terms — 4,311 to our 461 — because they fire 22× more
-often. 47% is not a good number; it is ours, and the failure modes behind it are named in
-[BENCHMARK-RESULTS.md](./BENCHMARK-RESULTS.md).
+They still find more real issues in absolute terms, because they fire 18× more often. Our
+precision moved 47% → 67% on 2026-08-14 by deleting name-matching, not by adding analysis —
+`no-xpath-injection` reported a Zod schema, `no-improper-sanitization` treated a pipe as
+unescaped HTML, and `no-http-urls` reported the guard that checks for `http://`. Each fix is
+measured before and after in [BENCHMARK-RESULTS.md](./BENCHMARK-RESULTS.md).
 
 ### What this is not
 

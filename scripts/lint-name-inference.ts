@@ -41,6 +41,15 @@
  * class cannot arrive unnoticed again. A registry entry whose sites have all
  * gone is also a failure, so the debt list cannot rot after a fix.
  *
+ * KNOWN BLIND SPOT: detection is intra-procedural. It tracks a binding whose
+ * initializer mentions `.name`, so it sees `const n = node.name; n.includes('x')` but
+ * not the same test split across two functions — `nameOf(node)` returning the name and
+ * a second function testing the string it was handed. `eslint-plugin-node-security`'s
+ * `utils/credential-evidence.ts` is exactly that shape: it decides a stored value is a
+ * secret by matching credential words against a name, and this gate cannot see it. The
+ * match is documented at its call site and in the two rules' docs instead. Closing this
+ * means following values across functions, which is a different instrument.
+ *
  * ponytail: file-level, not site-level. Line numbers churn on every edit and
  * a registry keyed to them would be wrong within a week. The cost is that
  * ADDING a second name-substring site to an already-registered rule does not
@@ -321,16 +330,6 @@ const REGISTERED: RegistryEntry[] = [
       'callee.object.name.toLowerCase().includes("purify") to treat a value as sanitised. ' +
       '`notPurifiedYet` qualifies as sanitised.',
   },
-  {
-    file: 'eslint-plugin-node-security/src/rules/require-secure-credential-storage/index.ts',
-    direction: 'suppress',
-    reason: 'arg.callee.name.includes("encrypt") to treat a value as encrypted. `decrypt` contains `encrypt`.',
-  },
-  {
-    file: 'eslint-plugin-node-security/src/rules/require-storage-encryption/index.ts',
-    direction: 'suppress',
-    reason: 'Same `includes("encrypt")` suppression as require-secure-credential-storage, and the same `decrypt` overlap.',
-  },
 ];
 
 export interface Violation {
@@ -369,19 +368,41 @@ export function checkNameInference(
   return { violations, staleRegistry, filesScanned: files.length, registered: registry.length };
 }
 
+/**
+ * Every file a name-substring check can live in.
+ *
+ * `src/utils` is scanned as well as `src/rules`, because a shared helper is exactly
+ * where this class hides. Moving `.includes('encrypt')` out of two rule files and into
+ * `utils/credential-evidence.ts` made both registry entries read as paid while the
+ * substring match — and the `decrypt` overlap it carried — was still shipping. The gate
+ * reported the debt cleared because it could no longer see it, which is the failure mode
+ * this ratchet exists to prevent.
+ */
 function ruleSources(): { file: string; source: string }[] {
   const files: { file: string; source: string }[] = [];
   if (!fs.existsSync(PACKAGES_DIR)) return files;
+
+  const add = (entry: string): void => {
+    if (!fs.existsSync(entry)) return;
+    files.push({
+      file: path.relative(PACKAGES_DIR, entry),
+      source: fs.readFileSync(entry, 'utf8'),
+    });
+  };
+
   for (const plugin of fs.readdirSync(PACKAGES_DIR)) {
     const rulesDir = path.join(PACKAGES_DIR, plugin, 'src', 'rules');
-    if (!fs.existsSync(rulesDir)) continue;
-    for (const rule of fs.readdirSync(rulesDir)) {
-      const entry = path.join(rulesDir, rule, 'index.ts');
-      if (!fs.existsSync(entry)) continue;
-      files.push({
-        file: path.relative(PACKAGES_DIR, entry),
-        source: fs.readFileSync(entry, 'utf8'),
-      });
+    if (fs.existsSync(rulesDir)) {
+      for (const rule of fs.readdirSync(rulesDir)) {
+        add(path.join(rulesDir, rule, 'index.ts'));
+      }
+    }
+
+    const utilsDir = path.join(PACKAGES_DIR, plugin, 'src', 'utils');
+    if (!fs.existsSync(utilsDir)) continue;
+    for (const util of fs.readdirSync(utilsDir)) {
+      if (!util.endsWith('.ts') || util.endsWith('.test.ts')) continue;
+      add(path.join(utilsDir, util));
     }
   }
   return files;

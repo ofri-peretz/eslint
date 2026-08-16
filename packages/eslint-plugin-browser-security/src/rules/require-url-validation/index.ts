@@ -26,7 +26,7 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-url-validation.md',
       description: 'Enforce URL validation before navigation',
       cwe: 'CWE-601',
-      cvss: 7.5,
+      cvss: 6.1,
     },
     messages: {
       violationDetected: formatLLMMessage({

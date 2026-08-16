@@ -184,3 +184,78 @@ describe('isStaticExpression', () => {
     ],
   });
 });
+
+/**
+ * Regression lock — `__dirname` / `__filename` are module-location constants.
+ *
+ * `import.meta.dirname` was already static here while its CommonJS counterpart was not,
+ * so every rule consuming this read `require(__dirname + '/utils')` and
+ * `fs.readFileSync(path.join(__dirname, './ssl.key'))` as attacker-steerable. Both are
+ * shapes eslint-plugin-security's own corpus marks valid.
+ */
+describe('module-location globals', () => {
+  ruleTester.run('__dirname and __filename are static', makeProbe(true), {
+    valid: [
+      { code: `sink(__dirname + '/utils')` },
+      { code: `sink(__filename)` },
+      { code: 'sink(`${__dirname}/utils`)' },
+      // Still static with const-folding switched off: the module's own location is not a
+      // build-time-inlined constant, which is what that option is about.
+      { code: `sink(__dirname)` },
+    ],
+    invalid: [
+      // A local of the same name is a real value the caller controls.
+      {
+        code: `function render(__dirname) { sink(__dirname); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      {
+        code: `let __dirname = input; sink(__dirname);`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+    ],
+  });
+
+  ruleTester.run('__dirname is static even without const folding', makeProbe(false), {
+    valid: [{ code: `sink(__dirname)` }],
+    invalid: [
+      {
+        code: `function render(__dirname) { sink(__dirname); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+    ],
+  });
+});
+
+/**
+ * Regression lock — `require.resolve(<static>)` is a build-time module lookup.
+ *
+ * It resolves against the dependency tree, not against anything a caller supplies, so
+ * `fs.readFileSync(require.resolve('eslint/package.json'))` is not attacker-steerable —
+ * a shape eslint-plugin-security's own corpus marks valid and we reported.
+ */
+describe('require.resolve', () => {
+  ruleTester.run('resolves statically when its argument does', makeProbe(true), {
+    valid: [
+      { code: `sink(require.resolve('eslint/package.json'))` },
+      { code: `const M = 'eslint'; sink(require.resolve(M));` },
+    ],
+    invalid: [
+      // The specifier decides, same as every other composite.
+      {
+        code: `function f(name) { sink(require.resolve(name)); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      // Only `require.resolve` — an unrelated `.resolve` proves nothing.
+      {
+        code: `sink(Promise.resolve('x'))`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+      // A shadowed `require` is not the module loader; a parameter returns anything.
+      {
+        code: `function f(require) { sink(require.resolve('pkg')); }`,
+        errors: [{ messageId: 'dynamic' }],
+      },
+    ],
+  });
+});
