@@ -1,0 +1,62 @@
+{
+  "rule": "postgresql-security/no-unsafe-query",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 16,
+  "vulnerable": 9,
+  "results": [
+    {
+      "name": "Interlace postgresql-security/no-unsafe-query",
+      "tp": 9,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    },
+    {
+      "name": "sonarjs [sql-queries]",
+      "tp": 4,
+      "fp": 1,
+      "fn": 5,
+      "precision": 0.8,
+      "recall": 0.4444444444444444,
+      "f1": 0.5714285714285714,
+      "crashes": [],
+      "missed": [
+        "vulnerable/03-local-db-execute.js",
+        "vulnerable/05-injected-handle.js",
+        "vulnerable/07-variable-hop.js",
+        "vulnerable/08-template-fn.js",
+        "vulnerable/09-object-form.js"
+      ],
+      "falsePositives": [
+        "safe/03-const-folded.js"
+      ]
+    },
+    {
+      "name": "eslint-plugin-security [detect-object-injection]",
+      "tp": 0,
+      "fp": 0,
+      "fn": 9,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "crashes": [],
+      "missed": [
+        "vulnerable/01-local-db-module.js",
+        "vulnerable/02-local-db-concat.js",
+        "vulnerable/03-local-db-execute.js",
+        "vulnerable/04-ts-cast.ts",
+        "vulnerable/05-injected-handle.js",
+        "vulnerable/06-service-class.js",
+        "vulnerable/07-variable-hop.js",
+        "vulnerable/08-template-fn.js",
+        "vulnerable/09-object-form.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

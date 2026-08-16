@@ -1,0 +1,20 @@
+{
+  "rule": "postgresql-security/check-query-params",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 32,
+  "vulnerable": 16,
+  "results": [
+    {
+      "name": "Interlace postgresql-security/check-query-params",
+      "tp": 16,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 /**
- * SAFE - `SET` changes session state that only exists for the life of this
- * connection, so the statement it guards has to run on the same client.
+ * SAFE - Two reasons at once, both of which must hold on their own. `SET`
+ * changes session state that only exists for the life of this connection, and
+ * the client is then passed into a helper, so what it is used for afterwards is
+ * not knowable from this call site.
  */
 const { Pool } = require('pg');
 

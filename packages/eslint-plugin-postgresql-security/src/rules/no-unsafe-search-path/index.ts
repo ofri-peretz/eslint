@@ -271,7 +271,11 @@ function isAllowlistGuarded(
       current !== undefined && current !== null;
       current = current.parent
     ) {
-      const parent = current.parent;
+      // Annotated explicitly: `current` is itself `Node | null | undefined`, so
+      // inferring `parent` from `current.parent` is circular and tsc widens it
+      // to `any` (TS7022) — which vitest never sees, because it does not
+      // typecheck. Green tests are not a typecheck.
+      const parent: TSESTree.Node | null | undefined = current.parent;
       if (
         parent !== undefined &&
         parent !== null &&

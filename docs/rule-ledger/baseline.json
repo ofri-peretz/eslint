@@ -3,68 +3,35 @@
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",
-      "dynamic-regexp",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unexercised-option"
+      "dynamic-regexp"
     ],
     "secure-coding/detect-object-injection": [
-      "dynamic-regexp",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "orphan-message",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "dynamic-regexp"
     ],
-    "secure-coding/detect-weak-password-validation": [
-      "no-corpus-fixture",
-      "nominal-inference-report"
-    ],
+    "secure-coding/detect-weak-password-validation": [],
     "secure-coding/no-bidi-characters": [
-      "option-without-default",
       "whole-program-text"
     ],
     "secure-coding/no-directive-injection": [
-      "no-corpus-fixture",
-      "nominal-inference-suppress",
-      "orphan-message",
-      "textual-matching",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "nominal-inference-suppress"
     ],
     "secure-coding/no-electron-security-issues": [
-      "no-corpus-fixture",
-      "orphan-message",
-      "unexercised-option"
+      "orphan-message"
     ],
     "secure-coding/no-fail-open-auth": [],
     "secure-coding/no-format-string-injection": [
-      "no-corpus-fixture",
       "nominal-inference-report",
-      "orphan-message",
       "textual-matching",
-      "unexercised-option",
       "unguarded-recursion"
     ],
     "secure-coding/no-graphql-injection": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
       "nominal-inference-suppress",
-      "orphan-message",
       "textual-matching",
-      "unasserted-message",
-      "unexercised-option",
       "whole-program-text"
     ],
     "secure-coding/no-hardcoded-credentials": [
       "duplicate-coverage",
-      "dynamic-regexp",
-      "orphan-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option",
       "unguarded-recursion"
     ],
     "secure-coding/no-hardcoded-session-tokens": [
@@ -73,284 +40,140 @@
     ],
     "secure-coding/no-homoglyph-identifiers": [],
     "secure-coding/no-improper-sanitization": [
-      "orphan-message",
-      "textual-matching",
-      "unexercised-option"
-    ],
-    "secure-coding/no-improper-type-validation": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "orphan-message",
-      "textual-matching",
-      "unasserted-message",
-      "unexercised-option"
-    ],
-    "secure-coding/no-insecure-comparison": [
-      "dynamic-regexp",
-      "no-corpus-fixture"
-    ],
-    "secure-coding/no-ldap-injection": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "nominal-inference-report",
-      "orphan-message",
-      "textual-matching",
-      "unasserted-message",
-      "unexercised-option"
-    ],
-    "secure-coding/no-log-injection": [
-      "unconfigurable-vocabulary"
-    ],
-    "secure-coding/no-missing-authentication": [
-      "dynamic-regexp",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "nominal-inference-report",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
-    ],
-    "secure-coding/no-pii-in-logs": [
-      "no-corpus-fixture",
-      "nominal-inference-report",
       "textual-matching"
     ],
-    "secure-coding/no-privilege-escalation": [
-      "dynamic-regexp",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "nominal-inference-report",
-      "unasserted-message",
-      "unexercised-option"
+    "secure-coding/no-improper-type-validation": [],
+    "secure-coding/no-insecure-comparison": [
+      "dynamic-regexp"
     ],
-    "secure-coding/no-redos-vulnerable-regex": [
-      "no-corpus-fixture"
-    ],
-    "secure-coding/no-sensitive-data-exposure": [
-      "no-corpus-fixture",
-      "orphan-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
-    ],
-    "secure-coding/no-sql-injection": [
-      "duplicate-coverage",
-      "no-corpus-fixture",
-      "unconfigurable-vocabulary"
-    ],
-    "secure-coding/no-template-injection": [
-      "no-corpus-fixture",
-      "unconfigurable-vocabulary"
-    ],
-    "secure-coding/no-unchecked-loop-condition": [
-      "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "textual-matching",
-      "unasserted-message",
-      "unexercised-option"
-    ],
-    "secure-coding/no-unlimited-resource-allocation": [
-      "orphan-message",
-      "textual-matching",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
-    ],
-    "secure-coding/no-unsafe-deserialization": [
-      "no-corpus-fixture",
-      "orphan-message",
-      "textual-matching",
-      "unexercised-option"
-    ],
-    "secure-coding/no-unsafe-regex-construction": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
-    ],
-    "secure-coding/no-weak-password-recovery": [
-      "nominal-inference-report",
-      "orphan-message",
-      "textual-matching",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
-    ],
-    "secure-coding/no-xpath-injection": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "nominal-inference-report",
+    "secure-coding/no-ldap-injection": [
       "orphan-message",
       "unasserted-message",
       "unexercised-option",
       "unguarded-recursion"
     ],
-    "secure-coding/no-xxe-injection": [
-      "no-corpus-fixture",
+    "secure-coding/no-log-injection": [],
+    "secure-coding/no-missing-authentication": [],
+    "secure-coding/no-pii-in-logs": [],
+    "secure-coding/no-privilege-escalation": [],
+    "secure-coding/no-redos-vulnerable-regex": [
+      "duplicate-coverage"
+    ],
+    "secure-coding/no-sensitive-data-exposure": [],
+    "secure-coding/no-sql-injection": [
+      "duplicate-coverage"
+    ],
+    "secure-coding/no-template-injection": [],
+    "secure-coding/no-unchecked-loop-condition": [
+      "duplicate-coverage"
+    ],
+    "secure-coding/no-unlimited-resource-allocation": [
+      "textual-matching"
+    ],
+    "secure-coding/no-unsafe-deserialization": [
+      "textual-matching"
+    ],
+    "secure-coding/no-unsafe-regex-construction": [],
+    "secure-coding/no-weak-password-recovery": [
       "nominal-inference-report",
-      "option-without-default",
-      "unexercised-option"
+      "textual-matching"
     ],
-    "secure-coding/require-backend-authorization": [
-      "no-corpus-fixture"
+    "secure-coding/no-xpath-injection": [
+      "nominal-inference-report",
+      "unguarded-recursion"
     ],
-    "secure-coding/require-secure-defaults": [
-      "no-corpus-fixture",
-      "thin-suite"
-    ],
+    "secure-coding/no-xxe-injection": [],
+    "secure-coding/require-backend-authorization": [],
+    "secure-coding/require-secure-defaults": [],
     "node-security/detect-child-process": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "orphan-message",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
     "node-security/detect-eval-with-expression": [
       "duplicate-coverage",
       "dynamic-regexp",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "orphan-message",
-      "unasserted-message",
       "unconfigurable-vocabulary"
     ],
     "node-security/detect-non-literal-fs-filename": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
-    "node-security/detect-suspicious-dependencies": [
-      "no-corpus-fixture"
-    ],
+    "node-security/detect-suspicious-dependencies": [],
     "node-security/lock-file": [
-      "no-corpus-fixture",
-      "option-without-default"
+      "no-corpus-fixture"
     ],
     "node-security/no-arbitrary-file-access": [
       "duplicate-coverage",
-      "no-corpus-fixture",
       "textual-matching"
     ],
     "node-security/no-buffer-overread": [
-      "no-corpus-fixture",
-      "nominal-inference-report",
-      "orphan-message",
       "textual-matching",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
-    "node-security/no-cryptojs": [
-      "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unexercised-option"
-    ],
+    "node-security/no-cryptojs": [],
     "node-security/no-cryptojs-weak-random": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "node-security/no-data-in-temp-storage": [
       "duplicate-coverage",
-      "no-corpus-fixture",
-      "option-without-default",
       "unconfigurable-vocabulary"
     ],
-    "node-security/no-deprecated-buffer": [
-      "no-corpus-fixture"
-    ],
+    "node-security/no-deprecated-buffer": [],
     "node-security/no-deprecated-cipher-method": [],
     "node-security/no-dynamic-algorithm-selection": [
       "duplicate-coverage",
       "unconfigurable-vocabulary"
     ],
     "node-security/no-dynamic-command-string": [
-      "no-corpus-fixture",
-      "option-without-default",
       "unconfigurable-vocabulary"
     ],
-    "node-security/no-dynamic-dependency-loading": [
-      "duplicate-coverage",
-      "no-corpus-fixture",
-      "thin-suite"
-    ],
-    "node-security/no-dynamic-require": [
-      "no-corpus-fixture",
-      "option-without-default",
-      "unexercised-option"
-    ],
+    "node-security/no-dynamic-dependency-loading": [],
+    "node-security/no-dynamic-require": [],
     "node-security/no-ecb-mode": [
       "duplicate-coverage"
     ],
     "node-security/no-env-injection": [
-      "no-corpus-fixture",
-      "option-without-default",
       "unconfigurable-vocabulary"
     ],
     "node-security/no-insecure-http-parser": [],
-    "node-security/no-insecure-key-derivation": [
-      "no-corpus-fixture",
-      "orphan-message",
-      "unexercised-option"
-    ],
+    "node-security/no-insecure-key-derivation": [],
     "node-security/no-insecure-rsa-padding": [
       "duplicate-coverage",
       "textual-matching",
       "unconfigurable-vocabulary"
     ],
     "node-security/no-math-random-crypto": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
       "unconfigurable-vocabulary"
     ],
-    "node-security/no-self-signed-certs": [
-      "inert-suggestion"
-    ],
+    "node-security/no-self-signed-certs": [],
     "node-security/no-sha1-hash": [
       "duplicate-coverage"
     ],
     "node-security/no-shell-injection": [
-      "duplicate-coverage",
-      "no-corpus-fixture"
+      "duplicate-coverage"
     ],
     "node-security/no-ssrf": [
       "nominal-inference-report",
       "unconfigurable-vocabulary"
     ],
-    "node-security/no-static-iv": [
-      "no-corpus-fixture",
-      "orphan-message"
-    ],
+    "node-security/no-static-iv": [],
     "node-security/no-timing-unsafe-compare": [
-      "dynamic-regexp",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unexercised-option"
+      "unconfigurable-vocabulary",
+      "unguarded-recursion"
     ],
     "node-security/no-toctou-vulnerability": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
     "node-security/no-unbounded-decompression": [
       "unconfigurable-vocabulary"
     ],
     "node-security/no-unsafe-buffer-alloc": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
       "unconfigurable-vocabulary",
       "unguarded-recursion"
     ],
     "node-security/no-unsafe-dynamic-require": [
       "duplicate-coverage",
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "node-security/no-weak-cipher-algorithm": [
       "duplicate-coverage",
@@ -362,154 +185,93 @@
     ],
     "node-security/no-zip-slip": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
       "nominal-inference-report",
-      "orphan-message",
-      "textual-matching",
-      "unexercised-option"
+      "textual-matching"
     ],
     "node-security/prefer-native-crypto": [
-      "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
     "node-security/require-aead-tag-verification": [
       "unconfigurable-vocabulary"
     ],
     "node-security/require-dependency-integrity": [
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "node-security/require-secure-credential-storage": [
       "duplicate-coverage",
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "node-security/require-secure-deletion": [
-      "no-corpus-fixture",
       "unconfigurable-vocabulary"
     ],
     "node-security/require-storage-encryption": [
       "duplicate-coverage",
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "node-security/require-stream-error-handler": [
-      "inert-suggestion",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/detect-mixed-content": [
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-allow-arbitrary-loads": [
-      "duplicate-coverage",
-      "thin-suite"
+      "duplicate-coverage"
     ],
     "browser-security/no-clickjacking": [
-      "no-corpus-fixture",
-      "orphan-message",
       "textual-matching",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option",
-      "whole-program-text"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-client-side-auth-logic": [
-      "no-corpus-fixture",
-      "nominal-inference-report"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-cookie-auth-tokens": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-credentials-in-query-params": [],
     "browser-security/no-disabled-certificate-validation": [
       "duplicate-coverage"
     ],
-    "browser-security/no-dynamic-service-worker-url": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
-    ],
-    "browser-security/no-eval": [
-      "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unconfigurable-vocabulary"
-    ],
+    "browser-security/no-dynamic-service-worker-url": [],
+    "browser-security/no-eval": [],
     "browser-security/no-filereader-innerhtml": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-http-urls": [
       "duplicate-coverage",
-      "no-corpus-fixture",
-      "option-without-default"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-incomplete-url-sanitization": [
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-innerhtml": [
-      "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unexercised-option"
+      "duplicate-coverage"
     ],
     "browser-security/no-insecure-redirects": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-insecure-websocket": [
       "duplicate-coverage",
-      "no-corpus-fixture",
-      "textual-matching"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-jwt-in-storage": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-missing-cors-check": [
-      "inert-suggestion",
-      "nominal-inference-suppress",
-      "orphan-message",
-      "unasserted-message"
+      "nominal-inference-suppress"
     ],
     "browser-security/no-missing-csrf-protection": [
-      "no-corpus-fixture",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-missing-security-headers": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
       "unconfigurable-vocabulary"
     ],
-    "browser-security/no-password-in-url": [
-      "no-corpus-fixture",
-      "thin-suite"
-    ],
-    "browser-security/no-permissive-cors": [
-      "no-corpus-fixture",
-      "thin-suite"
-    ],
+    "browser-security/no-password-in-url": [],
+    "browser-security/no-permissive-cors": [],
     "browser-security/no-postmessage-innerhtml": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-postmessage-wildcard-origin": [
@@ -517,120 +279,75 @@
     ],
     "browser-security/no-sensitive-cookie-js": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-data-in-analytics": [
       "duplicate-coverage",
-      "no-corpus-fixture",
-      "nominal-inference-report"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-data-in-cache": [
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-indexeddb": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-localstorage": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-sensitive-sessionstorage": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "option-without-default",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-tracking-without-consent": [
       "duplicate-coverage",
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-unencrypted-transmission": [
       "dynamic-regexp",
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-unescaped-url-parameter": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "nominal-inference-report",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-unsafe-eval-csp": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/no-unsafe-inline-csp": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
+      "duplicate-coverage"
     ],
     "browser-security/no-unvalidated-deeplinks": [
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
-    "browser-security/no-websocket-eval": [
-      "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
-    ],
+    "browser-security/no-websocket-eval": [],
     "browser-security/no-websocket-innerhtml": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-worker-message-innerhtml": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message",
       "unconfigurable-vocabulary"
     ],
     "browser-security/require-blob-url-revocation": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
-    ],
-    "browser-security/require-cookie-secure-attrs": [
-      "inert-suggestion",
-      "no-corpus-fixture",
-      "unasserted-message"
-    ],
-    "browser-security/require-csp-headers": [
-      "no-corpus-fixture"
-    ],
-    "browser-security/require-https-only": [
-      "no-corpus-fixture",
-      "thin-suite",
       "unconfigurable-vocabulary"
     ],
-    "browser-security/require-mime-type-validation": [
-      "no-corpus-fixture"
+    "browser-security/require-cookie-secure-attrs": [],
+    "browser-security/require-csp-headers": [],
+    "browser-security/require-https-only": [
+      "unconfigurable-vocabulary"
     ],
+    "browser-security/require-mime-type-validation": [],
     "browser-security/require-postmessage-origin-check": [
       "duplicate-coverage",
-      "inert-suggestion",
-      "unasserted-message",
-      "unconfigurable-vocabulary",
-      "unexercised-option"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/require-url-validation": [
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ],
     "browser-security/require-websocket-wss": [
-      "duplicate-coverage",
-      "no-corpus-fixture"
+      "unconfigurable-vocabulary"
     ]
   }
 }

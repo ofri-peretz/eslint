@@ -119,11 +119,11 @@ app.post('/signup', createAccount);
 
 ## Options
 
-| Option             | Type       | Default                           | Description                               |
-| ------------------ | ---------- | --------------------------------- | ----------------------------------------- |
-| `allowInTests`     | `boolean`  | `false`                           | Allow missing CSRF in test files          |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing CSRF in test files |
 | `protectedMethods` | `string[]` | `["post","put","patch","delete"]` | HTTP methods that require CSRF protection |
-| `ignorePatterns`   | `string[]` | `[]`                              | Route patterns to ignore                  |
+| `ignorePatterns` | `string[]` | `[]` | Route patterns to ignore |
 
 ```json
 {

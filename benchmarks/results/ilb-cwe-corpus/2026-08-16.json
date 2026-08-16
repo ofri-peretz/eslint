@@ -1,7 +1,21 @@
 {
   "bench": "ILB-CWE-Corpus",
-  "version": "1.0",
-  "timestamp": "2026-08-16T14:59:13.072Z",
+  "benchVersion": "1.0",
+  "timestamp": "2026-08-16T21:20:59.020Z",
+  "methodologyHash": "sha256:ef8ea3b0b761f29a4b92403985a71a1e7cf7e55682aecc72f8c100c310c554b0",
+  "methodologyPaths": [
+    "benchmarks/suites/ilb-cwe-corpus/run.ts",
+    "benchmarks/lib/methodology.ts",
+    "benchmarks/lib/toolchain.ts"
+  ],
+  "toolchain": {
+    "node": "24.18.0",
+    "eslint": "10.8.1",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
   "environment": {
     "nodeVersion": "v24.18.0",
     "eslintVersion": "10.8.1",
@@ -15,7 +29,7 @@
       "owasp": "A03:2021",
       "severity": "HIGH",
       "expectedPlugins": [
-        "eslint-plugin-secure-coding"
+        "eslint-plugin-browser-security"
       ],
       "counts": {
         "vulnerable": 5,
@@ -1103,9 +1117,10 @@
             {
               "file": "multipart-pipe-no-handler.js",
               "expectedVulnerable": true,
-              "findings": 1,
+              "findings": 2,
               "ruleHits": {
-                "node-security/require-stream-error-handler": 1
+                "node-security/require-stream-error-handler": 1,
+                "node-security/no-data-in-temp-storage": 1
               }
             },
             {
