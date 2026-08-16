@@ -20,6 +20,39 @@ export interface Options {}
 
 type RuleOptions = [Options?];
 
+/**
+ * Every `http(s)://…` occurrence in a string, with its AUTHORITY isolated.
+ *
+ * The authority is everything between `//` and the first `/`, `?`, `#` or
+ * whitespace. Isolating it is what makes the credential test honest: the
+ * previous pattern was `/https?:\/\/[^:]+:[^@]+@/`, which had no idea where
+ * the authority ended, so
+ *
+ * ```js
+ * const url = 'https://example.com:8080/threads/a@b';
+ * ```
+ *
+ * matched — `example.com` for the user, `8080/threads/a` for the password —
+ * and a port plus an `@` anywhere later in the path was reported as
+ * credentials in a URL at CVSS 6.5.
+ */
+const HTTP_URL = /https?:\/\/([^/?#\s'"`<>]*)/gi;
+
+/** Does any URL in this string carry `user:password@` in its authority? */
+function hasUserinfoPassword(value: string): boolean {
+  for (const match of value.matchAll(HTTP_URL)) {
+    const authority = match[1];
+    const at = authority.lastIndexOf('@');
+    if (at <= 0) continue;
+    const userinfo = authority.slice(0, at);
+    // A password is the part after the colon. `https://token@host` carries a
+    // username only, which CWE-521 is not about.
+    const colon = userinfo.indexOf(':');
+    if (colon > 0 && colon < userinfo.length - 1) return true;
+  }
+  return false;
+}
+
 export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
   name: 'no-password-in-url',
   meta: {
@@ -54,15 +87,9 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
     
     return {
       Literal(node: TSESTree.Literal) {
-        
-      // Check for http://user:password@host patterns
-      if (node.type === 'Literal' && typeof node.value === 'string') {
-        const urlPattern = /https?:\/\/[^:]+:[^@]+@/;
-        if (urlPattern.test(node.value)) {
+        if (typeof node.value === 'string' && hasUserinfoPassword(node.value)) {
           report(node);
         }
-      }
-    
       },
 };
   },

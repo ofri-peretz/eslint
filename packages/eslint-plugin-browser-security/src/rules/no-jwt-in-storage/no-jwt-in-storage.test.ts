@@ -140,3 +140,46 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
     },
   ],
 });
+
+/**
+ * Regression lock — `window.localStorage` is `localStorage`.
+ *
+ * The rule matched only the bare identifier, so spelling the global out — the
+ * form every no-implicit-globals lint rule asks for — hid the token entirely.
+ */
+ruleTester.run('lock: the global may be spelled out', noJwtInStorage, {
+  valid: [
+    // A wrapper that merely CONTAINS the word is not the global.
+    { code: 'myLocalStorageWrapper.setItem("access_token", jwt);' },
+    { code: 'const store = { localStorage: fake }; store.localStorage.setItem("access_token", jwt);' },
+    // `top` and `parent` name a DIFFERENT window; reading storage off them is
+    // a cross-origin access, not this sink.
+    { code: 'top.localStorage.setItem("access_token", jwt);' },
+    { code: 'parent.sessionStorage.setItem("access_token", jwt);' },
+    // A computed read proves nothing about which global it lands on.
+    { code: 'window[storageName].setItem("access_token", jwt);' },
+  ],
+  invalid: [
+    {
+      code: 'window.localStorage.setItem("access_token", jwt);',
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'access_token', storage: 'localStorage' } }],
+    },
+    {
+      code: 'globalThis.localStorage.setItem("refresh_token", jwt);',
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'refresh_token', storage: 'localStorage' } }],
+    },
+    {
+      code: 'self.sessionStorage.setItem("id_token", jwt);',
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'id_token', storage: 'sessionStorage' } }],
+    },
+    // The assignment path, same spelling problem.
+    {
+      code: 'window.localStorage.authToken = jwt;',
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'authToken', storage: 'localStorage' } }],
+    },
+    {
+      code: 'globalThis.sessionStorage["jwt"] = value;',
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'sessionStorage' } }],
+    },
+  ],
+});

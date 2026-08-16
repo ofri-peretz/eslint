@@ -16,8 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'weakRandom'
-  | 'useNativeRandom';
+  | 'weakRandom';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -36,7 +35,6 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-338',
       cvss: 5.3,
     },
-    hasSuggestions: true,
     messages: {
       weakRandom: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -47,14 +45,7 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
         fix: 'Use crypto.randomBytes() from Node.js or crypto.getRandomValues() in browsers',
         documentationLink: 'https://nvd.nist.gov/vuln/detail/CVE-2020-36732',
       }),
-      useNativeRandom: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use native randomBytes',
-        description: 'Use cryptographically secure random from native crypto',
-        severity: 'LOW',
-        fix: 'crypto.randomBytes(32)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptorandombytessize-callback',
-      }),
+
     },
     schema: [
       {
@@ -133,12 +124,6 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
       context.report({
         node,
         messageId: 'weakRandom',
-        suggest: [
-          {
-            messageId: 'useNativeRandom',
-            fix: () => null, // Complex refactoring
-          },
-        ],
       });
     }
 

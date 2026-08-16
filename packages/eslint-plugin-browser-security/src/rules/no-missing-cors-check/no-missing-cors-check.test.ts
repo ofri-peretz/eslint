@@ -172,11 +172,30 @@ describe('no-missing-cors-check', () => {
         {
           code: 'app.use(cors({ origin: 123 }));',
         },
+      ],
+      invalid: [
+        // ---- Fixture correction -------------------------------------------
+        // `origin: true` was pinned as VALID here, alongside an `origin: "*"`
+        // case the rule reported. That is backwards. In the `cors` package
+        // `true` means "reflect the request's Origin header", so it allows
+        // every origin — and unlike `"*"` it keeps working when
+        // `credentials: true` is set, because browsers refuse to send
+        // credentials to a literal `*` but will send them to a reflected
+        // origin. It is strictly more dangerous than the case that reported.
         {
           code: 'app.use(cors({ origin: true }));',
+          errors: [{ messageId: 'missingCorsCheck' }],
+        },
+        {
+          code: 'app.use(cors({ origin: true, credentials: true }));',
+          errors: [{ messageId: 'missingCorsCheck' }],
+        },
+        // Same shape reached through a config binding.
+        {
+          code: 'const corsConfig = { origin: true };\napp.use(cors(corsConfig));',
+          errors: [{ messageId: 'missingCorsCheck' }],
         },
       ],
-      invalid: [],
     });
 
     ruleTester.run('edge cases - non-CORS context', noMissingCorsCheck, {
@@ -195,6 +214,10 @@ describe('no-missing-cors-check', () => {
       valid: [
         {
           code: 'app.use(cors({ origin: allowedOrigins, credentials: true }));',
+        },
+        // A config binding whose `origin` is a predicate, not a literal.
+        {
+          code: 'const corsConfig = { origin: (o, cb) => cb(null, allowed.includes(o)) };\napp.use(cors(corsConfig));',
         },
       ],
       invalid: [],

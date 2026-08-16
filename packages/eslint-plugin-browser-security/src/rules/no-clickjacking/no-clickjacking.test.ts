@@ -318,3 +318,206 @@ describe('no-clickjacking', () => {
     );
   });
 });
+
+/**
+ * Regression lock — the verdict must not move when the file is renamed.
+ *
+ * `requireFrameBusting` used to gate on a FILENAME REGEX
+ * (`index|app|main|page|layout`) plus a `sourceCode.getText().includes('<button')`
+ * scan of the whole file. Identical bytes reported in `src/app/layout.tsx` and
+ * stayed silent in `src/components/Toolbar.tsx`. It now asks whether the file
+ * builds a document shell, which is a fact about the code.
+ */
+const TOOLBAR = 'export default function T() { return <div><button onClick={go}>Go</button></div>; }';
+const SHELL = 'export default function Root() { return <html><body><button onClick={go}>Go</button></body></html>; }';
+
+ruleTester.run('lock: no verdict depends on the filename', noClickjacking, {
+  valid: [
+    // A component that renders a fragment inside somebody else's document has
+    // no say in whether that document can be framed — under EITHER name.
+    { code: TOOLBAR, filename: 'src/components/Toolbar.tsx' },
+    { code: TOOLBAR, filename: 'src/app/layout.tsx' },
+    { code: TOOLBAR, filename: 'src/app/page.tsx' },
+    { code: TOOLBAR, filename: 'pages/index.jsx' },
+  ],
+  invalid: [
+    // A document shell reports under EITHER name.
+    {
+      code: SHELL,
+      filename: 'src/app/layout.tsx',
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    {
+      code: SHELL,
+      filename: 'src/components/Toolbar.tsx',
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // `<head>` alone is enough — a shell need not spell out `<html>`.
+    {
+      code: 'export const Head = () => <head><title>App</title></head>;',
+      filename: 'src/components/Head.tsx',
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — a file that already declares frame protection is protected.
+ *
+ * Nothing but JavaScript frame-busting could clear the old check, so a root
+ * layout serving `frame-ancestors 'none'` was still told it had no clickjacking
+ * defence.
+ */
+ruleTester.run('lock: declared frame protection silences the rule', noClickjacking, {
+  valid: [
+    // CSP in a string constant next to the shell.
+    {
+      code: `const csp = "default-src 'self'; frame-ancestors 'none'";\nexport default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content={csp} /></head><body /></html>; }`,
+    },
+    // CSP written straight into the meta tag.
+    {
+      code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors 'self'" /></head><body /></html>; }`,
+    },
+    // A template literal builds the policy.
+    {
+      code: 'export default function Root() { const csp = `default-src \'self\'; frame-ancestors \'none\'`; return <html><body>{csp}</body></html>; }',
+    },
+    // X-Frame-Options instead of CSP.
+    {
+      code: `export default function Root() { const h = { "X-Frame-Options": "DENY" }; return <html><body>{JSON.stringify(h)}</body></html>; }`,
+    },
+    // Frame-busting JavaScript, the original remediation.
+    {
+      code: 'export default function Root() { if (top !== self) { top.location = self.location; } return <html><body /></html>; }',
+    },
+  ],
+  invalid: [
+    // `frame-ancestors *` allows every framer — that is not protection.
+    {
+      code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors *" /></head><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // A CSP with no frame-ancestors directive at all.
+    {
+      code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="default-src 'self'" /></head><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — the trustedSources allowlist compares ORIGINS.
+ *
+ * `source.includes(trusted)` made it trivially bypassable: the default
+ * `['self', 'same-origin']` trusted `https://evil.example/self`.
+ */
+ruleTester.run('lock: trustedSources is an origin allowlist', noClickjacking, {
+  valid: [
+    // Same-origin relative src, under the default trustedSources.
+    { code: '<iframe src="/embed/checkout" />' },
+    // An explicitly allowlisted origin, with a path.
+    {
+      code: '<iframe src="https://trusted.com/embed/checkout" />',
+      options: [{ trustedSources: ['https://trusted.com'] }],
+    },
+  ],
+  invalid: [
+    // The word `self` inside a foreign URL is not the `self` origin.
+    {
+      code: '<iframe src="https://evil.example/self" />',
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+    // Nor is an allowlisted origin echoed in a query string.
+    {
+      code: '<iframe src="https://evil.example/?next=https://trusted.com" />',
+      options: [{ trustedSources: ['https://trusted.com'] }],
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+    // Protocol-relative is absolute, so it is not "self".
+    {
+      code: '<iframe src="//evil.example/widget" />',
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+  ],
+});
+
+/**
+ * Every option, set to a value that changes the verdict on the SAME code.
+ * A case that passes either way proves nothing about the option.
+ */
+const OVERLAY = 'const banner = "<div style=\'position: absolute; top: 0; left: 0\'></div>";';
+
+ruleTester.run('options change the verdict', noClickjacking, {
+  valid: [
+    // detectTransparentOverlays: off silences the overlay report.
+    { code: OVERLAY, options: [{ detectTransparentOverlays: false }] },
+    // trustedAnnotations: a JSDoc marker the project defines.
+    {
+      code: '/** @overlay-reviewed */\nconst banner = "<div style=\'opacity: 0\'></div>";',
+      options: [{ trustedAnnotations: ['overlay-reviewed'] }],
+    },
+  ],
+  invalid: [
+    // Same code, option at its default — the option is what changes it.
+    { code: OVERLAY, errors: [{ messageId: 'transparentFrameOverlay' }] },
+    // strictMode: true disables the safety checker, so an annotation that
+    // silences the report by default no longer does.
+    {
+      code: '/** @overlay-reviewed */\nconst banner = "<div style=\'opacity: 0\'></div>";',
+      options: [{ trustedAnnotations: ['overlay-reviewed'], strictMode: true }],
+      errors: [{ messageId: 'transparentFrameOverlay' }],
+    },
+  ],
+});
+
+/** Edge shapes the origin comparison and the JSX/template walks must survive. */
+ruleTester.run('edge shapes', noClickjacking, {
+  valid: [
+    // A protocol-relative allowlist entry matches a protocol-relative src.
+    {
+      code: '<iframe src="//cdn.example/widget" />',
+      options: [{ trustedSources: ['//cdn.example'] }],
+    },
+    // A JSX tag that is a member expression is not a document shell.
+    { code: 'const f = <Layout.Html><button onClick={go}>x</button></Layout.Html>;' },
+    // A tagged template whose cooked value is undefined (invalid escape).
+    { code: 'const t = tag`\\unicode and more`;' },
+  ],
+  invalid: [
+    // An allowlist entry that is not a URL cannot match any origin.
+    {
+      code: '<iframe src="https://trusted.com/embed" />',
+      options: [{ trustedSources: ['trusted.com'] }],
+      errors: [{ messageId: 'unsafeIframeUsage' }],
+    },
+  ],
+});
+
+/**
+ * Frame-busting recognised from the AST, including the `.location` comparison
+ * form. The old check lowercased the printed test and looked for the literal
+ * substrings `'top != self'`, `'top.location'` and friends, so spacing changed
+ * the verdict and the same words inside a string matched.
+ */
+ruleTester.run('frame-busting is read from the AST', noClickjacking, {
+  valid: [
+    // Location comparison, in spellings the substring matcher missed.
+    { code: 'if (top.location != self.location) { x(); } const f = <html><body /></html>;' },
+    { code: 'if (window.top.location!==window.self.location) { x(); } const f = <html><body /></html>;' },
+    { code: 'if (!self.location) { x(); } const f = <html><body /></html>;' },
+  ],
+  invalid: [
+    // `.location` off something that is not a frame reference is not a frame
+    // check.
+    {
+      code: 'if (iframeEl.location != preview.location) { x(); } const f = <html><body /></html>;',
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // A test nested deeper than the walk goes is not a frame check either —
+    // the recursion is bounded on purpose.
+    {
+      code: 'if (top.location && a2 && a3 && a4 && a5 && a6 && a7 && a8 && a9 && a10) { x(); } const f = <html><body /></html>;',
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+  ],
+});

@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
+import { resolveGlobalObject } from '../../utils/global-object';
 
 type MessageIds = 'jwtInStorage';
 
@@ -137,14 +138,17 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
-        // Check for localStorage.setItem() or sessionStorage.setItem()
+        // Check for localStorage.setItem() or sessionStorage.setItem(),
+        // however the global is spelled — `window.localStorage.setItem(...)`
+        // is the same sink and used to be invisible. See utils/global-object.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.object.type === AST_NODE_TYPES.Identifier &&
-          storageObjects.has(callee.object.name) &&
           callee.property.type === AST_NODE_TYPES.Identifier &&
           callee.property.name === 'setItem'
         ) {
+          const storage = resolveGlobalObject(callee.object, storageObjects);
+          if (storage === null) return;
+
           const keyArg = node.arguments[0];
           const valueArg = node.arguments[1];
 
@@ -182,7 +186,7 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
               messageId: 'jwtInStorage',
               data: {
                 key: keyValue || '<dynamic>',
-                storage: callee.object.name,
+                storage,
               },
             });
           }
@@ -195,11 +199,8 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const obj = node.left.object;
-        if (
-          obj.type !== AST_NODE_TYPES.Identifier ||
-          !storageObjects.has(obj.name)
-        ) {
+        const storage = resolveGlobalObject(node.left.object, storageObjects);
+        if (storage === null) {
           return;
         }
 
@@ -230,7 +231,7 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
             messageId: 'jwtInStorage',
             data: {
               key: keyValue || '<dynamic>',
-              storage: obj.name,
+              storage,
             },
           });
         }

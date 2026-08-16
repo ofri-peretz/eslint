@@ -1,6 +1,6 @@
 ---
 title: no-allow-arbitrary-loads
-description: "Prevents disabling App Transport Security (ATS) by detecting allowArbitraryLoads: true in configuration."
+description: "Prevents disabling App Transport Security (ATS) by detecting NSAllowsArbitraryLoads: true in an Expo/React Native config."
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -8,14 +8,14 @@ cwe: CWE-295
 autofix: false
 ---
 
-> **Keywords:** ATS, App Transport Security, iOS security, CWE-295, NSAppTransportSecurity, allowArbitraryLoads, mobile security
+> **Keywords:** ATS, App Transport Security, iOS security, CWE-295, NSAppTransportSecurity, NSAllowsArbitraryLoads, Expo app.config.js, mobile security
 
 
 <!-- @rule-summary -->
-Prevents disabling App Transport Security (ATS) by detecting allowArbitraryLoads: true in configuration.
+Prevents disabling App Transport Security (ATS) by detecting NSAllowsArbitraryLoads: true in an Expo/React Native config.
 <!-- @/rule-summary -->
 
-Prevents disabling App Transport Security (ATS) by detecting `allowArbitraryLoads: true` in configuration.
+Prevents disabling App Transport Security (ATS) by detecting `NSAllowsArbitraryLoads: true` in an Expo / React Native JavaScript config.
 
 ⚠️ This rule **errors** by default in the `recommended` config.
 
@@ -30,27 +30,52 @@ Prevents disabling App Transport Security (ATS) by detecting `allowArbitraryLoad
 
 ## Rule Details
 
-App Transport Security (ATS) enforces secure connections for iOS/macOS applications. Setting `allowArbitraryLoads: true` disables this protection entirely, allowing insecure HTTP connections and weakening certificate validation.
+App Transport Security (ATS) enforces secure connections for iOS/macOS applications. Setting `NSAllowsArbitraryLoads: true` disables this protection entirely, allowing insecure HTTP connections and weakening certificate validation.
 
-This rule detects configuration that disables ATS protection.
+The rule matches Apple's own key names, by exact membership:
+
+`NSAllowsArbitraryLoads`, `NSAllowsArbitraryLoadsInWebContent`,
+`NSAllowsArbitraryLoadsForMedia`, `NSAllowsLocalNetworking`,
+`NSExceptionAllowsInsecureHTTPLoads`,
+`NSThirdPartyExceptionAllowsInsecureHTTPLoads`.
+
+It previously matched `allowArbitraryLoads` — lowercase, unprefixed — which is
+a key in no Expo, React Native, Capacitor or Cordova schema. That made the rule
+vacuous in both directions: it could not fire on any real ATS opt-out, and
+anything it did fire on was somebody's own unrelated config key.
+
+The JavaScript surface these keys really appear on is an Expo
+`app.config.js` / `app.config.ts`. `Info.plist` itself is XML and ESLint never
+sees it — see Known False Negatives.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// Disabling ATS entirely - DANGEROUS
-const config = {
-  NSAppTransportSecurity: {
-    allowArbitraryLoads: true, // Allows all insecure connections
+// app.config.js — disabling ATS entirely, DANGEROUS
+export default {
+  ios: {
+    infoPlist: {
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: true, // Allows all insecure connections
+      },
+    },
   },
 };
 
-// In Info.plist configuration (parsed as JSON)
+// The narrower opt-outs are opt-outs too
 const plist = {
   NSAppTransportSecurity: {
-    NSAllowsArbitraryLoads: true,
-    allowArbitraryLoads: true,
+    NSAllowsArbitraryLoadsInWebContent: true,
+    NSAllowsLocalNetworking: true,
+  },
+};
+
+// A per-domain exception that re-permits cleartext
+const ats = {
+  NSExceptionDomains: {
+    'legacy.example.com': { NSExceptionAllowsInsecureHTTPLoads: true },
   },
 };
 ```
@@ -61,7 +86,7 @@ const plist = {
 // Keep ATS enabled (default)
 const config = {
   NSAppTransportSecurity: {
-    allowArbitraryLoads: false, // Or omit entirely
+    NSAllowsArbitraryLoads: false, // Or omit entirely
   },
 };
 
@@ -82,8 +107,8 @@ const config = {
 When triggered, this rule produces:
 
 ```
-🔒 CWE-295 | Prevent configuration allowing insecure loads detected - allowArbitraryLoads: true | HIGH
-   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/295.html
+🔒 CWE-295 | App Transport Security is disabled: "NSAllowsArbitraryLoads: true" lets the app load cleartext HTTP, so any network attacker can read and rewrite its traffic. | HIGH
+   Fix: Remove the opt-out and serve over HTTPS, or scope it to one host with NSExceptionDomains. | https://cwe.mitre.org/data/definitions/295.html
 ```
 
 ## Known False Negatives
@@ -97,7 +122,7 @@ The following patterns are **not detected** due to static analysis limitations:
 ```typescript
 // ❌ NOT DETECTED - Dynamic value
 const enableInsecure = process.env.ALLOW_INSECURE === 'true';
-const config = { allowArbitraryLoads: enableInsecure };
+const config = { NSAllowsArbitraryLoads: enableInsecure };
 ```
 
 **Mitigation**: Never use environment variables to control security settings.

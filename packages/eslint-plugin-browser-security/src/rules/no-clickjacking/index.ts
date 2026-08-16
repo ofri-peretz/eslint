@@ -28,19 +28,10 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'clickjackingVulnerability'
   | 'missingFrameBusting'
   | 'unsafeIframeUsage'
-  | 'missingXFrameOptions'
-  | 'missingCspFrameAncestors'
   | 'transparentFrameOverlay'
-  | 'frameManipulation'
-  | 'implementFrameBusting'
-  | 'useXFrameOptions'
-  | 'setCspFrameAncestors'
-  | 'strategyFrameProtection'
-  | 'strategyContentSecurity'
-  | 'strategyUserInteraction';
+  | 'frameManipulation';
 
 export interface Options extends SecurityRuleOptions {
   /** Trusted iframe sources */
@@ -92,6 +83,36 @@ function isFrameBustingTest(test: TSESTree.Node): boolean {
 }
 
 /**
+ * Does this expression read `.location` off a frame reference?
+ *
+ * `if (top.location != self.location)` and `if (window.top.location !== …)`
+ * are frame-busting tests that compare LOCATIONS rather than windows, so the
+ * window comparison above does not see them.
+ */
+function readsFrameLocation(node: TSESTree.Node, depth = 0): boolean {
+  if (depth > 8) return false;
+  if (
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property.type === 'Identifier' &&
+    node.property.name === 'location' &&
+    isFrameRef(node.object)
+  ) {
+    return true;
+  }
+  if (node.type === 'BinaryExpression' || node.type === 'LogicalExpression') {
+    return (
+      readsFrameLocation(node.left as TSESTree.Node, depth + 1) ||
+      readsFrameLocation(node.right, depth + 1)
+    );
+  }
+  if (node.type === 'UnaryExpression') {
+    return readsFrameLocation(node.argument, depth + 1);
+  }
+  return false;
+}
+
+/**
  * Every `property: value` pair in a chunk of CSS-bearing text.
  *
  * Substring matching over printed source is what put two findings on
@@ -125,6 +146,14 @@ function hasDeclaration(
   matches: (value: string) => boolean,
 ): boolean {
   return declarations.some(([prop, value]) => prop === property && matches(value));
+}
+
+/** `https://host:port` of an absolute or protocol-relative URL, else null. */
+function originOf(url: string): string | null {
+  const match = /^([a-z][a-z0-9+.-]*:)?\/\/([^/?#]+)/i.exec(url);
+  return match === null
+    ? null
+    : `${(match[1] ?? '').toLowerCase()}//${match[2].toLowerCase()}`;
 }
 
 const FUNCTION_TYPES = new Set([
@@ -229,16 +258,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-1021',
     },
     messages: {
-      clickjackingVulnerability: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Clickjacking Vulnerability',
-        cwe: 'CWE-1021',
-        description: 'Clickjacking protection missing',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink:
-          'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
-      }),
       missingFrameBusting: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Frame Busting',
@@ -259,26 +278,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
       }),
-      missingXFrameOptions: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Missing X-Frame-Options',
-        cwe: 'CWE-1021',
-        description: 'X-Frame-Options header not set',
-        severity: 'HIGH',
-        fix: 'Set X-Frame-Options: DENY or SAMEORIGIN',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options',
-      }),
-      missingCspFrameAncestors: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Missing CSP frame-ancestors',
-        cwe: 'CWE-1021',
-        description: 'CSP frame-ancestors directive not configured',
-        severity: 'HIGH',
-        fix: 'Add frame-ancestors to Content-Security-Policy',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors',
-      }),
       transparentFrameOverlay: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Transparent Frame Overlay',
@@ -296,60 +295,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         description: 'Code attempts to manipulate parent frames',
         severity: 'LOW',
         fix: 'Implement proper frame communication or prevent framing',
-        documentationLink:
-          'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
-      }),
-      implementFrameBusting: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Implement Frame Busting',
-        description: 'Add JavaScript to prevent framing',
-        severity: 'LOW',
-        fix: 'if (top != self) top.location = location;',
-        documentationLink:
-          'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
-      }),
-      useXFrameOptions: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use X-Frame-Options',
-        description: 'Set X-Frame-Options HTTP header',
-        severity: 'LOW',
-        fix: 'X-Frame-Options: DENY',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options',
-      }),
-      setCspFrameAncestors: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Set CSP frame-ancestors',
-        description: 'Configure CSP frame-ancestors directive',
-        severity: 'LOW',
-        fix: "frame-ancestors 'self' https://trusted.com",
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors',
-      }),
-      strategyFrameProtection: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Frame Protection Strategy',
-        description: 'Implement multiple layers of frame protection',
-        severity: 'LOW',
-        fix: 'Use X-Frame-Options, CSP, and frame-busting together',
-        documentationLink:
-          'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
-      }),
-      strategyContentSecurity: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Content Security Strategy',
-        description: 'Use CSP for comprehensive frame control',
-        severity: 'LOW',
-        fix: 'Implement strict CSP with frame-ancestors',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP',
-      }),
-      strategyUserInteraction: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'User Interaction Strategy',
-        description: 'Protect user interactions from framing attacks',
-        severity: 'LOW',
-        fix: 'Validate user intent for sensitive actions',
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html',
       }),
@@ -375,13 +320,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
             description:
               'Report transparent overlays positioned over clickable elements',
           },
-          trustedSanitizers: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description:
-              'Additional function names to consider as frame protectors',
-          },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
@@ -404,7 +342,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       trustedSources: ['self', 'same-origin'],
       requireFrameBusting: true,
       detectTransparentOverlays: true,
-      trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
     },
@@ -415,7 +352,6 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       trustedSources = ['self', 'same-origin'],
       requireFrameBusting = true,
       detectTransparentOverlays = true,
-      trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
     }: Options = options;
@@ -423,9 +359,15 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     const sourceCode = context.sourceCode;
     const filename = context.filename;
 
-    // Create safety checker for false positive detection
+    // Create safety checker for false positive detection.
+    //
+    // `trustedSanitizers` is deliberately absent. It only marks a node safe
+    // when that node IS a sanitisation call (or an identifier initialised from
+    // one) — and every node this rule reports is a JSXElement, a
+    // MemberExpression, a Literal or a TemplateLiteral. The option could never
+    // change a verdict here, so it was removed from the schema rather than
+    // left in place looking configurable.
     const safetyChecker = createSafetyChecker({
-      trustedSanitizers,
       trustedAnnotations,
       trustedOrmPatterns: [],
       strictMode,
@@ -435,35 +377,83 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     let hasFrameBusting = false;
 
     /**
-     * Check if source is trusted
+     * Does this file build the document that could be framed?
+     *
+     * The question `requireFrameBusting` needs, and the one the rule used to
+     * answer with a FILENAME REGEX over `index|app|main|page|layout` plus a
+     * substring scan over the printed text of the whole file, looking for
+     * `<button`. Two consequences, both measured:
+     *
+     * - Identical bytes reported in `src/app/layout.tsx` and stayed silent in
+     *   `src/components/Toolbar.tsx`. A rule whose verdict moves when you
+     *   rename the file has not looked at the code.
+     * - A file that already set `frame-ancestors 'none'` still reported,
+     *   because nothing except JavaScript frame-busting could clear the check.
+     *
+     * A document shell — `<html>`, `<head>`, `<body>` — is real AST evidence
+     * that this file decides what the browser renders as a top-level document.
+     * `Toolbar.tsx` renders a fragment inside somebody else's document and has
+     * no say in whether that document can be framed.
      */
-    const isTrustedSource = (source: string): boolean => {
-      return trustedSources.some(
-        (trusted) =>
-          source.includes(trusted) ||
-          (trusted === 'self' &&
-            (source === 'self' || source.startsWith('/'))) ||
-          (trusted === 'same-origin' && source === 'same-origin'),
-      );
+    let buildsDocumentShell = false;
+
+    /** Does the file establish frame protection by header or meta tag? */
+    let hasDeclaredFrameProtection = false;
+
+    const DOCUMENT_SHELL_TAGS: ReadonlySet<string> = new Set([
+      'html',
+      'head',
+      'body',
+    ]);
+
+    /**
+     * `frame-ancestors <something other than *>` or an X-Frame-Options value.
+     *
+     * Read off string values rather than identifiers — a CSP is data, and the
+     * directive it contains is the evidence, not the name of the variable it
+     * is stored in.
+     */
+    const declaresFrameProtection = (value: string): boolean => {
+      const text = value.toLowerCase();
+      const ancestors = /frame-ancestors\s+([^;]+)/.exec(text);
+      if (ancestors && ancestors[1].trim() !== '*') return true;
+      return /^\s*(deny|sameorigin)\s*$/.test(text) || text.includes('x-frame-options');
     };
 
     /**
-     * Check if this is frame-busting code
+     * Check if source is trusted — by ORIGIN, not by substring.
+     *
+     * `source.includes(trusted)` made the allowlist trivially bypassable:
+     * with the default `['self', 'same-origin']`, `https://evil.example/self`
+     * was trusted, and with `['https://trusted.com']` so was
+     * `https://evil.example/?next=https://trusted.com`. An iframe's `src` is
+     * a URL; the only part of it that decides who serves the frame is the
+     * origin.
      */
-    const isFrameBustingCode = (node: TSESTree.IfStatement): boolean => {
-      const test = node.test;
-      const testText = sourceCode.getText(test).toLowerCase();
+    const isTrustedSource = (source: string): boolean =>
+      trustedSources.some((trusted) => {
+        if (trusted === source) return true;
+        if (trusted === 'self' || trusted === 'same-origin') {
+          // Relative URLs cannot leave the origin. `//evil.example` can — it
+          // is protocol-relative and therefore absolute.
+          return source.startsWith('/') && !source.startsWith('//');
+        }
+        const trustedOrigin = originOf(trusted);
+        return trustedOrigin !== null && trustedOrigin === originOf(source);
+      });
 
-      // Look for common frame-busting patterns
-      return (
-        testText.includes('top != self') ||
-        testText.includes('top !== self') ||
-        testText.includes('window.top !== window.self') ||
-        testText.includes('parent != self') ||
-        testText.includes('top.location') ||
-        testText.includes('self.location')
-      );
-    };
+    /**
+     * Check if this is frame-busting code — from the AST, not printed source.
+     *
+     * This used to lowercase the printed test and look for the substrings
+     * `'top != self'`, `'top !== self'`, `'parent != self'`,
+     * `'window.top !== window.self'`, `'top.location'` and `'self.location'`.
+     * That is whitespace-sensitive — `top !=  self` and `top!==self` are the
+     * same program and did not match — and it matched the same words appearing
+     * in a string or a comment inside the test.
+     */
+    const isFrameBustingCode = (node: TSESTree.IfStatement): boolean =>
+      isFrameBustingTest(node.test) || readsFrameLocation(node.test);
 
     /**
      * Check for transparent/invisible elements that could hide clickjacking
@@ -506,6 +496,13 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
       // Check iframe elements (in JSX/TSX)
       JSXElement(node: TSESTree.JSXElement) {
+        if (node.openingElement.name.type === 'JSXIdentifier') {
+          const tag = node.openingElement.name.name;
+          if (DOCUMENT_SHELL_TAGS.has(tag)) {
+            buildsDocumentShell = true;
+          }
+        }
+
         if (
           node.openingElement.name.type === 'JSXIdentifier' &&
           node.openingElement.name.name === 'iframe'
@@ -624,6 +621,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
       // Check for CSS that could hide clickjacking attacks
       Literal(node: TSESTree.Literal) {
+        if (typeof node.value === 'string' && declaresFrameProtection(node.value)) {
+          hasDeclaredFrameProtection = true;
+        }
         if (typeof node.value === 'string' && detectTransparentOverlays) {
           // Check if this looks like CSS
           const text = node.value.toLowerCase();
@@ -650,8 +650,19 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
       // Check template literals for CSS
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
+        // `raw`, not `cooked`: a tagged template with an invalid escape has no
+        // cooked value at all, and a CSP directive carries no escapes anyway.
+        if (node.quasis.some((q) => declaresFrameProtection(q.value.raw))) {
+          hasDeclaredFrameProtection = true;
+        }
         if (detectTransparentOverlays) {
-          const text = sourceCode.getText(node).toLowerCase();
+          // The LITERAL chunks only. `sourceCode.getText(node)` would also
+          // print the source of every `${…}` interpolation, so a variable
+          // spelled `opacity_0` inside one read as a CSS declaration.
+          const text = node.quasis
+            .map((q) => q.value.raw)
+            .join(' ')
+            .toLowerCase();
 
           if (text.includes('style') && hasTransparentStyles(text)) {
             if (safetyChecker.isSafe(node, context)) {
@@ -672,37 +683,22 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
       // At the end of the file, check if frame-busting is required but missing
       'Program:exit'() {
-        if (requireFrameBusting && !hasFrameBusting) {
-          // Only check files that are likely entry points or render HTML
-          const isEntryPoint =
-            /\.(html|htm)$/.test(filename) ||
-            /(index|app|main|page)\.(tsx|jsx)$/i.test(filename) ||
-            /pages?\/.*\.(tsx|jsx)$/i.test(filename) ||
-            /layout\.(tsx|jsx)$/i.test(filename);
-
-          // Skip non-entry point files
-          if (!isEntryPoint) {
-            return;
-          }
-
-          // Check if this file has actual UI rendering (JSX elements with event handlers)
-          const fileContent = sourceCode.getText();
-          const hasUIElements =
-            fileContent.includes('<button') ||
-            fileContent.includes('<form') ||
-            fileContent.includes('<input') ||
-            (fileContent.includes('onClick') && fileContent.includes('<'));
-
-          if (hasUIElements) {
-            context.report({
-              node: context.sourceCode.ast,
-              messageId: 'missingFrameBusting',
-              data: {
-                filePath: filename,
-                line: '1',
-              },
-            });
-          }
+        // A file is only worth this question when it BUILDS THE DOCUMENT that
+        // could be framed, and establishes no frame protection anywhere in it.
+        if (
+          requireFrameBusting &&
+          buildsDocumentShell &&
+          !hasFrameBusting &&
+          !hasDeclaredFrameProtection
+        ) {
+          context.report({
+            node: context.sourceCode.ast,
+            messageId: 'missingFrameBusting',
+            data: {
+              filePath: filename,
+              line: '1',
+            },
+          });
         }
       },
     };

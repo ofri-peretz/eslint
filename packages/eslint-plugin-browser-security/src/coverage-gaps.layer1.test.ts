@@ -85,6 +85,11 @@ jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
   valid: [
     // entry-point file without UI elements -> no missing-frame-busting report
     { code: 'const a = 1;', filename: 'index.tsx' },
+    // The four shapes that used to report purely because of the FILENAME.
+    { code: `export const App = () => <button onClick={go}>hi</button>;`, filename: 'app.tsx' },
+    { code: `export const Page = () => <form onSubmit={s}></form>;`, filename: 'main.jsx' },
+    { code: `export const Page = () => <input />;`, filename: 'pages/settings.tsx' },
+    { code: `export const Page = () => <div onClick={h}></div>;`, filename: 'layout.tsx' },
     // frame-busting comparison: BinaryExpression with equality operator breaks
     // out of the manipulation walk (operator whitelist branch)
     {
@@ -172,28 +177,23 @@ jsxRuleTester.run('no-clickjacking (coverage)', noClickjacking, {
     { code: `const s = window.self;`, filename: 'lib.ts' },
   ],
   invalid: [
-    // entry-point + <button UI -> missing frame busting
+    // A document shell with no frame protection. These four fixtures used to
+    // be `<button>`, `<form>`, `<input>` and `onClick` in files NAMED
+    // app.tsx / main.jsx / pages/settings.tsx / layout.tsx — they pinned a
+    // verdict that came from the filename regex and a whole-file text scan.
     {
-      code: `export const App = () => <button onClick={go}>hi</button>;`,
+      code: `export const App = () => <html><body><button onClick={go}>hi</button></body></html>;`,
       filename: 'app.tsx',
       errors: [{ messageId: 'missingFrameBusting' }],
     },
-    // entry-point + <form UI arm
     {
-      code: `export const Page = () => <form onSubmit={s}></form>;`,
+      code: `export const Page = () => <body><form onSubmit={s}></form></body>;`,
       filename: 'main.jsx',
       errors: [{ messageId: 'missingFrameBusting' }],
     },
-    // entry-point + <input UI arm
     {
-      code: `export const Page = () => <input />;`,
+      code: `export const Page = () => <head><link rel="icon" href="/f.ico" /></head>;`,
       filename: 'pages/settings.tsx',
-      errors: [{ messageId: 'missingFrameBusting' }],
-    },
-    // entry-point + onClick + '<' arm (no button/form/input)
-    {
-      code: `export const Page = () => <div onClick={h}></div>;`,
-      filename: 'layout.tsx',
       errors: [{ messageId: 'missingFrameBusting' }],
     },
     // frame manipulation via assignment
@@ -677,17 +677,17 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
 ruleTester.run('no-missing-csrf-protection (coverage)', noMissingCsrfProtection, {
   valid: [
     // fewer than two arguments
-    `app.post('/incomplete');`,
+    `import express from 'express';\nconst app = express();\napp.post('/incomplete');`,
     // invalid regex ignore pattern falls back to includes() and matches
     {
-      code: `app.post('(weird', handler);`,
+      code: `import express from 'express';\nconst app = express();\napp.post('(weird', handler);`,
       options: [{ ignorePatterns: ['('] }],
     },
   ],
   invalid: [
     // invalid regex ignore pattern that does not match falls through
     {
-      code: `app.post('/a', handler);`,
+      code: `import express from 'express';\nconst app = express();\napp.post('/a', handler);`,
       options: [{ ignorePatterns: ['['] }],
       errors: [
         {
@@ -695,7 +695,7 @@ ruleTester.run('no-missing-csrf-protection (coverage)', noMissingCsrfProtection,
           suggestions: [
             {
               messageId: 'addCsrfValidation',
-              output: `app.post('/a', csrf(), handler);`,
+              output: `import express from 'express';\nconst app = express();\napp.post('/a', csrf(), handler);`,
             },
           ],
         },

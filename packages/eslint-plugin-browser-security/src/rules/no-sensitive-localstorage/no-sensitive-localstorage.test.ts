@@ -214,3 +214,60 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
     },
   ],
 });
+
+/**
+ * Regression lock — `window.localStorage` is `localStorage`.
+ */
+ruleTester.run('lock: the global may be spelled out', noSensitiveLocalstorage, {
+  valid: [
+    { code: 'myLocalStorageWrapper.setItem("password", pw);' },
+    { code: 'top.localStorage.setItem("password", pw);' },
+    { code: 'window[storageName].setItem("password", pw);' },
+  ],
+  invalid: [
+    {
+      code: 'window.localStorage.setItem("password", pw);',
+      errors: [{ messageId: 'sensitiveLocalStorage', data: { key: 'password', storage: 'localStorage' } }],
+    },
+    {
+      code: 'globalThis.localStorage.setItem("apiKey", k);',
+      errors: [{ messageId: 'sensitiveLocalStorage', data: { key: 'apiKey', storage: 'localStorage' } }],
+    },
+    {
+      code: 'self.sessionStorage.setItem("secret", s);',
+      errors: [{ messageId: 'sensitiveLocalStorage', data: { key: 'secret', storage: 'sessionStorage' } }],
+    },
+    {
+      code: 'window.localStorage.authToken = t;',
+      errors: [{ messageId: 'sensitiveLocalStorage', data: { key: 'authToken', storage: 'localStorage' } }],
+    },
+  ],
+});
+
+/**
+ * `sensitivePatterns` REPLACES the default vocabulary. The same code must give
+ * a different verdict with and without it, or the option proves nothing.
+ */
+ruleTester.run('option: sensitivePatterns replaces the vocabulary', noSensitiveLocalstorage, {
+  valid: [
+    // `password` is in the DEFAULT list but not in this one.
+    {
+      code: 'localStorage.setItem("password", pw);',
+      options: [{ sensitivePatterns: ['dossier'] }],
+    },
+    // And a project word is not sensitive by default.
+    { code: 'localStorage.setItem("dossier", d);' },
+  ],
+  invalid: [
+    // Same two snippets, verdicts swapped.
+    {
+      code: 'localStorage.setItem("password", pw);',
+      errors: [{ messageId: 'sensitiveLocalStorage', data: { key: 'password', storage: 'localStorage' } }],
+    },
+    {
+      code: 'localStorage.setItem("dossier", d);',
+      options: [{ sensitivePatterns: ['dossier'] }],
+      errors: [{ messageId: 'sensitiveLocalStorage', data: { key: 'dossier', storage: 'localStorage' } }],
+    },
+  ],
+});

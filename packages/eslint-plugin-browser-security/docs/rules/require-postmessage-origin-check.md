@@ -97,7 +97,6 @@ message
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `trustedOrigins` | `string[]` | `[]` | Origins accepted without an explicit check |
 
 ```json
 {

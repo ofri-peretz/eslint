@@ -13,8 +13,9 @@
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { asExpressRouteRegistration } from '../../utils/express-app';
 
 type MessageIds = 'missingCsrfProtection' | 'addCsrfValidation';
 
@@ -170,64 +171,96 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const callee = node.callee;
       const callText = sourceCode.getText(node);
-      
+
       // Check if it matches any ignore pattern
       if (matchesIgnorePattern(callText, ignorePatterns)) {
         return;
       }
 
-      // Check for route handler methods (app.post, router.put, etc.)
-      if (callee.type === AST_NODE_TYPES.MemberExpression && callee.property.type === AST_NODE_TYPES.Identifier) {
-        const methodName = callee.property.name;
-        
-        // Only check if it's a route handler that requires CSRF (O(1) Set lookup)
-        if (protectedMethodsSet.has(methodName.toLowerCase())) {
-          // Must have at least 2 arguments (path and handler)
-          if (node.arguments.length < 2) {
-            return;
-          }
-          
-          // Check if CSRF middleware is in the route chain arguments
-          let hasCsrfInChain = false;
-          
-          // Check if any argument (after the first path argument) is a CSRF middleware
-          // Skip the first argument (path) and check the rest
-          for (let i = 1; i < node.arguments.length; i++) {
-            const arg = node.arguments[i];
-            const argText = sourceCode.getText(arg);
-            if (csrfPatterns.some(pattern => argText.toLowerCase().includes(pattern.toLowerCase()))) {
-              hasCsrfInChain = true;
-              break;
-            }
-          }
-          
-          if (!hasCsrfInChain) {
-            context.report({
-              node,
-              messageId: 'missingCsrfProtection',
-              data: {
-                issue: `${methodName.toUpperCase()} route handler missing CSRF protection`,
-                safeAlternative: `Add CSRF middleware: app.${methodName}("/path", csrf(), handler) or use app.use(csrf()) globally`,
-              },
-              suggest: [
-                {
-                  messageId: 'addCsrfValidation',
-                  fix(fixer: TSESLint.RuleFixer) {
-                    // Add CSRF middleware after the first argument (path)
-                    const firstArg = node.arguments[0];
-                    if (firstArg) {
-                      return fixer.insertTextAfter(firstArg, ', csrf()');
-                    }
-                    return null;
-                  },
-                },
-              ],
-            });
-          }
+      // The receiver must be a PROVEN Express app or router. Matching the
+      // method name alone made `axios.post('/api/orders', cart)` a CVSS 8.8
+      // finding — an HTTP client call that cannot carry CSRF middleware and
+      // is not a route at all.
+      const registration = asExpressRouteRegistration(
+        node,
+        sourceCode.getScope(node),
+        protectedMethodsSet,
+      );
+      if (registration === null) {
+        return;
+      }
+      const methodName = registration.method;
+      const { pathArg } = registration;
+
+      // Check if CSRF middleware is in the route chain arguments.
+      // Skip the path argument, when this form has one, and check the rest.
+      let hasCsrfInChain = false;
+      for (let i = pathArg === null ? 0 : 1; i < node.arguments.length; i++) {
+        const arg = node.arguments[i];
+        const argText = sourceCode.getText(arg);
+        if (csrfPatterns.some(pattern => argText.toLowerCase().includes(pattern.toLowerCase()))) {
+          hasCsrfInChain = true;
+          break;
         }
       }
+
+      if (!hasCsrfInChain && !hasGlobalCsrfMiddleware()) {
+        context.report({
+          node,
+          messageId: 'missingCsrfProtection',
+          data: {
+            issue: `${methodName.toUpperCase()} route handler missing CSRF protection`,
+            safeAlternative: `Add CSRF middleware: app.${methodName}("/path", csrf(), handler) or use app.use(csrf()) globally`,
+          },
+          suggest: [
+            {
+              messageId: 'addCsrfValidation',
+              fix(fixer: TSESLint.RuleFixer) {
+                // Middleware goes after the path, or first in the handler list
+                // when the path was already spent by `.route(…)`.
+                return pathArg === null
+                  ? fixer.insertTextBefore(node.arguments[0], 'csrf(), ')
+                  : fixer.insertTextAfter(pathArg, ', csrf()');
+              },
+            },
+          ],
+        });
+      }
+    }
+
+    /**
+     * Was CSRF middleware mounted for the whole app — `app.use(csrf())`?
+     *
+     * The rule's own remediation text has always offered this as the fix, and
+     * the rule then reported every route in a file that took it. Computed once
+     * per file, over the top-level statements where middleware is mounted.
+     */
+    let globalCsrf: boolean | undefined;
+    function hasGlobalCsrfMiddleware(): boolean {
+      if (globalCsrf !== undefined) return globalCsrf;
+      globalCsrf = false;
+      for (const statement of sourceCode.ast.body) {
+        if (statement.type !== 'ExpressionStatement') continue;
+        const call = statement.expression;
+        if (
+          call.type !== 'CallExpression' ||
+          call.callee.type !== 'MemberExpression' ||
+          call.callee.computed ||
+          call.callee.property.type !== 'Identifier' ||
+          call.callee.property.name !== 'use'
+        ) {
+          continue;
+        }
+        const mounted = call.arguments
+          .map((arg) => sourceCode.getText(arg).toLowerCase())
+          .join(' ');
+        if (csrfPatterns.some((pattern) => mounted.includes(pattern.toLowerCase()))) {
+          globalCsrf = true;
+          break;
+        }
+      }
+      return globalCsrf;
     }
 
     return {

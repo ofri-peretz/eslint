@@ -20,6 +20,7 @@ import {
   createRule,
 } from '@interlace/eslint-devkit';
 import { resolveStringKey } from '../../utils/resolve-binding';
+import { resolveGlobalObject } from '../../utils/global-object';
 
 type MessageIds = 'sensitiveLocalStorage';
 
@@ -150,23 +151,26 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const storageObjects = ['localStorage'];
+    const storageObjects = new Set(['localStorage']);
     if (checkSessionStorage) {
-      storageObjects.push('sessionStorage');
+      storageObjects.add('sessionStorage');
     }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
-        // Check for localStorage.setItem() or sessionStorage.setItem()
+        // Check for localStorage.setItem() or sessionStorage.setItem(),
+        // however the global is spelled. `window.localStorage.setItem(...)` is
+        // the same sink and used to be invisible — see utils/global-object.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.object.type === AST_NODE_TYPES.Identifier &&
-          storageObjects.includes(callee.object.name) &&
           callee.property.type === AST_NODE_TYPES.Identifier &&
           callee.property.name === 'setItem'
         ) {
+          const storage = resolveGlobalObject(callee.object, storageObjects);
+          if (storage === null) return;
+
           const keyArg = node.arguments[0];
 
           if (!keyArg) {
@@ -181,7 +185,7 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
               messageId: 'sensitiveLocalStorage',
               data: {
                 key: keyValue,
-                storage: callee.object.name,
+                storage,
               },
             });
           }
@@ -194,8 +198,8 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const obj = node.left.object;
-        if (obj.type !== AST_NODE_TYPES.Identifier || !storageObjects.includes(obj.name)) {
+        const storage = resolveGlobalObject(node.left.object, storageObjects);
+        if (storage === null) {
           return;
         }
 
@@ -211,7 +215,7 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
             messageId: 'sensitiveLocalStorage',
             data: {
               key: keyValue,
-              storage: obj.name,
+              storage,
             },
           });
         }

@@ -81,8 +81,7 @@ type MessageIds =
   | 'unsafeAlloc'
   | 'unsafeAllocSlow'
   | 'useSafeAlloc'
-  | 'unboundedAllocation'
-  | 'clampAllocation';
+  | 'unboundedAllocation';
 
 /** The two uninitialized-memory allocators on `Buffer`. */
 const UNSAFE_ALLOCATORS = new Set(['allocUnsafe', 'allocUnsafeSlow']);
@@ -333,7 +332,6 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         fix: 'Clamp the length against the maximum the protocol actually permits, before allocating: `if (length > MAX_LENGTH) throw new Error("too long")`, or `new Array(Math.min(length, MAX_LENGTH))`. A guard that only rejects implausibly huge values is not a fix for `new Array` — those are the sizes V8 makes free. The damaging lengths are the plausible ones just below the packed-elements limit.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/789.html',
       }),
-      clampAllocation: 'Clamp the size against the maximum the protocol permits.',
     },
     schema: [],
   },
@@ -572,7 +570,6 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       context.report({
         node,
         messageId: 'unboundedAllocation',
-        suggest: [{ messageId: 'clampAllocation', fix: () => null }],
       });
     }
 

@@ -16,7 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingCorsCheck' | 'useCorsMiddleware';
+type MessageIds = 'missingCorsCheck';
 
 export interface Options {
   /** Allow missing CORS checks in test files. Default: false */
@@ -34,6 +34,29 @@ type RuleOptions = [Options?];
 /**
  * Check if a string matches any ignore pattern
  */
+/**
+ * What is wrong with this literal `origin` value — or `null` if nothing is?
+ *
+ * `origin: true` was pinned as VALID by this rule's own fixture, next to an
+ * `origin: "*"` case it reported. That ordering is backwards. In the `cors`
+ * package, `true` means "reflect whatever Origin header the request carried",
+ * which is a wildcard that ALSO works with credentials — browsers refuse to
+ * send credentials to a literal `*`, but they will happily send them to a
+ * reflected origin. So `origin: true` is strictly more dangerous than the `*`
+ * the rule already caught, and it was the shape being called safe.
+ *
+ * @see https://github.com/expressjs/cors#configuration-options
+ */
+function describePermissiveOrigin(value: unknown): string | null {
+  if (value === '*') {
+    return 'Wildcard CORS origin (*) allows all origins';
+  }
+  if (value === true) {
+    return 'origin: true reflects the request Origin header, allowing every origin — and unlike "*" it still works with credentials';
+  }
+  return null;
+}
+
 function matchesIgnorePattern(text: string, ignorePatterns: string[]): boolean {
   return ignorePatterns.some(pattern => {
     try {
@@ -66,15 +89,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/346.html',
-      }),
-
-      useCorsMiddleware: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use CORS Middleware',
-        description: 'Use CORS middleware with origin validation',
-        severity: 'LOW',
-        fix: 'app.use(cors({ origin: allowedOrigins }))',
-        documentationLink: 'https://github.com/expressjs/cors',
       }),
     },
     schema: [
@@ -298,19 +312,23 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
               if (arg.type === 'ObjectExpression') {
                 // Check for origin property with wildcard value
                 for (const prop of arg.properties) {
-                  if (prop.type === 'Property' && 
-                      prop.key.type === 'Identifier' && 
-                      prop.key.name === 'origin' &&
-                      prop.value.type === 'Literal' &&
-                      prop.value.value === '*') {
-                    context.report({
-                      node: prop.value,
-                      messageId: 'missingCorsCheck',
-                      data: {
-                        issue: 'Wildcard CORS origin (*) allows all origins',
-                        safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
-                      },
-                    });
+                  if (
+                    prop.type === 'Property' &&
+                    prop.key.type === 'Identifier' &&
+                    prop.key.name === 'origin' &&
+                    prop.value.type === 'Literal'
+                  ) {
+                    const issue = describePermissiveOrigin(prop.value.value);
+                    if (issue !== null) {
+                      context.report({
+                        node: prop.value,
+                        messageId: 'missingCorsCheck',
+                        data: {
+                          issue,
+                          safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
+                        },
+                      });
+                    }
                   }
                 }
               } else if (arg.type === 'Identifier') {
@@ -335,20 +353,24 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                             // Check if init is an object literal with origin: "*"
                             if (declarator.init.type === 'ObjectExpression') {
                               for (const prop of declarator.init.properties) {
-                                if (prop.type === 'Property' && 
-                                    prop.key.type === 'Identifier' && 
-                                    prop.key.name === 'origin' &&
-                                    prop.value.type === 'Literal' &&
-                                    prop.value.value === '*') {
-                                  context.report({
-                                    node: arg,
-                                    messageId: 'missingCorsCheck',
-                                    data: {
-                                      issue: 'Wildcard CORS origin (*) allows all origins',
-                                      safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
-                                    },
-                                  });
-                                  return; // Found and reported, exit
+                                if (
+                                  prop.type === 'Property' &&
+                                  prop.key.type === 'Identifier' &&
+                                  prop.key.name === 'origin' &&
+                                  prop.value.type === 'Literal'
+                                ) {
+                                  const issue = describePermissiveOrigin(prop.value.value);
+                                  if (issue !== null) {
+                                    context.report({
+                                      node: arg,
+                                      messageId: 'missingCorsCheck',
+                                      data: {
+                                        issue,
+                                        safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
+                                      },
+                                    });
+                                    return; // Found and reported, exit
+                                  }
                                 }
                               }
                             }

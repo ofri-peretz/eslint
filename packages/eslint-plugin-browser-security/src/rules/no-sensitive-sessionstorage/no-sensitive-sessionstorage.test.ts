@@ -72,11 +72,46 @@ ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
       code: `sessionStorage['authToken'] = tokenValue;`,
       errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'authToken' } }],
     },
-    // Custom additionalPatterns
+    // Custom additionalPatterns. `userPin` used to be the fixture here, but
+    // `/pin/i` is already in the DEFAULT vocabulary — it reported with or
+    // without the option, so it proved nothing about the option. `dossier` is
+    // not a default, so the verdict genuinely depends on the configuration.
     {
-      code: `sessionStorage.setItem('userPin', pin);`,
-      options: [{ additionalPatterns: ['pin'] }],
-      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'userPin' } }],
+      code: `sessionStorage.setItem('userDossier', d);`,
+      options: [{ additionalPatterns: ['dossier'] }],
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'userDossier' } }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — `window.sessionStorage` is `sessionStorage`.
+ */
+ruleTester.run('lock: the global may be spelled out', noSensitiveSessionstorage, {
+  valid: [
+    { code: 'mySessionStorageShim.setItem("password", pw);' },
+    { code: 'top.sessionStorage.setItem("password", pw);' },
+    // additionalPatterns at its default does not know `dossier`.
+    { code: 'window.sessionStorage.setItem("userDossier", d);' },
+  ],
+  invalid: [
+    {
+      code: 'window.sessionStorage.setItem("password", pw);',
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'password' } }],
+    },
+    {
+      code: 'globalThis.sessionStorage.setItem("apiKey", k);',
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'apiKey' } }],
+    },
+    {
+      code: 'self.sessionStorage.authToken = t;',
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'authToken' } }],
+    },
+    // Same code as the valid case above — the option is what changes it.
+    {
+      code: 'window.sessionStorage.setItem("userDossier", d);',
+      options: [{ additionalPatterns: ['dossier'] }],
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'userDossier' } }],
     },
   ],
 });

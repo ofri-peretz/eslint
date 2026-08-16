@@ -51,6 +51,84 @@ const NON_DOCUMENT_HEADERS = new Set([
 ]);
 
 /**
+ * Response headers this rule can recognise by name.
+ *
+ * Needed because `set` is in the trigger list and `set` is one of the most
+ * common method names in JavaScript. Before this existed the rule reported
+ *
+ * ```js
+ * featureFlags.set('newCheckout', true);   // "Missing security headers:
+ *                                          //  Content-Security-Policy, …"
+ * ```
+ *
+ * at CVSS 7.5, on a feature-flag map. `setHeader` and `header` are distinctive
+ * enough to stand alone — `setHeader` is Node's ServerResponse API and
+ * `header` is Express's — but `set` needs a second piece of evidence, and the
+ * only one available at the call site is the header it names. Exact membership
+ * against a closed list, never a substring test.
+ */
+const KNOWN_RESPONSE_HEADERS: ReadonlySet<string> = new Set(
+  [
+    // Security
+    'Content-Security-Policy',
+    'Content-Security-Policy-Report-Only',
+    'X-Frame-Options',
+    'X-Content-Type-Options',
+    'X-XSS-Protection',
+    'Strict-Transport-Security',
+    'Referrer-Policy',
+    'Permissions-Policy',
+    'Feature-Policy',
+    'Cross-Origin-Opener-Policy',
+    'Cross-Origin-Embedder-Policy',
+    'Cross-Origin-Resource-Policy',
+    'X-Permitted-Cross-Domain-Policies',
+    'X-DNS-Prefetch-Control',
+    'X-Download-Options',
+    'Origin-Agent-Cluster',
+    'Report-To',
+    'Reporting-Endpoints',
+    'Clear-Site-Data',
+    // CORS
+    'Access-Control-Allow-Origin',
+    'Access-Control-Allow-Credentials',
+    'Access-Control-Allow-Methods',
+    'Access-Control-Allow-Headers',
+    'Access-Control-Expose-Headers',
+    'Access-Control-Max-Age',
+    'Timing-Allow-Origin',
+    // Entity / transport / caching
+    'Content-Type',
+    'Content-Length',
+    'Content-Encoding',
+    'Content-Language',
+    'Content-Disposition',
+    'Content-Range',
+    'Cache-Control',
+    'Pragma',
+    'Expires',
+    'ETag',
+    'Last-Modified',
+    'Age',
+    'Vary',
+    'Location',
+    'Set-Cookie',
+    'Server',
+    'Retry-After',
+    'Link',
+    'Accept-Ranges',
+    'Transfer-Encoding',
+    'WWW-Authenticate',
+  ].map((h) => h.toLowerCase()),
+);
+
+/** Methods that name an HTTP header on sight, with no further evidence needed. */
+const UNAMBIGUOUS_HEADER_METHODS: ReadonlySet<string> = new Set([
+  'setHeader',
+  'header',
+]);
+
+/**
  * Extract header name from setHeader call
  */
 function extractHeaderName(node: TSESTree.CallExpression): string | null {
@@ -58,6 +136,36 @@ function extractHeaderName(node: TSESTree.CallExpression): string | null {
     return String(node.arguments[0].value);
   }
   return null;
+}
+
+/**
+ * Is this call setting an HTTP response header?
+ *
+ * `requiredHeaders` joins the closed list so a project that configures a
+ * header we have never heard of still gets `res.set('X-Whatever', …)`
+ * recognised for it.
+ */
+function isHeaderSet(
+  node: TSESTree.CallExpression,
+  requiredHeaders: readonly string[],
+): boolean {
+  if (
+    node.callee.type !== 'MemberExpression' ||
+    node.callee.computed ||
+    node.callee.property.type !== 'Identifier'
+  ) {
+    return false;
+  }
+  const method = node.callee.property.name;
+  if (UNAMBIGUOUS_HEADER_METHODS.has(method)) return true;
+  if (method !== 'set') return false;
+
+  const name = extractHeaderName(node)?.toLowerCase();
+  if (name === undefined) return false;
+  return (
+    KNOWN_RESPONSE_HEADERS.has(name) ||
+    requiredHeaders.some((h) => h.toLowerCase() === name)
+  );
 }
 
 /**
@@ -91,10 +199,7 @@ function checkFunctionForSecurityHeaders(
 
   // Collect all setHeader calls in this scope
   function collectHeaders(astNode: TSESTree.Node): void {
-    if (astNode.type === 'CallExpression' &&
-        astNode.callee.type === 'MemberExpression' &&
-        astNode.callee.property.type === 'Identifier' &&
-        ['setHeader', 'header', 'set'].includes(astNode.callee.property.name)) {
+    if (astNode.type === 'CallExpression' && isHeaderSet(astNode, requiredHeaders)) {
       const headerName = extractHeaderName(astNode);
       if (headerName) {
         setHeaders.add(headerName);
@@ -223,35 +328,32 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
      * Check for response header setting
      */
     function checkCallExpression(node: TSESTree.CallExpression) {
-      // Check for res.setHeader, res.header, res.set
-      if (node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier') {
-        const methodName = node.callee.property.name;
-        
-        if (['setHeader', 'header', 'set'].includes(methodName)) {
-          const scopeKey = getScopeKey(node);
+      // res.setHeader / res.header always; res.set only when it names a header
+      // — see isHeaderSet.
+      if (!isHeaderSet(node, requiredHeaders)) {
+        return;
+      }
 
-          // Only check once per scope
-          if (reportedScopes.has(scopeKey)) {
-            return;
-          }
+      const scopeKey = getScopeKey(node);
 
-          const missing = checkFunctionForSecurityHeaders(node, requiredHeaders, context);
-          
-          if (missing.length > 0) {
-            reportedScopes.add(scopeKey);
-            context.report({
-              node,
-              messageId: 'missingSecurityHeader',
-              data: {
-                headers: missing.join(', '),
-              },
-            });
-          } else {
-            // Mark as checked even if no error
-            reportedScopes.add(scopeKey);
-          }
-        }
+      // Only check once per scope
+      if (reportedScopes.has(scopeKey)) {
+        return;
+      }
+
+      const missing = checkFunctionForSecurityHeaders(node, requiredHeaders, context);
+
+      // Mark as checked either way
+      reportedScopes.add(scopeKey);
+
+      if (missing.length > 0) {
+        context.report({
+          node,
+          messageId: 'missingSecurityHeader',
+          data: {
+            headers: missing.join(', '),
+          },
+        });
       }
     }
 

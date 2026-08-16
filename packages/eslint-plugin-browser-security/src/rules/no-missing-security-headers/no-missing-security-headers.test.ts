@@ -118,3 +118,52 @@ ruleTester.run('lock: transport-only headers are not a document response', noMis
     { code: "function h(res) { res.setHeader('X-Frame-Options', 'DENY'); }", errors: 1 },
   ],
 });
+
+/**
+ * Regression lock — `set` is a method name, not evidence of an HTTP response.
+ *
+ * `set` sat in the trigger list beside `setHeader` and `header`, so the rule
+ * reported `featureFlags.set('newCheckout', true)` as "Missing security
+ * headers: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options"
+ * at CVSS 7.5. It now needs the first argument to name a header it knows.
+ */
+ruleTester.run('lock: .set() must name a header', noMissingSecurityHeaders, {
+  valid: [
+    // The reported false positive, and its neighbours.
+    { code: "featureFlags.set('newCheckout', true);" },
+    { code: "const cache = new Map(); cache.set('user:42', profile);" },
+    { code: "formData.set('email', 'a@b.test');" },
+    { code: "store.set('theme', 'dark');" },
+    // A dynamic key proves nothing either way, so the rule abstains.
+    { code: 'res.set(headerName, headerValue);' },
+    // A `set` on a document header alongside the rest of the trio is fine.
+    {
+      code: `
+        res.set('Content-Security-Policy', "default-src 'self'");
+        res.set('X-Frame-Options', 'DENY');
+        res.set('X-Content-Type-Options', 'nosniff');
+      `,
+    },
+    // Express's own header alias, same trio.
+    {
+      code: `
+        res.header('Content-Security-Policy', "default-src 'self'");
+        res.header('X-Frame-Options', 'DENY');
+        res.header('X-Content-Type-Options', 'nosniff');
+      `,
+    },
+  ],
+  invalid: [
+    // `res.set` with a real header name still triggers the rule.
+    { code: "res.set('Content-Type', 'text/html');", errors: 1 },
+    { code: "res.set('X-Frame-Options', 'DENY');", errors: 1 },
+    { code: "res.header('Content-Type', 'text/html');", errors: 1 },
+    // A header the closed list has never heard of is still recognised when the
+    // project configured it via requiredHeaders.
+    {
+      code: "res.set('X-Tenant-Policy', 'strict');",
+      options: [{ requiredHeaders: ['X-Tenant-Policy', 'X-Frame-Options'] }],
+      errors: 1,
+    },
+  ],
+});

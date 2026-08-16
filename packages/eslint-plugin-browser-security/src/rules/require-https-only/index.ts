@@ -12,6 +12,7 @@
 
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { isNonTransmittingUrl } from '../../utils/loopback-hosts';
 
 type MessageIds = 'violationDetected';
 
@@ -75,7 +76,13 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
           if (
             url.type === AST_NODE_TYPES.Literal &&
             typeof url.value === 'string' &&
-            url.value.startsWith('http://')
+            url.value.startsWith('http://') &&
+            // `http://localhost:3000` never leaves the machine and
+            // `http://example.com` is reserved by RFC 2606, so neither is an
+            // unencrypted transmission. Every sibling CWE-319 rule in this
+            // package already carves these out; this one reported them, so a
+            // dev-server URL was a HIGH finding here and silent next door.
+            !isNonTransmittingUrl(url.value)
           ) {
             report(node);
           }

@@ -25,10 +25,16 @@ type MessageIds = 'missingOriginCheck';
 export interface Options {
   /** Allow in test files. Default: false */
   allowInTests?: boolean;
-
-  /** Trusted origins that satisfy the check. Default: [] */
-  trustedOrigins?: string[];
 }
+
+/*
+ * `trustedOrigins` was removed. It was declared in the schema and documented
+ * as "origins accepted without an explicit check", but `create()` never
+ * destructured it, so no value a user supplied could reach any decision. It
+ * had no coherent meaning either: this rule asks whether an origin check
+ * EXISTS, and which origins that check then accepts is the application's
+ * business, not the linter's.
+ */
 
 type RuleOptions = [Options?];
 
@@ -159,11 +165,6 @@ export const requirePostmessageOriginCheck = createRule<
             type: 'boolean',
             default: false,
           },
-          trustedOrigins: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [], description: 'Origins accepted without an explicit check'
-          },
         },
         additionalProperties: false,
       },
@@ -172,7 +173,6 @@ export const requirePostmessageOriginCheck = createRule<
   defaultOptions: [
     {
       allowInTests: false,
-      trustedOrigins: [],
     },
   ],
   create(

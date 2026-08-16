@@ -240,7 +240,6 @@ contains, so those still report.
 | `detectTokens` | `boolean` | `true` | Detect tokens |
 | `detectDatabaseStrings` | `boolean` | `true` | Detect database connection strings |
 | `customPatterns` | `object[]` | `[]` | Custom credential patterns to detect |
-| `strategy` | `"env"` \| `"config"` \| `"vault"` \| `"auto"` | `"auto"` | Strategy for fixing hardcoded credentials (auto = smart detection) |
 | `allowPlaceholders` | `boolean` | `true` | Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`) |
 
 ### Ignoring Test Credentials

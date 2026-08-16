@@ -129,12 +129,6 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'insecureTls',
-            suggest: [
-              {
-                messageId: 'enableValidation',
-                fix: () => null, // Should remove the assignment
-              },
-            ],
           });
         }
       }

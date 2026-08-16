@@ -19,6 +19,11 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
+import { isGlobalObject } from '../../utils/global-object';
+
+/** The single global this rule guards, however it is spelled. */
+const SESSION_STORAGE: ReadonlySet<string> = new Set(['sessionStorage']);
+
 type MessageIds = 'sensitiveInSessionStorage';
 
 export interface Options {
@@ -95,13 +100,18 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          additionalPatterns: { type: 'array', items: { type: 'string' }, description: 'Extra key-name patterns to treat as sensitive' },
+          additionalPatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra key-name patterns to treat as sensitive',
+          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true }],
+  defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
@@ -118,10 +128,11 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
+        // `window.sessionStorage.setItem(...)` is the same sink as the bare
+        // spelling and used to be invisible — see utils/global-object.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.object.type === AST_NODE_TYPES.Identifier &&
-          callee.object.name === 'sessionStorage' &&
+          isGlobalObject(callee.object, SESSION_STORAGE) &&
           callee.property.type === AST_NODE_TYPES.Identifier &&
           callee.property.name === 'setItem'
         ) {
@@ -152,11 +163,7 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (node.left.type !== AST_NODE_TYPES.MemberExpression) return;
 
-        const obj = node.left.object;
-        if (
-          obj.type !== AST_NODE_TYPES.Identifier ||
-          obj.name !== 'sessionStorage'
-        ) {
+        if (!isGlobalObject(node.left.object, SESSION_STORAGE)) {
           return;
         }
 

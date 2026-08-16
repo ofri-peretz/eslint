@@ -50,19 +50,20 @@ This rule detects imports of `crypto-js` via both ES modules (`import`) and Comm
 
 ## Configuration
 
-| Option     | Type                  | Default  | Description                |
-| ---------- | --------------------- | -------- | -------------------------- |
-| `severity` | `'error'` \| `'warn'` | `'warn'` | Severity level for reports |
+This rule takes no options. Severity is set the ESLint way, by the config entry:
 
 ```javascript
 {
   rules: {
-    'node-security/no-cryptojs': ['warn', {
-      severity: 'warn'
-    }]
+    'node-security/no-cryptojs': 'warn'
   }
 }
 ```
+
+> **Removed:** a `severity: 'error' | 'warn'` option was previously documented
+> here. `create()` never read it and no rule can — ESLint decides severity from
+> the config entry, not from rule options — so setting it changed nothing while
+> the schema accepted it silently. It now fails validation instead.
 
 ## Examples
 
@@ -179,6 +180,4 @@ import CryptoJS from 'crypto-js'; // eslint-disable-line node-security/no-crypto
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `severity` | `"error"` \| `"warn"` | `"warn"` | Severity level for the rule |
+This rule takes no options.

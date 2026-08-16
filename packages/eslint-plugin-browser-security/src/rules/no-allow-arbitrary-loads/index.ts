@@ -15,8 +15,58 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+/**
+ * Apple's App Transport Security opt-out keys.
+ *
+ * The rule used to match `allowArbitraryLoads` — lowercase, unprefixed. That
+ * key exists in no API. Apple spells it `NSAllowsArbitraryLoads`, and the
+ * canonical home for it is `Info.plist`, which is XML and which ESLint never
+ * sees. So the rule as written could only ever fire on a key nobody writes:
+ * vacuous in both directions.
+ *
+ * There IS a JavaScript surface for exactly these keys, and it is the one
+ * React Native projects actually use — an Expo `app.config.js` / `.ts`:
+ *
+ * ```js
+ * export default {
+ *   ios: {
+ *     infoPlist: {
+ *       NSAppTransportSecurity: { NSAllowsArbitraryLoads: true },
+ *     },
+ *   },
+ * };
+ * ```
+ *
+ * Exact membership against Apple's closed key set, never a substring test.
+ */
+const ATS_OPT_OUT_KEYS: string[] = [
+  'NSAllowsArbitraryLoads',
+  'NSAllowsArbitraryLoadsInWebContent',
+  'NSAllowsArbitraryLoadsForMedia',
+  'NSAllowsLocalNetworking',
+  'NSExceptionAllowsInsecureHTTPLoads',
+  'NSThirdPartyExceptionAllowsInsecureHTTPLoads',
+];
+
+/** The key a property names, whether written bare or quoted. */
+function propertyKeyName(node: TSESTree.Property): string | null {
+  if (node.computed) return null;
+  if (node.key.type === 'Identifier') return node.key.name;
+  if (node.key.type === 'Literal' && typeof node.key.value === 'string') {
+    return node.key.value;
+  }
+  return null;
+}
+
+export interface Options {
+  /**
+   * Configuration keys that disable transport security. REPLACES the Apple
+   * ATS vocabulary, so a Capacitor or Cordova project can point the rule at
+   * `cleartext` / `allowMixedContent` instead.
+   * Default: the six Apple ATS opt-out keys.
+   */
+  insecureLoadKeys?: string[];
+}
 
 type RuleOptions = [Options?];
 
@@ -35,23 +85,44 @@ export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-295',
-        description: 'Prevent configuration allowing insecure loads detected - allowArbitraryLoads: true',
+        description:
+          'App Transport Security is disabled: "{{key}}: true" lets the app load cleartext HTTP, so any network attacker can read and rewrite its traffic.',
         severity: 'HIGH',
-        fix: 'Review and apply secure practices',
+        fix: 'Remove the opt-out and serve over HTTPS, or scope it to one host with NSExceptionDomains.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/295.html',
       })
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          insecureLoadKeys: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ATS_OPT_OUT_KEYS,
+            description:
+              'Configuration keys that disable transport security; replaces the Apple ATS vocabulary',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [{ insecureLoadKeys: ATS_OPT_OUT_KEYS }],
+  create(context, [options = {}]) {
+    const { insecureLoadKeys = ATS_OPT_OUT_KEYS } = options as Options;
+    const optOutKeys = new Set(insecureLoadKeys);
+
     return {
       Property(node: TSESTree.Property) {
-        if (node.key.type === 'Identifier' && 
-            node.key.name === 'allowArbitraryLoads' &&
-            node.value.type === 'Literal' && 
-            node.value.value === true) {
-          context.report({ node, messageId: 'violationDetected' });
+        const key = propertyKeyName(node);
+        if (
+          key !== null &&
+          optOutKeys.has(key) &&
+          node.value.type === 'Literal' &&
+          node.value.value === true
+        ) {
+          context.report({ node, messageId: 'violationDetected', data: { key } });
         }
       },
     };

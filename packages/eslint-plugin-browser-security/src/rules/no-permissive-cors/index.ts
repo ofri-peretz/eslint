@@ -83,10 +83,15 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
               p.key.type === AST_NODE_TYPES.Identifier &&
               p.key.name === 'origin'
           );
+          // `'*'` and `true` are both "every origin". In the `cors` package
+          // `true` REFLECTS the request's Origin header, which is strictly
+          // worse than `'*'`: browsers refuse to send credentials to a literal
+          // `*`, but they will send them to a reflected origin. Only `'*'` was
+          // caught.
           if (
             originProp &&
             originProp.value.type === AST_NODE_TYPES.Literal &&
-            originProp.value.value === '*'
+            (originProp.value.value === '*' || originProp.value.value === true)
           ) {
             report(node);
           }

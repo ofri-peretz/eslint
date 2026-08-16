@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, resolveModuleBinding } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =

@@ -103,7 +103,7 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
     'secure-coding/no-improper-sanitization': ['error', {
       safeSanitizers: ['DOMPurify.sanitize', 'escape', 'encodeForHTML'],
       dangerousChars: ['<', '>', '"', "'", '&'],
-      trustedLibraries: ['dompurify', 'html-escaper', 'xss']
+      safeSanitizers: ['DOMPurify.sanitize', 'escapeHtml']
     }]
   }
 }
@@ -116,7 +116,6 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
 | `safeSanitizers` | `string[]` | `["DOMPurify.sanitize","he.encode","encodeURIComponent","encodeURI","escape"]` | Sanitizer calls treated as sufficient |
 | `dangerousChars` | `string[]` | `` ["<",">","\"","'","&","`","$","{","}","\|",";","(",")"] `` | Characters a sanitizer is expected to handle |
 | `contexts` | `string[]` | `["html","url","sql","command","javascript","css"]` | Output contexts checked for a context-appropriate sanitizer |
-| `trustedLibraries` | `string[]` | `["DOMPurify","he","validator","express-validator"]` | Libraries whose sanitizers are trusted |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as sanitizers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |

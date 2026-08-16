@@ -31,6 +31,15 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * The one place the default lives.
+ *
+ * It used to be written out three times — in `defaultOptions`, in the
+ * `create()` destructuring, and nowhere at all in `meta.schema`, so the
+ * generated docs claimed the option had no default while the code applied one.
+ */
+const DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1'];
+
 export const noHttpUrls = createRule<RuleOptions, MessageIds>({
   name: 'no-http-urls',
   meta: {
@@ -73,11 +82,13 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
           allowedHosts: {
             type: 'array',
             items: { type: 'string' },
+            default: DEFAULT_ALLOWED_HOSTS,
             description: 'List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1)',
           },
           allowedPorts: {
             type: 'array',
             items: { type: 'number' },
+            default: [],
             description: 'List of ports allowed for HTTP (e.g., 3000, 8080 for development)',
           },
         },
@@ -87,13 +98,13 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowedHosts: ['localhost', '127.0.0.1'],
+      allowedHosts: DEFAULT_ALLOWED_HOSTS,
       allowedPorts: [],
     },
   ],
   create(context) {
     const [options = {}] = context.options;
-    const allowedHosts = options.allowedHosts ?? ['localhost', '127.0.0.1'];
+    const allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;
     const allowedPorts = options.allowedPorts ?? [];
 
     function isAllowedException(url: string): boolean {
