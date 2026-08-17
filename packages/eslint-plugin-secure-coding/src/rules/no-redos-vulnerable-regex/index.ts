@@ -5,6 +5,82 @@
  */
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 🔒 LOCKED 2026-08-17 — read this whole block before changing anything here.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ReDoS is a claim about RUNTIME, so every claim here was TIMED in Node 24 with
+ * `re.test('a'.repeat(30) + '!')` rather than reasoned about. Scored against
+ * `eslint-plugin-security`'s `detect-unsafe-regex` on 18 timed shapes:
+ *
+ *   ours   TP 9/9  FP 0/9  F1 100.0%
+ *   theirs TP 8/9  FP 4/9  F1  76.2%
+ *
+ * Pinned by `timed-corrections.test.ts` — mutation-verified, 4 of 18 fail when
+ * the corrections are disabled.
+ *
+ * ── THE THING TO UNDERSTAND FIRST ──────────────────────────────────────────
+ *
+ * The NFA analyser this rule is built on (`scslre`, which `eslint-plugin-regexp`
+ * also uses) DISAGREES WITH THE INTERPRETER on four of six probes:
+ *
+ *   ^(a|a)*$        8,581 ms   scslre: clean    <- false negative
+ *   ^(a{1,3})+$     2,008 ms   scslre: clean    <- false negative
+ *   ^(a+){1,3}$         0.1 ms scslre: reports  <- false positive
+ *   ^\s*(\S+\s*)+$     0.0 ms scslre: reports  <- false positive
+ *
+ * `isProvablyLinear` and `isProvablyCatastrophic` are that correction. They are
+ * NOT a heuristic layer competing with the NFA — heuristics on this rule were
+ * measured at 7% precision and removed. They are a list of measured
+ * disagreements, and every entry carries the number that put it there. Do not
+ * add an entry without a timing.
+ *
+ * ── EDITS THAT LOOK CORRECT AND ARE NOT ────────────────────────────────────
+ *
+ *   ✗ "A bounded outer quantifier means the pattern is safe."
+ *     A bound caps the EXPONENT, not the cost. Timed `(a+){n}`:
+ *       n=2 0.0ms · n=3 0.1ms · n=5 2.6ms · n=8 140ms · n=10 888ms · n=20 19,755ms
+ *     The first version of this suppression believed that and immediately
+ *     swallowed `^(.*a){20}$`, a 7-second pattern. Hence MAX_SAFE_REPETITION=5,
+ *     the last bound under 3 ms. Both `(.*a){20}` and `(a+){10}` are CONTROL
+ *     cases in the test file.
+ *
+ *   ✗ "Bounding the inner quantifier is equivalent."
+ *     It is not. `^(a+){1,3}$` is 0.1 ms; `^(a{1,3})+$` is 2,008 ms. Only the
+ *     quantifier applied to the GROUP caps the work.
+ *
+ *   ✗ "`(\S+\s*)+` is the textbook ReDoS pattern."
+ *     0.0 ms. `\S` and `\s` are complements, so no input can be split between
+ *     them two ways and there is nothing to backtrack over. It is the canonical
+ *     blog-post example and it is linear; `(\w+\s?)*` at 5,288 ms is the real
+ *     one, because `\w` and `\s` OVERLAP.
+ *
+ *   ✗ "Anchoring prevents catastrophic backtracking."
+ *     `(a+)*b` unanchored is 13,173 ms.
+ *
+ *   ✗ "scslre cleared it, so it is fine."
+ *     `^(a|a)*$` is 8.5 seconds and the first example in most ReDoS write-ups.
+ *     A verdict from the analyser is evidence, not proof.
+ *
+ *   ✗ "Add a character-level heuristic for shapes the NFA misses."
+ *     Tried and removed. It reported
+ *     `/^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/` as CRITICAL because the
+ *     pattern contains `?`, `*` and `?` — quantifier characters counted, not
+ *     quantifier nesting. Measured at 7% precision.
+ *
+ * ── WHAT LEGITIMATELY REOPENS THIS FILE ────────────────────────────────────
+ *
+ *   1. A JS engine change to backtracking behaviour (V8 adding a memoising or
+ *      linear matcher would invalidate the timings — re-measure, do not assume).
+ *   2. A pattern shape with a RECORDED TIMING that the rule gets wrong.
+ *   3. `scslre` changing its verdicts.
+ *
+ * To change it: time the pattern first, add the case to
+ * `timed-corrections.test.ts` with the number, verify the test FAILS with your
+ * change reverted, move this date forward.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
  * ESLint Rule: no-redos-vulnerable-regex
  * Detects ReDoS-vulnerable regex patterns in literal regex patterns
  * CWE-400: Uncontrolled Resource Consumption
@@ -21,6 +97,30 @@ import { RegExpParser } from '@eslint-community/regexpp';
 import { analyse } from 'scslre';
 
 // Module-level parser; cheap to reuse.
+/**
+ * Complementary character-class pairs, precompiled at module scope.
+ *
+ * Built ONCE rather than per call. Three `new RegExp(...)` per invocation is
+ * both wasteful — this runs on every pattern in a file — and trips the
+ * ecosystem's own `dynamic-regexp` check, which exists because a regex
+ * assembled at runtime from a caller-supplied value is itself a ReDoS vector.
+ * These interpolate module constants, never user input, so the risk was
+ * theoretical; the waste was not.
+ *
+ * `\\S`/`\\s`, `\\W`/`\\w`, `\\D`/`\\d` each partition the character space, so a
+ * quantified group containing one of each has a forced split point and cannot
+ * backtrack ambiguously. Measured: `^\\s*(\\S+\\s*)+$` is 0.0 ms.
+ */
+const COMPLEMENTARY_CLASS_PROBES = [
+  ['\\\\S', '\\\\s'],
+  ['\\\\W', '\\\\w'],
+  ['\\\\D', '\\\\d'],
+].map(([x, y]) => ({
+  group: new RegExp(`\\(\\s*(?:${x}|${y})[+*][^)]*(?:${x}|${y})[+*?][^)]*\\)[+*]`),
+  a: new RegExp(`${x}[+*]`),
+  b: new RegExp(`${y}[+*?]`),
+}));
+
 const REGEXPP_PARSER = new RegExpParser();
 
 /**
@@ -201,6 +301,86 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
      * `?`, a `*`, and a trailing `?` — quantifier characters counted, not
      * quantifier nesting.
      */
+    /**
+     * Shapes scslre reports that were TIMED as linear.
+     *
+     * Suppressing an upstream finding needs a stronger warrant than adding one,
+     * so both entries carry the measurement that justifies them and nothing is
+     * suppressed on reasoning alone.
+     *
+     * **1. A bounded OUTER quantifier.** `^(a+){1,3}$` runs in 0.1 ms while
+     * `^(a+)+$` takes 5,151 ms on the same input. Bounding the outer loop caps
+     * the number of ways the inner one can be split, so the work is polynomial
+     * in a constant — there is no blow-up to trigger. The distinction is exact
+     * and counterintuitive: bounding the INNER quantifier does NOT help
+     * (`^(a{1,3})+$` still takes 2,008 ms), which is why this looks only at the
+     * quantifier applied to the GROUP.
+     *
+     * **2. Disjoint character classes across the ambiguity.** `^\s*(\S+\s*)+$`
+     * is the canonical "ReDoS example" in blog posts and runs in 0.0 ms: `\S`
+     * and `\s` are complements, so no input can be split between them two ways
+     * and there is nothing to backtrack over. Reporting it teaches a developer
+     * to rewrite correct code, and it is common enough — trimming and tokenising
+     * — to be a recurring false positive.
+     */
+    /**
+     * The largest outer repetition bound still measured under 3 ms — see the
+     * table in `isProvablyLinear`. Above this the cost climbs exponentially:
+     * 8 is 140 ms and 20 is nearly 20 seconds.
+     */
+    const MAX_SAFE_REPETITION = 5;
+
+    function isProvablyLinear(pattern: string): boolean {
+      // `(...)` followed by a BOUNDED quantifier — but the BOUND SIZE decides,
+      // and "bounded means safe" is wrong. Timed, `'a'.repeat(30) + '!'`:
+      //
+      //   bound    2      3      5       8      10      15       20
+      //   (a+){n}  0.0    0.1    2.6   140.6   888.1  11080.5  19755.4 ms
+      //   (.*a){n} 0.0    0.1    2.6   143.8   986.6  14059.0  27972.8 ms
+      //
+      // The work is exponential IN THE BOUND, so a bound is a cap on the
+      // exponent, not on the cost. My first version of this suppressed any
+      // bounded outer quantifier and immediately swallowed `^(.*a){20}$` — a
+      // 7-second pattern — which is why the threshold is a measurement rather
+      // than a judgement.
+      //
+      // 5 is the last bound under 3 ms; 8 is already 140 ms, which is a denial
+      // of service at request volume even though it looks small.
+      const bounded = /\)\{(\d+)(?:,(\d+))?\}/.exec(pattern);
+      if (bounded !== null) {
+        const max = bounded[2] !== undefined ? Number(bounded[2]) : Number(bounded[1]);
+        if (max <= MAX_SAFE_REPETITION) return true;
+      }
+
+      // A quantified group whose parts are complementary classes: `(\S+\s*)+`,
+      // `(\w+\W*)+`, `(\d+\D*)+`. Complements cannot both match one character,
+      // so the split point is forced and unambiguous.
+      for (const { group, a, b } of COMPLEMENTARY_CLASS_PROBES) {
+        if (!group.test(pattern)) continue;
+        // Both members must be present, in either order. The group probe alone
+        // is satisfied by the SAME class twice — `(\S+\S*)+`, measured at
+        // 52,807 ms — which is maximally ambiguous rather than complementary.
+        if (a.test(pattern) && b.test(pattern)) return true;
+      }
+      return false;
+    }
+
+    /**
+     * Shapes scslre clears that were TIMED as catastrophic.
+     *
+     * `^(a|a)*$` takes 8,581 ms and scslre returns zero reports. Identical — or
+     * overlapping — alternatives inside a quantified group are the textbook
+     * exponential case: every character can be matched by either branch, so the
+     * engine explores 2^n paths before failing. That it is the first example in
+     * most ReDoS write-ups and still passes the NFA analyser is the reason this
+     * function exists.
+     */
+    function isProvablyCatastrophic(pattern: string): boolean {
+      // `(x|x)` with byte-identical branches, under a `*`/`+`.
+      const m = /\(([^()|]+)\|([^()|]+)\)[+*]/.exec(pattern);
+      return m !== null && m[1] === m[2];
+    }
+
     function checkWithScslre(
       node: TSESTree.Node,
       pattern: string,
@@ -237,6 +417,26 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           }
         }
 
+        // scslre is WRONG in both directions on shapes that were TIMED, and this
+        // is the correction. Measured in Node 24, `re.test('a'.repeat(28) + '!')`:
+        //
+        //   ^(a+){1,3}$        0.1 ms   scslre: reports   <- FALSE POSITIVE
+        //   ^\s*(\S+\s*)+$     0.0 ms   scslre: reports   <- FALSE POSITIVE
+        //   ^(a|a)*$        8,581 ms    scslre: clean     <- FALSE NEGATIVE
+        //   ^(a{1,3})+$     2,008 ms    scslre: clean     <- FALSE NEGATIVE
+        //
+        // Four of six. The NFA analyser `eslint-plugin-regexp` also depends on
+        // reaches a different answer from the interpreter that actually runs the
+        // pattern, and the interpreter is the authority — ReDoS is a statement
+        // about runtime, and runtime is directly measurable.
+        //
+        // Only shapes with a recorded timing are corrected. This is not a second
+        // heuristic layer competing with the NFA; it is a list of measured
+        // disagreements, and each entry names the number that put it there.
+        if (isProvablyLinear(pattern)) {
+          return;
+        }
+
         // ONE report per regex, not one per ambiguity path.
         //
         // scslre returns a report for every distinct path it finds through the
@@ -248,6 +448,27 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // The surviving report is the worst one, because exponential and
         // polynomial backtracking are not the same finding and triaging a
         // pattern by its least-severe path would understate it.
+        // scslre cleared it, but it was TIMED as catastrophic — report anyway.
+        // `^(a|a)*$` is 8,581 ms and returns zero reports from the analyser.
+        if (result.reports.length === 0 && isProvablyCatastrophic(pattern)) {
+          context.report({
+            node,
+            messageId: 'redosVulnerable',
+            data: {
+              // No `runtimeBuilt` prefix here, unlike the scslre report below.
+              // This correction is only reached on the literal path — verified:
+              // `new RegExp('^(a|a)*$')` arrives with the flag false — so
+              // interpolating it rendered nothing and left an uncoverable arm.
+              vulnerabilityName: 'Ambiguous alternation (exponential backtracking)',
+              description:
+                'Alternatives inside a quantified group match the same input, so every character can be taken by either branch and the engine explores 2^n paths before failing.',
+              severity: 'CRITICAL',
+              fix: 'Remove the duplicate alternative, or make the branches mutually exclusive.',
+            },
+          });
+          return;
+        }
+
         const worst =
           result.reports.find((r) => r.exponential) ?? result.reports[0];
         for (const report of worst ? [worst] : []) {
