@@ -182,6 +182,47 @@ const probe = async (ruleId: string): Promise<Report> => {
   const drift = schemaDefaultDrift(rule);
   probes['§B2 schema defaults'] = { ok: drift.length === 0, detail: drift.length === 0 ? 'agree' : drift.join('; ') };
 
+  // §C3 — the feedback-quality metrics that are COUNTABLE. Actionability,
+  // localisation and FP-recognition need a model in the loop and are not
+  // attempted here; token budget and the §C4 defects are arithmetic, and
+  // arithmetic that nobody had run.
+  //
+  // Messages are collected across every vulnerable fixture, so this is the
+  // rule's real output and not one hand-picked string.
+  const messages = fs
+    .readdirSync(path.join(dir, 'vulnerable'))
+    .flatMap((f) =>
+      lint(rule, name, fs.readFileSync(path.join(dir, 'vulnerable', f), 'utf8'), path.join('src', `case${path.extname(f)}`)).map(
+        (m) => m.message,
+      ),
+    );
+
+  if (messages.length) {
+    // ~4 chars per token. An approximation, and labelled as one — the §C3
+    // budget is 120, and these come in far enough under or over that a real
+    // tokenizer would not change the verdict.
+    const tokens = messages.map((m) => Math.ceil(m.length / 4));
+    const worst = Math.max(...tokens);
+    const mean = Math.round(tokens.reduce((a, b) => a + b, 0) / tokens.length);
+    probes['§C3 tokens/finding'] = { ok: worst <= 120, detail: `mean ${mean}, worst ${worst} (budget 120, ~4 chars/token)` };
+
+    // §C4: "Severity is uncalibrated. CVSS:9.8 on a missing-auth finding, and on
+    // object injection, and on command injection. If everything is 9.8 the field
+    // carries no information." Reported per rule so the ecosystem-wide question
+    // can be answered by running --all.
+    const cvss = [...new Set(messages.flatMap((m) => m.match(/CVSS:([\d.]+)/g) ?? []))];
+    probes['§C4 CVSS value(s)'] = { ok: true, detail: cvss.join(', ') || 'none in message' };
+
+    // §C2.4: "a sentence naming the safe pattern lets an agent close a finding
+    // instead of 'fixing' correct code. Nothing in either plugin does this
+    // today. Biggest available win." Still true until a rule says otherwise.
+    const saysWhatIsSafe = messages.every((m) => /Not a finding( if|:)|Safe if|Legitimate (if|when)/i.test(m));
+    probes['§C2.4 FP guidance'] = {
+      ok: saysWhatIsSafe,
+      detail: saysWhatIsSafe ? 'names the safe pattern' : 'no message says what a false positive looks like',
+    };
+  }
+
   return { rule: ruleId, probes };
 };
 

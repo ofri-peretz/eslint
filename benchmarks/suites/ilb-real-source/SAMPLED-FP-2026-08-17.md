@@ -104,9 +104,23 @@ before it is fixed — it is currently the single largest contributor to our noi
 |---|---|---|---|---|
 | 1 | detect-object-injection | n8n `langsmith.ts:121` | FP | `span.attributes[AI_OPERATION_ID]` — key is a module constant |
 | 2 | detect-unsafe-regex | n8n `observation-log-observer.ts:29` | **TP** | Same pattern as our #1, and timed the same. Both plugins found it |
-| 3 | detect-non-literal-regexp | n8n `observation-log-observer.ts:39` | FP | Read the source: the pattern is a template over `SECRET_KEYS`, a module constant. Build-time determined. **Our `detect-non-literal-regexp` does not report this** — it is `safe/02-module-constant` |
-| 4 | detect-non-literal-require | n8n `model-factory.ts:390` | FP | `require(entry.pkg)` where `entry = EMBEDDING_PROVIDERS[provider]` with an explicit `if (!entry) throw`. A closed-set lookup — `safe/04-closed-set-lookup` |
-| 5 | detect-non-literal-fs-filename | n8n `registry.ts:115` | FP | Guarded **twice**: `normalizeLinkedFilePath()` then `findLinkedFile(skill.linkedFiles, …)`, which returns null on non-membership. An allowlist — `safe/04-allowlisted-filename`. **Our rule does not report this** |
+| 3 | detect-non-literal-regexp | n8n `observation-log-observer.ts:39` | FP | Read the source: the pattern is a template over `SECRET_KEYS`, a module constant. Build-time determined. ~~Our rule does not report this~~ — **see the correction below: it does** |
+| 4 | detect-non-literal-require | n8n `model-factory.ts:390` | FP | `require(entry.pkg)` where `entry = EMBEDDING_PROVIDERS[provider]` with an explicit `if (!entry) throw`. A closed-set lookup. We ship no rule for this sink, so we are silent by absence, not by judgement |
+| 5 | detect-non-literal-fs-filename | n8n `registry.ts:115` | FP | Guarded **twice**: `normalizeLinkedFilePath()` then `findLinkedFile(skill.linkedFiles, …)`, which returns null on non-membership. An allowlist — `safe/04-allowlisted-filename`. Our rule did not report this line in the run above |
+
+> ### Correction, same day
+>
+> The original rows 3, 4 and 5 each claimed "our rule does not report this". For
+> row 3 that was **false**, and the mistake is instructive: the rule had not been
+> *run*. `detect-non-literal-regexp` is deliberately not in `recommended`, so the
+> preset-based run never enabled it — and I read its absence from the output as a
+> judgement it had made. Forced on (`--sample-rules`), it reports the same file
+> and line the competitor did.
+>
+> **Silence is not precision, and a rule that was never enabled is not silent —
+> it is absent.** §0.4 says a zero is a finding about the harness until shown
+> otherwise; I had the rule's own corpus fixture in mind (`safe/02-module-constant`)
+> and let it stand in for a measurement.
 | 6 | detect-object-injection | axios `adapters.js:75` | FP | `adapters[i]`, `i` a loop index |
 | 7 | detect-unsafe-regex | axios `AxiosHeaders.js:23` | FP | **Timed flat** (0.0 ms through n=20,000). `[^\s,;=]+` and `\s*` are disjoint |
 | 8 | detect-non-literal-fs-filename | axios `sandbox/server.js:21` | **TP** | `createReadStream(join(resolve(), 'sandbox', file))` with a request-derived `file` — traversal |
@@ -126,6 +140,84 @@ before it is fixed — it is currently the single largest contributor to our noi
 | 22 | detect-object-injection | express `application.js:111` | FP | Key is `trustProxyDefaultSymbol`, a module Symbol |
 | 23 | detect-non-literal-require | express `view.js:81` | FP | `require(mod)` where `mod` is the view-engine name from the file extension — Express's documented engine resolution |
 | 24 | detect-non-literal-fs-filename | express `statSync(path):201` | FP | Express's own view-lookup primitive. The traversal risk belongs to an application that passes user input to `res.render`, not to the framework's resolver |
+
+---
+
+---
+
+## Per-rule sample — the four locked rules
+
+The volume-stratified sample above answers the ECOSYSTEM question. It cannot
+seal a rule: of the four locked rules only `no-redos-vulnerable-regex` reaches
+the top 5 by volume, so the other three had **no real-source precision number at
+all** and "sealed" meant "sealed on fixtures we wrote".
+
+```
+node benchmarks/suites/ilb-real-source/run.mjs --allow-local --sample=27 \
+  --sample-rules=secure-coding/detect-object-injection,node-security/detect-non-literal-fs-filename,secure-coding/detect-non-literal-regexp
+```
+
+This deliberately over-weights rules the volume sample would barely see. **It is
+a different claim from the ecosystem precision and must never be quoted as it.**
+
+| rule | locked | TP | FP | precision |
+|---|---|---:|---:|---:|
+| `no-redos-vulnerable-regex` | 2026-08-17 | 3 | 1 | **75%** |
+| `detect-non-literal-regexp` | 2026-08-17 | 3 | 7 | **30%** |
+| `detect-non-literal-fs-filename` | 2026-08-17 | 0 | 4 | **0%** |
+| `detect-object-injection` | 2026-08-16 | 0 | 13 | **0%** |
+
+**All four score 100.0% F1 on their own corpora.** Three of them are at or below
+30% on code we did not write. That is the gap this protocol exists to find, and
+until now the protocol had not looked.
+
+### `detect-object-injection` is our loudest rule by an order of magnitude
+
+Forced on, it reports **15,306** findings over 3.0M LOC — against the entire
+incumbent plugin's 22,530. It is absent from the ecosystem table above only
+because it is not in `recommended`, which is also the only thing keeping it out
+of consumers' inboxes.
+
+Its 13 sampled findings are all the same shape: an index into a structure the
+program itself owns — an OpenTelemetry span map, an axios adapter registry, a
+knex migration lookup table, express's `this.engines[extension]`, a webpack
+`pkg.bin[cli.binName]`. No attacker is present in any of them.
+
+**Two are a guard failing, not a missing guard.** `fastify.js:255`
+(`this[pluginUtils.kRegisteredPlugins]`) and `mongoose/lib/aggregate.js:59`
+(`modelOrConn[modelSymbol]`) are **Symbol-keyed**, and a Symbol can never be
+`'__proto__'` — the rule has an `isSymbolKey` guard for exactly this. Probed:
+
+```js
+const kPlugins = Symbol('plugins');  self[kPlugins]      // quiet  ✓
+import { kPlugins } from './utils';  self[kPlugins]      // REPORTS ✗
+```
+
+`isSymbolKey` resolves an in-file `Symbol()` and gives up on an imported
+binding. Module-scope symbols live in a shared `symbols.js` in every codebase
+that uses them, so the guard misses the normal spelling and catches the rare
+one. Fixing it is bounded and mechanical, and it is the first thing to do here.
+
+### `detect-non-literal-regexp` — the two real positives, and the honest miss
+
+TP: `new RegExp(keyword,'i')` over stored monitor configuration (uptime-kuma),
+`new RegExp(pattern, flags)` over a user-supplied JSON-schema keyword
+(serverless), and `new RegExp(atom.$regex)` in parse-server's Mongo transform —
+the last is a client-supplied query operator reaching the constructor, a real
+ReDoS vector.
+
+The instructive FP is directus:
+
+```js
+new RegExp(`${escapeRegExp(dep.replace(/\//g, '_'))}\\.[a-zA-Z0-9_-]{8}\\.entry\\.js`)
+```
+
+The pattern is escaped already, by a real `escapeRegExp` one call away. `isNeutralised`
+recognises the escape only when it can see the metacharacter-class regex literal
+at the site, and deliberately refuses to trust the callee's NAME (a
+`const escapeRegExp = (s) => s` shipped in this ecosystem once). So the rule is
+wrong here *because* of a decision that is right in general. Naming it rather
+than filing it as noise.
 
 ---
 

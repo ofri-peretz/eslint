@@ -107,6 +107,24 @@ const limitArg = args.find((a) => a.startsWith('--limit='));
 // 5 rules, for hand-labelling. Without it the run only produces volume, and §A3
 // forbids publishing a volume ratio with no sampled-FP number beside it.
 const sampleN = Number((args.find((a) => a.startsWith('--sample=')) ?? '=0').split('=')[1]);
+/**
+ * `--sample-rules=a/b,c/d` samples THOSE rules instead of the top 5 by volume.
+ *
+ * §A2's default stratification is by volume, which is right for an ecosystem
+ * claim — it weights the sample the way a consumer's inbox is weighted. It is
+ * useless for sealing one rule: of the four locked rules only
+ * `no-redos-vulnerable-regex` reaches the top 5, so the other three came back
+ * with no real-source precision number at all and "sealed" meant "sealed on
+ * fixtures we wrote".
+ *
+ * A per-rule sample is a DIFFERENT claim from the ecosystem one and must never
+ * be reported as the ecosystem precision — it deliberately over-weights a rule
+ * the volume sample would barely see.
+ */
+const sampleRules = (args.find((a) => a.startsWith('--sample-rules=')) ?? '=')
+  .split('=')[1]
+  .split(',')
+  .filter(Boolean);
 const corpusArg = (args.find((a) => a.startsWith('--corpus=')) ?? '--corpus=popular').split('=')[1];
 const CORPORA = { popular: REPOS, adoption: ADOPTION_REPOS, all: [...REPOS, ...ADOPTION_REPOS] };
 const chosen = CORPORA[corpusArg];
@@ -232,10 +250,17 @@ const recommendedOf = (plugin, prefix) => {
     : all(plugin, prefix);
 };
 
+// A rule named by `--sample-rules` is enabled explicitly. `detect-non-literal-regexp`
+// is deliberately NOT in `recommended` (see the plugin index for the measurement
+// that removed it), so without this it would contribute zero samples and the run
+// would report a clean sheet for a rule it never ran — §0.4, a zero is a finding
+// about the harness until shown otherwise.
+const forced = Object.fromEntries(sampleRules.map((r) => [r, 'error']));
 const US = mk({ 'secure-coding': sc, 'browser-security': bs, 'node-security': ns }, {
   ...recommendedOf(sc, 'secure-coding'),
   ...recommendedOf(bs, 'browser-security'),
   ...recommendedOf(ns, 'node-security'),
+  ...forced,
 });
 const THEM = mk({ [competitorPrefix]: sec }, recommendedOf(sec, competitorPrefix));
 
@@ -324,7 +349,9 @@ const count = async (engine, files, root, prefixes, repo) => {
  * "read" this protocol exists to replace.
  */
 const stratify = (samples, byRule, n) => {
-  const topRules = Object.entries(byRule).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([r]) => r);
+  const topRules = sampleRules.length
+    ? sampleRules
+    : Object.entries(byRule).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([r]) => r);
   const buckets = new Map();
   for (const s of samples) {
     if (!topRules.includes(s.rule)) continue;
