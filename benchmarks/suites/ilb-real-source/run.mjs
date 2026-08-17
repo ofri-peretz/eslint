@@ -103,6 +103,10 @@ const ADOPTION_REPOS = [
 const args = process.argv.slice(2);
 const asJson = args.includes('--json');
 const limitArg = args.find((a) => a.startsWith('--limit='));
+// §A2: `--sample=N` dumps N findings per side, stratified by repo and by the top
+// 5 rules, for hand-labelling. Without it the run only produces volume, and §A3
+// forbids publishing a volume ratio with no sampled-FP number beside it.
+const sampleN = Number((args.find((a) => a.startsWith('--sample=')) ?? '=0').split('=')[1]);
 const corpusArg = (args.find((a) => a.startsWith('--corpus=')) ?? '--corpus=popular').split('=')[1];
 const CORPORA = { popular: REPOS, adoption: ADOPTION_REPOS, all: [...REPOS, ...ADOPTION_REPOS] };
 const chosen = CORPORA[corpusArg];
@@ -160,7 +164,13 @@ if (stale.length && !args.includes('--allow-local')) {
 // repo was 48/48 false positives, three quarters of them purely because spec/ was linted.
 // This omission invalidated the previous 20-repo table for BOTH sides.
 const SKIP_DIR = /(^|\/)(node_modules|dist|build|\.next|\.nuxt|coverage|vendor|public|fixtures?|__fixtures__|test|tests|__tests__|spec|specs|e2e|benchmarks?|examples?|docs?)(\/|$)/;
-const SKIP_FILE = /\.(min|bundle|chunk)\.[cm]?jsx?$/;
+// `.test.` / `.spec.` colocated with source. SKIP_DIR only catches test
+// DIRECTORIES, and the modern convention is a sibling file — n8n keeps
+// `src/config.test.ts` next to `src/config.ts`. The §A2 sampler surfaced one on
+// its first run (`no-http-urls` firing on an `expect(isOriginAllowed('http://…'))`
+// assertion), which is the §A5 "test directories excluded" gate failing on a
+// technicality of where the test lives.
+const SKIP_FILE = /(\.(min|bundle|chunk)\.[cm]?jsx?|\.(test|spec)\.[cm]?[jt]sx?)$/;
 const MAX_AVG_LINE = 500; // a proxy for "minified", independent of filename
 
 const clone = (repo) => {
@@ -255,19 +265,30 @@ const THEM_PREFIXES = [competitorPrefix];
 const belongsToSuite = (ruleId, prefixes) =>
   prefixes.some((prefix) => ruleId.startsWith(`${prefix}/`));
 
-const count = async (engine, files, root, prefixes) => {
+const count = async (engine, files, root, prefixes, repo) => {
   let findings = 0;
   let foreign = 0;
+  // §A5 gate: "every intended file was actually linted". These were `continue`
+  // with no tally, so a parser that choked on a whole repo read as a quiet zero.
+  let skippedMinified = 0;
+  let unreadable = 0;
+  let lintFailed = 0;
+  let loc = 0;
   const byRule = {};
+  const samples = [];
   for (const f of files) {
     let code;
-    try { code = fs.readFileSync(f, 'utf8'); } catch { continue; }
-    const lines = code.split('\n').length;
-    if (code.length / Math.max(lines, 1) > MAX_AVG_LINE) continue; // minified
+    try { code = fs.readFileSync(f, 'utf8'); } catch { unreadable++; continue; }
+    const srcLines = code.split('\n');
+    const lines = srcLines.length;
+    if (code.length / Math.max(lines, 1) > MAX_AVG_LINE) { skippedMinified++; continue; } // minified
     let res;
     try {
       res = await engine.lintText(code, { filePath: `case${path.extname(f)}` });
-    } catch { continue; }
+    } catch { lintFailed++; continue; }
+    // Only files that were actually linted contribute LOC, so the §A3 denominator
+    // matches the numerator.
+    loc += lines;
     for (const m of res[0]?.messages ?? []) {
       if (!m.ruleId) continue;
       // A rule the suite does not own is the repo's own config leaking in, never
@@ -278,9 +299,48 @@ const count = async (engine, files, root, prefixes) => {
       }
       findings++;
       byRule[m.ruleId] = (byRule[m.ruleId] ?? 0) + 1;
+      if (sampleN) {
+        samples.push({
+          repo,
+          rule: m.ruleId,
+          file: path.relative(root, f).split(path.sep).join('/'),
+          line: m.line,
+          message: m.message,
+          src: (srcLines[m.line - 1] ?? '').trim().slice(0, 200),
+        });
+      }
     }
   }
-  return { findings, byRule, foreign };
+  return { findings, byRule, foreign, loc, skippedMinified, unreadable, lintFailed, samples };
+};
+
+/**
+ * §A2 sampling protocol: ">=20 findings per side, stratified across repos AND
+ * across the top 5 rules by volume".
+ *
+ * Round-robin over (rule, repo) buckets rather than taking the first N: the
+ * repos are walked in star order, so a head-of-list slice is n8n's top rule and
+ * nothing else — which is the shape of sample that produced the 10-finding
+ * "read" this protocol exists to replace.
+ */
+const stratify = (samples, byRule, n) => {
+  const topRules = Object.entries(byRule).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([r]) => r);
+  const buckets = new Map();
+  for (const s of samples) {
+    if (!topRules.includes(s.rule)) continue;
+    const k = `${s.rule} ${s.repo}`;
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(s);
+  }
+  const queues = [...buckets.values()];
+  const out = [];
+  for (let i = 0; out.length < n && queues.some((q) => q.length); i++) {
+    for (const q of queues) {
+      if (out.length >= n) break;
+      if (q.length > i) out.push(q[i]);
+    }
+  }
+  return out;
 };
 
 const rows = [];
@@ -288,14 +348,28 @@ const rows = [];
 // full of inline rule configs, which is worth knowing when reading the totals.
 let foreignTotal = 0;
 const usRules = {}, themRules = {};
+const usSamples = [], themSamples = [];
+const dropped = { skippedMinified: 0, unreadable: 0, lintFailed: 0 };
 for (const { repo, stars, surface } of selected) {
   const dir = clone(repo);
   const files = collect(dir);
-  const u = await count(US, files, dir, US_PREFIXES);
-  const t = await count(THEM, files, dir, THEM_PREFIXES);
+  const u = await count(US, files, dir, US_PREFIXES, repo);
+  const t = await count(THEM, files, dir, THEM_PREFIXES, repo);
   for (const [r, c] of Object.entries(u.byRule)) usRules[r] = (usRules[r] ?? 0) + c;
   for (const [r, c] of Object.entries(t.byRule)) themRules[r] = (themRules[r] ?? 0) + c;
-  rows.push({ repo, stars, surface, files: files.length, us: u.findings, them: t.findings });
+  usSamples.push(...u.samples);
+  themSamples.push(...t.samples);
+  for (const k of Object.keys(dropped)) dropped[k] += u[k];
+  rows.push({
+    repo, stars, surface,
+    files: files.length,
+    // LOC is measured on OUR pass; both sides walk the same file list through the
+    // same filters, so `u.loc` and `t.loc` agree — asserted below rather than
+    // assumed, because an asymmetric denominator is exactly the §0.2 defect.
+    loc: u.loc,
+    locThem: t.loc,
+    us: u.findings, them: t.findings,
+  });
   foreignTotal += u.foreign + t.foreign;
   if (!asJson) {
     console.log(`${repo.padEnd(32)} files ${String(files.length).padStart(5)}   them ${String(t.findings).padStart(6)}   us ${String(u.findings).padStart(6)}`);
@@ -305,12 +379,35 @@ for (const { repo, stars, surface } of selected) {
 const totalUs = rows.reduce((a, r) => a + r.us, 0);
 const totalThem = rows.reduce((a, r) => a + r.them, 0);
 const totalFiles = rows.reduce((a, r) => a + r.files, 0);
+const totalLoc = rows.reduce((a, r) => a + r.loc, 0);
+
+// §0.2: "both sides run identically … any asymmetry is a defect in the harness,
+// not a result." If the two passes linted different amounts of code, every
+// per-LOC number below is comparing different denominators.
+const asym = rows.filter((r) => r.loc !== r.locThem);
+if (asym.length) {
+  console.error(`\nHARNESS DEFECT: ${asym.length} repo(s) linted a different LOC per side:`);
+  for (const r of asym) console.error(`  ${r.repo}  us ${r.loc}  them ${r.locThem}`);
+  process.exit(1);
+}
+
+const per1k = (n) => ((n / totalLoc) * 1000).toFixed(1);
+const samples = sampleN
+  ? { us: stratify(usSamples, usRules, sampleN), them: stratify(themSamples, themRules, sampleN) }
+  : null;
 
 if (asJson) {
-  console.log(JSON.stringify({ rows, totalUs, totalThem, totalFiles, usRules, themRules }, null, 1));
+  console.log(JSON.stringify({ rows, totalUs, totalThem, totalFiles, totalLoc, usRules, themRules, dropped, samples }, null, 1));
 } else {
-  console.log(`\nTOTAL  ${totalFiles} files   them ${totalThem}   us ${totalUs}`);
-  console.log(`Per 1k files: them ${((totalThem / totalFiles) * 1000).toFixed(0)}   us ${((totalUs / totalFiles) * 1000).toFixed(0)}`);
+  console.log(`\nTOTAL  ${totalFiles} files / ${totalLoc.toLocaleString()} LOC   them ${totalThem}   us ${totalUs}`);
+  // §A3 reports per 1,000 LOC. Per-file is kept only as a caveat line: file size
+  // varies 100x across these repos, so it ranks repos, not noise.
+  console.log(`Per 1k LOC:   them ${per1k(totalThem)}   us ${per1k(totalUs)}`);
+  console.log(`Per 1k files: them ${((totalThem / totalFiles) * 1000).toFixed(0)}   us ${((totalUs / totalFiles) * 1000).toFixed(0)}   (caveat, not the criterion)`);
+  console.log(
+    `Dropped before linting: ${dropped.skippedMinified} minified, ` +
+      `${dropped.unreadable} unreadable, ${dropped.lintFailed} parse failures.`,
+  );
   console.log(`\nLouder on ${rows.filter((r) => r.us > r.them).length} of ${rows.length} repos.`);
   console.log(
     `Excluded ${foreignTotal} "rule not found" messages from inline configs in the ` +
@@ -322,5 +419,19 @@ if (asJson) {
   Object.entries(themRules).sort((a, b) => b[1] - a[1]).slice(0, 10).forEach(([r, c]) => console.log(`  ${String(c).padStart(6)}  ${r}`));
   console.log('\nThese are FINDING COUNTS, not false positives. A higher number is not');
   console.log('automatically worse — it is only worse if the extra findings are wrong.');
-  console.log('Hand-read a sample before quoting any of this.');
+  if (!samples) {
+    console.log('Run again with --sample=20 and hand-label before quoting any of this.');
+  } else {
+    for (const [side, list] of [['US', samples.us], [competitorArg, samples.them]]) {
+      console.log(`\n=== §A2 SAMPLE — ${side} (n=${list.length}) ===`);
+      list.forEach((s, i) => {
+        console.log(`\n[${i + 1}] ${s.rule}`);
+        console.log(`    ${s.repo}  ${s.file}:${s.line}`);
+        console.log(`    src: ${s.src}`);
+        console.log(`    msg: ${s.message}`);
+      });
+    }
+    console.log('\nLabel every one TP / FP / undecidable with a reason, and report the');
+    console.log('undecidable count — a high one means the message failed to explain itself.');
+  }
 }

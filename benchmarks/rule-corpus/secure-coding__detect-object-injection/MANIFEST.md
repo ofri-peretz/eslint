@@ -22,24 +22,39 @@ this corpus tests both directions:
 ## Scores
 
 `RESULTS.json` is the verbatim output of
-`benchmarks/suites/ilb-rule-duel/run.mjs`. That harness's `COMPETITORS` map has
-no entry for this rule id, so it scores only our rule; the competitor row below
-was produced separately with the identical file-level scoring contract
-(`eslint-plugin-security@latest`, `detect-object-injection`, default options,
-same 19 files). **Adding a `COMPETITORS` entry for this rule id would fold that
-row into `RESULTS.json` and is worth doing** — this worker was scoped out of
-`benchmarks/suites/`.
+`benchmarks/suites/ilb-rule-duel/run.mjs`, which now carries a `COMPETITORS`
+entry for this rule id — so both rows below come from the one committed runner:
+
+```
+npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/detect-object-injection
+```
+
+### §0.5 RESTATEMENT — 2026-08-17
+
+**The corpus is an instrument, and this one grew without its numbers being
+restated.** The table previously read 10/0/0 against their 7/6/3 (60.9%) over
+"the same 19 files". The corpus now holds **28 files** — 14 vulnerable and 14
+safe. Nine fixtures were added during the adversarial wave and the CWE-1321 /
+CWE-915 split without the same-commit callout §0.5 requires, so every figure
+derived from the 19-file set was silently obsolete.
+
+Re-derived on the full 28 files, both sides, same command:
 
 | Plugin | TP | FP | FN | Precision | Recall | F1 |
 |---|---:|---:|---:|---:|---:|---:|
-| Interlace `secure-coding/detect-object-injection` | 10 | 0 | 0 | 100.0% | 100.0% | **100.0%** |
-| `eslint-plugin-security/detect-object-injection` | 7 | 6 | 3 | 53.8% | 70.0% | **60.9%** |
+| Interlace `secure-coding/detect-object-injection` | 14 | 0 | 0 | 100.0% | 100.0% | **100.0%** |
+| `eslint-plugin-security/detect-object-injection` | 9 | 7 | 5 | 56.3% | 64.3% | **60.0%** |
 
 Their misses: `01-express-settings-write` (key is a MemberExpression, not an
-Identifier), `05-object-assign-request-body`, `07-dynamic-handler-dispatch`.
-Their false positives: six of the nine safe fixtures, including the array index
-loop, the allowlist guard and the constant lookup table — i.e. three of the
-documented *remediations* for this CWE.
+Identifier), `05-object-assign-request-body`, `07-dynamic-handler-dispatch`,
+`11-constructor-prototype-traversal`, `12-proto-traversal-bracket` — the last two
+being CWE-1321 proper, which a one-step-write check cannot see.
+Their false positives: seven of the fourteen safe fixtures, including the array
+index loop, the allowlist guard, the constant lookup table and the `hasOwn`
+guard — i.e. four of the documented *remediations* for this CWE.
+
+**Tier: `INT`.** Both sides on fixtures we authored: a regression gate and a
+statement about detectable shapes, not a precision claim about real code.
 
 ## What the adversarial wave cost, and bought
 

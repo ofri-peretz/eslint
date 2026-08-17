@@ -24,24 +24,41 @@ to triage before deciding the plugin is not worth keeping.
 ## Scores
 
 `RESULTS.json` is the verbatim output of
-`benchmarks/suites/ilb-rule-duel/run.mjs`. That harness's `COMPETITORS` map has
-no entry for this rule id, so it scores only our rule; the competitor row below
-was produced separately with the identical file-level scoring contract
-(`eslint-plugin-security@latest`, `detect-non-literal-regexp`, default options,
-same 19 files). **Adding a `COMPETITORS` entry for this rule id would fold that
-row into `RESULTS.json` and is worth doing** — this worker was scoped out of
-`benchmarks/suites/`.
+`benchmarks/suites/ilb-rule-duel/run.mjs`, which now carries a `COMPETITORS`
+entry for this rule id — so both rows below come from the one committed runner:
+
+```
+npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/detect-non-literal-regexp
+```
+
+### §0.5 RESTATEMENT — 2026-08-17
+
+**The corpus is an instrument, and this one grew without its numbers being
+restated.** The table below previously read 10/0/0 against their 7/5/3 (63.6%)
+over "the same 19 files". The corpus now holds **30 files** — 15 vulnerable and
+15 safe. Eleven fixtures were added across the adversarial wave and the lock
+session without the same-commit callout §0.5 requires, so every figure derived
+from the 19-file set was silently obsolete, including the 63.6% quoted in
+planning docs.
+
+Re-derived on the full 30 files, both sides, same command:
 
 | Plugin | TP | FP | FN | Precision | Recall | F1 |
 |---|---:|---:|---:|---:|---:|---:|
-| Interlace `secure-coding/detect-non-literal-regexp` | 10 | 0 | 0 | 100.0% | 100.0% | **100.0%** |
-| `eslint-plugin-security/detect-non-literal-regexp` | 7 | 5 | 3 | 58.3% | 70.0% | **63.6%** |
+| Interlace `secure-coding/detect-non-literal-regexp` | 15 | 0 | 0 | 100.0% | 100.0% | **100.0%** |
+| `eslint-plugin-security/detect-non-literal-regexp` | 12 | 7 | 3 | 63.2% | 80.0% | **70.6%** |
 
 Their misses: `05-call-form-no-new`, `08-global-namespaced-constructor`,
 `09-aliased-constructor` — all three constructor spellings.
-Their false positives: `03-const-array-join`, `05-loop-counter-placeholder`,
+Their false positives: `03-const-array-join`, `04-closed-set-lookup`,
+`05-escaped-inline`, `05-loop-counter-placeholder`,
 `07-let-with-literal-branches`, `08-for-of-const-pattern-list`,
-`09-string-raw-source` — all five constant-provenance shapes.
+`09-string-raw-source` — every one a constant- or neutralised-provenance shape.
+
+**Tier: `INT`.** Both sides run on fixtures we authored. It is a regression gate
+and a statement about which shapes each implementation can see — not a precision
+claim about real code. The real-code number lives in `BENCHMARK-RESULTS.md` §B
+and requires the §A2 sampled-FP protocol.
 
 ## What the adversarial wave cost, and bought
 

@@ -87,6 +87,21 @@ const COMPETITORS = {
   'secure-coding/detect-non-literal-regexp': [
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-non-literal-regexp'] },
   ],
+  // Their rule for this weakness is spelled `detect-unsafe-regex`, not
+  // `no-redos-vulnerable-regex`, so a name-matched wiring found nothing and this
+  // rule scored with no competitor row at all. The 76.2% published for it on
+  // 2026-08-17 was produced by a one-off script that is gone — exactly the
+  // "figure with no committed runner" §0.1 exists to forbid. Wired by SINK, which
+  // is the only durable way to pair rules across plugins.
+  //
+  // `eslint-plugin-regexp` is listed second because it is the other real
+  // implementation a consumer would install, and because it shares `scslre` with
+  // us — so a disagreement between the two rows is a disagreement about the
+  // corrections layer, not about the analyser.
+  'secure-coding/no-redos-vulnerable-regex': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-unsafe-regex'] },
+    { name: 'eslint-plugin-regexp', pkg: 'eslint-plugin-regexp', rules: ['no-super-linear-backtracking'] },
+  ],
   'secure-coding/detect-object-injection': [
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
     { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['no-vulnerable-dom-methods'] },

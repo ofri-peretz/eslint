@@ -488,8 +488,19 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         properties: {
           allowLiterals: {
             type: 'boolean',
-            default: false,
-            description: 'Allow literal string regex patterns'
+            // TRUE, matching `defaultOptions` and the runtime. The schema said
+            // `false` while `create()` destructured `= true` and the rule stayed
+            // quiet on `new RegExp('^[a-z]+$')` — so the schema, which is what
+            // IDE tooling and the docs generator read, told a consumer the
+            // opposite of what the rule does. Caught auditing against
+            // BENCHMARK-CRITERIA.md §B2, not by any test: nothing asserted the
+            // schema default and the destructured default agree.
+            default: true,
+            description:
+              'Allow literal string regex patterns — `new RegExp(\'^[a-z]+$\')`. ' +
+              'A rule named "non-literal" reporting a literal by default contradicted ' +
+              'its own contract. Set false to prefer `/…/` literal syntax; measured ' +
+              'effect on the 30-fixture corpus: +6 findings, all on safe/ files.'
           },
           maxPatternLength: {
             type: 'number',
