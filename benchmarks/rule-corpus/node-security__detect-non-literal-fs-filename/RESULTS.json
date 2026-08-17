@@ -1,0 +1,41 @@
+{
+  "rule": "node-security/detect-non-literal-fs-filename",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 20,
+  "vulnerable": 10,
+  "results": [
+    {
+      "name": "Interlace node-security/detect-non-literal-fs-filename",
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    },
+    {
+      "name": "eslint-plugin-security [detect-non-literal-fs-filename]",
+      "tp": 10,
+      "fp": 8,
+      "fn": 0,
+      "precision": 0.5555555555555556,
+      "recall": 1,
+      "f1": 0.7142857142857143,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": [
+        "safe/02-basename-sanitizer.js",
+        "safe/03-separator-anchored-guard.js",
+        "safe/04-allowlisted-filename.js",
+        "safe/06-dirname-anchored.js",
+        "safe/07-process-env-whole-value.js",
+        "safe/08-argv-cli-feature.js",
+        "safe/09-locally-built-request.js",
+        "safe/10-generated-temp-name.js"
+      ]
+    }
+  ]
+}

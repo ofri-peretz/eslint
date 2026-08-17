@@ -77,6 +77,13 @@ const COMPETITORS = {
   // over 5 repos). Scoring against it on shapes derived from the WEAKNESS —
   // not from either implementation — is the only way to tell precision from
   // silence.
+  // Their SECOND loudest rule in our real-source measurement (1,457 findings over
+  // 5 repos), same name as ours, same weakness. Precision is the axis that
+  // matters here — both plugins detect the canonical shapes, so the question is
+  // what each reports that it should not.
+  'node-security/detect-non-literal-fs-filename': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-non-literal-fs-filename'] },
+  ],
   'secure-coding/detect-object-injection': [
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
     { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['no-vulnerable-dom-methods'] },
