@@ -1462,10 +1462,19 @@ ruleTester.run('lock: evidence beats spelling, and guard spellings are equivalen
     },
     /**
      * A binding that is neither a loop variable nor a callback parameter — here
-     * an import — is not an own-keys iteration and proves nothing.
+     * a plain function parameter — is not an own-keys iteration and proves
+     * nothing.
+     *
+     * This case used to use `import { columnKey } from './columns'`, and the
+     * import was incidental: the assertion is about the OWN-KEYS guard, and any
+     * binding of neither kind demonstrates it. On 2026-08-17 an imported key
+     * became a recognised safe shape (`isImportedBinding` — a key fixed by the
+     * module graph is not one a caller can choose), which made the old fixture
+     * assert the opposite of the rule's contract. Swapped for a parameter rather
+     * than deleted, so the own-keys assertion it was written for survives.
      */
     {
-      code: "import { columnKey } from './columns'; export function f(record) { return record[columnKey]; }",
+      code: 'export function f(record, columnKey) { return record[columnKey]; }',
       errors: 1,
     },
   ],

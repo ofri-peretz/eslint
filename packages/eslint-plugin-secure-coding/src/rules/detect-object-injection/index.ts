@@ -796,10 +796,68 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       );
     };
 
+    /**
+     * Is this key fixed by the MODULE GRAPH rather than chosen by a caller?
+     *
+     * Both weaknesses this rule reports require the attacker to pick the
+     * property — `__proto__` for CWE-1321, `isAdmin` for CWE-915. A binding that
+     * comes from an `import` is decided when the module loads, by whoever wrote
+     * the import statement. An attacker who can change that does not need
+     * prototype pollution.
+     *
+     * This closes an inconsistency rather than adding an exception: the rule
+     * already trusts module constants through `isStaticExpression`, and an
+     * import is the same claim across a file boundary.
+     *
+     * It also fixes the shape that made `isSymbolKey` miss its main case. A
+     * symbol key lives in a shared `symbols.js` in every codebase that uses one,
+     * so `isSymbolKey` — which needs to SEE the `Symbol()` call — resolved the
+     * rare in-file spelling and gave up on the normal one. Measured: fastify's
+     * `this[pluginUtils.kRegisteredPlugins]` and mongoose's
+     * `modelOrConn[modelSymbol]` both reported.
+     *
+     * The root is what matters, so `pluginUtils.kRegisteredPlugins` resolves
+     * through the member chain to the imported `pluginUtils`.
+     */
+    const isImportedBinding = (node: TSESTree.Node): boolean => {
+      const root = chainRoot(node);
+      if (root === null) return false;
+      const variable = sourceCode
+        .getScope(root)
+        .references.find((ref) => ref.identifier === root)?.resolved;
+      if (!variable || variable.defs.length !== 1) return false;
+      // Reassignment disqualifies, exactly as in `isSymbolKey` and
+      // `isLocallyConstructed`. `import { k } from './x'` cannot be written to,
+      // but reading only the def type would let a shadowing binding through.
+      const def = variable.defs[0];
+      if (def.type === 'ImportBinding') {
+        // An import binding cannot be written to at all, so no write check.
+        return true;
+      }
+      // CommonJS. `const pluginUtils = require('./pluginUtils')` is a Variable
+      // def, not an ImportBinding — and BOTH sites this predicate was written
+      // for are CJS. The ESM-only first version passed its own ESM tests and
+      // changed nothing at fastify.js:255 or mongoose/aggregate.js:59, which is
+      // the whole reason the fix is re-measured against the real file rather
+      // than a reduction of it.
+      if (def.type !== 'Variable') return false;
+      // A reassigned binding no longer holds the module it was declared with.
+      // The initialiser is one write, so more than one means reassignment.
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      const init = (def.node as TSESTree.VariableDeclarator).init;
+      return (
+        init?.type === AST_NODE_TYPES.CallExpression &&
+        init.callee.type === AST_NODE_TYPES.Identifier &&
+        init.callee.name === 'require'
+      );
+    };
+
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
       // SAFE: a Symbol can never be the string '__proto__', nor a field name a
       // caller can aim at. Not a heuristic — a fact about the type.
       if (isSymbolKey(propertyNode)) return false;
+      // SAFE: the key is fixed by the module graph, not chosen by a caller.
+      if (isImportedBinding(propertyNode)) return false;
       // SAFE: the key is read out of an object this file BUILDS.
       // `const req = { params: { id: '1' } }; table[req.params.id]` is a fixture
       // or a default, not an inbound request — reporting it is asserting a

@@ -256,10 +256,31 @@ const recommendedOf = (plugin, prefix) => {
 // would report a clean sheet for a rule it never ran — §0.4, a zero is a finding
 // about the harness until shown otherwise.
 const forced = Object.fromEntries(sampleRules.map((r) => [r, 'error']));
+/**
+ * `--all-rules` enables every rule on OUR side, not just `recommended`.
+ *
+ * This is not a comparison mode and the competitor column is meaningless under
+ * it — it is a per-rule VOLUME CENSUS, to answer "which of our rules are loud on
+ * real code" for the rules a preset-based run never switches on. That question
+ * had no answer: `detect-object-injection` turned out to be our single loudest
+ * rule at 15,306 findings and was invisible in every previous table purely
+ * because it sits outside `recommended`.
+ *
+ * A rule at zero here is a rule to investigate, not a rule to be pleased about
+ * (§0.4). Silence on 3M lines usually means the sink never appears — or that
+ * nothing arms it, which is the `detect-non-literal-fs-filename` failure that
+ * scored TP 0/6 while reporting nothing at all.
+ */
+const allRules = args.includes('--all-rules');
+const ourRules = allRules
+  ? { ...all(sc, 'secure-coding'), ...all(bs, 'browser-security'), ...all(ns, 'node-security') }
+  : {
+      ...recommendedOf(sc, 'secure-coding'),
+      ...recommendedOf(bs, 'browser-security'),
+      ...recommendedOf(ns, 'node-security'),
+    };
 const US = mk({ 'secure-coding': sc, 'browser-security': bs, 'node-security': ns }, {
-  ...recommendedOf(sc, 'secure-coding'),
-  ...recommendedOf(bs, 'browser-security'),
-  ...recommendedOf(ns, 'node-security'),
+  ...ourRules,
   ...forced,
 });
 const THEM = mk({ [competitorPrefix]: sec }, recommendedOf(sec, competitorPrefix));
@@ -355,7 +376,7 @@ const stratify = (samples, byRule, n) => {
   const buckets = new Map();
   for (const s of samples) {
     if (!topRules.includes(s.rule)) continue;
-    const k = `${s.rule} ${s.repo}`;
+    const k = `${s.rule} :: ${s.repo}`;
     if (!buckets.has(k)) buckets.set(k, []);
     buckets.get(k).push(s);
   }
@@ -440,6 +461,23 @@ if (asJson) {
     `Excluded ${foreignTotal} "rule not found" messages from inline configs in the ` +
       `target repos — they carry a ruleId but belong to neither plugin.`,
   );
+  if (allRules) {
+    // The census: EVERY rule, loudest first, with the rules that never fired
+    // listed explicitly rather than omitted. An absent row reads as "fine"; a
+    // named zero reads as "unverified", which is what it is.
+    const enabled = Object.keys(ourRules);
+    const rows = enabled
+      .map((r) => [r, usRules[r] ?? 0])
+      .sort((a, b) => b[1] - a[1]);
+    const fired = rows.filter(([, c]) => c > 0);
+    console.log(`\nPER-RULE CENSUS — ${enabled.length} rules enabled, ${fired.length} fired, ${enabled.length - fired.length} silent`);
+    console.log('   findings   per 1k LOC   rule');
+    for (const [r, c] of fired) {
+      console.log(`  ${String(c).padStart(9)}  ${((c / totalLoc) * 1000).toFixed(2).padStart(11)}   ${r}`);
+    }
+    console.log('\nSILENT on 3M lines — each is unverified, not proven precise (§0.4):');
+    for (const [r] of rows.filter(([, c]) => c === 0)) console.log(`    ${r}`);
+  }
   console.log('\nOur top rules by volume:');
   Object.entries(usRules).sort((a, b) => b[1] - a[1]).slice(0, 10).forEach(([r, c]) => console.log(`  ${String(c).padStart(6)}  ${r}`));
   console.log(`\n${competitorArg} top rules by volume:`);
