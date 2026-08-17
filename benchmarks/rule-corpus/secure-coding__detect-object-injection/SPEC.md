@@ -1,5 +1,30 @@
 # `detect-object-injection` — TP / FP / FN map
 
+> ## 🔒 LOCKED 2026-08-16
+>
+> This rule met its contract and was scored head-to-head: **100.0% F1 on the
+> 28-fixture corpus against `eslint-plugin-security`'s 60.0%**, and **13,075 vs
+> 17,406** findings on 5 real repositories. Behaviour is pinned by three
+> mutation-verified test files beside `src/rules/detect-object-injection/index.ts`.
+>
+> **It reopens for three reasons only:**
+> 1. ECMAScript/TypeScript gains a new route to `Object.prototype` or a new
+>    computed-access form (TC39 Stage 4 is the bar).
+> 2. A new use case arrives **with a reproduction** — code that is genuinely
+>    vulnerable and unreported, or genuinely safe and reported, demonstrated by
+>    RUNNING it.
+> 3. A shared helper it imports changes behaviour underneath it.
+>
+> "Simpler", "inconsistent", or "the volume looks high" are not reasons. The
+> volume has been measured. The rule's own header lists the seven edits that look
+> correct and are not, each with the measurement that killed it — read that
+> before changing anything, and add to it rather than deleting from it.
+>
+> Changing this file means: write the case here first → prove the semantics with
+> `node -e` → add the fixture → re-run the duel → re-measure real-source volume →
+> add a lock test that fails when reverted → move this date and say what changed.
+
+
 The behaviour contract, written BEFORE the fixtures, from the semantics of the
 weakness rather than from what the rule currently does. Every claim below was
 verified by running it in Node 24, not reasoned about.

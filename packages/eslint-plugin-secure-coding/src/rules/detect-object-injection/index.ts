@@ -5,16 +5,133 @@
  */
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 🔒 LOCKED 2026-08-16 — read this whole block before changing anything here.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * This rule's behaviour was derived from the SEMANTICS of the weakness, every
+ * claim was executed in Node 24 rather than reasoned about, and the result was
+ * scored head-to-head against `eslint-plugin-security`'s rule of the same name:
+ *
+ *   corpus (28 fixtures)   ours 100.0% F1   ·   theirs 60.0% F1
+ *   real source (5 repos)  ours 13,075      ·   theirs 17,406 findings
+ *
+ * The contract lives in
+ * `benchmarks/rule-corpus/secure-coding__detect-object-injection/SPEC.md` and is
+ * pinned by three test files beside this one:
+ * `global-prototype-write.test.ts`, `mass-assignment.test.ts`,
+ * `dangerous-properties-option.test.ts`. All three were mutation-verified — each
+ * fails when its fix is removed.
+ *
+ * ── WHAT LEGITIMATELY REOPENS THIS FILE ────────────────────────────────────
+ *
+ *   1. ECMAScript or TypeScript gains a new way to reach `Object.prototype`, or
+ *      a new computed-access form. A TC39 proposal reaching Stage 4 is the bar.
+ *   2. A NEW use case arrives with a REPRODUCTION: code that is genuinely
+ *      vulnerable and goes unreported, or genuinely safe and gets reported,
+ *      demonstrated by running it — not by reading this file and reasoning.
+ *   3. A shared helper it imports changes behaviour underneath it.
+ *
+ * Anything else is not a reason. In particular, "this could be simpler",
+ * "this looks inconsistent", or "the volume seems high" are not reasons, and
+ * the volume in particular has already been measured.
+ *
+ * ── EDITS THAT LOOK CORRECT AND ARE NOT ────────────────────────────────────
+ *
+ * Each of these was actually attempted or believed on 2026-08-16, and each was
+ * killed by running it. They are listed because they are the edits a competent
+ * reader — human or model — will independently arrive at.
+ *
+ *   ✗ "A single `obj[k] = v` with `k = '__proto__'` pollutes the prototype."
+ *     It does NOT. `[[Set]]` invokes the `__proto__` setter and re-parents that
+ *     ONE object; `Object.prototype` is untouched. Verified, along with
+ *     `Object.assign(o, JSON.parse('{"__proto__":…}'))`, object spread, and
+ *     `Object.setPrototypeOf` — all safe. Global pollution needs a TWO-STEP
+ *     TRAVERSAL, which is what `globalPrototypeWrite` models.
+ *
+ *   ✗ "Flag any member step named `prototype`."
+ *     `fn.prototype.method = …` and `class C {}; C.prototype.m = …` are SAFE and
+ *     appear in essentially every pre-class codebase. `prototype` counts only
+ *     when reached THROUGH `constructor`. Widening this floods on a language
+ *     idiom. Pinned by two valid cases in `global-prototype-write.test.ts`.
+ *
+ *   ✗ "Add `_.merge` / `_.set` / `_.defaultsDeep` / `dot-prop` as sinks."
+ *     Measured against lodash 4.18.1: all safe. Patched in 4.17.5/.11/.21. A
+ *     rule flagging them reports ALREADY-FIXED code the user cannot satisfy, and
+ *     a linter cannot see which version is installed — that is `npm audit`'s
+ *     job. The mechanism still lives in hand-written traversal, which the
+ *     copy-loop and path-setter paths already detect.
+ *
+ *   ✗ "`dangerousProperties` is dead, it changed nothing when I tried it."
+ *     It reaches the literal-name path and cannot reach a dynamic key, because
+ *     a dynamic key has no name to compare against a list. An option is a
+ *     function of (shape × setting); testing one shape proves nothing. The full
+ *     matrix is pinned in `dangerous-properties-option.test.ts`.
+ *
+ *   ✗ "These constants should be configurable."
+ *     `__proto__` / `prototype` / `constructor` are the object model's own
+ *     accessors — see the `@protocol-constant` tag on the table below. Making
+ *     them tunable cannot change WHAT is reported, only mislabel a critical
+ *     finding, and the CWE-1321 traversal is a fact about the language rather
+ *     than a vocabulary.
+ *
+ *   ✗ "This test expects an error on `const key = 'name'; obj[key] = value`,
+ *      so the rule should report it."
+ *     Two such fixtures existed and both were moved to `valid` on 2026-08-16.
+ *     Their own comments admitted they pinned a false positive. A const holding
+ *     a literal is a compile-time constant key; no type information is needed to
+ *     see it. Do not restore them.
+ *
+ *   ✗ "A Symbol key should report like any other computed access."
+ *     A Symbol is not a string, so it can NEVER be `'__proto__'` nor a field
+ *     name a caller aims at, and `Object.keys` does not return it. Impossible,
+ *     not unlikely.
+ *
+ *   ✗ "Suppress by resolving the key's declaration."
+ *     Only with a reassignment check. `let key = 0; key = req.query.k` is
+ *     numeric where it is declared and attacker-controlled where it is used;
+ *     reading only the declaration silences a real finding. Both
+ *     `isLocallyConstructed` and `isSymbolKey` carry that guard, and both have a
+ *     CONTROL case proving it.
+ *
+ * ── HOW TO CHANGE IT, IF YOU HAVE A REAL REASON ────────────────────────────
+ *
+ *   1. Write the case in `SPEC.md` first, as TP or FP, with the reason.
+ *   2. Prove the semantics with `node -e`. Six of thirteen claims in that spec
+ *      came back OPPOSITE to intuition; assume yours might too.
+ *   3. Add the fixture to `benchmarks/rule-corpus/secure-coding__detect-object-injection/`
+ *      and re-run the duel — corpus F1 must stay 100% for both plugins' sake.
+ *   4. Re-measure real-source volume. A change that fixes one shape and adds a
+ *      thousand findings is not an improvement.
+ *   5. Add a lock test and verify it FAILS with your change reverted.
+ *   6. Move this date forward and say what changed.
+ *
+ * A QUIET probe proves nothing without a positive control. If you conclude a
+ * shape is safe, first prove the rule REPORTS on it with the sink present.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
  * ESLint Rule: detect-object-injection
- * Detects variable[key] as a left- or right-hand assignment operand (prototype pollution)
- * LLM-optimized with comprehensive object injection prevention guidance
+ *
+ * Two distinct weaknesses, deliberately carrying two messageIds and two CWEs:
+ *   `globalPrototypeWrite`  CWE-1321  a write THROUGH `__proto__` or
+ *                                     `constructor.prototype` — lands on
+ *                                     Object.prototype, every object inherits it
+ *   `massAssignment`        CWE-915   every caller key copied onto a target —
+ *                                     the caller picks the field (`isAdmin`)
+ *   `objectInjection`       CWE-915   an attacker-keyed computed read or write
+ *
+ * Reporting one under the other's CWE sends the reader to the wrong
+ * remediation, and no F1 number notices.
  *
  * Type-Aware Enhancement:
- * This rule uses TypeScript type information when available to reduce false positives.
- * If a property key is constrained to a union of string literals (e.g., 'name' | 'email'),
- * the access is considered safe because the values are statically known at compile time.
+ * This rule uses TypeScript type information when available to reduce false
+ * positives. If a property key is constrained to a union of string literals
+ * (e.g. 'name' | 'email'), the access is considered safe because the values are
+ * statically known at compile time.
  *
  * @see https://portswigger.net/web-security/prototype-pollution
+ * @see https://cwe.mitre.org/data/definitions/1321.html
  * @see https://cwe.mitre.org/data/definitions/915.html
  */
 import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
