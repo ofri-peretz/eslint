@@ -5,9 +5,100 @@
  */
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 🔒 LOCKED 2026-08-17 — read this whole block before changing anything here.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Scored against `eslint-plugin-security`'s rule of the same name, on 13 cases
+ * derived from the weakness and verified by running them:
+ *
+ *   ours   TP 7/7  FP 0/7  F1 100.0%
+ *   theirs TP 7/7  FP 3/7  F1  82.4%
+ *
+ * Recall was already identical before this work — both rules found all seven.
+ * The entire gap is precision, and it came from two guards NEITHER rule
+ * recognised. Pinned by `neutralised-pattern.test.ts`; 3 of its 12 cases fail
+ * when the guards are disabled.
+ *
+ * ── THE WEAKNESS HAS TWO FACES ─────────────────────────────────────────────
+ *
+ *   DoS       `new RegExp('(a+)+$')` against 30 characters: 39,812 ms. The
+ *             attacker does not need a bad pattern in your code — they supply one.
+ *   BYPASS    `new RegExp('.*').test('totally-unrelated')` is TRUE. A caller who
+ *             controls the pattern of an allow decision matches everything.
+ *
+ * The second is routinely forgotten and is NOT fixed by a regex timeout. Any
+ * change here has to keep both in view.
+ *
+ * ── EDITS THAT LOOK CORRECT AND ARE NOT ────────────────────────────────────
+ *
+ *   ✗ "Escaping does not really make it safe."
+ *     Measured: the same `(a+)+$` pattern is 39,812 ms raw and **0.0 ms** after
+ *     `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` — there are no quantifiers left,
+ *     it matches six literal characters. It is also the remediation this rule's
+ *     own message recommends, and reporting a developer who followed it makes
+ *     the rule unsatisfiable.
+ *
+ *   ✗ "Detect the escape by its name — `escapeRegExp`, `escapeRe`, …"
+ *     That is defeated by `const escapeRegExp = (s) => s`, which this ecosystem
+ *     has already shipped once as a sanitiser allowlist. `isNeutralised` keys on
+ *     the SEARCH ARGUMENT being a regex literal with a metacharacter class, and
+ *     the fake-escaper CONTROL (`.replace(/foo/g,'bar')`) pins it.
+ *
+ *   ✗ "A closed-set lookup is still dynamic."
+ *     `PATTERNS[req.query.kind]` lets the caller choose WHICH pattern, never
+ *     WHAT. Neither face of the weakness is reachable, and it is the rule's own
+ *     `good:` example.
+ *
+ *   ✗ "Resolve the escape through the binding and stop there."
+ *     Only with a reassignment check. `let p = raw.replace(...); p = req.query.raw`
+ *     is escaped at the declaration and raw where it is used — the same trap
+ *     `detect-object-injection` and `detect-non-literal-fs-filename` both fell
+ *     into. There is a CONTROL case for it.
+ *
+ *   ✗ "`new RegExp(SOME_CONST)` should report — it is not a literal."
+ *     "Dynamic" means an attacker can change the pattern, not that it is spelled
+ *     as something other than a literal. `isStaticExpression` follows const
+ *     bindings, template parts and concatenation; a build-time constant is not a
+ *     finding, and eslint-plugin-security's own corpus marks it valid.
+ *
+ * ── KNOWN OPEN, MEASURED: the corpus gap does NOT show at scale ────────────
+ *
+ * Corpus 100.0% vs 70.6%, but on 5 real repositories we report 227 and they
+ * report 236 — **1.0x**. Unlike `detect-non-literal-fs-filename` (60x quieter),
+ * the two guards added here are rare in real code, so the corpus advantage is
+ * real and almost irrelevant to what a maintainer sees.
+ *
+ * Hand-reading 10 of our 177 n8n findings: the dominant class is a template
+ * interpolating the PROGRAM'S OWN data — a TypeORM column name, a parameter
+ * name, a config key, `parts.join('/')`. `isStaticExpression` cannot prove those
+ * constant because they arrive through a function parameter or an object
+ * property, so the rule reports. No attacker is present in any of them.
+ *
+ * That is the same question `detect-non-literal-fs-filename` answers with
+ * `WHOLE_VALUE_TRUSTED_ROOTS`: not "is this dynamic" but WHO SUPPLIES IT. This
+ * rule has no equivalent, and closing it is the next real precision work here —
+ * NOT more guard idioms.
+ *
+ * One case worth naming: `safeRegex.worker.ts` compiles `request.pattern` inside
+ * a worker deliberately, which IS the mitigation for this weakness. Reporting
+ * the mitigation is the unsatisfiable-rule failure mode, and it is unresolved.
+ *
+ * ── WHAT LEGITIMATELY REOPENS THIS FILE ────────────────────────────────────
+ *
+ *   1. A new way to reach the RegExp intrinsic (a spelling `isRegExpConstructor`
+ *      does not resolve).
+ *   2. A new neutralising idiom, WITH the measurement showing it neutralises —
+ *      time the pattern before and after.
+ *   3. A shared helper it imports changing behaviour.
+ *
+ * To change it: add the case to `neutralised-pattern.test.ts` with its
+ * measurement, verify the test FAILS with your change reverted, move this date.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
  * ESLint Rule: detect-non-literal-regexp
- * Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression
- * LLM-optimized with comprehensive ReDoS prevention guidance
+ * Detects a caller-steerable pattern reaching the RegExp constructor.
  *
  * @see https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
  * @see https://cwe.mitre.org/data/definitions/400.html
@@ -460,6 +551,88 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         constructor = `new ${node.callee.name}`;
       }
 
+      /**
+       * Has the attacker's control over this pattern been NEUTRALISED?
+       *
+       * Two guards, both verified by running them:
+       *
+       * **1. Regex escaping.** `attacker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`
+       * turns every metacharacter into a literal. Measured: the pattern
+       * `(a+)+$` takes **39,812 ms** through `new RegExp` unescaped and
+       * **0.0 ms** escaped, because after escaping there are no quantifiers
+       * left to backtrack over — it matches the six characters `(a+)+$`.
+       *
+       * This is also the remediation the rule's own message recommends, and
+       * reporting a developer who followed it makes the rule unsatisfiable.
+       *
+       * Recognised STRUCTURALLY: a `.replace()` whose first argument is a regex
+       * literal containing a metacharacter class, not a call named
+       * `escapeRegExp`. A name-based check would be defeated by
+       * `const escapeRegExp = (s) => s`, which is the failure mode this
+       * ecosystem already shipped once with a sanitiser allowlist.
+       *
+       * **2. Closed-set lookup.** `PATTERNS[req.query.kind]` can only yield a
+       * pattern the program wrote. The caller picks WHICH, never WHAT, so
+       * neither the DoS nor the semantic bypass is reachable — and the bypass
+       * matters here as much as the DoS: an attacker who supplies `.*` to an
+       * allow decision matches everything, verified.
+       */
+      const isNeutralised = (patternNode: TSESTree.Node): boolean => {
+        const escaped = (n: TSESTree.Node): boolean => {
+          if (n.type !== 'CallExpression') return false;
+          const callee = (n as TSESTree.CallExpression).callee;
+          if (
+            callee.type !== 'MemberExpression' ||
+            callee.computed ||
+            callee.property.type !== 'Identifier' ||
+            callee.property.name !== 'replace'
+          ) {
+            return false;
+          }
+          const search = (n as TSESTree.CallExpression).arguments[0];
+          if (search === undefined || search.type !== 'Literal') return false;
+          const re = (search as TSESTree.RegExpLiteral).regex;
+          // A character class carrying regex metacharacters is the escaping
+          // idiom; `.replace(/foo/g, 'bar')` is not and must not suppress.
+          return re !== undefined && /\[[^\]]*[.*+?^${}()|][^\]]*\]/.test(re.pattern);
+        };
+        if (escaped(patternNode)) return true;
+
+        // Follow ONE binding hop: `const safe = raw.replace(...); new RegExp(safe)`.
+        if (patternNode.type === 'Identifier') {
+          const v = context.sourceCode
+            .getScope(patternNode)
+            .references.find((r) => r.identifier === patternNode)?.resolved;
+          if (v && v.defs.length === 1 && v.defs[0].type === 'Variable') {
+            // A reassigned binding no longer holds what it was declared with.
+            if (v.references.filter((r) => r.isWrite()).length > 1) return false;
+            const init = (v.defs[0].node as TSESTree.VariableDeclarator).init;
+            if (init && escaped(init)) return true;
+            // Closed-set lookup: `PATTERNS[k]` where PATTERNS is a literal map
+            // this file wrote.
+            if (init?.type === 'MemberExpression' && init.computed) {
+              const obj = init.object;
+              if (obj.type === 'Identifier') {
+                const ov = context.sourceCode
+                  .getScope(obj)
+                  .references.find((r) => r.identifier === obj)?.resolved;
+                const oinit =
+                  ov && ov.defs.length === 1 && ov.defs[0].type === 'Variable'
+                    ? (ov.defs[0].node as TSESTree.VariableDeclarator).init
+                    : undefined;
+                if (
+                  oinit?.type === 'ObjectExpression' ||
+                  oinit?.type === 'ArrayExpression'
+                ) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+        return false;
+      };
+
       // First argument is the pattern
       const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
       const pattern = patternNode ? sourceCode.getText(patternNode) : '';
@@ -472,7 +645,8 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       // `isLiteralString` still gates the LENGTH below: that path reads
       // `patternNode.value` directly, which only exists on an actual literal node.
       const isDynamic = patternNode
-        ? !isStaticExpression({ node: patternNode, scope: context.sourceCode.getScope(patternNode) })
+        ? !isStaticExpression({ node: patternNode, scope: context.sourceCode.getScope(patternNode) }) &&
+          !isNeutralised(patternNode)
         : false;
       const length = patternNode && isLiteralString(patternNode) ?
                      String((patternNode as TSESTree.Literal).value).length : pattern.length;

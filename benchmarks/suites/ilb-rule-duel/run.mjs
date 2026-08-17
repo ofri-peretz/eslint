@@ -84,6 +84,9 @@ const COMPETITORS = {
   'node-security/detect-non-literal-fs-filename': [
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-non-literal-fs-filename'] },
   ],
+  'secure-coding/detect-non-literal-regexp': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-non-literal-regexp'] },
+  ],
   'secure-coding/detect-object-injection': [
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
     { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['no-vulnerable-dom-methods'] },
