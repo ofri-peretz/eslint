@@ -156,13 +156,66 @@ const tsParser = await load('@typescript-eslint/parser');
 // Same fatal stale-dist guard as head-to-head.mjs. A published-vs-local mix silently
 // measures unreleased code; that has already restated this file's numbers once.
 const req = (await import('node:module')).createRequire(import.meta.url);
+
+/**
+ * Newest mtime under a directory, so `dist` can be compared against `src`.
+ *
+ * Cheap enough to run on four packages; it walks source trees, not the corpus.
+ */
+const newestMtime = (dir) => {
+  let newest = 0;
+  (function walk(d) {
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) { walk(p); continue; }
+      const m = fs.statSync(p).mtimeMs;
+      if (m > newest) newest = m;
+    }
+  })(dir);
+  return newest;
+};
+
 const stale = [];
+const unbuilt = [];
 for (const n of ['eslint-plugin-secure-coding', 'eslint-plugin-browser-security', 'eslint-plugin-node-security', competitorArg]) {
   let dir = path.dirname(req.resolve(n));
   while (!fs.existsSync(path.join(dir, 'package.json'))) dir = path.dirname(dir);
+  // The build COPIES package.json into `dist`, so the upward walk stops there
+  // and reports the package root as `<pkg>/dist`. Harmless for the version
+  // print, fatal for the src-vs-dist comparison below: it looked for
+  // `<pkg>/dist/dist`, found nothing, and every package came back "src is 56
+  // years newer than dist".
+  if (path.basename(dir) === 'dist') dir = path.dirname(dir);
   const { version } = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
-  if (dir.includes(`${path.sep}packages${path.sep}`)) stale.push(`${n}@${version}`);
-  if (!asJson) console.log(`  resolved ${n}@${version}`);
+  const local = dir.includes(`${path.sep}packages${path.sep}`);
+  if (local) stale.push(`${n}@${version}`);
+
+  // The gate that was missing, and it cost two full 15-minute runs.
+  //
+  // `--allow-local` says "measure the working tree deliberately". It never
+  // checked that the working tree had been BUILT: this runner resolves the
+  // package through its `main`, i.e. `dist/`, so an unbuilt source change is
+  // measured as if it had never been made. Two censuses came back byte-identical
+  // across a fix that removes 50 findings from a single file, and the only
+  // reason it was caught is that the totals were suspiciously equal.
+  //
+  // A silent no-op is the worst shape a benchmark result can take, because it
+  // reads as "the change did nothing" — a finding — rather than as "the change
+  // was not present", which is a fact about the harness (§0.4).
+  if (local) {
+    const srcAt = newestMtime(path.join(dir, 'src'));
+    const distAt = newestMtime(path.join(dir, 'dist'));
+    if (srcAt > distAt) unbuilt.push(`${n} — src is ${Math.round((srcAt - distAt) / 1000)}s newer than dist`);
+  }
+  if (!asJson) console.log(`  resolved ${n}@${version}${local ? ' (local)' : ''}`);
+}
+if (unbuilt.length) {
+  console.error(`\nRefusing to run: local package(s) have unbuilt source changes.\n  ${unbuilt.join('\n  ')}`);
+  console.error('\nThis runner loads `dist`, so those edits would be silently absent from');
+  console.error('the result. Build first:  npx turbo run build --filter=<package>');
+  process.exit(1);
 }
 if (stale.length && !args.includes('--allow-local')) {
   console.error(`\nRefusing to run: ${stale.join(', ')} resolved to the monorepo dist, not npm.`);
