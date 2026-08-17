@@ -432,6 +432,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  skipTestFiles: true, // §B1 — independent of the harness
   defaultOptions: [
     {
       allowLiterals: false,

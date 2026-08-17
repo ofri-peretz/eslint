@@ -362,6 +362,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  // §B1 — the rule skips test files itself, not because a harness excluded
+  // them. A consumer's own config decides what gets linted, and an assertion
+  // like `expect(() => obj[key]).toThrow()` is noise it can never act on.
+  skipTestFiles: true,
   defaultOptions: [
     {
       allowLiterals: false,
@@ -409,19 +413,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return fileUsesAstTooling(sourceCode.ast);
     })();
 
-    // Test-file skip — bracket access in tests is universally safe (fixture data,
-    // assertion helpers, mock objects). This closes the largest class of
-    // ILB-Wild FPs without any precision loss on real application code.
-    const isTestFile = (() => {
-      const f = context.filename;
-      return (
-        /\.test\.[mc]?[jt]sx?$/.test(f) ||
-        /\.spec\.[mc]?[jt]sx?$/.test(f) ||
-        /\/__tests__\//.test(f) ||
-        /\/test\//.test(f) ||
-        /\.fixture\.[mc]?[jt]sx?$/.test(f)
-      );
-    })();
+    // The test-file skip that used to live here is gone. It is now `skipTestFiles`
+    // on the rule definition, which short-circuits `create()` before any visitor
+    // runs — so this rule cannot be reached in a test file at all, and the guard
+    // here was dead code that coverage caught.
+    //
+    // It was also wrong in the way BENCHMARK-CRITERIA warns about: `/\/test\//`
+    // matches anywhere in an absolute path, so a checkout under `~/test/proj`
+    // silenced the rule for the whole repository.
 
     /**
      * Check if a node is a literal string (potentially safe)
@@ -1791,7 +1790,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * with an attacker in it.
      */
     const checkMassAssignmentLoop = (node: TSESTree.ForOfStatement) => {
-      if (isInCodemodContext || isTestFile) return;
+      if (isInCodemodContext) return;
 
       // `for (const k of Object.keys(X))` / `Object.entries(X)` / `Object.values(X)`
       const iterated = node.right;
@@ -1861,8 +1860,48 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       walk(node.body);
     };
 
+    /**
+     * Is the object a `for…in` copy loop iterates something this file cannot
+     * vouch for?
+     *
+     * Three ways in, in the order they cost:
+     *
+     * 1. A request-rooted expression — `req.body`, `ctx.request.body`. Decided by
+     *    `isUntrustedExpression`, so `isLocallyConstructed` still disqualifies a
+     *    `req` the file builds itself.
+     * 2. A parameter — the `merge(target, source)` shape behind lodash.merge and
+     *    deep-extend. The file cannot see what a caller passes.
+     * 3. A single-assignment local whose initialiser is request-rooted. One
+     *    binding hop is not a sanitiser, and requiring exactly one write is what
+     *    stops `let s = req.body; s = SAFE_DEFAULTS` from being read as tainted.
+     *
+     * Anything else — a module-local object, an import, a literal — is not
+     * armed. That asymmetry is the point: this predicate decides what to LOOK at,
+     * and looking at every `for…in` in a codebase is how this rule earns a
+     * reputation instead of a finding.
+     */
+    const isCopyLoopSourceOpaque = (source: TSESTree.Node): boolean => {
+      if (isUntrustedExpression(source)) return true;
+      if (source.type !== AST_NODE_TYPES.Identifier) return false;
+
+      const variable = sourceCode
+        .getScope(source)
+        .references.find((ref) => ref.identifier === source)?.resolved;
+      if (!variable) return false;
+      if (variable.defs.some((def) => def.type === 'Parameter')) return true;
+
+      // The binding hop. More than one write means the declaration no longer
+      // tells you what the loop iterates — the same trap that silenced a real
+      // finding in `isLocallyConstructed` and in two other rules since.
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      const def = variable.defs[0];
+      if (!def || def.type !== 'Variable') return false;
+      const init = (def.node as TSESTree.VariableDeclarator).init;
+      return init ? isUntrustedExpression(init) : false;
+    };
+
     const checkPrototypePollutingCopyLoop = (node: TSESTree.ForInStatement) => {
-      if (isInCodemodContext || isTestFile) return;
+      if (isInCodemodContext) return;
 
       // The binding introduced by `for (const k in ...)`.
       const keyName =
@@ -1898,16 +1937,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       //     levels survives here. That residual is real and tracked; it needs the guard
       //     state to be accumulated during the single traversal instead of re-derived per
       //     loop, which is a redesign of this heuristic rather than a reordering.
-      if (node.right.type !== AST_NODE_TYPES.Identifier) return;
-      const sourceName = node.right.name;
-      let isParameter = false;
-      for (let scope: typeof node extends never ? never : ReturnType<typeof context.sourceCode.getScope> | null = context.sourceCode.getScope(node); scope; scope = scope.upper) {
-        const variable = scope.variables.find((v) => v.name === sourceName);
-        if (!variable) continue;
-        isParameter = variable.defs.some((def) => def.type === 'Parameter');
-        break;
-      }
-      if (!isParameter) return;
+      //
+      // A PARAMETER is not the only opaque source. `for (const k in req.body)`
+      // is a MemberExpression, so the Identifier-only test below returned before
+      // any of this ran, and `const source = req.body` is an Identifier that is
+      // not a Parameter — both are CWE-1321 with an attacker at the root, and
+      // both were silent until the §B seal audit needed a reporting loop for a
+      // positive control and this one did not report. So the test is: a
+      // parameter, OR provably request-rooted. A module-local object is neither,
+      // which is what keeps the benign majority quiet.
+      if (!isCopyLoopSourceOpaque(node.right)) return;
 
       // TOKENS, not `getText`. Raw source text carries the comments with it, so an
       // ordinary `/* copy each prototype key */` inside the loop silenced the finding
@@ -1974,18 +2013,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         if (armedLoops.has(node)) openCopyLoops.pop();
       },
       AssignmentExpression: (node: TSESTree.AssignmentExpression) => {
-        if (isInCodemodContext || isTestFile) return;
+        if (isInCodemodContext) return;
         // A copy-loop key-write is reported as prototype pollution and must not also be
         // reported by the generic computed-assignment check.
         if (reportCopyLoopWrite(node)) return;
         return checkAssignmentExpression(node);
       },
       MemberExpression: (node: TSESTree.MemberExpression) => {
-        if (isInCodemodContext || isTestFile) return;
+        if (isInCodemodContext) return;
         return checkMemberExpression(node);
       },
       CallExpression: (node: TSESTree.CallExpression) => {
-        if (isInCodemodContext || isTestFile) return;
+        if (isInCodemodContext) return;
         return checkObjectAssignSpread(node);
       },
     };

@@ -513,6 +513,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  skipTestFiles: true, // §B1 — independent of the harness
   defaultOptions: [
     {
       allowLiterals: true,

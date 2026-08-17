@@ -267,6 +267,7 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  skipTestFiles: true, // §B1 — independent of the harness
   defaultOptions: [
     {
       allowCommonPatterns: false,
