@@ -92,6 +92,25 @@ const row = table[req.params.id];`,
 }`,
       },
       {
+        // Symbols cannot be this weakness — not "unlikely", impossible. A Symbol
+        // is not a string, so it can never be '__proto__' or a field name a
+        // caller aims at, and Object.keys does not return it. Measured on axios:
+        // `socket[kAxiosCurrentReq] = null` and `obj[Symbol.iterator]` were a
+        // visible share of our real-source volume.
+        name: 'a module-private Symbol key',
+        code: `const kTag = Symbol('tag');
+export function tag(socket) { socket[kTag] = null; }`,
+      },
+      {
+        name: 'a well-known Symbol from the protocol',
+        code: `export function iterate(obj) { return obj && obj[Symbol.iterator]; }`,
+      },
+      {
+        name: 'Symbol.for is the registry form of the same thing',
+        code: `const kShared = Symbol.for('app.tag');
+export function tag(o) { o[kShared] = 1; }`,
+      },
+      {
         // A source rooted at a CALL, not an identifier. The file cannot show
         // where it came from, so there is no request root to match — and
         // guessing from `getBody`'s spelling is the defect this ecosystem gates
@@ -162,6 +181,17 @@ export function update(req, user) {
   for (k of Object.keys(req.body)) { user[k] = req.body[k]; }
 }`,
         errors: [{ messageId: 'objectInjection' }, { messageId: 'objectInjection' }],
+      },
+      {
+        // CONTROL for the Symbol suppression. Declared a Symbol, reassigned to a
+        // request value before use — a suppression that reads only the
+        // declaration would silence a real finding here, which is the same trap
+        // isLocallyConstructed fell into.
+        name: 'CONTROL: a Symbol binding reassigned to a string still reports',
+        code: `let k = Symbol('t');
+k = req.query.k;
+socket[k] = null;`,
+        errors: [{ messageId: 'objectInjection' }],
       },
       {
         // CONTROL for isLocallyConstructed. Numeric at the declaration,

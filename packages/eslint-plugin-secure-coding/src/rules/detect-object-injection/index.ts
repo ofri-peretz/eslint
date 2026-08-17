@@ -635,7 +635,55 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Check if property access is potentially dangerous
      */
+    /**
+     * Is this key provably a SYMBOL?
+     *
+     * A Symbol is not a string and can never be `'__proto__'`, `'constructor'`
+     * or any field name a caller could aim at, so a Symbol-keyed access cannot
+     * be this weakness — structurally, not probably. `Object.keys` does not even
+     * return them.
+     *
+     * Measured on axios: `socket[kAxiosCurrentReq] = null` and
+     * `obj[Symbol.iterator]` both reported. The well-known-Symbol protocol
+     * (`Symbol.iterator`, `Symbol.asyncIterator`, `Symbol.toStringTag`) and
+     * module-private Symbol keys are ordinary library plumbing, and they were a
+     * visible share of our real-source volume.
+     */
+    const isSymbolKey = (node: TSESTree.Node): boolean => {
+      // `obj[Symbol.iterator]` — a member of the Symbol global.
+      if (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        node.object.name === 'Symbol'
+      ) {
+        return true;
+      }
+      // `obj[kTag]` where `const kTag = Symbol('tag')` / `Symbol.for('tag')`.
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = sourceCode
+        .getScope(node)
+        .references.find((ref) => ref.identifier === node)?.resolved;
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return false;
+      // Reassignment disqualifies, same as isLocallyConstructed — a binding that
+      // held a Symbol at declaration may hold a string by the time it is used.
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      const init = (def.node as TSESTree.VariableDeclarator).init;
+      if (init?.type !== AST_NODE_TYPES.CallExpression) return false;
+      const callee = init.callee;
+      return (
+        (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'Symbol') ||
+        (callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'Symbol')
+      );
+    };
+
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
+      // SAFE: a Symbol can never be the string '__proto__', nor a field name a
+      // caller can aim at. Not a heuristic — a fact about the type.
+      if (isSymbolKey(propertyNode)) return false;
       // SAFE: the key is read out of an object this file BUILDS.
       // `const req = { params: { id: '1' } }; table[req.params.id]` is a fixture
       // or a default, not an inbound request — reporting it is asserting a

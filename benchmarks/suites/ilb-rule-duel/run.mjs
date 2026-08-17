@@ -71,6 +71,16 @@ const COMPETITORS = {
     { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['sql-queries'] },
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
   ],
+  // The head-to-head this rule exists for. eslint-plugin-security ships a rule
+  // of the SAME NAME, it is the most-installed implementation of this check, and
+  // it is the loudest rule in our own real-source measurement (10,359 findings
+  // over 5 repos). Scoring against it on shapes derived from the WEAKNESS —
+  // not from either implementation — is the only way to tell precision from
+  // silence.
+  'secure-coding/detect-object-injection': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
+    { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['no-vulnerable-dom-methods'] },
+  ],
   'secure-coding/no-sql-injection': [
     { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['sql-queries'] },
     { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
