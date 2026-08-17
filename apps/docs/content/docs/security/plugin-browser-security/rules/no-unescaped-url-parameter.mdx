@@ -190,7 +190,7 @@ export function sortedUrl(direction: 'asc' | 'desc') {
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Allow unescaped URL parameters in test files |
-| `trustedLibraries` | `string[]` | `["url","querystring"]` | Trusted URL construction libraries |
+| `trustedLibraries` | `string[]` | `["url","querystring"]` | Modules whose exports produce already-encoded URL text |
 | `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ## Rule Logic Flow

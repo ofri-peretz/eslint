@@ -47,7 +47,9 @@ const fileUsesAstTooling = createModuleEvidence({
 });
 
 type MessageIds =
-  | 'objectInjection';
+  | 'objectInjection'
+  | 'globalPrototypeWrite'
+  | 'massAssignment';
 
 /**
  * `additionalMethods` and `strategy` used to be declared here and in
@@ -60,7 +62,18 @@ export interface Options {
   /** Allow bracket notation with literal strings. Default: false (stricter) */
   allowLiterals?: boolean;
 
-  /** Properties to consider dangerous. Default: __proto__, prototype, constructor */
+  /**
+   * Property NAMES treated as dangerous where the name is literally present.
+   * Default: `['__proto__', 'prototype', 'constructor']`.
+   *
+   * Scope, precisely — it was documented as governing every finding and does
+   * not:
+   *   `obj['__proto__'] = v`  literal name   -> this option decides
+   *   `obj[k] = v`            dynamic key    -> no name to compare; unaffected
+   *   `cfg[req.query.k]`      dynamic read   -> unaffected
+   *   `o.constructor.prototype.p = 1`        -> unaffected; CWE-1321 traversal
+   *                                             is a language fact, not a vocabulary
+   */
   dangerousProperties?: string[];
 }
 
@@ -101,9 +114,16 @@ interface ObjectInjectionPattern {
 
 /**
  * Message metadata for the three property names prototype pollution travels
- * through. This table does NOT decide whether to report — that decision is the
- * `dangerousProperties` option — it only selects the risk level and the
- * `vulnerability` / `safeAlternative` wording of a finding already made.
+ * through. This table does NOT decide whether to report — it only selects the
+ * risk level and the `vulnerability` / `safeAlternative` wording of a finding
+ * already made.
+ *
+ * It used to add "that decision is the `dangerousProperties` option", which was
+ * false: that option reaches only the literal-name path, and cannot reach the
+ * dynamic-key or read paths at all, because a dynamic key has no name to compare
+ * against a list. Measured as a (shape x setting) matrix — see
+ * dangerous-properties-option.test.ts. The claim survived because every test
+ * exercised one shape at a time.
  *
  * @protocol-constant `__proto__`, `prototype` and `constructor` are the
  * ECMAScript object model's own prototype-chain accessors, not words a domain
@@ -158,6 +178,47 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
       }),
+      /**
+       * Its own message, and its own CWE.
+       *
+       * `objectInjection` above declares CWE-915 — *Improperly Controlled
+       * Modification of Dynamically-Determined Object Attributes* — which is the
+       * mass-assignment weakness: an attacker picks which field of ONE object
+       * gets written. Writing through `__proto__` or `constructor.prototype` is
+       * CWE-1321, a different weakness with a different blast radius: the
+       * property lands on `Object.prototype` and every object in the process
+       * inherits it.
+       *
+       * Reporting one under the other's CWE is wrong output that no F1 number
+       * notices, and it sends the reader to the wrong remediation — freezing a
+       * lookup table does nothing about a polluting merge.
+       */
+      /**
+       * CWE-915 proper: the attacker chooses WHICH FIELD of one object is
+       * written, not what every object inherits. Separate from
+       * `globalPrototypeWrite` because the remediation differs — an allowlist of
+       * assignable fields, not a guarded traversal.
+       */
+      massAssignment: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Mass assignment',
+        cwe: 'CWE-915',
+        description:
+          'Every key of an untrusted object is copied onto this target, so the caller chooses which field is written — including one they should not control, such as isAdmin',
+        severity: 'HIGH',
+        fix: 'Copy an explicit allowlist of assignable fields instead of iterating the caller\'s keys',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/915.html',
+      }),
+      globalPrototypeWrite: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Global prototype pollution',
+        cwe: 'CWE-1321',
+        description:
+          'Assignment writes THROUGH {{step}}, so the property lands on Object.prototype and every object in the process inherits it',
+        severity: 'CRITICAL',
+        fix: 'Guard the traversal with Object.hasOwn, or build the target with Object.create(null) / a Map',
+        documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
+      }),
     },
     schema: [
       {
@@ -172,7 +233,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: ['__proto__', 'prototype', 'constructor'],
-            description: 'Properties to consider dangerous'
+            description:
+              'Property NAMES treated as dangerous where the name is visible in the source — ' +
+              "`obj['__proto__'] = v`. It cannot apply to a dynamic key (`obj[k] = v`), because " +
+              'there is no name to compare, and it does not gate the CWE-1321 traversal check, ' +
+              'which is a fact about the language rather than a vocabulary. Set it to [] to stop ' +
+              'reporting literal dangerous-property writes.'
           },
         },
         additionalProperties: false,
@@ -505,9 +571,81 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * The identifier a member chain is rooted at — `req` for `req.body.name`.
+     */
+    const chainRoot = (node: TSESTree.Node): TSESTree.Identifier | null => {
+      let cur = node;
+      while (cur.type === AST_NODE_TYPES.MemberExpression) cur = cur.object;
+      return cur.type === AST_NODE_TYPES.Identifier ? cur : null;
+    };
+
+    /**
+     * Is this binding something THIS FILE builds, rather than something opaque
+     * handed to it?
+     *
+     * `const req = { params: { id: '1' } }` is a fixture, a default, a test
+     * double — not an inbound request, whatever it is spelled. Without this the
+     * rule reports a compile-time constant as attacker-controlled, which is the
+     * measured false positive E7 in the spec and the same one `no-sql-injection`
+     * shipped: a root the file CONSTRUCTS cannot carry a caller's data.
+     *
+     * A root whose initialiser this file cannot see (a parameter, an import, a
+     * call result) stays untrusted — absence of evidence is not evidence of
+     * safety, and that asymmetry is deliberate.
+     */
+    const isLocallyConstructed = (id: TSESTree.Identifier): boolean => {
+      const variable = sourceCode
+        .getScope(id)
+        .references.find((ref) => ref.identifier === id)?.resolved;
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return false;
+      // A REASSIGNED binding no longer holds what it was declared with, and
+      // reading only the declaration turns scope resolution into an escape
+      // hatch. `let key = 0; key = req.query.k; obj[key] = value` is numeric at
+      // the declaration and attacker-controlled by the time the access runs —
+      // this suppression returned true for it and silenced a real finding until
+      // the fixture written for exactly that trap caught it.
+      // The initialiser is itself one write, so more than one means reassignment.
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      const init = (def.node as TSESTree.VariableDeclarator).init;
+      if (!init) return false;
+      return (
+        init.type === AST_NODE_TYPES.ObjectExpression ||
+        init.type === AST_NODE_TYPES.ArrayExpression ||
+        isStaticExpression({ node: init, scope: sourceCode.getScope(init) })
+      );
+    };
+
+    /**
+     * Does this expression carry caller-supplied data?
+     *
+     * Exact membership against request roots, never a substring — `requestId`
+     * and `prerequisites` are not requests. Then disqualified by
+     * `isLocallyConstructed`, so the SPELLING alone never decides.
+     */
+    const REQUEST_ROOTS = new Set(['req', 'request', 'ctx', 'context', 'event']);
+    const isUntrustedExpression = (node: TSESTree.Node): boolean => {
+      const root = chainRoot(node);
+      if (root === null) return false;
+      if (!REQUEST_ROOTS.has(root.name)) return false;
+      return !isLocallyConstructed(root);
+    };
+
+    /**
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
+      // SAFE: the key is read out of an object this file BUILDS.
+      // `const req = { params: { id: '1' } }; table[req.params.id]` is a fixture
+      // or a default, not an inbound request — reporting it is asserting a
+      // caller exists where the initialiser is right there. Evidence beats the
+      // spelling in both directions: a `req` the file constructs is clean, and a
+      // root the file cannot see stays untrusted.
+      {
+        const root = chainRoot(propertyNode);
+        if (root !== null && isLocallyConstructed(root)) return false;
+      }
       // SAFE: the key is provably numeric, is namespaced behind a literal
       // prefix, or is a concatenation containing a number. All three are facts
       // about the expression's shape, not its naming — rename every identifier
@@ -681,6 +819,74 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       ) || null;
 
       return { object, property, propertyNode, isAssignment, pattern };
+    };
+
+    /**
+     * The static property name of one member step, dot or bracket-literal.
+     *
+     * `o.constructor` and `o['constructor']` are the same traversal and both
+     * pollute; keying on `computed` would see only one of them.
+     */
+    const stepName = (m: TSESTree.MemberExpression): string | null => {
+      if (!m.computed && m.property.type === AST_NODE_TYPES.Identifier) return m.property.name;
+      if (
+        m.computed &&
+        m.property.type === AST_NODE_TYPES.Literal &&
+        typeof m.property.value === 'string'
+      ) {
+        return m.property.value;
+      }
+      return null;
+    };
+
+    /**
+     * Does this assignment WRITE THROUGH a prototype-reaching step, landing on
+     * `Object.prototype` and affecting every object in the process?
+     *
+     * This is CWE-1321, and it is the shape the rule was blind to. Verified in
+     * Node 24 rather than assumed, because the intuition is wrong in both
+     * directions:
+     *
+     *   o.__proto__.p = 1              POLLUTES   (non-final __proto__)
+     *   o['__proto__'].p = 1           POLLUTES   (same step, bracket spelling)
+     *   o.constructor.prototype.p = 1  POLLUTES   (non-final constructor→prototype)
+     *   o.__proto__ = { p: 1 }         safe       (FINAL — re-parents this object only)
+     *   o.constructor = X              safe       (FINAL)
+     *   fn.prototype.p = 1             safe       (a function's own prototype)
+     *   class C {}; C.prototype.p = 1  safe       (ditto)
+     *
+     * Two consequences the rule had backwards. **A single `obj[k] = v` cannot
+     * pollute** — `[[Set]]` on `__proto__` invokes the setter and re-parents that
+     * one object — so the shape the rule reported hardest is the shape that
+     * cannot cause this. And **the write need not be computed at all**: the
+     * canonical form is a plain dot chain, which the `!computed` early return
+     * below discards.
+     *
+     * The last two rows are why this cannot be "any step named `prototype`":
+     * `fn.prototype.method = …` is ordinary prototype-based JavaScript and
+     * appears in essentially every pre-class codebase. `prototype` counts only
+     * when it is reached THROUGH `constructor`, which is what escapes the
+     * object's own function into the shared one.
+     */
+    const globalPrototypeWrite = (node: TSESTree.AssignmentExpression): string | null => {
+      if (node.left.type !== AST_NODE_TYPES.MemberExpression) return null;
+
+      // Every step EXCEPT the final one — the final property is what is written
+      // TO, and writing to `__proto__` re-parents one object rather than polluting.
+      const steps: string[] = [];
+      let cur: TSESTree.Node = node.left.object;
+      while (cur.type === AST_NODE_TYPES.MemberExpression) {
+        const name = stepName(cur);
+        if (name === null) return null; // a dynamic step — not provably this shape
+        steps.unshift(name);
+        cur = cur.object;
+      }
+
+      if (steps.includes('__proto__')) return '__proto__';
+      for (let i = 0; i < steps.length - 1; i++) {
+        if (steps[i] === 'constructor' && steps[i + 1] === 'prototype') return 'constructor.prototype';
+      }
+      return null;
     };
 
     /**
@@ -1135,6 +1341,28 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check assignment expressions for object injection
      */
     const checkAssignmentExpression = (node: TSESTree.AssignmentExpression) => {
+      // BEFORE isHighRiskAssignment, which returns false for a non-computed left
+      // side. The canonical pollution shape is a plain dot chain
+      // (`o.constructor.prototype.p = 1`), so gating this on bracket notation is
+      // what made the rule blind to it.
+      const step = globalPrototypeWrite(node);
+      if (step !== null) {
+        // Claim the whole left-side chain first. `o['constructor']['prototype'].p = 1`
+        // otherwise draws this finding AND a generic `objectInjection` from the
+        // MemberExpression visitor for the inner computed steps — one defect,
+        // two findings, which is the over-reporting we criticise in competitors.
+        // The dot spelling never hit it, so this only shows up on the bracket form.
+        for (
+          let m: TSESTree.Node = node.left;
+          m.type === AST_NODE_TYPES.MemberExpression;
+          m = m.object
+        ) {
+          handledMemberExpressions.add(m);
+        }
+        context.report({ node, messageId: 'globalPrototypeWrite', data: { step } });
+        return;
+      }
+
       if (!isHighRiskAssignment(node)) {
         return;
       }
@@ -1374,6 +1602,100 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * detection without adding their noise. Quiet when the body guards the key —
      * `hasOwnProperty`, a `__proto__`/`constructor` check, or an allowlist test.
      */
+    /**
+     * Mass assignment (CWE-915): `for (const k of Object.keys(req.body)) user[k] = req.body[k]`
+     *
+     * A different weakness from the pollution the `for...in` handler below
+     * models, with a different fix. The attacker does not reach
+     * `Object.prototype`; they pick WHICH FIELD of one object gets written, and
+     * set `isAdmin` on it. Measured: `isAdmin` goes true.
+     *
+     * Gated on the ITERATED expression being untrusted, which is the fact that
+     * matters and the one the spec got wrong at first. Two candidate guards were
+     * measured and only one holds:
+     *
+     *   Object.keys(TARGET)   safe against pollution (a target's own keys cannot
+     *                         include `__proto__` unless someone put it there) —
+     *                         but NOT against mass assignment: if the target
+     *                         already has `isAdmin`, the attacker still sets it.
+     *   Object.keys(SOURCE)   unsafe for both. `JSON.parse('{"__proto__":…}')`
+     *                         puts `__proto__` in `Object.keys`, verified.
+     *
+     * So "iterates Object.keys" is not a suppressor on its own; *keys of what*
+     * decides. This reports only the untrusted-source form, which is the shape
+     * with an attacker in it.
+     */
+    const checkMassAssignmentLoop = (node: TSESTree.ForOfStatement) => {
+      if (isInCodemodContext || isTestFile) return;
+
+      // `for (const k of Object.keys(X))` / `Object.entries(X)` / `Object.values(X)`
+      const iterated = node.right;
+      if (iterated.type !== AST_NODE_TYPES.CallExpression) return;
+      const callee = iterated.callee;
+      if (
+        callee.type !== AST_NODE_TYPES.MemberExpression ||
+        callee.computed ||
+        callee.object.type !== AST_NODE_TYPES.Identifier ||
+        callee.object.name !== 'Object' ||
+        callee.property.type !== AST_NODE_TYPES.Identifier ||
+        !['keys', 'entries'].includes(callee.property.name)
+      ) {
+        return;
+      }
+      const source = iterated.arguments[0];
+      if (source === undefined || !isUntrustedExpression(source)) return;
+
+      // The loop binding. Two spellings, and missing the second left the
+      // `Object.entries` form — the more idiomatic one, since it avoids the
+      // second lookup — undetected:
+      //   for (const k of Object.keys(x))          -> Identifier
+      //   for (const [k, v] of Object.entries(x))  -> ArrayPattern, key at [0]
+      if (node.left.type !== AST_NODE_TYPES.VariableDeclaration) return;
+      const bound = node.left.declarations[0]?.id;
+      const keyName =
+        bound?.type === AST_NODE_TYPES.Identifier
+          ? bound.name
+          : bound?.type === AST_NODE_TYPES.ArrayPattern &&
+              bound.elements[0]?.type === AST_NODE_TYPES.Identifier
+            ? bound.elements[0].name
+            : null;
+      if (keyName === null) return;
+
+      // An allowlist inside the body is the remediation — naming the edit that
+      // clears this finding is what keeps the rule satisfiable.
+      const body = sourceCode.getText(node.body);
+      if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body)) return;
+
+      // A computed write keyed by the loop variable, anywhere in the body.
+      let reported = false;
+      const walk = (n: TSESTree.Node): void => {
+        if (reported) return;
+        if (
+          n.type === AST_NODE_TYPES.AssignmentExpression &&
+          n.left.type === AST_NODE_TYPES.MemberExpression &&
+          n.left.computed &&
+          n.left.property.type === AST_NODE_TYPES.Identifier &&
+          n.left.property.name === keyName
+        ) {
+          reported = true;
+          context.report({
+            node: n,
+            messageId: 'massAssignment',
+            data: { key: keyName },
+          });
+          return;
+        }
+        for (const key of Object.keys(n)) {
+          const child = (n as unknown as Record<string, unknown>)[key];
+          if (key === 'parent' || child === null || typeof child !== 'object') continue;
+          for (const c of Array.isArray(child) ? child : [child]) {
+            if (c && typeof (c as TSESTree.Node).type === 'string') walk(c as TSESTree.Node);
+          }
+        }
+      };
+      walk(node.body);
+    };
+
     const checkPrototypePollutingCopyLoop = (node: TSESTree.ForInStatement) => {
       if (isInCodemodContext || isTestFile) return;
 
@@ -1479,6 +1801,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      ForOfStatement: checkMassAssignmentLoop,
       ForInStatement: checkPrototypePollutingCopyLoop,
       'ForInStatement:exit': (node: TSESTree.ForInStatement) => {
         // Only loops that armed above pushed a frame, and they nest, so the frame to drop

@@ -404,17 +404,29 @@ describe('detect-object-injection', () => {
         {
           code: 'obj["email"] = value;',
         },
-      ],
-      invalid: [
-        // Without type info, const key = 'name' is still an identifier access (flagged)
-        // WITH type info and proper literal type inference, this would be SAFE
         {
+          // Was pinned as invalid until 2026-08-16 — a const holding a literal
+          // is a compile-time constant key, not object injection.
           code: `
             const key = 'name';
             obj[key] = value;
           `,
-          errors: [{ messageId: 'objectInjection' }],
         },
+        {
+          code: `
+            type Key = 'name' | 'email';
+            const key: Key = 'name';
+            obj[key] = value;
+          `,
+        },
+      ],
+      invalid: [
+        // MOVED TO valid 2026-08-16. This pinned a false positive and said so:
+        // `const key = 'name'` is a compile-time constant, and no type
+        // information is needed to see it — the initialiser is right there.
+        // Reporting it was the rule asserting an attacker where the file shows a
+        // literal, and "documented" is not "mitigated".
+        //   (see the matching valid case below)
         // Without type information, any identifier access is flagged
         // When type-aware: if key is typed as 'name' | 'email', this would be SAFE
         {
@@ -487,17 +499,9 @@ describe('detect-object-injection', () => {
           code: 'obj["prototype"] = value;',
           errors: [{ messageId: 'objectInjection' }],
         },
-        // Variable access without type info is flagged
-        {
-          code: `
-            type Key = 'name' | 'email';
-            const key: Key = 'name';
-            obj[key] = value;
-          `,
-          // Without type info, this is flagged because 'key' is an identifier
-          // WITH type info, this would be SAFE (key is constrained to 'name' | 'email')
-          errors: [{ messageId: 'objectInjection' }],
-        },
+        // MOVED TO valid 2026-08-16, same reason as above: the const holds a
+        // string literal, which is visible without any type information. The
+        // union annotation is not what makes it safe — the initialiser is.
       ],
     });
   });
