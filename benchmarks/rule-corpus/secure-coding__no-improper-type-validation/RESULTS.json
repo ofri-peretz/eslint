@@ -1,6 +1,8 @@
 {
   "rule": "secure-coding/no-improper-type-validation",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
   "fixtures": 22,
+  "vulnerable": 12,
   "results": [
     {
       "name": "Interlace secure-coding/no-improper-type-validation",
