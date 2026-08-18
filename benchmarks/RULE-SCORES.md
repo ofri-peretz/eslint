@@ -46,6 +46,7 @@ labels in [`suites/ilb-real-source/SAMPLED-FP-2026-08-17.md`](./suites/ilb-real-
 | :--- | ---: | ---: | ---: | ---: | :--- | :--- |
 | `node-security/detect-non-literal-fs-filename` | **1** | 1 (census) | 1 | 0 | census | **passes** |
 | `secure-coding/no-unlimited-resource-allocation` | **3** | 3 (census) | 3 | 0 | census, `warn` ≥70% | **passes** (was 173 findings) |
+| `node-security/no-toctou-vulnerability` | **59** | 59 (classified) | ~0 | ~59 | census, `error` ≥95% | **fails — fix written, NOT shipped** |
 | `secure-coding/no-redos-vulnerable-regex` | 123 | 22 | 6 | 15 | ratio, was `error` ≥95% | **28.6% — removed from presets 2026-08-18** |
 | `secure-coding/detect-non-literal-regexp` | 243 | 10 | 3 | 7 | opt-in, no floor | 30% |
 | `secure-coding/detect-object-injection` | 14,696 | 13 | 0 | 13 | opt-in, no floor | 0% |
@@ -116,6 +117,53 @@ axios counts the decompressed bytes against `maxContentLength` and aborts. That
 limit is opt-in and axios's default is `-1`, so an axios user relying on
 defaults is still unbounded. The rule stops reporting the *library* implementing
 the mechanism; it says nothing about the *consumer* who leaves it off.
+
+### `no-toctou-vulnerability` — 59 findings, and the fix is a contract change
+
+`node benchmarks/suites/ilb-real-source/run.mjs --allow-local --sample=200 --sample-rules=node-security/no-toctou-vulnerability`
+
+Ships at **`error` in `recommended`**, so every one of these fails a consumer's
+build. 59 findings, under 73, so the census criterion applies: label all of
+them, pass at zero false positives.
+
+| Shape | Findings | Example |
+| :--- | ---: | :--- |
+| `mkdir` / `rm` carrying `recursive: true` or `force: true` | 22 | `if (!existsSync(dir)) mkdirSync(dir, { recursive: true })` — uptime-kuma `server/database.js:141` ×4, pm2 `lib/Client.js:133` |
+| build / release tooling on its own directories | ~25 | `if (existsSync('./extra/healthcheck-armv7')) renameSync(…)` — uptime-kuma `extra/build-healthcheck.js:13` |
+| `createReadStream` gated on existence | 3 | n8n event-bus log reader |
+| truncating own log files | 3 | pm2 `lib/API/LogManagement.js:49` |
+| in `os.tmpdir()` | **1** | n8n `.../node-parameter-schema/test-schema-setup.ts:73` |
+
+**The rule's own corpus already says what the finding is.** All 16 `vulnerable/`
+fixtures are rooted at `os.tmpdir()` or a literal `/tmp` path, and they say why
+in their own headers — *"on a path in the shared /tmp namespace. Any local user
+can replace the name"*, *"an attacker's symlink in /tmp hands them everything
+written into it afterwards"*. A check/use window is only exploitable where a
+second party can act inside it.
+
+The implementation never checked that. It exempts paths that reach a **per-user**
+root (`os.homedir()`, `$XDG_CACHE_HOME`) and reports everything else, including
+every build script operating on its own checkout.
+
+Requiring the shared root to be **provable** was implemented and measured:
+
+| | findings on 20 repos | corpus F1 |
+| :--- | ---: | ---: |
+| as shipped | 59 | 100% |
+| requiring a shared root | **1** (a true positive) | 100% |
+
+**Not shipped.** It is a contract change on a rule at `error` — it flips the
+default from *report unless proven per-user* to *report only where a shared
+namespace is proven* — and roughly 15 unit cases exist specifically to assert
+the current direction (`const p = notAFunction(); if (existsSync(p)) unlinkSync(p)`
+is invalid today precisely because the path does not resolve). The rule's tests
+and the rule's corpus disagree with each other, and the measurement says the
+corpus is right; but reversing a security rule's default against its own
+documented tests is Ofri's call, not an overnight patch. See
+`RULE-TO-BAR-PLAYBOOK.md` for the design.
+
+Shipped from this session: the §C2.4 message now names what a false positive
+looks like, which was the rule's one failing seal probe.
 
 ### `detect-non-literal-fs-filename` — the fix trail
 

@@ -141,18 +141,66 @@ Then the plugin's preset comment, and a lock test for any preset change.
 Ranked by findings on the 20-repo corpus, because that is what a consumer sees.
 Loudest first is also cheapest first: one fix moves thousands of findings.
 
-| # | Rule | Findings | Sampled | Why this position |
+| # | Rule | Findings | Sampled | Status |
 | ---: | :--- | ---: | :--- | :--- |
+| 7 | `secure-coding/no-unlimited-resource-allocation` | 173 → **3** | 3/3 TP | **done** 2026-08-18 (`abc9fb1e2`) |
+| 8 | `node-security/no-toctou-vulnerability` | 59 | ~0 TP | **measured, fix written, NOT shipped** — see below |
 | 5 | `secure-coding/no-improper-type-validation` | 2,392 | — | second loudest, never measured |
 | 6 | `secure-coding/no-insecure-comparison` | 1,830 | — | third loudest, never measured |
-| 7 | `secure-coding/no-unlimited-resource-allocation` | 173 | **0 TP / 5 FP** | in `recommended`; reports `new Set()` in a loop |
-| 8 | `node-security/no-toctou-vulnerability` | 59 | **0 TP / 4 FP** | in `recommended`; names the use, never the check it races |
 | 9 | `secure-coding/no-unchecked-loop-condition` | 435 | — | fourth loudest |
 | 10 | `secure-coding/no-missing-authentication` | 366 | — | fifth loudest; already flagged by the audit |
 
-**7 and 8 are the urgent ones** despite being quieter: they ship in
-`recommended` and both scored 0 TP in the ecosystem sample. 5 and 6 are louder
-but opt-in exposure is unknown until measured — check their tier first (step 1).
+5 and 6 are louder than 7 and 8 were, but opt-in exposure is unknown until
+measured — check their tier first (step 1). Start each at step 0.
+
+### Waiting on a decision — `node-security/no-toctou-vulnerability`
+
+Ships at **`error` in `recommended`**. 59 findings on the 20-repo corpus, of
+which one is a true positive. Measured and diagnosed 2026-08-18; the fix is
+written and reverted, because it is a contract change rather than a patch.
+
+**The disagreement.** All 16 `vulnerable/` fixtures in the rule's corpus are
+rooted at `os.tmpdir()` or a literal `/tmp` path, and say why in their headers:
+a check/use window is exploitable only where a second party can act inside it.
+The implementation asks the opposite question — it exempts paths reaching a
+per-user root and reports everything else — and ~15 unit cases assert that
+direction on purpose (`const p = notAFunction(); if (existsSync(p)) unlinkSync(p)`
+is invalid today *because* the path does not resolve).
+
+The corpus and the tests contradict each other. The measurement says the corpus
+is right: what the current direction actually reports is build and release
+tooling operating on its own checkout.
+
+**The fix, measured.** Require the shared root to be provable — mirror
+`reachesPerUserRoot` as `reachesSharedRoot`, with the same walk plus a string-
+Literal arm, over:
+
+```
+SHARED_ROOT_FUNCTIONS   tmpdir
+SHARED_ENV_VARS         TMPDIR, TMP, TEMP
+SHARED_LITERAL_ROOTS    /tmp, /var/tmp, /dev/shm, /var/folders/,
+                        C:\Windows\Temp, C:\Temp
+```
+
+and one line in `checkCallExpression`, after the existing per-user exemption:
+
+```ts
+if (!reachesSharedRoot(useArg)) return;
+```
+
+| | findings on 20 repos | corpus F1 |
+| :--- | ---: | ---: |
+| as shipped | 59 | 100% |
+| requiring a shared root | **1** — n8n `test-schema-setup.ts:73`, a real one | 100% |
+
+**Two things to decide.** First, whether an unresolvable path should report:
+today it does, and that is where the 59 come from. Second, whether two corpus
+fixtures may name the shared path they already describe —
+`09-cast-at-the-use.ts` and `16-nonnull-assertion.ts` both say "the shared
+scratch file" / "the shared export artefact" in their comments but build the
+path from an unresolvable parameter, so they are the only two that would stop
+reporting. Their stated subject is cast and non-null-assertion unwrapping,
+which is unaffected either way.
 
 ### Deferred, deliberately
 
