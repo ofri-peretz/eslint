@@ -193,6 +193,29 @@ for (const [rule, entry] of ranked.slice(0, top)) {
 const share = ranked.slice(0, 5).reduce((sum, [, e]) => sum + e.findings, 0);
 console.log(`\n  top 5 rules produce ${((share / seen.length) * 100).toFixed(1)}% of everything a user sees.`);
 
+// Resolution-dependent rules are NOT measurable on this corpus.
+//
+// The cache holds cloned source, and 1 of 20 repositories has node_modules
+// installed. Any rule that asks the resolver a question therefore reports
+// nearly every import in nearly every file — `import-next/no-unresolved` alone
+// produced 41,584 findings from 2 distinct cases across 16 repositories, which
+// is the signature of a configuration artifact rather than a defect. Reporting
+// them in the aggregate would inflate the number a user is told to expect by
+// roughly a fifth.
+const RESOLUTION_DEPENDENT = /^import-next\/(no-unresolved|no-extraneous-dependencies)$/;
+const artifact = ranked
+  .filter(([rule]) => RESOLUTION_DEPENDENT.test(rule))
+  .reduce((sum, [, e]) => sum + e.findings, 0);
+if (artifact > 0) {
+  const real = seen.length - artifact;
+  console.log(
+    `\n  ${artifact} finding(s) come from resolution-dependent rules and are ARTIFACTS of an\n` +
+      `  uninstalled corpus (1 of 20 repos has node_modules). Excluding them:\n` +
+      `    findings          ${real}\n` +
+      `    per 1,000 LOC     ${((real / loc) * 1000).toFixed(2)}`,
+  );
+}
+
 fs.writeFileSync(
   path.join(ROOT, 'benchmarks/PRESET-SWEEP.json'),
   `${JSON.stringify(
