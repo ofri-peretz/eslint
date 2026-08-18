@@ -10,14 +10,29 @@
     "node": "24"
   },
   "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- node-security/detect-non-literal-fs-filename"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/index.ts"
+    },
     "corpus": {
       "state": "met",
-      "evidence": "SPEC.md: written BEFORE touching the rule, from CWE-22 semantics, and every claim executed in Node 24 rather than reasoned about \u2014 including the counterintuitive `path.join` results the rule turns on.",
+      "evidence": "SPEC.md: written BEFORE touching the rule, from CWE-22 semantics, and every claim executed in Node 24 rather than reasoned about — including the counterintuitive `path.join` results the rule turns on.",
       "command": "cat benchmarks/rule-corpus/node-security__detect-non-literal-fs-filename/SPEC.md"
     },
     "duel": {
       "state": "met",
-      "evidence": "10 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/detect-non-literal-fs-filename"
     },
     "adversarial": {
@@ -26,13 +41,13 @@
       "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
     },
     "realSource": {
-      "state": "unmet",
-      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
-      "command": "npm run cases -- node-security/detect-non-literal-fs-filename --update"
+      "state": "met",
+      "evidence": "4 case(s): 0 enforce, 4 exempt, 0 undecided, 0 unreviewed",
+      "command": "npm run cases -- node-security/detect-non-literal-fs-filename"
     },
     "partition": {
       "state": "unmet",
-      "evidence": "PROBED 2026-08-18 and FAILED. `fs.readFileSync(req.query.file)` \u2014 the canonical CWE-22 sink \u2014 is reported by BOTH this rule and node-security/no-arbitrary-file-access. Zip-slip partitions cleanly: with a real unzipper binding, exactly one report, from no-zip-slip.",
+      "evidence": "PROBED 2026-08-18 and FAILED. `fs.readFileSync(req.query.file)` — the canonical CWE-22 sink — is reported by BOTH this rule and node-security/no-arbitrary-file-access. Zip-slip partitions cleanly: with a real unzipper binding, exactly one report, from no-zip-slip.",
       "command": "npx tsx scripts/probe-rule.mts node-security/detect-non-literal-fs-filename node-security/no-arbitrary-file-access node-security/no-zip-slip -- 'const fs=require(\"fs\"); function h(req){ return fs.readFileSync(req.query.file); }'"
     },
     "behaviour": {
@@ -46,13 +61,13 @@
       "command": "npx vitest run --coverage src/rules/detect-non-literal-fs-filename"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.00ms \u00b7 2000L +0.00ms \u00b7 8000L +0.00ms \u2014 NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "state": "met",
+      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +2.61ms · 8000L +0.64ms — 0.2x time for 4x lines (2000→8000), linear",
       "command": "npx tsx scripts/seal-audit.mts node-security/detect-non-literal-fs-filename"
     },
     "recorded": {
       "state": "met",
-      "evidence": "rule last changed 2026-08-18 \u00b7 RULE-SCORES.md stamp 2026-08-18 \u00b7 BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal node-security/detect-non-literal-fs-filename' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
@@ -63,7 +78,7 @@
       "limit": null,
       "summary": "The canonical sink `fs.readFileSync(req.query.file)` is reported by this rule AND by node-security/no-arbitrary-file-access.",
       "why": "Open work, not a limit. Two rules in one plugin model the same sink, so a consumer enabling `recommended` sees the same defect twice with two different message shapes. Which rule owns direct fs-sink taint is a taxonomy decision.",
-      "reopenWhen": "immediately \u2014 this is a defect, listed here so it is not lost"
+      "reopenWhen": "immediately — this is a defect, listed here so it is not lost"
     },
     {
       "id": "throughput-not-established",

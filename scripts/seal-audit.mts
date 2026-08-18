@@ -358,6 +358,31 @@ for (const dir of dirs) {
   }
 
   const axes: Record<string, Axis> = {
+    // ── The three axes added 2026-08-18, when the bar became "under 5%
+    // effective false positives". They are judgement axes on purpose: each
+    // asks a question a script cannot answer, and each exists because getting
+    // it wrong is what produced our worst measurement to date.
+    oracle: keep('oracle') ?? {
+      state: 'unmet',
+      evidence:
+        'no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — ' +
+        'a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%',
+      command: 'see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md',
+    },
+    effectiveFp: keep('effectiveFp') ?? {
+      state: 'unmet',
+      evidence:
+        'never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is ' +
+        'right but nobody would act on it. Bar is 5% for anything a preset enables',
+      command: `npm run cases -- ${ruleId}`,
+    },
+    reachability: keep('reachability') ?? {
+      state: 'unmet',
+      evidence:
+        'the rule\'s default contract is not asserted. A rule enabled by default must report only when it can resolve a ' +
+        'path from an untrusted source; "report unless proven safe" is a different product and belongs opt-in',
+      command: `grep -n "return true" packages/eslint-plugin-${prefix}/src/rules/${ruleName}/index.ts`,
+    },
     corpus: keep('corpus') ?? {
       state: 'unmet',
       evidence: 'not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule',

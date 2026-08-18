@@ -10,6 +10,21 @@
     "node": "24"
   },
   "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- secure-coding/no-improper-type-validation"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/index.ts"
+    },
     "corpus": {
       "state": "unmet",
       "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
@@ -47,7 +62,7 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.00ms · 8000L +0.00ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 500L +0.10ms · 2000L +0.18ms · 8000L +0.31ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-improper-type-validation"
     },
     "recorded": {

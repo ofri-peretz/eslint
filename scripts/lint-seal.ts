@@ -46,9 +46,12 @@ const CORPUS = path.join(ROOT, 'benchmarks/rule-corpus');
  */
 const AXES = [
   'corpus',
+  'oracle',
   'duel',
   'adversarial',
   'realSource',
+  'effectiveFp',
+  'reachability',
   'partition',
   'behaviour',
   'coverage',

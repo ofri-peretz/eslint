@@ -10,14 +10,29 @@
     "node": "24"
   },
   "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- node-security/require-secure-credential-storage"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/index.ts"
+    },
     "corpus": {
       "state": "unmet",
-      "evidence": "not asserted \u2014 a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
       "command": "cat benchmarks/rule-corpus/node-security__require-secure-credential-storage/MANIFEST.md"
     },
     "duel": {
       "state": "unmet",
-      "evidence": "9 TP / 3 FP / 4 FN \u2014 75.0% precision, 69.2% recall, 72.0% F1",
+      "evidence": "9 TP / 3 FP / 4 FN — 75.0% precision, 69.2% recall, 72.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/require-secure-credential-storage"
     },
     "adversarial": {
@@ -27,7 +42,7 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
       "command": "npm run cases -- node-security/require-secure-credential-storage --update"
     },
     "partition": {
@@ -42,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured \u2014 run without --skip-coverage",
+      "evidence": "not measured — run without --skip-coverage",
       "command": "npx vitest run --coverage src/rules/require-secure-credential-storage"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.74ms \u00b7 2000L +0.02ms \u00b7 8000L +3.21ms \u2014 0.0x time for 4x lines (500\u21922000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.15ms · 8000L +3.45ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/require-secure-credential-storage"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/require-secure-credential-storage' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

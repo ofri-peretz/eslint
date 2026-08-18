@@ -1,14 +1,19 @@
 {
   "rule": "secure-coding/no-unsafe-regex-construction",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
   "fixtures": 24,
+  "vulnerable": 12,
   "results": [
     {
       "name": "Interlace secure-coding/no-unsafe-regex-construction",
       "tp": 12,
       "fp": 0,
       "fn": 0,
+      "tn": 12,
       "precision": 1,
       "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
       "f1": 1,
       "crashes": [],
       "missed": [],

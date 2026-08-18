@@ -9,8 +9,11 @@
       "tp": 24,
       "fp": 0,
       "fn": 1,
+      "tn": 18,
       "precision": 1,
       "recall": 0.96,
+      "specificity": 1,
+      "youdenJ": 0.96,
       "f1": 0.9795918367346939,
       "crashes": [],
       "missed": [

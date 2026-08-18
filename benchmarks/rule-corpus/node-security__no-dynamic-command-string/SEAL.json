@@ -10,14 +10,29 @@
     "node": "24"
   },
   "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- node-security/no-dynamic-command-string"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-node-security/src/rules/no-dynamic-command-string/index.ts"
+    },
     "corpus": {
       "state": "unmet",
-      "evidence": "not asserted \u2014 a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
       "command": "cat benchmarks/rule-corpus/node-security__no-dynamic-command-string/MANIFEST.md"
     },
     "duel": {
       "state": "met",
-      "evidence": "16 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "16 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/no-dynamic-command-string"
     },
     "adversarial": {
@@ -27,7 +42,7 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
       "command": "npm run cases -- node-security/no-dynamic-command-string --update"
     },
     "partition": {
@@ -42,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured \u2014 run without --skip-coverage",
+      "evidence": "not measured — run without --skip-coverage",
       "command": "npx vitest run --coverage src/rules/no-dynamic-command-string"
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.02ms \u00b7 2000L +0.75ms \u00b7 8000L +0.57ms \u2014 0.8x time for 4x lines (2000\u21928000), linear",
+      "evidence": "marginal over a no-op control: 500L +0.15ms · 2000L +1.84ms · 8000L +1.04ms — 0.6x time for 4x lines (2000→8000), linear",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-dynamic-command-string"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/no-dynamic-command-string' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

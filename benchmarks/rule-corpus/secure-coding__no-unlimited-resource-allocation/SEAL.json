@@ -10,6 +10,21 @@
     "node": "24"
   },
   "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- secure-coding/no-unlimited-resource-allocation"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/index.ts"
+    },
     "corpus": {
       "state": "met",
       "evidence": "10 vulnerable / 16 safe, written 2026-08-18 from the 173 measured false positives and from real framework idiom, not from the rule's tests",
@@ -17,22 +32,22 @@
     },
     "duel": {
       "state": "met",
-      "evidence": "10 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-unlimited-resource-allocation"
     },
     "adversarial": {
       "state": "unmet",
-      "evidence": "NOT RUN. The corpus was written from measured false positives, so the rule was tuned against it \u2014 phase 4 exists precisely because that score is worth nothing on its own",
+      "evidence": "NOT RUN. The corpus was written from measured false positives, so the rule was tuned against it — phase 4 exists precisely because that score is worth nothing on its own",
       "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
     },
     "realSource": {
       "state": "met",
-      "evidence": "2 case(s) filed, 0 still unreviewed",
+      "evidence": "2 case(s): 2 enforce, 0 exempt, 0 undecided, 0 unreviewed",
       "command": "npm run cases -- secure-coding/no-unlimited-resource-allocation"
     },
     "partition": {
       "state": "unmet",
-      "evidence": "Probed 2026-08-18 and FAILED. Exactly one report per shape, but from the wrong rule \u2014 see knownGaps/decompression-owned-by-the-generic-rule",
+      "evidence": "Probed 2026-08-18 and FAILED. Exactly one report per shape, but from the wrong rule — see knownGaps/decompression-owned-by-the-generic-rule",
       "command": "npx tsx scripts/probe-rule.mts secure-coding/no-unlimited-resource-allocation node-security/no-unbounded-decompression -- 'const zlib=require(\"zlib\"); const g = zlib.createGunzip();'"
     },
     "behaviour": {
@@ -47,12 +62,12 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.69ms \u00b7 2000L +0.07ms \u00b7 8000L +0.08ms \u2014 0.1x time for 4x lines (500\u21922000), linear",
+      "evidence": "marginal over a no-op control: 500L +0.91ms · 2000L +0.13ms · 8000L +0.43ms — 0.1x time for 4x lines (500→2000), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
     },
     "recorded": {
-      "state": "unmet",
-      "evidence": "rule last changed 2026-08-18 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
+      "state": "met",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal secure-coding/no-unlimited-resource-allocation' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
@@ -61,7 +76,7 @@
       "id": "decompression-owned-by-the-generic-rule",
       "kind": "partition",
       "summary": "node-security/no-unbounded-decompression is silent on zlib.createGunzip(), zlib.createUnzip() and unzipper.Extract(); this generic CWE-770 rule reports all three",
-      "why": "Not a double-report \u2014 exactly one finding per shape \u2014 but the dedicated CWE-409 rule does not see its own canonical sink, and all 3 of this rule's surviving real-source findings live in that overlap. Fixing it means deciding which rule owns decompression, which is a taxonomy decision across two plugins",
+      "why": "Not a double-report — exactly one finding per shape — but the dedicated CWE-409 rule does not see its own canonical sink, and all 3 of this rule's surviving real-source findings live in that overlap. Fixing it means deciding which rule owns decompression, which is a taxonomy decision across two plugins",
       "reopenWhen": "the CWE-409/CWE-770 ownership boundary is settled",
       "limit": null
     },

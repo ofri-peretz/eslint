@@ -10,14 +10,29 @@
     "node": "24"
   },
   "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- browser-security/no-innerhtml"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-browser-security/src/rules/no-innerhtml/index.ts"
+    },
     "corpus": {
       "state": "unmet",
-      "evidence": "not asserted \u2014 a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
       "command": "cat benchmarks/rule-corpus/browser-security__no-innerhtml/MANIFEST.md"
     },
     "duel": {
       "state": "met",
-      "evidence": "24 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "24 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs browser-security/no-innerhtml"
     },
     "adversarial": {
@@ -27,7 +42,7 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
       "command": "npm run cases -- browser-security/no-innerhtml --update"
     },
     "partition": {
@@ -42,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured \u2014 run without --skip-coverage",
+      "evidence": "not measured — run without --skip-coverage",
       "command": "npx vitest run --coverage src/rules/no-innerhtml"
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +3.04ms \u00b7 2000L +3.35ms \u00b7 8000L +10.09ms \u2014 3.0x time for 4x lines (2000\u21928000), linear",
+      "evidence": "marginal over a no-op control: 500L +2.48ms · 2000L +3.06ms · 8000L +8.98ms — 2.9x time for 4x lines (2000→8000), linear",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-innerhtml"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-innerhtml' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

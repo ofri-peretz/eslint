@@ -1,0 +1,23 @@
+{
+  "rule": "node-security/no-data-in-temp-storage",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 28,
+  "vulnerable": 15,
+  "results": [
+    {
+      "name": "Interlace node-security/no-data-in-temp-storage",
+      "tp": 15,
+      "fp": 0,
+      "fn": 0,
+      "tn": 13,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -6,15 +6,17 @@
   "results": [
     {
       "name": "Interlace node-security/require-secure-credential-storage",
-      "tp": 8,
+      "tp": 9,
       "fp": 3,
-      "fn": 5,
-      "precision": 0.7272727272727273,
-      "recall": 0.6153846153846154,
-      "f1": 0.6666666666666667,
+      "fn": 4,
+      "tn": 9,
+      "precision": 0.75,
+      "recall": 0.6923076923076923,
+      "specificity": 0.75,
+      "youdenJ": 0.4423076923076923,
+      "f1": 0.7199999999999999,
       "crashes": [],
       "missed": [
-        "vulnerable/06-fake-local-encrypt.js",
         "vulnerable/07-session-storage-cast.ts",
         "vulnerable/08-store-alias.js",
         "vulnerable/09-credentials-object-json.js",

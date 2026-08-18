@@ -1,14 +1,19 @@
 {
   "rule": "browser-security/no-innerhtml",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
   "fixtures": 44,
+  "vulnerable": 24,
   "results": [
     {
       "name": "Interlace browser-security/no-innerhtml",
       "tp": 24,
       "fp": 0,
       "fn": 0,
+      "tn": 20,
       "precision": 1,
       "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
       "f1": 1,
       "crashes": [],
       "missed": [],
@@ -17,11 +22,14 @@
     {
       "name": "no-unsanitized (Mozilla) [property, method]",
       "tp": 20,
-      "fp": 5,
+      "fp": 9,
       "fn": 4,
-      "precision": 0.8,
+      "tn": 11,
+      "precision": 0.6896551724137931,
       "recall": 0.8333333333333334,
-      "f1": 0.816326530612245,
+      "specificity": 0.55,
+      "youdenJ": 0.3833333333333333,
+      "f1": 0.7547169811320755,
       "crashes": [],
       "missed": [
         "vulnerable/07-iframe-srcdoc.js",
@@ -33,8 +41,12 @@
         "safe/03-dompurify.js",
         "safe/04-sanitize-html.js",
         "safe/05-dompurify-aliased.js",
+        "safe/08-const-folded.js",
         "safe/14-escaped.js",
-        "safe/18-dompurify-with-config.js"
+        "safe/15-i18n-constant.js",
+        "safe/18-dompurify-with-config.js",
+        "safe/19-const-only-let.js",
+        "safe/20-nested-static-template.js"
       ]
     },
     {
@@ -42,8 +54,11 @@
       "tp": 19,
       "fp": 11,
       "fn": 5,
+      "tn": 9,
       "precision": 0.6333333333333333,
       "recall": 0.7916666666666666,
+      "specificity": 0.45,
+      "youdenJ": 0.2416666666666667,
       "f1": 0.7037037037037038,
       "crashes": [],
       "missed": [
@@ -72,8 +87,11 @@
       "tp": 0,
       "fp": 0,
       "fn": 24,
+      "tn": 20,
       "precision": 0,
       "recall": 0,
+      "specificity": 1,
+      "youdenJ": 0,
       "f1": 0,
       "crashes": [],
       "missed": [

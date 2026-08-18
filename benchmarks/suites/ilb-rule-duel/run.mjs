@@ -162,6 +162,7 @@ function score(linter, rules, prefix, files, parser, options) {
     Object.keys(rules).map((r) => [`${prefix}/${r}`, options ? ['error', ...options] : 'error']),
   );
   let tp = 0, fp = 0, fn = 0;
+  let tn = 0;
   const crashes = [];
   const missed = [];
   const falsePositives = [];
@@ -198,12 +199,33 @@ function score(linter, rules, prefix, files, parser, options) {
       else { fn++; missed.push(f.name); }
     } else if (reported) {
       fp++; falsePositives.push(f.name);
+    } else {
+      // A safe fixture left alone. Counted explicitly rather than derived,
+      // because Youden's J needs true negatives and a fixture that crashed the
+      // rule is neither a TN nor a pass.
+      tn++;
     }
   }
   const precision = tp + fp === 0 ? 0 : tp / (tp + fp);
   const recall = tp + fn === 0 ? 0 : tp / (tp + fn);
   const f1 = precision + recall === 0 ? 0 : (2 * precision * recall) / (precision + recall);
-  return { tp, fp, fn, precision, recall, f1, crashes, missed, falsePositives };
+
+  // Youden's J — sensitivity + specificity - 1, i.e. TPR - FPR. The OWASP
+  // Benchmark's headline score, and it is here as a GUARD rather than a
+  // decoration.
+  //
+  // F1 can be raised by reporting more, and precision alone can be raised by
+  // reporting less. We have committed the second: one sweep took false
+  // positives from 10 to 3 while false negatives went from 18 to 34, and the
+  // precision number read as progress. J moves in neither of those directions —
+  // a tool that reports everything drives FPR to 1, a tool that goes quiet
+  // drives TPR to 0, and both collapse it.
+  //
+  // TN is the safe fixtures left alone, which the corpus knows exactly because
+  // it is labelled independently of any implementation.
+  const specificity = tn + fp === 0 ? 0 : tn / (tn + fp);
+  const youdenJ = recall + specificity - 1;
+  return { tp, fp, fn, tn, precision, recall, specificity, youdenJ, f1, crashes, missed, falsePositives };
 }
 
 async function main() {
@@ -266,12 +288,14 @@ async function main() {
 
   const v = files.filter((f) => f.expectReport).length;
   console.log(`\n══ ${ruleId} — ${v} vulnerable / ${files.length - v} safe fixtures\n`);
-  console.log(`| Plugin | TP | FP | FN | Precision | Recall | F1 |`);
+  console.log(`| Plugin | TP | FP | FN | Precision | Recall | F1 | Youden J |`);
   console.log(`|---|---:|---:|---:|---:|---:|---:|`);
   for (const r of results) {
     if (r.unavailable) { console.log(`| ${r.name} | — | — | — | not installed | | |`); continue; }
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
-    console.log(`| ${r.name} | ${r.tp} | ${r.fp} | ${r.fn} | ${pct(r.precision)} | ${pct(r.recall)} | **${pct(r.f1)}** |`);
+    console.log(
+      `| ${r.name} | ${r.tp} | ${r.fp} | ${r.fn} | ${pct(r.precision)} | ${pct(r.recall)} | **${pct(r.f1)}** | ${pct(r.youdenJ)} |`,
+    );
   }
   for (const r of results) {
     if (r.unavailable) continue;

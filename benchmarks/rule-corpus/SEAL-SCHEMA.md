@@ -82,6 +82,9 @@ A seal claims all nine. `n/a` is allowed and must be justified in `evidence`
 | Axis | Met when |
 | :--- | :--- |
 | `corpus` | fixtures written from the VULNERABILITY and from real idiom, never from the rule's own tests |
+| `oracle` | an independent decider labels the findings — something we did not write. Without one, a precision figure is our opinion of our own output |
+| `effectiveFp` | **≤ 5%**, counting a finding against us when it is wrong AND when it is right but nobody would act on it |
+| `reachability` | a default-enabled rule reports only where a path from an untrusted source resolves. "Report unless proven safe" is opt-in |
 | `duel` | scored against the corpus, and against every competitor that ships a comparable rule |
 | `adversarial` | a second wave written to BREAK the tuned rule found nothing new |
 | `realSource` | measured on code we did not write, every finding labelled with a reason |

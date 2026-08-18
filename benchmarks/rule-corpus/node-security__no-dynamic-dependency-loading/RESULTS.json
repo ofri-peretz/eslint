@@ -1,0 +1,25 @@
+{
+  "rule": "node-security/no-dynamic-dependency-loading",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 21,
+  "vulnerable": 11,
+  "results": [
+    {
+      "name": "Interlace node-security/no-dynamic-dependency-loading",
+      "tp": 11,
+      "fp": 1,
+      "fn": 0,
+      "tn": 9,
+      "precision": 0.9166666666666666,
+      "recall": 1,
+      "specificity": 0.9,
+      "youdenJ": 0.8999999999999999,
+      "f1": 0.9565217391304348,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": [
+        "safe/08-allowlist-lookup.js"
+      ]
+    }
+  ]
+}
