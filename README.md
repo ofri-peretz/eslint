@@ -294,6 +294,33 @@ Three rules follow from that, and they bind us more than they bind anyone else:
    tier you sit at is not an accepted state here; see
    [the open list](./BENCHMARK-RESULTS.md) and the scoreboard below.
 
+#### When a rule is too rare to score — the census criterion
+
+A ratio needs findings to compute. `detect-non-literal-fs-filename` produces
+**one** finding across 3.04M lines of mature open-source code, and that finding
+is real. There is no sample size at which that becomes 70% — at `n = 1` the
+defensible lower bound is 20.7%, and the bar needs `n ≥ 9`. A rule can be
+correct and still be unscoreable.
+
+So a rule whose whole output on the corpus is smaller than the `n` its tier
+requires is scored a different way, and it is a **stricter** test, not a waiver:
+
+| | ratio criterion | census criterion |
+| :--- | :--- | :--- |
+| Applies when | findings ≥ required `n` | findings < required `n` |
+| What is judged | a stratified **sample** | **every finding**, no sampling |
+| Passing | the tier's percentage | **zero false positives** |
+| Published | the rate and its `n` | the finding count and the labels |
+
+Sampling lets a rule hide its worst findings behind the ones you happened to
+draw. A census cannot: one false positive anywhere in the output fails it. That
+is why this is not the easy road — `detect-non-literal-fs-filename` needed three
+rounds of fixes to get from 37 findings to 1, and any of the 36 removed would
+have failed it.
+
+**A rule may not choose which criterion it is judged by.** The finding count
+decides, and the count is published beside the verdict.
+
 #### How big a sample the bar actually needs
 
 A percentage from 20 findings is not evidence for a 95% claim. If you read 20
@@ -361,7 +388,7 @@ Honest status, because a published bar with no scoreboard is marketing:
 | Rule                             | Ships at     | Sampled precision      | Meets bar     |
 | :------------------------------- | :----------- | :--------------------- | :------------ |
 | `no-redos-vulnerable-regex`      | `error`      | ≥4/22 TP, 18 unclassified | **unscored** |
-| `detect-non-literal-fs-filename` | `warn`       | 0/4 — n too small       | **no**        |
+| `detect-non-literal-fs-filename` | `warn`       | **1/1 — census, all 1 finding labelled** | **yes** (census criterion) |
 | `detect-object-injection`        | opt-in       | 0/13                    | n/a (opt-in)  |
 | `detect-non-literal-regexp`      | opt-in       | 3/10                    | n/a (opt-in)  |
 | **the other 117 rules**          | various      | **not yet measured**    | **unscored**  |

@@ -79,6 +79,28 @@ Three rules follow, and they bind us more than they bind you:
    is an open defect, not a resolved one. Rules below their bar block new rule
    work: ten rules that hold their promise beat a hundred that do not.
 
+### When a rule is too rare to score
+
+A ratio needs findings to compute. `detect-non-literal-fs-filename` produces
+**one** finding across 3.04M lines of mature open-source code, and that finding
+is real. No sample size turns that into 70%. A rule can be correct and still be
+unscoreable by a ratio.
+
+A rule whose entire output is smaller than the `n` its tier requires is scored by
+**census** instead — and it is stricter, not a waiver:
+
+| | ratio criterion | census criterion |
+| :--- | :--- | :--- |
+| Applies when | findings ≥ required `n` | findings < required `n` |
+| What is judged | a stratified sample | **every finding** |
+| Passing | the tier's percentage | **zero false positives** |
+| Published | the rate and its `n` | the finding count and the labels |
+
+Sampling lets a rule hide its worst findings behind the ones you drew. A census
+cannot — one false positive anywhere fails it. A rule does not choose which
+criterion applies; the finding count decides, and the count is published beside
+the verdict.
+
 ### How big a sample the bar needs
 
 **`n` is the sample size** — how many individual findings we pulled out of real
@@ -142,7 +164,7 @@ recompute. It is not independent review and we do not call it that.
 | Rule | Ships at | Sampled precision | Meets bar |
 | :--- | :--- | :--- | :--- |
 | `no-redos-vulnerable-regex` | `error` | ≥4/22 TP, 18 unclassified | **unscored** |
-| `detect-non-literal-fs-filename` | `warn` | 0/4 — n too small | **no** |
+| `detect-non-literal-fs-filename` | `warn` | **1/1 — census, every finding labelled** | **yes** (census) |
 | `detect-object-injection` | opt-in | 0/13 | n/a (opt-in) |
 | `detect-non-literal-regexp` | opt-in | 3/10 | n/a (opt-in) |
 | the other 117 rules | various | not yet measured | **unscored** |
