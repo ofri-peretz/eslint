@@ -1,0 +1,83 @@
+{
+  "rule": "node-security/detect-non-literal-fs-filename",
+  "cases": [
+    {
+      "id": "fsPathTraversal-43e216dfbc76",
+      "signature": "43e216dfbc76",
+      "verdict": "exempt",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.readFileSync);Lit:string)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/tools/passwd.js",
+          "line": 5,
+          "source": "return fs.readFileSync('/etc/passwd')"
+        }
+      ],
+      "why": "A LITERAL absolute path with no traversal segment. pm2 lib/tools/passwd.js:5 reads /etc/passwd because parsing /etc/passwd is what the file is for \u2014 nothing here is invoker-controlled, so there is no path to traverse. The sensitive-location check added on 2026-08-17 was meant for RELATIVE literals like `../../etc/passwd`, where the `..` is the traversal; an absolute literal is the author naming a file outright. The rule still reports this, so the ledger will show a regression until it stops."
+    },
+    {
+      "id": "fsPathTraversal-c94e7c4b7e6b",
+      "signature": "c94e7c4b7e6b",
+      "verdict": "exempt",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.writeFileSync);Id,Id)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-mariadb.ts",
+          "line": 115,
+          "source": "fs.writeFileSync(snapshotPath, dump);"
+        }
+      ],
+      "why": "strapi examples/complex/scripts/db-mariadb.ts:115 \u2014 a developer CLI script writing a snapshot to a path derived from its own argument, which the same file validates through assertSafeSnapshotName(). The rule cannot see that validator: summarising a called function is outside single-file analysis (L1). Adjudicated FP; the rule does not yet agree."
+    },
+    {
+      "id": "fsPathTraversal-d422b1089f18",
+      "signature": "d422b1089f18",
+      "verdict": "exempt",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.readFileSync);Id)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-mariadb.ts",
+          "line": 157,
+          "source": "const sql = fs.readFileSync(restorePath);"
+        }
+      ],
+      "why": "Same script, the restore direction (db-mariadb.ts:157). Same argument, same limit."
+    },
+    {
+      "id": "fsPathTraversal-2026f6b4c6fc",
+      "signature": "2026f6b4c6fc",
+      "verdict": "exempt",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.copyFileSync);Id,Id)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-sqlite.ts",
+          "line": 78,
+          "source": "fs.copyFileSync(DATABASE_FILENAME, target);"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-sqlite.ts",
+          "line": 108,
+          "source": "fs.copyFileSync(source, DATABASE_FILENAME);"
+        }
+      ],
+      "why": "strapi examples/complex/scripts/db-sqlite.ts:78 and :108 \u2014 both operands are operator-supplied: DATABASE_FILENAME resolves to process.env.SQLITE_DATABASE_FILENAME || process.env.DATABASE_FILENAME || a default, and the other side is snapshotPath(name) with the name validated in-file. The rule already holds `process` in WHOLE_VALUE_TRUSTED_ROOTS, so reporting here is inconsistent with its own doctrine and with the position taken for no-unlimited-resource-allocation on 2026-08-18."
+    }
+  ]
+}

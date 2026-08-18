@@ -87,12 +87,29 @@ earlier one was optimistic about a sample, not about the plugins.
 Full labelled sample, every verdict with its reason and every ReDoS verdict timed:
 [`benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md`](./benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md).
 
-**What it says to do next.** Precision is not evenly spread. In that sample
-`no-unlimited-resource-allocation` scored **0 TP / 5 FP** and is our single
-loudest rule (173 findings); `no-toctou-vulnerability` scored **0 TP / 4 FP** and
-never names the *check* that its reported *use* races. Both are in `recommended`.
-The one rule in the sample that has been through the rule-lock protocol,
-`no-redos-vulnerable-regex`, was the most precise at 75%.
+**What it said to do next, and what happened.** Precision was not evenly
+spread. In that sample `no-unlimited-resource-allocation` scored **0 TP / 5 FP**
+as our loudest rule (173 findings) and `no-toctou-vulnerability` scored
+**0 TP / 4 FP**, both in `recommended`.
+
+**Superseded 2026-08-18.** Both were taken apart:
+
+| Rule | then | now |
+| :--- | ---: | :--- |
+| `no-unlimited-resource-allocation` | 173 findings, 0 TP / 5 FP | **3 findings, 3 TP / 0 FP**, and 2 of 2 on the CWE-770 corpus it previously scored 0 on |
+| `no-toctou-vulnerability` | 59 findings, 0 TP / 4 FP | measured and diagnosed; the fix takes it to 1 finding and is **not shipped** — it is a contract change awaiting a decision |
+| `no-improper-type-validation` | never measured | 2,392 → **1,647** findings |
+
+Per-rule numbers, each with the command that produced it, now live in
+[`benchmarks/RULE-SCORES.md`](./benchmarks/RULE-SCORES.md); per-rule seal state
+and known gaps live in each rule's `SEAL.json`, classified against
+[`ANALYSIS-LIMITS.md`](./ANALYSIS-LIMITS.md).
+
+<!-- seal node-security/detect-non-literal-fs-filename 2026-08-18 -->
+<!-- seal secure-coding/no-redos-vulnerable-regex 2026-08-18 -->
+<!-- seal secure-coding/detect-non-literal-regexp 2026-08-18 -->
+<!-- seal secure-coding/detect-object-injection 2026-08-18 -->
+<!-- seal secure-coding/no-unlimited-resource-allocation 2026-08-18 -->
 
 ### C · Rule surface and configurability
 

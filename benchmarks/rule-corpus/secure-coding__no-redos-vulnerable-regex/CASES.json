@@ -1,0 +1,229 @@
+{
+  "rule": "secure-coding/no-redos-vulnerable-regex",
+  "cases": [
+    {
+      "id": "redosVulnerable-1a409199007d",
+      "signature": "1a409199007d",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "Lit:object",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Automattic/mongoose",
+          "file": "docs/js/convert-old-anchorid.js",
+          "line": 7,
+          "source": "if (!/^#\\w+_\\w+(?:-\\w+)?$/i.test(anchor)) {"
+        },
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/tools/IsAbsolute.js",
+          "line": 9,
+          "source": "var splitDeviceRe = /^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/;"
+        },
+        {
+          "repo": "Unitech/pm2",
+          "file": "modules/pm2-io-agent/src/push/TransactionAggregator.js",
+          "line": 600,
+          "source": "} else if (id.match(/((?:[0-9a-zA-Z]+[@\\-_.][0-9a-zA-Z]+|[0-9a-zA-Z]+[@\\-_.]|[@\\-_.][0-9a-zA-Z]+)+)/)) {"
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-f18a7b23e3fc",
+      "signature": "f18a7b23e3fc",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "Lit:object",
+      "context": "ForStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "knex/knex",
+          "file": "docs/.vitepress/knexDialects.ts",
+          "line": 149,
+          "source": "const headingMatch = line.match(/^(#{2,6})\\s+(.+)$/);"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/nodes-base/nodes/Git/Git.node.ts",
+          "line": 836,
+          "source": "const match = line.match(/^(\\S+)\\s+(.+?):\\s+(.+?):\\s+(.+)$/);"
+        },
+        {
+          "repo": "sequelize/sequelize",
+          "file": ".yarn/releases/yarn-4.13.0.cjs",
+          "line": 147,
+          "source": "`)[3];return mtt(t)}function JH(){return typeof pR.default.availableParallelism<\"u\"?pR.default.availableParallelism():Ma"
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-b62d6efe9b12",
+      "signature": "b62d6efe9b12",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "Lit:object",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": ".github/actions/ci-filter/ci-filter.mjs",
+          "line": 60,
+          "source": "const headerMatch = line.match(/^([a-zA-Z0-9_-]+):\\s*(.*)?$/);"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/src/tools/n8n-docs/registry.ts",
+          "line": 148,
+          "source": "const heading = /^##+\\s+(.+?)\\s*$/.exec(line);"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/bench.ts",
+          "line": 213,
+          "source": "const m = line.match(/^([^|]+?)\\s*\\|\\s*(\\d+)\\s*$/);"
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-d69295a0b4e6",
+      "signature": "d69295a0b4e6",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "New(Id;Tpl(Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/typeorm/src/driver/sqlite-abstract/AbstractSqliteQueryRunner.ts",
+          "line": 1307,
+          "source": "const re = new RegExp(`^${dataType}\\\\((\\\\d+),?\\\\s?(\\\\d+)?\\\\)`);"
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-f06afcf9f6b7",
+      "signature": "f06afcf9f6b7",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "New(Id;Tpl(Call(Mem(Id.join);Lit:string)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/extensions/expression-extension.ts",
+          "line": 60,
+          "source": "const EXPRESSION_EXTENSION_REGEX = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-2c14e9065aad",
+      "signature": "2c14e9065aad",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "New(Id;Tpl(Mem(Id.name),Mem(Id.name)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "lib/commands/cache.js",
+          "line": 15,
+          "source": "const searchMFH = new RegExp(`^make-fetch-happen:request-cache:.*(?<!/[@a-zA-Z]+)/${parsed.name}/-/(${parsed.name}[^/]+."
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-6f4862bfbe75",
+      "signature": "6f4862bfbe75",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "New(Id;Tpl(Call(Mem(Call(…;…).join);Lit:string)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "sequelize/sequelize",
+          "file": ".yarn/releases/yarn-4.13.0.cjs",
+          "line": 140,
+          "source": "`,CHAR_NO_BREAK_SPACE:\"\\xA0\",CHAR_PERCENT:\"%\",CHAR_PLUS:\"+\",CHAR_QUESTION_MARK:\"?\",CHAR_RIGHT_ANGLE_BRACKET:\">\",CHAR_RIG"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": ".yarn/releases/yarn-4.12.0.cjs",
+          "line": 140,
+          "source": "`,CHAR_NO_BREAK_SPACE:\"\\xA0\",CHAR_PERCENT:\"%\",CHAR_PLUS:\"+\",CHAR_QUESTION_MARK:\"?\",CHAR_RIGHT_ANGLE_BRACKET:\">\",CHAR_RIG"
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-7449216ca132",
+      "signature": "7449216ca132",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "Lit:object",
+      "context": "ForStatement<ForStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "sequelize/sequelize",
+          "file": ".yarn/releases/yarn-4.13.0.cjs",
+          "line": 322,
+          "source": "`.repeat(e));YCe.displayName=\"Newline\";lD.default=YCe});var ZCe=G(cD=>{\"use strict\";var JCe=cD&&cD.__importDefault||func"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": ".yarn/releases/yarn-4.12.0.cjs",
+          "line": 322,
+          "source": "`.repeat(t));o2e.displayName=\"Newline\";lD.default=o2e});var u2e=_(cD=>{\"use strict\";var l2e=cD&&cD.__importDefault||func"
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-ef7758875310",
+      "signature": "ef7758875310",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "New(Id;Tpl(Id,Id,Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/aws/utils/find-and-group-deployments.js",
+          "line": 6,
+          "source": "const regex = new RegExp(`${prefix}/${service}/${stage}/(.+-.+-.+-.+)/(.+)`)"
+        }
+      ]
+    },
+    {
+      "id": "redosVulnerable-9269531f5d16",
+      "signature": "9269531f5d16",
+      "verdict": "unreviewed",
+      "messageId": "redosVulnerable",
+      "shape": "New(Id;Tpl(Id,Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 8153,
+          "source": "const _JOINABLE_SELECTOR_RE = new RegExp("
+        },
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 8161,
+          "source": "const _JOINABLE_NESTED_RE = new RegExp("
+        }
+      ]
+    }
+  ]
+}

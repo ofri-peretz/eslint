@@ -11,8 +11,8 @@
   },
   "axes": {
     "corpus": {
-      "state": "unmet",
-      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "state": "met",
+      "evidence": "MANIFEST.md: written against code designed to break the claim that the heuristic was replaced by evidence, testing both directions of the original — its over-reporting of `arr[i]` and its under-reporting of non-identifier keys.",
       "command": "cat benchmarks/rule-corpus/secure-coding__detect-object-injection/MANIFEST.md"
     },
     "duel": {
@@ -31,9 +31,9 @@
       "command": "npm run cases -- secure-coding/detect-object-injection --update"
     },
     "partition": {
-      "state": "unmet",
-      "evidence": "sink shapes not probed with the CWE family enabled",
-      "command": "npx tsx scripts/probe-rule.mts secure-coding/detect-object-injection <siblings> -- '<snippet>'"
+      "state": "met",
+      "evidence": "PROBED 2026-08-18. `target[req.body.key] = req.body.value` draws exactly one report, from this rule. The CWE-915 siblings are ORM-specific and model a different sink.",
+      "command": "npx tsx scripts/probe-rule.mts secure-coding/detect-object-injection -- 'function h(req, target){ target[req.body.key] = req.body.value; }'"
     },
     "behaviour": {
       "state": "met",
@@ -47,14 +47,23 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.15ms · 2000L +0.13ms · 8000L +12.99ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 500L +0.08ms · 2000L +0.66ms · 8000L +11.61ms — 17.6x time for 4x lines (2000→8000), SUPERLINEAR",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-object-injection"
     },
     "recorded": {
-      "state": "unmet",
-      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "state": "met",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal secure-coding/detect-object-injection' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
-  "knownGaps": []
+  "knownGaps": [
+    {
+      "id": "throughput-not-established",
+      "kind": "performance",
+      "limit": "L10",
+      "summary": "The rule's marginal CPU cost clears the noise floor at 8000 lines only, so no growth curve can be read.",
+      "why": "Harness cost at that size is ~70ms and the rule contributes ~11ms; at 500 and 2000 lines the difference between two parser-dominated timings is smaller than the run-to-run variance. The property is decidable, the instrument is not sharp enough.",
+      "reopenWhen": "a CPU profile attributing samples to the rule’s own frames exists, or the sizes are raised until two points clear the floor"
+    }
+  ]
 }

@@ -11,13 +11,13 @@
   },
   "axes": {
     "corpus": {
-      "state": "unmet",
-      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
-      "command": "cat benchmarks/rule-corpus/node-security__detect-non-literal-fs-filename/MANIFEST.md"
+      "state": "met",
+      "evidence": "SPEC.md: written BEFORE touching the rule, from CWE-22 semantics, and every claim executed in Node 24 rather than reasoned about \u2014 including the counterintuitive `path.join` results the rule turns on.",
+      "command": "cat benchmarks/rule-corpus/node-security__detect-non-literal-fs-filename/SPEC.md"
     },
     "duel": {
       "state": "met",
-      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "10 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/detect-non-literal-fs-filename"
     },
     "adversarial": {
@@ -27,13 +27,13 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
       "command": "npm run cases -- node-security/detect-non-literal-fs-filename --update"
     },
     "partition": {
       "state": "unmet",
-      "evidence": "sink shapes not probed with the CWE family enabled",
-      "command": "npx tsx scripts/probe-rule.mts node-security/detect-non-literal-fs-filename <siblings> -- '<snippet>'"
+      "evidence": "PROBED 2026-08-18 and FAILED. `fs.readFileSync(req.query.file)` \u2014 the canonical CWE-22 sink \u2014 is reported by BOTH this rule and node-security/no-arbitrary-file-access. Zip-slip partitions cleanly: with a real unzipper binding, exactly one report, from no-zip-slip.",
+      "command": "npx tsx scripts/probe-rule.mts node-security/detect-non-literal-fs-filename node-security/no-arbitrary-file-access node-security/no-zip-slip -- 'const fs=require(\"fs\"); function h(req){ return fs.readFileSync(req.query.file); }'"
     },
     "behaviour": {
       "state": "met",
@@ -46,15 +46,32 @@
       "command": "npx vitest run --coverage src/rules/detect-non-literal-fs-filename"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.26ms · 2000L +5.06ms · 8000L +0.33ms — 0.1x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 500L +0.00ms \u00b7 2000L +0.00ms \u00b7 8000L +0.00ms \u2014 NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/detect-non-literal-fs-filename"
     },
     "recorded": {
-      "state": "unmet",
-      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "state": "met",
+      "evidence": "rule last changed 2026-08-18 \u00b7 RULE-SCORES.md stamp 2026-08-18 \u00b7 BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal node-security/detect-non-literal-fs-filename' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
-  "knownGaps": []
+  "knownGaps": [
+    {
+      "id": "cwe-22-double-report-with-no-arbitrary-file-access",
+      "kind": "partition",
+      "limit": null,
+      "summary": "The canonical sink `fs.readFileSync(req.query.file)` is reported by this rule AND by node-security/no-arbitrary-file-access.",
+      "why": "Open work, not a limit. Two rules in one plugin model the same sink, so a consumer enabling `recommended` sees the same defect twice with two different message shapes. Which rule owns direct fs-sink taint is a taxonomy decision.",
+      "reopenWhen": "immediately \u2014 this is a defect, listed here so it is not lost"
+    },
+    {
+      "id": "throughput-not-established",
+      "kind": "performance",
+      "limit": "L10",
+      "summary": "The rule's marginal CPU cost does not clear the noise floor at two or more sizes, so no growth curve can be read.",
+      "why": "Harness cost (parser + scope construction) is ~70ms at 8000 lines and dominates; the difference between two such measurements is larger than the rule's own contribution at 500 and 2000 lines. The same rule has measured +1.50ms and +0.00ms at 500 lines on consecutive runs. The property is decidable; the instrument is not sharp enough.",
+      "reopenWhen": "a CPU profile attributing samples to the rule's own frames exists, or the sizes are raised until two points clear the floor"
+    }
+  ]
 }

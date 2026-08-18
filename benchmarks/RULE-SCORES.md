@@ -12,6 +12,17 @@ Real-source corpus: **20 repositories · 21,146 files · 3,036,307 LOC**, test
 directories and colocated `*.test.*` excluded, minified excluded by path and by
 average line length.
 
+<!-- seal node-security/detect-non-literal-fs-filename 2026-08-18 -->
+<!-- seal secure-coding/no-redos-vulnerable-regex 2026-08-18 -->
+<!-- seal secure-coding/detect-non-literal-regexp 2026-08-18 -->
+<!-- seal secure-coding/detect-object-injection 2026-08-18 -->
+<!-- seal secure-coding/no-unlimited-resource-allocation 2026-08-18 -->
+
+Per-rule seal state and known gaps live in each rule's `SEAL.json`, classified
+against [`ANALYSIS-LIMITS.md`](../ANALYSIS-LIMITS.md). `npm run lint:seal` for
+the scoreboard, `npm run limits` for what is blocking and whether we have been
+here before.
+
 ---
 
 ## 1. Corpus duel — our fixtures, both sides
