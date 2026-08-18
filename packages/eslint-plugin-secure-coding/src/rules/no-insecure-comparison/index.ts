@@ -13,7 +13,7 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
 /**
@@ -102,7 +102,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-697',
         description: 'Insecure comparison operator ({{operator}}) detected - can lead to type coercion vulnerabilities',
         severity: 'HIGH',
-        fix: 'Use strict equality ({{strictOperator}}) instead: {{example}}',
+        fix: 'Use strict equality ({{strictOperator}}) instead: {{example}} — Not a finding if the comparison is against null, which tests null and undefined together on purpose',
         documentationLink: 'https://cwe.mitre.org/data/definitions/697.html',
       }),
       useStrictEquality: formatLLMMessage({
@@ -110,7 +110,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         issueName: 'Use Strict Equality',
         description: 'Use strict equality operator',
         severity: 'LOW',
-        fix: 'Replace == with === and != with !==',
+        fix: 'Replace == with === and != with !== — Not a finding if the comparison is the idiomatic `x == null` nullish test',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality',
       }),
       /**
@@ -127,7 +127,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         issueName: 'Use A Constant-Time Comparison',
         description: 'Compare secrets in constant time, not with an operator that short-circuits',
         severity: 'LOW',
-        fix: 'Rewrite as crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))',
+        fix: 'Rewrite as crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) — Not a finding if neither side is a secret the caller can guess one character at a time',
         documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
       timingUnsafeComparison: formatLLMMessage({
@@ -136,7 +136,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-208',
         description: 'Secret comparison with {{operator}} can leak timing information',
         severity: 'HIGH',
-        fix: 'Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))',
+        fix: 'Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) — Not a finding if the compared value is public, such as an id or a status',
         documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
     },
@@ -160,6 +160,19 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  // NOT `skipTestFiles: true`, unlike its siblings, and the seal probe's §B1
+  // therefore fails here on purpose.
+  //
+  // This rule already owns the question through `allowInTests`, which a
+  // concurrent hardening pass deliberately defaulted to FALSE: a test that
+  // compares an API key with `===` is demonstrating the bug the rule exists to
+  // find, and several repositories keep real fixtures in `__tests__`. Setting
+  // `skipTestFiles` would make that option dead code — it is checked at line
+  // 266, and the devkit gate runs first — and would silently flip the default
+  // the option was given.
+  //
+  // Whoever reconciles §B1 with `allowInTests` across the plugin should do it
+  // in one pass, not by half-overriding one rule.
   defaultOptions: [
     {
       allowInTests: false,
@@ -176,7 +189,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
     // Codemods and AST-walker tools legitimately compare AST identifiers

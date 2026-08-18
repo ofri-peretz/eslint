@@ -89,7 +89,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1287',
         description: 'typeof x === \'object\' also matches null and arrays',
         severity: 'MEDIUM',
-        fix: 'Use value != null && typeof value === "object" && !Array.isArray(value)',
+        fix: 'Use value != null && typeof value === "object" && !Array.isArray(value) — Not a finding if the value is already known non-null on this path',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof',
       }),
       unsafeInstanceofUsage: formatLLMMessage({
@@ -98,7 +98,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1287',
         description: 'instanceof may fail across contexts',
         severity: 'LOW',
-        fix: 'Use Array.isArray() or typeof checks',
+        fix: 'Use Array.isArray() or typeof checks — Not a finding if the value never crosses a realm boundary (no vm, iframe, or worker)',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof',
       }),
       looseEqualityTypeCheck: formatLLMMessage({
@@ -107,7 +107,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1287',
         description: 'Loose equality may cause type confusion',
         severity: 'LOW',
-        fix: 'Use strict equality (===) for type checking',
+        fix: 'Use strict equality (===) for type checking — Not a finding if both operands are already the same primitive type',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Equality',
       }),
       unreliableConstructorCheck: formatLLMMessage({
@@ -116,7 +116,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1287',
         description: 'constructor.name can be spoofed',
         severity: 'MEDIUM',
-        fix: 'Use Object.prototype.toString.call() or duck typing',
+        fix: 'Use Object.prototype.toString.call() or duck typing — Not a finding if the value never came from parsed input',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor',
       }),
     },
@@ -151,6 +151,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  // §B1 — a fixture's deliberately-wrong comparison is the fixture's point.
+  skipTestFiles: true,
   defaultOptions: [
     {
       allowInstanceofSameRealm: true,
