@@ -28,6 +28,7 @@ claim about real code.
 | `secure-coding/no-redos-vulnerable-regex` | 14v/14s | **100.0%** | `security/detect-unsafe-regex` | 60.0% |
 | " | " | " | `regexp/no-super-linear-backtracking` | **88.0%** |
 | `secure-coding/detect-non-literal-regexp` | 15v/15s | **100.0%** | `security/detect-non-literal-regexp` | 70.6% |
+| `secure-coding/no-unlimited-resource-allocation` | 10v/16s | **100.0%** | — | — |
 | `node-security/detect-non-literal-fs-filename` | 10v/10s | **100.0%** | `security/detect-non-literal-fs-filename` | 71.4% |
 
 `eslint-plugin-regexp` is the honest competitor for ReDoS: it ties us on
@@ -44,6 +45,7 @@ labels in [`suites/ilb-real-source/SAMPLED-FP-2026-08-17.md`](./suites/ilb-real-
 | Rule | Findings on corpus | Labelled | TP | FP | Criterion | Verdict |
 | :--- | ---: | ---: | ---: | ---: | :--- | :--- |
 | `node-security/detect-non-literal-fs-filename` | **1** | 1 (census) | 1 | 0 | census | **passes** |
+| `secure-coding/no-unlimited-resource-allocation` | **3** | 3 (census) | 3 | 0 | census, `warn` ≥70% | **passes** (was 173 findings) |
 | `secure-coding/no-redos-vulnerable-regex` | 123 | 22 | 6 | 15 | ratio, was `error` ≥95% | **28.6% — removed from presets 2026-08-18** |
 | `secure-coding/detect-non-literal-regexp` | 243 | 10 | 3 | 7 | opt-in, no floor | 30% |
 | `secure-coding/detect-object-injection` | 14,696 | 13 | 0 | 13 | opt-in, no floor | 0% |
@@ -73,6 +75,47 @@ It also found a conflict worth naming: three of the rule's own `safe` fixtures
 ARE polynomial at n=20,000 and read as clean at the n=30 they were timed at.
 Neither measurement is wrong — exponential needs 24 characters to bite,
 polynomial needs 20,000 — but the corpus does not currently distinguish them.
+
+### `no-unlimited-resource-allocation` — 173 findings to 3, and 0 of 2 to 2 of 2
+
+Measured 2026-08-18, before any change: **173 findings** on the 20-repo corpus,
+and the rule detected **neither** of the two vulnerable fixtures in
+`benchmarks/corpus/CWE-770/`. Both halves came from one predicate —
+`isUserInputExpression` running `String.includes` over the printed source.
+
+| Class | Findings | Verdict | Why |
+| :--- | ---: | :--- | :--- |
+| `new Set(x)` / `new Map(x)` inside a loop | 107 | FP | `Set` takes an ITERABLE, not a size. No input makes the copy larger. |
+| other allocation-in-loop | 25 | FP | loop bound is a constant or an in-memory collection |
+| `xml2js.parseString` as billion laughs | 24 | FP | measured: sax-js rejects custom entities outright |
+| `fs.read/write` on a config path | 11 | FP | `dataDir`, `queryParams`, `inputFile`, `entryMetadataPath` — substrings |
+| `new Buffer(data)` | 1 | FP | overloaded constructor; a conversion, not a size |
+| decompression with no output bound | 5 | 3 TP / 2 FP | axios counts the decompressed bytes downstream |
+| **after the fix** | **3** | **3 TP / 0 FP** | strapi, directus, nodemailer — each read at the cached source |
+
+The xml2js premise had never been measured. It is false:
+
+```
+xml2js 0.6.2 / sax 1.6.1 — every payload answers `Invalid character entity`
+  <!DOCTYPE d [<!ENTITY a "HELLO">]><d>&a;</d>                      ERR
+  <!DOCTYPE d [<!ENTITY a "xx"><!ENTITY b "&a;&a;&a;">]><d>&b;</d>  ERR
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">                          ERR
+  nine-level billion laughs                ERR in 1 ms, 0 chars expanded
+```
+
+`XML_PARSE_METHODS` was `parseString` / `parseStringPromise` — the xml2js API
+and no other — so xml2js was the only library the path could ever fire on.
+
+The rule now scores **2 of 2** on `benchmarks/corpus/CWE-770/` and **100% F1**
+on a new 26-fixture corpus at
+`benchmarks/rule-corpus/secure-coding__no-unlimited-resource-allocation/`,
+written from the measured false positives rather than from the test file.
+
+**What this does not say:** the two axios findings are recorded as FP because
+axios counts the decompressed bytes against `maxContentLength` and aborts. That
+limit is opt-in and axios's default is `-1`, so an axios user relying on
+defaults is still unbounded. The rule stops reporting the *library* implementing
+the mechanism; it says nothing about the *consumer* who leaves it off.
 
 ### `detect-non-literal-fs-filename` — the fix trail
 
