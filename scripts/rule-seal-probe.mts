@@ -216,7 +216,13 @@ const probe = async (ruleId: string): Promise<Report> => {
     // §C2.4: "a sentence naming the safe pattern lets an agent close a finding
     // instead of 'fixing' correct code. Nothing in either plugin does this
     // today. Biggest available win." Still true until a rule says otherwise.
-    const saysWhatIsSafe = messages.every((m) => /Not a finding( if|:)|Safe if|Legitimate (if|when)/i.test(m));
+    // Detects the GUIDANCE, not one phrasing. The first version demanded
+    // "Not a finding if", so rewording a message to "Not a finding when" made a
+    // rule that satisfies §C2.4 report as failing it — a check that dictates
+    // wording rather than measuring the property it claims to measure.
+    const saysWhatIsSafe = messages.every((m) =>
+      /not a finding|safe (if|when)|legitimate (if|when)|this is fine (if|when)/i.test(m),
+    );
     probes['§C2.4 FP guidance'] = {
       ok: saysWhatIsSafe,
       detail: saysWhatIsSafe ? 'names the safe pattern' : 'no message says what a false positive looks like',

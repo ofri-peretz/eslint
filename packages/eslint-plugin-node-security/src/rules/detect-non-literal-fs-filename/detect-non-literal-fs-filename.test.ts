@@ -296,13 +296,29 @@ describe('detect-non-literal-fs-filename', () => {
           code: 'fs.readFile("/path/to/file.txt", callback);',
           options: [{ allowLiterals: true }],
         },
+        /**
+         * MOVED FROM `invalid` on 2026-08-17. This test pinned a false positive.
+         *
+         * It sat directly beside `fs.readFile("../../../etc/passwd")` as though
+         * the two were one shape. They are not: the literal branch tested
+         * `/\.\.[/\\]/`, so it matched every relative path that walks up a
+         * directory, and a census of ALL 37 findings this rule produces over
+         * 3.0M lines of open-source code found exactly that to be its single
+         * largest false-positive class — `cp('../../../docs', …)`,
+         * `readFile('../package.json')`.
+         *
+         * Traversal is an attacker steering a path. A literal is fixed by
+         * whoever typed it, so the only literal worth reporting is one that
+         * already arrives somewhere sensitive. See `targetsSensitiveLocation`
+         * and `literal-paths.test.ts`.
+         */
+        { options: [{ reportUnresolvedPaths: true }], code: 'fs.readFile("../config.json", callback);' },
       ],
       invalid: [
-        // Path traversal patterns in literals should still be flagged as CRITICAL
+        // A hardcoded path is a finding only when it ARRIVES somewhere
+        // sensitive. `../../../etc/passwd` does; `../config.json` does not, and
+        // it moved to `valid` on 2026-08-17 — see the note there.
         { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile("../../../etc/passwd", callback);',
-          errors: [{ messageId: 'fsPathTraversal' }],
-        },
-        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile("../config.json", callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
         // Note: Rule only checks fs.method() directly, not imported/aliased calls

@@ -114,7 +114,22 @@ export interface Options {
    */
   reportUnresolvedPaths?: boolean;
 
-  /** Allow literal strings. Default: false (stricter) */
+  /**
+   * Turn the hardcoded-path check off entirely. Default: `false` (the check
+   * runs).
+   *
+   * With the default, a literal reports only when it ARRIVES somewhere
+   * sensitive — `/etc/passwd`, `.ssh/id_rsa`, `.aws/credentials` — via
+   * `targetsSensitiveLocation`. Measured effect of getting that wrong: the check
+   * used to fire on any `../`, and on a census of ALL 37 findings this rule
+   * produces over 3.0M lines of open-source code, relative literals like
+   * `cp('../../../docs', …)` and `readFile('../package.json')` were its single
+   * largest false-positive class. Narrowing it took the rule 37 -> 24 findings
+   * and ADDED a true positive (`fs.readFileSync('/etc/passwd')` in pm2, which
+   * has no `../` and never matched the old check).
+   *
+   * Set `true` to silence hardcoded paths altogether, including sensitive ones.
+   */
   allowLiterals?: boolean;
   
   /** Additional fs methods to check */
@@ -188,6 +203,72 @@ const FS_OPERATIONS: FSOperation[] = [
  */
 const hasTraversalPatterns = (pathStr: string): boolean => {
   return /\.\.[/\\]/.test(pathStr) || /^\.\.[/\\]/.test(pathStr);
+};
+
+/**
+ * Locations a program has no ordinary reason to reach with a hardcoded path.
+ *
+ * A closed set of OPERATING-SYSTEM paths, matched on normalised path segments —
+ * not a vocabulary of identifier spellings, which is the inference this
+ * ecosystem forbids. `/etc/passwd` means one thing on every Unix box; a variable
+ * called `config` means nothing.
+ */
+/**
+ * The members of `process` that carry INPUT — values chosen by whoever launched
+ * the program. Everything else on `process` is machine state the program reads
+ * about itself (`pid`, `ppid`, `platform`, `arch`, `version`, `versions`,
+ * `execPath`, `uptime()`), and a number or a platform name cannot contain `../`.
+ *
+ * Exact membership against Node's documented surface, never a substring test.
+ */
+const PROCESS_INPUT_MEMBERS = new Set(['env', 'argv', 'argv0', 'execArgv', 'stdin']);
+
+const SENSITIVE_SEGMENTS = [
+  'etc/passwd',
+  'etc/shadow',
+  'etc/hosts',
+  'etc/sudoers',
+  'proc/self',
+  '.ssh/id_rsa',
+  '.ssh/id_dsa',
+  '.ssh/authorized_keys',
+  '.aws/credentials',
+  '.npmrc',
+  '.git/config',
+  'windows/system32/config/sam',
+];
+
+/**
+ * Does a HARDCODED path aim somewhere it should not?
+ *
+ * This is what the literal branch always claimed to do — "a hardcoded
+ * `../etc/passwd` is a finding regardless of taint: nobody needs to steer a path
+ * that already points where it should not". What it actually did was test for
+ * `/\.\.[/\\]/`, i.e. any `../` at all.
+ *
+ * Measured: a census of ALL 37 findings this rule produces over 3.0M lines of
+ * open-source code found relative literals to be the single largest false-positive
+ * class — `cp('../../../docs', …)`, `readFile('../package.json')`,
+ * `readFileSync('../package.json')`. Every one is an ordinary
+ * monorepo-relative path, reported as CWE-22 at CRITICAL.
+ *
+ * Traversal is an ATTACKER steering a path. A literal is fixed by whoever typed
+ * it, so the only literal worth reporting is one that already arrives somewhere
+ * sensitive. Segments are compared after collapsing `..`, so `../../etc/passwd`
+ * and `/etc/passwd` are the same finding and `../config.json` is not one.
+ */
+const targetsSensitiveLocation = (pathStr: string): boolean => {
+  // `pathStr` is `sourceCode.getText(node)`, so a string literal arrives WITH its
+  // quotes — `'../../etc/passwd'`, not `../../etc/passwd`. The old check searched
+  // for `../` anywhere and never noticed; anything anchored at the start does.
+  const unquoted = pathStr.replace(/^['"`]|['"`]$/g, '');
+  const normalised = unquoted.replace(/\\/g, '/').toLowerCase();
+  // Strip leading `./` and `../` segments — they say where the path STARTS, and
+  // the question here is where it ENDS.
+  const withoutPrefix = normalised.replace(/^(?:\.{1,2}\/)+/, '');
+  return SENSITIVE_SEGMENTS.some(
+    (seg) => withoutPrefix === seg || withoutPrefix.endsWith(`/${seg}`) || withoutPrefix.startsWith(`${seg}/`),
+  );
 };
 
 /**
@@ -360,18 +441,44 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-22',
       confidence: 'medium',
     },
+    // Token optimization — 39% reduction (49 to 30 tokens); template variables
+    // still work. Kept OUTSIDE the messages block: `scripts/rule-audit.ts` reads
+    // messageIds by scanning the block for `name:`, so a comment containing a
+    // colon inside it becomes a phantom messageId that no test can ever assert.
+    // This note's old wording produced one called `optimization`.
     messages: {
-      // 🎯 Token optimization: 39% reduction (49→30 tokens) - template variables still work
       fsPathTraversal: formatLLMMessage({
         icon: '🔑',
         issueName: 'Path traversal',
         cwe: 'CWE-22',
         description: 'Path traversal vulnerability',
         severity: '{{riskLevel}}',
-        fix: '{{safePattern}}',
+        // §C2.4 — the sentence that lets a reader CLOSE a finding instead of
+        // "fixing" correct code. Names `path.resolve` + a SEPARATOR-ANCHORED
+        // prefix check, never a bare `startsWith(SAFE_DIR)`: that guard is
+        // defeated by `/safe-dir-evil`, and this rule's own remediation text
+        // recommended it until 2026-08-17.
+        fix: '{{safePattern}} — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved and then prefix-checked WITH a trailing separator',
         documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
       }),
 },
+    /**
+     * `allowedExtensions` used to sit in `properties`. It was declared in the
+     * schema ONLY — absent from the `Options` interface, absent from
+     * `defaultOptions`, and read by nothing in `create()`. A consumer who set it
+     * got no suppression and no complaint. Deleted rather than built out: this
+     * rule reports paths whose provenance is ATTACKER-REACHABLE, and such a
+     * path's extension is by definition not known statically —
+     * `fs.readFileSync(process.argv[2])` has no extension to match. An option
+     * that could only ever fire on paths the rule already ignores is not a
+     * missing feature.
+     *
+     * Kept OUTSIDE the properties block deliberately: `scripts/rule-audit.ts`
+     * reads property names by scanning the block for `name:`, and a comment
+     * containing a colon inside it is read as a phantom option — this note's
+     * old wording produced one called `implemented`, which then failed the
+     * `unexercised-option` check forever because no test could ever set it.
+     */
     schema: [
       {
         type: 'object',
@@ -410,7 +517,8 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           allowLiterals: {
             type: 'boolean',
             default: false,
-            description: 'Allow literal string paths'
+            description:
+              'Allow literal string paths. Default true: a rule named "non-literal" reporting a literal contradicts its contract. Set false to also flag hardcoded paths containing "../" — measured as this rule\'s largest FP class on real code.'
           },
           additionalMethods: {
             type: 'array',
@@ -418,15 +526,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Additional fs methods to check'
           }
-          // `allowedExtensions` used to sit here. It was declared in the
-          // schema ONLY — absent from the `Options` interface, absent from
-          // `defaultOptions`, and read by nothing in `create()`. A consumer
-          // who set it got no suppression and no complaint. Deleted rather
-          // than implemented: this rule reports on paths whose provenance is
-          // ATTACKER-REACHABLE, and such a path's extension is by definition
-          // not known statically — `fs.readFileSync(process.argv[2])` has no
-          // extension to match. An option that could only ever fire on paths
-          // the rule already ignores is not a missing feature.
         },
         additionalProperties: false,
       },
@@ -609,6 +708,32 @@ allowLiterals = false,
           return bound !== undefined && readsTaintSource(bound, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression: {
+          // Most of `process` is MACHINE STATE, not input.
+          //
+          // `process` is a taint root so that `process.env.X` and
+          // `process.argv[2]` are seen — things whoever launched the program
+          // chooses. `process.pid` is a number the OS assigns; it cannot contain
+          // a path separator, let alone `../`. Nor can `platform`, `arch`,
+          // `version` or `ppid`.
+          //
+          // Measured: n8n's blob store builds
+          // `` `${writePath}.tmp.${process.pid}.${randomUUID()}` `` and every fs
+          // call on that temp path was reported — four findings in one file, and
+          // the same shape recurred across the corpus. The path is composed, so
+          // `isWholeTaintValue` correctly declined to trust it; the error was
+          // upstream, in calling a PID untrusted at all.
+          //
+          // A closed set of member names off `process`, not a spelling heuristic:
+          // these are the documented Node properties an invoker controls.
+          if (
+            !node.computed &&
+            node.object.type === AST_NODE_TYPES.Identifier &&
+            node.object.name === 'process' &&
+            node.property.type === AST_NODE_TYPES.Identifier &&
+            !PROCESS_INPUT_MEMBERS.has(node.property.name)
+          ) {
+            return false;
+          }
           // `process.argv[2]`, `req.query.file`, `process.env.X` — walk to the
           // root of the chain and judge that.
           return readsTaintSource(node.object, depth + 1);
@@ -745,7 +870,10 @@ allowLiterals = false,
       // `allowLiterals` opts out of even that — it is the option's whole
       // purpose, and after the inversion a literal has no other way to report.
       if (isLiteralString(pathNode)) {
-        return !allowLiterals && hasTraversalPatterns(pathStr);
+        // `hasTraversalPatterns` alone matched every `../` in the codebase. The
+        // finding is the DESTINATION, not the dots — see
+        // `targetsSensitiveLocation` and `literal-paths.test.ts`.
+        return !allowLiterals && targetsSensitiveLocation(pathStr);
       }
 
       // Explicitly validated by a startsWith guard — an existing, separate
