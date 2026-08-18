@@ -274,9 +274,35 @@ only part of a lint finding a consumer plans around:
 
 | Tier                         | Promise to you                                              | Bar                             |
 | :--------------------------- | :---------------------------------------------------------- | :------------------------------ |
-| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable.      | **≥ 95%** sampled precision      |
-| **`warn`** in `recommended`  | Triage these. Most are real; some need your context.          | **≥ 70%** sampled precision      |
+| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable.      | **≤ 5%** effective false positives |
+| **`warn`** in `recommended`  | Fix these, but not today. Same accuracy, lower urgency.       | **≤ 5%** effective false positives |
 | **Off by default** (opt-in)  | A paranoid sweep. You asked for it; expect to triage.         | No floor — **but the rate is published** |
+| **The preset, as a whole**   | What you actually install.                                    | **≤ 5%** across every rule it enables |
+
+**Severity signals urgency, not confidence.** `warn` used to carry a lower
+accuracy bar here — 70%, i.e. three wrong findings in ten. That was incoherent:
+a noisy `warn` costs a reader exactly as much attention as a noisy `error`, and
+the only difference is whether the build also fails. Anything we switch on for
+you meets the same bar; the tier tells you how soon to care.
+
+**And the bar that matters is the preset's, not the rule's.** You install a
+config, not a rule. Twenty rules each sitting at a defensible 5% do not compose
+into a 5% experience, so the aggregate carries its own budget.
+
+#### Why 5%, and why "effective"
+
+The number is not ours. Google admits an analyzer into code review only while
+its effective false-positive rate stays under 10%, and its actual fleet average
+runs just under 5% — measured across the largest continuously-linted codebase
+anyone has published on. Above roughly 10%, developers stop reading a tool, then
+switch it off. We take the fleet average rather than the ceiling because we are
+asking you to enable a preset you did not tune.
+
+**Effective** is the load-bearing word, also Google's. A finding counts against
+us when it is wrong — *and* when it is right but you would not act on it: the
+message did not explain itself, or the issue was too trivial to be worth the
+interruption. A correct finding nobody understands costs a reader exactly what a
+wrong one costs. That makes message quality a precision property, not polish.
 
 Three rules follow from that, and they bind us more than they bind anyone else:
 
@@ -293,6 +319,32 @@ Three rules follow from that, and they bind us more than they bind anyone else:
    demoted rule is an open defect, not a resolved one. Shipping below the bar of the
    tier you sit at is not an accepted state here; see
    [the open list](./BENCHMARK-RESULTS.md) and the scoreboard below.
+
+#### Reachability is how the bar gets met
+
+A 5% bar is not reached by tuning thresholds. It is reached by changing what a
+rule is willing to assert.
+
+**Reachability** — can attacker-controlled input actually arrive at this
+expression — is the lever the commercial tools pulled to cut alert volume by a
+reported 92–95%, and it is the difference between the two contracts a rule can
+have:
+
+| Contract | Behaviour | Result |
+| :--- | :--- | :--- |
+| *Report unless proven safe* | the final branch returns "report" | every unprovable case is a finding |
+| *Report only when reachable* | the final branch returns "quiet" | an unprovable case is silence |
+
+The first is not a stricter version of the second — it is a different product.
+`detect-object-injection` ships the first contract and produces **14,696**
+findings across our 20-repository corpus at 0 confirmed true positives in the
+sample. No threshold fixes that; only the contract does.
+
+So: **anything enabled by default asserts reachability.** A rule that cannot
+resolve a path from an untrusted source to the sink stays quiet by default, and
+the paranoid sweep — report on shape alone — remains available opt-in, with its
+rate published. This is what our taint analysis already approximates; the change
+is making it the precondition rather than the tiebreak.
 
 #### When a rule is too rare to score — the census criterion
 
@@ -359,10 +411,13 @@ precision and **reverted it**, documenting the gap instead. A high bar systemati
 biases us toward missing things. That is a deliberate trade, not an oversight, and the
 misses are published alongside the wins.
 
-**70% at `warn` still means 3 in 10 are wrong.** At a few hundred findings that is
-real hours. The justification is that a `warn` is a question, not a verdict — but it
-is not free, and the honest framing is that `warn` costs you triage time in exchange
-for catching things `error` cannot safely assert.
+**A 5% bar cuts against recall, and we measure the cut.** Buying precision by
+going quiet is the mirror failure, and we have committed it: one sweep took false
+positives from 10 to 3 while false negatives went from 18 to 34, and the
+precision number alone read as progress. So precision is never reported without
+**Youden's J** — sensitivity + specificity − 1 — the OWASP Benchmark's headline
+score, which a tool cannot raise by reporting more OR by reporting less. It is
+the guard against optimising the number we happen to be looking at.
 
 **Opt-in rules have no floor, and some are genuinely noisy.** `detect-object-injection`
 measured 0/13 on real code. It stays exported because a team hunting prototype
