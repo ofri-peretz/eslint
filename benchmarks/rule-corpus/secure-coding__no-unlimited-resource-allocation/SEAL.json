@@ -1,0 +1,89 @@
+{
+  "rule": "secure-coding/no-unlimited-resource-allocation",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "met",
+      "evidence": "10 vulnerable / 16 safe, written 2026-08-18 from the 173 measured false positives and from real framework idiom, not from the rule's tests",
+      "command": "ls benchmarks/rule-corpus/secure-coding__no-unlimited-resource-allocation"
+    },
+    "duel": {
+      "state": "met",
+      "evidence": "100% precision, 100% recall, 100% F1 on 26 fixtures. No competitor: eslint-plugin-security ships no CWE-770 rule, so there is nobody to duel",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-unlimited-resource-allocation"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "NOT RUN. The corpus was written from measured false positives, so the rule was tuned against it — phase 4 exists precisely because that score is worth nothing on its own",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "173 findings to 3 across 20 repositories / 3,036,307 LOC. All 3 labelled TP against the cached source. n=3 is below the 9 a warn rule needs, so the census criterion applies and it passes at zero FPs",
+      "command": "node benchmarks/suites/ilb-real-source/run.mjs --allow-local --sample=200 --sample-rules=secure-coding/no-unlimited-resource-allocation"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "Probed 2026-08-18 and FAILED. Exactly one report per shape, but from the wrong rule — see knownGaps/decompression-owned-by-the-generic-rule",
+      "command": "npx tsx scripts/probe-rule.mts secure-coding/no-unlimited-resource-allocation node-security/no-unbounded-decompression -- 'const zlib=require(\"zlib\"); const g = zlib.createGunzip();'"
+    },
+    "behaviour": {
+      "state": "met",
+      "evidence": "11/11, including the positive control",
+      "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-unlimited-resource-allocation"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100% statements, branches and functions, read from istanbul JSON. 185 tests",
+      "command": "npx vitest run --coverage src/rules/no-unlimited-resource-allocation"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "NOT MEASURED at any size. The rule gained a recursive taint walk and a subtree scan for the decompression byte-count guard; neither has been timed",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 9"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "In benchmarks/RULE-SCORES.md. NOT in BENCHMARK-RESULTS.md, which still reports the superseded '0 TP / 5 FP, 173 findings' at line 91",
+      "command": "grep -n no-unlimited-resource-allocation BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "decompression-owned-by-the-generic-rule",
+      "kind": "partition",
+      "summary": "node-security/no-unbounded-decompression is silent on zlib.createGunzip(), zlib.createUnzip() and unzipper.Extract(); this generic CWE-770 rule reports all three",
+      "why": "Not a double-report — exactly one finding per shape — but the dedicated CWE-409 rule does not see its own canonical sink, and all 3 of this rule's surviving real-source findings live in that overlap. Fixing it means deciding which rule owns decompression, which is a taxonomy decision across two plugins",
+      "reopenWhen": "the CWE-409/CWE-770 ownership boundary is settled"
+    },
+    {
+      "id": "axios-opt-in-limit-reads-as-mitigated",
+      "kind": "false-negative",
+      "summary": "A decompression whose output bytes are counted against a threshold in the same function is treated as bounded, even when that threshold is opt-in and defaults to unlimited",
+      "why": "axios counts decompressed bytes against maxContentLength, whose default is -1. The rule stops reporting the library that implements the mechanism; it cannot see whether a consumer enabled it. Reporting anyway would mean reporting the fix the author already applied",
+      "reopenWhen": "the rule can see a config default, or the check moves to the call site that sets maxContentLength"
+    },
+    {
+      "id": "unresolvable-size-is-not-reported",
+      "kind": "false-negative",
+      "summary": "Buffer.alloc(n) where n is a function parameter with no visible initializer is not reported",
+      "why": "Deliberate. Taint starts at a binding this file can see the value of; assuming a parameter named `data` or `size` is attacker-controlled is what produced the 173 findings this rule was fixed for",
+      "reopenWhen": "cross-file taint is available, which no rule in this ecosystem has today"
+    },
+    {
+      "id": "entity-expansion-not-covered",
+      "kind": "scope",
+      "summary": "No XML entity-expansion detection. The path was removed 2026-08-18 after xml2js was measured unable to expand entities at all",
+      "why": "The removed check could only ever fire on xml2js, which parses through sax-js and rejects custom entity references outright. libxmljs `noent: true` IS a real sink and is a different API on a different module",
+      "reopenWhen": "a rule is written against a parser whose entity handling was actually measured"
+    }
+  ]
+}

@@ -30,6 +30,8 @@
     "rule-audit:gate": "tsx scripts/rule-audit-gate.ts",
     "probe-rule": "tsx scripts/probe-rule.mts",
     "lint:name-inference": "tsx scripts/lint-name-inference.ts",
+    "lint:seal": "tsx scripts/lint-seal.ts",
+    "cases": "tsx scripts/case-ledger.mts",
     "lint:workflows": "node scripts/lint-workflows.ts",
     "lint:publish": "node scripts/lint-publish-warnings.ts",
     "lint:workflows:actionlint": "actionlint",
