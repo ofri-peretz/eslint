@@ -292,7 +292,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-915',
         description: 'Object injection/Prototype pollution (incl. model/tool outputs)',
         severity: '{{riskLevel}}',
-        fix: '{{safeAlternative}}',
+        // §C2.4 — the sentence that lets a reader CLOSE a finding instead of
+        // "fixing" correct code. This rule reports what it could not prove safe;
+        // only the reader knows whether the key's provenance is a route table or
+        // a request body.
+        fix: '{{safeAlternative}} — Not a finding when the key is a numeric index, a module constant, or guarded by Object.hasOwn / an allowlist',
         documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
       }),
       /**
@@ -323,7 +327,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         description:
           'Every key of an untrusted object is copied onto this target, so the caller chooses which field is written — including one they should not control, such as isAdmin',
         severity: 'HIGH',
-        fix: 'Copy an explicit allowlist of assignable fields instead of iterating the caller\'s keys',
+        fix: 'Copy an explicit allowlist of assignable fields instead of the caller\'s keys — Not a finding when the iterated object is module-built, or the body checks each key against an allowlist',
         documentationLink: 'https://cwe.mitre.org/data/definitions/915.html',
       }),
       globalPrototypeWrite: formatLLMMessage({
@@ -333,7 +337,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         description:
           'Assignment writes THROUGH {{step}}, so the property lands on Object.prototype and every object in the process inherits it',
         severity: 'CRITICAL',
-        fix: 'Guard the traversal with Object.hasOwn, or build the target with Object.create(null) / a Map',
+        fix: 'Guard with Object.hasOwn, or build the target with Object.create(null) / a Map — Not a finding when the path is fixed at build time, or __proto__ / constructor / prototype are rejected first',
         documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
       }),
     },

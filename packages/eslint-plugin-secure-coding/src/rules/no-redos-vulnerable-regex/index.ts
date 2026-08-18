@@ -242,7 +242,11 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-400',
         description: '{{vulnerabilityName}}: {{description}}',
         severity: '{{severity}}',
-        fix: '{{fix}}',
+        // §C2.4. Worth more here than anywhere: this rule's verdict comes from
+        // an NFA analyser that disagrees with the interpreter in BOTH directions
+        // (see timed-corrections.test.ts), so a reader holding a pattern the
+        // analyser misjudged needs to know what settles it — a measurement.
+        fix: '{{fix}} — Not a finding if the quantifiers cannot overlap',
         documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
     },
@@ -464,7 +468,7 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
               description:
                 'Alternatives inside a quantified group match the same input, so every character can be taken by either branch and the engine explores 2^n paths before failing.',
               severity: 'CRITICAL',
-              fix: 'Remove the duplicate alternative, or make the branches mutually exclusive.',
+              fix: 'Remove the duplicate alternative, or make the branches mutually exclusive',
             },
           });
           return;
@@ -485,7 +489,7 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
                 ? `A quantifier reaches itself via the parent loop. An attacker can craft input that triggers ${isExp ? 'exponential' : 'polynomial'} backtracking.`
                 : `Two quantifiers can exchange characters, enabling ${isExp ? 'exponential' : 'polynomial'} backtracking on crafted input.`,
               severity: isExp ? 'CRITICAL' : 'HIGH',
-              fix: 'Atomic group, possessive quantifier, or rewrite to eliminate the ambiguity. The scslre auto-suggested fix may be available.',
+              fix: 'Atomic group, possessive quantifier, or rewrite to remove the ambiguity',
             },
           });
         }

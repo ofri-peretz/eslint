@@ -478,7 +478,8 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-400',
         description: 'ReDoS vulnerability detected',
         severity: '{{riskLevel}}',
-        fix: '{{safeAlternative}}',
+        // §C2.4 — names the safe shapes so a reader can close the finding.
+        fix: '{{safeAlternative}} — Not a finding when the pattern is a module constant, a closed-set lookup, or escaped before construction',
         documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
 },
