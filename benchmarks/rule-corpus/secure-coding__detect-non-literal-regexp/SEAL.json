@@ -1,0 +1,60 @@
+{
+  "rule": "secure-coding/detect-non-literal-regexp",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/secure-coding__detect-non-literal-regexp/MANIFEST.md"
+    },
+    "duel": {
+      "state": "met",
+      "evidence": "15 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/detect-non-literal-regexp"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- secure-coding/detect-non-literal-regexp --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts secure-coding/detect-non-literal-regexp <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "met",
+      "evidence": "11/11, including the positive control",
+      "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/detect-non-literal-regexp"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/detect-non-literal-regexp"
+    },
+    "throughput": {
+      "state": "met",
+      "evidence": "500L 8.1ms · 2000L 3.4ms · 8000L 83.2ms — 10.3x time for 16x lines, linear",
+      "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-non-literal-regexp"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal secure-coding/detect-non-literal-regexp' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

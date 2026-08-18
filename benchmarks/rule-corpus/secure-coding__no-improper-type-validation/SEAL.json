@@ -1,0 +1,60 @@
+{
+  "rule": "secure-coding/no-improper-type-validation",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/secure-coding__no-improper-type-validation/MANIFEST.md"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "6 TP / 0 FP / 6 FN — 100.0% precision, 50.0% recall, 66.7% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-improper-type-validation"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- secure-coding/no-improper-type-validation --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts secure-coding/no-improper-type-validation <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "met",
+      "evidence": "11/11, including the positive control",
+      "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-improper-type-validation"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/no-improper-type-validation"
+    },
+    "throughput": {
+      "state": "met",
+      "evidence": "500L 0.8ms · 2000L 2.4ms · 8000L 7.9ms — 9.7x time for 16x lines, linear",
+      "command": "npx tsx scripts/seal-audit.mts secure-coding/no-improper-type-validation"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal secure-coding/no-improper-type-validation' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

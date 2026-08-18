@@ -1,0 +1,60 @@
+{
+  "rule": "node-security/detect-non-literal-fs-filename",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-node-security@4.13.1",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/node-security__detect-non-literal-fs-filename/MANIFEST.md"
+    },
+    "duel": {
+      "state": "met",
+      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/detect-non-literal-fs-filename"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- node-security/detect-non-literal-fs-filename --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts node-security/detect-non-literal-fs-filename <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "met",
+      "evidence": "11/11, including the positive control",
+      "command": "npx tsx scripts/rule-seal-probe.mts node-security/detect-non-literal-fs-filename"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/detect-non-literal-fs-filename"
+    },
+    "throughput": {
+      "state": "met",
+      "evidence": "500L 3.1ms · 2000L 42.8ms · 8000L 10.2ms — 3.3x time for 16x lines, linear",
+      "command": "npx tsx scripts/seal-audit.mts node-security/detect-non-literal-fs-filename"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal node-security/detect-non-literal-fs-filename' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

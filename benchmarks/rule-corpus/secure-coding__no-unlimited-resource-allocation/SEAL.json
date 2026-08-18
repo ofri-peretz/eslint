@@ -17,7 +17,7 @@
     },
     "duel": {
       "state": "met",
-      "evidence": "100% precision, 100% recall, 100% F1 on 26 fixtures. No competitor: eslint-plugin-security ships no CWE-770 rule, so there is nobody to duel",
+      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-unlimited-resource-allocation"
     },
     "adversarial": {
@@ -27,8 +27,8 @@
     },
     "realSource": {
       "state": "met",
-      "evidence": "173 findings to 3 across 20 repositories / 3,036,307 LOC. All 3 labelled TP against the cached source. n=3 is below the 9 a warn rule needs, so the census criterion applies and it passes at zero FPs",
-      "command": "node benchmarks/suites/ilb-real-source/run.mjs --allow-local --sample=200 --sample-rules=secure-coding/no-unlimited-resource-allocation"
+      "evidence": "2 case(s) filed, 0 still unreviewed",
+      "command": "npm run cases -- secure-coding/no-unlimited-resource-allocation"
     },
     "partition": {
       "state": "unmet",
@@ -42,18 +42,18 @@
     },
     "coverage": {
       "state": "met",
-      "evidence": "100% statements, branches and functions, read from istanbul JSON. 185 tests",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-unlimited-resource-allocation"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "NOT MEASURED at any size. The rule gained a recursive taint walk and a subtree scan for the decompression byte-count guard; neither has been timed",
-      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 9"
+      "state": "met",
+      "evidence": "500L 5.2ms · 2000L 2.6ms · 8000L 6.3ms — 1.2x time for 16x lines, linear",
+      "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "In benchmarks/RULE-SCORES.md. NOT in BENCHMARK-RESULTS.md, which still reports the superseded '0 TP / 5 FP, 173 findings' at line 91",
-      "command": "grep -n no-unlimited-resource-allocation BENCHMARK-RESULTS.md"
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal secure-coding/no-unlimited-resource-allocation' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
   "knownGaps": [
