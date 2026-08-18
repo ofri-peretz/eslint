@@ -590,6 +590,75 @@ allowLiterals = false,
      * and remote".
      */
     const WHOLE_VALUE_TRUSTED_ROOTS = new Set(['process']);
+
+    /**
+     * Roots whose NAME is not evidence of anything.
+     *
+     * `req`, `request` and `event` name a request in nearly all code that uses
+     * them, and no measured false positive came from them. `ctx` and `context`
+     * name a build context, a compiler directory, a React context, a canvas
+     * context, an AWS Lambda context — and occasionally a Koa request.
+     */
+    const AMBIGUOUS_ROOTS = new Set(['ctx', 'context']);
+
+    /**
+     * Properties that only a request-like object carries. Exact membership
+     * against a closed surface, never a substring — `ctx.runtimeDir` and
+     * `ctx.plugins` are not in it, and `ctx.query` is.
+     */
+    const REQUEST_SURFACE = new Set([
+      'query',
+      'params',
+      'body',
+      'request',
+      'req',
+      'headers',
+      'cookies',
+      'searchParams',
+      'originalUrl',
+    ]);
+
+    /**
+     * Does this `ctx`/`context` binding PROVE it is a request?
+     *
+     * The proof is a member access naming a request surface, anywhere the
+     * binding is read: Koa's `ctx.query.file` proves it, `ctx.runtimeDir` does
+     * not. Scope references are used rather than the one node in hand, so the
+     * evidence can appear at any use of the binding, not only at the sink.
+     */
+    /** Does this name bind to something the file actually declares? */
+    const resolvesInFile = (id: TSESTree.Identifier): boolean =>
+      context.sourceCode.getScope(id).references.find((ref) => ref.identifier === id)?.resolved != null;
+
+    const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
+      node?.type === AST_NODE_TYPES.MemberExpression &&
+      !node.computed &&
+      node.property.type === AST_NODE_TYPES.Identifier &&
+      REQUEST_SURFACE.has(node.property.name);
+
+    const hasRequestEvidence = (id: TSESTree.Identifier): boolean => {
+      // The access in hand: `ctx.query.file` reaches here as the `ctx` of
+      // `ctx.query`, so the parent alone settles the common case.
+      if (readsRequestSurface((id as TSESTree.Node & { parent?: TSESTree.Node }).parent)) return true;
+      // Otherwise any OTHER use of the same binding will do — a handler that
+      // reads `ctx.request.body` on one line and builds a path from `ctx.x` on
+      // the next is still holding a request.
+      //
+      // `context.sourceCode`, not the `sourceCode` local: this helper sits above
+      // that declaration, and referencing it here threw `ReferenceError` inside
+      // the rule — which RuleTester surfaced as ordinary assertion failures in
+      // BOTH directions, not as a crash.
+      // No `?? []` fallback: the caller has already established with
+      // `resolvesInFile` that this binding resolves, so the branch would be
+      // unreachable — and an unreachable branch is a permanent hole in a package
+      // held at a 100% coverage threshold.
+      const variable = context.sourceCode
+        .getScope(id)
+        .references.find((ref) => ref.identifier === id)!.resolved!;
+      return variable.references.some((ref) =>
+        readsRequestSurface((ref.identifier as TSESTree.Node & { parent?: TSESTree.Node }).parent),
+      );
+    };
     const taintRoots = new Set(options.taintSources ?? DEFAULT_TAINT_ROOTS);
     const reportUnresolvedPaths = options.reportUnresolvedPaths ?? false;
 
@@ -703,7 +772,35 @@ allowLiterals = false,
       if (depth > 6) return false;
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
-          if (taintRoots.has(node.name)) return !isLocallyConstructed(node);
+          if (taintRoots.has(node.name)) {
+            // `ctx` and `context` are the two roots that name something OTHER
+            // than a request far more often than they name one. Measured: after
+            // the literal and process.pid fixes, EVERY remaining false positive
+            // over the 20-repo corpus was one of them — webpack's compiler
+            // context directory, a Docker build context, and a strapi parameter
+            // annotated `BuildContext`. A bare name is not evidence, and this
+            // rule reporting on one is the defect class CLAUDE.md opens with.
+            //
+            // It evaded `lint:name-inference` because the match lives in a data
+            // table instead of a `.includes()` call — the documented way that
+            // gate has been defeated before.
+            // RESOLVES, and then has no evidence. The two conditions are not
+            // interchangeable: a `ctx` the file declares nowhere cannot be shown
+            // to be a build context any more than it can be shown to be a
+            // request, and this rule's standing position is that absence of
+            // evidence is not evidence of safety. Dropping the resolution check
+            // turned an undeclared `ctx.runtimeDir` from a finding into silence
+            // — a false negative introduced by a false-positive fix, caught by
+            // the case below it.
+            if (
+              AMBIGUOUS_ROOTS.has(node.name) &&
+              resolvesInFile(node) &&
+              !hasRequestEvidence(node)
+            ) {
+              return false;
+            }
+            return !isLocallyConstructed(node);
+          }
           const bound = constBindings.get(node.name);
           return bound !== undefined && readsTaintSource(bound, depth + 1);
         }
@@ -806,6 +903,40 @@ allowLiterals = false,
      * binding cycle (`const a = b; const b = a;`) has no root to reach, so
      * `readsTaintSource` returns false on it and this function is never called.
      */
+    /**
+     * Does any part of this expression reach a taint root that is NOT trusted
+     * whole — a request, rather than the process's own environment?
+     *
+     * Deliberately separate from `readsTaintSource`: that answers "is there
+     * taint", this answers "is any of it the dangerous kind". The base-is-taint
+     * exemption above turns on the difference.
+     */
+    const containsUntrustedRoot = (node: TSESTree.Node, depth = 0): boolean => {
+      if (depth > 6) return false;
+      switch (node.type) {
+        case AST_NODE_TYPES.Identifier: {
+          if (taintRoots.has(node.name)) return !WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
+          const bound = constBindings.get(node.name);
+          return bound !== undefined && containsUntrustedRoot(bound, depth + 1);
+        }
+        case AST_NODE_TYPES.MemberExpression:
+          return containsUntrustedRoot(node.object, depth + 1);
+        case AST_NODE_TYPES.TemplateLiteral:
+          return node.expressions.some((e) => containsUntrustedRoot(e, depth + 1));
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            containsUntrustedRoot(node.left as TSESTree.Node, depth + 1) ||
+            containsUntrustedRoot(node.right, depth + 1)
+          );
+        case AST_NODE_TYPES.CallExpression:
+          return node.arguments.some(
+            (a) => a.type !== AST_NODE_TYPES.SpreadElement && containsUntrustedRoot(a, depth + 1),
+          );
+        default:
+          return false;
+      }
+    };
+
     const isWholeTaintValue = (node: TSESTree.Node): boolean => {
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
@@ -824,13 +955,40 @@ allowLiterals = false,
           // give the attacker a second part to escape from. Two or more parts
           // is a base plus a segment, which is composition.
           const callee = node.callee;
-          return (
-            callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            callee.object.name === 'path' &&
-            node.arguments.length === 1 &&
-            isWholeTaintValue(node.arguments[0])
-          );
+          // `path.join(...)` AND the destructured `join(...)` from
+          // `import { join } from 'path'`. Only the member form was recognised,
+          // so a CLI using the destructured spelling — which n8n and serverless
+          // both do — fell out of every path-aware branch. Resolved through the
+          // module graph rather than matched on the callee's NAME: a local
+          // function called `join` is not `path.join`.
+          const isPathCall =
+            (callee.type === AST_NODE_TYPES.MemberExpression &&
+              callee.object.type === AST_NODE_TYPES.Identifier &&
+              callee.object.name === 'path') ||
+            resolveModuleBinding(callee, context.sourceCode.getScope(callee), {})?.module === 'path';
+          if (!isPathCall) return false;
+          if (node.arguments.length === 1) return isWholeTaintValue(node.arguments[0]);
+          // Taint as the BASE, with every following segment a fixed literal:
+          // `path.join(process.env.HOME, '.terraform.d', 'credentials.tfrc.json')`.
+          // Nothing here is steerable — the caller chose the base and the program
+          // chose the rest. Same argument WHOLE_VALUE_TRUSTED_ROOTS already makes
+          // for a whole-value read, one step further along.
+          //
+          // Deliberately limited to those roots by `isWholeTaintValue` on the
+          // first argument: whoever picks the base directory picks the file, so
+          // `path.join(req.body.dir, 'config.json')` must still report. A CONTROL
+          // pins both directions.
+          //
+          // Generalised from "literal suffixes only" after measurement: both
+          // remaining real-source findings were a CLI joining a name onto the
+          // directory it was handed (`join(process.argv[2], file)`). A segment
+          // cannot escape a base the INVOKER named — that is the lock header's
+          // own argument for whole values, one step along.
+          //
+          // The guard is `containsUntrustedRoot`: one request-derived part
+          // anywhere in the expression and the exemption is off, so
+          // `join(baseDir, req.query.f)` still reports.
+          return isWholeTaintValue(node.arguments[0]) && !containsUntrustedRoot(node);
         }
         default:
           return false;
