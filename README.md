@@ -225,6 +225,47 @@ built the fix and measured it before shipping — findings went **29 → 2,243**
 corpus, and a hand-read of the new ones put precision at **~25%**. We reverted it, and
 [documented the gap](./BENCHMARK-RESULTS.md) rather than closing it badly.
 
+### The words we use, in plain terms
+
+Every number below depends on these, so they are defined once here rather than
+assumed.
+
+**Severity — what ESLint does when a rule fires.** You set it per rule in your
+config, and our presets set it for you:
+
+| Severity | In your config | What happens |
+| :------- | :------------- | :----------- |
+| **`error`** | `'error'` or `2` | Reported as an error and **`eslint` exits non-zero — your build fails.** |
+| **`warn`** | `'warn'` or `1` | Reported, but the exit code stays 0. Your build passes; you see it and decide. |
+| **off / opt-in** | `'off'`, `0`, or simply not in the preset | The rule does not run at all. Ours are still shipped and documented — you turn them on deliberately. |
+
+That is why a severity is a promise: `error` interrupts you and `warn` does not.
+
+**The four outcomes.** Every finding is one of these, and the pair of words for
+the two that matter:
+
+- **TP** (true positive) — the rule fired and the code really was vulnerable. Signal.
+- **FP** (false positive) — the rule fired and the code was fine. Noise.
+- **FN** (false negative) — the code was vulnerable and the rule stayed quiet. A miss.
+- **TN** — the code was fine and the rule stayed quiet. Correct silence.
+
+**Precision** = TP / (TP + FP). *Of the findings you are shown, what share are
+real?* This is the number that decides whether you keep the tool on. **Recall** =
+TP / (TP + FN) — *of the real problems, what share did we catch?* You cannot
+maximise both, which is the tradeoff section below.
+
+**`n` — the sample size.** How many individual findings we pulled out of real
+repositories and read one at a time, labelling each TP, FP, or *undecidable*. `n
+= 20` means twenty findings judged by hand. It matters because a percentage from
+a small `n` is mostly luck: at `n = 4`, reclassifying one finding moves precision
+by 25 points.
+
+**Sampled precision vs fixture precision.** *Fixture* precision is measured on
+test files we wrote — it is a regression gate and says nothing about your code.
+*Sampled* precision is measured on open-source repositories we did not write.
+Only the second one predicts your afternoon, and it is the only one the bars below
+use.
+
 ### The severity contract — what each tier promises
 
 Nobody in this space publishes a precision bar, so we set ours and publish where we
@@ -255,16 +296,14 @@ Three rules follow from that, and they bind us more than they bind anyone else:
 
 #### How big a sample the bar actually needs
 
-**`n` is the sample size** — how many individual findings we pulled out of real
-repositories and read one at a time, labelling each true positive, false positive, or
-undecidable. `n = 20` means twenty findings judged by hand. It matters because a
-percentage from a small `n` is mostly luck: at `n = 4`, reclassifying one finding
-moves precision by 25 points.
+A percentage from 20 findings is not evidence for a 95% claim. If you read 20
+findings and all 20 are real, the true rate could still be 85% and you got a good
+draw. So the bars carry a required `n`, derived from the **Wilson score interval** —
+the standard statistical answer to *"given what we saw, what is the worst the true
+rate plausibly is?"*, at 95% confidence. That worst case is the number we hold
+ourselves to, not the raw percentage.
 
-A percentage from 20 findings is not evidence for a 95% claim, so the bars carry
-sample sizes derived from the Wilson score interval (95% confidence, lower bound) —
-the standard way to ask "given what we saw, what is the worst the true rate plausibly
-is?" With a **perfect** sample:
+With a **perfect** sample — every finding a true positive:
 
 | Sample size    |  n=20 |  n=50 | **n=73** | n=100 |
 | :------------- | ----: | ----: | -------: | ----: |
