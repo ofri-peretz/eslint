@@ -12,12 +12,12 @@
   "axes": {
     "corpus": {
       "state": "unmet",
-      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "evidence": "not asserted \u2014 a human must confirm the fixtures came from the vulnerability, not from the rule",
       "command": "cat benchmarks/rule-corpus/browser-security__no-missing-csrf-protection/MANIFEST.md"
     },
     "duel": {
       "state": "met",
-      "evidence": "8 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "8 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs browser-security/no-missing-csrf-protection"
     },
     "adversarial": {
@@ -27,7 +27,7 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
       "command": "npm run cases -- browser-security/no-missing-csrf-protection --update"
     },
     "partition": {
@@ -42,17 +42,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured",
-      "command": ""
+      "evidence": "not measured \u2014 run without --skip-coverage",
+      "command": "npx vitest run --coverage src/rules/no-missing-csrf-protection"
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.31ms · 2000L +1.32ms · 8000L +3.57ms — 2.7x time for 4x lines (2000→8000), linear",
+      "evidence": "marginal over a no-op control: 500L +0.31ms \u00b7 2000L +1.32ms \u00b7 8000L +3.57ms \u2014 2.7x time for 4x lines (2000\u21928000), linear",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-missing-csrf-protection"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-16 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-missing-csrf-protection' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

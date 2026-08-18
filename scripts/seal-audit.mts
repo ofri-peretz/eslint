@@ -307,7 +307,14 @@ for (const dir of dirs) {
   };
 
   // coverage
-  let coverage: Axis = keep('coverage') ?? { state: 'unmet', evidence: 'not measured', command: '' };
+  // Every axis carries the command that would settle it, INCLUDING the ones
+  // that have not been run — "not measured" with no way to measure it is the
+  // shape of a to-do nobody can action.
+  let coverage: Axis = keep('coverage') ?? {
+    state: 'unmet',
+    evidence: 'not measured — run without --skip-coverage',
+    command: `npx vitest run --coverage src/rules/${ruleName}`,
+  };
   if (!skipCoverage) {
     const out = path.join(ROOT, '.tmp-seal-cov', dir);
     try {

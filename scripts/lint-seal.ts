@@ -57,10 +57,29 @@ const AXES = [
 ] as const;
 
 const STATES = new Set(['met', 'unmet', 'n/a']);
-const GAP_KINDS = new Set(['false-negative', 'false-positive', 'partition', 'scope']);
+const GAP_KINDS = new Set(['false-negative', 'false-positive', 'partition', 'scope', 'performance']);
+
+/**
+ * The analysis-limit registry, read from ANALYSIS-LIMITS.md rather than
+ * duplicated here — one home for the list, so a limit cannot be cited that the
+ * document does not define, and cannot be defined without becoming citable.
+ */
+const LIMITS = new Set(
+  [...fs.readFileSync(path.join(ROOT, 'ANALYSIS-LIMITS.md'), 'utf8').matchAll(/^\|\s*\*\*(L\d+)\*\*/gm)].map(
+    (m) => m[1],
+  ),
+);
 
 type Axis = { state?: string; evidence?: string; command?: string };
-type Gap = { id?: string; kind?: string; summary?: string; why?: string; reopenWhen?: string };
+type Gap = {
+  id?: string;
+  kind?: string;
+  summary?: string;
+  why?: string;
+  reopenWhen?: string;
+  /** An ID from ANALYSIS-LIMITS.md, or absent when the gap is still open work. */
+  limit?: string | null;
+};
 type Seal = {
   rule?: string;
   status?: string;
@@ -139,6 +158,17 @@ for (const dir of dirs) {
 
   // 2. HONESTY — sealed means nothing is outstanding.
   if (seal.status === 'sealed') {
+    // A gap with no limit is open WORK, not a boundary of the method. Sealing
+    // over one would be the whole apparatus lying: the claim "we do not reopen
+    // this" is only survivable when every remaining gap is a named property of
+    // single-file AST analysis rather than something nobody got to.
+    const unclassified = (seal.knownGaps ?? []).filter((gap) => !gap.limit);
+    if (unclassified.length > 0) {
+      problems.push(
+        `${rel}: status "sealed" with ${unclassified.length} gap(s) citing no analysis limit — ` +
+          `${unclassified.map((g) => g.id).join(', ')}. Classify against ANALYSIS-LIMITS.md or fix them.`,
+      );
+    }
     if (unmet.length > 0) {
       problems.push(
         `${rel}: status "sealed" but ${unmet.length} axis/axes unmet — ${unmet.join(', ')}`,
@@ -172,13 +202,19 @@ for (const dir of dirs) {
     if (!gap.reopenWhen?.trim()) {
       problems.push(`${at} has no reopenWhen — a gap with no reopen condition is an excuse`);
     }
+    // Citing a limit is optional (an unclassified gap is open work, which is a
+    // legitimate state). Citing one that does not exist is not.
+    if (gap.limit != null && !LIMITS.has(gap.limit)) {
+      problems.push(`${at} cites "${gap.limit}", which ANALYSIS-LIMITS.md does not define`);
+    }
   }
 
   const gaps = seal.knownGaps?.length ?? 0;
+  const open = (seal.knownGaps ?? []).filter((g) => !g.limit).length;
   rows.push(
     `  ${(seal.status ?? '?').padEnd(7)} ${expected.padEnd(52)} ${
       unmet.length ? `${unmet.length} unmet: ${unmet.join(', ')}` : 'all axes answered'
-    }${gaps ? ` · ${gaps} known gap(s)` : ''}`,
+    }${gaps ? ` · ${gaps} gap(s)${open ? `, ${open} unclassified` : ', all classified'}` : ''}`,
   );
 }
 

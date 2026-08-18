@@ -12,12 +12,12 @@
   "axes": {
     "corpus": {
       "state": "unmet",
-      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "evidence": "not asserted \u2014 a human must confirm the fixtures came from the vulnerability, not from the rule",
       "command": "cat benchmarks/rule-corpus/node-security__require-storage-encryption/MANIFEST.md"
     },
     "duel": {
       "state": "unmet",
-      "evidence": "4 TP / 2 FP / 7 FN — 66.7% precision, 36.4% recall, 47.1% F1",
+      "evidence": "4 TP / 2 FP / 7 FN \u2014 66.7% precision, 36.4% recall, 47.1% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/require-storage-encryption"
     },
     "adversarial": {
@@ -27,7 +27,7 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
       "command": "npm run cases -- node-security/require-storage-encryption --update"
     },
     "partition": {
@@ -42,17 +42,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured",
-      "command": ""
+      "evidence": "not measured \u2014 run without --skip-coverage",
+      "command": "npx vitest run --coverage src/rules/require-storage-encryption"
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.13ms · 2000L +0.01ms · 8000L +0.00ms — below the 0.2ms noise floor at every size",
+      "evidence": "marginal over a no-op control: 500L +0.13ms \u00b7 2000L +0.01ms \u00b7 8000L +0.00ms \u2014 below the 0.2ms noise floor at every size",
       "command": "npx tsx scripts/seal-audit.mts node-security/require-storage-encryption"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-16 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/require-storage-encryption' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

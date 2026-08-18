@@ -40,7 +40,8 @@ gate can check the file has not gone stale.
   "knownGaps": [
     {
       "id": "short-slug",
-      "kind": "false-negative" | "false-positive" | "partition" | "scope",
+      "kind": "false-negative" | "false-positive" | "partition" | "scope" | "performance",
+      "limit": "L1",            // an ID from ANALYSIS-LIMITS.md, or null while it is open work
       "summary": "one line",
       "why": "why it is acceptable to ship with this, or what blocks the fix",
       "reopenWhen": "the condition that turns this back into work"
@@ -48,6 +49,30 @@ gate can check the file has not gone stale.
   ]
 }
 ```
+
+## Gaps cite a limit, or they are backlog
+
+Every gap carries a `limit` from [`ANALYSIS-LIMITS.md`](../../ANALYSIS-LIMITS.md)
+— the registry of the things single-file AST analysis cannot do, named as the
+program-analysis literature names them: intraprocedural scope, type-unaware
+analysis, flow- and path-insensitivity, absent points-to analysis, unmodeled
+library semantics, configuration invisibility, reflection opacity,
+undecidability, corpus incompleteness, measurement resolution.
+
+`limit: null` is legitimate and means one thing: **this is open work, not a
+boundary of the method.** `lint:seal` therefore refuses `status: "sealed"` while
+any gap is unclassified. A rule is finished when every residual gap cites a
+limit — not when it is perfect, but when the boundary is written down.
+
+```bash
+npm run limits              # which limits we hit, where, how often
+npm run limits -- L1        # every gap citing it — "was I here before?"
+npm run limits -- --open    # the gaps citing nothing: the real backlog
+```
+
+That is what makes the knowledge accumulate. A session that ends with a new gap
+classified has moved the rule forward even if it changed no code, because the
+next session does not re-derive the same conclusion.
 
 ## The axes
 

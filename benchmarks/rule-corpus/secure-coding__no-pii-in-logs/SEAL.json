@@ -12,12 +12,12 @@
   "axes": {
     "corpus": {
       "state": "unmet",
-      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "evidence": "not asserted \u2014 a human must confirm the fixtures came from the vulnerability, not from the rule",
       "command": "cat benchmarks/rule-corpus/secure-coding__no-pii-in-logs/MANIFEST.md"
     },
     "duel": {
       "state": "unmet",
-      "evidence": "8 TP / 1 FP / 0 FN — 88.9% precision, 100.0% recall, 94.1% F1",
+      "evidence": "8 TP / 1 FP / 0 FN \u2014 88.9% precision, 100.0% recall, 94.1% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-pii-in-logs"
     },
     "adversarial": {
@@ -27,7 +27,7 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "evidence": "no CASES.json \u2014 the rule has never been classified against real code",
       "command": "npm run cases -- secure-coding/no-pii-in-logs --update"
     },
     "partition": {
@@ -42,17 +42,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured",
-      "command": ""
+      "evidence": "not measured \u2014 run without --skip-coverage",
+      "command": "npx vitest run --coverage src/rules/no-pii-in-logs"
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.01ms · 2000L +0.92ms · 8000L +0.00ms — 0.0x time for 4x lines (2000→8000), linear",
+      "evidence": "marginal over a no-op control: 500L +0.01ms \u00b7 2000L +0.92ms \u00b7 8000L +0.00ms \u2014 0.0x time for 4x lines (2000\u21928000), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-pii-in-logs"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-16 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal secure-coding/no-pii-in-logs' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

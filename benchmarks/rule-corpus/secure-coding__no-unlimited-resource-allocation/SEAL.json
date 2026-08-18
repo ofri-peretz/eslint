@@ -17,12 +17,12 @@
     },
     "duel": {
       "state": "met",
-      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "10 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-unlimited-resource-allocation"
     },
     "adversarial": {
       "state": "unmet",
-      "evidence": "NOT RUN. The corpus was written from measured false positives, so the rule was tuned against it — phase 4 exists precisely because that score is worth nothing on its own",
+      "evidence": "NOT RUN. The corpus was written from measured false positives, so the rule was tuned against it \u2014 phase 4 exists precisely because that score is worth nothing on its own",
       "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
     },
     "realSource": {
@@ -32,7 +32,7 @@
     },
     "partition": {
       "state": "unmet",
-      "evidence": "Probed 2026-08-18 and FAILED. Exactly one report per shape, but from the wrong rule — see knownGaps/decompression-owned-by-the-generic-rule",
+      "evidence": "Probed 2026-08-18 and FAILED. Exactly one report per shape, but from the wrong rule \u2014 see knownGaps/decompression-owned-by-the-generic-rule",
       "command": "npx tsx scripts/probe-rule.mts secure-coding/no-unlimited-resource-allocation node-security/no-unbounded-decompression -- 'const zlib=require(\"zlib\"); const g = zlib.createGunzip();'"
     },
     "behaviour": {
@@ -47,12 +47,12 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.69ms · 2000L +0.07ms · 8000L +0.08ms — 0.1x time for 4x lines (500→2000), linear",
+      "evidence": "marginal over a no-op control: 500L +0.69ms \u00b7 2000L +0.07ms \u00b7 8000L +0.08ms \u2014 0.1x time for 4x lines (500\u21922000), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-18 \u00b7 RULE-SCORES.md stamp MISSING \u00b7 BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal secure-coding/no-unlimited-resource-allocation' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
@@ -61,29 +61,33 @@
       "id": "decompression-owned-by-the-generic-rule",
       "kind": "partition",
       "summary": "node-security/no-unbounded-decompression is silent on zlib.createGunzip(), zlib.createUnzip() and unzipper.Extract(); this generic CWE-770 rule reports all three",
-      "why": "Not a double-report — exactly one finding per shape — but the dedicated CWE-409 rule does not see its own canonical sink, and all 3 of this rule's surviving real-source findings live in that overlap. Fixing it means deciding which rule owns decompression, which is a taxonomy decision across two plugins",
-      "reopenWhen": "the CWE-409/CWE-770 ownership boundary is settled"
+      "why": "Not a double-report \u2014 exactly one finding per shape \u2014 but the dedicated CWE-409 rule does not see its own canonical sink, and all 3 of this rule's surviving real-source findings live in that overlap. Fixing it means deciding which rule owns decompression, which is a taxonomy decision across two plugins",
+      "reopenWhen": "the CWE-409/CWE-770 ownership boundary is settled",
+      "limit": null
     },
     {
       "id": "axios-opt-in-limit-reads-as-mitigated",
       "kind": "false-negative",
       "summary": "A decompression whose output bytes are counted against a threshold in the same function is treated as bounded, even when that threshold is opt-in and defaults to unlimited",
       "why": "axios counts decompressed bytes against maxContentLength, whose default is -1. The rule stops reporting the library that implements the mechanism; it cannot see whether a consumer enabled it. Reporting anyway would mean reporting the fix the author already applied",
-      "reopenWhen": "the rule can see a config default, or the check moves to the call site that sets maxContentLength"
+      "reopenWhen": "the rule can see a config default, or the check moves to the call site that sets maxContentLength",
+      "limit": "L6"
     },
     {
       "id": "unresolvable-size-is-not-reported",
       "kind": "false-negative",
       "summary": "Buffer.alloc(n) where n is a function parameter with no visible initializer is not reported",
       "why": "Deliberate. Taint starts at a binding this file can see the value of; assuming a parameter named `data` or `size` is attacker-controlled is what produced the 173 findings this rule was fixed for",
-      "reopenWhen": "cross-file taint is available, which no rule in this ecosystem has today"
+      "reopenWhen": "cross-file taint is available, which no rule in this ecosystem has today",
+      "limit": "L1"
     },
     {
       "id": "entity-expansion-not-covered",
       "kind": "scope",
       "summary": "No XML entity-expansion detection. The path was removed 2026-08-18 after xml2js was measured unable to expand entities at all",
       "why": "The removed check could only ever fire on xml2js, which parses through sax-js and rejects custom entity references outright. libxmljs `noent: true` IS a real sink and is a different API on a different module",
-      "reopenWhen": "a rule is written against a parser whose entity handling was actually measured"
+      "reopenWhen": "a rule is written against a parser whose entity handling was actually measured",
+      "limit": "L5"
     }
   ]
 }

@@ -31,6 +31,8 @@
     "probe-rule": "tsx scripts/probe-rule.mts",
     "lint:name-inference": "tsx scripts/lint-name-inference.ts",
     "lint:seal": "tsx scripts/lint-seal.ts",
+    "limits": "tsx scripts/limits.mts",
+    "seal:audit": "tsx scripts/seal-audit.mts",
     "cases": "tsx scripts/case-ledger.mts",
     "lint:workflows": "node scripts/lint-workflows.ts",
     "lint:publish": "node scripts/lint-publish-warnings.ts",
