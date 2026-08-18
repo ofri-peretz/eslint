@@ -225,6 +225,55 @@ built the fix and measured it before shipping — findings went **29 → 2,243**
 corpus, and a hand-read of the new ones put precision at **~25%**. We reverted it, and
 [documented the gap](./BENCHMARK-RESULTS.md) rather than closing it badly.
 
+### The severity contract — what each tier promises
+
+Nobody in this space publishes a precision bar, so we set ours and publish where we
+sit against it. A severity is a **promise about your triage time**, and it is the
+only part of a lint finding a consumer plans around:
+
+| Tier                         | Promise to you                                              | Bar                             |
+| :--------------------------- | :---------------------------------------------------------- | :------------------------------ |
+| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable.      | **≥ 95%** sampled precision      |
+| **`warn`** in `recommended`  | Triage these. Most are real; some need your context.          | **≥ 70%** sampled precision      |
+| **Off by default** (opt-in)  | A paranoid sweep. You asked for it; expect to triage.         | No floor — **but the rate is published** |
+
+Three rules follow from that, and they bind us more than they bind anyone else:
+
+1. **A rule may not ship at a tier it has not been measured against.** Unmeasured
+   means opt-in, however good it looks on our fixtures.
+2. **The sample is ≥ 20 findings for that rule specifically**, on code we did not
+   write, each labelled TP / FP / undecidable with a reason
+   ([protocol](./BENCHMARK-CRITERIA.md#a2-precision--three-tiers-never-conflated)).
+   A rule's precision measured inside a mixed sample of four rules is not that rule's
+   precision.
+3. **A rule that misses its bar is demoted, not excused.** `no-unsafe-deserialization`
+   went `error` → `warn` on 2026-05-09 at 76% Wild hits; the demotion is locked by a
+   test so it cannot quietly return.
+
+### Where we actually sit, 2026-08-17
+
+Honest status, because a published bar with no scoreboard is marketing:
+
+| Rule                             | Ships at     | Sampled precision      | Meets bar     |
+| :------------------------------- | :----------- | :--------------------- | :------------ |
+| `no-redos-vulnerable-regex`      | `error`      | ≥4/22 TP, 18 unclassified | **unscored** |
+| `detect-non-literal-fs-filename` | `warn`       | 0/4 — n too small       | **no**        |
+| `detect-object-injection`        | opt-in       | 0/13                    | n/a (opt-in)  |
+| `detect-non-literal-regexp`      | opt-in       | 3/10                    | n/a (opt-in)  |
+| **the other 117 rules**          | various      | **not yet measured**    | **unscored**  |
+
+That table is the current state of a programme, not a boast. Four rules have been
+through per-rule measurement on real code; 117 have not. The ReDoS row says
+*unscored* rather than a percentage because the generic timing sweep that produced
+it can **confirm** a slow pattern and cannot **prove** a fast one — two patterns it
+called flat were 167 ms and 956 ms under a crafted input. A method that only errs
+one way does not get to report a precision figure.
+
+**Why publish this at all.** Because the alternative is the industry norm: ship 121
+rules at `error`, publish an F1 from your own fixtures, and let the user discover the
+noise. Our corpus F1 is 100% and our measured real-code precision is 28.6% — those
+are both true, and only one of them predicts your afternoon.
+
 ### The same corpus, six plugins, one command
 
 Every community ESLint security plugin, scored on identical labelled fixtures from
@@ -245,20 +294,33 @@ a regression gate wearing a benchmark's clothes. The number that survives contac
 we did not write is the away-turf one — **51/51 live cases on `eslint-plugin-security`'s own
 RuleTester suite**, which they wrote to define their own true positives.
 
-And on 20 open-source projects (23,682 files, 2.37M SLOC), sampled and hand-labelled on both
-sides:
+And on 20 open-source projects (21,146 files, 3.04M LOC), sampled and hand-labelled on both
+sides, `recommended` vs `recommended`:
 
-|                                  | Interlace | eslint-plugin-security |
-| :------------------------------- | --------: | ---------------------: |
-| Findings                         |     1,375 |                 23,325 |
-| Measured precision               |   **67%** |                    20% |
-| Findings you read per real issue |   **1.5** |                    5.0 |
+|                                  |  Interlace | eslint-plugin-security |
+| :------------------------------- | ---------: | ---------------------: |
+| Findings                         |      1,059 |                 22,530 |
+| Findings per 1,000 LOC           |    **0.3** |                    7.4 |
+| Measured precision (n=24/side)   |  **28.6%** |                  13.0% |
+| Findings you read per real issue |    **3.5** |                    7.7 |
 
-They still find more real issues in absolute terms, because they fire 18× more often. Our
-precision moved 47% → 67% on 2026-08-14 by deleting name-matching, not by adding analysis —
-`no-xpath-injection` reported a Zod schema, `no-improper-sanitization` treated a pipe as
-unescaped HTML, and `no-http-urls` reported the guard that checks for `http://`. Each fix is
-measured before and after in [BENCHMARK-RESULTS.md](./BENCHMARK-RESULTS.md).
+**28.6% is not a good number and we are not going to dress it up.** Roughly two in
+three of our findings on real code are wrong. It beats the incumbent by 2.2× and that
+is the only claim it supports.
+
+It replaces a **67%** we published on 2026-08-14. That figure was not falsified —
+the sample was. §A2 requires stratifying across the top 5 rules by volume, and the
+older sample did not, so it under-weighted exactly the rules that produce most of the
+output. Re-sampled correctly, the number fell. The measurement got better; the plugins
+did not get worse.
+
+The noise is **concentrated, not diffuse**, which is the actionable part:
+`no-unlimited-resource-allocation` scored 0 TP / 5 FP and is the loudest rule in
+`recommended`; `no-toctou-vulnerability` scored 0 TP / 4 FP and never names the *check*
+its reported *use* races. Two rules, most of the noise. Every finding is labelled with
+its reason in
+[SAMPLED-FP-2026-08-17.md](./benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md),
+including the ones that embarrass us.
 
 ### What this is not
 
