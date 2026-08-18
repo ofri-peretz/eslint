@@ -880,3 +880,77 @@ describe('structural predicates', () => {
     ],
   });
 });
+
+
+/**
+ * The null guard, both ways round.
+ *
+ * `typeof x === 'object'` narrows on the TRUE branch, so its guard is an `&&`
+ * chain. `typeof x !== 'object'` bails on the true branch, so its guard is an
+ * `||` chain asserting the negation. Only the first was recognised, and the
+ * second is the more common of the two in real code — it is the early return at
+ * the top of a normaliser.
+ *
+ * Every case here is PAIRED with the same shape missing its guard, because
+ * "quiet" proves nothing on a rule that could simply have stopped reporting.
+ */
+describe('null guards: && for the positive form, || for the negated one', () => {
+  ruleTester.run('no-improper-type-validation', noImproperTypeValidation, {
+    valid: [
+      // mongoose lib/aggregate.js:207 — the textbook check, reported until now.
+      'function f(arg) { if (typeof arg !== "object" || arg === null || Array.isArray(arg)) { return; } use(arg); }',
+      // axios lib/core/AxiosError.js:34, n8n observation-log-observer.ts:303
+      'function f(value) { if (value === null || typeof value !== "object") { return value; } use(value); }',
+      // The same, with the operands the other way round.
+      'function f(v) { if (typeof v !== "object" || v === null) { return; } use(v); }',
+      // A bare truthiness test is STRICTLY STRONGER than `!== null`: it also
+      // excludes undefined, 0, '' and false.
+      // serverless config-schema-handler/index.js:437, knex lib/client.js:57
+      'function f(value) { if (value && typeof value === "object") { use(value); } }',
+      // strapi packages/admin-test-utils/src/setup.ts:56
+      'function f(arg) { if (arg && typeof arg === "object" && "message" in arg) { use(arg); } }',
+      // `!v` on the rejecting side is the same guard, negated.
+      'function f(v) { if (!v || typeof v !== "object") { return; } use(v); }',
+      // `!= null` covers null AND undefined.
+      'function f(v) { if (v != null && typeof v === "object") { use(v); } }',
+      // The guard may name the same member expression, not just an identifier.
+      'function f(o) { if (o.cfg && typeof o.cfg === "object") { use(o.cfg); } }',
+    ],
+    invalid: [
+      // CONTROLS. Each is the paired case above with the guard removed, or with
+      // a guard that does not apply to this operand.
+      {
+        code: 'function f(arg) { if (typeof arg !== "object" || Array.isArray(arg)) { return; } use(arg); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      {
+        code: 'function f(value) { if (typeof value !== "object") { return value; } use(value); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      {
+        code: 'function f(value) { if (typeof value === "object") { use(value); } }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // The guard names a DIFFERENT value, so it proves nothing about this one.
+      {
+        code: 'function f(a, b) { if (b && typeof a === "object") { use(a); } }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      {
+        code: 'function f(o) { if (o.other && typeof o.cfg === "object") { use(o.cfg); } }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // WRONG COMBINATOR. `&&` cannot guard the negated form — on the branch
+      // this takes, `x` has not been excluded at all.
+      {
+        code: 'function f(v) { if (typeof v !== "object" && v !== null) { return; } use(v); }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // ...and `||` cannot guard the positive form.
+      {
+        code: 'function f(v) { if (typeof v === "object" || v !== null) { use(v); } }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+    ],
+  });
+});

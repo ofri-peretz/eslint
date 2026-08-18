@@ -209,26 +209,67 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Is `operand` proven non-null by another test in the same `&&` chain?
+     * Is `operand` proven non-null by another test in the same chain?
      *
-     * Both directions: `x !== null && typeof x === 'object'` and
-     * `typeof x === 'object' && x !== null`. Only the left side used to be examined.
+     * Two chains, because `typeof x === 'object'` and `typeof x !== 'object'`
+     * are guarded by opposite operators. De Morgan, not a special case:
+     *
+     *   x !== null && typeof x === 'object'      accept, then narrow
+     *   x === null || typeof x !== 'object'      reject, then bail
+     *
+     * The second is the more common of the two in real code — it is the early
+     * return at the top of a normaliser — and only the first was recognised.
+     * Measured on 20 repositories: of 60 sampled findings, 47 were
+     * `unsafeTypeofCheck`, and the majority of those were guarded shapes:
+     *
+     *   if (typeof arg !== 'object' || arg === null || Array.isArray(arg))
+     *       mongoose lib/aggregate.js:207 — the textbook check, reported
+     *   if (value === null || typeof value !== 'object') return value;
+     *       axios lib/core/AxiosError.js:34, n8n observation-log-observer.ts:303
+     *   if (value && typeof value === 'object')
+     *       serverless config-schema-handler/index.js:437, knex lib/client.js:57
+     *   if (arg && typeof arg === 'object' && 'message' in arg)
+     *       strapi packages/admin-test-utils/src/setup.ts:56
+     *
+     * A bare truthiness test counts. `x && …` excludes `null`, `undefined`, and
+     * `0`, `''` and `false` besides — it is strictly stronger than `x !== null`,
+     * and it is how the guard is actually written.
      */
     const hasNullGuard = (node: TSESTree.BinaryExpression, operand: TSESTree.Node): boolean => {
-      const guards = (expression: TSESTree.Node): boolean => {
-        if (expression.type === 'LogicalExpression' && expression.operator === '&&') {
-          return guards(expression.left) || guards(expression.right);
+      /** `x !== null`, `x != undefined`, or a bare truthy `x`. */
+      const excludesNullish = (expression: TSESTree.Node, negated: boolean): boolean => {
+        if (sameExpression(expression, operand)) return !negated;
+        if (expression.type === 'UnaryExpression' && expression.operator === '!') {
+          return sameExpression(expression.argument, operand) && negated;
         }
         if (expression.type !== 'BinaryExpression') return false;
-        if (expression.operator !== '!==' && expression.operator !== '!=') return false;
+        const wanted = negated ? ['===', '=='] : ['!==', '!='];
+        if (!wanted.includes(expression.operator)) return false;
         if (isNullish(expression.right)) return sameExpression(expression.left, operand);
         if (isNullish(expression.left)) return sameExpression(expression.right, operand);
         return false;
       };
 
-      // Walk out to the outermost enclosing `&&` chain, then search the whole chain.
+      // `typeof x === 'object'` narrows on the TRUE branch, so its guard sits in
+      // an `&&` chain and asserts non-null. `typeof x !== 'object'` bails on the
+      // true branch, so its guard sits in an `||` chain and asserts the
+      // negation. Anything else is not a guard at all.
+      const negated = node.operator === '!==' || node.operator === '!=';
+      const combinator = negated ? '||' : '&&';
+
+      const guards = (expression: TSESTree.Node): boolean => {
+        if (expression.type === 'LogicalExpression' && expression.operator === combinator) {
+          return guards(expression.left) || guards(expression.right);
+        }
+        return excludesNullish(expression, negated);
+      };
+
+      // Walk out to the outermost enclosing chain, then search the whole chain.
       let chain: TSESTree.Node = node;
-      while (chain.parent?.type === 'LogicalExpression' && chain.parent.operator === '&&') {
+      while (
+        chain.parent?.type === 'LogicalExpression' &&
+        chain.parent.operator === combinator
+      ) {
         chain = chain.parent;
       }
       return chain !== node && guards(chain);

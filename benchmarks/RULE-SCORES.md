@@ -47,6 +47,7 @@ labels in [`suites/ilb-real-source/SAMPLED-FP-2026-08-17.md`](./suites/ilb-real-
 | `node-security/detect-non-literal-fs-filename` | **1** | 1 (census) | 1 | 0 | census | **passes** |
 | `secure-coding/no-unlimited-resource-allocation` | **3** | 3 (census) | 3 | 0 | census, `warn` ≥70% | **passes** (was 173 findings) |
 | `node-security/no-toctou-vulnerability` | **59** | 59 (classified) | ~0 | ~59 | census, `error` ≥95% | **fails — fix written, NOT shipped** |
+| `secure-coding/no-improper-type-validation` | 2,392 → **1,647** | 60 | — | most | opt-in, no floor | rate published; −31% from one fix, still loud |
 | `secure-coding/no-redos-vulnerable-regex` | 123 | 22 | 6 | 15 | ratio, was `error` ≥95% | **28.6% — removed from presets 2026-08-18** |
 | `secure-coding/detect-non-literal-regexp` | 243 | 10 | 3 | 7 | opt-in, no floor | 30% |
 | `secure-coding/detect-object-injection` | 14,696 | 13 | 0 | 13 | opt-in, no floor | 0% |
@@ -164,6 +165,41 @@ documented tests is Ofri's call, not an overnight patch. See
 
 Shipped from this session: the §C2.4 message now names what a false positive
 looks like, which was the rule's one failing seal probe.
+
+### `no-improper-type-validation` — the null guard, both ways round
+
+`node benchmarks/suites/ilb-real-source/run.mjs --allow-local --sample=60 --sample-rules=secure-coding/no-improper-type-validation`
+
+Ships **opt-in** (`strict`, `owasp-top-10`), so the bar is no floor but a
+published rate. 60 of 2,392 findings sampled: 47 `unsafeTypeofCheck`, 10 loose
+equality, 3 `constructor.name`.
+
+The rule recognised only one spelling of the null guard. `typeof x === 'object'`
+narrows on the TRUE branch, so its guard is an `&&` chain; `typeof x !== 'object'`
+bails on the true branch, so its guard is an `||` chain asserting the negation.
+Only the first was implemented — and the second is the more common of the two in
+real code, being the early return at the top of a normaliser. A bare truthiness
+test (`x && typeof x === 'object'`) was not recognised either, though it is
+strictly stronger than `x !== null`.
+
+| Reported until 2026-08-18 | Where |
+| :--- | :--- |
+| `if (typeof arg !== 'object' \|\| arg === null \|\| Array.isArray(arg))` | mongoose `lib/aggregate.js:207` — the textbook check |
+| `if (value === null \|\| typeof value !== 'object') return value;` | axios `lib/core/AxiosError.js:34`, n8n |
+| `if (value && typeof value === 'object')` | serverless, knex `lib/client.js:57` |
+| `if (arg && typeof arg === 'object' && 'message' in arg)` | strapi `admin-test-utils/src/setup.ts:56` |
+
+**2,392 → 1,647 findings (−31%).** Corpus F1 unchanged at 66.7% — 100%
+precision, 50% recall, the six known false negatives are documented in the
+rule's own `MANIFEST.md`.
+
+**Still loud, and the remaining classes are named rather than fixed.** The
+sample after the fix is dominated by shapes that are not validation at all:
+`typeof x === 'object' ? a : b` dispatching on a value's type,
+`typeof arg === 'object' && !Array.isArray(arg)` (array excluded, so only null
+remains and the message names both), `fn.constructor.name === 'AsyncFunction'`,
+and `==` against a number or a literal. Fixing those is a further pass; the rate
+is published here so nobody has to guess at it in the meantime.
 
 ### `detect-non-literal-fs-filename` — the fix trail
 
