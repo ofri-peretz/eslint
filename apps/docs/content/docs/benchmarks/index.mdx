@@ -37,12 +37,63 @@ Three rules follow, and they bind us more than they bind you:
 
 1. **A rule may not ship at a tier it has not been measured against.** Unmeasured
    means opt-in, however good it looks on our own fixtures.
-2. **The sample is ≥ 20 findings for that rule specifically**, on code we did not
-   write, each labelled TP / FP / undecidable with a reason. A rule's precision
+2. **The sample is for that rule specifically**, on code we did not write, each
+   finding labelled TP / FP / undecidable with a reason. A rule's precision
    measured inside a mixed sample of several rules is not that rule's precision.
-3. **A rule that misses its bar is demoted, not excused.**
-   `no-unsafe-deserialization` went `error` → `warn` on 2026-05-09 at 76% Wild
-   hits, and the demotion is locked by a test so it cannot quietly return.
+3. **A rule that misses its bar is a defect, and gets fixed.** Demotion is the
+   stopgap that protects you today — `no-unsafe-deserialization` went `error` →
+   `warn` on 2026-05-09 at 76% Wild hits, locked by a test — but a demoted rule
+   is an open defect, not a resolved one. Rules below their bar block new rule
+   work: ten rules that hold their promise beat a hundred that do not.
+
+### How big a sample the bar needs
+
+**`n` is the sample size** — how many individual findings we pulled out of real
+repositories and read one at a time, labelling each true positive, false
+positive, or undecidable. It matters because a percentage from a small `n` is
+mostly luck: at `n = 4`, reclassifying one finding moves precision 25 points.
+
+A percentage from 20 findings is not evidence for a 95% claim. Using the Wilson
+score interval (95% confidence, lower bound) — "given what we saw, what is the
+worst the true rate plausibly is?" — a **perfect** sample defends:
+
+| Sample size | n=20 | n=50 | **n=73** | n=100 |
+| :--- | ---: | ---: | ---: | ---: |
+| Defensible precision | 83.9% | 92.9% | **95.1%** | 96.3% |
+
+So the `error` bar needs **n ≥ 73 with zero false positives**, or n ≥ 150 with
+one. `n ≥ 20` is enough to publish a rate, never enough to clear the `error`
+bar. We got this wrong when the contract was first written and are saying so
+rather than quietly restating it.
+
+### What these bars cost
+
+**A 95% `error` bar means very few rules will ever be `error`.** Most coverage
+lives at `warn` or behind an opt-in preset, and a team wanting breadth has to
+enable it. If your threat model wants maximum coverage at any noise level, our
+defaults are the wrong shape — `strict` is one line away.
+
+**Raising precision costs recall, and we have paid it.** A precision sweep here
+took false positives 10 → 3 while false negatives went 18 → 34. A recall fix for
+`no-unsafe-regex-construction` took findings 29 → 2,243 at ~25% precision and was
+**reverted**, with the gap documented instead. A high bar biases us toward
+missing things. Deliberate trade, published misses.
+
+**70% at `warn` still means 3 in 10 are wrong.** At a few hundred findings that
+is real hours. A `warn` is a question, not a verdict — but it is not free.
+
+**Opt-in rules have no floor, and some are genuinely noisy.**
+`detect-object-injection` measured 0/13 on real code. Turning on every rule hands
+you our worst numbers.
+
+**Measurement is the bottleneck, not analysis.** 73 hand-labelled findings per
+`error`-tier rule across 121 rules is thousands of judgements. That is why 117
+rules are unscored, and why they get measured loudest-first rather than in the
+order we find them interesting.
+
+**We label our own findings.** The person deciding TP or FP wrote the rule. Every
+label ships with its reason, file and line, so you can disagree with any one and
+recompute. It is not independent review and we do not call it that.
 
 ### Where we sit today — 2026-08-17
 
