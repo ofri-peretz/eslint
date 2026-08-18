@@ -62,6 +62,22 @@ ruleTester.run('no-redos-vulnerable-regex (adversarial wave)', noRedosVulnerable
       name: 'a linear pattern through globalThis stays quiet',
       code: `export default new globalThis.RegExp('^[a-z]+$');`,
     },
+    {
+      // The depth guard. Five hops is already past any real code, and the
+      // guard is what keeps a cyclic `const a = b; const b = a` from
+      // recursing forever — so the resolver gives up and the rule stays
+      // quiet. Deliberately a MISS: refusing to answer beats not returning.
+      name: 'an alias chain deeper than the resolver follows',
+      code: [
+        'const A = RegExp;',
+        'const B = A;',
+        'const C = B;',
+        'const D = C;',
+        'const E = D;',
+        'const F = E;',
+        `export default new F('${CATASTROPHIC}');`,
+      ].join('\n'),
+    },
   ],
   invalid: [
     {
