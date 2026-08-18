@@ -47,7 +47,7 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "500L 0.7ms · 2000L 21.0ms · 8000L 5.8ms — 8.3x time for 16x lines, linear",
+      "evidence": "marginal over a no-op control: 500L +0.04ms · 2000L +7.65ms · 8000L +0.05ms — 0.0x time for 4x lines (2000→8000), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-redos-vulnerable-regex"
     },
     "recorded": {

@@ -46,8 +46,8 @@
       "command": "npx vitest run --coverage src/rules/no-insecure-comparison"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "500L 0.7ms · 2000L 2.3ms · 8000L 6.6ms — 9.9x time for 16x lines, linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 500L +0.07ms · 2000L +0.00ms · 8000L +0.01ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-insecure-comparison"
     },
     "recorded": {

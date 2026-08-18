@@ -47,7 +47,7 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "500L 8.1ms · 2000L 3.4ms · 8000L 83.2ms — 10.3x time for 16x lines, linear",
+      "evidence": "marginal over a no-op control: 500L +0.47ms · 2000L +0.05ms · 8000L +0.00ms — 0.1x time for 4x lines (500→2000), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-non-literal-regexp"
     },
     "recorded": {

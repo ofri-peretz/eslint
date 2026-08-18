@@ -1,0 +1,60 @@
+{
+  "rule": "node-security/detect-suspicious-dependencies",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-node-security@4.13.1",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/node-security__detect-suspicious-dependencies/MANIFEST.md"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "15 TP / 1 FP / 0 FN — 93.8% precision, 100.0% recall, 96.8% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/detect-suspicious-dependencies"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- node-security/detect-suspicious-dependencies --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts node-security/detect-suspicious-dependencies <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "4 probe(s) failing",
+      "command": "npx tsx scripts/rule-seal-probe.mts node-security/detect-suspicious-dependencies"
+    },
+    "coverage": {
+      "state": "unmet",
+      "evidence": "not measured",
+      "command": ""
+    },
+    "throughput": {
+      "state": "met",
+      "evidence": "marginal over a no-op control: 500L +1.60ms · 2000L +0.00ms · 8000L +0.00ms — 0.0x time for 4x lines (500→2000), linear",
+      "command": "npx tsx scripts/seal-audit.mts node-security/detect-suspicious-dependencies"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal node-security/detect-suspicious-dependencies' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

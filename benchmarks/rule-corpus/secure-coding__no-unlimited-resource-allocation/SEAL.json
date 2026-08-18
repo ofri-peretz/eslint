@@ -47,7 +47,7 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "500L 5.2ms · 2000L 2.6ms · 8000L 6.3ms — 1.2x time for 16x lines, linear",
+      "evidence": "marginal over a no-op control: 500L +0.69ms · 2000L +0.07ms · 8000L +0.08ms — 0.1x time for 4x lines (500→2000), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
     },
     "recorded": {

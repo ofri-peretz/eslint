@@ -47,7 +47,7 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "500L 2.6ms · 2000L 2.8ms · 8000L 94.8ms — 36.2x time for 16x lines, SUPERLINEAR",
+      "evidence": "marginal over a no-op control: 500L +0.15ms · 2000L +0.13ms · 8000L +12.99ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-object-injection"
     },
     "recorded": {

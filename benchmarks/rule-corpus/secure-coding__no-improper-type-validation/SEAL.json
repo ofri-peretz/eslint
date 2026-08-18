@@ -46,8 +46,8 @@
       "command": "npx vitest run --coverage src/rules/no-improper-type-validation"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "500L 0.8ms · 2000L 2.4ms · 8000L 7.9ms — 9.7x time for 16x lines, linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.00ms · 8000L +0.00ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-improper-type-validation"
     },
     "recorded": {

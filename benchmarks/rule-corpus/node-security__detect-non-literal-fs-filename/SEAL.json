@@ -47,7 +47,7 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "500L 3.1ms · 2000L 42.8ms · 8000L 10.2ms — 3.3x time for 16x lines, linear",
+      "evidence": "marginal over a no-op control: 500L +0.26ms · 2000L +5.06ms · 8000L +0.33ms — 0.1x time for 4x lines (2000→8000), linear",
       "command": "npx tsx scripts/seal-audit.mts node-security/detect-non-literal-fs-filename"
     },
     "recorded": {

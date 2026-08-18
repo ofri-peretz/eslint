@@ -1,0 +1,60 @@
+{
+  "rule": "node-security/require-secure-credential-storage",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-node-security@4.13.1",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/node-security__require-secure-credential-storage/MANIFEST.md"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "9 TP / 3 FP / 4 FN — 75.0% precision, 69.2% recall, 72.0% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/require-secure-credential-storage"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- node-security/require-secure-credential-storage --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts node-security/require-secure-credential-storage <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "5 probe(s) failing",
+      "command": "npx tsx scripts/rule-seal-probe.mts node-security/require-secure-credential-storage"
+    },
+    "coverage": {
+      "state": "unmet",
+      "evidence": "not measured",
+      "command": ""
+    },
+    "throughput": {
+      "state": "met",
+      "evidence": "marginal over a no-op control: 500L +0.74ms · 2000L +0.02ms · 8000L +3.21ms — 0.0x time for 4x lines (500→2000), linear",
+      "command": "npx tsx scripts/seal-audit.mts node-security/require-secure-credential-storage"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal node-security/require-secure-credential-storage' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

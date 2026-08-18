@@ -1,0 +1,60 @@
+{
+  "rule": "node-security/no-buffer-overread",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-node-security@4.13.1",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/node-security__no-buffer-overread/MANIFEST.md"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "11 TP / 0 FP / 1 FN — 100.0% precision, 91.7% recall, 95.7% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/no-buffer-overread"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- node-security/no-buffer-overread --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts node-security/no-buffer-overread <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "4 probe(s) failing",
+      "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-buffer-overread"
+    },
+    "coverage": {
+      "state": "unmet",
+      "evidence": "not measured",
+      "command": ""
+    },
+    "throughput": {
+      "state": "met",
+      "evidence": "marginal over a no-op control: 500L +0.78ms · 2000L +0.37ms · 8000L +0.20ms — 0.6x time for 4x lines (2000→8000), linear",
+      "command": "npx tsx scripts/seal-audit.mts node-security/no-buffer-overread"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal node-security/no-buffer-overread' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

@@ -72,17 +72,32 @@ const run = (file: string, args: string[]): string => {
 };
 
 /**
- * Throughput, per rule, at three sizes.
+ * Throughput, per rule, at three sizes — measured as MARGINAL cost.
  *
- * The input is the rule's OWN corpus concatenated to length: representative code
- * for this rule rather than a synthetic file it would skip in one pass. What
- * matters is the SHAPE of the curve — a rule whose 8000-line time is roughly 16x
- * its 500-line time is quadratic, and that is a defect however small the
- * absolute numbers look on a laptop.
+ * The first version of this axis timed `linter.verify` with the rule enabled
+ * and called the result the rule's cost. It reported
+ * `secure-coding/detect-object-injection` as superlinear: 2.6 ms at 500 lines,
+ * 2.8 ms at 2000, 90 ms at 8000. The control it never ran says otherwise —
+ * a rule whose `create()` returns `{}` shows the same curve:
+ *
+ *   no-op (parse + scope only)   500L 2.3ms · 2000L 8.7ms · 8000L 71.2ms
+ *   visit every node             500L 0.8ms · 2000L 2.2ms · 8000L 68.3ms
+ *   detect-object-injection      500L 0.7ms · 2000L 1.5ms · 8000L 70.8ms
+ *
+ * The superlinearity is in `@typescript-eslint/parser` and ESLint's scope
+ * construction. Every rule in the ecosystem pays it and no rule can avoid it,
+ * so attributing it to a rule is a measurement defect — the same class as
+ * reading a stale sentence in a results document as current evidence.
+ *
+ * What is attributable is the DIFFERENCE: the same input, once with the rule
+ * and once with a no-op, subtracted. That is the only figure a rule author can
+ * act on. It is small and noisy by nature, so each size is measured over
+ * several passes and the minimum is taken — the minimum is the least
+ * contaminated by scheduling, GC and background load.
  */
 const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   const [, ruleName] = ruleId.split('/');
-  const files = ['vulnerable', 'safe']
+  const fixtures = ['vulnerable', 'safe']
     .flatMap((sub) => {
       const full = path.join(dir, sub);
       return fs.existsSync(full)
@@ -90,41 +105,104 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
         : [];
     })
     .join('\n');
-  if (!files.trim()) {
-    return { state: 'unmet', evidence: 'no corpus fixtures to time against', command: 'npx tsx scripts/seal-audit.mts' };
+  if (!fixtures.trim()) {
+    return {
+      state: 'unmet',
+      evidence: 'no corpus fixtures to time against',
+      command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+    };
   }
-  const unit = files.split('\n');
+  const unit = fixtures.split('\n');
   const linter = new Linter({ configType: 'flat' });
-  const config = [
+  const configFor = (r: unknown) => [
     {
       files: ['**/*.ts'],
       languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const },
-      plugins: { probe: { rules: { [ruleName]: rule } } },
+      plugins: { probe: { rules: { [ruleName]: r } } },
       rules: { [`probe/${ruleName}`]: 'error' as const },
     },
   ];
+  const noop = { create: () => ({}) };
+
+  const PASSES = 5;
+  const best = (r: unknown, source: string): number => {
+    const config = configFor(r);
+    linter.verify(source, config, 'perf.ts');
+    let min = Infinity;
+    for (let pass = 0; pass < PASSES; pass += 1) {
+      const started = process.hrtime.bigint();
+      linter.verify(source, config, 'perf.ts');
+      min = Math.min(min, Number(process.hrtime.bigint() - started) / 1e6);
+    }
+    return min;
+  };
+
+  const marginal: number[] = [];
   const timings: string[] = [];
-  const times: number[] = [];
   for (const target of [500, 2000, 8000]) {
     const lines: string[] = [];
     while (lines.length < target) lines.push(...unit);
     const source = lines.slice(0, target).join('\n');
-    // One warm-up pass so the first measurement is not paying for JIT.
-    linter.verify(source, config, 'perf.ts');
-    const started = process.hrtime.bigint();
-    linter.verify(source, config, 'perf.ts');
-    const ms = Number(process.hrtime.bigint() - started) / 1e6;
-    times.push(ms);
-    timings.push(`${target}L ${ms.toFixed(1)}ms`);
+    const cost = Math.max(0, best(rule, source) - best(noop, source));
+    marginal.push(cost);
+    timings.push(`${target}L +${cost.toFixed(2)}ms`);
   }
-  // 16x the lines; a linear rule lands well under 16x the time.
-  const growth = times[0] > 0 ? times[2] / times[0] : Infinity;
-  const linear = growth < 24;
-  return {
-    state: linear ? 'met' : 'unmet',
-    evidence: `${timings.join(' · ')} — ${growth.toFixed(1)}x time for 16x lines, ${linear ? 'linear' : 'SUPERLINEAR'}`,
-    command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
-  };
+
+  // Judge the growth on the largest PAIR of sizes whose smaller member is above
+  // the noise floor, and compare it against that pair's own line ratio.
+  //
+  // Dividing the 8000-line cost by the 500-line one looks obvious and is wrong
+  // whenever the 500-line cost rounds to zero: the ratio is undefined, and the
+  // first version of this check silently substituted 1 and called it linear.
+  // `detect-object-injection` measures +0.00 / +0.30 / +18.41 ms — a 61x rise
+  // across a 4x rise in lines, reported as "1.0x, linear". Three checks in this
+  // session have now failed in the flattering direction; a comparison that
+  // cannot be made must be reported as such, never resolved to a pass.
+  const SIZES = [500, 2000, 8000];
+  const NOISE_FLOOR_MS = 0.2;
+  let verdict: Axis;
+  let index = SIZES.length - 2;
+  while (index >= 0 && marginal[index] < NOISE_FLOOR_MS) index -= 1;
+
+  if (index < 0) {
+    // Fewer than two sizes are above the noise floor, so there is no curve to
+    // read. That is NOT a pass — it is an unmeasurable, and the difference
+    // matters: `detect-object-injection` measures +0.01 / +0.03 / +11.30 ms,
+    // where the first two are noise and the third is real, and an earlier
+    // version of this branch called that "below the noise floor at every size"
+    // and marked it met.
+    //
+    // The subtraction itself is sound; the sizes are wrong. Harness cost at
+    // 8000 lines is ~70 ms, so a sub-millisecond rule cost is below the
+    // resolution of a difference between two ~70 ms measurements — the same
+    // rule measured +1.50 ms and +0.00 ms at 500 lines on consecutive runs.
+    // Measuring this properly needs either sizes large enough to lift the rule
+    // cost above the floor at more than one point, or a CPU profile attributing
+    // samples to the rule's own frames. Until one of those is built, the axis
+    // reports what it is: not established.
+    verdict = {
+      state: 'unmet',
+      evidence:
+        `marginal over a no-op control: ${timings.join(' · ')} — NOT ESTABLISHED: ` +
+        `fewer than two sizes clear the ${NOISE_FLOOR_MS}ms floor, so no growth curve can be read`,
+      command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+    };
+  } else {
+    const lineRatio = SIZES[index + 1] / SIZES[index];
+    const growth = marginal[index + 1] / marginal[index];
+    // 1.6x headroom over the line ratio absorbs measurement noise without
+    // absorbing an order of growth.
+    const linear = growth <= lineRatio * 1.6;
+    verdict = {
+      state: linear ? 'met' : 'unmet',
+      evidence:
+        `marginal over a no-op control: ${timings.join(' · ')} — ` +
+        `${growth.toFixed(1)}x time for ${lineRatio}x lines (${SIZES[index]}→${SIZES[index + 1]}), ` +
+        `${linear ? 'linear' : 'SUPERLINEAR'}`,
+      command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+    };
+  }
+  return verdict;
 };
 
 const dirs = fs
