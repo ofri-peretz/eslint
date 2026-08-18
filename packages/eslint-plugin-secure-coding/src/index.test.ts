@@ -171,3 +171,45 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
     });
   });
 });
+
+/**
+ * `no-redos-vulnerable-regex` is OPT-IN, and stays that way until it is measured
+ * above a preset tier's bar.
+ *
+ * It shipped at `error` — where a finding FAILS YOUR BUILD and the published bar
+ * is ≥95% sampled precision — until 2026-08-18, when it was measured against
+ * that bar for the first time. 22 of its 123 findings over the 20-repo corpus
+ * were classified by TIMING with `scripts/redos-classify.mts`:
+ *
+ *   exponential (catastrophic)              0
+ *   polynomial (143-197 ms at n=20,000)     6
+ *   unreproduced                           15
+ *
+ * ~28.6%. Not one finding on real code was catastrophic. `warn` was not an
+ * option either — its bar is 70%.
+ *
+ * The classifier is validated in both directions: it reproduces every corpus
+ * `vulnerable` pattern as exponential and leaves the genuinely linear `safe`
+ * ones unreproduced. A verdict from it is evidence, and `unreproduced` is
+ * explicitly NOT proof of safety.
+ *
+ * This test exists because the rule has drifted back into a preset before. Do
+ * not restore it without a fresh measurement that clears the tier's bar.
+ */
+describe('no-redos-vulnerable-regex is opt-in until measured', () => {
+  it('is absent from recommended', () => {
+    expect(configs.recommended.rules?.['secure-coding/no-redos-vulnerable-regex']).toBeUndefined();
+  });
+
+  it('is absent from flagship', () => {
+    expect(configs.flagship.rules?.['secure-coding/no-redos-vulnerable-regex']).toBeUndefined();
+  });
+
+  it('is still exported, so a team that wants it can turn it on', () => {
+    expect(rules['no-redos-vulnerable-regex']).toBeDefined();
+  });
+
+  it('is still in strict, which is the opt-in-everything preset', () => {
+    expect(configs.strict.rules?.['secure-coding/no-redos-vulnerable-regex']).toBe('error');
+  });
+});

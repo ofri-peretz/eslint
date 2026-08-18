@@ -256,8 +256,35 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   //
   // Kept exported and opt-in-able for teams that want the paranoid sweep and
   // will triage it.
-  // Demoted 2026-05-09 — 91% Edge ratio.
-  'secure-coding/no-redos-vulnerable-regex': 'error',
+  //
+  // NOTE: `no-redos-vulnerable-regex` is also intentionally NOT in `recommended`
+  // (removed 2026-08-18). It shipped at `error`, where a finding FAILS YOUR
+  // BUILD and the published bar is >= 95% sampled precision. Measured against
+  // that bar for the first time on 2026-08-18 and it is not close.
+  //
+  // 22 of its 123 findings over the 20-repo corpus (3.04M LOC) were classified
+  // by TIMING, using `scripts/redos-classify.mts` — an attack generator that
+  // draws its alphabet from the pattern itself and pumps to n=20,000. The
+  // generator is validated: it reproduces all 7 corpus `vulnerable` patterns as
+  // EXPONENTIAL and leaves the genuinely linear `safe` ones unreproduced.
+  //
+  //   exponential (catastrophic)   0
+  //   polynomial  (143-197 ms at n=20,000)   6
+  //   unreproduced                 15
+  //
+  // So roughly 28.6%, against a 95% bar. Not one finding on real code was
+  // catastrophic; the six real ones are polynomial, which needs a 20,000-
+  // character input to bite.
+  //
+  // Removed rather than demoted to `warn`, because `warn`'s bar is 70% and 28.6%
+  // fails that too. This is the same call made for `detect-non-literal-regexp`
+  // on 2026-08-12, for the same reason and on the same kind of evidence: a rule
+  // whose measured precision does not support any preset tier ships opt-in, with
+  // its rate published, until the precision work is done.
+  //
+  // The precision work is a real fix, not a withdrawal: 15 of 21 findings are
+  // patterns this generator cannot make superlinear at all, which is a
+  // correction-layer gap in `isProvablyLinear`, not a property of ReDoS.
   'secure-coding/no-unsafe-regex-construction': 'error',
 
   // Critical - Credentials
@@ -353,7 +380,10 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       'secure-coding/no-hardcoded-credentials': 'error',
-      'secure-coding/no-redos-vulnerable-regex': 'error',
+      // `no-redos-vulnerable-regex` left flagship on 2026-08-18 with the same
+      // measurement that removed it from `recommended`. Flagship is the curated
+      // showcase — the two rules a reader tries first — so a rule measured at
+      // ~28.6% on real code is the worst possible thing to put in it.
     },
   } satisfies TSESLint.FlatConfig.Config,
 
