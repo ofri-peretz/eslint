@@ -17,17 +17,17 @@
     },
     "duel": {
       "state": "met",
-      "evidence": "14 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "14 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-redos-vulnerable-regex"
     },
     "adversarial": {
       "state": "met",
-      "evidence": "Two waves, 2026-08-18, both written after the rule reached 100% F1. Wave 1: 15 patterns the rule had never seen, labelled by TIMING via redos-classify (6 measured exponential, 9 unreproduced) \u2014 6 of 6 caught, 0 missed. Wave 2 held the weakness constant and varied only the spelling: one measured-exponential automaton (x+x+)+y reached by 15 syntactic routes \u2014 2 FALSE NEGATIVES (const R = RegExp; new R(p), and new globalThis.RegExp(p)) plus 2 FALSE POSITIVES (a parameter named RegExp, and a local shadow). All four fixed by resolving the intrinsic through the scope chain instead of matching callee.name; 0 of 15 now missed.",
+      "evidence": "Two waves, 2026-08-18, both written after the rule reached 100% F1. Wave 1: 15 patterns the rule had never seen, labelled by TIMING via redos-classify (6 measured exponential, 9 unreproduced) — 6 of 6 caught, 0 missed. Wave 2 held the weakness constant and varied only the spelling: one measured-exponential automaton (x+x+)+y reached by 15 syntactic routes — 2 FALSE NEGATIVES (const R = RegExp; new R(p), and new globalThis.RegExp(p)) plus 2 FALSE POSITIVES (a parameter named RegExp, and a local shadow). All four fixed by resolving the intrinsic through the scope chain instead of matching callee.name; 0 of 15 now missed.",
       "command": "npx vitest run src/rules/no-redos-vulnerable-regex/adversarial-wave.test.ts"
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "10 case(s) filed, 10 still unreviewed",
+      "evidence": "111 case(s): 28 enforce, 1 exempt, 82 undecided, 0 unreviewed",
       "command": "npm run cases -- secure-coding/no-redos-vulnerable-regex"
     },
     "partition": {
@@ -47,14 +47,23 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.09ms \u00b7 2000L +11.29ms \u00b7 8000L +0.38ms \u2014 0.0x time for 4x lines (2000\u21928000), linear",
+      "evidence": "marginal over a no-op control: 500L +0.24ms · 2000L +9.04ms · 8000L +0.00ms — 0.0x time for 4x lines (2000→8000), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-redos-vulnerable-regex"
     },
     "recorded": {
       "state": "met",
-      "evidence": "rule last changed 2026-08-18 \u00b7 RULE-SCORES.md stamp 2026-08-18 \u00b7 BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal secure-coding/no-redos-vulnerable-regex' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
-  "knownGaps": []
+  "knownGaps": [
+    {
+      "id": "redos-detection-cannot-prove-linearity",
+      "kind": "undecided",
+      "limit": "L10",
+      "summary": "74% of the rule's real-source output (82 of 111 cases) could not be decided either way.",
+      "why": "Every pattern was timed on V8 with inputs drawn from the pattern itself, pumped to n=20,000 with four failing suffixes. 28 came back measurably superlinear. For 82, no superlinear input was FOUND — and a search that fails to find a witness has not shown there is none. Deciding these needs NFA ambiguity analysis, which is a known algorithm this ecosystem does not implement; scslre approximates it and disagrees with the interpreter in both directions.",
+      "reopenWhen": "a sound NFA ambiguity analyser replaces the heuristic, or the classifier gains a counterexample generator that can prove linearity rather than fail to disprove it"
+    }
+  ]
 }

@@ -57,7 +57,14 @@ const AXES = [
 ] as const;
 
 const STATES = new Set(['met', 'unmet', 'n/a']);
-const GAP_KINDS = new Set(['false-negative', 'false-positive', 'partition', 'scope', 'performance']);
+const GAP_KINDS = new Set([
+  'false-negative',
+  'false-positive',
+  'partition',
+  'scope',
+  'performance',
+  'undecided',
+]);
 
 /**
  * The analysis-limit registry, read from ANALYSIS-LIMITS.md rather than

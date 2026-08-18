@@ -118,7 +118,18 @@ export function skeleton(node: Node | null | undefined, depth = 0): string {
     case 'PrivateIdentifier':
       return 'PrivId';
     case 'Literal': {
-      const value = (node as TSESTree.Literal).value;
+      const literal = node as TSESTree.Literal & { regex?: { pattern: string; flags: string } };
+      // A REGEX literal keeps its pattern. Dropping literal values is right for
+      // `alloc(1024)` vs `alloc(4096)` — one decision, two magnitudes — but a
+      // regex rule's claim IS about the pattern, so erasing it collapsed every
+      // literal in the file to one case. On no-redos-vulnerable-regex that put
+      // pm2's Windows path splitter and n8n's markdown heading matcher under a
+      // single signature called `Lit:object`, which no reviewer could adjudicate
+      // because the thing being judged was not in it.
+      if (literal.regex) {
+        return `Regex:/${literal.regex.pattern}/${literal.regex.flags}`;
+      }
+      const value = literal.value;
       const kind = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
       return `Lit:${kind}`;
     }

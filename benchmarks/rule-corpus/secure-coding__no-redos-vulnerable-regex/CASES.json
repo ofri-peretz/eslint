@@ -2,20 +2,14 @@
   "rule": "secure-coding/no-redos-vulnerable-regex",
   "cases": [
     {
-      "id": "redosVulnerable-1a409199007d",
-      "signature": "1a409199007d",
-      "verdict": "unreviewed",
+      "id": "redosVulnerable-e19665d61f4e",
+      "signature": "e19665d61f4e",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
-      "shape": "Lit:object",
+      "shape": "Regex:/^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/",
       "context": "",
-      "firstSeen": "this run",
+      "firstSeen": "2026-08-18",
       "examples": [
-        {
-          "repo": "Automattic/mongoose",
-          "file": "docs/js/convert-old-anchorid.js",
-          "line": 7,
-          "source": "if (!/^#\\w+_\\w+(?:-\\w+)?$/i.test(anchor)) {"
-        },
         {
           "repo": "Unitech/pm2",
           "file": "lib/tools/IsAbsolute.js",
@@ -24,78 +18,669 @@
         },
         {
           "repo": "Unitech/pm2",
+          "file": "modules/pm2-io-agent/src/Utility.js",
+          "line": 126,
+          "source": "let splitDeviceRe = /^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/"
+        },
+        {
+          "repo": "Unitech/pm2",
+          "file": "modules/pm2-io-bpm/utils/stackParser.js",
+          "line": 89,
+          "source": "let splitDeviceRe = /^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-887a8004a949",
+      "signature": "887a8004a949",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/((?:[0-9a-zA-Z]+[@\\-_.][0-9a-zA-Z]+|[0-9a-zA-Z]+[@\\-_.]|[@\\-_.][0-9a-zA-Z]+)+)/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
           "file": "modules/pm2-io-agent/src/push/TransactionAggregator.js",
           "line": 600,
           "source": "} else if (id.match(/((?:[0-9a-zA-Z]+[@\\-_.][0-9a-zA-Z]+|[0-9a-zA-Z]+[@\\-_.]|[@\\-_.][0-9a-zA-Z]+)+)/)) {"
+        },
+        {
+          "repo": "Unitech/pm2",
+          "file": "modules/pm2-io-bpm/utils/transactionAggregator.js",
+          "line": 394,
+          "source": "} else if (id.match(/((?:[0-9a-zA-Z]+[@\\-_.][0-9a-zA-Z]+|[0-9a-zA-Z]+[@\\-_.]|[@\\-_.][0-9a-zA-Z]+)+)/)) {"
         }
-      ]
+      ],
+      "why": "Measured polynomial: 467.3 ms on \"0\" x 20000 + \" \", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
     },
     {
-      "id": "redosVulnerable-f18a7b23e3fc",
-      "signature": "f18a7b23e3fc",
-      "verdict": "unreviewed",
+      "id": "redosVulnerable-69edb72fb8cd",
+      "signature": "69edb72fb8cd",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
-      "shape": "Lit:object",
-      "context": "ForStatement",
-      "firstSeen": "this run",
+      "shape": "Regex:/\\{\\{\\s*([^:}]+):[^}]*\\}\\}/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "app/src/ai/composables/use-prompts.ts",
+          "line": 12,
+          "source": "return text.replace(/\\{\\{\\s*([^:}]+):[^}]*\\}\\}/g, '{{ $1 }}');"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-64e044e81142",
+      "signature": "64e044e81142",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/::: notice\\n+([\\s\\S]*)(?<!\\n)\\n+:::$/m",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "packages/release-notes-generator/src/utils/process-release-lines.ts",
+          "line": 23,
+          "source": "const notice = summary.match(/::: notice\\n+([\\s\\S]*)(?<!\\n)\\n+:::$/m)?.[1];"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-d186c19d113f",
+      "signature": "d186c19d113f",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(-?(?:\\d+)?\\.?\\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|months?|mth|mo|years?|yrs?|y)?$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/adjust-date.ts",
+          "line": 37,
+          "source": "/^(-?(?:\\d+)?\\.?\\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|months?|"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.2 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-5d0ece9836df",
+      "signature": "5d0ece9836df",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^([^$\\s]*?)\\((.*?)\\)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/deep-map-filter.ts",
+          "line": 74,
+          "source": "const functionMatch = /^([^$\\s]*?)\\((.*?)\\)$/.exec(key);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-1cfcc8837399",
+      "signature": "1cfcc8837399",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\[([^\\]]+)\\]\\((https:\\/\\/github\\.com\\/([^/]+)\\/([^/)]+)[^)]*)\\)/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "fastify/fastify",
+          "file": "scripts/validate-ecosystem-links.js",
+          "line": 32,
+          "source": "const regex = /\\[([^\\]]+)\\]\\((https:\\/\\/github\\.com\\/([^/]+)\\/([^/)]+)[^)]*)\\)/g"
+        }
+      ],
+      "why": "Measured polynomial: 212.3 ms on \"[\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-fa63ae17fb15",
+      "signature": "fa63ae17fb15",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\d+\\.?\\d*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "knex/knex",
-          "file": "docs/.vitepress/knexDialects.ts",
-          "line": 149,
-          "source": "const headingMatch = line.match(/^(#{2,6})\\s+(.+)$/);"
-        },
-        {
-          "repo": "n8n-io/n8n",
-          "file": "packages/nodes-base/nodes/Git/Git.node.ts",
-          "line": 836,
-          "source": "const match = line.match(/^(\\S+)\\s+(.+?):\\s+(.+?):\\s+(.+)$/);"
-        },
-        {
-          "repo": "sequelize/sequelize",
-          "file": ".yarn/releases/yarn-4.13.0.cjs",
-          "line": 147,
-          "source": "`)[3];return mtt(t)}function JH(){return typeof pR.default.availableParallelism<\"u\"?pR.default.availableParallelism():Ma"
+          "file": "lib/dialects/oracledb/index.js",
+          "line": 400,
+          "source": "return version.match(/^\\d+\\.?\\d*$/) ? version : null;"
         }
-      ]
+      ],
+      "why": "Measured polynomial: 153.4 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
     },
     {
-      "id": "redosVulnerable-b62d6efe9b12",
-      "signature": "b62d6efe9b12",
-      "verdict": "unreviewed",
+      "id": "redosVulnerable-2c64aac678b9",
+      "signature": "2c64aac678b9",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
-      "shape": "Lit:object",
-      "context": "ForOfStatement",
-      "firstSeen": "this run",
+      "shape": "Regex:/^([*-])[ \\t]+(.+?)[ \\t]+by[ \\t]+@\\S+[ \\t]+in[ \\t]+#(\\d+)[ \\t]*$/gm",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "knex/knex",
+          "file": "scripts/update-changelog.mjs",
+          "line": 55,
+          "source": "/^([*-])[ \\t]+(.+?)[ \\t]+by[ \\t]+@\\S+[ \\t]+in[ \\t]+#(\\d+)[ \\t]*$/gm;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-6ef8bed47e37",
+      "signature": "6ef8bed47e37",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(?:^|^)\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])*`|[^#\\r\\n]+)?\\s*(?:#.*)?(?:$|$)/mg",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "motdotla/dotenv",
+          "file": "lib/main.js",
+          "line": 12,
+          "source": "const LINE = /(?:^|^)\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.2 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-b7f0ee3ca91b",
+      "signature": "b7f0ee3ca91b",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(\\s*)[*-]\\s+(CRITICAL|IMPORTANT|INFO|COMPLETION)(?:\\s+\\(\\d{2}:\\d{2}\\))?\\s+(.+)$/iu",
+      "context": "",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "n8n-io/n8n",
-          "file": ".github/actions/ci-filter/ci-filter.mjs",
-          "line": 60,
-          "source": "const headerMatch = line.match(/^([a-zA-Z0-9_-]+):\\s*(.*)?$/);"
+          "file": "packages/@n8n/agents/src/runtime/memory/observation-log-observer.ts",
+          "line": 29,
+          "source": "/^(\\s*)[*-]\\s+(CRITICAL|IMPORTANT|INFO|COMPLETION)(?:\\s+\\(\\d{2}:\\d{2}\\))?\\s+(.+)$/iu;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-fa69cdecf519",
+      "signature": "fa69cdecf519",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\bimport\\s+[\\s\\S]*?\\s+from\\s+['\"`]/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/ai-workflow-builder.ee/evaluations/evaluators/binary-checks/checks/no-code-imports.ts",
+          "line": 9,
+          "source": "const JS_IMPORT_PATTERNS = [/\\brequire\\s*\\(/, /\\bimport\\s+[\\s\\S]*?\\s+from\\s+['\"`]/, /\\bimport\\s*\\(/];"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-793bad00e25a",
+      "signature": "793bad00e25a",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/```(?:json)?\\s*([\\s\\S]*?)```/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/ai-workflow-builder.ee/evaluations/evaluators/responder/index.ts",
+          "line": 58,
+          "source": "const jsonMatch = content.match(/```(?:json)?\\s*([\\s\\S]*?)```/);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-163c644785d4",
+      "signature": "163c644785d4",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"][^'\"]+['\"];?\\s*$/gm",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/ai-workflow-builder.ee/src/code-builder/utils/extract-code.ts",
+          "line": 19,
+          "source": "const importRegex = /^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"][^'\"]+['\"];?\\s*$/gm;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-ef66e64e65d0",
+      "signature": "ef66e64e65d0",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\{\\{[\\s\\S]*(?:\\$\\([\\s\\S]*?\\)|\\$\\w+)[\\s\\S]*}}/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/ai-workflow-builder.ee/src/validation/utils/expressions.ts",
+          "line": 9,
+          "source": "return /\\{\\{[\\s\\S]*(?:\\$\\([\\s\\S]*?\\)|\\$\\w+)[\\s\\S]*}}/.test(value);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-f930ecfc5387",
+      "signature": "f930ecfc5387",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(?:(?:https?|ftp):\\/\\/)?(?:mailto:)?(?:\\/\\/)?((?:www\\.)?(?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?]*)?(?:\\?[^\\s#]*)?(?:#[^\\s]*)?$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/expression-runtime/src/extensions/string-extensions.ts",
+          "line": 27,
+          "source": "/^(?:(?:https?|ftp):\\/\\/)?(?:mailto:)?(?:\\/\\/)?((?:www\\.)?(?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d"
         },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/extensions/string-extensions.ts",
+          "line": 56,
+          "source": "/^(?:(?:https?|ftp):\\/\\/)?(?:mailto:)?(?:\\/\\/)?((?:www\\.)?(?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-acd8784b62ef",
+      "signature": "acd8784b62ef",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?]*)?(?:\\?[^\\s#]*)?(?:#[^\\s]*)?$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/expression-runtime/src/extensions/string-extensions.ts",
+          "line": 30,
+          "source": "/^(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/extensions/string-extensions.ts",
+          "line": 75,
+          "source": "/^(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-c68b148d7db3",
+      "signature": "c68b148d7db3",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?#]*)?(?:\\?[^\\s#]*)?(?=([^\\s]+#.*)?)#?[^\\s]*$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/expression-runtime/src/extensions/string-extensions.ts",
+          "line": 36,
+          "source": "/^(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/extensions/string-extensions.ts",
+          "line": 115,
+          "source": "/^(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-98a06f35adfd",
+      "signature": "98a06f35adfd",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?#]*)?(?:\\?[^\\s#]*)?(?=([^\\s]+#.*)?)#?[^\\s]*/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/expression-runtime/src/extensions/string-extensions.ts",
+          "line": 39,
+          "source": "/(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/extensions/string-extensions.ts",
+          "line": 122,
+          "source": "/(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-0cddb5b59492",
+      "signature": "0cddb5b59492",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"]([^'\"]+)['\"];?\\s*$/gm",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/harness/parse-seed-workflow.ts",
+          "line": 10,
+          "source": "const IMPORT_REGEX = /^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"]([^'\"]+)['\"];?\\s*$/gm;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-ca49fdff91d6",
+      "signature": "ca49fdff91d6",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\bInternal server error\\b|\\bOverloaded\\b|\\bService Unavailable\\b|\\bBad Gateway\\b|\\b(?:HTTP|status(?: code)?)\\s*[:=]?\\s*(?:429|500|502|503|529)\\b/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/harness/transient-error.ts",
+          "line": 146,
+          "source": "/\\bInternal server error\\b|\\bOverloaded\\b|\\bService Unavailable\\b|\\bBad Gateway\\b|\\b(?:HTTP|status(?: code)?)\\s*[:=]?\\s*"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-7033f9121738",
+      "signature": "7033f9121738",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/```(?:json)?\\s*\\n?([\\s\\S]*?)```/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/utils/llm-judge.ts",
+          "line": 9,
+          "source": "const FENCED_JSON = /```(?:json)?\\s*\\n?([\\s\\S]*?)```/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-84cc18df3312",
+      "signature": "84cc18df3312",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\*{0,2}\\s*verdict\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/utils/llm-judge.ts",
+          "line": 23,
+          "source": "{ regex: /\\*{0,2}\\s*verdict\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi, passToken: 'pass' },"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-38476f9388de",
+      "signature": "38476f9388de",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\*{0,2}\\s*pass\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(true|false)/gi",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/utils/llm-judge.ts",
+          "line": 24,
+          "source": "{ regex: /\\*{0,2}\\s*pass\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(true|false)/gi, passToken: 'true' },"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-a648f0720b0e",
+      "signature": "a648f0720b0e",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\*{0,2}\\s*decision\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/utils/llm-judge.ts",
+          "line": 25,
+          "source": "{ regex: /\\*{0,2}\\s*decision\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi, passToken: 'pass' },"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-fee92dbd057c",
+      "signature": "fee92dbd057c",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/Cloudflare Ray ID:\\s*(?:<[^>]+>|\\s)*([a-f0-9]+)/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/src/error-formatting.ts",
+          "line": 118,
+          "source": "return value.match(/Cloudflare Ray ID:\\s*(?:<[^>]+>|\\s)*([a-f0-9]+)/i)?.[1];"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-d6f528f55d54",
+      "signature": "d6f528f55d54",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^([a-zA-Z0-9][a-zA-Z0-9._-]*\\.ts)\\s*\\|\\s*(.+)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/src/knowledge-base/build-templates-index.ts",
+          "line": 31,
+          "source": "const PIPE_DELIMITED_INDEX_LINE = /^([a-zA-Z0-9][a-zA-Z0-9._-]*\\.ts)\\s*\\|\\s*(.+)$/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-b91568c93c8e",
+      "signature": "b91568c93c8e",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^##+\\s+(.+?)\\s*$/",
+      "context": "ForOfStatement",
+      "firstSeen": "2026-08-18",
+      "examples": [
         {
           "repo": "n8n-io/n8n",
           "file": "packages/@n8n/instance-ai/src/tools/n8n-docs/registry.ts",
           "line": 148,
           "source": "const heading = /^##+\\s+(.+?)\\s*$/.exec(line);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-98dea89b3e3a",
+      "signature": "98dea89b3e3a",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\b([A-Za-z][A-Za-z0-9]*Id|[Ww]orkflow ID|[Ee]xecution ID|[Cc]redential ID|ID|id)\\b\\s*(?::|=)?\\s*[\"'`]?([A-Za-z0-9][A-Za-z0-9_-]{5,})[\"'`]?/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/src/tracing/trace-replay.ts",
+          "line": 282,
+          "source": "/\\b([A-Za-z][A-Za-z0-9]*Id|[Ww]orkflow ID|[Ee]xecution ID|[Cc]redential ID|ID|id)\\b\\s*(?::|=)?\\s*[\"'`]?([A-Za-z0-9][A-Za"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-ff47b69f68ab",
+      "signature": "ff47b69f68ab",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^```(?:json)?\\s*([\\s\\S]*?)\\s*```$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/src/utils/generate-validated-json.ts",
+          "line": 35,
+          "source": "const fencedMatch = /^```(?:json)?\\s*([\\s\\S]*?)\\s*```$/i.exec(trimmed);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-fffe532e4376",
+      "signature": "fffe532e4376",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^Bearer\\s+(.+)$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/mcp-browser/src/server.ts",
+          "line": 58,
+          "source": "const match = /^Bearer\\s+(.+)$/i.exec(header.trim());"
         },
         {
-          "repo": "strapi/strapi",
-          "file": "examples/complex/scripts/bench.ts",
-          "line": 213,
-          "source": "const m = line.match(/^([^|]+?)\\s*\\|\\s*(\\d+)\\s*$/);"
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/mcp/mcp-server-middleware.service.ts",
+          "line": 118,
+          "source": "const tokenMatch = headerValue.match(/^Bearer\\s+(.+)$/i);"
         }
-      ]
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-064a41223203",
+      "signature": "064a41223203",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^https?:\\/\\/[a-zA-Z0-9.-]+\\/?[a-zA-Z0-9.\\/_-]*$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/nodes-langchain/nodes/Guardrails/actions/checks/secretKeys.ts",
+          "line": 169,
+          "source": "const urlPattern = /^https?:\\/\\/[a-zA-Z0-9.-]+\\/?[a-zA-Z0-9.\\/_-]*$/i;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-0290640e39d0",
+      "signature": "0290640e39d0",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\b(authorization)([\"']?\\s*[:=]\\s*[\"']?\\s*(?:(?:bearer|basic)\\s+)?)[^\\s\"',;}]+/gi",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/nodes-langchain/nodes/tools/ToolHttpRequest/utils.ts",
+          "line": 216,
+          "source": "/\\b(authorization)([\"']?\\s*[:=]\\s*[\"']?\\s*(?:(?:bearer|basic)\\s+)?)[^\\s\"',;}]+/gi,"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
     },
     {
       "id": "redosVulnerable-d69295a0b4e6",
       "signature": "d69295a0b4e6",
-      "verdict": "unreviewed",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
       "shape": "New(Id;Tpl(Id))",
       "context": "",
-      "firstSeen": "this run",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "n8n-io/n8n",
@@ -103,16 +688,532 @@
           "line": 1307,
           "source": "const re = new RegExp(`^${dataType}\\\\((\\\\d+),?\\\\s?(\\\\d+)?\\\\)`);"
         }
-      ]
+      ],
+      "why": "n8n AbstractSqliteQueryRunner.ts:1307 builds `^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`. The written half is linear; the verdict rests entirely on `dataType`, a column type that arrives from schema metadata this file never fixes.",
+      "limit": "L1"
+    },
+    {
+      "id": "redosVulnerable-fbf7ecb391aa",
+      "signature": "fbf7ecb391aa",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^=\\{\\{\\s*([\\s\\S]*?)\\s*\\}\\}$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/expression/index.ts",
+          "line": 11,
+          "source": "const match = expr.match(/^=\\{\\{\\s*([\\s\\S]*?)\\s*\\}\\}$/);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-11802bc695fd",
+      "signature": "11802bc695fd",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*import\\s+type\\s[\\s\\S]*?;?\\s*$/gm",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/lint/sdk/workflow-sdk-lint.ts",
+          "line": 73,
+          "source": "code = code.replace(/^\\s*import\\s+type\\s[\\s\\S]*?;?\\s*$/gm, blankSameLines);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-f95b062f177a",
+      "signature": "f95b062f177a",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\b((?:const|let|var)\\s+[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*=)/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/lint/sdk/workflow-sdk-lint.ts",
+          "line": 78,
+          "source": "/\\b((?:const|let|var)\\s+[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*=)/g,"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-58c3e4afe94b",
+      "signature": "58c3e4afe94b",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/([,(]\\s*[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*[,)=])/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/lint/sdk/workflow-sdk-lint.ts",
+          "line": 82,
+          "source": "/([,(]\\s*[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*[,)=])/g,"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-27344b9e63e9",
+      "signature": "27344b9e63e9",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*\\(?(\\w+)\\)?\\s*=>\\s*(.+)$/s",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/utils/code-helpers.ts",
+          "line": 11,
+          "source": "const arrowMatch = fnStr.match(/^\\s*\\(?(\\w+)\\)?\\s*=>\\s*(.+)$/s);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-b856483fec85",
+      "signature": "b856483fec85",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*(?:=\\s*)?(?:\\{\\{\\s*)?['\"`]?\\s*(?:<\\?xml|<soap:?|<s:envelope|<env:envelope)/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/workflow-builder/plugins/validators/http-request-validator.ts",
+          "line": 33,
+          "source": "/^\\s*(?:=\\s*)?(?:\\{\\{\\s*)?['\"`]?\\s*(?:<\\?xml|<soap:?|<s:envelope|<env:envelope)/i;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-a024ab1f1a35",
+      "signature": "a024ab1f1a35",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/process\\s*(?:\\/\\*[\\s\\S]*?\\*\\/)?\\s*\\??\\.?\\s*env\\b/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/breaking-changes/rules/v2/process-env-access.rule.ts",
+          "line": 44,
+          "source": "const processEnvPattern = /process\\s*(?:\\/\\*[\\s\\S]*?\\*\\/)?\\s*\\??\\.?\\s*env\\b/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-fdf5e09ce412",
+      "signature": "fdf5e09ce412",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/([+*?{]|\\{\\d+,?\\d*\\})\\s*[)]\\s*[+*?{]/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/dynamic-credentials.ee/context-establishment-hooks/http-header-extractor.ts",
+          "line": 26,
+          "source": "const nestedQuantifier = /([+*?{]|\\{\\d+,?\\d*\\})\\s*[)]\\s*[+*?{]/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-38b7aa79ed22",
+      "signature": "38b7aa79ed22",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\([^)]*\\|[^)]*\\)[+*]/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/dynamic-credentials.ee/context-establishment-hooks/http-header-extractor.ts",
+          "line": 28,
+          "source": "const overlappingAlt = /\\([^)]*\\|[^)]*\\)[+*]/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-898184b5006b",
+      "signature": "898184b5006b",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^[Bb][Ee][Aa][Rr][Ee][Rr]\\s+(.+)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/dynamic-credentials.ee/services/dynamic-credential-web.service.ts",
+          "line": 14,
+          "source": "const BEARER_TOKEN_REGEX = /^[Bb][Ee][Aa][Rr][Ee][Rr]\\s+(.+)$/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-c8b5ebc02a56",
+      "signature": "c8b5ebc02a56",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(content-type:\\s*(application\\/pdf|image\\/(?:png|jpeg|jpg|gif|webp))[^]*?\\r?\\n\\r?\\n)([^]*?)(?=\\r?\\n--|$)/gi",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/instance-ai/eval/mock-handler.ts",
+          "line": 916,
+          "source": "/(content-type:\\s*(application\\/pdf|image\\/(?:png|jpeg|jpg|gif|webp))[^]*?\\r?\\n\\r?\\n)([^]*?)(?=\\r?\\n--|$)/gi;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-4c81db3a18a1",
+      "signature": "4c81db3a18a1",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/```(?:json)?\\s*([\\s\\S]*?)```/gi",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/instance-ai/eval/structured-output-conformance.ts",
+          "line": 47,
+          "source": "const FENCED_JSON = /```(?:json)?\\s*([\\s\\S]*?)```/gi;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-3bb5ec30430f",
+      "signature": "3bb5ec30430f",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^```(?:json)?\\s*([\\s\\S]*?)```$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/instance-ai/eval/structured-output-conformance.ts",
+          "line": 144,
+          "source": "const fenced = /^```(?:json)?\\s*([\\s\\S]*?)```$/i.exec(content.trim());"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-854e87ffcf8b",
+      "signature": "854e87ffcf8b",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^=.*\\{\\{.+\\}\\}/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/utils.ts",
+          "line": 162,
+          "source": "return /^=.*\\{\\{.+\\}\\}/.test(testString);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-5a653e69615f",
+      "signature": "5a653e69615f",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\d+-?\\d*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/app/composables/useUniqueNodeName.ts",
+          "line": 62,
+          "source": "if (/^\\d+-?\\d*$/.test(originalName)) {"
+        }
+      ],
+      "why": "Measured polynomial: 157.9 ms on \"1\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-e713e3e9ec32",
+      "signature": "e713e3e9ec32",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(.*?)(?:\\s*<([^>]+)>)?$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/collaboration/projects/projects.utils.ts",
+          "line": 56,
+          "source": "const regex = /^(.*?)(?:\\s*<([^>]+)>)?$/;"
+        }
+      ],
+      "why": "Measured polynomial: 207.5 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-1d2cc529cf23",
+      "signature": "1d2cc529cf23",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/=.*\\{\\{[^}]*\\$secrets\\.[^}]+}}.*/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/credentials/composables/useCredentialForm.ts",
+          "line": 402,
+          "source": "typeof value !== 'object' && /=.*\\{\\{[^}]*\\$secrets\\.[^}]+}}.*/.test(`${value}`),"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-67ea74ba282e",
+      "signature": "67ea74ba282e",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\((\\d+)\\.?(\\d*)\\)\\.(.*)/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/shared/editors/plugins/codemirror/completions/datatype.completions.ts",
+          "line": 1544,
+          "source": "numberLiteral: /\\((\\d+)\\.?(\\d*)\\)\\.(.*)/, // (123). or (123.4)."
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-22ba27ace55e",
+      "signature": "22ba27ace55e",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/([^\"{\\s]+\\[.+\\])\\??\\.(.*)/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/shared/editors/plugins/codemirror/completions/datatype.completions.ts",
+          "line": 1550,
+          "source": "indexedAccess: /([^\"{\\s]+\\[.+\\])\\??\\.(.*)/, // 'abc'[0]. or 'abc'[0]?. or similar ones"
+        }
+      ],
+      "why": "Measured polynomial: 199.8 ms on \"a\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-23ab85e9ec23",
+      "signature": "23ab85e9ec23",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^{{\\s*(.*)\\s*}}$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/shared/editors/plugins/codemirror/tooltips/InfoBoxTooltip.ts",
+          "line": 137,
+          "source": "const jsCode = resolvable.replace(/^{{\\s*(.*)\\s*}}$/, '$1');"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-9c9d9e2ca68d",
+      "signature": "9c9d9e2ca68d",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/nodes-base/nodes/Aws/Cognito/helpers/utils.ts",
+          "line": 22,
+          "source": "const validateEmail = (email: string): boolean => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-2a1f40be0122",
+      "signature": "2a1f40be0122",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(\\S+)\\s+(.+?):\\s+(.+?):\\s+(.+)$/",
+      "context": "ForStatement",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/nodes-base/nodes/Git/Git.node.ts",
+          "line": 836,
+          "source": "const match = line.match(/^(\\S+)\\s+(.+?):\\s+(.+?):\\s+(.+)$/);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-2e8ccf4177ae",
+      "signature": "2e8ccf4177ae",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/SELECT\\s+(.+?)\\s+FROM/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/nodes-base/nodes/Merge/v3/helpers/utils.ts",
+          "line": 407,
+          "source": "const selectMatch = userQuery.match(/SELECT\\s+(.+?)\\s+FROM/i);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-2539c6adb74d",
+      "signature": "2539c6adb74d",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\s*((?:[^\\\\,]*?(?:\\\\[\\s\\S])*)*?)\\s*(?:,|$)/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/nodes-base/nodes/SeaTable/v1/GenericFunctions.ts",
+          "line": 230,
+          "source": ".split(/\\s*((?:[^\\\\,]*?(?:\\\\[\\s\\S])*)*?)\\s*(?:,|$)/)"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/nodes-base/nodes/SeaTable/v2/GenericFunctions.ts",
+          "line": 192,
+          "source": ".split(/\\s*((?:[^\\\\,]*?(?:\\\\[\\s\\S])*)*?)\\s*(?:,|$)/)"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.3 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-1907a8803cc2",
+      "signature": "1907a8803cc2",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^.{2}\\s+(.+)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/utils/git-operations.ts",
+          "line": 47,
+          "source": "const gitStatusPattern = /^.{2}\\s+(.+)$/;"
+        }
+      ],
+      "why": "Measured polynomial: 178.5 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-d541b5038d54",
+      "signature": "d541b5038d54",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*\\{?\\{?\\s*\\$\\w+\\.\\w+\\s*\\}?\\}?\\s*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/performance/scripts/extract-expressions.mjs",
+          "line": 67,
+          "source": "if (/^\\s*\\{?\\{?\\s*\\$\\w+\\.\\w+\\s*\\}?\\}?\\s*$/.test(expr)) return 'simpleProperty';"
+        }
+      ],
+      "why": "Measured polynomial: 212.1 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-b757d3734e49",
+      "signature": "b757d3734e49",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\n?\\/\\/# sourceMappingURL=.*\\s*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/playwright/scripts/backend-coverage-resolver.ts",
+          "line": 129,
+          "source": "source.replace(/\\n?\\/\\/# sourceMappingURL=.*\\s*$/, '\\n') +"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
     },
     {
       "id": "redosVulnerable-f06afcf9f6b7",
       "signature": "f06afcf9f6b7",
-      "verdict": "unreviewed",
+      "verdict": "exempt",
       "messageId": "redosVulnerable",
       "shape": "New(Id;Tpl(Call(Mem(Id.join);Lit:string)))",
       "context": "",
-      "firstSeen": "this run",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "n8n-io/n8n",
@@ -120,16 +1221,149 @@
           "line": 60,
           "source": "const EXPRESSION_EXTENSION_REGEX = new RegExp("
         }
-      ]
+      ],
+      "why": "n8n expression-extension.ts:60 assembles `(\\$if|\\.(a|b|c)\\s*(\\?\\.)?)\\s*\\(` from Object.keys of three internal extension tables \u2014 an alternation of fixed method names, joined at module load. No quantifier is ambiguous with another. The authors annotate it `-- static pattern` on the line above, and they are right."
+    },
+    {
+      "id": "redosVulnerable-6e69ea7987f1",
+      "signature": "6e69ea7987f1",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(?<protocolPlusDomain>.*?\\..*?)(?<pathname>\\/.*)/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/telemetry-helpers.ts",
+          "line": 157,
+          "source": "const URL_PARTS_REGEX = /(?<protocolPlusDomain>.*?\\..*?)(?<pathname>\\/.*)/;"
+        }
+      ],
+      "why": "Measured polynomial: 94.0 ms on \"r\" x 20000 + \"!\", blow-up at n=Infinity. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-cf902d6309bd",
+      "signature": "cf902d6309bd",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/([\"\\u0080-\\uFFFF][^\\s]*)[^\"\\u0080-\\uFFFF]*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/mime-funcs/index.js",
+          "line": 161,
+          "source": "const lastMatch = value.match(/([\"\\u0080-\\uFFFF][^\\s]*)[^\"\\u0080-\\uFFFF]*$/);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-368d12d56ba9",
+      "signature": "368d12d56ba9",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)PLAIN/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/smtp-connection/index.js",
+          "line": 1543,
+          "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)PLAIN/i.test(str)) {"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-f5633d69884d",
+      "signature": "f5633d69884d",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)LOGIN/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/smtp-connection/index.js",
+          "line": 1548,
+          "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)LOGIN/i.test(str)) {"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-325063245e0c",
+      "signature": "325063245e0c",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)CRAM-MD5/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/smtp-connection/index.js",
+          "line": 1553,
+          "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)CRAM-MD5/i.test(str)) {"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-36e5e1bdf21f",
+      "signature": "36e5e1bdf21f",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)XOAUTH2/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/smtp-connection/index.js",
+          "line": 1558,
+          "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)XOAUTH2/i.test(str)) {"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-69ca8c1d6d25",
+      "signature": "69ca8c1d6d25",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^334\\s+(.+)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/smtp-connection/index.js",
+          "line": 1672,
+          "source": "const challengeMatch = str.match(/^334\\s+(.+)$/);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
     },
     {
       "id": "redosVulnerable-2c14e9065aad",
       "signature": "2c14e9065aad",
-      "verdict": "unreviewed",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
       "shape": "New(Id;Tpl(Mem(Id.name),Mem(Id.name)))",
       "context": "",
-      "firstSeen": "this run",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "npm/cli",
@@ -137,62 +1371,247 @@
           "line": 15,
           "source": "const searchMFH = new RegExp(`^make-fetch-happen:request-cache:.*(?<!/[@a-zA-Z]+)/${parsed.name}/-/(${parsed.name}[^/]+."
         }
-      ]
+      ],
+      "why": "npm/cli cache.js:15 interpolates `parsed.name` twice into a pattern already carrying `.*` and a lookbehind. Timing the skeleton with a placeholder name found nothing at n=20,000, which is not proof; and the real risk depends on a package name this file receives rather than defines.",
+      "limit": "L1"
     },
     {
-      "id": "redosVulnerable-6f4862bfbe75",
-      "signature": "6f4862bfbe75",
-      "verdict": "unreviewed",
+      "id": "redosVulnerable-830b90590573",
+      "signature": "830b90590573",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
-      "shape": "New(Id;Tpl(Call(Mem(Call(…;…).join);Lit:string)))",
+      "shape": "Regex:/^(-+)((?:no-)*)(.*)$/",
       "context": "",
-      "firstSeen": "this run",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
-          "repo": "sequelize/sequelize",
-          "file": ".yarn/releases/yarn-4.13.0.cjs",
-          "line": 140,
-          "source": "`,CHAR_NO_BREAK_SPACE:\"\\xA0\",CHAR_PERCENT:\"%\",CHAR_PLUS:\"+\",CHAR_QUESTION_MARK:\"?\",CHAR_RIGHT_ANGLE_BRACKET:\">\",CHAR_RIG"
-        },
-        {
-          "repo": "strapi/strapi",
-          "file": ".yarn/releases/yarn-4.12.0.cjs",
-          "line": 140,
-          "source": "`,CHAR_NO_BREAK_SPACE:\"\\xA0\",CHAR_PERCENT:\"%\",CHAR_PLUS:\"+\",CHAR_QUESTION_MARK:\"?\",CHAR_RIGHT_ANGLE_BRACKET:\">\",CHAR_RIG"
+          "repo": "npm/cli",
+          "file": "lib/commands/completion.js",
+          "line": 257,
+          "source": "const split = word.match(/^(-+)((?:no-)*)(.*)$/)"
         }
-      ]
+      ],
+      "why": "Measured polynomial: 176.5 ms on \"-\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
     },
     {
-      "id": "redosVulnerable-7449216ca132",
-      "signature": "7449216ca132",
-      "verdict": "unreviewed",
+      "id": "redosVulnerable-4c132cea5baf",
+      "signature": "4c132cea5baf",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
-      "shape": "Lit:object",
-      "context": "ForStatement<ForStatement",
-      "firstSeen": "this run",
+      "shape": "Regex:/^(-*)((?:no-)+)?(.*)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "lib/commands/completion.js",
+          "line": 283,
+          "source": "const split = word.match(/^(-*)((?:no-)+)?(.*)$/)"
+        }
+      ],
+      "why": "Measured polynomial: 174.1 ms on \"-\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-faa0b71034be",
+      "signature": "faa0b71034be",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(.+)\\[([^\\]]+)\\]\\.?(.*)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "lib/utils/queryable.js",
+          "line": 7,
+          "source": "const sqBracketsMatcher = str => str.match(/(.+)\\[([^\\]]+)\\]\\.?(.*)$/)"
+        }
+      ],
+      "why": "Measured polynomial: 1230.0 ms on \"[\" x 2000 + \"!\", blow-up at n=2000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-011a902256d3",
+      "signature": "011a902256d3",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/index:[\\sa-zA-Z0-9_\\-\\.]+\\$?([a-zA-Z_-]+)_1/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/Adapters/Storage/Mongo/MongoStorageAdapter.js",
+          "line": 582,
+          "source": "const matches = error.message.match(/index:[\\sa-zA-Z0-9_\\-\\.]+\\$?([a-zA-Z_-]+)_1/);"
+        },
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/Adapters/Storage/Mongo/MongoStorageAdapter.js",
+          "line": 676,
+          "source": "/index:[\\sa-zA-Z0-9_\\-\\.]+\\$?([a-zA-Z_-]+)_1/"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-57fc213c0b7f",
+      "signature": "57fc213c0b7f",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^.+@.+$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/RestWrite.js",
+          "line": 890,
+          "source": "if (!this.data.email.match(/^.+@.+$/)) {"
+        }
+      ],
+      "why": "Measured polynomial: 187.7 ms on \"@\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-852324c77fe7",
+      "signature": "852324c77fe7",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\/\\/\\S+:(\\S+)@/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/Security/CheckGroups/CheckGroupDatabase.js",
+          "line": 26,
+          "source": "const password = databaseUrl.match(/\\/\\/\\S+:(\\S+)@/)[1];"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-03a0506e98d0",
+      "signature": "03a0506e98d0",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(^Author:|^Co-authored-by:)\\s+(?<author>[^<]+)\\s+(?<email><[^>]+>)/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "sequelize/sequelize",
-          "file": ".yarn/releases/yarn-4.13.0.cjs",
-          "line": 322,
-          "source": "`.repeat(e));YCe.displayName=\"Newline\";lD.default=YCe});var ZCe=G(cD=>{\"use strict\";var JCe=cD&&cD.__importDefault||func"
-        },
-        {
-          "repo": "strapi/strapi",
-          "file": ".yarn/releases/yarn-4.12.0.cjs",
-          "line": 322,
-          "source": "`.repeat(t));o2e.displayName=\"Newline\";lD.default=o2e});var u2e=_(cD=>{\"use strict\";var l2e=cD&&cD.__importDefault||func"
+          "file": "dev/update-authors.js",
+          "line": 47,
+          "source": "const authorRe = /(^Author:|^Co-authored-by:)\\s+(?<author>[^<]+)\\s+(?<email><[^>]+>)/i;"
         }
-      ]
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-9e4f63dbd9df",
+      "signature": "9e4f63dbd9df",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/SQL0803N {2}An error or warning occurred. {2}One or more values in the INSERT statement, UPDATE statement, or foreign key update caused by a DELETE statement are not valid because the primary key, unique constraint or unique index identified by \"(\\d)+\" constrains table \"(.*)\\.(.*)\" from having duplicate values for the index key./",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "sequelize/sequelize",
+          "file": "packages/db2/src/query.js",
+          "line": 284,
+          "source": "/SQL0803N {2}An error or warning occurred. {2}One or more values in the INSERT statement, UPDATE statement, or foreign k"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-9e4f60885c4d",
+      "signature": "9e4f60885c4d",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/Duplicate entry '([\\S\\s]*)' for key '?([^']*?)'?\\s.*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "sequelize/sequelize",
+          "file": "packages/mariadb/src/query.js",
+          "line": 218,
+          "source": "const match = err.message.match(/Duplicate entry '([\\S\\s]*)' for key '?([^']*?)'?\\s.*$/);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-0325ad41a14d",
+      "signature": "0325ad41a14d",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*(?:([`\"'])(?:(?!\\1).|\\1{2})*\\1\\.?)+\\s*$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "sequelize/sequelize",
+          "file": "packages/oracle/src/query-generator.js",
+          "line": 1094,
+          "source": "return /^\\s*(?:([`\"'])(?:(?!\\1).|\\1{2})*\\1\\.?)+\\s*$/i.test(identifier);"
+        }
+      ],
+      "why": "Measured exponential: 76500.4 ms on \"`\" x 64 + \"!\", blow-up at n=64. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-032bf8876ac6",
+      "signature": "032bf8876ac6",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(\"(?:\\\\.|[^\"\\\\])*\"|[^,]*)(?:\\s*,\\s*|\\s*$)/gi",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "sequelize/sequelize",
+          "file": "packages/postgres/src/query-generator.js",
+          "line": 587,
+          "source": "let matches = text.match(/(\"(?:\\\\.|[^\"\\\\])*\"|[^,]*)(?:\\s*,\\s*|\\s*$)/gi);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-c7f77048e8b7",
+      "signature": "c7f77048e8b7",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^arn:(aws[\\w-]*).*:lambda:([\\w+-]{2,}\\d+):(\\d+):function:(.*)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/aws/custom-resources/resources/utils.js",
+          "line": 71,
+          "source": "/^arn:(aws[\\w-]*).*:lambda:([\\w+-]{2,}\\d+):(\\d+):function:(.*)$/,"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
     },
     {
       "id": "redosVulnerable-ef7758875310",
       "signature": "ef7758875310",
-      "verdict": "unreviewed",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
       "shape": "New(Id;Tpl(Id,Id,Id))",
       "context": "",
-      "firstSeen": "this run",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "serverless/serverless",
@@ -200,16 +1619,466 @@
           "line": 6,
           "source": "const regex = new RegExp(`${prefix}/${service}/${stage}/(.+-.+-.+-.+)/(.+)`)"
         }
-      ]
+      ],
+      "why": "serverless find-and-group-deployments.js:6 builds `${prefix}/${service}/${stage}/(.+-.+-.+-.+)/(.+)`. The `(.+-.+-.+-.+)` skeleton is the textbook polynomial shape, yet the classifier found no superlinear input for it \u2014 most likely an alphabet-extraction miss on my side rather than safety. Three interpolated values on top.",
+      "limit": "L1"
+    },
+    {
+      "id": "redosVulnerable-e7f0f8b59c7c",
+      "signature": "e7f0f8b59c7c",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(^|\\s|#)service\\s*:\\s*\\n(\\s+)name:.+/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/utils/rename-service.js",
+          "line": 16,
+          "source": "/(^|\\s|#)service\\s*:\\s*\\n(\\s+)name:.+/,"
+        },
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/sf-core/src/utils/fs/index.js",
+          "line": 325,
+          "source": "/(^|\\s|#)service\\s*:\\s*\\n(\\s+)name:.+/,"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-aaa6663c3df3",
+      "signature": "aaa6663c3df3",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(^|\\s)service\\s*:\\s*{\\s*\\n(\\s+)name:\\s*('|\").+('|\")/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/utils/rename-service.js",
+          "line": 31,
+          "source": "/(^|\\s)service\\s*:\\s*{\\s*\\n(\\s+)name:\\s*('|\").+('|\")/,"
+        },
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/sf-core/src/utils/fs/index.js",
+          "line": 346,
+          "source": "/(^|\\s)service\\s*:\\s*{\\s*\\n(\\s+)name:\\s*('|\").+('|\")/,"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-72bc62d6878d",
+      "signature": "72bc62d6878d",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(?<option>[^:=][^:=]*)\\s*(?<vi>[:=])\\s*(?<value>.*)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/sf-core/src/lib/auth/aws-config-writer.js",
+          "line": 7,
+          "source": "this.OPTION_REGEX = /(?<option>[^:=][^:=]*)\\s*(?<vi>[:=])\\s*(?<value>.*)$/"
+        }
+      ],
+      "why": "Measured polynomial: 266.3 ms on \"n\" x 20000 + \" \", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-0da1205b2454",
+      "signature": "0da1205b2454",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(s3|ssm|output|cf)(?:\\(([^,]*?)(?:,\\s*([^)]+))?\\))?:(.*)/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/sf-core/src/lib/resolvers/placeholders.js",
+          "line": 69,
+          "source": "/^(s3|ssm|output|cf)(?:\\(([^,]*?)(?:,\\s*([^)]+))?\\))?:(.*)/g"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-08a1194f385e",
+      "signature": "08a1194f385e",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\${(\\w*:?[\\w\\d.-]+)}/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/sf-core/src/lib/runners/compose/index.js",
+          "line": 99,
+          "source": "const regex = /\\${(\\w*:?[\\w\\d.-]+)}/g"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-88ae5f8dfa26",
+      "signature": "88ae5f8dfa26",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/.+\\/(.+)\\.git/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/sf-core/src/utils/https/index.js",
+          "line": 241,
+          "source": "const repo = url.match(/.+\\/(.+)\\.git/)[1]"
+        }
+      ],
+      "why": "Measured polynomial: 363.9 ms on \"g\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-b82ebace880a",
+      "signature": "b82ebace880a",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(\\s*)(>[> ]*|[*+-] \\[[x ]\\]|[*+-]|(\\d+)[.)])(\\s*)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/content-manager/admin/src/pages/EditView/components/FormInputs/Wysiwyg/utils/continueList.ts",
+          "line": 7,
+          "source": "emptyListRE = /^(\\s*)(>[> ]*|[*+-] \\[[x ]\\]|[*+-]|(\\d+)[.)])(\\s*)$/,"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-6ab041522049",
+      "signature": "6ab041522049",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(.*?)\\s*<([^>]+)>\\s*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/email/shared/email-address-parser.ts",
+          "line": 233,
+          "source": "const angleMatch = decoded.match(/^(.*?)\\s*<([^>]+)>\\s*$/);"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/providers/email-nodemailer/src/utils/email-address.ts",
+          "line": 278,
+          "source": "const angleMatch = decoded.match(/^(.*?)\\s*<([^>]+)>\\s*$/);"
+        }
+      ],
+      "why": "Measured polynomial: 204.4 ms on \" \" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-fa22a0192254",
+      "signature": "fa22a0192254",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^Symbol\\((.*)\\)(.*)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/utils/src/print-value.ts",
+          "line": 9,
+          "source": "const SYMBOL_REGEXP = /^Symbol\\((.*)\\)(.*)$/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-c5c8fddd69d1",
+      "signature": "c5c8fddd69d1",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])*`|[^#\\r\\n]+)?\\s*(?:#.*)?$/gm",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/DotenvPlugin.js",
+          "line": 30,
+          "source": "/^\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])*`|[^#\\r\\n]+)?\\s*(?"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-4c03cd15fda6",
+      "signature": "4c03cd15fda6",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(.+) (.+)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/NormalModule.js",
+          "line": 1055,
+          "source": "if (schema.title && (match = /^(.+) (.+)$/.exec(schema.title))) {"
+        }
+      ],
+      "why": "Measured polynomial: 172.5 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-7b429a44aa2b",
+      "signature": "7b429a44aa2b",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\"\\s\\+*.*\\+\\s*\"$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/TemplatedPathPlugin.js",
+          "line": 132,
+          "source": "if (/^\"\\s\\+*.*\\+\\s*\"$/.test(id)) {"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-e95f5500d61f",
+      "signature": "e95f5500d61f",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\"\\s\\+*\\s*(.*)\\s*\\+\\s*\"$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/TemplatedPathPlugin.js",
+          "line": 133,
+          "source": "const match = /^\"\\s\\+*\\s*(.*)\\s*\\+\\s*\"$/.exec(id);"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-9a43b811ffc9",
+      "signature": "9a43b811ffc9",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/cli.js",
+          "line": 713,
+          "source": "const DECIMAL_NUMBER_REGEXP = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?$/i;"
+        },
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 7139,
+          "source": "const _BARE_NUMBER_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?$/i;"
+        }
+      ],
+      "why": "Measured polynomial: 209.0 ms on \"1\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-376b0c879122",
+      "signature": "376b0c879122",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(?:((?:[A-Z]:)?[/\\\\].*?))?(?::(.+?))?$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/config/browserslistTargetHandler.js",
+          "line": 17,
+          "source": "const inputRx = /^(?:((?:[A-Z]:)?[/\\\\].*?))?(?::(.+?))?$/i;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-0e15e660c7e6",
+      "signature": "0e15e660c7e6",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)%?$/",
+      "context": "ForStatement",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 5832,
+          "source": "if (!/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)%?$/.test(s)) return null;"
+        }
+      ],
+      "why": "Measured polynomial: 206.4 ms on \"1\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-8ff70aa39092",
+      "signature": "8ff70aa39092",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^([+-]?(?:\\d+\\.?\\d*|\\.\\d+))(%?)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 5875,
+          "source": "const _COLOR_NUMBER_RE = /^([+-]?(?:\\d+\\.?\\d*|\\.\\d+))(%?)$/;"
+        }
+      ],
+      "why": "Measured polynomial: 275.7 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-45aff7a4b887",
+      "signature": "45aff7a4b887",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^([+-]?(?:\\d+\\.?\\d*|\\.\\d+))(?:deg)?$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 5878,
+          "source": "const _COLOR_HUE_RE = /^([+-]?(?:\\d+\\.?\\d*|\\.\\d+))(?:deg)?$/i;"
+        }
+      ],
+      "why": "Measured polynomial: 206.6 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-2b0c051f50b1",
+      "signature": "2b0c051f50b1",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 6230,
+          "source": "const _PLAIN_NUMBER_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)$/;"
+        }
+      ],
+      "why": "Measured polynomial: 156.7 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-f74b801af5ca",
+      "signature": "f74b801af5ca",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*(?:([+-]?)\\s*(\\d*)[nN]\\s*(?:([+-])\\s*(\\d+))?|([+-]?)\\s*(\\d+))\\s*$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 6620,
+          "source": "/^\\s*(?:([+-]?)\\s*(\\d*)[nN]\\s*(?:([+-])\\s*(\\d+))?|([+-]?)\\s*(\\d+))\\s*$/;"
+        }
+      ],
+      "why": "Measured polynomial: 118.8 ms on \" \" x 8000 + \"\", blow-up at n=8000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-43ad49bf7429",
+      "signature": "43ad49bf7429",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:s|ms)$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 7188,
+          "source": "const _TRANSITION_TIME_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:s|ms)$/i;"
+        }
+      ],
+      "why": "Measured polynomial: 158.0 ms on \"1\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-55aba6633b7c",
+      "signature": "55aba6633b7c",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/(^|\\s)((?:\\d+\\.?\\d*|\\.\\d+))\\s*\\/\\s*1(?=$|\\s)/g",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 7376,
+          "source": "const _RATIO_OVER_ONE_RE = /(^|\\s)((?:\\d+\\.?\\d*|\\.\\d+))\\s*\\/\\s*1(?=$|\\s)/g;"
+        }
+      ],
+      "why": "Measured polynomial: 166.1 ms on \"1\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-51be36087bc5",
+      "signature": "51be36087bc5",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?(%|[a-z]*)$/i",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 7884,
+          "source": "const _NUMERIC_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?(%|[a-z]*)$/i;"
+        }
+      ],
+      "why": "Measured polynomial: 104.5 ms on \"1\" x 8000 + \" \", blow-up at n=8000. Timed on V8 via scripts/redos-classify.mts, not read."
     },
     {
       "id": "redosVulnerable-9269531f5d16",
       "signature": "9269531f5d16",
-      "verdict": "unreviewed",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
       "shape": "New(Id;Tpl(Id,Id))",
       "context": "",
-      "firstSeen": "this run",
+      "firstSeen": "2026-08-18",
       "examples": [
         {
           "repo": "webpack/webpack",
@@ -223,7 +2092,84 @@
           "line": 8161,
           "source": "const _JOINABLE_NESTED_RE = new RegExp("
         }
-      ]
+      ],
+      "why": "webpack css/syntax.js:8153 and :8161 build `^${_COMPOUND}(?:(?:\\s*[>+~]\\s*|\\s+)${_COMPOUND})*$` \u2014 an outer `*` over a group whose branches are `\\s*` and `\\s+`, which is exactly the ambiguity shape that bites. Unlike the others, `_COMPOUND` IS declared in this file, so this one is resolvable in principle and the rule simply does not follow it. That is the reopen condition.",
+      "limit": "L1"
+    },
+    {
+      "id": "redosVulnerable-9e2a11187ec9",
+      "signature": "9e2a11187ec9",
+      "verdict": "enforce",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(.+?)(\\(\\))?\\s+from\\s+(.+)$/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/dependencies/WorkerAndWorkletPlugin.js",
+          "line": 727,
+          "source": "const match = /^(.+?)(\\(\\))?\\s+from\\s+(.+)$/.exec(item);"
+        }
+      ],
+      "why": "Measured polynomial: 208.0 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+    },
+    {
+      "id": "redosVulnerable-9c8887571b71",
+      "signature": "9c8887571b71",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^\\s*\\[\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*,\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*\\]/",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "tooling/generate-css-data.js",
+          "line": 82,
+          "source": "/^\\s*\\[\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*,\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*\\]/;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-13bd9206778c",
+      "signature": "13bd9206778c",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/^(?:partial\\s+)?interface(?:\\s+mixin)?\\s+(\\w+)[^{;]*\\{/gm",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "tooling/generate-html-data.js",
+          "line": 104,
+          "source": "const headRe = /^(?:partial\\s+)?interface(?:\\s+mixin)?\\s+(\\w+)[^{;]*\\{/gm;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
+    },
+    {
+      "id": "redosVulnerable-b6a5b1045e95",
+      "signature": "b6a5b1045e95",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "Regex:/\\n\\/\\/\\s*#region wasm code: (.+) \\((.+)\\)(.*)\\n[\\s\\S]+?\\/\\/[\\s+]*#endregion\\n/g",
+      "context": "ForOfStatement",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "tooling/generate-wasm-code.js",
+          "line": 25,
+          "source": "/\\n\\/\\/\\s*#region wasm code: (.+) \\((.+)\\)(.*)\\n[\\s\\S]+?\\/\\/[\\s+]*#endregion\\n/g;"
+        }
+      ],
+      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
+      "limit": "L10"
     }
   ]
 }

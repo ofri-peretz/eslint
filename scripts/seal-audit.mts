@@ -265,10 +265,22 @@ for (const dir of dirs) {
   };
   if (fs.existsSync(casesFile)) {
     const ledger = JSON.parse(fs.readFileSync(casesFile, 'utf8')) as { cases: { verdict: string }[] };
-    const unreviewed = ledger.cases.filter((c) => c.verdict === 'unreviewed').length;
+    const tally = (v: string) => ledger.cases.filter((c) => c.verdict === v).length;
+    const unreviewed = tally('unreviewed');
+    const undecided = tally('undecided');
+    const enforce = tally('enforce');
+    // Reviewing every case is necessary and not sufficient. A ledger that is
+    // mostly `undecided` means the rule's output could not be judged, which is
+    // not the same as judging it acceptable — so the axis requires a decided
+    // MAJORITY as well. no-redos-vulnerable-regex sits at 28 decided against 82
+    // undecided; calling that "measured on real code" would be the flattering
+    // reading again.
+    const decided = enforce + tally('exempt');
     realSource = {
-      state: unreviewed === 0 && ledger.cases.length > 0 ? 'met' : 'unmet',
-      evidence: `${ledger.cases.length} case(s) filed, ${unreviewed} still unreviewed`,
+      state: unreviewed === 0 && ledger.cases.length > 0 && decided > undecided ? 'met' : 'unmet',
+      evidence:
+        `${ledger.cases.length} case(s): ${enforce} enforce, ${tally('exempt')} exempt, ` +
+        `${undecided} undecided, ${unreviewed} unreviewed`,
       command: `npm run cases -- ${ruleId}`,
     };
   }

@@ -22,7 +22,16 @@
  *   enforce     this shape MUST report. A finding here is a confirmed TP.
  *   exempt      this shape must stay QUIET. A finding here is a REGRESSION —
  *               we already decided, and the rule changed its mind.
+ *   undecided   reviewed, evidence gathered, and the evidence did not settle it.
  *   unreviewed  seen, filed, not yet adjudicated. The backlog, visible.
+ *
+ * `undecided` exists because the three-verdict version forced a lie. Timing 106
+ * regex patterns from real repositories produced 28 measurably superlinear and
+ * 78 for which no superlinear input was FOUND — and "not found" is not "not
+ * there". redos-classify says so in its own header: UNREPRODUCED is not a clean
+ * bill of health. Filing those 78 as `exempt` would convert the absence of a
+ * witness into a claim of safety, which is the failure this whole apparatus
+ * exists to prevent. Every `undecided` case cites the limit that blocked it.
  *
  * A run then splits into four buckets, and only two of them need a human:
  *
@@ -70,7 +79,7 @@ type Example = { repo: string; file: string; line: number; source: string };
 type Case = {
   id: string;
   signature: string;
-  verdict: 'enforce' | 'exempt' | 'unreviewed';
+  verdict: 'enforce' | 'exempt' | 'undecided' | 'unreviewed';
   messageId: string;
   shape: string;
   context: string;
@@ -185,7 +194,7 @@ instrumented.rules[ruleName] = wrapped;
 console.log(`  ${files.length} cached files · rule ${ruleId}\n`);
 await eslint.lintFiles(files);
 
-const buckets = { confirmed: 0, regression: [] as string[], backlog: 0, fresh: [] as Case[] };
+const buckets = { confirmed: 0, undecided: 0, regression: [] as string[], backlog: 0, fresh: [] as Case[] };
 const freshBySignature = new Map<string, Case>();
 
 for (const hit of seen) {
@@ -202,6 +211,7 @@ for (const hit of seen) {
   const known = bySignature.get(key);
   if (known) {
     if (known.verdict === 'enforce') buckets.confirmed += 1;
+    else if (known.verdict === 'undecided') buckets.undecided += 1;
     else if (known.verdict === 'exempt') {
       buckets.regression.push(`${known.id} — ${example.repo} ${example.file}:${example.line}`);
     } else buckets.backlog += 1;
@@ -231,6 +241,7 @@ for (const hit of seen) {
 console.log(`  findings          ${seen.length}`);
 console.log(`  distinct cases    ${bySignature.size + freshBySignature.size}\n`);
 console.log(`  confirmed (enforce)   ${buckets.confirmed}`);
+console.log(`  undecided             ${buckets.undecided}`);
 console.log(`  backlog (unreviewed)  ${buckets.backlog}`);
 console.log(`  REGRESSION            ${buckets.regression.length}`);
 console.log(`  NEW                   ${buckets.fresh.length}\n`);
