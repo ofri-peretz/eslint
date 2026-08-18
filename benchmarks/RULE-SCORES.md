@@ -44,15 +44,35 @@ labels in [`suites/ilb-real-source/SAMPLED-FP-2026-08-17.md`](./suites/ilb-real-
 | Rule | Findings on corpus | Labelled | TP | FP | Criterion | Verdict |
 | :--- | ---: | ---: | ---: | ---: | :--- | :--- |
 | `node-security/detect-non-literal-fs-filename` | **1** | 1 (census) | 1 | 0 | census | **passes** |
-| `secure-coding/no-redos-vulnerable-regex` | 123 | 22 | ≥4 | — | ratio, `error` ≥95% | **unscored** |
+| `secure-coding/no-redos-vulnerable-regex` | 123 | 22 | 6 | 15 | ratio, was `error` ≥95% | **28.6% — removed from presets 2026-08-18** |
 | `secure-coding/detect-non-literal-regexp` | 243 | 10 | 3 | 7 | opt-in, no floor | 30% |
 | `secure-coding/detect-object-injection` | 14,696 | 13 | 0 | 13 | opt-in, no floor | 0% |
 
-`no-redos-vulnerable-regex` reads *unscored*, not a percentage, on purpose: the
-generic timing sweep behind it can **confirm** that a pattern backtracks and
-cannot **prove** that one does not — two patterns it called flat ran 167 ms and
-956 ms under a crafted input. A method that errs in one direction does not get to
-report a rate.
+### `no-redos-vulnerable-regex` — classified by timing
+
+`npx tsx scripts/redos-classify.mts --file <patterns.txt>`
+
+The earlier sweep used six fixed attack strings and left 18 of 22 patterns
+unclassified. The classifier draws its alphabet from the pattern itself and
+pumps to n=20,000, and is **validated in both directions**: it reproduces all 7
+corpus `vulnerable` patterns as exponential and leaves the genuinely linear
+`safe` ones unreproduced.
+
+| Verdict | Count | Meaning |
+| :--- | ---: | :--- |
+| exponential | **0** | 24 characters denies an endpoint |
+| polynomial | 6 | 143–197 ms, needs a 20,000-character input |
+| unreproduced | 15 | the generator found nothing — evidence toward FP, **not proof of safety** |
+| uncompilable | 1 | extraction artifact, excluded |
+
+~28.6% against a 95% bar. **Not one finding on real code was catastrophic.**
+Removed from `recommended` and `flagship` on 2026-08-18, still exported and in
+`strict`, locked by four tests.
+
+It also found a conflict worth naming: three of the rule's own `safe` fixtures
+ARE polynomial at n=20,000 and read as clean at the n=30 they were timed at.
+Neither measurement is wrong — exponential needs 24 characters to bite,
+polynomial needs 20,000 — but the corpus does not currently distinguish them.
 
 ### `detect-non-literal-fs-filename` — the fix trail
 
