@@ -145,8 +145,8 @@ Loudest first is also cheapest first: one fix moves thousands of findings.
 | ---: | :--- | ---: | :--- | :--- |
 | 7 | `secure-coding/no-unlimited-resource-allocation` | 173 → **3** | 3/3 TP | **done** 2026-08-18 (`abc9fb1e2`) |
 | 8 | `node-security/no-toctou-vulnerability` | 59 | ~0 TP | **measured, fix written, NOT shipped** — see below |
-| 5 | `secure-coding/no-improper-type-validation` | 2,392 | — | second loudest, never measured |
-| 6 | `secure-coding/no-insecure-comparison` | 1,830 | — | third loudest, never measured |
+| 5 | `secure-coding/no-improper-type-validation` | 2,392 → **1,647** | 60 | **measured, −31%, sealed** — opt-in, rate published; remaining classes named in RULE-SCORES.md |
+| 6 | `secure-coding/no-insecure-comparison` | 1,830 | — | §C2.4 sealed; rate not yet measured |
 | 9 | `secure-coding/no-unchecked-loop-condition` | 435 | — | fourth loudest |
 | 10 | `secure-coding/no-missing-authentication` | 366 | — | fifth loudest; already flagged by the audit |
 
