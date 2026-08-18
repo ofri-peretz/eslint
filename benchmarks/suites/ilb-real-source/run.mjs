@@ -435,7 +435,17 @@ const stratify = (samples, byRule, n) => {
   }
   const queues = [...buckets.values()];
   const out = [];
-  for (let i = 0; out.length < n && queues.some((q) => q.length); i++) {
+  // Bound by the DEEPEST bucket, not by "some bucket is non-empty". The queues
+  // are read by index and never drained, so `queues.some((q) => q.length)` stays
+  // true forever — and when the corpus holds fewer findings than the requested
+  // n, `out.length < n` also stays true. Asking for 40 samples of a rule with 37
+  // findings hung the run after it had walked all 20 repositories.
+  //
+  // Returning fewer than n is the correct answer to "sample 40 from 37", and the
+  // caller prints the actual count so a short sample cannot be mistaken for a
+  // full one.
+  const deepest = Math.max(0, ...queues.map((q) => q.length));
+  for (let i = 0; out.length < n && i < deepest; i++) {
     for (const q of queues) {
       if (out.length >= n) break;
       if (q.length > i) out.push(q[i]);
