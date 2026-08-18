@@ -85,17 +85,29 @@ const ledger: Ledger = fs.existsSync(ledgerFile)
   : { rule: ruleId, cases: [] };
 const bySignature = new Map(ledger.cases.map((c) => [c.signature, c]));
 
-/** Same exclusions as the real-source runner: no tests, no minified, no builds. */
-const SKIP = /(\.(min|bundle|chunk)\.[cm]?jsx?|\.(test|spec)\.[cm]?[jt]sx?)$/;
-const SKIP_DIR = /(^|\/)(node_modules|dist|build|\.output|\.nuxt|coverage|__tests__|test|tests|fixtures)(\/|$)/;
+/**
+ * The SAME exclusions as `benchmarks/suites/ilb-real-source/run.mjs`, copied
+ * deliberately rather than approximated.
+ *
+ * They diverged on the first run and the divergence was invisible: the runner
+ * skips `docs/`, `examples/` and every dot-directory, this walker did not, and
+ * so the ledger filed cases from `mongoose/docs/js/`, `knex/docs/.vitepress/`
+ * and a vendored `.yarn/releases/yarn-4.13.0.cjs` that the published precision
+ * number had never counted. Two instruments answering the same question about
+ * the same rule must see the same files, or one of them is quietly measuring
+ * something else.
+ */
+const SKIP_DIR =
+  /(^|\/)(node_modules|dist|build|\.next|\.nuxt|coverage|vendor|public|fixtures?|__fixtures__|test|tests|__tests__|spec|specs|e2e|benchmarks?|examples?|docs?)(\/|$)/;
+const SKIP_FILE = /(\.(min|bundle|chunk)\.[cm]?jsx?|\.(test|spec)\.[cm]?[jt]sx?)$/;
 
 const files: string[] = [];
 const walk = (dir: string): void => {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!SKIP_DIR.test(full.replace(CACHE, ''))) walk(full);
-    } else if (/\.[cm]?[jt]sx?$/.test(entry.name) && !SKIP.test(entry.name)) {
+      if (!SKIP_DIR.test(`/${path.relative(CACHE, full)}/`) && !entry.name.startsWith('.')) walk(full);
+    } else if (/\.[cm]?[jt]sx?$/.test(entry.name) && !SKIP_FILE.test(entry.name)) {
       files.push(full);
     }
   }

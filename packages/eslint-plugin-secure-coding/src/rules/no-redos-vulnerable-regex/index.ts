@@ -95,6 +95,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslin
 import { createRule } from '@interlace/eslint-devkit';
 import { RegExpParser } from '@eslint-community/regexpp';
 import { analyse } from 'scslre';
+import { isRegExpConstructor } from '../../utils/regexp-intrinsic';
 
 // Module-level parser; cheap to reuse.
 /**
@@ -686,7 +687,13 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
      */
     function checkNewRegExp(node: TSESTree.CallExpression | TSESTree.NewExpression) {
       const callee = node.callee;
-      if (callee.type !== AST_NODE_TYPES.Identifier || callee.name !== 'RegExp') {
+      // Resolve the INTRINSIC, not the spelling. `callee.name === 'RegExp'`
+      // was wrong in both directions, and the 2026-08-18 adversarial wave found
+      // both: it went quiet on `const R = RegExp; new R(p)` and on
+      // `new globalThis.RegExp(p)` — two real library idioms compiling the same
+      // automaton — while reporting `function render(RegExp) { RegExp(p) }`,
+      // where the callee is a parameter that never compiles anything.
+      if (!isRegExpConstructor(callee, context.sourceCode)) {
         return;
       }
 
