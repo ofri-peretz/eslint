@@ -19,7 +19,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
   matchesAnyUserPattern,
   nameHasAnyWord,
 } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingAuthentication';
 
@@ -27,8 +27,11 @@ export interface Options {
   /** Allow missing authentication in test files. Default: false */
   allowInTests?: boolean;
   
-  /** Test file pattern regex string. Default: '\\.(test|spec)\\.(ts|tsx|js|jsx)$' */
-  testFilePattern?: string;
+  /**
+   * Override which filenames `allowInTests` applies to, as a regex string.
+   * Unset, the shared structural predicate (`isTestFilePath`) decides.
+   */
+  testFilePattern?: string | null;
   
   /** Authentication middleware patterns to recognize. Default: ['authenticate', 'auth', 'requireAuth', 'isAuthenticated'] */
   authMiddlewarePatterns?: string[];
@@ -408,9 +411,23 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             description: 'Extra router-object name words, on top of `routerNameWords`.',
           },
           testFilePattern: {
-            type: 'string',
-            default: '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
-            description: 'Test file pattern regex string',
+            // `null` IS the default, and saying so in the schema is the point.
+            //
+            // The option is genuinely three-state: a string overrides which
+            // filenames `allowInTests` covers, and "not set" means the shared
+            // structural predicate decides. There is no string that expresses
+            // the second — `''` compiles to a regex matching every path, which
+            // would silence the rule everywhere — so the default was left
+            // implicit in the destructuring and `option-without-default` fired,
+            // correctly: a default that lives only in `create()` is one the
+            // docs cannot state and a consumer cannot read.
+            //
+            // Naming `null` gives the third state a value, so the schema and the
+            // runtime agree and both are readable.
+            type: ['string', 'null'],
+            default: null,
+            description:
+              'Override which filenames `allowInTests` applies to. Null — the default — leaves it to the shared structural predicate.',
           },
         },
         additionalProperties: false,
@@ -420,7 +437,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInTests: false,
-      testFilePattern: '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
       authMiddlewarePatterns: DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns: DEFAULT_ROUTE_HANDLER_PATTERNS,
       ignorePatterns: DEFAULT_PUBLIC_ROUTE_PATTERNS,
@@ -434,7 +450,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
   ) {
     const {
       allowInTests = false,
-      testFilePattern = '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
+      testFilePattern,
       authMiddlewarePatterns = DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns = DEFAULT_ROUTE_HANDLER_PATTERNS,
       ignorePatterns = DEFAULT_PUBLIC_ROUTE_PATTERNS,
@@ -450,8 +466,14 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
     // "Invalid regular expression" out of create(), killing the whole lint
     // run rather than just this rule. compileUserPattern degrades both to a
     // substring match.
-    const testFileRegex = compileUserPattern(testFilePattern);
-    const isTestFile = allowInTests && testFileRegex.test(filename);
+    // Unset — the normal case — the shared structural predicate decides, so the
+    // verdict cannot depend on where the repo is checked out. A user who sets
+    // the option still overrides it exactly.
+    const isTestFile =
+      allowInTests &&
+      (testFilePattern == null
+        ? isTestFilePath(filename)
+        : compileUserPattern(testFilePattern).test(filename));
     const sourceCode = context.sourceCode;
 
     /**

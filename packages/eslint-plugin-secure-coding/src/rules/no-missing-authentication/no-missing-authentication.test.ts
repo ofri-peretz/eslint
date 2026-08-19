@@ -561,10 +561,10 @@ describe('lock: the rule never writes to stdout', () => {
  * `testFilePattern` — the regex that decides which filenames `allowInTests`
  * applies to.
  *
- * Same source, same filename, one option apart. `fixtures/routes.ts` does not
- * match the default `\.(test|spec)\.(ts|tsx|js|jsx)$`, so a repository that
- * keeps its route fixtures outside that convention gets no exemption until it
- * says so.
+ * Same source, same filename, one option apart. `seeds/routes.ts` is neither a
+ * `*.test.*` basename nor a known test directory, so the default structural
+ * predicate does not exempt it. (`fixtures/` used to sit here; it IS a test
+ * directory to `isTestFilePath`, which would have made the pair vacuous.)
  */
 describe('option: testFilePattern', () => {
   const ROUTE = 'app.get("/api/users", (req, res) => {});';
@@ -573,8 +573,8 @@ describe('option: testFilePattern', () => {
     valid: [
       {
         code: ROUTE,
-        filename: 'fixtures/routes.ts',
-        options: [{ allowInTests: true, testFilePattern: 'fixtures/' }],
+        filename: 'seeds/routes.ts',
+        options: [{ allowInTests: true, testFilePattern: 'seeds/' }],
       },
     ],
     invalid: [
@@ -582,7 +582,7 @@ describe('option: testFilePattern', () => {
       // pattern is gone, and the finding comes back.
       {
         code: ROUTE,
-        filename: 'fixtures/routes.ts',
+        filename: 'seeds/routes.ts',
         options: [{ allowInTests: true }],
         errors: [{ messageId: 'missingAuthentication' }],
       },

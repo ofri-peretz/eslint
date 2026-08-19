@@ -17,6 +17,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   cspSourceKeyword,
@@ -74,7 +75,7 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
   ) {
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};

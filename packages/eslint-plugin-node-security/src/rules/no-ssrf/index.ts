@@ -21,6 +21,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   unwrapTypeSyntax,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { bindingInit } from '../../utils/provenance';
 
@@ -376,8 +377,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
     );
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     if (isTestFile) return {};
 
     return {

@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { createRule, isModuleBinding } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 import {
@@ -317,7 +317,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     const protectedMethodsSet = new Set(protectedMethods.map(m => m.toLowerCase()));
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
     function checkCallExpression(node: TSESTree.CallExpression) {

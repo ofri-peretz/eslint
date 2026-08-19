@@ -22,6 +22,7 @@ import {
   MessageIcons,
   createRule,
   AST_NODE_TYPES,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'mathRandomCrypto';
@@ -237,8 +238,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     const sourceCode = context.sourceCode;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     /**
      * The declarator this identifier is bound to, when the binding has exactly

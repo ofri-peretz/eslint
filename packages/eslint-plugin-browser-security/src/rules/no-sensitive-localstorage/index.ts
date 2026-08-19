@@ -36,6 +36,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   hasProvableJwtValue,
@@ -128,8 +129,7 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
       checkSessionStorage = false,
     } = options as Options;
 
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
+    const isTestFile = allowInTests && isTestFilePath(context.filename);
 
     if (isTestFile) {
       return {};

@@ -12,7 +12,7 @@
  * @see https://cwe.mitre.org/data/definitions/327.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
 import { resolveConstantString } from '../../utils/const-value';
 
 type MessageIds =
@@ -186,7 +186,7 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     /**
      * Check if a call expression uses a weak cipher

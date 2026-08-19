@@ -12,7 +12,7 @@
  * @see https://cwe.mitre.org/data/definitions/295.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'insecureTls'
@@ -81,7 +81,7 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     function checkProperty(node: TSESTree.Property) {
       if (isTestFile) return;

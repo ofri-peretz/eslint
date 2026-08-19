@@ -19,6 +19,7 @@ import {
   AST_NODE_TYPES,
   isModuleBinding,
   unwrapTypeSyntax,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { constInitializerOf, resolveConstant, resolveConstantString } from '../../utils/const-value';
 import { findVariable } from '../../utils/provenance';
@@ -152,7 +153,7 @@ export const noStaticIv = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     /**
      * Is this call one of the IV-taking `crypto` factories?

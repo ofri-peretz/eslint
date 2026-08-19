@@ -19,6 +19,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   resolveModuleBinding,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 import { resolveConstantString } from '../../utils/const-value';
@@ -192,7 +193,7 @@ export const noCryptojsWeakRandom = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;

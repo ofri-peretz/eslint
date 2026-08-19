@@ -30,7 +30,7 @@
  * @see https://owasp.org/www-project-secure-headers/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
@@ -709,7 +709,7 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
 }: Options = options || {};
 
     const filename = context.filename;
-    const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = ignoreInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};

@@ -36,6 +36,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 import {
@@ -118,7 +119,7 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true, additionalPatterns = [] } = options as Options;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
+    const isTestFile = isTestFilePath(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};

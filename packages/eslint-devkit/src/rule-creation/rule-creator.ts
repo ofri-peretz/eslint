@@ -182,13 +182,18 @@ const TEST_DIR_SEGMENTS = new Set([
   'specs',
   'e2e',
   '__mocks__',
+  // Not underscore-wrapped: MSW and the hand-rolled predicate in
+  // secure-coding/no-hardcoded-credentials both use a plain `mocks/`.
+  'mocks',
   'fixtures',
   '__fixtures__',
 ]);
 // `fixture` and `mock` are here because the rules that already hand-rolled this
 // predicate included them — test data and stand-ins are as much scaffolding as
-// the assertions that consume them.
-const TEST_BASENAME = /\.(test|spec|fixture|mock)\.[cm]?[jt]sx?$/;
+// the assertions that consume them. `e2e-spec` is Nest's own generator output
+// (`app.e2e-spec.ts`); the mongodb, nestjs and jwt predicates this replaced all
+// carried it, and `\.spec\.` does not match it — the char before `spec` is `-`.
+const TEST_BASENAME = /\.(test|spec|fixture|mock|e2e-spec)\.[cm]?[jt]sx?$/;
 
 export function isTestFilePath(filename: string): boolean {
   if (!filename || filename === '<input>' || filename === '<text>') return false;

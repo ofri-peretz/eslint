@@ -421,9 +421,11 @@ describe('no-privilege-escalation', () => {
  *
  * Both cases below use the SAME source and the SAME filename and differ only
  * in the option, so the pair proves the pattern is consulted rather than
- * merely accepted. `fixtures/seed-roles.ts` deliberately does not match the
- * default `\.(test|spec)\.(ts|tsx|js|jsx)$` — a repository whose fixtures live
- * outside that naming convention gets no exemption until it says so.
+ * merely accepted. `seeds/seed-roles.ts` is neither a `*.test.*` basename nor a
+ * known test directory, so the default structural predicate does not exempt it —
+ * a repository that seeds roles outside those conventions gets no exemption
+ * until it says so. (`fixtures/` used to sit here; it IS a test directory to
+ * `isTestFilePath`, which would have made the pair vacuous.)
  */
 describe('option: testFilePattern', () => {
   const SEED = 'user.role = req.body.role;';
@@ -432,8 +434,8 @@ describe('option: testFilePattern', () => {
     valid: [
       {
         code: SEED,
-        filename: 'fixtures/seed-roles.ts',
-        options: [{ allowInTests: true, testFilePattern: 'fixtures/' }],
+        filename: 'seeds/seed-roles.ts',
+        options: [{ allowInTests: true, testFilePattern: 'seeds/' }],
       },
     ],
     invalid: [
@@ -441,7 +443,7 @@ describe('option: testFilePattern', () => {
       // pattern is gone, and the finding comes back.
       {
         code: SEED,
-        filename: 'fixtures/seed-roles.ts',
+        filename: 'seeds/seed-roles.ts',
         options: [{ allowInTests: true }],
         errors: [{ messageId: 'privilegeEscalation' }],
       },

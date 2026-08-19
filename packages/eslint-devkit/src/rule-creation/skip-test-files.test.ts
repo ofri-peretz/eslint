@@ -55,6 +55,12 @@ describe('isTestFilePath', () => {
     'src/users.fixture.ts',
     'src/fs.mock.ts',
     'src/fixtures/users.ts',
+    // Nest's own e2e generator output, and the plain `mocks/` directory — both
+    // carried by the hand-rolled predicates this replaced (mongodb/nestjs/jwt
+    // and secure-coding respectively). `\.spec\.` does not match `e2e-spec`.
+    'test/app.e2e-spec.ts',
+    'src/app.e2e-spec.ts',
+    'src/mocks/handlers.ts',
     // No directory at all — the bare-filename path, which the separator split
     // has to handle without inventing an empty segment.
     'handler.test.ts',
@@ -69,10 +75,18 @@ describe('isTestFilePath', () => {
     '/Users/me/latest/src/handler.ts',
     'src/contest-entry.ts',
     'src/protest.ts',
+    // Carried over from the nestjs predicate this replaced: a production
+    // directory whose name merely contains a test word.
+    'src/testimonials/testimonials.controller.ts',
+    'src/specifications/index.ts',
     // `testing-library` is a dependency name, not a test directory of ours.
     'node_modules/@testing-library/react/index.js',
-    // A file merely NAMED test, without the `.test.` infix, is source.
+    // A file merely NAMED test, without the `.test.` infix, is source. Same for
+    // the two additions above: the leading `.` is required, and `mocks` counts
+    // as a directory segment only.
     'src/test.ts',
+    'src/e2e-spec.ts',
+    'src/mocks.ts',
     // Bare filename, not a test — the other half of the no-directory path.
     'handler.ts',
     // Linter gives these when there is no file on disk; neither is a test file.

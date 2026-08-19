@@ -71,6 +71,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   resolveModuleBinding,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { carriesUntrustedText } from './untrusted-text';
 import { isEncodingPosition, urlKind, urlShape } from './url-shape';
@@ -183,8 +184,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options;
 
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
+    const isTestFile = allowInTests && isTestFilePath(context.filename);
     if (isTestFile) return {};
 
     const sourceCode = context.sourceCode;

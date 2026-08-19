@@ -18,6 +18,7 @@ import {
   AST_NODE_TYPES,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -345,8 +346,7 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
         : SECURE_ALTERNATIVES;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {

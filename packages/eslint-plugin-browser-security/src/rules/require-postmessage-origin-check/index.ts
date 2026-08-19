@@ -17,6 +17,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { isAnchoredRegexpTest } from '../../utils/regexp-anchoring';
 
@@ -182,8 +183,7 @@ export const requirePostmessageOriginCheck = createRule<
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};

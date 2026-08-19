@@ -51,6 +51,7 @@ import {
   MessageIcons,
   createRule,
   AST_NODE_TYPES,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unhandledStreamError';
@@ -149,7 +150,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    if (allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 

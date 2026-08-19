@@ -36,7 +36,7 @@
  * @see https://cwe.mitre.org/data/definitions/1004.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 
 import {
   cookieNameFrom,
@@ -116,7 +116,7 @@ export const noCookieAuthTokens = createRule<RuleOptions, MessageIds>({
       allowInTests = true,
       bearerPatterns = BEARER_CREDENTIAL_TERMS,
     } = options as Options;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
+    const isTestFile = isTestFilePath(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};

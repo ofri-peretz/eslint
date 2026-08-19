@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createPayloadResolver } from '@interlace/eslint-devkit';
+import { createPayloadResolver, isTestFilePath } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -206,8 +206,7 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};

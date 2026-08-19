@@ -39,7 +39,7 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 
 import {
   cookieNameFrom,
@@ -117,7 +117,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true, sensitivePatterns = [...NON_BEARER_SECRET_TERMS] } = options as Options;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
+    const isTestFile = isTestFilePath(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};

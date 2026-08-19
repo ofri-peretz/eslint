@@ -43,7 +43,7 @@
  * @see https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   isLocationNavigationCall,
@@ -226,7 +226,7 @@ ignoreInTests = true
 }: Options = options || {};
 
     const filename = context.filename;
-    const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = ignoreInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};

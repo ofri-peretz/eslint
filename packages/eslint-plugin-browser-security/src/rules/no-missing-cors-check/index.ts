@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/attacks/CORS_Misconfiguration
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCorsCheck';
@@ -137,7 +137,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     const trustedLibraries = corsTrustedLibraries;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {

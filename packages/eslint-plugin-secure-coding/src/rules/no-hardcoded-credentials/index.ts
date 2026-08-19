@@ -16,7 +16,7 @@ import { formatLLMMessage, MessageIcons,
   compileUserPatterns,
   type PatternTest,
 } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
 type MessageIds = 'useEnvironmentVariable' | 'useSecretManager';
 
@@ -818,18 +818,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     ]);
 
     const filename = context.filename;
-    const isTestFile = allowInTests && (
-      filename.includes('.test.') ||
-      filename.includes('.spec.') ||
-      filename.includes('.fixture.') ||
-      filename.includes('.mock.') ||
-      filename.includes('__tests__') ||
-      filename.includes('__mocks__') ||
-      filename.includes('/test/') ||
-      filename.includes('/tests/') ||
-      filename.includes('/fixtures/') ||
-      filename.includes('/mocks/')
-    );
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     // Compile ignore patterns to regex
     // Guarded: a user pattern reaches `new RegExp` here. Measured before this

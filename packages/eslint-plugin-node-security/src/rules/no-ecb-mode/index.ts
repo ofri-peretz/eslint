@@ -12,7 +12,7 @@
  * @see https://blog.cloudflare.com/why-are-some-images-more-secure-than-others/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
 import { resolveConstantString } from '../../utils/const-value';
 
 type MessageIds =
@@ -91,7 +91,7 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;

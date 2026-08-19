@@ -21,7 +21,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
   nameHasAnyWord,
   type PatternTest,
 } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
 type MessageIds = 'privilegeEscalation';
 
@@ -29,8 +29,11 @@ export interface Options {
   /** Allow privilege escalation patterns in test files. Default: false */
   allowInTests?: boolean;
   
-  /** Test file pattern regex string. Default: '\\.(test|spec)\\.(ts|tsx|js|jsx)$' */
-  testFilePattern?: string;
+  /**
+   * Override which filenames `allowInTests` applies to, as a regex string.
+   * Unset, the shared structural predicate (`isTestFilePath`) decides.
+   */
+  testFilePattern?: string | null;
   
   /** Role check patterns to recognize. Default: ['hasRole', 'checkRole', 'isAdmin', 'isAuthorized'] */
   roleCheckPatterns?: string[];
@@ -386,9 +389,23 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
             description: 'Allow privilege escalation patterns in test files',
           },
           testFilePattern: {
-            type: 'string',
-            default: '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
-            description: 'Test file pattern regex string',
+            // `null` IS the default, and saying so in the schema is the point.
+            //
+            // The option is genuinely three-state: a string overrides which
+            // filenames `allowInTests` covers, and "not set" means the shared
+            // structural predicate decides. There is no string that expresses
+            // the second — `''` compiles to a regex matching every path, which
+            // would silence the rule everywhere — so the default was left
+            // implicit in the destructuring and `option-without-default` fired,
+            // correctly: a default that lives only in `create()` is one the
+            // docs cannot state and a consumer cannot read.
+            //
+            // Naming `null` gives the third state a value, so the schema and the
+            // runtime agree and both are readable.
+            type: ['string', 'null'],
+            default: null,
+            description:
+              'Override which filenames `allowInTests` applies to. Null — the default — leaves it to the shared structural predicate.',
           },
           roleCheckPatterns: {
             type: 'array',
@@ -455,7 +472,6 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInTests: false,
-      testFilePattern: '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
       roleCheckPatterns: DEFAULT_ROLE_CHECK_PATTERNS,
       userInputPatterns: [],
       ignorePatterns: [],
@@ -473,7 +489,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
   ) {
     const {
       allowInTests = false,
-      testFilePattern = '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
+      testFilePattern,
       roleCheckPatterns = DEFAULT_ROLE_CHECK_PATTERNS,
       userInputPatterns: additionalUserInputPatterns = [],
       ignorePatterns = [],
@@ -504,8 +520,14 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
     // "Invalid regular expression" out of create(), killing the whole lint
     // run rather than just this rule. compileUserPattern degrades both to a
     // substring match.
-    const testFileRegex = compileUserPattern(testFilePattern);
-    const isTestFile = allowInTests && testFileRegex.test(filename);
+    // Unset — the normal case — the shared structural predicate decides, so the
+    // verdict cannot depend on where the repo is checked out. A user who sets
+    // the option still overrides it exactly.
+    const isTestFile =
+      allowInTests &&
+      (testFilePattern == null
+        ? isTestFilePath(filename)
+        : compileUserPattern(testFilePattern).test(filename));
     const sourceCode = context.sourceCode;
 
     // Combine default and additional user input patterns

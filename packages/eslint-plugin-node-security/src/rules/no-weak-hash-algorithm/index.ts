@@ -12,7 +12,7 @@
  * @see https://cwe.mitre.org/data/definitions/327.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
 import { makeNameTest } from '../../utils/names';
 import { resolveConstantString } from '../../utils/const-value';
 
@@ -427,7 +427,7 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
     const isSecurityUse = makeNameTest(securityUseNames);
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const nonCryptoNames = new Set(nonCryptographicNames.map(normalizeName));
 
     /** Is this hash stored under a name that marks it as an identifier? */

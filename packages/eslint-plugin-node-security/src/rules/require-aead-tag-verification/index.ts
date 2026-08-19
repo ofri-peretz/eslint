@@ -28,6 +28,7 @@ import {
   MessageIcons,
   createRule,
   AST_NODE_TYPES,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingAuthTag' | 'missingFinal';
@@ -120,8 +121,7 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
   ) {
     const { allowInTests = false } = options as Options;
 
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(context.filename);
+    const isTestFile = allowInTests && isTestFilePath(context.filename);
 
     /** `crypto.createDecipheriv(...)` or a bare `createDecipheriv(...)`. */
     function isCreateDecipheriv(

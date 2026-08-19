@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/attacks/xss/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createPayloadResolver, isStaticExpression } from '@interlace/eslint-devkit';
+import { createPayloadResolver, isStaticExpression, isTestFilePath } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -375,8 +375,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
