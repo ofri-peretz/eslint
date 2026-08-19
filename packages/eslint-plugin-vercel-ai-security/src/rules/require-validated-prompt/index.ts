@@ -11,7 +11,7 @@
  * @see https://owasp.org/www-project-top-10-for-large-language-model-applications/
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
@@ -134,7 +134,7 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
     const filename = context.filename;
 
     // Skip test files if allowed
-    if (allowInTests && /\.(test|spec)\.[jt]sx?$/.test(filename)) {
+    if (allowInTests && isTestFilePath(filename)) {
       return {};
     }
 

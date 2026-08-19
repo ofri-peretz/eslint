@@ -18,6 +18,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -28,7 +29,6 @@ import {
   INPUT_DECORATORS,
   isControllerClass,
   isRouteHandler,
-  isTestFile,
 } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
 import { hasParserServices, getParserServices } from '@interlace/eslint-devkit';
@@ -163,7 +163,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    if (allowInTests && isTestFile(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 

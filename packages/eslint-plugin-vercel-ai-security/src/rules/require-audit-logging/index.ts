@@ -10,7 +10,7 @@
  * @see OWASP ASI10: Logging & Monitoring
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'missingAuditLogging';
@@ -78,7 +78,7 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
     const filename = context.filename;
 
     // Skip test files if allowed
-    if (allowInTests && /\.(test|spec)\.[jt]sx?$/.test(filename)) {
+    if (allowInTests && isTestFilePath(filename)) {
       return {};
     }
 

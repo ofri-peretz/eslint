@@ -19,6 +19,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -32,7 +33,6 @@ import {
   isAccessControlDecorator,
   isControllerClass,
   isRouteHandler,
-  isTestFile,
   memberName,
   superClassName,
   type ClassNode,
@@ -382,7 +382,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    if (allowInTests && isTestFile(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 

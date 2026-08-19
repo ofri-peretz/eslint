@@ -17,6 +17,7 @@ import {
   AST_NODE_TYPES,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
@@ -175,8 +176,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     );
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
     function checkCallExpression(node: TSESTree.CallExpression) {

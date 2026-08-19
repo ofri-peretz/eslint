@@ -11,7 +11,7 @@
  * @see OWASP ASI02: Tool Misuse & Exploitation
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'missingInputSchema' | 'emptyToolsObject';
@@ -89,7 +89,7 @@ export const requireToolSchema = createRule<RuleOptions, MessageIds>({
     const filename = context.filename;
 
     // Skip test files if allowed
-    if (allowInTests && /\.(test|spec)\.[jt]sx?$/.test(filename)) {
+    if (allowInTests && isTestFilePath(filename)) {
       return {};
     }
 

@@ -42,6 +42,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCsrf';
@@ -249,8 +250,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};

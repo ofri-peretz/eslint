@@ -18,6 +18,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -29,7 +30,6 @@ import {
   isAccessControlDecorator,
   HTTP_METHOD_DECORATORS,
   isControllerClass,
-  isTestFile,
   memberName,
   type ClassNode,
 } from '../../utils/nest-ast';
@@ -222,7 +222,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    if (allowInTests && isTestFile(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 

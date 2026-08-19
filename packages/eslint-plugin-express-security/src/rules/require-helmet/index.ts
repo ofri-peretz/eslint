@@ -24,6 +24,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingHelmet';
@@ -202,8 +203,7 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
     }
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};

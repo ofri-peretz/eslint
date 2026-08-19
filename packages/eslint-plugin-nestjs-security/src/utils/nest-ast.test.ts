@@ -34,7 +34,6 @@ import {
   routeMethodName,
   memberName,
   superClassName,
-  isTestFile,
   objectProperties,
   isTrueLiteral,
   callReceiver,
@@ -354,19 +353,6 @@ describe('superClassName', () => {
   });
 });
 
-describe('isTestFile', () => {
-  it.each([
-    ['users.controller.spec.ts', true],
-    ['users.controller.test.ts', true],
-    ['app.e2e-spec.ts', true],
-    ['users.spec.mts', true],
-    ['users.controller.ts', false],
-    ['specifications.ts', false],
-  ])('%s -> %s', (filename, expected) => {
-    expect(isTestFile(filename)).toBe(expected);
-  });
-});
-
 describe('collectImportOrigins / decoratorSource / rootBindingName', () => {
   /** Parse a whole module and return its Program plus the first class's decorators. */
   function parseModule(code: string) {
@@ -620,29 +606,7 @@ describe('isAuthDecoratorName — retrieval verbs are not enforcement', () => {
   });
 });
 
-describe('isTestFile — directories count, not just suffixes', () => {
-  it.each([
-    'users.controller.spec.ts',
-    'app.e2e-spec.ts',
-    'thing.test.ts',
-    // teable/apps/nestjs-backend/test/utils/init-app.ts builds an app for the
-    // e2e suite. It is test code, and nothing in its *name* says so.
-    'test/utils/init-app.ts',
-    'apps/api/test/helpers/seed.ts',
-    'src/__tests__/factory.ts',
-    'src/__mocks__/repository.ts',
-    'e2e/setup.ts',
-  ])('treats %s as test code', (filename) => {
-    expect(isTestFile(filename)).toBe(true);
-  });
-
-  it.each([
-    'users.controller.ts',
-    'src/main.ts',
-    // A production directory whose name merely contains a test word.
-    'src/testimonials/testimonials.controller.ts',
-    'src/latest/latest.controller.ts',
-  ])('treats %s as production code', (filename) => {
-    expect(isTestFile(filename)).toBe(false);
-  });
-});
+// `isTestFile` used to live here with its own suffix and directory cases. It is
+// now `isTestFilePath` in @interlace/eslint-devkit, locked by
+// rule-creation/skip-test-files.test.ts — which carries those cases forward,
+// `testimonials/` and `latest/` included.

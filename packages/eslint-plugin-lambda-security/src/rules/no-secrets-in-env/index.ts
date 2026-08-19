@@ -13,7 +13,7 @@
  * @see https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'secretsInEnv';
@@ -87,7 +87,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true, additionalPatterns = [] } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};

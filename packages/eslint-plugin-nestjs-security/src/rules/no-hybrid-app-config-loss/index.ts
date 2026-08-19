@@ -57,12 +57,12 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 import {
   expressionName,
-  isTestFile,
   objectProperties,
 } from '../../utils/nest-ast';
 
@@ -119,7 +119,7 @@ export const noHybridAppConfigLoss = createRule<RuleOptions, MessageIds>({
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
     const { allowInTests = true } = options;
-    if (allowInTests && isTestFile(context.filename)) return {};
+    if (allowInTests && isTestFilePath(context.filename)) return {};
 
     /**
      * Whether the hybrid options argument opts into inheritance.

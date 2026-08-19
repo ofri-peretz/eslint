@@ -28,6 +28,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
@@ -39,7 +40,6 @@ import {
   enclosingClass,
   isControllerClass,
   isRouteHandler,
-  isTestFile,
   isTrueLiteral,
   expressionName,
   objectProperties,
@@ -165,7 +165,7 @@ export const noResBypassSerialization = createRule<RuleOptions, MessageIds>({
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
     const { allowInTests = true, assumeGlobalSerializer = false } = options;
-    if (allowInTests && isTestFile(context.filename)) return {};
+    if (allowInTests && isTestFilePath(context.filename)) return {};
 
     /**
      * The identifier bound to a non-passthrough `@Res()`, if the handler has

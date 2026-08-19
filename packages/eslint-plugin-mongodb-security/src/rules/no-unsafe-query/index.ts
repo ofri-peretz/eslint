@@ -18,8 +18,8 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
-import { isTestFile } from '../../utils/paths';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'unsafeQuery' | 'suggestionUseEq';
@@ -212,7 +212,7 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true, additionalMethods = [] } = options as Options;
     const filename = context.filename;
-    const inTestFile = isTestFile(filename);
+    const inTestFile = isTestFilePath(filename);
 
     if (allowInTests && inTestFile) {
       return {};

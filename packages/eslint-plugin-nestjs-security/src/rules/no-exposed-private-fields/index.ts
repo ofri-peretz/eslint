@@ -19,12 +19,12 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
   enclosingClass,
   hasDecorator,
-  isTestFile,
   isTrueLiteral,
   memberName,
   objectProperties,
@@ -132,7 +132,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true, sensitivePatterns = [] } = options as Options;
 
-    if (allowInTests && isTestFile(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 

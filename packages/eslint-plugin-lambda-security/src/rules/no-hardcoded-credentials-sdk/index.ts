@@ -13,7 +13,7 @@
  * @see https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/loading-browser-credentials-browser.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'hardcodedCredentials';
@@ -114,7 +114,7 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};

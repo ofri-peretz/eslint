@@ -38,11 +38,11 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   collectImportOrigins,
   expressionName,
-  isTestFile,
   objectProperties,
 } from '../../utils/nest-ast';
 
@@ -304,7 +304,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
     const { allowInTests = true } = options;
-    if (allowInTests && isTestFile(context.filename)) return {};
+    if (allowInTests && isTestFilePath(context.filename)) return {};
 
     let origins: ReadonlyMap<string, string> = new Map();
     let importedNames: ReadonlyMap<string, string> = new Map();

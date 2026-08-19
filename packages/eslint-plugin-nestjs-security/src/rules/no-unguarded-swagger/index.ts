@@ -32,9 +32,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { expressionName, isTestFile } from '../../utils/nest-ast';
+import { expressionName } from '../../utils/nest-ast';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'unguardedSwagger';
@@ -104,7 +105,7 @@ export const noUnguardedSwagger = createRule<RuleOptions, MessageIds>({
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
     const { allowInTests = true } = options;
-    if (allowInTests && isTestFile(context.filename)) return {};
+    if (allowInTests && isTestFilePath(context.filename)) return {};
 
     /**
      * The nearest enclosing function, and whether anything on the way there

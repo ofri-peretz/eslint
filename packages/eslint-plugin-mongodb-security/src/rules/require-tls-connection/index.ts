@@ -10,8 +10,7 @@
  * CWE-295: Improper Certificate Validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isTestFile } from '../../utils/paths';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -60,7 +59,7 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const inTestFile = isTestFile(filename);
+    const inTestFile = isTestFilePath(filename);
 
     if (allowInTests && inTestFile) {
       return {};
