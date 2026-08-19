@@ -1,7 +1,7 @@
 {
   "rule": "secure-coding/detect-non-literal-regexp",
   "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
-  "fixtures": 30,
+  "fixtures": 31,
   "vulnerable": 15,
   "results": [
     {
@@ -9,7 +9,7 @@
       "tp": 15,
       "fp": 0,
       "fn": 0,
-      "tn": 15,
+      "tn": 16,
       "precision": 1,
       "recall": 1,
       "specificity": 1,
@@ -22,14 +22,14 @@
     {
       "name": "eslint-plugin-security [detect-non-literal-regexp]",
       "tp": 12,
-      "fp": 7,
+      "fp": 8,
       "fn": 3,
       "tn": 8,
-      "precision": 0.631578947368421,
+      "precision": 0.6,
       "recall": 0.8,
-      "specificity": 0.5333333333333333,
-      "youdenJ": 0.3333333333333335,
-      "f1": 0.7058823529411765,
+      "specificity": 0.5,
+      "youdenJ": 0.30000000000000004,
+      "f1": 0.6857142857142857,
       "crashes": [],
       "missed": [
         "vulnerable/05-call-form-no-new.js",
@@ -43,7 +43,8 @@
         "safe/05-loop-counter-placeholder.js",
         "safe/07-let-with-literal-branches.js",
         "safe/08-for-of-const-pattern-list.js",
-        "safe/09-string-raw-source.js"
+        "safe/09-string-raw-source.js",
+        "safe/10-cloned-regexp.js"
       ]
     }
   ]

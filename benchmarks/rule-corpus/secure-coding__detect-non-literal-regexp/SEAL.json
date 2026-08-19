@@ -42,7 +42,7 @@
     },
     "realSource": {
       "state": "unmet",
-      "evidence": "112 case(s): 0 enforce, 0 exempt, 0 undecided, 112 unreviewed",
+      "evidence": "116 case(s): 0 enforce, 0 exempt, 0 undecided, 116 unreviewed",
       "command": "npm run cases -- secure-coding/detect-non-literal-regexp"
     },
     "partition": {
@@ -62,7 +62,7 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 1995L +2.06±1.87ms · 7980L +6.62±3.12ms · 31920L +10.54±1.56ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 2125L +1.03±0.89ms · 8075L +5.09±1.86ms · 31875L +24.72±1.97ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-non-literal-regexp"
     },
     "recorded": {

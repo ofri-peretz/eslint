@@ -377,6 +377,98 @@ function isConstantBinding(
   });
 }
 
+
+/**
+ * Is this construction a CLONE of an existing RegExp?
+ *
+ * `.source` is a string the ENGINE produced from an already-compiled pattern,
+ * not one a caller supplied, so a clone cannot introduce backtracking the
+ * original did not have. Executed against `recheck` rather than argued — see
+ * REGEXP-FACTS.md in this rule's corpus: four patterns, spanning safe and
+ * exponential, cloned byte-identically with the oracle returning the same
+ * verdict for original and copy in every case.
+ *
+ * So a finding here is a DUPLICATE (the original is a literal that
+ * `no-redos-vulnerable-regex` already reports, with proof) or a MISATTRIBUTION
+ * (it points at the copy instead of the pattern). Measured on 20 repositories:
+ * 7 cases, 10 findings, in mongoose, webpack, n8n and nest.
+ *
+ * ## Why this asks about SHAPE and never about the receiver's name
+ *
+ * `regexp.source` and `config.source` are both, syntactically, a property read
+ * off a parameter. Nothing distinguishes them but the identifier the author
+ * chose, and deciding by that is the defect `lint:name-inference` gates: a
+ * project whose regex is held in `p` would get no credit, and one whose
+ * `config` happens to carry a `.source` string would be silently exempted.
+ *
+ * Two things ARE evidence, and both are structural:
+ *
+ *   1. `new RegExp(X.source, X.flags)` — the same receiver, read through two
+ *      accessors the language defines only on RegExp, feeding the pattern and
+ *      flags positions of a RegExp constructor. That is the clone idiom itself,
+ *      not a guess about what `X` is called. `.source` ALONE is not enough:
+ *      any object may carry one, which is what the `config.source` control
+ *      pins.
+ *   2. The receiver resolves, in this file, to a regular expression — a regex
+ *      literal or a RegExp construction. Then it is a RegExp because the
+ *      program says so.
+ *
+ * Deliberately NOT treated as a clone: `new RegExp(re.source + '$', re.flags)`,
+ * which nestjs/nest uses. Appending a literal is usually harmless and "usually"
+ * is not a contract — a literal may itself carry a quantifier (`re.source +
+ * '+'`). Only the pure form is claimed, so that shape keeps its finding.
+ */
+function isRegExpClone(
+  node: TSESTree.CallExpression | TSESTree.NewExpression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const [patternArg, flagsArg] = node.arguments;
+  if (
+    patternArg?.type !== 'MemberExpression' ||
+    patternArg.computed ||
+    patternArg.property.type !== 'Identifier' ||
+    patternArg.property.name !== 'source'
+  ) {
+    return false;
+  }
+
+  const receiver = patternArg.object;
+
+  // (1) The same receiver also supplies `.flags`.
+  if (
+    flagsArg?.type === 'MemberExpression' &&
+    !flagsArg.computed &&
+    flagsArg.property.type === 'Identifier' &&
+    flagsArg.property.name === 'flags' &&
+    sourceCode.getText(flagsArg.object) === sourceCode.getText(receiver)
+  ) {
+    return true;
+  }
+
+  // (2) The receiver resolves to a regular expression in this file.
+  if (receiver.type !== 'Identifier') {
+    return false;
+  }
+  const variable = resolveVariable(receiver.name, sourceCode.getScope(receiver));
+  const def = variable?.defs.length === 1 ? variable.defs[0] : null;
+  if (!def || def.type !== 'Variable' || def.node.type !== 'VariableDeclarator') {
+    return false;
+  }
+  const init = def.node.init;
+  if (!init) {
+    return false;
+  }
+  return (
+    // `'regex' in init` is the whole test: a RegExpLiteral always carries the
+    // property and a string literal never does. An `init.regex !== undefined`
+    // tail was here first and is unreachable behind the `in` check — deleted
+    // rather than covered, since a branch no input can take is not a branch.
+    (init.type === 'Literal' && 'regex' in init) ||
+    ((init.type === 'NewExpression' || init.type === 'CallExpression') &&
+      isRegExpConstructor(init.callee, sourceCode))
+  );
+}
+
 export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   name: 'detect-non-literal-regexp',
   meta: {
@@ -685,6 +777,12 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
      * Check RegExp constructor calls for vulnerabilities
      */
     const checkRegExpCall = (node: TSESTree.CallExpression | TSESTree.NewExpression) => {
+      // A clone of an existing RegExp carries the original's backtracking and
+      // adds none of its own — proven by execution, see `isRegExpClone`.
+      if (isRegExpClone(node, context.sourceCode)) {
+        return;
+      }
+
       // Does the callee resolve to the intrinsic RegExp constructor? Asked of
       // the BINDING, not of the spelling at the call site — see
       // `isRegExpConstructor`.
