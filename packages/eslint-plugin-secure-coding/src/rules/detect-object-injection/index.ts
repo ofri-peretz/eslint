@@ -1724,7 +1724,120 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    /**
+     * Is the value read here CALLED?
+     *
+     * A read cannot pollute a prototype, but a read whose result is invoked is
+     * method injection — CWE-915's other arm, and a real one. The corpus fixture
+     * `vulnerable/07-dynamic-handler-dispatch.js` is exactly this:
+     *
+     *   const handler = this.handlers[req.body.action];
+     *   return handler(req.body.payload);
+     *
+     * `{"action":"constructor"}` resolves to the Object constructor and the next
+     * line calls it. Dropping every read would have lost this, and the duel
+     * caught it — recall fell 100% to 92.9% on the first attempt at this change.
+     *
+     * Two shapes: called immediately, or bound once and then called in the same
+     * scope. Beyond one hop is L1.
+     */
+    const isInvokedRead = (node: TSESTree.MemberExpression): boolean => {
+      const parent = node.parent as TSESTree.Node | undefined;
+      if (parent === undefined) return false;
+
+      // `handlers[k](...)`
+      if (parent.type === AST_NODE_TYPES.CallExpression && parent.callee === node) {
+        return true;
+      }
+
+      // `const h = handlers[k]; h(...)`
+      if (
+        parent.type !== AST_NODE_TYPES.VariableDeclarator ||
+        parent.init !== node ||
+        parent.id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const variable = context.sourceCode
+        .getDeclaredVariables(parent as never)
+        .find((candidate) => candidate.name === (parent.id as TSESTree.Identifier).name);
+      return (
+        variable?.references.some((reference) => {
+          const referenceParent = reference.identifier.parent as TSESTree.Node | undefined;
+          return (
+            referenceParent?.type === AST_NODE_TYPES.CallExpression &&
+            referenceParent.callee === reference.identifier
+          );
+        }) ?? false
+      );
+    };
+
+    /**
+     * Is this access the TARGET of a write, rather than a value being read?
+     *
+     * A member expression is a write target when it is the left side of an
+     * assignment or update, the argument of `delete`, or an intermediate step in
+     * a chain whose outermost link is one of those — `o[a][b] = v` writes
+     * through `o[a]`, so `o[a]` is on a write path even though it is not itself
+     * the assignment's left side.
+     */
+    const isWriteTarget = (node: TSESTree.MemberExpression): boolean => {
+      let current: TSESTree.Node = node;
+      let parent = current.parent as TSESTree.Node | undefined;
+      while (parent !== undefined) {
+        if (
+          parent.type === AST_NODE_TYPES.AssignmentExpression &&
+          parent.left === current
+        ) {
+          return true;
+        }
+        if (parent.type === AST_NODE_TYPES.UpdateExpression && parent.argument === current) {
+          return true;
+        }
+        if (parent.type === AST_NODE_TYPES.UnaryExpression && parent.operator === 'delete') {
+          return true;
+        }
+        // Keep climbing only while we are still the OBJECT of an enclosing
+        // member expression; that is the `o[a]` in `o[a][b] = v`. Being the
+        // computed PROPERTY (`x` in `o[x]`) is a read of `x`, not a write path.
+        if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === current) {
+          current = parent;
+          parent = current.parent as TSESTree.Node | undefined;
+          continue;
+        }
+        return false;
+      }
+      return false;
+    };
+
     const checkMemberExpression = (node: TSESTree.MemberExpression) => {
+      // A READ CANNOT POLLUTE A PROTOTYPE. Executed, not argued:
+      //
+      //   const o = {}, k = '__proto__';
+      //   const v = o[k];            // Object.prototype unchanged
+      //
+      // There is no key, no object and no runtime in which evaluating `obj[k]`
+      // as an expression writes anything. The probe is in the corpus at
+      // POLLUTION-FACTS.md.
+      //
+      // Measured on 20 repositories and 3.10M lines, this rule produced 14,910
+      // findings across 4,286 distinct cases — and 2,100 of those cases, 49.0%,
+      // were reads. Half of everything it said was provably incapable of the
+      // weakness it is named after, under a CWE-1321 message that told the
+      // reader otherwise.
+      //
+      // The LOCK header permits exactly this reopening: "a new use case arrives
+      // WITH A REPRODUCTION — code that is genuinely safe and reported,
+      // demonstrated by RUNNING it."
+      //
+      // NOT claimed: that reading an attacker-chosen key is harmless in general.
+      // `user[req.query.field]` can hand back a password hash. That is CWE-200,
+      // information exposure — a different weakness needing a different message,
+      // and it is tracked as a gap rather than smuggled in under this one.
+      if (!isWriteTarget(node) && !isInvokedRead(node)) {
+        return;
+      }
+
       if (!isHighRiskMemberAccess(node)) {
         return;
       }
@@ -1738,10 +1851,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Skip inner chained computed accesses — report only the OUTERMOST MemberExpression.
-      // For `a[b][c]`, both `a[b]` and `a[b][c]` start at the same source position, so
-      // reporting both produces exact duplicate findings. Skip the inner `a[b]` here;
-      // the outer `a[b][c]` will be reported by a subsequent call to this handler.
+      // Skip the inner link of a chained computed access — report only the
+      // OUTERMOST. For `a[b][c] = v`, `a[b]` and `a[b][c]` start at the same
+      // source position, so reporting both is one defect twice.
+      //
+      // I removed both of these guards on 2026-08-19 believing coverage had
+      // shown them dead, and five tests immediately reported EXTRA findings.
+      // Coverage marks the `return` uncovered because no test reaches it, while
+      // the condition itself runs constantly and is load-bearing. An uncovered
+      // line is not a dead line, and that distinction cost a broken build.
       const parent = node.parent as TSESTree.Node | undefined;
       if (
         parent?.type === AST_NODE_TYPES.MemberExpression &&
@@ -1751,8 +1869,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Also check parent - if it's an AssignmentExpression and this node is the left side, skip
-      // (This handles cases where WeakSet check didn't work due to visitor order)
+      // The assignment's left side is the AssignmentExpression visitor's to
+      // report; this catches the case where visitor order beat the WeakSet.
       if (parent && parent.type === AST_NODE_TYPES.AssignmentExpression && parent.left === node) {
         return;
       }

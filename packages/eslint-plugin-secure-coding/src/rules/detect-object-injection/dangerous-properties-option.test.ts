@@ -45,6 +45,17 @@ describe('detect-object-injection — dangerousProperties (shape x setting)', ()
   ruleTester.run('detect-object-injection', detectObjectInjection, {
     valid: [
       {
+        // Moved from `invalid` 2026-08-19. The point of the case is unchanged —
+        // `dangerousProperties: []` cannot silence a DYNAMIC key, because there
+        // is no name to compare against the list. What changed is that a read is
+        // no longer a finding at all, so the option's irrelevance now shows up
+        // as silence for a second, independent reason.
+        name: 'a dynamic READ is out of the option\'s scope — and reads cannot pollute',
+        code: `export function g(req) { return config[req.query.key]; }`,
+        options: [{ dangerousProperties: [] }],
+      },
+
+      {
         // THE cell that proves the option does something. Remove the option
         // plumbing and this reports, which is what makes it a lock rather than
         // a description.
@@ -79,12 +90,6 @@ o['prototype'] = payload;`,
         // asserting so is what stops the contract drifting back.
         name: 'a DYNAMIC key has no name to compare — [] cannot silence it',
         code: `function f(o, k) { o[k] = 1; }`,
-        options: [{ dangerousProperties: [] }],
-        errors: [{ messageId: 'objectInjection' }],
-      },
-      {
-        name: 'a dynamic READ is likewise out of the option\'s scope',
-        code: `export function g(req) { return config[req.query.key]; }`,
         options: [{ dangerousProperties: [] }],
         errors: [{ messageId: 'objectInjection' }],
       },

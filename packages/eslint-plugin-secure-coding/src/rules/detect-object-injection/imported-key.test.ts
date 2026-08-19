@@ -122,9 +122,13 @@ export function get(target) {
         // CONTROL. A request-derived key must still report — this is the whole
         // rule, and a guard that swallowed it would make every valid case above
         // pass vacuously.
+        // Changed from a read to a WRITE on 2026-08-19. A read no longer
+        // reports, so the read form would have made this control vacuous — and
+        // a vacuous control is worse than none, because every valid case above
+        // then passes for free.
         name: 'CONTROL: a request-derived key still reports',
-        code: `export function get(req, target) {
-  return target[req.query.k];
+        code: `export function set(req, target, value) {
+  target[req.query.k] = value;
 }`,
         errors: 1,
       },

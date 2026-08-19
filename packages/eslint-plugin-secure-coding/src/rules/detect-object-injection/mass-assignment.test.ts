@@ -180,7 +180,9 @@ export function tag(o) { o[kShared] = 1; }`,
 export function update(req, user) {
   for (k of Object.keys(req.body)) { user[k] = req.body[k]; }
 }`,
-        errors: [{ messageId: 'objectInjection' }, { messageId: 'objectInjection' }],
+        // 2 -> 1 on 2026-08-19: this asserted the write `user[k]` AND the read
+        // `req.body[k]`. The write still reports; the read cannot pollute.
+        errors: [{ messageId: 'objectInjection' }],
       },
       {
         // CONTROL for the Symbol suppression. Declared a Symbol, reassigned to a
