@@ -425,7 +425,7 @@ function isRegExpClone(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  const [patternArg, flagsArg] = node.arguments;
+  const [patternArg] = node.arguments;
   if (
     patternArg?.type !== 'MemberExpression' ||
     patternArg.computed ||
@@ -437,16 +437,33 @@ function isRegExpClone(
 
   const receiver = patternArg.object;
 
-  // (1) The same receiver also supplies `.flags`.
-  if (
-    flagsArg?.type === 'MemberExpression' &&
-    !flagsArg.computed &&
-    flagsArg.property.type === 'Identifier' &&
-    flagsArg.property.name === 'flags' &&
-    sourceCode.getText(flagsArg.object) === sourceCode.getText(receiver)
-  ) {
-    return true;
-  }
+  // Only ONE thing qualifies: the receiver resolves, in this file, to a regular
+  // expression. Then it is a RegExp because the program says so, and the copy
+  // compiles to what the original compiles to.
+  //
+  // An earlier revision also accepted `new RegExp(X.source, X.flags)` — the same
+  // receiver supplying both accessors — on the grounds that it is the clone
+  // idiom. An adversarial wave killed it:
+  //
+  //     const o = { source: req.query.p, flags: 'g' };
+  //     new RegExp(o.source, o.flags);            // exempted. attacker-chosen.
+  //     const o = JSON.parse(body);
+  //     new RegExp(o.source, o.flags);            // exempted. attacker-chosen.
+  //
+  // Any object may carry `.source` and `.flags`; the pair is an idiom, not a
+  // type. Structurally it is indistinguishable from mongoose's
+  // `cloneRegExp(regexp)`, so the condition could not tell a clone from parsed
+  // request data and let the second through.
+  //
+  // The message the rule now reports is what settles it. It says the pattern is
+  // decided at runtime and its cost and origin are NOT VISIBLE HERE — and the
+  // origin of `a.source`, for an `a` this file never sees, is exactly that:
+  // not visible. Exempting it contradicted the finding's own words.
+  //
+  // Cost, measured: mongoose's `clone.js` and webpack's two sites bind their
+  // receiver to a parameter and report again. n8n's `PLACEHOLDER_REGEX.source`
+  // resolves to a literal in the file and stays exempt. Recall bought back at
+  // the price of three findings, and the three are honest ones.
 
   // (2) The receiver resolves to a regular expression in this file.
   if (receiver.type !== 'Identifier') {

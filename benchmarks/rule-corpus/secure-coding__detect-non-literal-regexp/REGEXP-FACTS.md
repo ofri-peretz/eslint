@@ -249,3 +249,54 @@ Two things follow, and neither is done here:
 - Judging a rule's cases and renaming its messages are ordered operations.
   Rename first, judge after — and if a rename becomes necessary later, the
   verdicts have to be carried across deliberately.
+
+## The adversarial wave, and the exemption it killed
+
+Run 2026-08-19. The first attempt reported 9 correct results and 5 false
+positives, and every one of them was fiction: the harness used a wholly
+universal `files` glob, so ESLint never linted the probe at all and returned one
+non-fatal "No matching configuration found" — which a `!m.fatal` filter counts
+as a finding. Nine "reports" were that warning. The wave measured nothing, twice
+over, and looked healthy doing it.
+
+With a config that actually lints, on 14 probes: **6 false negatives, 1 false
+positive.** Three of the six were introduced the same day, by the clone
+exemption two commits earlier:
+
+```js
+const o = { source: req.query.p, flags: 'g' };
+new RegExp(o.source, o.flags);          // exempted — attacker-chosen
+const o = JSON.parse(body);
+new RegExp(o.source, o.flags);          // exempted — attacker-chosen
+```
+
+The exemption accepted "the same receiver supplies `.source` and `.flags`" as
+proof of a RegExp. Any object may carry both. Structurally that is
+indistinguishable from mongoose's `cloneRegExp(regexp)`, so the condition could
+not separate a compiled pattern from parsed request data, and passed both.
+
+What settles it is the message this rule now reports: *the pattern's cost and
+origin are not visible here*. For a receiver the file never sees, the origin is
+exactly that — not visible. The exemption contradicted the finding's own words,
+and only the second condition survives: the receiver must resolve, in this file,
+to a regex literal or a RegExp construction.
+
+Cost of buying that recall back: **245 → 248 findings.** mongoose's `clone.js`
+and webpack's two sites bind their receiver to a parameter and report again;
+n8n's `PLACEHOLDER_REGEX.source` resolves to a literal and stays exempt. The
+fixture followed the contract rather than the other way round — the parameter
+clone moved from `safe/` to `vulnerable/16-clone-of-unknown-regexp.js`, and the
+duel is 16 TP / 0 FP / 0 FN, 100% F1 against eslint-plugin-security's 70.3%.
+
+### Still open, measured not guessed
+
+Three false negatives survive, all pre-existing and all in reaching the RegExp
+intrinsic:
+
+- `Reflect.construct(RegExp, [p])`
+- `const { RegExp: R } = globalThis; new R(p)`
+- `class My extends RegExp {}; new My(p)`
+
+And one false positive: `const P = { X: '^a$' } as const; new RegExp(P.X)` is a
+compile-time constant and is reported. Each is a unit of work, not an accepted
+defect.

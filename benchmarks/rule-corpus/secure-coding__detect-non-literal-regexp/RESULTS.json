@@ -1,12 +1,12 @@
 {
   "rule": "secure-coding/detect-non-literal-regexp",
   "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
-  "fixtures": 31,
-  "vulnerable": 15,
+  "fixtures": 32,
+  "vulnerable": 16,
   "results": [
     {
       "name": "Interlace secure-coding/detect-non-literal-regexp",
-      "tp": 15,
+      "tp": 16,
       "fp": 0,
       "fn": 0,
       "tn": 16,
@@ -21,15 +21,15 @@
     },
     {
       "name": "eslint-plugin-security [detect-non-literal-regexp]",
-      "tp": 12,
+      "tp": 13,
       "fp": 8,
       "fn": 3,
       "tn": 8,
-      "precision": 0.6,
-      "recall": 0.8,
+      "precision": 0.6190476190476191,
+      "recall": 0.8125,
       "specificity": 0.5,
-      "youdenJ": 0.30000000000000004,
-      "f1": 0.6857142857142857,
+      "youdenJ": 0.3125,
+      "f1": 0.7027027027027026,
       "crashes": [],
       "missed": [
         "vulnerable/05-call-form-no-new.js",

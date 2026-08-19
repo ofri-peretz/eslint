@@ -32,7 +32,7 @@
     },
     "duel": {
       "state": "met",
-      "evidence": "15 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "16 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/detect-non-literal-regexp"
     },
     "adversarial": {
@@ -62,7 +62,7 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 2125L +0.60±0.58ms · 8075L +9.00±1.01ms · 31875L +30.69±8.27ms — 3.4x time for 3.9x lines (8075→31875), linear",
+      "evidence": "marginal over a no-op control: 1780L +2.18±1.44ms · 8010L +6.29±1.40ms · 32040L +30.15±4.93ms — 4.8x time for 4.0x lines (8010→32040), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-non-literal-regexp"
     },
     "recorded": {

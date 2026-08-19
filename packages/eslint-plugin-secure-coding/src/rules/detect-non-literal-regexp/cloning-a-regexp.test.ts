@@ -35,16 +35,6 @@ const ruleTester = new RuleTester();
 ruleTester.run('detect-non-literal-regexp — cloning', detectNonLiteralRegexp, {
   valid: [
     {
-      // Automattic/mongoose lib/helpers/clone.js:247
-      name: 'the canonical clone, source and flags',
-      code: `export function clone(regexp) { return new RegExp(regexp.source, regexp.flags); }`,
-    },
-    {
-      // webpack/webpack
-      name: 'a clone whose receiver is named something else',
-      code: `export function f(source) { return new RegExp(source.source, source.flags); }`,
-    },
-    {
       // n8n-io/n8n — cloning a module constant to add a flag.
       name: 'a clone that replaces the flags with a literal',
       code: `const PLACEHOLDER = /\\{\\{(.*?)\\}\\}/; export function f() { return new RegExp(PLACEHOLDER.source, 'g'); }`,
@@ -63,6 +53,31 @@ ruleTester.run('detect-non-literal-regexp — cloning', detectNonLiteralRegexp, 
     },
   ],
   invalid: [
+    {
+      // These two were `valid` when the exemption also accepted "the same
+      // receiver supplies .source AND .flags". An adversarial wave killed that
+      // condition: any object may carry both, so it could not tell mongoose's
+      // `cloneRegExp(regexp)` from `JSON.parse(body)` and exempted the second.
+      //
+      // The receiver is a parameter this file never sees, so nothing shows it
+      // is a RegExp — which is precisely what the finding now says: the
+      // pattern's cost and origin are not visible here. Exempting it
+      // contradicted the message. mongoose's clone.js and webpack's two sites
+      // report again, and that is the honest answer for all three.
+      name: 'a parameter supplying source and flags is not provably a RegExp',
+      code: `export function clone(regexp) { return new RegExp(regexp.source, regexp.flags); }`,
+      errors: 1,
+    },
+    {
+      name: 'CONTROL: the same shape reached through parsed request data',
+      code: `export function h(body) { const o = JSON.parse(body); return new RegExp(o.source, o.flags); }`,
+      errors: 1,
+    },
+    {
+      name: 'CONTROL: an object literal built from a request',
+      code: `export function h(req) { const o = { source: req.query.p, flags: 'g' }; return new RegExp(o.source, o.flags); }`,
+      errors: 1,
+    },
     {
       // The point of the whole exemption, stated as a test: when the original
       // IS runtime-decided, the finding does not disappear — it moves to the
