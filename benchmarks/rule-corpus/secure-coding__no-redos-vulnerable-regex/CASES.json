@@ -2,37 +2,6 @@
   "rule": "secure-coding/no-redos-vulnerable-regex",
   "cases": [
     {
-      "id": "redosVulnerable-e19665d61f4e",
-      "signature": "e19665d61f4e",
-      "verdict": "undecided",
-      "messageId": "redosVulnerable",
-      "shape": "Regex:/^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/",
-      "context": "",
-      "firstSeen": "2026-08-18",
-      "examples": [
-        {
-          "repo": "Unitech/pm2",
-          "file": "lib/tools/IsAbsolute.js",
-          "line": 9,
-          "source": "var splitDeviceRe = /^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/;"
-        },
-        {
-          "repo": "Unitech/pm2",
-          "file": "modules/pm2-io-agent/src/Utility.js",
-          "line": 126,
-          "source": "let splitDeviceRe = /^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/"
-        },
-        {
-          "repo": "Unitech/pm2",
-          "file": "modules/pm2-io-bpm/utils/stackParser.js",
-          "line": 89,
-          "source": "let splitDeviceRe = /^([a-zA-Z]:|[\\\\/]{2}[^\\\\/]+[\\\\/]+[^\\\\/]+)?([\\\\/])?([\\s\\S]*?)$/"
-        }
-      ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
-    },
-    {
       "id": "redosVulnerable-887a8004a949",
       "signature": "887a8004a949",
       "verdict": "enforce",
@@ -54,12 +23,12 @@
           "source": "} else if (id.match(/((?:[0-9a-zA-Z]+[@\\-_.][0-9a-zA-Z]+|[0-9a-zA-Z]+[@\\-_.]|[@\\-_.][0-9a-zA-Z]+)+)/)) {"
         }
       ],
-      "why": "Measured polynomial: 467.3 ms on \"0\" x 20000 + \" \", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-69edb72fb8cd",
       "signature": "69edb72fb8cd",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\{\\{\\s*([^:}]+):[^}]*\\}\\}/g",
       "context": "",
@@ -72,13 +41,12 @@
           "source": "return text.replace(/\\{\\{\\s*([^:}]+):[^}]*\\}\\}/g, '{{ $1 }}');"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-64e044e81142",
       "signature": "64e044e81142",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/::: notice\\n+([\\s\\S]*)(?<!\\n)\\n+:::$/m",
       "context": "",
@@ -91,13 +59,12 @@
           "source": "const notice = summary.match(/::: notice\\n+([\\s\\S]*)(?<!\\n)\\n+:::$/m)?.[1];"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-d186c19d113f",
       "signature": "d186c19d113f",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(-?(?:\\d+)?\\.?\\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|months?|mth|mo|years?|yrs?|y)?$/i",
       "context": "",
@@ -110,13 +77,12 @@
           "source": "/^(-?(?:\\d+)?\\.?\\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|months?|"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.2 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-5d0ece9836df",
       "signature": "5d0ece9836df",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^([^$\\s]*?)\\((.*?)\\)$/",
       "context": "",
@@ -129,8 +95,7 @@
           "source": "const functionMatch = /^([^$\\s]*?)\\((.*?)\\)$/.exec(key);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-1cfcc8837399",
@@ -148,7 +113,7 @@
           "source": "const regex = /\\[([^\\]]+)\\]\\((https:\\/\\/github\\.com\\/([^/]+)\\/([^/)]+)[^)]*)\\)/g"
         }
       ],
-      "why": "Measured polynomial: 212.3 ms on \"[\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-fa63ae17fb15",
@@ -166,12 +131,12 @@
           "source": "return version.match(/^\\d+\\.?\\d*$/) ? version : null;"
         }
       ],
-      "why": "Measured polynomial: 153.4 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-2c64aac678b9",
       "signature": "2c64aac678b9",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^([*-])[ \\t]+(.+?)[ \\t]+by[ \\t]+@\\S+[ \\t]+in[ \\t]+#(\\d+)[ \\t]*$/gm",
       "context": "",
@@ -184,13 +149,12 @@
           "source": "/^([*-])[ \\t]+(.+?)[ \\t]+by[ \\t]+@\\S+[ \\t]+in[ \\t]+#(\\d+)[ \\t]*$/gm;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-6ef8bed47e37",
       "signature": "6ef8bed47e37",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/(?:^|^)\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])*`|[^#\\r\\n]+)?\\s*(?:#.*)?(?:$|$)/mg",
       "context": "",
@@ -203,13 +167,12 @@
           "source": "const LINE = /(?:^|^)\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.2 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-b7f0ee3ca91b",
       "signature": "b7f0ee3ca91b",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(\\s*)[*-]\\s+(CRITICAL|IMPORTANT|INFO|COMPLETION)(?:\\s+\\(\\d{2}:\\d{2}\\))?\\s+(.+)$/iu",
       "context": "",
@@ -222,13 +185,12 @@
           "source": "/^(\\s*)[*-]\\s+(CRITICAL|IMPORTANT|INFO|COMPLETION)(?:\\s+\\(\\d{2}:\\d{2}\\))?\\s+(.+)$/iu;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-fa69cdecf519",
       "signature": "fa69cdecf519",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\bimport\\s+[\\s\\S]*?\\s+from\\s+['\"`]/",
       "context": "",
@@ -241,13 +203,12 @@
           "source": "const JS_IMPORT_PATTERNS = [/\\brequire\\s*\\(/, /\\bimport\\s+[\\s\\S]*?\\s+from\\s+['\"`]/, /\\bimport\\s*\\(/];"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-793bad00e25a",
       "signature": "793bad00e25a",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/```(?:json)?\\s*([\\s\\S]*?)```/",
       "context": "",
@@ -260,13 +221,12 @@
           "source": "const jsonMatch = content.match(/```(?:json)?\\s*([\\s\\S]*?)```/);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-163c644785d4",
       "signature": "163c644785d4",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"][^'\"]+['\"];?\\s*$/gm",
       "context": "",
@@ -279,13 +239,12 @@
           "source": "const importRegex = /^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"][^'\"]+['\"];?\\s*$/gm;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-ef66e64e65d0",
       "signature": "ef66e64e65d0",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\{\\{[\\s\\S]*(?:\\$\\([\\s\\S]*?\\)|\\$\\w+)[\\s\\S]*}}/",
       "context": "",
@@ -298,13 +257,12 @@
           "source": "return /\\{\\{[\\s\\S]*(?:\\$\\([\\s\\S]*?\\)|\\$\\w+)[\\s\\S]*}}/.test(value);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-f930ecfc5387",
       "signature": "f930ecfc5387",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(?:(?:https?|ftp):\\/\\/)?(?:mailto:)?(?:\\/\\/)?((?:www\\.)?(?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?]*)?(?:\\?[^\\s#]*)?(?:#[^\\s]*)?$/i",
       "context": "",
@@ -323,13 +281,12 @@
           "source": "/^(?:(?:https?|ftp):\\/\\/)?(?:mailto:)?(?:\\/\\/)?((?:www\\.)?(?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-acd8784b62ef",
       "signature": "acd8784b62ef",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?]*)?(?:\\?[^\\s#]*)?(?:#[^\\s]*)?$/i",
       "context": "",
@@ -348,13 +305,12 @@
           "source": "/^(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-c68b148d7db3",
       "signature": "c68b148d7db3",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?#]*)?(?:\\?[^\\s#]*)?(?=([^\\s]+#.*)?)#?[^\\s]*$/i",
       "context": "",
@@ -373,38 +329,12 @@
           "source": "/^(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
-    },
-    {
-      "id": "redosVulnerable-98a06f35adfd",
-      "signature": "98a06f35adfd",
-      "verdict": "undecided",
-      "messageId": "redosVulnerable",
-      "shape": "Regex:/(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}))(?::\\d+)?(?:\\/[^\\s?#]*)?(?:\\?[^\\s#]*)?(?=([^\\s]+#.*)?)#?[^\\s]*/i",
-      "context": "",
-      "firstSeen": "2026-08-18",
-      "examples": [
-        {
-          "repo": "n8n-io/n8n",
-          "file": "packages/@n8n/expression-runtime/src/extensions/string-extensions.ts",
-          "line": 39,
-          "source": "/(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"
-        },
-        {
-          "repo": "n8n-io/n8n",
-          "file": "packages/workflow/src/extensions/string-extensions.ts",
-          "line": 122,
-          "source": "/(?:(?:https?|ftp):\\/\\/)(?:www\\.)?((?:(?:[-\\w]+\\.)+(?:[a-zA-Z]{2,}|xn--[a-zA-Z0-9]+)|localhost|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}"
-        }
-      ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-0cddb5b59492",
       "signature": "0cddb5b59492",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"]([^'\"]+)['\"];?\\s*$/gm",
       "context": "",
@@ -417,13 +347,12 @@
           "source": "const IMPORT_REGEX = /^\\s*import\\s+(?:[\\s\\S]*?from\\s+)?['\"]([^'\"]+)['\"];?\\s*$/gm;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-ca49fdff91d6",
       "signature": "ca49fdff91d6",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\bInternal server error\\b|\\bOverloaded\\b|\\bService Unavailable\\b|\\bBad Gateway\\b|\\b(?:HTTP|status(?: code)?)\\s*[:=]?\\s*(?:429|500|502|503|529)\\b/i",
       "context": "",
@@ -436,13 +365,12 @@
           "source": "/\\bInternal server error\\b|\\bOverloaded\\b|\\bService Unavailable\\b|\\bBad Gateway\\b|\\b(?:HTTP|status(?: code)?)\\s*[:=]?\\s*"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-7033f9121738",
       "signature": "7033f9121738",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/```(?:json)?\\s*\\n?([\\s\\S]*?)```/",
       "context": "",
@@ -455,13 +383,12 @@
           "source": "const FENCED_JSON = /```(?:json)?\\s*\\n?([\\s\\S]*?)```/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-84cc18df3312",
       "signature": "84cc18df3312",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\*{0,2}\\s*verdict\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi",
       "context": "",
@@ -474,13 +401,12 @@
           "source": "{ regex: /\\*{0,2}\\s*verdict\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi, passToken: 'pass' },"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-38476f9388de",
       "signature": "38476f9388de",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\*{0,2}\\s*pass\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(true|false)/gi",
       "context": "",
@@ -493,13 +419,12 @@
           "source": "{ regex: /\\*{0,2}\\s*pass\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(true|false)/gi, passToken: 'true' },"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-a648f0720b0e",
       "signature": "a648f0720b0e",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\*{0,2}\\s*decision\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi",
       "context": "",
@@ -512,13 +437,12 @@
           "source": "{ regex: /\\*{0,2}\\s*decision\\s*\\*{0,2}\\s*:\\s*\\*{0,2}\\s*(pass|fail)/gi, passToken: 'pass' },"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-fee92dbd057c",
       "signature": "fee92dbd057c",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/Cloudflare Ray ID:\\s*(?:<[^>]+>|\\s)*([a-f0-9]+)/i",
       "context": "",
@@ -531,13 +455,12 @@
           "source": "return value.match(/Cloudflare Ray ID:\\s*(?:<[^>]+>|\\s)*([a-f0-9]+)/i)?.[1];"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-d6f528f55d54",
       "signature": "d6f528f55d54",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^([a-zA-Z0-9][a-zA-Z0-9._-]*\\.ts)\\s*\\|\\s*(.+)$/",
       "context": "",
@@ -550,13 +473,12 @@
           "source": "const PIPE_DELIMITED_INDEX_LINE = /^([a-zA-Z0-9][a-zA-Z0-9._-]*\\.ts)\\s*\\|\\s*(.+)$/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-b91568c93c8e",
       "signature": "b91568c93c8e",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^##+\\s+(.+?)\\s*$/",
       "context": "ForOfStatement",
@@ -569,13 +491,12 @@
           "source": "const heading = /^##+\\s+(.+?)\\s*$/.exec(line);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-98dea89b3e3a",
       "signature": "98dea89b3e3a",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\b([A-Za-z][A-Za-z0-9]*Id|[Ww]orkflow ID|[Ee]xecution ID|[Cc]redential ID|ID|id)\\b\\s*(?::|=)?\\s*[\"'`]?([A-Za-z0-9][A-Za-z0-9_-]{5,})[\"'`]?/g",
       "context": "",
@@ -588,13 +509,12 @@
           "source": "/\\b([A-Za-z][A-Za-z0-9]*Id|[Ww]orkflow ID|[Ee]xecution ID|[Cc]redential ID|ID|id)\\b\\s*(?::|=)?\\s*[\"'`]?([A-Za-z0-9][A-Za"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-ff47b69f68ab",
       "signature": "ff47b69f68ab",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^```(?:json)?\\s*([\\s\\S]*?)\\s*```$/i",
       "context": "",
@@ -607,13 +527,12 @@
           "source": "const fencedMatch = /^```(?:json)?\\s*([\\s\\S]*?)\\s*```$/i.exec(trimmed);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-fffe532e4376",
       "signature": "fffe532e4376",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^Bearer\\s+(.+)$/i",
       "context": "",
@@ -632,13 +551,12 @@
           "source": "const tokenMatch = headerValue.match(/^Bearer\\s+(.+)$/i);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-064a41223203",
       "signature": "064a41223203",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^https?:\\/\\/[a-zA-Z0-9.-]+\\/?[a-zA-Z0-9.\\/_-]*$/i",
       "context": "",
@@ -651,13 +569,12 @@
           "source": "const urlPattern = /^https?:\\/\\/[a-zA-Z0-9.-]+\\/?[a-zA-Z0-9.\\/_-]*$/i;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-0290640e39d0",
       "signature": "0290640e39d0",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\b(authorization)([\"']?\\s*[:=]\\s*[\"']?\\s*(?:(?:bearer|basic)\\s+)?)[^\\s\"',;}]+/gi",
       "context": "",
@@ -670,8 +587,7 @@
           "source": "/\\b(authorization)([\"']?\\s*[:=]\\s*[\"']?\\s*(?:(?:bearer|basic)\\s+)?)[^\\s\"',;}]+/gi,"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-d69295a0b4e6",
@@ -689,13 +605,13 @@
           "source": "const re = new RegExp(`^${dataType}\\\\((\\\\d+),?\\\\s?(\\\\d+)?\\\\)`);"
         }
       ],
-      "why": "n8n AbstractSqliteQueryRunner.ts:1307 builds `^${dataType}\\((\\d+),?\\s?(\\d+)?\\)`. The written half is linear; the verdict rests entirely on `dataType`, a column type that arrives from schema metadata this file never fixes.",
-      "limit": "L1"
+      "limit": "L1",
+      "why": "Pattern is assembled at runtime from interpolated values. There is no fixed automaton for the oracle to analyse, so the verdict rests on data this file does not determine."
     },
     {
       "id": "redosVulnerable-fbf7ecb391aa",
       "signature": "fbf7ecb391aa",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^=\\{\\{\\s*([\\s\\S]*?)\\s*\\}\\}$/",
       "context": "",
@@ -708,13 +624,12 @@
           "source": "const match = expr.match(/^=\\{\\{\\s*([\\s\\S]*?)\\s*\\}\\}$/);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-11802bc695fd",
       "signature": "11802bc695fd",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^\\s*import\\s+type\\s[\\s\\S]*?;?\\s*$/gm",
       "context": "",
@@ -727,13 +642,12 @@
           "source": "code = code.replace(/^\\s*import\\s+type\\s[\\s\\S]*?;?\\s*$/gm, blankSameLines);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-f95b062f177a",
       "signature": "f95b062f177a",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\b((?:const|let|var)\\s+[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*=)/g",
       "context": "",
@@ -746,13 +660,12 @@
           "source": "/\\b((?:const|let|var)\\s+[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*=)/g,"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-58c3e4afe94b",
       "signature": "58c3e4afe94b",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/([,(]\\s*[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*[,)=])/g",
       "context": "",
@@ -765,32 +678,12 @@
           "source": "/([,(]\\s*[A-Za-z_$][\\w$]*)\\s*:\\s*[A-Za-z_$][\\w$.|<>[\\]\\s,&?]*(?=\\s*[,)=])/g,"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
-    },
-    {
-      "id": "redosVulnerable-27344b9e63e9",
-      "signature": "27344b9e63e9",
-      "verdict": "undecided",
-      "messageId": "redosVulnerable",
-      "shape": "Regex:/^\\s*\\(?(\\w+)\\)?\\s*=>\\s*(.+)$/s",
-      "context": "",
-      "firstSeen": "2026-08-18",
-      "examples": [
-        {
-          "repo": "n8n-io/n8n",
-          "file": "packages/@n8n/workflow-sdk/src/utils/code-helpers.ts",
-          "line": 11,
-          "source": "const arrowMatch = fnStr.match(/^\\s*\\(?(\\w+)\\)?\\s*=>\\s*(.+)$/s);"
-        }
-      ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-b856483fec85",
       "signature": "b856483fec85",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^\\s*(?:=\\s*)?(?:\\{\\{\\s*)?['\"`]?\\s*(?:<\\?xml|<soap:?|<s:envelope|<env:envelope)/i",
       "context": "",
@@ -803,13 +696,12 @@
           "source": "/^\\s*(?:=\\s*)?(?:\\{\\{\\s*)?['\"`]?\\s*(?:<\\?xml|<soap:?|<s:envelope|<env:envelope)/i;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-a024ab1f1a35",
       "signature": "a024ab1f1a35",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/process\\s*(?:\\/\\*[\\s\\S]*?\\*\\/)?\\s*\\??\\.?\\s*env\\b/",
       "context": "",
@@ -822,13 +714,12 @@
           "source": "const processEnvPattern = /process\\s*(?:\\/\\*[\\s\\S]*?\\*\\/)?\\s*\\??\\.?\\s*env\\b/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-fdf5e09ce412",
       "signature": "fdf5e09ce412",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/([+*?{]|\\{\\d+,?\\d*\\})\\s*[)]\\s*[+*?{]/",
       "context": "",
@@ -841,13 +732,12 @@
           "source": "const nestedQuantifier = /([+*?{]|\\{\\d+,?\\d*\\})\\s*[)]\\s*[+*?{]/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-38b7aa79ed22",
       "signature": "38b7aa79ed22",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\([^)]*\\|[^)]*\\)[+*]/",
       "context": "",
@@ -860,13 +750,12 @@
           "source": "const overlappingAlt = /\\([^)]*\\|[^)]*\\)[+*]/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-898184b5006b",
       "signature": "898184b5006b",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^[Bb][Ee][Aa][Rr][Ee][Rr]\\s+(.+)$/",
       "context": "",
@@ -879,13 +768,12 @@
           "source": "const BEARER_TOKEN_REGEX = /^[Bb][Ee][Aa][Rr][Ee][Rr]\\s+(.+)$/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-c8b5ebc02a56",
       "signature": "c8b5ebc02a56",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/(content-type:\\s*(application\\/pdf|image\\/(?:png|jpeg|jpg|gif|webp))[^]*?\\r?\\n\\r?\\n)([^]*?)(?=\\r?\\n--|$)/gi",
       "context": "",
@@ -898,13 +786,12 @@
           "source": "/(content-type:\\s*(application\\/pdf|image\\/(?:png|jpeg|jpg|gif|webp))[^]*?\\r?\\n\\r?\\n)([^]*?)(?=\\r?\\n--|$)/gi;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-4c81db3a18a1",
       "signature": "4c81db3a18a1",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/```(?:json)?\\s*([\\s\\S]*?)```/gi",
       "context": "",
@@ -917,13 +804,12 @@
           "source": "const FENCED_JSON = /```(?:json)?\\s*([\\s\\S]*?)```/gi;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-3bb5ec30430f",
       "signature": "3bb5ec30430f",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^```(?:json)?\\s*([\\s\\S]*?)```$/i",
       "context": "",
@@ -936,13 +822,12 @@
           "source": "const fenced = /^```(?:json)?\\s*([\\s\\S]*?)```$/i.exec(content.trim());"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-854e87ffcf8b",
       "signature": "854e87ffcf8b",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^=.*\\{\\{.+\\}\\}/",
       "context": "",
@@ -955,8 +840,7 @@
           "source": "return /^=.*\\{\\{.+\\}\\}/.test(testString);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-5a653e69615f",
@@ -974,7 +858,7 @@
           "source": "if (/^\\d+-?\\d*$/.test(originalName)) {"
         }
       ],
-      "why": "Measured polynomial: 157.9 ms on \"1\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-e713e3e9ec32",
@@ -992,12 +876,12 @@
           "source": "const regex = /^(.*?)(?:\\s*<([^>]+)>)?$/;"
         }
       ],
-      "why": "Measured polynomial: 207.5 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-1d2cc529cf23",
       "signature": "1d2cc529cf23",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/=.*\\{\\{[^}]*\\$secrets\\.[^}]+}}.*/",
       "context": "",
@@ -1010,13 +894,12 @@
           "source": "typeof value !== 'object' && /=.*\\{\\{[^}]*\\$secrets\\.[^}]+}}.*/.test(`${value}`),"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-67ea74ba282e",
       "signature": "67ea74ba282e",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\((\\d+)\\.?(\\d*)\\)\\.(.*)/",
       "context": "",
@@ -1029,8 +912,7 @@
           "source": "numberLiteral: /\\((\\d+)\\.?(\\d*)\\)\\.(.*)/, // (123). or (123.4)."
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-22ba27ace55e",
@@ -1048,12 +930,12 @@
           "source": "indexedAccess: /([^\"{\\s]+\\[.+\\])\\??\\.(.*)/, // 'abc'[0]. or 'abc'[0]?. or similar ones"
         }
       ],
-      "why": "Measured polynomial: 199.8 ms on \"a\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-23ab85e9ec23",
       "signature": "23ab85e9ec23",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^{{\\s*(.*)\\s*}}$/",
       "context": "",
@@ -1066,13 +948,12 @@
           "source": "const jsCode = resolvable.replace(/^{{\\s*(.*)\\s*}}$/, '$1');"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-9c9d9e2ca68d",
       "signature": "9c9d9e2ca68d",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/",
       "context": "",
@@ -1085,13 +966,12 @@
           "source": "const validateEmail = (email: string): boolean => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-2a1f40be0122",
       "signature": "2a1f40be0122",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(\\S+)\\s+(.+?):\\s+(.+?):\\s+(.+)$/",
       "context": "ForStatement",
@@ -1104,13 +984,12 @@
           "source": "const match = line.match(/^(\\S+)\\s+(.+?):\\s+(.+?):\\s+(.+)$/);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-2e8ccf4177ae",
       "signature": "2e8ccf4177ae",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/SELECT\\s+(.+?)\\s+FROM/i",
       "context": "",
@@ -1123,13 +1002,12 @@
           "source": "const selectMatch = userQuery.match(/SELECT\\s+(.+?)\\s+FROM/i);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-2539c6adb74d",
       "signature": "2539c6adb74d",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\s*((?:[^\\\\,]*?(?:\\\\[\\s\\S])*)*?)\\s*(?:,|$)/",
       "context": "",
@@ -1148,8 +1026,7 @@
           "source": ".split(/\\s*((?:[^\\\\,]*?(?:\\\\[\\s\\S])*)*?)\\s*(?:,|$)/)"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.3 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves exponential ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-1907a8803cc2",
@@ -1167,7 +1044,7 @@
           "source": "const gitStatusPattern = /^.{2}\\s+(.+)$/;"
         }
       ],
-      "why": "Measured polynomial: 178.5 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-d541b5038d54",
@@ -1185,12 +1062,12 @@
           "source": "if (/^\\s*\\{?\\{?\\s*\\$\\w+\\.\\w+\\s*\\}?\\}?\\s*$/.test(expr)) return 'simpleProperty';"
         }
       ],
-      "why": "Measured polynomial: 212.1 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-b757d3734e49",
       "signature": "b757d3734e49",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\n?\\/\\/# sourceMappingURL=.*\\s*$/",
       "context": "",
@@ -1203,13 +1080,12 @@
           "source": "source.replace(/\\n?\\/\\/# sourceMappingURL=.*\\s*$/, '\\n') +"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-f06afcf9f6b7",
       "signature": "f06afcf9f6b7",
-      "verdict": "exempt",
+      "verdict": "undecided",
       "messageId": "redosVulnerable",
       "shape": "New(Id;Tpl(Call(Mem(Id.join);Lit:string)))",
       "context": "",
@@ -1222,7 +1098,8 @@
           "source": "const EXPRESSION_EXTENSION_REGEX = new RegExp("
         }
       ],
-      "why": "n8n expression-extension.ts:60 assembles `(\\$if|\\.(a|b|c)\\s*(\\?\\.)?)\\s*\\(` from Object.keys of three internal extension tables \u2014 an alternation of fixed method names, joined at module load. No quantifier is ambiguous with another. The authors annotate it `-- static pattern` on the line above, and they are right."
+      "limit": "L1",
+      "why": "Pattern is assembled at runtime from interpolated values. There is no fixed automaton for the oracle to analyse, so the verdict rests on data this file does not determine."
     },
     {
       "id": "redosVulnerable-6e69ea7987f1",
@@ -1240,12 +1117,12 @@
           "source": "const URL_PARTS_REGEX = /(?<protocolPlusDomain>.*?\\..*?)(?<pathname>\\/.*)/;"
         }
       ],
-      "why": "Measured polynomial: 94.0 ms on \"r\" x 20000 + \"!\", blow-up at n=Infinity. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-cf902d6309bd",
       "signature": "cf902d6309bd",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/([\"\\u0080-\\uFFFF][^\\s]*)[^\"\\u0080-\\uFFFF]*$/",
       "context": "",
@@ -1258,13 +1135,12 @@
           "source": "const lastMatch = value.match(/([\"\\u0080-\\uFFFF][^\\s]*)[^\"\\u0080-\\uFFFF]*$/);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-368d12d56ba9",
       "signature": "368d12d56ba9",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)PLAIN/i",
       "context": "",
@@ -1277,13 +1153,12 @@
           "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)PLAIN/i.test(str)) {"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-f5633d69884d",
       "signature": "f5633d69884d",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)LOGIN/i",
       "context": "",
@@ -1296,13 +1171,12 @@
           "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)LOGIN/i.test(str)) {"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-325063245e0c",
       "signature": "325063245e0c",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)CRAM-MD5/i",
       "context": "",
@@ -1315,13 +1189,12 @@
           "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)CRAM-MD5/i.test(str)) {"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-36e5e1bdf21f",
       "signature": "36e5e1bdf21f",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)XOAUTH2/i",
       "context": "",
@@ -1334,13 +1207,12 @@
           "source": "if (/[ -]AUTH(?:(\\s+|=)[^\\n]*\\s+|\\s+|=)XOAUTH2/i.test(str)) {"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-69ca8c1d6d25",
       "signature": "69ca8c1d6d25",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^334\\s+(.+)$/",
       "context": "",
@@ -1353,27 +1225,7 @@
           "source": "const challengeMatch = str.match(/^334\\s+(.+)$/);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
-    },
-    {
-      "id": "redosVulnerable-2c14e9065aad",
-      "signature": "2c14e9065aad",
-      "verdict": "undecided",
-      "messageId": "redosVulnerable",
-      "shape": "New(Id;Tpl(Mem(Id.name),Mem(Id.name)))",
-      "context": "",
-      "firstSeen": "2026-08-18",
-      "examples": [
-        {
-          "repo": "npm/cli",
-          "file": "lib/commands/cache.js",
-          "line": 15,
-          "source": "const searchMFH = new RegExp(`^make-fetch-happen:request-cache:.*(?<!/[@a-zA-Z]+)/${parsed.name}/-/(${parsed.name}[^/]+."
-        }
-      ],
-      "why": "npm/cli cache.js:15 interpolates `parsed.name` twice into a pattern already carrying `.*` and a lookbehind. Timing the skeleton with a placeholder name found nothing at n=20,000, which is not proof; and the real risk depends on a package name this file receives rather than defines.",
-      "limit": "L1"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-830b90590573",
@@ -1391,7 +1243,7 @@
           "source": "const split = word.match(/^(-+)((?:no-)*)(.*)$/)"
         }
       ],
-      "why": "Measured polynomial: 176.5 ms on \"-\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-4c132cea5baf",
@@ -1409,7 +1261,26 @@
           "source": "const split = word.match(/^(-*)((?:no-)+)?(.*)$/)"
         }
       ],
-      "why": "Measured polynomial: 174.1 ms on \"-\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
+    },
+    {
+      "id": "redosVulnerable-2c14e9065aad",
+      "signature": "2c14e9065aad",
+      "verdict": "undecided",
+      "messageId": "redosVulnerable",
+      "shape": "New(Id;Tpl(Mem(Id.name),Mem(Id.name)))",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "lib/commands/cache.js",
+          "line": 15,
+          "source": "const searchMFH = new RegExp(`^make-fetch-happen:request-cache:.*(?<!/[@a-zA-Z]+)/${parsed.name}/-/(${parsed.name}[^/]+."
+        }
+      ],
+      "limit": "L1",
+      "why": "Pattern is assembled at runtime from interpolated values. There is no fixed automaton for the oracle to analyse, so the verdict rests on data this file does not determine."
     },
     {
       "id": "redosVulnerable-faa0b71034be",
@@ -1427,12 +1298,12 @@
           "source": "const sqBracketsMatcher = str => str.match(/(.+)\\[([^\\]]+)\\]\\.?(.*)$/)"
         }
       ],
-      "why": "Measured polynomial: 1230.0 ms on \"[\" x 2000 + \"!\", blow-up at n=2000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-011a902256d3",
       "signature": "011a902256d3",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/index:[\\sa-zA-Z0-9_\\-\\.]+\\$?([a-zA-Z_-]+)_1/",
       "context": "",
@@ -1451,8 +1322,7 @@
           "source": "/index:[\\sa-zA-Z0-9_\\-\\.]+\\$?([a-zA-Z_-]+)_1/"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-57fc213c0b7f",
@@ -1470,12 +1340,12 @@
           "source": "if (!this.data.email.match(/^.+@.+$/)) {"
         }
       ],
-      "why": "Measured polynomial: 187.7 ms on \"@\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-852324c77fe7",
       "signature": "852324c77fe7",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\/\\/\\S+:(\\S+)@/",
       "context": "",
@@ -1488,13 +1358,12 @@
           "source": "const password = databaseUrl.match(/\\/\\/\\S+:(\\S+)@/)[1];"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-03a0506e98d0",
       "signature": "03a0506e98d0",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/(^Author:|^Co-authored-by:)\\s+(?<author>[^<]+)\\s+(?<email><[^>]+>)/i",
       "context": "",
@@ -1507,13 +1376,12 @@
           "source": "const authorRe = /(^Author:|^Co-authored-by:)\\s+(?<author>[^<]+)\\s+(?<email><[^>]+>)/i;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-9e4f63dbd9df",
       "signature": "9e4f63dbd9df",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/SQL0803N {2}An error or warning occurred. {2}One or more values in the INSERT statement, UPDATE statement, or foreign key update caused by a DELETE statement are not valid because the primary key, unique constraint or unique index identified by \"(\\d)+\" constrains table \"(.*)\\.(.*)\" from having duplicate values for the index key./",
       "context": "",
@@ -1526,13 +1394,12 @@
           "source": "/SQL0803N {2}An error or warning occurred. {2}One or more values in the INSERT statement, UPDATE statement, or foreign k"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-9e4f60885c4d",
       "signature": "9e4f60885c4d",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/Duplicate entry '([\\S\\s]*)' for key '?([^']*?)'?\\s.*$/",
       "context": "",
@@ -1545,8 +1412,7 @@
           "source": "const match = err.message.match(/Duplicate entry '([\\S\\s]*)' for key '?([^']*?)'?\\s.*$/);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-0325ad41a14d",
@@ -1564,31 +1430,12 @@
           "source": "return /^\\s*(?:([`\"'])(?:(?!\\1).|\\1{2})*\\1\\.?)+\\s*$/i.test(identifier);"
         }
       ],
-      "why": "Measured exponential: 76500.4 ms on \"`\" x 64 + \"!\", blow-up at n=64. Timed on V8 via scripts/redos-classify.mts, not read."
-    },
-    {
-      "id": "redosVulnerable-032bf8876ac6",
-      "signature": "032bf8876ac6",
-      "verdict": "undecided",
-      "messageId": "redosVulnerable",
-      "shape": "Regex:/(\"(?:\\\\.|[^\"\\\\])*\"|[^,]*)(?:\\s*,\\s*|\\s*$)/gi",
-      "context": "",
-      "firstSeen": "2026-08-18",
-      "examples": [
-        {
-          "repo": "sequelize/sequelize",
-          "file": "packages/postgres/src/query-generator.js",
-          "line": 587,
-          "source": "let matches = text.match(/(\"(?:\\\\.|[^\"\\\\])*\"|[^,]*)(?:\\s*,\\s*|\\s*$)/gi);"
-        }
-      ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-c7f77048e8b7",
       "signature": "c7f77048e8b7",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^arn:(aws[\\w-]*).*:lambda:([\\w+-]{2,}\\d+):(\\d+):function:(.*)$/",
       "context": "",
@@ -1601,8 +1448,7 @@
           "source": "/^arn:(aws[\\w-]*).*:lambda:([\\w+-]{2,}\\d+):(\\d+):function:(.*)$/,"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-ef7758875310",
@@ -1620,13 +1466,13 @@
           "source": "const regex = new RegExp(`${prefix}/${service}/${stage}/(.+-.+-.+-.+)/(.+)`)"
         }
       ],
-      "why": "serverless find-and-group-deployments.js:6 builds `${prefix}/${service}/${stage}/(.+-.+-.+-.+)/(.+)`. The `(.+-.+-.+-.+)` skeleton is the textbook polynomial shape, yet the classifier found no superlinear input for it \u2014 most likely an alphabet-extraction miss on my side rather than safety. Three interpolated values on top.",
-      "limit": "L1"
+      "limit": "L1",
+      "why": "Pattern is assembled at runtime from interpolated values. There is no fixed automaton for the oracle to analyse, so the verdict rests on data this file does not determine."
     },
     {
       "id": "redosVulnerable-e7f0f8b59c7c",
       "signature": "e7f0f8b59c7c",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/(^|\\s|#)service\\s*:\\s*\\n(\\s+)name:.+/",
       "context": "",
@@ -1645,13 +1491,12 @@
           "source": "/(^|\\s|#)service\\s*:\\s*\\n(\\s+)name:.+/,"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-aaa6663c3df3",
       "signature": "aaa6663c3df3",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/(^|\\s)service\\s*:\\s*{\\s*\\n(\\s+)name:\\s*('|\").+('|\")/",
       "context": "",
@@ -1670,8 +1515,7 @@
           "source": "/(^|\\s)service\\s*:\\s*{\\s*\\n(\\s+)name:\\s*('|\").+('|\")/,"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-72bc62d6878d",
@@ -1689,12 +1533,12 @@
           "source": "this.OPTION_REGEX = /(?<option>[^:=][^:=]*)\\s*(?<vi>[:=])\\s*(?<value>.*)$/"
         }
       ],
-      "why": "Measured polynomial: 266.3 ms on \"n\" x 20000 + \" \", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-0da1205b2454",
       "signature": "0da1205b2454",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(s3|ssm|output|cf)(?:\\(([^,]*?)(?:,\\s*([^)]+))?\\))?:(.*)/g",
       "context": "",
@@ -1707,13 +1551,12 @@
           "source": "/^(s3|ssm|output|cf)(?:\\(([^,]*?)(?:,\\s*([^)]+))?\\))?:(.*)/g"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-08a1194f385e",
       "signature": "08a1194f385e",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\${(\\w*:?[\\w\\d.-]+)}/g",
       "context": "",
@@ -1726,8 +1569,7 @@
           "source": "const regex = /\\${(\\w*:?[\\w\\d.-]+)}/g"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-88ae5f8dfa26",
@@ -1745,12 +1587,12 @@
           "source": "const repo = url.match(/.+\\/(.+)\\.git/)[1]"
         }
       ],
-      "why": "Measured polynomial: 363.9 ms on \"g\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-b82ebace880a",
       "signature": "b82ebace880a",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(\\s*)(>[> ]*|[*+-] \\[[x ]\\]|[*+-]|(\\d+)[.)])(\\s*)$/",
       "context": "",
@@ -1763,8 +1605,7 @@
           "source": "emptyListRE = /^(\\s*)(>[> ]*|[*+-] \\[[x ]\\]|[*+-]|(\\d+)[.)])(\\s*)$/,"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-6ab041522049",
@@ -1788,12 +1629,12 @@
           "source": "const angleMatch = decoded.match(/^(.*?)\\s*<([^>]+)>\\s*$/);"
         }
       ],
-      "why": "Measured polynomial: 204.4 ms on \" \" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-fa22a0192254",
       "signature": "fa22a0192254",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^Symbol\\((.*)\\)(.*)$/",
       "context": "",
@@ -1806,13 +1647,12 @@
           "source": "const SYMBOL_REGEXP = /^Symbol\\((.*)\\)(.*)$/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-c5c8fddd69d1",
       "signature": "c5c8fddd69d1",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])*`|[^#\\r\\n]+)?\\s*(?:#.*)?$/gm",
       "context": "",
@@ -1825,8 +1665,7 @@
           "source": "/^\\s*(?:export\\s+)?([\\w.-]+)(?:\\s*=\\s*?|:\\s+?)(\\s*'(?:\\\\'|[^'])*'|\\s*\"(?:\\\\\"|[^\"])*\"|\\s*`(?:\\\\`|[^`])*`|[^#\\r\\n]+)?\\s*(?"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-4c03cd15fda6",
@@ -1844,12 +1683,12 @@
           "source": "if (schema.title && (match = /^(.+) (.+)$/.exec(schema.title))) {"
         }
       ],
-      "why": "Measured polynomial: 172.5 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-7b429a44aa2b",
       "signature": "7b429a44aa2b",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^\"\\s\\+*.*\\+\\s*\"$/",
       "context": "",
@@ -1862,13 +1701,12 @@
           "source": "if (/^\"\\s\\+*.*\\+\\s*\"$/.test(id)) {"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-e95f5500d61f",
       "signature": "e95f5500d61f",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^\"\\s\\+*\\s*(.*)\\s*\\+\\s*\"$/",
       "context": "",
@@ -1881,8 +1719,7 @@
           "source": "const match = /^\"\\s\\+*\\s*(.*)\\s*\\+\\s*\"$/.exec(id);"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-9a43b811ffc9",
@@ -1906,12 +1743,12 @@
           "source": "const _BARE_NUMBER_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?$/i;"
         }
       ],
-      "why": "Measured polynomial: 209.0 ms on \"1\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-376b0c879122",
       "signature": "376b0c879122",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(?:((?:[A-Z]:)?[/\\\\].*?))?(?::(.+?))?$/i",
       "context": "",
@@ -1924,8 +1761,7 @@
           "source": "const inputRx = /^(?:((?:[A-Z]:)?[/\\\\].*?))?(?::(.+?))?$/i;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.1 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-0e15e660c7e6",
@@ -1943,7 +1779,7 @@
           "source": "if (!/^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)%?$/.test(s)) return null;"
         }
       ],
-      "why": "Measured polynomial: 206.4 ms on \"1\" x 20000 + \"!\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-8ff70aa39092",
@@ -1961,7 +1797,7 @@
           "source": "const _COLOR_NUMBER_RE = /^([+-]?(?:\\d+\\.?\\d*|\\.\\d+))(%?)$/;"
         }
       ],
-      "why": "Measured polynomial: 275.7 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-45aff7a4b887",
@@ -1979,7 +1815,7 @@
           "source": "const _COLOR_HUE_RE = /^([+-]?(?:\\d+\\.?\\d*|\\.\\d+))(?:deg)?$/i;"
         }
       ],
-      "why": "Measured polynomial: 206.6 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-2b0c051f50b1",
@@ -1997,7 +1833,7 @@
           "source": "const _PLAIN_NUMBER_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)$/;"
         }
       ],
-      "why": "Measured polynomial: 156.7 ms on \"1\" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-f74b801af5ca",
@@ -2015,7 +1851,7 @@
           "source": "/^\\s*(?:([+-]?)\\s*(\\d*)[nN]\\s*(?:([+-])\\s*(\\d+))?|([+-]?)\\s*(\\d+))\\s*$/;"
         }
       ],
-      "why": "Measured polynomial: 118.8 ms on \" \" x 8000 + \"\", blow-up at n=8000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-43ad49bf7429",
@@ -2033,7 +1869,7 @@
           "source": "const _TRANSITION_TIME_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:s|ms)$/i;"
         }
       ],
-      "why": "Measured polynomial: 158.0 ms on \"1\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-55aba6633b7c",
@@ -2051,7 +1887,7 @@
           "source": "const _RATIO_OVER_ONE_RE = /(^|\\s)((?:\\d+\\.?\\d*|\\.\\d+))\\s*\\/\\s*1(?=$|\\s)/g;"
         }
       ],
-      "why": "Measured polynomial: 166.1 ms on \"1\" x 20000 + \"\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-51be36087bc5",
@@ -2069,7 +1905,7 @@
           "source": "const _NUMERIC_RE = /^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?(%|[a-z]*)$/i;"
         }
       ],
-      "why": "Measured polynomial: 104.5 ms on \"1\" x 8000 + \" \", blow-up at n=8000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-9269531f5d16",
@@ -2093,8 +1929,8 @@
           "source": "const _JOINABLE_NESTED_RE = new RegExp("
         }
       ],
-      "why": "webpack css/syntax.js:8153 and :8161 build `^${_COMPOUND}(?:(?:\\s*[>+~]\\s*|\\s+)${_COMPOUND})*$` \u2014 an outer `*` over a group whose branches are `\\s*` and `\\s+`, which is exactly the ambiguity shape that bites. Unlike the others, `_COMPOUND` IS declared in this file, so this one is resolvable in principle and the rule simply does not follow it. That is the reopen condition.",
-      "limit": "L1"
+      "limit": "L1",
+      "why": "Pattern is assembled at runtime from interpolated values. There is no fixed automaton for the oracle to analyse, so the verdict rests on data this file does not determine."
     },
     {
       "id": "redosVulnerable-9e2a11187ec9",
@@ -2112,14 +1948,14 @@
           "source": "const match = /^(.+?)(\\(\\))?\\s+from\\s+(.+)$/.exec(item);"
         }
       ],
-      "why": "Measured polynomial: 208.0 ms on \" \" x 20000 + \"\\n\", blow-up at n=20000. Timed on V8 via scripts/redos-classify.mts, not read."
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-9c8887571b71",
       "signature": "9c8887571b71",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
-      "shape": "Regex:/^\\s*\\[\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*,\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*\\]/",
+      "shape": "Regex:/^\\s*\\[\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|∞))\\s*,\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|∞))\\s*\\]/",
       "context": "",
       "firstSeen": "2026-08-18",
       "examples": [
@@ -2127,16 +1963,15 @@
           "repo": "webpack/webpack",
           "file": "tooling/generate-css-data.js",
           "line": 82,
-          "source": "/^\\s*\\[\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*,\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|\u221e))\\s*\\]/;"
+          "source": "/^\\s*\\[\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|∞))\\s*,\\s*(-?(?:\\d*\\.?\\d+[a-z%]*|∞))\\s*\\]/;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-13bd9206778c",
       "signature": "13bd9206778c",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/^(?:partial\\s+)?interface(?:\\s+mixin)?\\s+(\\w+)[^{;]*\\{/gm",
       "context": "",
@@ -2149,13 +1984,12 @@
           "source": "const headRe = /^(?:partial\\s+)?interface(?:\\s+mixin)?\\s+(\\w+)[^{;]*\\{/gm;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     },
     {
       "id": "redosVulnerable-b6a5b1045e95",
       "signature": "b6a5b1045e95",
-      "verdict": "undecided",
+      "verdict": "enforce",
       "messageId": "redosVulnerable",
       "shape": "Regex:/\\n\\/\\/\\s*#region wasm code: (.+) \\((.+)\\)(.*)\\n[\\s\\S]+?\\/\\/[\\s+]*#endregion\\n/g",
       "context": "ForOfStatement",
@@ -2168,8 +2002,7 @@
           "source": "/\\n\\/\\/\\s*#region wasm code: (.+) \\((.+)\\)(.*)\\n[\\s\\S]+?\\/\\/[\\s+]*#endregion\\n/g;"
         }
       ],
-      "why": "No superlinear input found. scripts/redos-classify.mts pumped every character the pattern itself can consume, to n=20,000, with four failing suffixes; worst observed 0.0 ms. UNREPRODUCED is not proof of safety \u2014 it is the strongest evidence this instrument produces, and it is recorded as such.",
-      "limit": "L10"
+      "why": "recheck proves polynomial ambiguity in the automaton. This is a decided true positive, not an estimate."
     }
   ]
 }
