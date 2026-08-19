@@ -221,3 +221,31 @@ fifth is nestjs's `new RegExp(re.source + '$', re.flags)`, which is
 concatenation and keeps its finding deliberately. Four sites, four findings —
 the arithmetic closes, which is how the change is attributable rather than
 merely coincident with a smaller number.
+
+## Renaming a messageId orphans the whole case ledger
+
+Changing `regexpReDoS` to `runtimeDecidedPattern` was a message fix with no
+effect on what the rule reports — 245 findings before and after. The ledger
+disagreed: it went from 116 cases to **209**.
+
+Case ids are built from the messageId. Under the new name every case is a new
+case, so the 116 stored ones matched nothing in the run and the 93 real ones
+were all filed as NEW. The ledger did not notice; it reported a rule with 245
+findings spread over 209 cases, 116 of which no longer exist.
+
+Here it cost nothing, and only by luck: all 116 carried `unreviewed`, so they
+were pruned with nothing lost and 93 live cases remain. Had this rule been
+judged first — the very next step planned for it — every `enforce` and `exempt`
+verdict would have been silently detached from the finding it was about, and the
+ledger would have reported a clean slate as if the work had never happened.
+That is the failure mode the ledger exists to prevent, occurring inside the
+ledger.
+
+Two things follow, and neither is done here:
+
+- The ledger should refuse, or migrate, when a stored case names a messageId the
+  rule no longer defines. Silently keeping it is how a rename turns into lost
+  review history.
+- Judging a rule's cases and renaming its messages are ordered operations.
+  Rename first, judge after — and if a rename becomes necessary later, the
+  verdicts have to be carried across deliberately.

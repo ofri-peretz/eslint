@@ -101,7 +101,7 @@ export function search(req) {
       {
         name: 'a caller-supplied pattern reaches the constructor',
         code: `export function search(req) { return new RegExp(req.query.q); }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         name: 'through a binding hop',
@@ -109,17 +109,17 @@ export function search(req) {
   const p = req.query.q;
   return new RegExp(p);
 }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         name: 'interpolated into a template',
         code: 'export function search(req) { return new RegExp(`^${req.query.q}$`); }',
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         name: 'concatenated onto a literal prefix',
         code: `export function search(req) { return new RegExp('^' + req.query.q); }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         // CONTROL for guard 1. A `.replace()` that is not an escape must not
@@ -130,7 +130,7 @@ export function search(req) {
   const notEscaped = req.query.q.replace(/foo/g, 'bar');
   return new RegExp(notEscaped);
 }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         // A `.replace()` whose search is a VARIABLE, not a regex literal. The
@@ -140,7 +140,7 @@ export function search(req) {
   const maybe = req.query.q.replace(pat, '');
   return new RegExp(maybe);
 }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         // The lookup receiver is a PARAMETER, so the file cannot show it is a
@@ -150,7 +150,7 @@ export function search(req) {
   const p = table[req.query.kind];
   return new RegExp(p);
 }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         // The lookup receiver is a MEMBER EXPRESSION, not a bare identifier, so
@@ -162,7 +162,7 @@ export function search(req) {
   const p = config.patterns[req.query.kind];
   return new RegExp(p);
 }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
       {
         // CONTROL for the binding hop. Escaped at the declaration, then
@@ -174,7 +174,7 @@ export function search(req) {
   p = req.query.raw;
   return new RegExp(p);
 }`,
-        errors: [{ messageId: 'regexpReDoS' }],
+        errors: [{ messageId: 'runtimeDecidedPattern' }],
       },
     ],
   });

@@ -54,26 +54,26 @@ describe('detect-non-literal-regexp', () => {
       invalid: [
         {
           code: 'const pattern = new RegExp(userInput);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         {
           code: 'const regex = RegExp(userPattern);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         {
           code: 'new RegExp(`^${userInput}$`);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         {
           code: `
             const pattern = getUserInput();
             const regex = new RegExp(pattern);
           `,
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         {
           code: 'new RegExp(config.pattern);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -99,7 +99,7 @@ describe('detect-non-literal-regexp', () => {
         // Dynamic regex with variables still flagged
         {
           code: 'const pattern = new RegExp(userInput);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -114,7 +114,7 @@ describe('detect-non-literal-regexp', () => {
           code: 'const regex = new RegExp(userInput);',
           errors: [
             {
-              messageId: 'regexpReDoS',
+              messageId: 'runtimeDecidedPattern',
               // Note: Rule may not provide suggestions in all cases
             },
           ],
@@ -157,7 +157,7 @@ describe('detect-non-literal-regexp', () => {
          */
         {
           code: 'export function compile(rawPattern) { return new globalThis.RegExp(rawPattern); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         /**
          * REGRESSION LOCK — the native-constructor capture. `NativeRegExp`
@@ -165,7 +165,7 @@ describe('detect-non-literal-regexp', () => {
          */
         {
           code: 'const NativeRegExp = RegExp; export function compile(p) { return new NativeRegExp(p); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         /**
          * REGRESSION LOCK — a binding whose initialiser is constant but which is
@@ -175,7 +175,7 @@ describe('detect-non-literal-regexp', () => {
          */
         {
           code: 'export function scan(userPatterns) { let source = "^a$"; for (source of userPatterns) { new RegExp(source); } }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -209,17 +209,17 @@ describe('detect-non-literal-regexp', () => {
         // iterable / an unproven write must still report.
         {
           code: 'export function each(sources) { for (const source of sources) { new RegExp(source); } }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         {
           code: 'export function compile(mode, raw) { let source = "^\\\\d+$"; if (mode === "raw") { source = raw; } return new RegExp(source); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // A tagged template whose tag is NOT String.raw proves nothing about the
         // produced string — the tag function can return anything.
         {
           code: 'export function compile(tag, value) { return new RegExp(tag`^${value}$`); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -239,13 +239,13 @@ describe('detect-non-literal-regexp', () => {
         // `String.raw` WITH a substitution: constant iff the substitution is.
         {
           code: 'export function f(v) { return new RegExp(String.raw`^${v}$`); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // An UpdateExpression write carries no inspectable expression, so the
         // binding stays unproven.
         {
           code: 'export function f() { let source = "a"; source++; return new RegExp(source); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -265,12 +265,12 @@ describe('detect-non-literal-regexp', () => {
         {
           code: 'new RegExp(userInput);',
           options: [{ maxPatternLength: 100 }],
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         {
           code: 'new RegExp(userInput);',
           options: [{ allowLiterals: true }],
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -288,7 +288,7 @@ describe('detect-non-literal-regexp', () => {
         // This should trigger the no vulnerability case, but still report due to dynamic nature
         {
           code: 'new RegExp(userInput);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -308,7 +308,7 @@ describe('detect-non-literal-regexp', () => {
       invalid: [
         {
           code: 'new RegExp(a++);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -356,42 +356,42 @@ describe('detect-non-literal-regexp', () => {
         // Unresolvable provenance still reports: a parameter could be anything.
         {
           code: 'function build(pattern) { return new RegExp(pattern); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // `let` can be reassigned between declaration and use.
         {
           code: 'let p = "^a"; p = readInput(); const r = new RegExp(p);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // A constant-preserving method over a NON-constant receiver is not constant.
         {
           code: 'function f(parts) { return new RegExp(parts.join("|")); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // `map` takes a callback that could read anything — not in the allowlist.
         {
           code: 'const A = ["x"]; const r = new RegExp(A.map(String).join("|"));',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // Subtraction is not concatenation.
         {
           code: 'const N = 2; const r = new RegExp(String(N - 1));',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // A spread element hides its contents.
         {
           code: 'function f(rest) { const A = ["x", ...rest]; return new RegExp(A.join("|")); }',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // A hole in an array literal resolves to undefined, not a constant.
         {
           code: 'const A = ["x", , "y"]; const r = new RegExp(A.join("|"));',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // An undeclared identifier cannot be resolved at all.
         {
           code: 'const r = new RegExp(globalPattern);',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // Known ceiling on the LOCAL constancy walk — the one that understands
         // `.join()` / `.concat()` / `.toUpperCase()`, which devkit's
@@ -401,7 +401,7 @@ describe('detect-non-literal-regexp', () => {
           code:
             'const A = ["a"]; const r = new RegExp(' +
             'A.concat(A).concat(A).concat(A).concat(A).concat(A).concat(A).join("|"));',
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });
@@ -416,13 +416,13 @@ describe('detect-non-literal-regexp', () => {
         {
           code: 'const r = new RegExp("^[a-z]+$");',
           options: [{ allowLiterals: false }],
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // An absurdly long literal still reports even when literals are allowed.
         {
           code: `const r = new RegExp("${'x'.repeat(300)}");`,
           options: [{ allowLiterals: true, maxPatternLength: 100 }],
-          errors: [{ messageId: 'regexpReDoS' }],
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
       ],
     });

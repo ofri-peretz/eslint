@@ -112,8 +112,7 @@ import {
   resolveVariable,
 } from '../../utils/regexp-intrinsic';
 
-type MessageIds =
-  | 'regexpReDoS';
+type MessageIds = 'runtimeDecidedPattern';
 
 /**
  * `additionalPatterns` used to be declared here, in `meta.schema` and in
@@ -145,7 +144,11 @@ type RuleOptions = [Options?];
 interface RegExpPattern {
   pattern: string;
   dangerous: boolean;
-  vulnerability: 'redos' | 'injection' | 'performance';
+  // Only ever 'redos'. The union carried 'injection' and 'performance' and no
+  // arm in the rule ever produced either — dead configuration that made the
+  // table look like it decided something. It selects remediation text; the
+  // verdict was always the same.
+  vulnerability: 'redos';
   safeAlternative: string;
   example: { bad: string; good: string };
   effort: string;
@@ -480,11 +483,28 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 41% reduction (51→30 tokens) - compact template variables
-      regexpReDoS: formatLLMMessage({
+      // Says what the check ESTABLISHED — the pattern is decided at runtime —
+      // and not what it would like to have established. Every one of this
+      // rule's 245 findings over 20 repositories used to read "ReDoS
+      // vulnerability detected", a property of an automaton that a syntax check
+      // cannot decide and that `no-redos-vulnerable-regex` decides with an
+      // oracle. Locked by states-what-it-proves.lock.test.ts.
+      //
+      // CWE-400 stays because it is why a runtime-decided pattern is worth
+      // surfacing at all; the description is what keeps it a pointer to the
+      // risk rather than a claim to have found it.
+      runtimeDecidedPattern: formatLLMMessage({
         icon: MessageIcons.WARNING,
-        issueName: 'ReDoS vulnerability',
+        issueName: 'Regex pattern decided at runtime',
         cwe: 'CWE-400',
-        description: 'ReDoS vulnerability detected',
+        // `issueName` is not rendered into the final template, so the
+        // established fact has to lead the DESCRIPTION or it reaches no reader.
+        // Kept under the §C3 budget: the first honest wording measured 121
+        // tokens against a ceiling of 120. Naming the two rules that DO decide
+        // is what makes a "cannot tell" finding actionable, so the prose around
+        // them was cut instead of the pointers.
+        description:
+          'Pattern decided at runtime, not visible here. Backtracking: no-redos-vulnerable-regex. Untrusted input: no-unsafe-regex-construction',
         severity: '{{riskLevel}}',
         // §C2.4 — names the safe shapes so a reader can close the finding.
         fix: '{{safeAlternative}} — Not a finding when the pattern is a module constant, a closed-set lookup, or escaped before construction',
@@ -820,7 +840,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
 
       context.report({
         node,
-        messageId: 'regexpReDoS',
+        messageId: 'runtimeDecidedPattern',
         data: {
           pattern: pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
           riskLevel,
