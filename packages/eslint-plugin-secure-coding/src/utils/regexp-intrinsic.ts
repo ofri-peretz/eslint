@@ -108,9 +108,98 @@ export function isRegExpConstructor(
     return false;
   }
   const definition = variable.defs[0]!;
+
+  // `class My extends RegExp {}` — every `new My(p)` runs the intrinsic's
+  // constructor on p. Found by an adversarial wave on 2026-08-19; both regex
+  // rules were silent on it, and neither corpus contained the shape.
+  if (definition.type === 'ClassName') {
+    const superClass = definition.node.superClass;
+    return superClass != null && isRegExpConstructor(superClass, sourceCode, depth + 1);
+  }
+
   if (definition.type !== 'Variable' || definition.parent.kind !== 'const') {
     return false;
   }
+
+  // `const { RegExp: R } = globalThis` — the binding holds the intrinsic just as
+  // surely as `const R = RegExp`, but the initialiser is the NAMESPACE, so
+  // recursing straight into it asks "is globalThis the RegExp constructor" and
+  // correctly answers no. The property key is where the answer lives.
+  //
+  // Same wave, same day. This is the bundler-safe spelling's destructured form,
+  // and it is real idiom in code that captures intrinsics before a sandbox can
+  // replace them.
+  if (definition.node.id.type === 'ObjectPattern') {
+    const namespace = definition.node.init;
+    if (namespace === null || namespace.type !== 'Identifier') {
+      return false;
+    }
+    if (!GLOBAL_NAMESPACES.has(namespace.name) || !isEnvironmentGlobal(namespace.name, sourceCode.getScope(namespace))) {
+      return false;
+    }
+    return definition.node.id.properties.some(
+      (property) =>
+        property.type === 'Property' &&
+        !property.computed &&
+        property.key.type === 'Identifier' &&
+        property.key.name === 'RegExp' &&
+        property.value.type === 'Identifier' &&
+        property.value.name === node.name,
+    );
+  }
+
   const init = definition.node.init;
   return init !== null && isRegExpConstructor(init, sourceCode, depth + 1);
+}
+
+/**
+ * `Reflect.construct(RegExp, [pattern, flags])` — the same construction, spelled
+ * so that neither rule's `node.callee` check can see it.
+ *
+ * Both regex rules ask whether the CALLEE resolves to the intrinsic. Here the
+ * callee is `Reflect.construct` and the intrinsic is an ARGUMENT, so both were
+ * silent. Found by an adversarial wave on 2026-08-19; it is the spelling a
+ * proxy or polyfill reaches for, and it compiles a pattern like any other.
+ *
+ * Returns a node that presents the construction in the shape the rules already
+ * understand: same `loc` and `range`, so the finding still lands on the whole
+ * `Reflect.construct(...)` call, with `callee` set to the intrinsic and
+ * `arguments` to the array's elements. A spread rather than a fresh object, so
+ * `parent` and everything else the rules read survives.
+ *
+ * Returns null when the node is anything else, including
+ * `Reflect.construct(Other, [...])` and a call whose argument list is built at
+ * runtime — `Reflect.construct(RegExp, args)` has no visible elements, and
+ * inventing some would be guessing.
+ */
+export function asDirectConstruction<T extends TSESTree.CallExpression | TSESTree.NewExpression>(
+  node: T,
+  sourceCode: TSESLint.SourceCode,
+): T {
+  if (
+    node.type !== 'CallExpression' ||
+    node.callee.type !== 'MemberExpression' ||
+    node.callee.computed ||
+    node.callee.property.type !== 'Identifier' ||
+    node.callee.property.name !== 'construct' ||
+    node.callee.object.type !== 'Identifier' ||
+    node.callee.object.name !== 'Reflect' ||
+    !isEnvironmentGlobal(node.callee.object.name, sourceCode.getScope(node.callee.object))
+  ) {
+    return node;
+  }
+
+  const [target, argsArray] = node.arguments;
+  if (target === undefined || !isRegExpConstructor(target, sourceCode)) {
+    return node;
+  }
+  if (argsArray === undefined || argsArray.type !== 'ArrayExpression') {
+    return node;
+  }
+
+  return {
+    ...node,
+    callee: target,
+    arguments: argsArray.elements.filter((element) => element !== null),
+  } as unknown as T;
 }

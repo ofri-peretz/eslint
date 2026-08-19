@@ -61,8 +61,8 @@
       "command": "npx vitest run --coverage src/rules/detect-non-literal-regexp"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 1780L +2.18±1.44ms · 8010L +6.29±1.40ms · 32040L +30.15±4.93ms — 4.8x time for 4.0x lines (8010→32040), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 1780L +1.90±5.00ms · 8010L +6.16±2.78ms · 32040L +26.84±2.12ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-non-literal-regexp"
     },
     "recorded": {

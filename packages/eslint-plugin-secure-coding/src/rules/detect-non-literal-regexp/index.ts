@@ -110,6 +110,7 @@ import {
   isEnvironmentGlobal,
   isRegExpConstructor,
   resolveVariable,
+  asDirectConstruction,
 } from '../../utils/regexp-intrinsic';
 
 type MessageIds = 'runtimeDecidedPattern';
@@ -869,7 +870,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     };
 
     return {
-      CallExpression: checkRegExpCall,
+      // Reflect.construct(RegExp, [...]) is normalised to the direct shape
+      // before the check runs, so one code path handles both spellings.
+      CallExpression: (node: TSESTree.CallExpression) =>
+        checkRegExpCall(asDirectConstruction(node, context.sourceCode)),
       NewExpression: checkRegExpCall
     };
   },

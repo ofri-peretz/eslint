@@ -95,7 +95,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslin
 import { createRule } from '@interlace/eslint-devkit';
 import { RegExpParser } from '@eslint-community/regexpp';
 import { analyse } from 'scslre';
-import { isRegExpConstructor } from '../../utils/regexp-intrinsic';
+import { asDirectConstruction, isRegExpConstructor } from '../../utils/regexp-intrinsic';
 import { confirmsRedos } from '../../utils/redos-oracle';
 
 // Module-level parser; cheap to reuse.
@@ -738,7 +738,10 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
 
     return {
       Literal: checkLiteralRegExp,
-      CallExpression: checkNewRegExp,
+      // Reflect.construct(RegExp, [...]) is normalised to the direct shape
+      // before the check runs, so one code path handles both spellings.
+      CallExpression: (node: TSESTree.CallExpression) =>
+        checkNewRegExp(asDirectConstruction(node, context.sourceCode)),
       NewExpression: checkNewRegExp,
     };
   },

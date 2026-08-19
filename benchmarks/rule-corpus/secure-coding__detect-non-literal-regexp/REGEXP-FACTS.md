@@ -288,15 +288,34 @@ fixture followed the contract rather than the other way round — the parameter
 clone moved from `safe/` to `vulnerable/16-clone-of-unknown-regexp.js`, and the
 duel is 16 TP / 0 FP / 0 FN, 100% F1 against eslint-plugin-security's 70.3%.
 
-### Still open, measured not guessed
+### The three intrinsic gaps, closed
 
-Three false negatives survive, all pre-existing and all in reaching the RegExp
-intrinsic:
+All three were blind in BOTH regex rules, because both ask the same question of
+the same shared resolver:
 
-- `Reflect.construct(RegExp, [p])`
-- `const { RegExp: R } = globalThis; new R(p)`
-- `class My extends RegExp {}; new My(p)`
+- `const { RegExp: R } = globalThis; new R(p)` — the initialiser is the
+  NAMESPACE, so recursing into it asks "is globalThis the RegExp constructor"
+  and correctly answers no. The property KEY is where the answer lives.
+- `class My extends RegExp {}; new My(p)` — every construction runs the
+  intrinsic's constructor. The binding is a class, not a variable, so the
+  resolver stopped at a definition kind it did not handle.
+- `Reflect.construct(RegExp, [p])` — not a resolver gap at all. Both rules ask
+  what the CALLEE resolves to, and here the intrinsic is an ARGUMENT. Normalised
+  to the direct shape before the check runs, keeping the original `loc` so the
+  finding still lands on the whole call.
 
-And one false positive: `const P = { X: '^a$' } as const; new RegExp(P.X)` is a
-compile-time constant and is reported. Each is a unit of work, not an accepted
-defect.
+**Cost on real source: zero.** Both rules report exactly what they reported
+before — 248 and 119 findings across the 20 repositories — and both duels hold
+at 100% F1. The shapes do not occur in that corpus, which is the expected result
+and also the reason the corpus could never have found them: recall against
+evasion is bought here at no precision at all.
+
+Six negative controls came with them, because a resolver that says yes too often
+is the worse failure: destructuring from a non-global object, from a call
+result, a different key off globalThis, `Reflect.construct(Date, ...)`, a
+runtime-built argument list, and a locally-declared `Reflect`.
+
+### Still open
+
+One false positive: `const P = { X: '^a$' } as const; new RegExp(P.X)` is a
+compile-time constant and is reported. A unit of work, not an accepted defect.
