@@ -97,14 +97,34 @@ const run = (file: string, args: string[]): string => {
  */
 const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   const [, ruleName] = ruleId.split('/');
-  const fixtures = ['vulnerable', 'safe']
-    .flatMap((sub) => {
-      const full = path.join(dir, sub);
-      return fs.existsSync(full)
-        ? fs.readdirSync(full).map((f) => fs.readFileSync(path.join(full, f), 'utf8'))
-        : [];
-    })
-    .join('\n');
+  // Kept as SEPARATE files, not concatenated.
+  //
+  // Joining them into one source was the fourth defect in this measurement.
+  // Two fixture files that each declare `const handler` are both valid; their
+  // concatenation is a redeclaration, which is a SyntaxError in a module — and
+  // a source that does not parse is a source the rule never runs on. On the
+  // first run of the repaired instrument, 29 of 94 rule corpora produced an
+  // unparseable concatenation and reported VOID for every size.
+  //
+  // Files are also the unit ESLint actually works in, so nothing is lost by
+  // dropping the join: a rule sees the same fixtures, each in its own scope,
+  // which is the shape it will meet in a consumer's repository.
+  // Each fixture keeps its own EXTENSION as well as its own file. A .jsx
+  // fixture parsed under a .ts filename is a syntax error, which is how 29 of
+  // 94 corpora first reported VOID at every size — browser-security's fixtures
+  // are React components. Worse, the flat config matched `**/*.ts` only, so
+  // simply renaming the file to .jsx would have applied NO rule and timed an
+  // empty run as fast.
+  const fixtureFiles = ['vulnerable', 'safe'].flatMap((sub) => {
+    const full = path.join(dir, sub);
+    return fs.existsSync(full)
+      ? fs.readdirSync(full).map((f) => ({
+          code: fs.readFileSync(path.join(full, f), 'utf8'),
+          ext: path.extname(f) || '.ts',
+        }))
+      : [];
+  });
+  const fixtures = fixtureFiles.map((f) => f.code).join('\n');
   if (!fixtures.trim()) {
     return {
       state: 'unmet',
@@ -116,8 +136,13 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   const linter = new Linter({ configType: 'flat' });
   const configFor = (r: unknown) => [
     {
-      files: ['**/*.ts'],
-      languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const },
+      files: ['**/*'],
+      languageOptions: {
+        parser: tsParser,
+        ecmaVersion: 2022 as const,
+        sourceType: 'module' as const,
+        parserOptions: { ecmaFeatures: { jsx: true } },
+      },
       plugins: { probe: { rules: { [ruleName]: r } } },
       rules: { [`probe/${ruleName}`]: 'error' as const },
     },
@@ -129,11 +154,16 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   const PASSES = 5;
   const best = (r: unknown, files: number): number => {
     const config = configFor(r);
-    for (let f = 0; f < files; f += 1) linter.verify(fixtures, config, `perf${f}.ts`);
+    const run = (): void => {
+      for (let rep = 0; rep < files; rep += 1) {
+        fixtureFiles.forEach((f, i) => linter.verify(f.code, config, `perf${rep}-${i}${f.ext}`));
+      }
+    };
+    run();
     let min = Infinity;
     for (let pass = 0; pass < PASSES; pass += 1) {
       const started = process.hrtime.bigint();
-      for (let f = 0; f < files; f += 1) linter.verify(fixtures, config, `perf${f}.ts`);
+      run();
       min = Math.min(min, Number(process.hrtime.bigint() - started) / 1e6);
     }
     return min;
@@ -193,9 +223,9 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   //
   // Files are also what ESLint actually does, so this is the shape the number is
   // meant to describe.
-  const parses = (source: string): boolean =>
+  const parses = (source: string, name: string): boolean =>
     !linter
-      .verify(source, [{ files: ['**/*.ts'], languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const }, rules: {} }], 'perf.ts')
+      .verify(source, [{ files: ['**/*'], languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const, parserOptions: { ecmaFeatures: { jsx: true } } }, rules: {} }], name)
       .some((m) => m.fatal);
 
   const marginal: number[] = [];
@@ -206,11 +236,12 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   for (const target of SIZES) {
     const files = Math.max(1, Math.round(target / unit.length));
     actual.push(files * unit.length);
-    if (!parses(fixtures)) {
+    const broken = fixtureFiles.findIndex((f, i) => !parses(f.code, `probe${i}${f.ext}`));
+    if (broken !== -1) {
       usable.push(false);
       marginal.push(0);
       floors.push(Infinity);
-      timings.push(`${target}L VOID (fixture does not parse)`);
+      timings.push(`${target}L VOID (fixture #${broken} does not parse)`);
       continue;
     }
     usable.push(true);
