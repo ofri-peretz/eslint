@@ -12,7 +12,7 @@
   "axes": {
     "oracle": {
       "state": "unmet",
-      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output \u2014 a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
       "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
     },
     "effectiveFp": {
@@ -27,12 +27,12 @@
     },
     "corpus": {
       "state": "met",
-      "evidence": "SPEC.md: written BEFORE touching the rule, from CWE-22 semantics, and every claim executed in Node 24 rather than reasoned about — including the counterintuitive `path.join` results the rule turns on.",
+      "evidence": "SPEC.md: written BEFORE touching the rule, from CWE-22 semantics, and every claim executed in Node 24 rather than reasoned about \u2014 including the counterintuitive `path.join` results the rule turns on.",
       "command": "cat benchmarks/rule-corpus/node-security__detect-non-literal-fs-filename/SPEC.md"
     },
     "duel": {
       "state": "met",
-      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "10 TP / 0 FP / 0 FN \u2014 100.0% precision, 100.0% recall, 100.0% F1",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs node-security/detect-non-literal-fs-filename"
     },
     "adversarial": {
@@ -47,7 +47,7 @@
     },
     "partition": {
       "state": "unmet",
-      "evidence": "PROBED 2026-08-18 and FAILED. `fs.readFileSync(req.query.file)` — the canonical CWE-22 sink — is reported by BOTH this rule and node-security/no-arbitrary-file-access. Zip-slip partitions cleanly: with a real unzipper binding, exactly one report, from no-zip-slip.",
+      "evidence": "PROBED 2026-08-18 and FAILED. `fs.readFileSync(req.query.file)` \u2014 the canonical CWE-22 sink \u2014 is reported by BOTH this rule and node-security/no-arbitrary-file-access. Zip-slip partitions cleanly: with a real unzipper binding, exactly one report, from no-zip-slip.",
       "command": "npx tsx scripts/probe-rule.mts node-security/detect-non-literal-fs-filename node-security/no-arbitrary-file-access node-security/no-zip-slip -- 'const fs=require(\"fs\"); function h(req){ return fs.readFileSync(req.query.file); }'"
     },
     "behaviour": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +2.61ms · 8000L +0.64ms — 0.2x time for 4x lines (2000→8000), linear",
+      "evidence": "marginal over a no-op control: 500L +0.00ms \u00b7 2000L +2.61ms \u00b7 8000L +0.64ms \u2014 0.2x time for 4x lines (2000\u21928000), linear",
       "command": "npx tsx scripts/seal-audit.mts node-security/detect-non-literal-fs-filename"
     },
     "recorded": {
       "state": "met",
-      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "evidence": "rule last changed 2026-08-18 \u00b7 RULE-SCORES.md stamp 2026-08-18 \u00b7 BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal node-security/detect-non-literal-fs-filename' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
@@ -78,7 +78,7 @@
       "limit": null,
       "summary": "The canonical sink `fs.readFileSync(req.query.file)` is reported by this rule AND by node-security/no-arbitrary-file-access.",
       "why": "Open work, not a limit. Two rules in one plugin model the same sink, so a consumer enabling `recommended` sees the same defect twice with two different message shapes. Which rule owns direct fs-sink taint is a taxonomy decision.",
-      "reopenWhen": "immediately — this is a defect, listed here so it is not lost"
+      "reopenWhen": "immediately \u2014 this is a defect, listed here so it is not lost"
     },
     {
       "id": "throughput-not-established",
@@ -87,6 +87,14 @@
       "summary": "The rule's marginal CPU cost does not clear the noise floor at two or more sizes, so no growth curve can be read.",
       "why": "Harness cost (parser + scope construction) is ~70ms at 8000 lines and dominates; the difference between two such measurements is larger than the rule's own contribution at 500 and 2000 lines. The same rule has measured +1.50ms and +0.00ms at 500 lines on consecutive runs. The property is decidable; the instrument is not sharp enough.",
       "reopenWhen": "a CPU profile attributing samples to the rule's own frames exists, or the sizes are raised until two points clear the floor"
+    },
+    {
+      "id": "absolute-sensitive-literal-contract",
+      "kind": "scope",
+      "limit": null,
+      "summary": "The literal branch reports a hardcoded path that ARRIVES somewhere sensitive; whether a bare absolute path is CWE-22 at all is undecided.",
+      "why": "Open work AND a contract question. `literal-paths.test.ts` deliberately asserts `fs.readFileSync('/etc/shadow')` reports. The single real-source instance \u2014 pm2/lib/tools/passwd.js:5, a file whose job is parsing /etc/passwd \u2014 reads as a false alarm under a traversal message. n=1 is not enough to overturn a deliberate decision, so the rule is unchanged.",
+      "reopenWhen": "the literal branch's purpose is settled: traversal only, or sensitive destinations generally \u2014 and if the latter, whether it belongs under CWE-497 with its own message"
     }
   ]
 }

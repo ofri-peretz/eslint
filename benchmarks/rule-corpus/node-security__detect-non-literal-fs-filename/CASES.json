@@ -4,7 +4,7 @@
     {
       "id": "fsPathTraversal-43e216dfbc76",
       "signature": "43e216dfbc76",
-      "verdict": "exempt",
+      "verdict": "undecided",
       "messageId": "fsPathTraversal",
       "shape": "Call(Mem(Id.readFileSync);Lit:string)",
       "context": "",
@@ -17,7 +17,8 @@
           "source": "return fs.readFileSync('/etc/passwd')"
         }
       ],
-      "why": "A LITERAL absolute path with no traversal segment. pm2 lib/tools/passwd.js:5 reads /etc/passwd because parsing /etc/passwd is what the file is for \u2014 nothing here is invoker-controlled, so there is no path to traverse. The sensitive-location check added on 2026-08-17 was meant for RELATIVE literals like `../../etc/passwd`, where the `..` is the traversal; an absolute literal is the author naming a file outright. The rule still reports this, so the ledger will show a regression until it stops."
+      "why": "CONTRACT CONFLICT, not a defect \u2014 and my earlier `exempt` here was a hasty call that contradicted the rule's own suite.\n\nThe rule deliberately reports a hardcoded path that ARRIVES somewhere sensitive, absolute or relative: `literal-paths.test.ts` asserts `fs.readFileSync('/etc/shadow')` must report, written when this branch was designed.\n\nAgainst that: CWE-22 is an attacker STEERING a path, and pm2/lib/tools/passwd.js:5 is a file whose entire job is parsing /etc/passwd. Nothing is invoker-controlled. Under a path-traversal message at CRITICAL, it reads as a false alarm \u2014 and the rule is named detect-non-literal-fs-filename, so a bare literal is arguably out of scope by name.\n\nEvidence for changing it is n=1 across 3.10M lines. That is not enough to overturn a deliberate decision, so the rule is unchanged and the disagreement is recorded instead. Deciding it means choosing what the literal branch is FOR: traversal only, or sensitive destinations generally \u2014 and if the latter, whether that belongs under CWE-497 with its own message rather than here.",
+      "limit": null
     },
     {
       "id": "fsPathTraversal-c94e7c4b7e6b",
