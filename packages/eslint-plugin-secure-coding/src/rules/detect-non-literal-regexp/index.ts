@@ -276,9 +276,140 @@ function isBuildTimeConstant(
       );
     case 'Identifier':
       return isConstantBinding(node, sourceCode, depth);
+    // `{ … } as const` and `<const>{ … }` — the annotation is not the value.
+    case 'TSAsExpression':
+    case 'TSTypeAssertion':
+      return isBuildTimeConstant(node.expression, sourceCode, depth + 1);
+    case 'ObjectExpression':
+      return node.properties.every(
+        (property) =>
+          property.type === 'Property' &&
+          !property.computed &&
+          isBuildTimeConstant(property.value as TSESTree.Node, sourceCode, depth + 1),
+      );
+    case 'MemberExpression':
+      return isConstantTableLookup(node, sourceCode, depth);
     default:
       return false;
   }
+}
+
+/**
+ * `PATTERNS.email`, where PATTERNS is a table the program fully decides.
+ *
+ * The rule's own documentation has recommended this shape as the safe
+ * alternative for as long as it has existed — `const PATTERNS = {...};
+ * PATTERNS[userChoice]` — and reported it anyway. An adversarial wave caught
+ * that on 2026-08-19.
+ *
+ * ## Why resolving the declaration is not enough
+ *
+ * `const` prevents REBINDING, not MUTATION:
+ *
+ * ```js
+ * const PATTERNS = { email: '^ok$' };
+ * PATTERNS.email = req.body.pattern;   // legal, and the table is now theirs
+ * new RegExp(PATTERNS.email);
+ * ```
+ *
+ * So the binding must resolve to an object literal AND nothing in the file may
+ * write through it. The write can be anywhere — a config loader patching the
+ * table at startup is the realistic shape, not an assignment two lines above
+ * the use — so every reference is checked, not just the ones nearby.
+ *
+ * Bounded by the same depth counter as the rest of the walk, and a key the
+ * table does not define resolves to nothing and reports: absent is not
+ * constant.
+ */
+function isConstantTableLookup(
+  node: TSESTree.MemberExpression,
+  sourceCode: TSESLint.SourceCode,
+  depth: number,
+): boolean {
+  const value = resolveLookup(node, sourceCode, depth);
+  return value !== null && isBuildTimeConstant(value, sourceCode, depth + 1);
+}
+
+/** `{ … } as const` and `<const>{ … }` are annotations; the value is underneath. */
+function withoutTypeAnnotation(node: TSESTree.Node): TSESTree.Node {
+  let current = node;
+  while (current.type === 'TSAsExpression' || current.type === 'TSTypeAssertion') {
+    current = current.expression;
+  }
+  return current;
+}
+
+/**
+ * The value a chain of non-computed lookups names, or null.
+ *
+ * Recursive, so `P.user.email` costs no more code than `P.email` — an earlier
+ * revision had a second near-identical resolver for exactly one extra level,
+ * and the duplication showed up as uncovered lines in the copy.
+ */
+function resolveLookup(
+  node: TSESTree.MemberExpression,
+  sourceCode: TSESLint.SourceCode,
+  depth: number,
+): TSESTree.Node | null {
+  if (depth > 6 || node.computed || node.property.type !== 'Identifier') {
+    return null;
+  }
+
+  const table =
+    node.object.type === 'Identifier'
+      ? constObjectBinding(node.object, sourceCode)
+      : node.object.type === 'MemberExpression'
+        ? resolveLookup(node.object, sourceCode, depth + 1)
+        : null;
+  if (table === null) {
+    return null;
+  }
+
+  const unwrapped = withoutTypeAnnotation(table);
+  if (unwrapped.type !== 'ObjectExpression') {
+    return null;
+  }
+  const name = node.property.name;
+  const match = unwrapped.properties.find(
+    (property) =>
+      property.type === 'Property' && !property.computed && property.key.type === 'Identifier' && property.key.name === name,
+  );
+  // A key the table does not define resolves to undefined at runtime, so
+  // nothing is proven about it: absent is not constant.
+  return match !== undefined && match.type === 'Property' ? (match.value as TSESTree.Node) : null;
+}
+
+/** The object literal a `const` binding holds, if nothing writes through it. */
+function constObjectBinding(node: TSESTree.Identifier, sourceCode: TSESLint.SourceCode): TSESTree.Node | null {
+  const variable = resolveVariable(node.name, sourceCode.getScope(node));
+  if (variable === null || variable.defs.length !== 1) {
+    return null;
+  }
+  const definition = variable.defs[0]!;
+  if (definition.type !== 'Variable' || definition.parent.kind !== 'const' || definition.node.init === null) {
+    return null;
+  }
+  return isMutatedThroughAnyReference(variable) ? null : definition.node.init;
+}
+
+/** Is any reference to this binding the object of an assignment target? */
+function isMutatedThroughAnyReference(variable: TSESLint.Scope.Variable): boolean {
+  return variable.references.some((reference) => {
+    let current: TSESTree.Node | undefined = reference.identifier as TSESTree.Node;
+    let parent = current.parent;
+    while (parent?.type === 'MemberExpression' && parent.object === current) {
+      current = parent;
+      parent = parent.parent;
+    }
+    if (current === reference.identifier) {
+      return false;
+    }
+    return (
+      (parent?.type === 'AssignmentExpression' && parent.left === current) ||
+      (parent?.type === 'UpdateExpression' && parent.argument === current) ||
+      (parent?.type === 'UnaryExpression' && parent.operator === 'delete' && parent.argument === current)
+    );
+  });
 }
 
 /** Resolve an identifier to its single declaration and judge that. */
