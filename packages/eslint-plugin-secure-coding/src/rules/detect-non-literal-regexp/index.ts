@@ -156,45 +156,6 @@ interface RegExpPattern {
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
 }
 
-const REGEXP_PATTERNS: RegExpPattern[] = [
-  {
-    pattern: 'new RegExp\\(.*\\)',
-    dangerous: true,
-    vulnerability: 'redos',
-    safeAlternative: 'Pre-defined RegExp constants',
-    example: {
-      bad: 'new RegExp(userInput)',
-      good: 'const PATTERNS = { email: /^[a-zA-Z0-9]+$/ }; PATTERNS[userChoice]'
-    },
-    effort: '10-15 minutes',
-    riskLevel: 'high'
-  },
-  {
-    pattern: 'RegExp\\(.*\\)',
-    dangerous: true,
-    vulnerability: 'redos',
-    safeAlternative: 'Static RegExp literals or validated patterns',
-    example: {
-      bad: 'RegExp(userPattern)',
-      // oxlint-disable-next-line no-template-curly-in-string
-      good: 'const safePattern = userPattern.replace(/[.*+?^${}()|[\\]\\\\]/g, \'\\\\$&\'); new RegExp(`^${safePattern}$`)'
-    },
-    effort: '15-20 minutes',
-    riskLevel: 'high'
-  },
-  {
-    pattern: '/.*\\*\\*.*|.*\\+\\+.*|.*\\?\\?/',
-    dangerous: true,
-    vulnerability: 'redos',
-    safeAlternative: 'Avoid nested quantifiers, use atomic groups',
-    example: {
-      bad: '/(a+)+b/', // ReDoS vulnerable
-      good: '/(?>a+)b/', // Atomic group (if supported) or restructure
-    },
-    effort: '20-30 minutes',
-    riskLevel: 'critical'
-  }
-];
 
 /**
  * String/array methods that turn constant inputs into a constant output.
@@ -202,6 +163,14 @@ const REGEXP_PATTERNS: RegExpPattern[] = [
  * Deliberately short: every entry has to be a pure transformation whose result
  * depends on nothing but its receiver and arguments. `map`/`filter` take a
  * callback and are excluded — the callback could read anything.
+ *
+ * @protocol-constant Method names from the ECMAScript String and Array
+ * prototypes, selected by the language's own semantics: each returns a value
+ * determined solely by its receiver and arguments. A consumer cannot add a
+ * seventh — adding one asserts that some other method is pure, which would make
+ * the rule treat a runtime-decided pattern as constant and go silent on it, and
+ * removing one turns `'a'.trim()` back into a finding. The set is a fact about
+ * the language, not a vocabulary about anyone's domain.
  */
 const CONSTANT_PRESERVING_METHODS: ReadonlySet<string> = new Set([
   'join',
@@ -717,14 +686,27 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
      * Detect the specific vulnerability pattern
      */
     const detectVulnerability = (pattern: string, isDynamic: boolean): RegExpPattern => {
-      // Check for dynamic construction first (highest risk)
+      // One outcome, because there was only ever one.
+      //
+      // A REGEXP_PATTERNS table used to be consulted here, matched with
+      // `new RegExp(entry.pattern, 'i').test(printedSource)`. Three entries:
+      // two were `new RegExp(...)` and `RegExp(...)` — the same shape with and
+      // without `new` — and the third matched `**`, `++` or `??` appearing as
+      // TEXT and escalated the finding to `critical`.
+      //
+      // Every entry returned `vulnerability: 'redos'`, and so did the
+      // fall-through, so the table never changed the verdict. What it did change
+      // was severity, on a textual guess at catastrophic backtracking — the one
+      // claim this rule proves nothing about and `no-redos-vulnerable-regex`
+      // decides with `recheck`. The literal branch below already said as much
+      // about "the two hand-written regexes that used to live here"; this branch
+      // kept its own.
+      //
+      // Deleting it removes a regex over printed source (the `textual-matching`
+      // defect the rule audit reports on rules), a word list no option could
+      // override (`unconfigurable-vocabulary`, red since 2026-08-18), and a
+      // severity signal that was never evidence.
       if (isDynamic) {
-        for (const vuln of REGEXP_PATTERNS) {
-          if (new RegExp(vuln.pattern, 'i').test(pattern)) {
-            return vuln;
-          }
-        }
-        // Generic dynamic RegExp construction
         return {
           pattern: 'dynamic',
           dangerous: true,
@@ -773,43 +755,26 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         ].join('\n');
       }
 
-      if (vulnerability.pattern === 'literal-construction') {
-        return [
-          '   1. Replace new RegExp(\'…\') with a /…/ literal',
-          '   2. Keep the flags as literal suffixes: /…/gi',
-          '   3. Escaping differs: a literal needs one backslash, not two'
-        ].join('\n');
-      }
-
-      // Every `RegExpPattern` constructed in this module has
-      // `vulnerability: 'redos'` (see REGEXP_PATTERNS above and the two
-      // object literals returned from `detectVulnerability`) — there is no
-      // code path that ever produces `'injection'` or another value, so
-      // this is the only reachable case. Kept as a direct return (not a
-      // switch) to avoid unreachable branches that no test could ever hit.
+      // `detectVulnerability` returns exactly two shapes, so this is the other
+      // one. A third arm used to follow, reachable only from REGEXP_PATTERNS
+      // entries; deleting the table left it unreachable, and it advised on
+      // nested quantifiers and possessive syntax — backtracking advice, from
+      // the rule that does not decide backtracking.
       return [
-        '   1. Avoid nested quantifiers and backreferences',
-        '   2. Use possessive quantifiers: *+, ++, ?+',
-        '   3. Restructure regex to be more specific',
-        '   4. Test with potentially malicious inputs',
-        '   5. Consider safe-regex library validation'
+        '   1. Replace new RegExp(\'…\') with a /…/ literal',
+        '   2. Keep the flags as literal suffixes: /…/gi',
+        '   3. Escaping differs: a literal needs one backslash, not two'
       ].join('\n');
     };
 
-    /**
-     * Determine overall risk level
-     */
-    // Every `RegExpPattern` ever constructed in this module (REGEXP_PATTERNS
-    // entries, and the two object literals in `detectVulnerability`) sets
-    // `riskLevel` to only `'high'` or `'critical'` — never `'medium'` or
-    // `'low'` — so those two branches are the only reachable outcomes.
-    const determineRiskLevel = (vulnerability: RegExpPattern): string => {
-      if (vulnerability.riskLevel === 'critical') {
-        return 'CRITICAL';
-      }
-
-      return 'HIGH';
-    };
+    // Severity is constant, and that is the honest state of it.
+    //
+    // A `determineRiskLevel` used to escalate to CRITICAL, and exactly one
+    // thing ever produced that: the REGEXP_PATTERNS entry that matched `**`,
+    // `++` or `??` as TEXT in the printed source. With the table gone nothing
+    // reaches it, so the function collapsed to a constant — which is what it
+    // always was for every finding the rule can still justify.
+    const RISK_LEVEL = 'HIGH';
 
     /**
      * Check RegExp constructor calls for vulnerabilities
@@ -853,7 +818,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       // `isDynamic` is false — meaning a synthetic `isDynamic ? {...} :
       // Both branches of `detectVulnerability` return an object — the dynamic
       // one and the literal-construction one — so there is no null to guard.
-      const riskLevel = determineRiskLevel(vulnerability);
+      const riskLevel = RISK_LEVEL;
       const steps = generateRefactoringSteps(vulnerability);
 
       context.report({
