@@ -95,6 +95,24 @@ const run = (file: string, args: string[]): string => {
  * several passes and the minimum is taken — the minimum is the least
  * contaminated by scheduling, GC and background load.
  */
+/**
+ * Every extension the fixtures use, named explicitly.
+ *
+ * A wholly universal `files` pattern — star-star-slash-star — looks like "all
+ * files" and is not. ESLint treats it as applying to files it is ALREADY
+ * linting rather than as a reason to lint one, so under that pattern a .ts,
+ * .tsx or .jsx file is never linted at all: `linter.verify` returns a single
+ * non-fatal "No matching configuration found" and no rule runs.
+ *
+ * That is worse than the VOID it replaced. An unparsed fixture at least
+ * reported VOID; an unmatched one reports a clean, fast, empty run. The commit
+ * that widened this glob for browser-security's .jsx fixtures named that exact
+ * failure — "renaming the fixture to .jsx WITHOUT widening the glob would have
+ * applied no rule at all, and an empty run times as fast" — and then shipped it,
+ * because the widening it chose does not widen.
+ */
+const LINTABLE = '**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}';
+
 const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   const [, ruleName] = ruleId.split('/');
   // Kept as SEPARATE files, not concatenated.
@@ -136,7 +154,7 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   const linter = new Linter({ configType: 'flat' });
   const configFor = (r: unknown) => [
     {
-      files: ['**/*'],
+      files: [LINTABLE],
       languageOptions: {
         parser: tsParser,
         ecmaVersion: 2022 as const,
@@ -225,7 +243,7 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   // meant to describe.
   const parses = (source: string, name: string): boolean =>
     !linter
-      .verify(source, [{ files: ['**/*'], languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const, parserOptions: { ecmaFeatures: { jsx: true } } }, rules: {} }], name)
+      .verify(source, [{ files: [LINTABLE], languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const, parserOptions: { ecmaFeatures: { jsx: true } } }, rules: {} }], name)
       .some((m) => m.fatal);
 
   const marginal: number[] = [];
@@ -236,6 +254,21 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   for (const target of SIZES) {
     const files = Math.max(1, Math.round(target / unit.length));
     actual.push(files * unit.length);
+    // A fixture that is never LINTED is worse than one that never parses: it
+    // costs nothing, so it times as fast and the axis passes on an empty run.
+    // Proven reachable — the previous revision's glob left every .jsx and .ts
+    // fixture unmatched, and the numbers it published were measuring nothing.
+    const unlinted = fixtureFiles.findIndex((f, i) => {
+      const seen = linter.verify(f.code, configFor(rule), `lintcheck${i}${f.ext}`);
+      return seen.some((m) => /No matching configuration/.test(m.message));
+    });
+    if (unlinted !== -1) {
+      throw new Error(
+        `fixture #${unlinted} (${fixtureFiles[unlinted].ext}) is not matched by the throughput config for ${ruleId} — ` +
+          `it would be timed as a zero-cost run. Add its extension to LINTABLE.`,
+      );
+    }
+
     const broken = fixtureFiles.findIndex((f, i) => !parses(f.code, `probe${i}${f.ext}`));
     if (broken !== -1) {
       usable.push(false);
