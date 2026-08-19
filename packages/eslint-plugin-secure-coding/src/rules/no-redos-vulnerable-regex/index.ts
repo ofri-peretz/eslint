@@ -96,6 +96,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import { RegExpParser } from '@eslint-community/regexpp';
 import { analyse } from 'scslre';
 import { isRegExpConstructor } from '../../utils/regexp-intrinsic';
+import { confirmsRedos } from '../../utils/redos-oracle';
 
 // Module-level parser; cheap to reuse.
 /**
@@ -443,6 +444,7 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+
         // ONE report per regex, not one per ambiguity path.
         //
         // scslre returns a report for every distinct path it finds through the
@@ -457,6 +459,7 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // scslre cleared it, but it was TIMED as catastrophic — report anyway.
         // `^(a|a)*$` is 8,581 ms and returns zero reports from the analyser.
         if (result.reports.length === 0 && isProvablyCatastrophic(pattern)) {
+          if (!confirmsRedos(pattern, flags)) return;
           context.report({
             node,
             messageId: 'redosVulnerable',
@@ -477,6 +480,20 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
 
         const worst =
           result.reports.find((r) => r.exponential) ?? result.reports[0];
+        // SECOND STAGE, at the report site and nowhere earlier.
+        //
+        // If the optional `recheck` oracle is installed it may RETRACT a finding
+        // this structural pass cannot justify — never add one, because a rule
+        // that reports more when an optional package happens to be present makes
+        // two identical versions disagree about whether a build passes.
+        //
+        // Placement is the whole performance story. At 14.3 ms per pattern, an
+        // earlier call — after the linear pre-filter but before scslre had
+        // decided anything — took the corpus sweep from 35s to 205s, because
+        // most patterns reaching that point are never reported. Asked only about
+        // patterns about to be reported, the same oracle costs under two seconds
+        // across 21,394 files.
+        if (worst && !confirmsRedos(pattern, flags)) return;
         for (const report of worst ? [worst] : []) {
           const isExp = report.exponential;
           context.report({

@@ -6,11 +6,21 @@ import tsParser from '@typescript-eslint/parser';
 export default [
   {
     files: ['**/*.js', '**/*.jsx', '**/*.mjs', '**/*.cjs', '**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
+    // Ignores are matched against the FULL path, so a bare '**/benchmarks/**'
+    // also matches the corpus's own location under benchmarks/.real-source-cache
+    // and silently excludes every file. The first run of this script reported 0
+    // findings for all five rules for exactly that reason — which reads like
+    // five perfect rules.
+    //
+    // Anchoring each pattern one level inside a repository directory keeps the
+    // intent (skip a project's own tests, docs and vendored output) without the
+    // pattern reaching up and eating the corpus root.
     ignores: [
-      '**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**', '**/vendor/**',
-      '**/*.min.js', '**/*.bundle.js', '**/*.test.*', '**/*.spec.*',
-      '**/test/**', '**/tests/**', '**/__tests__/**', '**/fixtures/**',
-      '**/docs/**', '**/examples/**', '**/benchmarks/**',
+      '**/node_modules/**', '**/*.min.js', '**/*.bundle.js', '**/*.chunk.js',
+      '**/*.test.*', '**/*.spec.*',
+      '*/*/dist/**', '*/*/build/**', '*/*/coverage/**', '*/*/vendor/**',
+      '*/*/test/**', '*/*/tests/**', '*/*/__tests__/**', '*/*/fixtures/**',
+      '*/*/docs/**', '*/*/examples/**', '*/*/benchmarks/**', '*/*/.yarn/**',
     ],
     languageOptions: { parser: tsParser, ecmaVersion: 2022, sourceType: 'module' },
     plugins: { 'secure-coding': { rules: interlace.rules } },

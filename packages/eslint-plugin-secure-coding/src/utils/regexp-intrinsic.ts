@@ -34,8 +34,14 @@ import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
  */
 const GLOBAL_NAMESPACES: ReadonlySet<string> = new Set(['globalThis', 'global', 'window', 'self']);
 
-/** Resolve a name to its variable through the scope chain, or null. */
-function resolveVariable(
+/**
+ * Resolve a name to its variable through the scope chain, or null.
+ *
+ * Exported because `detect-non-literal-regexp` asks the same question in two
+ * other places. Two copies of a scope walk is how the two regex rules came to
+ * disagree about which spellings reach the intrinsic in the first place.
+ */
+export function resolveVariable(
   name: string,
   scope: TSESLint.Scope.Scope | null,
 ): TSESLint.Scope.Variable | null {
@@ -56,7 +62,7 @@ function resolveVariable(
  * compiles a pattern. A global-scope entry carrying no definition belongs to the
  * environment, so it counts.
  */
-function isEnvironmentGlobal(name: string, scope: TSESLint.Scope.Scope | null): boolean {
+export function isEnvironmentGlobal(name: string, scope: TSESLint.Scope.Scope | null): boolean {
   const variable = resolveVariable(name, scope);
   return variable === null || variable.defs.length === 0;
 }

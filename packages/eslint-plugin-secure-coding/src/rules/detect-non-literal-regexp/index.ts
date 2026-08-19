@@ -106,6 +106,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import {
+  isEnvironmentGlobal,
+  isRegExpConstructor,
+  resolveVariable,
+} from '../../utils/regexp-intrinsic';
 
 type MessageIds =
   | 'regexpReDoS';
@@ -204,102 +209,13 @@ const CONSTANT_PRESERVING_METHODS: ReadonlySet<string> = new Set([
   'repeat',
 ]);
 
-/**
- * Global namespace objects that hold the intrinsic `RegExp`.
- *
- * Exact membership against a closed set of language-defined names — not a
- * substring test on a spelling. Renaming every identifier in a file changes
- * nothing about which of these is the global object.
- */
-const GLOBAL_NAMESPACES: ReadonlySet<string> = new Set(['globalThis', 'global', 'window', 'self']);
-
-/**
- * Resolve a name to its variable through the scope chain, or null.
- */
-function resolveVariable(
-  name: string,
-  scope: TSESLint.Scope.Scope | null,
-): TSESLint.Scope.Variable | null {
-  for (let current = scope; current !== null; current = current.upper) {
-    const variable = current.variables.find((candidate) => candidate.name === name) ?? null;
-    if (variable !== null) {
-      return variable;
-    }
-  }
-  return null;
-}
-
-/**
- * Is this name the environment's binding rather than one this file declares?
- *
- * `function render(RegExp) { new RegExp(p) }` calls a parameter, not the
- * intrinsic; treating it as the constructor would report code that never
- * compiles a pattern. A global-scope entry carrying no definition belongs to the
- * environment, so it counts.
- */
-function isEnvironmentGlobal(name: string, scope: TSESLint.Scope.Scope | null): boolean {
-  const variable = resolveVariable(name, scope);
-  return variable === null || variable.defs.length === 0;
-}
-
-/**
- * Does this callee evaluate to the intrinsic RegExp constructor?
- *
- * Three spellings reach the same intrinsic and were previously three different
- * answers, because the check was `callee.name === 'RegExp'`:
- *
- *   new RegExp(p)                 — reported
- *   new globalThis.RegExp(p)      — silent (isomorphic libraries write this to
- *                                   survive a bundler that shadows the bare name)
- *   const R = RegExp; new R(p)    — silent (the native-constructor capture that
- *                                   libraries use to survive a patched global)
- *
- * Resolved through the scope chain, so the answer depends on what the binding
- * IS, never on what it is called.
- */
-function isRegExpConstructor(
-  node: TSESTree.Node,
-  sourceCode: TSESLint.SourceCode,
-  depth = 0,
-): boolean {
-  // A chain of aliases longer than this is not real code; refusing it keeps a
-  // cyclic `const a = b; const b = a` from recursing.
-  if (depth > 4) {
-    return false;
-  }
-
-  if (node.type === 'MemberExpression') {
-    return (
-      !node.computed &&
-      node.property.type === 'Identifier' &&
-      node.property.name === 'RegExp' &&
-      node.object.type === 'Identifier' &&
-      GLOBAL_NAMESPACES.has(node.object.name) &&
-      isEnvironmentGlobal(node.object.name, sourceCode.getScope(node.object))
-    );
-  }
-
-  if (node.type !== 'Identifier') {
-    return false;
-  }
-
-  if (node.name === 'RegExp' && isEnvironmentGlobal(node.name, sourceCode.getScope(node))) {
-    return true;
-  }
-
-  // `const NativeRegExp = RegExp` — one declaration, never rewritten, so the
-  // binding provably holds the intrinsic.
-  const variable = resolveVariable(node.name, sourceCode.getScope(node));
-  if (variable === null || variable.defs.length !== 1) {
-    return false;
-  }
-  const definition = variable.defs[0]!;
-  if (definition.type !== 'Variable' || definition.parent.kind !== 'const') {
-    return false;
-  }
-  const init = definition.node.init;
-  return init !== null && isRegExpConstructor(init, sourceCode, depth + 1);
-}
+// `isRegExpConstructor`, `GLOBAL_NAMESPACES` and the scope-chain resolver used
+// to live here. They moved to ../../utils/regexp-intrinsic.ts on 2026-08-18,
+// when an adversarial wave found `no-redos-vulnerable-regex` blind to two
+// spellings this rule had already learned — `const R = RegExp; new R(p)` and
+// `new globalThis.RegExp(p)`. One rule knowing something its sibling does not is
+// the defect a shared resolver removes: a new way to reach the intrinsic is now
+// learned once, by both.
 
 /**
  * `String.raw` used as a template tag, on the real intrinsic.

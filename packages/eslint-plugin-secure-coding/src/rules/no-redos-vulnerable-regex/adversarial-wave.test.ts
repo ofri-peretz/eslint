@@ -78,6 +78,26 @@ ruleTester.run('no-redos-vulnerable-regex (adversarial wave)', noRedosVulnerable
         `export default new F('${CATASTROPHIC}');`,
       ].join('\n'),
     },
+    {
+      // THE ORACLE RETRACTION PATH — verified to be the path, not assumed.
+      //
+      // This is sequelize's CSV-field splitter, taken from the real-source
+      // corpus. The structural pass reports it: a quantified group whose
+      // branches can both begin on a quote. recheck proves the automaton
+      // linear, and the finding is withdrawn.
+      //
+      // Confirmed by running it BOTH ways rather than by reading the code —
+      // with the oracle forced absent the rule REPORTS, with it present the
+      // rule is quiet. Three shorter candidates were rejected first because
+      // they were quiet either way, which would have made this a test of
+      // nothing. That is the same trap as a probe with no positive control.
+      //
+      // The case therefore holds only while the optional oracle is installed,
+      // which it is here. Without it the rule reports, and that is the
+      // documented cost of not installing it.
+      name: 'the oracle retracts a pattern the structural pass cannot clear',
+      code: String.raw`export default /("(?:\.|[^"\])*"|[^,]*)(?:\s*,\s*|\s*$)/;`,
+    },
   ],
   invalid: [
     {
