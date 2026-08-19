@@ -100,7 +100,8 @@ describe('detect-object-injection — Layer 2', () => {
 
   it('a for-head declarator with no initialiser is not a numeric key', () => {
     // `for (let i; …)` — legal, and the numeric-key check cannot prove anything
-    // about a binding with nothing to read.
+    // about a binding with nothing to read. It must decline, not assume, and it
+    // must not throw on the missing initialiser.
     const { listeners, reports } = createWithMockContext(detectObjectInjection);
     const declarator: Record<string, unknown> = { type: 'VariableDeclarator', id: { type: 'Identifier', name: 'i' }, init: null };
     const declaration: Record<string, unknown> = { type: 'VariableDeclaration', kind: 'let', declarations: [declarator] };
@@ -115,7 +116,8 @@ describe('detect-object-injection — Layer 2', () => {
       property: { type: 'Identifier', name: 'i' },
     };
     node.parent = { type: 'AssignmentExpression', operator: '=', left: node };
-    expect(() => (listeners.MemberExpression as (n: unknown) => void)(node)).not.toThrow();
+    (listeners.MemberExpression as (n: unknown) => void)(node);
+    expect(reports).toHaveLength(0);
   });
 
   it('a for-head declarator with a null initialiser resolves to "not numeric"', () => {
@@ -156,8 +158,18 @@ describe('detect-object-injection — Layer 2', () => {
     };
     node.parent = { type: 'AssignmentExpression', operator: '=', left: node };
     (listeners.MemberExpression as (n: unknown) => void)(node);
-    // It reports: an unprovable key on a write is the rule's job.
-    expect(reports.length).toBeGreaterThanOrEqual(0);
+    // Quiet — and the reason is worth stating, because this assertion used to
+    // read `expect(reports.length).toBeGreaterThanOrEqual(0)`, which is true of
+    // every array and so tested nothing. It sat under a comment claiming "it
+    // reports: an unprovable key on a write is the rule's job". Pinning the
+    // number showed the rule reports NOTHING here, so the comment described
+    // behaviour that does not happen and the vacuous assertion hid the gap.
+    //
+    // Failing the numeric check is not by itself a reason to report: nothing in
+    // this synthetic scope marks `arr` or `i` as attacker-reachable. The branch
+    // this case exists to reach is the numeric check declining on a declarator
+    // with no initialiser, and it reaches it.
+    expect(reports).toHaveLength(0);
   });
 
   it('a declarator whose binding cannot be resolved is not an invoked read', () => {

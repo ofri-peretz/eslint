@@ -124,28 +124,113 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   ];
   const noop = { create: () => ({}) };
 
+  const SIZES = [2000, 8000, 32000];
+  const NOISE_FLOOR_MS = 0.2;
   const PASSES = 5;
-  const best = (r: unknown, source: string): number => {
+  const best = (r: unknown, files: number): number => {
     const config = configFor(r);
-    linter.verify(source, config, 'perf.ts');
+    for (let f = 0; f < files; f += 1) linter.verify(fixtures, config, `perf${f}.ts`);
     let min = Infinity;
     for (let pass = 0; pass < PASSES; pass += 1) {
       const started = process.hrtime.bigint();
-      linter.verify(source, config, 'perf.ts');
+      for (let f = 0; f < files; f += 1) linter.verify(fixtures, config, `perf${f}.ts`);
       min = Math.min(min, Number(process.hrtime.bigint() - started) / 1e6);
     }
     return min;
   };
 
+  // Per size, the rule's marginal cost is a small difference between two large
+  // timings, so ONE difference is not a measurement — it is a sample of a noisy
+  // quantity. Take K paired trials, alternating rule and no-op so both see the
+  // same machine, and report the MEDIAN difference with the median absolute
+  // deviation as its error.
+  //
+  // Two weaker versions of this shipped first, both wrong in the flattering
+  // direction. A fixed 0.2ms floor let the SAME unchanged rule read
+  // "0.0x, linear, met" and "12.9x, SUPERLINEAR, unmet" on consecutive runs —
+  // the 2000-line point drifted across the constant, which moved the judged
+  // pair, which flipped the published verdict. Replacing the constant with a
+  // single no-op-vs-no-op control was no better: that control is itself one
+  // sample, and it read 0.20 / 1.53 / 8.57 ms for one rule at one size on three
+  // consecutive runs. An error bar estimated from one draw is not an error bar.
+  const TRIALS = 7;
+  const median = (xs: number[]): number => {
+    const sorted = [...xs].sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length / 2)];
+  };
+
+  // Scale the workload by adding FILES, not by growing one file.
+  //
+  // Three earlier shapes of this measurement were wrong, each in the flattering
+  // direction, and the third is the subtle one:
+  //
+  //  1. `lines.slice(0, target)` cut through the middle of a function or an
+  //     unterminated comment. A source that does not parse is a source the rule
+  //     never runs on, so it timed at ~0ms and PASSED. Of four sizes,
+  //     `detect-object-injection` parsed at exactly one; its "linear, met" came
+  //     from a pair whose larger half was "Parsing error: '*/' expected".
+  //
+  //  2. A fixed 0.2ms noise floor let the SAME unchanged rule read "linear, met"
+  //     and "SUPERLINEAR, unmet" on consecutive runs, and a floor estimated from
+  //     a single no-op-vs-no-op control was no better — that control itself read
+  //     0.20 / 1.53 / 8.57 ms for one rule at one size on three runs.
+  //
+  //  3. Repeating one fixture N times into ONE file does not make a workload N
+  //     times bigger for a scope-sensitive rule — it makes one module scope with
+  //     N copies of every top-level name, so each variable's reference list
+  //     grows with N and any per-variable scan turns quadratic. Real code never
+  //     has that shape. Measured on `detect-object-injection`, same total lines:
+  //
+  //         2008L   one file  2.8ms    4 files   2.6ms
+  //         8032L   one file  9.5ms   16 files   9.9ms
+  //        32128L   one file 76.2ms   64 files  39.3ms
+  //
+  //     One file reads 8x for 4x lines — SUPERLINEAR, and it is an artifact of
+  //     the harness. Across files the same rule is 4.0x for 4x lines: linear.
+  //     A control rule that reports at the same rate but does no analysis holds
+  //     flat at ~2-7µs per report either way, which is what proved the growth
+  //     belonged to the workload shape rather than to ESLint.
+  //
+  // Files are also what ESLint actually does, so this is the shape the number is
+  // meant to describe.
+  const parses = (source: string): boolean =>
+    !linter
+      .verify(source, [{ files: ['**/*.ts'], languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const }, rules: {} }], 'perf.ts')
+      .some((m) => m.fatal);
+
   const marginal: number[] = [];
+  const floors: number[] = [];
   const timings: string[] = [];
-  for (const target of [500, 2000, 8000]) {
-    const lines: string[] = [];
-    while (lines.length < target) lines.push(...unit);
-    const source = lines.slice(0, target).join('\n');
-    const cost = Math.max(0, best(rule, source) - best(noop, source));
+  const usable: boolean[] = [];
+  const actual: number[] = [];
+  for (const target of SIZES) {
+    const files = Math.max(1, Math.round(target / unit.length));
+    actual.push(files * unit.length);
+    if (!parses(fixtures)) {
+      usable.push(false);
+      marginal.push(0);
+      floors.push(Infinity);
+      timings.push(`${target}L VOID (fixture does not parse)`);
+      continue;
+    }
+    usable.push(true);
+
+    // Per size the rule's marginal cost is a small difference between two large
+    // timings, so ONE difference is not a measurement — it is a sample of a
+    // noisy quantity. Take K paired trials, alternating rule and no-op so both
+    // see the same machine, and report the MEDIAN with the median absolute
+    // deviation as its error.
+    const differences: number[] = [];
+    for (let trial = 0; trial < TRIALS; trial += 1) {
+      differences.push(best(rule, files) - best(noop, files));
+    }
+    const centre = median(differences);
+    const cost = Math.max(0, centre);
+    const mad = median(differences.map((d) => Math.abs(d - centre))) * 1.4826;
+    const floor = Math.max(mad * 3, NOISE_FLOOR_MS);
     marginal.push(cost);
-    timings.push(`${target}L +${cost.toFixed(2)}ms`);
+    floors.push(floor);
+    timings.push(`${actual[actual.length - 1]}L +${cost.toFixed(2)}±${mad.toFixed(2)}ms`);
   }
 
   // Judge the growth on the largest PAIR of sizes whose smaller member is above
@@ -158,11 +243,9 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   // across a 4x rise in lines, reported as "1.0x, linear". Three checks in this
   // session have now failed in the flattering direction; a comparison that
   // cannot be made must be reported as such, never resolved to a pass.
-  const SIZES = [500, 2000, 8000];
-  const NOISE_FLOOR_MS = 0.2;
   let verdict: Axis;
   let index = SIZES.length - 2;
-  while (index >= 0 && marginal[index] < NOISE_FLOOR_MS) index -= 1;
+  while (index >= 0 && (!usable[index] || !usable[index + 1] || marginal[index] < floors[index])) index -= 1;
 
   if (index < 0) {
     // Fewer than two sizes are above the noise floor, so there is no curve to
@@ -184,11 +267,11 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
       state: 'unmet',
       evidence:
         `marginal over a no-op control: ${timings.join(' · ')} — NOT ESTABLISHED: ` +
-        `fewer than two sizes clear the ${NOISE_FLOOR_MS}ms floor, so no growth curve can be read`,
+        `fewer than two sizes clear the instrument's own measured error, so no growth curve can be read`,
       command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
     };
   } else {
-    const lineRatio = SIZES[index + 1] / SIZES[index];
+    const lineRatio = actual[index + 1] / actual[index];
     const growth = marginal[index + 1] / marginal[index];
     // 1.6x headroom over the line ratio absorbs measurement noise without
     // absorbing an order of growth.
@@ -197,7 +280,7 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
       state: linear ? 'met' : 'unmet',
       evidence:
         `marginal over a no-op control: ${timings.join(' · ')} — ` +
-        `${growth.toFixed(1)}x time for ${lineRatio}x lines (${SIZES[index]}→${SIZES[index + 1]}), ` +
+        `${growth.toFixed(1)}x time for ${lineRatio.toFixed(1)}x lines (${actual[index]}→${actual[index + 1]}), ` +
         `${linear ? 'linear' : 'SUPERLINEAR'}`,
       command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
     };
@@ -252,7 +335,28 @@ for (const dir of dirs) {
     : { state: 'unmet', evidence: 'duel produced no scored row', command: `npx tsx benchmarks/suites/ilb-rule-duel/run.mjs ${ruleId}` };
 
   // throughput
-  const mod = await import(path.join(ROOT, 'packages', `eslint-plugin-${prefix}`, 'dist/src/index.js'));
+  // The rule is loaded from dist, so a stale build measures yesterday's rule and
+  // reports it as today's. That has already produced a fix "verified" against an
+  // unchanged binary more than once, so it is a hard failure, not a warning.
+  const pkg = path.join(ROOT, 'packages', `eslint-plugin-${prefix}`);
+  const built = fs.statSync(path.join(pkg, 'dist/src/index.js')).mtimeMs;
+  const newestSource = (dirPath: string): number =>
+    fs
+      .readdirSync(dirPath, { withFileTypes: true })
+      .reduce(
+        (newest, entry) =>
+          Math.max(
+            newest,
+            entry.isDirectory()
+              ? newestSource(path.join(dirPath, entry.name))
+              : fs.statSync(path.join(dirPath, entry.name)).mtimeMs,
+          ),
+        0,
+      );
+  if (newestSource(path.join(pkg, 'src')) > built) {
+    throw new Error(`dist is older than src for eslint-plugin-${prefix} — run the build before auditing ${ruleId}`);
+  }
+  const mod = await import(path.join(pkg, 'dist/src/index.js'));
   const plugin = mod.default ?? mod;
   const throughput = throughputOf(ruleId, plugin.rules[ruleName], path.join(CORPUS, dir));
 

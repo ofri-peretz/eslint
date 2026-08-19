@@ -137,6 +137,7 @@
 import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
+import { resolvedReference } from '../../utils/resolve-reference';
 
 /**
  * Whether this file loads an AST-manipulation library.
@@ -675,7 +676,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      */
     const hasVisibleNonConstantInitialiser = (node: TSESTree.Identifier): boolean => {
       const scope = sourceCode.getScope(node);
-      const variable = scope.references.find((ref) => ref.identifier === node)?.resolved;
+      const variable = resolvedReference(scope, node);
       if (!variable || variable.defs.length !== 1) {
         return false;
       }
@@ -714,9 +715,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * safety, and that asymmetry is deliberate.
      */
     const isLocallyConstructed = (id: TSESTree.Identifier): boolean => {
-      const variable = sourceCode
-        .getScope(id)
-        .references.find((ref) => ref.identifier === id)?.resolved;
+      const variable = resolvedReference(sourceCode.getScope(id), id);
       if (!variable || variable.defs.length !== 1) return false;
       const def = variable.defs[0];
       if (def.type !== 'Variable') return false;
@@ -780,9 +779,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
       // `obj[kTag]` where `const kTag = Symbol('tag')` / `Symbol.for('tag')`.
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
-      const variable = sourceCode
-        .getScope(node)
-        .references.find((ref) => ref.identifier === node)?.resolved;
+      const variable = resolvedReference(sourceCode.getScope(node), node);
       if (!variable || variable.defs.length !== 1) return false;
       const def = variable.defs[0];
       if (def.type !== 'Variable') return false;
@@ -826,9 +823,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const isImportedBinding = (node: TSESTree.Node): boolean => {
       const root = chainRoot(node);
       if (root === null) return false;
-      const variable = sourceCode
-        .getScope(root)
-        .references.find((ref) => ref.identifier === root)?.resolved;
+      const variable = resolvedReference(sourceCode.getScope(root), root);
       if (!variable || variable.defs.length !== 1) return false;
       // Reassignment disqualifies, exactly as in `isSymbolKey` and
       // `isLocallyConstructed`. `import { k } from './x'` cannot be written to,
@@ -1326,7 +1321,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (isLoopCounterIdentifier(node)) return true;
 
       const scope = context.sourceCode.getScope(node);
-      const variable = scope.references.find((r) => r.identifier === node)?.resolved;
+      const variable = resolvedReference(scope, node);
       if (!variable || variable.defs.length === 0) return false;
 
       const cached = numericVarCache.get(variable);
@@ -1374,7 +1369,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      */
     const isLoopCounterIdentifier = (node: TSESTree.Identifier): boolean => {
       const scope = context.sourceCode.getScope(node);
-      const variable = scope.references.find((r) => r.identifier === node)?.resolved;
+      const variable = resolvedReference(scope, node);
       if (!variable || variable.defs.length === 0) return false;
       const def = variable.defs[0];
       // Look for `for (let i = <numeric init>; ...; ...)` shape.
@@ -1483,7 +1478,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const isForInOrObjectKeysKey = (node: TSESTree.Node): boolean => {
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       const scope = context.sourceCode.getScope(node);
-      const variable = scope.references.find((r) => r.identifier === node)?.resolved;
+      const variable = resolvedReference(scope, node);
       if (!variable || variable.defs.length === 0) return false;
       const def = variable.defs[0];
       if (def.type === 'Parameter') {
@@ -2072,9 +2067,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (isUntrustedExpression(source)) return true;
       if (source.type !== AST_NODE_TYPES.Identifier) return false;
 
-      const variable = sourceCode
-        .getScope(source)
-        .references.find((ref) => ref.identifier === source)?.resolved;
+      const variable = resolvedReference(sourceCode.getScope(source), source);
       if (!variable) return false;
       if (variable.defs.some((def) => def.type === 'Parameter')) return true;
 
