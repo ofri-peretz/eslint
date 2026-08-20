@@ -131,7 +131,7 @@ describe('detect-child-process', () => {
         {
           code: 'child_process.spawn(userCommand, args);',
           options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
+          errors: [{ messageId: 'untrustedProgram' }],
         },
         {
           code: 'child_process.spawnSync("sh", ["-c", userInput]);',
@@ -207,19 +207,19 @@ describe('detect-child-process', () => {
         {
           code: 'child_process.execFileSync(userCommand, args);',
           options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
+          errors: [{ messageId: 'untrustedProgram' }],
         },
         // Test with fork to trigger default case
         {
           code: 'child_process.fork(userScript);',
           options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
+          errors: [{ messageId: 'untrustedProgram' }],
         },
         // Test with forkSync to trigger forkSync case in generateRefactoringSteps (lines 429-438)
         {
           code: 'child_process.forkSync(userScript);',
           options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
+          errors: [{ messageId: 'untrustedProgram' }],
         },
       ],
     });
@@ -303,7 +303,7 @@ describe('detect-child-process', () => {
             execFile(userCommand, ['--version'], callback);
           `,
           options: UNRESOLVED,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
+          errors: [{ messageId: 'untrustedProgram' }],
         },
         {
           code: `
@@ -424,7 +424,7 @@ describe('detect-child-process — coverage completion', () => {
         {
           code: `const { doExec } = require('child_process'); doExec(userInput);`,
           options: [{ additionalMethods: ['doExec'], reportUnresolvedCommands: true }],
-          errors: [{ messageId: 'childProcessCommandInjection' }],
+          errors: [{ messageId: 'untrustedProgram' }],
         },
       ],
     });
@@ -746,7 +746,11 @@ describe('detect-child-process — coverage completion', () => {
         {
           code: `const { spawn } = require('child_process');
                  app.post('/run', (req) => spawn(req.body.cmd, ['--version']));`,
-          errors: [{ messageId: 'childProcessCommandInjection' }],
+          // CWE-114, not CWE-78: `spawn` runs no shell, so there are no
+          // metacharacters to interpret — the request simply names the program.
+          // The old CWE-78 message advised "use spawn with {shell: false}",
+          // which this line already does.
+          errors: [{ messageId: 'untrustedProgram' }],
         },
       ],
     });
