@@ -108,8 +108,25 @@ function reportDescriptors(src) {
   return out.join('\n');
 }
 
+/**
+ * Comments out, before anything is counted.
+ *
+ * These patterns run over printed source, so a rule that DOCUMENTS a dead
+ * declaration is counted as making one. `no-innerhtml`'s header explains why its
+ * inert suggestion was deleted and quotes `hasSuggestions: true` in the
+ * explanation; the rule declares nothing of the kind, and this bench scored it as
+ * a dead declaration on the strength of that sentence.
+ *
+ * It applies to the competitor rows too — every number this bench has published,
+ * ours and theirs, counted prose as metadata. Stripping comments is the whole fix
+ * and it changes the published figures, which is the point of fixing it.
+ */
+const stripComments = (src) =>
+  src.replaceAll(/\/\*[\s\S]*?\*\//g, '').replaceAll(/^[ \t]*\/\/.*$/gm, '');
+
 /** Scan one rule source file for declaration + implementation signals. */
-function scanSource(src) {
+function scanSource(rawSrc) {
+  const src = stripComments(rawSrc);
   const reports = reportDescriptors(src);
   return {
     declFixable: RE_DECL_FIXABLE.test(src),

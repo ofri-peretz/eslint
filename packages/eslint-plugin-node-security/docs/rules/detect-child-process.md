@@ -394,7 +394,6 @@ execFile('cmd', [], { env: { PATH: userInput } });
 | `allowLiteralStrings` | `boolean` | `false` | Allow exec() with literal strings |
 | `allowLiteralSpawn` | `boolean` | `false` | Allow spawn() with literal arguments |
 | `additionalMethods` | `string[]` | `[]` | Additional child_process methods to check |
-| `strategy` | `"validate"` \| `"sanitize"` \| `"restrict"` \| `"auto"` | `"auto"` | Strategy for fixing command injection (auto = smart detection) |
 | `taintSources` | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process) |
 | `reportUnresolvedCommands` | `boolean` | `false` | Report a command whose provenance cannot be resolved. Restores the pre-inversion "any dynamic argument is dangerous" behaviour. |
 

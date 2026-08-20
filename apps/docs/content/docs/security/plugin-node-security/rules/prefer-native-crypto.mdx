@@ -64,19 +64,29 @@ This rule detects imports of these third-party crypto libraries:
 
 ## Configuration
 
-| Option     | Type                  | Default  | Description                |
-| ---------- | --------------------- | -------- | -------------------------- |
-| `severity` | `'error'` \| `'warn'` | `'warn'` | Severity level for reports |
+This rule takes no options. Severity is set the ESLint way, by the config entry:
 
 ```javascript
 {
   rules: {
-    'node-security/prefer-native-crypto': ['warn', {
-      severity: 'warn'
-    }]
+    'node-security/prefer-native-crypto': 'warn'
   }
 }
 ```
+
+> **Removed:** a `severity: 'error' | 'warn'` option was previously documented
+> here. `create()` never read it and no rule can — ESLint decides severity from
+> the config entry, not from rule options — so setting it changed nothing while
+> the schema accepted it silently. It now fails validation instead.
+
+## Password hashing is a separate case
+
+`bcryptjs` and `bcrypt-nodejs` report `preferNativePasswordHash`, not
+`preferNative`, because **`node:crypto` has no bcrypt**. Migrating a password
+hash to `crypto.createHash` replaces a deliberately-slow KDF with a fast digest
+— [CWE-916](https://cwe.mitre.org/data/definitions/916.html), a worse bug than
+the one being reported. The remedy is the native `bcrypt` binding, `argon2`, or
+`crypto.scrypt`.
 
 ## Examples
 
@@ -202,6 +212,4 @@ import forge from 'node-forge'; // For PEM parsing
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `severity` | `"error"` \| `"warn"` | `"warn"` | Severity level |
+This rule takes no options.

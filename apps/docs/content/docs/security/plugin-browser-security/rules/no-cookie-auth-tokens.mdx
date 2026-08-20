@@ -67,6 +67,7 @@ document.cookie = 'locale=en-US';
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `bearerPatterns` | `string[]` | `["jwt","token","bearer","auth","authorization","session","sid","credential","credentials"]` | Whole words that name a bearer credential. Replaces the default vocabulary. |
 
 ```json
 {
@@ -80,6 +81,29 @@ document.cookie = 'locale=en-US';
   }
 }
 ```
+
+### `bearerPatterns`
+
+Default: `["jwt", "token", "bearer", "auth", "authorization", "session", "sid", "credential", "credentials"]`
+
+Matched **whole-word** after the key is split on `_`, `-`, `.`, case boundaries
+and URL punctuation, and after regular plurals are folded — so `token` matches
+`access_token` and `accessToken` but not `tokenizer`, and `auth` matches
+`auth_state` but not `author`. A key that names a *fact about* a credential
+(`tokenCount`, `sessionTimeout`) is excluded separately.
+
+This list used to live inside `utils/sensitive-value-evidence.ts` with no option
+surface at all, one level below the rules that report from it: a user whose
+credential cookie was called `handle` could not add it, and a user whose harmless
+key collided with the list could not remove it.
+
+> **Keeping the partition.** The five medium rules (`no-sensitive-localstorage`,
+> `no-sensitive-sessionstorage`, `no-sensitive-indexeddb`,
+> `no-sensitive-data-in-cache`, `no-sensitive-cookie-js`) defer to this rule with
+> the SAME vocabulary, and they read the default because a rule cannot see
+> another rule's options. If you customise `bearerPatterns`, mirror the change in
+> those rules' `sensitivePatterns` — otherwise a key you added here is reported
+> by this rule and by the medium rule that no longer defers.
 
 <WhenNotToUse />
 

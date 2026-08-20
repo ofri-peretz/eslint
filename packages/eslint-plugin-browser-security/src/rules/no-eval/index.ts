@@ -13,14 +13,17 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createPayloadResolver } from '@interlace/eslint-devkit';
+import { createPayloadResolver, isTestFilePath } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
   createRule,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'dangerousEval' | 'useSafeAlternative';
+import type { DynamicCodeSink } from '../../utils/dynamic-code-sinks';
+import { dynamicCodeSink } from '../../utils/dynamic-code-sinks';
+
+type MessageIds = 'dangerousEval';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -28,23 +31,58 @@ export interface Options {
 
   /** Allow Function constructor. Default: false */
   allowFunctionConstructor?: boolean;
+
+  /**
+   * Hand a DYNAMIC `eval(x)` payload to `node-security/detect-eval-with-expression`
+   * instead of reporting it here. Default: `false`.
+   *
+   * The partition documented at the top of this file is correct *within* an
+   * ecosystem install, and it was applied unconditionally — which made this rule
+   * exactly inverted for anyone who installs browser-security alone:
+   *
+   *   eval(userInput);   QUIET      ← the actual vulnerability
+   *   eval("2 + 2");     CVSS 9.8   ← a constant
+   *
+   * eslint-plugin-browser-security does not depend on eslint-plugin-node-security,
+   * so a browser-only consumer had NO eval coverage whatsoever while being told
+   * their arithmetic was critical. A rule cannot see which other plugins are
+   * enabled, so this has to be the user's declaration: default self-sufficient,
+   * opt in to the partition when both plugins are installed.
+   */
+  deferDynamicPayloads?: boolean;
 }
 
 type RuleOptions = [Options?];
 
-const DANGEROUS_FUNCTIONS = new Set([
-  'eval',
-  'execScript', // IE legacy
-]);
-
-const DANGEROUS_METHODS_WITH_STRING_ARG = new Set([
-  'setTimeout',
-  'setInterval',
-  'setImmediate',
-]);
-
 /**
- * Rule partition — `no-eval` (here) vs `detect-eval-with-expression`
+ * ## Rule partition — `no-eval` (here) vs `no-websocket-eval` (this package)
+ *
+ * Both rules match the same sinks. They are separated by **who the payload
+ * came from**, and the two tests are literal complements of one another:
+ *
+ *   `no-websocket-eval` owns a site whose executed argument resolves —
+ *     through the message-event *binding*, not its name — to a `WebSocket`
+ *     handler payload. That finding names the source, the attacker position
+ *     (a compromised server or a MITM) and the fix, which is strictly more
+ *     than this rule can say about the same line.
+ *
+ *   `no-eval` owns **every other** dynamic-code shape: any other message
+ *     source (Worker, SharedWorker, FileReader, postMessage — none of which
+ *     has an eval rule of its own), any unattributable value, and any static
+ *     payload. Yielding on *every* resolved source instead of the WebSocket one
+ *     would drop Worker and FileReader payloads entirely; the complement is
+ *     per-SOURCE, not per-resolver.
+ *
+ * The partition is enforced structurally rather than by agreement: both rules
+ * call `dynamicCodeSink()` in `src/utils/dynamic-code-sinks.ts`, so neither can
+ * yield a shape the other does not claim. Two separate sink lists is exactly
+ * how `window.eval(e.data)`, `execScript(e.data)` and `globalThis['eval'](e.data)`
+ * inside a WebSocket handler came to be reported by NEITHER rule while the same
+ * three lines were reported outside one. The matrix in
+ * `no-eval.test.ts` (`eval-partition-matrix`) asserts EXACTLY ONE report per
+ * shape and must be re-run whenever the sink list changes.
+ *
+ * ## Rule partition — `no-eval` (here) vs `detect-eval-with-expression`
  * (eslint-plugin-node-security).
  *
  * Both matched `eval(x)` and `new Function(x)`, at the identical range, in
@@ -80,11 +118,19 @@ const DANGEROUS_METHODS_WITH_STRING_ARG = new Set([
  * `Function` as it already does for `eval`, and must skip the zero-argument
  * case. Anything statically known is ours; anything dynamic and unattributed
  * is theirs.
+ *
+ * Only the shapes that rule can actually see may be deferred: a bare
+ * `Identifier` callee named `eval` or `Function`. `execScript`, indirect access
+ * (`window.eval`, `globalThis['eval']`, `(0, eval)`, an aliased binding) and the
+ * timer sinks are invisible to it, so deferring them would hand the finding to
+ * nobody — the same hole this file's first partition note exists to close.
  */
-function hasStaticPayload(
-  node: TSESTree.CallExpression | TSESTree.NewExpression,
-): boolean {
-  return node.arguments.every(
+function isDeferrableToNodeSecurity(sink: DynamicCodeSink): boolean {
+  return sink.kind === 'direct' && sink.name !== 'execScript';
+}
+
+function hasStaticPayload(sink: DynamicCodeSink): boolean {
+  return sink.codeArguments.every(
     (arg) => arg.type === 'Literal' && typeof arg.value === 'string',
   );
 }
@@ -100,7 +146,6 @@ export const noEval = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-95',
       cvss: 9.8,
     },
-    hasSuggestions: true,
     messages: {
       dangerousEval: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -113,15 +158,7 @@ export const noEval = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/attacks/Code_Injection',
       }),
-      useSafeAlternative: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe Alternative',
-        description: 'Replace with a safe alternative',
-        severity: 'LOW',
-        fix: 'Use JSON.parse() for JSON, or define functions statically.',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval#never_use_eval!',
-      }),
+
     },
     schema: [
       {
@@ -136,6 +173,15 @@ export const noEval = createRule<RuleOptions, MessageIds>({
             default: false,
             description:
               'Allow `new Function(...)` while still reporting `eval()`',
+          },
+          deferDynamicPayloads: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Let node-security/detect-eval-with-expression own dynamic eval() ' +
+              'payloads. Enable when both plugins are installed, to avoid one ' +
+              'line being reported twice. Off by default so browser-security ' +
+              'covers eval() on its own.',
           },
         },
         additionalProperties: false,
@@ -152,12 +198,15 @@ export const noEval = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = false, allowFunctionConstructor = false } =
+    const {
+      allowInTests = false,
+      allowFunctionConstructor = false,
+      deferDynamicPayloads = false,
+    } =
       options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
@@ -166,149 +215,61 @@ export const noEval = createRule<RuleOptions, MessageIds>({
     const payloadSource = createPayloadResolver(context.sourceCode);
 
     /**
-     * Is this site ours under the partition documented above? See
-     * `hasStaticPayload`.
+     * Is this site ours under the node-security partition documented above?
+     * See `hasStaticPayload`.
      */
-    function ownsPayload(
-      node: TSESTree.CallExpression | TSESTree.NewExpression,
-    ): boolean {
+    function ownsPayload(sink: DynamicCodeSink): boolean {
       // A browser source we can attribute (worker / filereader / postmessage —
       // websocket has already returned by the time this runs).
-      if (node.arguments.some((arg) => payloadSource(arg) !== undefined)) {
+      if (sink.codeArguments.some((arg) => payloadSource(arg) !== undefined)) {
         return true;
       }
-      return hasStaticPayload(node);
+      return hasStaticPayload(sink);
+    }
+
+    /**
+     * One decision path for `CallExpression` and `NewExpression` alike.
+     *
+     * They were two, and they drifted: the `NewExpression` half applied the
+     * node-security deferral UNCONDITIONALLY — ignoring `deferDynamicPayloads`
+     * entirely — so for a browser-only consumer the Function constructor was
+     * exactly inverted, reporting `new Function('return 1')` at CVSS 9.8 while
+     * `new Function('return ' + userInput)` was silent. Two pre-existing tests
+     * asserted that silence as correct.
+     */
+    function inspect(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): void {
+      const sink = dynamicCodeSink(node, context.sourceCode);
+      if (sink === undefined) return;
+
+      // WebSocket only, and via the SAME sink model the sibling claims with —
+      // see the first partition note. Skipping every resolved source would drop
+      // Worker, SharedWorker and FileReader payloads entirely.
+      if (sink.codeArguments.some((arg) => payloadSource(arg) === 'websocket')) {
+        return;
+      }
+
+      if (allowFunctionConstructor && sink.name === 'Function') return;
+
+      if (
+        deferDynamicPayloads &&
+        isDeferrableToNodeSecurity(sink) &&
+        !ownsPayload(sink)
+      ) {
+        return;
+      }
+
+      context.report({
+        node,
+        messageId: 'dangerousEval',
+        data: { function: sink.label },
+      });
     }
 
     return {
-      CallExpression(node: TSESTree.CallExpression) {
-        const callee = node.callee;
-
-        // WebSocket only. `no-websocket-eval` is the ONLY eval rule with a
-        // source of its own, so skipping every resolved source would drop
-        // Worker, SharedWorker and FileReader payloads entirely — nobody would
-        // report them. The complement is per-SINK, not per-resolver.
-        if (node.arguments.some((arg) => payloadSource(arg) === 'websocket'))
-          return;
-
-        // Check for eval(), execScript()
-        if (callee.type === 'Identifier') {
-          if (DANGEROUS_FUNCTIONS.has(callee.name)) {
-            // A dynamic `eval(…)` payload belongs to
-            // `detect-eval-with-expression` — see the partition note above.
-            // `execScript` is unknown to that rule, so it stays here either way.
-            if (callee.name === 'eval' && !ownsPayload(node)) {
-              return;
-            }
-            context.report({
-              node,
-              messageId: 'dangerousEval',
-              data: { function: callee.name },
-              suggest: [
-                {
-                  messageId: 'useSafeAlternative',
-                  fix: () => null,
-                },
-              ],
-            });
-            return;
-          }
-
-          // Check for setTimeout/setInterval with string argument
-          if (DANGEROUS_METHODS_WITH_STRING_ARG.has(callee.name)) {
-            const firstArg = node.arguments[0];
-            if (
-              firstArg &&
-              firstArg.type === 'Literal' &&
-              typeof firstArg.value === 'string'
-            ) {
-              context.report({
-                node,
-                messageId: 'dangerousEval',
-                data: { function: `${callee.name} with string` },
-                suggest: [
-                  {
-                    messageId: 'useSafeAlternative',
-                    fix: () => null,
-                  },
-                ],
-              });
-            }
-          }
-        }
-
-        // Check for `window.eval`, `global.eval`, `globalThis.eval`, `self.eval`
-        // (member access — non-computed) AND `window['eval']`, `globalThis['Function']`
-        // (computed — Literal property). The second form was an audit FN
-        // surfaced by `npm run ilb:stress-test` (see benchmarks/AUDIT_PATTERNS.md
-        // §3.3 — "indirect access via bracket notation").
-        if (callee.type === 'MemberExpression') {
-          let propertyName: string | null = null;
-          if (
-            !callee.computed &&
-            callee.property.type === 'Identifier' &&
-            DANGEROUS_FUNCTIONS.has(callee.property.name)
-          ) {
-            propertyName = callee.property.name;
-          } else if (
-            callee.computed &&
-            callee.property.type === 'Literal' &&
-            typeof callee.property.value === 'string' &&
-            DANGEROUS_FUNCTIONS.has(callee.property.value)
-          ) {
-            propertyName = callee.property.value;
-          }
-          if (propertyName) {
-            context.report({
-              node,
-              messageId: 'dangerousEval',
-              data: { function: propertyName },
-              suggest: [
-                {
-                  messageId: 'useSafeAlternative',
-                  fix: () => null,
-                },
-              ],
-            });
-          }
-        }
-      },
-
-      // Check for new Function()
-      NewExpression(node: TSESTree.NewExpression) {
-        // Same ownership gate as CallExpression below. Without it
-        // `new Function(event.data)` in a WebSocket handler reports from BOTH
-        // no-websocket-eval and here — the exact double-report this rule pair
-        // exists to prevent, and the complement only holds if every reporting
-        // path asks the question.
-        if (node.arguments.some((arg) => payloadSource(arg) === 'websocket'))
-          return;
-
-        if (allowFunctionConstructor) {
-          return;
-        }
-
-        // A dynamic `new Function(…)` body belongs to
-        // `detect-eval-with-expression` — see the partition note above.
-        if (!ownsPayload(node)) {
-          return;
-        }
-
-        const callee = node.callee;
-        if (callee.type === 'Identifier' && callee.name === 'Function') {
-          context.report({
-            node,
-            messageId: 'dangerousEval',
-            data: { function: 'Function constructor' },
-            suggest: [
-              {
-                messageId: 'useSafeAlternative',
-                fix: () => null,
-              },
-            ],
-          });
-        }
-      },
+      CallExpression: inspect,
+      NewExpression: inspect,
     };
   },
 });

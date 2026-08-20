@@ -114,7 +114,7 @@ Object.assign(process.env, { NODE_ENV: 'production' });
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `extraRequestRoots` | `string[]` | — | Extra identifiers to treat as roots of request-controlled data |
+| `extraRequestRoots` | `string[]` | `[]` | Extra identifiers to treat as roots of request-controlled data. Added to the built-in roots, not a replacement for them. |
 
 The default roots are `req`, `request`, `ctx` and `event`.
 

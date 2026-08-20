@@ -1,0 +1,23 @@
+{
+  "rule": "browser-security/require-https-only",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 31,
+  "vulnerable": 13,
+  "results": [
+    {
+      "name": "Interlace browser-security/require-https-only",
+      "tp": 13,
+      "fp": 0,
+      "fn": 0,
+      "tn": 18,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

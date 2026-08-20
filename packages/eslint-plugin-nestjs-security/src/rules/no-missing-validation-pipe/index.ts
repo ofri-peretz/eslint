@@ -18,6 +18,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -28,7 +29,6 @@ import {
   INPUT_DECORATORS,
   isControllerClass,
   isRouteHandler,
-  isTestFile,
 } from '../../utils/nest-ast';
 import { getProjectContext } from '../../utils/project-context';
 import { hasParserServices, getParserServices } from '@interlace/eslint-devkit';
@@ -36,7 +36,7 @@ import type ts from 'typescript';
 import { loadTypeScript } from '../../utils/typescript-peer';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
-type MessageIds = 'missingValidation' | 'addValidationPipe' | 'undecoratedDto';
+type MessageIds = 'missingValidation' | 'undecoratedDto';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -79,7 +79,6 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-20',
       cvss: 8.6,
     },
-    hasSuggestions: true,
     messages: {
       // `missingValidation` is declared first because it is the rule's primary
       // finding, and security-cvss-docs-consistency reads the FIRST message
@@ -113,14 +112,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         fix: 'Decorate the DTO properties (@IsString() name: string;) AND apply a ValidationPipe — app.useGlobalPipes(new ValidationPipe()) or @UsePipes(new ValidationPipe()). Neither half validates anything on its own.',
         documentationLink: 'https://docs.nestjs.com/techniques/validation',
       }),
-      addValidationPipe: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Validation Pipe',
-        description: 'Add ValidationPipe to validate and transform input',
-        severity: 'LOW',
-        fix: 'import { ValidationPipe, UsePipes } from "@nestjs/common"; @UsePipes(new ValidationPipe())',
-        documentationLink: 'https://docs.nestjs.com/techniques/validation',
-      }),
+
     },
     schema: [
       {
@@ -171,7 +163,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    if (allowInTests && isTestFile(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
@@ -465,7 +457,6 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
             data: {
               param: `@${decoratorName(inputDecorator)}() ${param.name}`,
             },
-            suggest: [{ messageId: 'addValidationPipe', fix: () => null }],
           });
         }
       },

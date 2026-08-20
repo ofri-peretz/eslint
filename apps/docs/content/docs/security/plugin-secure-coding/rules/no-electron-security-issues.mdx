@@ -128,8 +128,6 @@ ipcMain.handle('safe-channel', async (event, arg) => {
 {
   rules: {
     'secure-coding/no-electron-security-issues': ['error', {
-      allowInDev: false,
-      safePreloadPatterns: ['preload.js', 'preload.ts'],
       allowedIpcChannels: ['safe-channel', 'app:*']
     }]
   }
@@ -140,8 +138,6 @@ ipcMain.handle('safe-channel', async (event, arg) => {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `allowInDev` | `boolean` | `false` | Allow insecure settings in development |
-| `safePreloadPatterns` | `string[]` | `["contextBridge","ipcRenderer"]` | Preload-script APIs treated as safe |
 | `allowedIpcChannels` | `string[]` | `[]` | IPC channel names allowed without validation |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |

@@ -585,13 +585,8 @@ export function getOptionsArgument(
   return undefined;
 }
 
-/**
- * Check if file is a test file
- */
-export function isTestFile(filename: string): boolean {
-  return (
-    /\.(test|spec)\.[jt]sx?$/.test(filename) ||
-    /__(tests?|mocks?)__/.test(filename) ||
-    /\/(tests?|specs?|__tests__)\//.test(filename)
-  );
-}
+// `isTestFile` used to live here. It is now `isTestFilePath` in
+// @interlace/eslint-devkit — the `/(tests?|specs?)/` form above matched the
+// substring anywhere in the path, so a repo checked out under `~/test/`
+// disabled the rule for every file in it. Locked by
+// rule-creation/skip-test-files.test.ts.

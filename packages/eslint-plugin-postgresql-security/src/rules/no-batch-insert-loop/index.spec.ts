@@ -43,11 +43,25 @@ ruleTester.run('no-batch-insert-loop', noBatchInsertLoop, {
     "class C { method() { client.query('INSERT'); } }",
     "client.query()", // Empty args
     "client.query(123)", // Non-string literal
-    "items.map(item => client.query('SELECT 1'))", // Map but SELECT (ignored)
+    // `map` PRODUCES an array of promises; whoever consumes it decides the
+    // concurrency, and `await Promise.all(xs.map(...))` is the shape people
+    // write to escape the sequential round trips this rule catches.
+    "items.map(item => client.query('SELECT 1'))",
+    "async function f() { await Promise.all(items.map(item => client.query('INSERT', [item]))); }",
+    // Pagination: a statement that returns a PAGE, in a loop that iterates a
+    // condition rather than a collection.
     `
-    // SELECT inside loop is acceptable for this rule (targeted at mutations)
+    async function exportAll() {
+      while (true) {
+        const { rows } = await client.query('SELECT id FROM t ORDER BY id LIMIT $1 OFFSET $2', [500, offset]);
+        if (rows.length === 0) break;
+      }
+    }
+    `,
+    // A lambda the loop STORES rather than invokes.
+    `
     for (const id of ids) {
-       await client.query('SELECT * FROM items WHERE id = $1', [id]);
+      jobs.push(() => client.query('INSERT INTO t VALUES ($1)', [id]));
     }
     `,
     // Coverage: Line 92 - function boundary break (function NOT inside CallExpression parent)
@@ -73,6 +87,40 @@ ruleTester.run('no-batch-insert-loop', noBatchInsertLoop, {
     `
   ]),
   invalid: pg([
+    {
+      // REGRESSION LOCK. This was in the `valid` array, commented
+      // "SELECT inside loop is acceptable for this rule (targeted at
+      // mutations)". It is the N+1 problem by its textbook definition — one
+      // parent query, then one child SELECT per parent row — and it is the
+      // exact shape the rule's own documentation link describes. The
+      // statement-kind filter that excused it also only ran when the argument
+      // was a plain string, so the identical SELECT written as a template
+      // literal reported and the string form did not.
+      code: `
+      for (const id of ids) {
+        await client.query('SELECT * FROM items WHERE id = $1', [id]);
+      }
+      `,
+      errors: [{ messageId: 'noBatchInsertLoop' }],
+    },
+    {
+      // A `map` nested inside a real loop: treating `map` as a value producer
+      // must not make the enclosing loop invisible.
+      code: `
+      for (const tenant of tenants) {
+        await Promise.all(tenant.skus.map(sku => client.query('UPDATE p SET t = $1 WHERE sku = $2', [tenant.id, sku])));
+      }
+      `,
+      errors: [{ messageId: 'noBatchInsertLoop' }],
+    },
+    {
+      // The sequential-reduce idiom — visible only if the walk passes through
+      // `.then`.
+      code: `
+      statements.reduce((chain, s) => chain.then(() => client.query('INSERT INTO log (s) VALUES ($1)', [s])), Promise.resolve());
+      `,
+      errors: [{ messageId: 'noBatchInsertLoop' }],
+    },
     {
       code: `
       for (const item of items) {

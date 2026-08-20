@@ -224,5 +224,5 @@ obj[method](userInput);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `allowCommonPatterns` | `boolean` | `false` | **Deprecated and ignored.** Gated the removed heuristic layer; still accepted so existing configs load. Removed in the next major. |
+| `allowCommonPatterns` | `boolean` | `false` | Deprecated and ignored. Gated the removed heuristic layer; kept so existing configs still load. |
 | `maxPatternLength` | `number` | `500` | Maximum pattern length to analyze |

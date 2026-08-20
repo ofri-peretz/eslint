@@ -14,7 +14,6 @@ import {
   isVerifyOperation,
   isDecodeOperation,
   getOptionsArgument,
-  isTestFile,
   SENSITIVE_PAYLOAD_FIELDS,
   SYMMETRIC_ALGORITHMS,
   SECURE_ALGORITHMS,
@@ -496,19 +495,6 @@ describe('JWT Utils', () => {
     it('should return undefined if no options', () => {
       const call = mockCallExpression('verify');
       expect(getOptionsArgument(call)).toBeUndefined();
-    });
-  });
-
-  describe('isTestFile', () => {
-    it('should return true for test files', () => {
-      expect(isTestFile('file.test.ts')).toBe(true);
-      expect(isTestFile('file.spec.js')).toBe(true);
-      expect(isTestFile('/path/__tests__/file.ts')).toBe(true);
-    });
-
-    it('should return false for non-test files', () => {
-      expect(isTestFile('index.ts')).toBe(false);
-      expect(isTestFile('utils.js')).toBe(false);
     });
   });
 

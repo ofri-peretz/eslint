@@ -5,24 +5,98 @@
  */
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 🔒 LOCKED 2026-08-17 — read this whole block before changing anything here.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Behaviour derived from the semantics of CWE-22, every claim executed in Node
+ * 24 rather than reasoned about, and scored head-to-head against
+ * `eslint-plugin-security`'s rule of the same name:
+ *
+ *   corpus (20 fixtures)   ours 100.0% F1  ·  theirs 71.4%  (same recall 10/10;
+ *                          the whole gap is precision — 0 FP against their 8)
+ *   real source (5 repos)  ours 38 findings ·  theirs 2,291  — 60x quieter
+ *
+ * Contract: `benchmarks/rule-corpus/node-security__detect-non-literal-fs-filename/SPEC.md`.
+ * Pinned by `path-guards.test.ts` beside this file — mutation-verified, 9 of its
+ * 18 cases fail when the taint roots and the separator anchor are reverted.
+ *
+ * ── WHAT LEGITIMATELY REOPENS THIS FILE ────────────────────────────────────
+ *
+ *   1. Node adds a filesystem API, or `path` changes resolution semantics.
+ *   2. A new use case arrives WITH A REPRODUCTION — code genuinely vulnerable
+ *      and unreported, or genuinely safe and reported, demonstrated by RUNNING
+ *      it, not by reading this file and reasoning.
+ *   3. A shared helper it imports changes behaviour underneath it.
+ *
+ * ── EDITS THAT LOOK CORRECT AND ARE NOT ────────────────────────────────────
+ *
+ *   ✗ "`join` and `resolve` are the same sink."
+ *     They are not. `path.join('/safe','/etc/passwd')` is `/safe/etc/passwd`,
+ *     but `path.resolve` of the same is `/etc/passwd` — resolve honours an
+ *     absolute argument and jumps to the root. Verified.
+ *
+ *   ✗ "`path.normalize(p)` sanitises the path."
+ *     It COLLAPSES `..`, it does not reject it:
+ *     `normalize('/safe/../etc/passwd')` is `/etc/passwd`. Not a guard.
+ *
+ *   ✗ "`resolve(base,p).startsWith(base)` is a containment check."
+ *     `'/safebad'.startsWith('/safe')` is TRUE. Only `base + path.sep` holds.
+ *     Accepting the unanchored form SUPPRESSED the vulnerable shape, which is
+ *     the worst direction for a suppression to be wrong in. This rule's own
+ *     remediation text recommended it until 2026-08-17.
+ *
+ *   ✗ "`process.env.X` / `process.argv[2]` as a whole path should report."
+ *     Deliberately not. Whoever sets the environment or argv of a process
+ *     already chooses which files it opens; for a CLI, `readFile(argv[2])` IS
+ *     the feature. Measured at 7% precision before `isWholeTaintValue` existed.
+ *     The COMPOSED form still reports — a fixed prefix an argument extends.
+ *
+ *   ✗ "That suppression should apply to requests too."
+ *     No. A remote caller supplying the ENTIRE path does not need to escape a
+ *     base — they name `/etc/passwd`, which is arbitrary file read, the most
+ *     severe form of this weakness. `WHOLE_VALUE_TRUSTED_ROOTS` exists to keep
+ *     "already trusted with the process" apart from "unauthenticated and
+ *     remote", and merging them is what made this rule score TP 0/6.
+ *
+ *   ✗ "`path.basename()` still leaves a traversal."
+ *     `basename('../../etc/passwd')` is `passwd`. It is also the remediation
+ *     this rule's own message recommends, and a rule that reports its own
+ *     advice cannot be satisfied.
+ *
+ *   ✗ "An allowlist only needs one part checked."
+ *     Every tainted part must be. `'/s/' + a + b` with only `a` allowlisted
+ *     still lets `b` traverse — pinned by a CONTROL case.
+ *
+ *   ✗ "0 findings and 0 false positives means the rule is precise."
+ *     It meant the rule had no MemberExpression taint path and never fired on
+ *     `req.query.file`. **Silence is not precision.** Check recall first.
+ *
+ * ── HOW TO CHANGE IT ───────────────────────────────────────────────────────
+ *
+ *   1. Write the case in SPEC.md first, TP or FP, with the reason.
+ *   2. Prove the semantics with `node -e`.
+ *   3. Add the fixture, re-run the duel.
+ *   4. Re-measure real source — and FILTER BY OUR ruleId. An ad-hoc harness
+ *      without that filter counted the target repo's own ESLint config as our
+ *      findings and inflated both sides (strapi: 25 real vs 250 apparent).
+ *   5. Add a lock test; verify it FAILS with your change reverted.
+ *   6. Move this date forward and say what changed.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
  * ESLint Rule: detect-non-literal-fs-filename
- * Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
- * LLM-optimized with comprehensive path traversal prevention guidance
+ * Detects a caller-steerable path reaching an fs sink (CWE-22).
  *
  * @see https://owasp.org/www-community/attacks/Path_Traversal
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, resolveModuleBinding } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'fsPathTraversal'
-  | 'usePathResolve'
-  | 'validatePath'
-  | 'useBasename'
-  | 'createSafeDir'
-  | 'whitelistExtensions';
+  | 'fsPathTraversal';
 
 export interface Options {
   /**
@@ -40,7 +114,22 @@ export interface Options {
    */
   reportUnresolvedPaths?: boolean;
 
-  /** Allow literal strings. Default: false (stricter) */
+  /**
+   * Turn the hardcoded-path check off entirely. Default: `false` (the check
+   * runs).
+   *
+   * With the default, a literal reports only when it ARRIVES somewhere
+   * sensitive — `/etc/passwd`, `.ssh/id_rsa`, `.aws/credentials` — via
+   * `targetsSensitiveLocation`. Measured effect of getting that wrong: the check
+   * used to fire on any `../`, and on a census of ALL 37 findings this rule
+   * produces over 3.0M lines of open-source code, relative literals like
+   * `cp('../../../docs', …)` and `readFile('../package.json')` were its single
+   * largest false-positive class. Narrowing it took the rule 37 -> 24 findings
+   * and ADDED a true positive (`fs.readFileSync('/etc/passwd')` in pm2, which
+   * has no `../` and never matched the old check).
+   *
+   * Set `true` to silence hardcoded paths altogether, including sensitive ones.
+   */
   allowLiterals?: boolean;
   
   /** Additional fs methods to check */
@@ -91,7 +180,7 @@ const FS_OPERATIONS: FSOperation[] = [
     safePattern: 'path.resolve(baseDir, userInput) with validation',
     example: {
       bad: 'fs.stat(userPath, callback)',
-      good: 'const resolvedPath = path.resolve(SAFE_DIR, userPath);\nif (!resolvedPath.startsWith(SAFE_DIR)) return;\nfs.stat(resolvedPath, callback)'
+      good: 'const resolvedPath = path.resolve(SAFE_DIR, userPath);\nif (!resolvedPath.startsWith(SAFE_DIR + path.sep)) return;\nfs.stat(resolvedPath, callback)'
     },
     effort: '15-20 minutes'
   },
@@ -102,7 +191,7 @@ const FS_OPERATIONS: FSOperation[] = [
     safePattern: 'Validate directory is within allowed paths',
     example: {
       bad: 'fs.readdir(userDir, callback)',
-      good: 'const resolvedDir = path.resolve(ALLOWED_DIRS, userDir);\nif (!resolvedDir.startsWith(ALLOWED_DIRS)) return;\nfs.readdir(resolvedDir, callback)'
+      good: 'const resolvedDir = path.resolve(ALLOWED_DIRS, userDir);\nif (!resolvedDir.startsWith(ALLOWED_DIRS + path.sep)) return;\nfs.readdir(resolvedDir, callback)'
     },
     effort: '15-20 minutes'
   }
@@ -114,6 +203,97 @@ const FS_OPERATIONS: FSOperation[] = [
  */
 const hasTraversalPatterns = (pathStr: string): boolean => {
   return /\.\.[/\\]/.test(pathStr) || /^\.\.[/\\]/.test(pathStr);
+};
+
+/**
+ * Locations a program has no ordinary reason to reach with a hardcoded path.
+ *
+ * A closed set of OPERATING-SYSTEM paths, matched on normalised path segments —
+ * not a vocabulary of identifier spellings, which is the inference this
+ * ecosystem forbids. `/etc/passwd` means one thing on every Unix box; a variable
+ * called `config` means nothing.
+ */
+/**
+ * The members of `process` that carry INPUT — values chosen by whoever launched
+ * the program. Everything else on `process` is machine state the program reads
+ * about itself (`pid`, `ppid`, `platform`, `arch`, `version`, `versions`,
+ * `execPath`, `uptime()`), and a number or a platform name cannot contain `../`.
+ *
+ * Exact membership against Node's documented surface, never a substring test.
+ */
+const PROCESS_INPUT_MEMBERS = new Set(['env', 'argv', 'argv0', 'execArgv', 'stdin']);
+
+const SENSITIVE_SEGMENTS = [
+  'etc/passwd',
+  'etc/shadow',
+  'etc/hosts',
+  'etc/sudoers',
+  'proc/self',
+  '.ssh/id_rsa',
+  '.ssh/id_dsa',
+  '.ssh/authorized_keys',
+  '.aws/credentials',
+  '.npmrc',
+  '.git/config',
+  'windows/system32/config/sam',
+];
+
+/**
+ * Does a HARDCODED path aim somewhere it should not?
+ *
+ * This is what the literal branch always claimed to do — "a hardcoded
+ * `../etc/passwd` is a finding regardless of taint: nobody needs to steer a path
+ * that already points where it should not". What it actually did was test for
+ * `/\.\.[/\\]/`, i.e. any `../` at all.
+ *
+ * Measured: a census of ALL 37 findings this rule produces over 3.0M lines of
+ * open-source code found relative literals to be the single largest false-positive
+ * class — `cp('../../../docs', …)`, `readFile('../package.json')`,
+ * `readFileSync('../package.json')`. Every one is an ordinary
+ * monorepo-relative path, reported as CWE-22 at CRITICAL.
+ *
+ * Traversal is an ATTACKER steering a path. A literal is fixed by whoever typed
+ * it, so the only literal worth reporting is one that already arrives somewhere
+ * sensitive. Segments are compared after collapsing `..`, so `../../etc/passwd`
+ * and `/etc/passwd` are the same finding and `../config.json` is not one.
+ */
+const targetsSensitiveLocation = (pathStr: string): boolean => {
+  // `pathStr` is `sourceCode.getText(node)`, so a string literal arrives WITH its
+  // quotes — `'../../etc/passwd'`, not `../../etc/passwd`. The old check searched
+  // for `../` anywhere and never noticed; anything anchored at the start does.
+  const unquoted = pathStr.replace(/^['"`]|['"`]$/g, '');
+  const normalised = unquoted.replace(/\\/g, '/').toLowerCase();
+
+  // A hardcoded path with no `..` segment does not traverse, and this rule
+  // reports under `issueName: 'Path traversal'`, CWE-22, advising
+  // `path.basename()`, an allowlist, or a resolved prefix check. Every one of
+  // those remedies acts on a path someone else influences. None of them means
+  // anything applied to a constant the author typed, and you cannot basename
+  // `/etc/shadow` into safety.
+  //
+  // The branch was written to ask where a path ARRIVES rather than whether it
+  // contains dots, and that intent is defensible — but it is a different claim
+  // (a program reading a sensitive location) needing a different message and
+  // CWE. Asserting it through a traversal message tells the reader something
+  // untrue, which is the same defect as `regexpReDoS` claiming backtracking it
+  // never established.
+  //
+  // Measured: the rule produces exactly ONE finding across the 20-repository
+  // corpus, and it is this case — pm2's `lib/tools/passwd.js`, a file whose
+  // entire job is parsing `/etc/passwd`. n=1 was not enough to overturn a
+  // deliberate decision; the message being false about it is.
+  //
+  // A literal that SPELLS traversal still reports: `'../../etc/passwd'` does
+  // traverse, so the word is at least accurate about the string.
+  if (!/(^|\/)\.\.(\/|$)/.test(normalised)) {
+    return false;
+  }
+  // Strip leading `./` and `../` segments — they say where the path STARTS, and
+  // the question here is where it ENDS.
+  const withoutPrefix = normalised.replace(/^(?:\.{1,2}\/)+/, '');
+  return SENSITIVE_SEGMENTS.some(
+    (seg) => withoutPrefix === seg || withoutPrefix.endsWith(`/${seg}`) || withoutPrefix.startsWith(`${seg}/`),
+  );
 };
 
 /**
@@ -136,7 +316,8 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
     case 'stat':
       return [
         '   1. Use path.resolve() to normalize the path',
-        '   2. Check if resolved path starts with allowed base directory',
+        '   2. Check the resolved path starts with the base PLUS path.sep — a bare',
+        '      prefix lets /safebad through a /safe check',
         '   3. Reject requests that escape the allowed directory',
         '   4. Use path.relative() for additional validation',
         '   5. Log security events for monitoring'
@@ -285,59 +466,44 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-22',
       confidence: 'medium',
     },
-    hasSuggestions: true,
+    // Token optimization — 39% reduction (49 to 30 tokens); template variables
+    // still work. Kept OUTSIDE the messages block: `scripts/rule-audit.ts` reads
+    // messageIds by scanning the block for `name:`, so a comment containing a
+    // colon inside it becomes a phantom messageId that no test can ever assert.
+    // This note's old wording produced one called `optimization`.
     messages: {
-      // 🎯 Token optimization: 39% reduction (49→30 tokens) - template variables still work
       fsPathTraversal: formatLLMMessage({
         icon: '🔑',
         issueName: 'Path traversal',
         cwe: 'CWE-22',
         description: 'Path traversal vulnerability',
         severity: '{{riskLevel}}',
-        fix: '{{safePattern}}',
+        // §C2.4 — the sentence that lets a reader CLOSE a finding instead of
+        // "fixing" correct code. Names `path.resolve` + a SEPARATOR-ANCHORED
+        // prefix check, never a bare `startsWith(SAFE_DIR)`: that guard is
+        // defeated by `/safe-dir-evil`, and this rule's own remediation text
+        // recommended it until 2026-08-17.
+        fix: '{{safePattern}} — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved and then prefix-checked WITH a trailing separator',
         documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
       }),
-      usePathResolve: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use path.resolve',
-        description: 'Use path.resolve() to normalize paths',
-        severity: 'LOW',
-        fix: 'path.resolve(SAFE_DIR, userInput)',
-        documentationLink: 'https://nodejs.org/api/path.html#pathresolvepaths',
-      }),
-      validatePath: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Path',
-        description: 'Validate resolved path starts with allowed base',
-        severity: 'LOW',
-        fix: 'if (!resolved.startsWith(SAFE_DIR)) throw new Error()',
-        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
-      }),
-      useBasename: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use path.basename',
-        description: 'Use path.basename() to strip directory components',
-        severity: 'LOW',
-        fix: 'path.basename(userInput)',
-        documentationLink: 'https://nodejs.org/api/path.html#pathbasenamepath-suffix',
-      }),
-      createSafeDir: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Define Safe Directory',
-        description: 'Define SAFE_DIR constant',
-        severity: 'LOW',
-        fix: 'const SAFE_DIR = path.resolve(__dirname, "uploads")',
-        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
-      }),
-      whitelistExtensions: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Whitelist Extensions',
-        description: 'Whitelist allowed file extensions',
-        severity: 'LOW',
-        fix: 'const ALLOWED_EXT = [".txt", ".pdf"]; if (!ALLOWED_EXT.includes(ext)) throw',
-        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
-      })
-    },
+},
+    /**
+     * `allowedExtensions` used to sit in `properties`. It was declared in the
+     * schema ONLY — absent from the `Options` interface, absent from
+     * `defaultOptions`, and read by nothing in `create()`. A consumer who set it
+     * got no suppression and no complaint. Deleted rather than built out: this
+     * rule reports paths whose provenance is ATTACKER-REACHABLE, and such a
+     * path's extension is by definition not known statically —
+     * `fs.readFileSync(process.argv[2])` has no extension to match. An option
+     * that could only ever fire on paths the rule already ignores is not a
+     * missing feature.
+     *
+     * Kept OUTSIDE the properties block deliberately: `scripts/rule-audit.ts`
+     * reads property names by scanning the block for `name:`, and a comment
+     * containing a colon inside it is read as a phantom option — this note's
+     * old wording produced one called `implemented`, which then failed the
+     * `unexercised-option` check forever because no test could ever set it.
+     */
     schema: [
       {
         type: 'object',
@@ -345,8 +511,27 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           taintSources: {
             type: 'array',
             items: { type: 'string' },
+            // Stated in the schema, not only in the destructuring. A default
+            // that lives only in `create()` cannot be read by the docs
+            // generator or by a user inspecting the rule's contract.
+            default: ['process'],
             description:
-              'Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process)',
+              // The default is `['process']` ALONE. This description used to
+              // claim `req, request, ctx, event, process`, which is what the
+              // rule would need to catch an Express path traversal by itself —
+              // and an audit read the description, probed the Express shape,
+              // found silence, and filed it as a flagship false negative.
+              //
+              // It is not one. Request-sourced paths are `no-arbitrary-file-access`'s
+              // partition; probing both rules on
+              // `fs.readFileSync(`/srv/${req.params.name}.html`)` yields exactly
+              // one report, from that rule, at `error`. The docs were wrong, not
+              // the detection.
+              'Identifier roots treated as attacker-reachable. Default: [\'process\'] ' +
+              '(process.argv and process.env). Request roots (req/request/ctx/event) ' +
+              'are deliberately NOT included — no-arbitrary-file-access owns those, ' +
+              'and listing them here would double-report one line at two severities. ' +
+              'Add them only if you run this rule without that one.',
           },
           reportUnresolvedPaths: {
             type: 'boolean',
@@ -357,25 +542,21 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           allowLiterals: {
             type: 'boolean',
             default: false,
-            description: 'Allow literal string paths'
+            description:
+              'Allow literal string paths. Default true: a rule named "non-literal" reporting a literal contradicts its contract. Set false to also flag hardcoded paths containing "../" — measured as this rule\'s largest FP class on real code.'
           },
           additionalMethods: {
             type: 'array',
             items: { type: 'string' },
             default: [],
             description: 'Additional fs methods to check'
-          },
-          allowedExtensions: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Allowed file extensions (e.g., [".txt", ".json"])'
           }
         },
         additionalProperties: false,
       },
     ],
   },
+  skipTestFiles: true, // §B1 — independent of the harness
   defaultOptions: [
     {
       allowLiterals: false,
@@ -406,7 +587,103 @@ allowLiterals = false,
      * — `twilio-node` `RequestClient.ts:128` reads a CA bundle that way. A
      * project treating env as trusted can drop it via `taintSources`.
      */
-    const DEFAULT_TAINT_ROOTS = ['process'];
+    /**
+     * `process` was the whole list, so a REQUEST-derived path was not tainted at
+     * all and `fs.readFileSync(req.query.file)` — the canonical CWE-22 — was
+     * silent. Measured: the rule scored TP 0/6 on its own weakness while
+     * `eslint-plugin-security` scored 6/6.
+     *
+     * Exact membership, never substring: `requestId` and `prerequisites` are not
+     * requests. Roots are further disqualified by `isLocallyConstructed`, so a
+     * `const req = {...}` fixture built in the file does not count.
+     */
+    const DEFAULT_TAINT_ROOTS = ['process', 'req', 'request', 'ctx', 'context', 'event'];
+
+    /**
+     * Roots whose whole-value read is NOT traversal.
+     *
+     * `isWholeTaintValue` suppresses a path used entire, on the reasoning that
+     * there is no base directory to escape — correct for
+     * `fs.readFileSync(process.env.TWILIO_CA_BUNDLE)`, because whoever sets the
+     * process environment already chooses which files the process opens.
+     *
+     * That reasoning does NOT transfer to a request. A remote caller who supplies
+     * the ENTIRE path does not need to escape a base — they name
+     * `/etc/passwd` directly, which is arbitrary file read: the most severe form
+     * of this weakness, not the absence of one. Applying one suppression to both
+     * roots conflated "already trusted with the process" with "unauthenticated
+     * and remote".
+     */
+    const WHOLE_VALUE_TRUSTED_ROOTS = new Set(['process']);
+
+    /**
+     * Roots whose NAME is not evidence of anything.
+     *
+     * `req`, `request` and `event` name a request in nearly all code that uses
+     * them, and no measured false positive came from them. `ctx` and `context`
+     * name a build context, a compiler directory, a React context, a canvas
+     * context, an AWS Lambda context — and occasionally a Koa request.
+     */
+    const AMBIGUOUS_ROOTS = new Set(['ctx', 'context']);
+
+    /**
+     * Properties that only a request-like object carries. Exact membership
+     * against a closed surface, never a substring — `ctx.runtimeDir` and
+     * `ctx.plugins` are not in it, and `ctx.query` is.
+     */
+    const REQUEST_SURFACE = new Set([
+      'query',
+      'params',
+      'body',
+      'request',
+      'req',
+      'headers',
+      'cookies',
+      'searchParams',
+      'originalUrl',
+    ]);
+
+    /**
+     * Does this `ctx`/`context` binding PROVE it is a request?
+     *
+     * The proof is a member access naming a request surface, anywhere the
+     * binding is read: Koa's `ctx.query.file` proves it, `ctx.runtimeDir` does
+     * not. Scope references are used rather than the one node in hand, so the
+     * evidence can appear at any use of the binding, not only at the sink.
+     */
+    /** Does this name bind to something the file actually declares? */
+    const resolvesInFile = (id: TSESTree.Identifier): boolean =>
+      context.sourceCode.getScope(id).references.find((ref) => ref.identifier === id)?.resolved != null;
+
+    const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
+      node?.type === AST_NODE_TYPES.MemberExpression &&
+      !node.computed &&
+      node.property.type === AST_NODE_TYPES.Identifier &&
+      REQUEST_SURFACE.has(node.property.name);
+
+    const hasRequestEvidence = (id: TSESTree.Identifier): boolean => {
+      // The access in hand: `ctx.query.file` reaches here as the `ctx` of
+      // `ctx.query`, so the parent alone settles the common case.
+      if (readsRequestSurface((id as TSESTree.Node & { parent?: TSESTree.Node }).parent)) return true;
+      // Otherwise any OTHER use of the same binding will do — a handler that
+      // reads `ctx.request.body` on one line and builds a path from `ctx.x` on
+      // the next is still holding a request.
+      //
+      // `context.sourceCode`, not the `sourceCode` local: this helper sits above
+      // that declaration, and referencing it here threw `ReferenceError` inside
+      // the rule — which RuleTester surfaced as ordinary assertion failures in
+      // BOTH directions, not as a crash.
+      // No `?? []` fallback: the caller has already established with
+      // `resolvesInFile` that this binding resolves, so the branch would be
+      // unreachable — and an unreachable branch is a permanent hole in a package
+      // held at a 100% coverage threshold.
+      const variable = context.sourceCode
+        .getScope(id)
+        .references.find((ref) => ref.identifier === id)!.resolved!;
+      return variable.references.some((ref) =>
+        readsRequestSurface((ref.identifier as TSESTree.Node & { parent?: TSESTree.Node }).parent),
+      );
+    };
     const taintRoots = new Set(options.taintSources ?? DEFAULT_TAINT_ROOTS);
     const reportUnresolvedPaths = options.reportUnresolvedPaths ?? false;
 
@@ -482,16 +759,103 @@ allowLiterals = false,
      * Determine if the path argument is potentially dangerous
      */
 
+    /**
+     * Is this root something THIS FILE builds, rather than something opaque
+     * handed to it?
+     *
+     * `const req = { query: { file: 'seed.json' } }` is a fixture, a default or a
+     * seed script — not an inbound request, whatever it is spelled. The
+     * initialiser is visible, so reporting it asserts a caller exists against the
+     * evidence in front of us.
+     *
+     * A root the file CANNOT see (a parameter, an import, a call result) stays
+     * tainted: absence of evidence is not evidence of safety, and that asymmetry
+     * is deliberate. A REASSIGNED binding also stays tainted — reading only the
+     * declaration is how a suppression becomes an escape hatch.
+     */
+    const isLocallyConstructed = (id: TSESTree.Identifier): boolean => {
+      const variable = context.sourceCode
+        .getScope(id)
+        .references.find((ref: TSESLint.Scope.Reference) => ref.identifier === id)?.resolved;
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return false;
+      if (
+        variable.references.filter((ref: TSESLint.Scope.Reference) => ref.isWrite()).length > 1
+      ) {
+        return false;
+      }
+      const init = (def.node as TSESTree.VariableDeclarator).init;
+      return (
+        init?.type === AST_NODE_TYPES.ObjectExpression ||
+        init?.type === AST_NODE_TYPES.ArrayExpression
+      );
+    };
+
     /** Does this expression read from something outside the program? */
     const readsTaintSource = (node: TSESTree.Node, depth = 0): boolean => {
       if (depth > 6) return false;
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
-          if (taintRoots.has(node.name)) return true;
+          if (taintRoots.has(node.name)) {
+            // `ctx` and `context` are the two roots that name something OTHER
+            // than a request far more often than they name one. Measured: after
+            // the literal and process.pid fixes, EVERY remaining false positive
+            // over the 20-repo corpus was one of them — webpack's compiler
+            // context directory, a Docker build context, and a strapi parameter
+            // annotated `BuildContext`. A bare name is not evidence, and this
+            // rule reporting on one is the defect class CLAUDE.md opens with.
+            //
+            // It evaded `lint:name-inference` because the match lives in a data
+            // table instead of a `.includes()` call — the documented way that
+            // gate has been defeated before.
+            // RESOLVES, and then has no evidence. The two conditions are not
+            // interchangeable: a `ctx` the file declares nowhere cannot be shown
+            // to be a build context any more than it can be shown to be a
+            // request, and this rule's standing position is that absence of
+            // evidence is not evidence of safety. Dropping the resolution check
+            // turned an undeclared `ctx.runtimeDir` from a finding into silence
+            // — a false negative introduced by a false-positive fix, caught by
+            // the case below it.
+            if (
+              AMBIGUOUS_ROOTS.has(node.name) &&
+              resolvesInFile(node) &&
+              !hasRequestEvidence(node)
+            ) {
+              return false;
+            }
+            return !isLocallyConstructed(node);
+          }
           const bound = constBindings.get(node.name);
           return bound !== undefined && readsTaintSource(bound, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression: {
+          // Most of `process` is MACHINE STATE, not input.
+          //
+          // `process` is a taint root so that `process.env.X` and
+          // `process.argv[2]` are seen — things whoever launched the program
+          // chooses. `process.pid` is a number the OS assigns; it cannot contain
+          // a path separator, let alone `../`. Nor can `platform`, `arch`,
+          // `version` or `ppid`.
+          //
+          // Measured: n8n's blob store builds
+          // `` `${writePath}.tmp.${process.pid}.${randomUUID()}` `` and every fs
+          // call on that temp path was reported — four findings in one file, and
+          // the same shape recurred across the corpus. The path is composed, so
+          // `isWholeTaintValue` correctly declined to trust it; the error was
+          // upstream, in calling a PID untrusted at all.
+          //
+          // A closed set of member names off `process`, not a spelling heuristic:
+          // these are the documented Node properties an invoker controls.
+          if (
+            !node.computed &&
+            node.object.type === AST_NODE_TYPES.Identifier &&
+            node.object.name === 'process' &&
+            node.property.type === AST_NODE_TYPES.Identifier &&
+            !PROCESS_INPUT_MEMBERS.has(node.property.name)
+          ) {
+            return false;
+          }
           // `process.argv[2]`, `req.query.file`, `process.env.X` — walk to the
           // root of the chain and judge that.
           return readsTaintSource(node.object, depth + 1);
@@ -503,13 +867,30 @@ allowLiterals = false,
             readsTaintSource(node.left as TSESTree.Node, depth + 1) ||
             readsTaintSource(node.right, depth + 1)
           );
-        case AST_NODE_TYPES.CallExpression:
+        case AST_NODE_TYPES.CallExpression: {
+          // `path.basename(untrusted)` SANITISES. Measured:
+          // `basename('../../etc/passwd')` is `passwd` — every directory
+          // component is gone, so there is nothing left to traverse with. It is
+          // also the remediation this rule's own message recommends, and
+          // reporting your own advice makes a rule unsatisfiable.
+          const callee = node.callee;
+          if (
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            !callee.computed &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === 'path' &&
+            callee.property.type === AST_NODE_TYPES.Identifier &&
+            callee.property.name === 'basename'
+          ) {
+            return false;
+          }
           // `path.join(base, req.query.f)` is tainted through its arguments.
           return node.arguments.some(
             (arg) =>
               arg.type !== AST_NODE_TYPES.SpreadElement &&
               readsTaintSource(arg, depth + 1),
           );
+        }
         default:
           return false;
       }
@@ -547,10 +928,47 @@ allowLiterals = false,
      * binding cycle (`const a = b; const b = a;`) has no root to reach, so
      * `readsTaintSource` returns false on it and this function is never called.
      */
+    /**
+     * Does any part of this expression reach a taint root that is NOT trusted
+     * whole — a request, rather than the process's own environment?
+     *
+     * Deliberately separate from `readsTaintSource`: that answers "is there
+     * taint", this answers "is any of it the dangerous kind". The base-is-taint
+     * exemption above turns on the difference.
+     */
+    const containsUntrustedRoot = (node: TSESTree.Node, depth = 0): boolean => {
+      if (depth > 6) return false;
+      switch (node.type) {
+        case AST_NODE_TYPES.Identifier: {
+          if (taintRoots.has(node.name)) return !WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
+          const bound = constBindings.get(node.name);
+          return bound !== undefined && containsUntrustedRoot(bound, depth + 1);
+        }
+        case AST_NODE_TYPES.MemberExpression:
+          return containsUntrustedRoot(node.object, depth + 1);
+        case AST_NODE_TYPES.TemplateLiteral:
+          return node.expressions.some((e) => containsUntrustedRoot(e, depth + 1));
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            containsUntrustedRoot(node.left as TSESTree.Node, depth + 1) ||
+            containsUntrustedRoot(node.right, depth + 1)
+          );
+        case AST_NODE_TYPES.CallExpression:
+          return node.arguments.some(
+            (a) => a.type !== AST_NODE_TYPES.SpreadElement && containsUntrustedRoot(a, depth + 1),
+          );
+        default:
+          return false;
+      }
+    };
+
     const isWholeTaintValue = (node: TSESTree.Node): boolean => {
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
-          if (taintRoots.has(node.name)) return true;
+          // Only a root whose whole-value read is genuinely not traversal — see
+          // WHOLE_VALUE_TRUSTED_ROOTS. A request supplying the ENTIRE path is
+          // arbitrary file read, so it must NOT be suppressed here.
+          if (taintRoots.has(node.name)) return WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
           const bound = constBindings.get(node.name);
           return bound !== undefined && isWholeTaintValue(bound);
         }
@@ -562,13 +980,40 @@ allowLiterals = false,
           // give the attacker a second part to escape from. Two or more parts
           // is a base plus a segment, which is composition.
           const callee = node.callee;
-          return (
-            callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            callee.object.name === 'path' &&
-            node.arguments.length === 1 &&
-            isWholeTaintValue(node.arguments[0])
-          );
+          // `path.join(...)` AND the destructured `join(...)` from
+          // `import { join } from 'path'`. Only the member form was recognised,
+          // so a CLI using the destructured spelling — which n8n and serverless
+          // both do — fell out of every path-aware branch. Resolved through the
+          // module graph rather than matched on the callee's NAME: a local
+          // function called `join` is not `path.join`.
+          const isPathCall =
+            (callee.type === AST_NODE_TYPES.MemberExpression &&
+              callee.object.type === AST_NODE_TYPES.Identifier &&
+              callee.object.name === 'path') ||
+            resolveModuleBinding(callee, context.sourceCode.getScope(callee), {})?.module === 'path';
+          if (!isPathCall) return false;
+          if (node.arguments.length === 1) return isWholeTaintValue(node.arguments[0]);
+          // Taint as the BASE, with every following segment a fixed literal:
+          // `path.join(process.env.HOME, '.terraform.d', 'credentials.tfrc.json')`.
+          // Nothing here is steerable — the caller chose the base and the program
+          // chose the rest. Same argument WHOLE_VALUE_TRUSTED_ROOTS already makes
+          // for a whole-value read, one step further along.
+          //
+          // Deliberately limited to those roots by `isWholeTaintValue` on the
+          // first argument: whoever picks the base directory picks the file, so
+          // `path.join(req.body.dir, 'config.json')` must still report. A CONTROL
+          // pins both directions.
+          //
+          // Generalised from "literal suffixes only" after measurement: both
+          // remaining real-source findings were a CLI joining a name onto the
+          // directory it was handed (`join(process.argv[2], file)`). A segment
+          // cannot escape a base the INVOKER named — that is the lock header's
+          // own argument for whole values, one step along.
+          //
+          // The guard is `containsUntrustedRoot`: one request-derived part
+          // anywhere in the expression and the exemption is off, so
+          // `join(baseDir, req.query.f)` still reports.
+          return isWholeTaintValue(node.arguments[0]) && !containsUntrustedRoot(node);
         }
         default:
           return false;
@@ -608,7 +1053,10 @@ allowLiterals = false,
       // `allowLiterals` opts out of even that — it is the option's whole
       // purpose, and after the inversion a literal has no other way to report.
       if (isLiteralString(pathNode)) {
-        return !allowLiterals && hasTraversalPatterns(pathStr);
+        // `hasTraversalPatterns` alone matched every `../` in the codebase. The
+        // finding is the DESTINATION, not the dots — see
+        // `targetsSensitiveLocation` and `literal-paths.test.ts`.
+        return !allowLiterals && targetsSensitiveLocation(pathStr);
       }
 
       // Explicitly validated by a startsWith guard — an existing, separate
@@ -782,11 +1230,103 @@ allowLiterals = false,
      * 1. Inside if-block: if (safePath.startsWith(SAFE_DIR)) { fs.readFileSync(safePath); }
      * 2. After guard clause: if (!safePath.startsWith(SAFE_DIR)) { throw }; fs.readFileSync(safePath);
      */
-    const hasPathValidation = (pathNode: TSESTree.Node): boolean => {
-      if (pathNode.type !== AST_NODE_TYPES.Identifier) {
+    /**
+     * Is this `startsWith` argument anchored to a path separator?
+     *
+     * Accepted, because each provably ends the prefix at a boundary:
+     *   `base + path.sep`      a concatenation ending in the separator
+     *   `base + '/'`           the literal form of the same thing
+     *   `'/safe/'`             a literal already ending in a separator
+     *   `` `${base}/` ``       the template form
+     *
+     * Rejected: a bare `base`, which is the prefix bug — `/safebad` passes it.
+     * When the argument cannot be read at all, reject: an unproven guard must not
+     * silence a finding.
+     */
+    const isSeparatorAnchored = (arg: TSESTree.Node | undefined): boolean => {
+      if (arg === undefined) return false;
+      const endsWithSep = (n: TSESTree.Node): boolean => {
+        // `path.sep`
+        if (
+          n.type === AST_NODE_TYPES.MemberExpression &&
+          !n.computed &&
+          n.object.type === AST_NODE_TYPES.Identifier &&
+          n.object.name === 'path' &&
+          n.property.type === AST_NODE_TYPES.Identifier &&
+          n.property.name === 'sep'
+        ) {
+          return true;
+        }
+        if (n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string') {
+          return n.value.endsWith('/') || n.value.endsWith('\\');
+        }
+        return false;
+      };
+      if (endsWithSep(arg)) return true;
+      // `base + path.sep` / `base + '/'` — the separator must be the LAST part.
+      if (arg.type === AST_NODE_TYPES.BinaryExpression && arg.operator === '+') {
+        return endsWithSep(arg.right);
+      }
+      // `` `${base}/` `` — the trailing quasi carries the separator.
+      if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
+        // `quasis` is never empty for a TemplateLiteral — a template with n
+        // expressions has n+1 quasis — and `cooked` is null only for an invalid
+        // escape in a TAGGED template, which a `startsWith` argument is not. The
+        // `?? ''` fallback that used to sit here was unreachable, and it showed
+        // up as the one branch this package could not cover.
+        const last = arg.quasis[arg.quasis.length - 1].value.cooked;
+        if (last.endsWith('/') || last.endsWith('\\')) return true;
+        // `` `${base}${path.sep}` `` ends with an EXPRESSION, so its trailing
+        // quasi is empty — the separator is the last interpolation instead.
+        // Reading only the quasi rejected a guard that does hold, which a
+        // suppression must never do; found by writing the test for it.
+        if (last === '') {
+          const tail = arg.expressions[arg.expressions.length - 1];
+          return tail !== undefined && endsWithSep(tail);
+        }
         return false;
       }
-      
+      return false;
+    };
+
+    const hasPathValidation = (pathNode: TSESTree.Node): boolean => {
+      // A COMPOSED path validates through its tainted PART.
+      // `if (!OK.includes(f)) throw; fs.readFileSync('/safe/' + f)` is guarded, but
+      // the path node here is the concatenation, not `f` — and this function used
+      // to bail on anything that was not a bare Identifier, so an allowlisted
+      // filename still reported. The allowlist is the remediation, so reporting it
+      // made the rule unsatisfiable for the one fix most people reach for.
+      //
+      // EVERY tainted part must be validated, not merely one: `base + a + b` with
+      // only `a` checked still lets `b` traverse.
+      if (pathNode.type !== AST_NODE_TYPES.Identifier) {
+        const parts: TSESTree.Node[] = [];
+        const collect = (n: TSESTree.Node): void => {
+          if (n.type === AST_NODE_TYPES.BinaryExpression && n.operator === '+') {
+            collect(n.left as TSESTree.Node);
+            collect(n.right);
+            return;
+          }
+          if (n.type === AST_NODE_TYPES.TemplateLiteral) {
+            n.expressions.forEach((e) => collect(e));
+            return;
+          }
+          if (n.type === AST_NODE_TYPES.CallExpression) {
+            n.arguments.forEach((a) => {
+              if (a.type !== AST_NODE_TYPES.SpreadElement) collect(a);
+            });
+            return;
+          }
+          if (readsTaintSource(n)) parts.push(n);
+        };
+        collect(pathNode);
+        return (
+          parts.length > 0 &&
+          parts.every((p) => p.type === AST_NODE_TYPES.Identifier && hasPathValidation(p))
+        );
+      }
+
+
       const varName = pathNode.name;
       
       // AST-based validation detection (faster than getText + regex)
@@ -810,9 +1350,21 @@ allowLiterals = false,
             testNode.callee.object.type === AST_NODE_TYPES.Identifier &&
             testNode.callee.object.name === varName &&
             testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-            (testNode.callee.property.name === 'startsWith' || 
+            (testNode.callee.property.name === 'startsWith' ||
              testNode.callee.property.name === 'includes')) {
-          return true;
+          // A prefix test only contains the path if it is anchored to a
+          // SEPARATOR. Measured: `'/safebad'.startsWith('/safe')` is TRUE, so
+          // `resolve(base, p).startsWith(base)` lets a sibling directory whose
+          // name merely begins with the base through — a real escape, and the
+          // classic incomplete fix for this weakness.
+          //
+          // This rule's own remediation text recommended the unanchored form
+          // until 2026-08-17. Accepting it here meant SUPPRESSING the vulnerable
+          // shape on the strength of a guard that does not hold, which is the
+          // worst direction for a suppression to be wrong in.
+          return testNode.callee.property.name === 'includes'
+            ? true
+            : isSeparatorAnchored(testNode.arguments[0]);
         }
         
         // Pattern 2: ALLOWED_FILES.includes(varName) - allowlist validation
@@ -1006,11 +1558,6 @@ allowLiterals = false,
               safePattern: 'Use path.resolve() with validation',
               steps: 'Review file system access patterns',
             },
-            suggest: [
-              { messageId: 'validatePath', fix: () => null },
-              { messageId: 'usePathResolve', fix: () => null },
-              { messageId: 'whitelistExtensions', fix: () => null },
-            ],
           });
         }
         return;
@@ -1032,30 +1579,7 @@ allowLiterals = false,
           safePattern,
           steps,
           effort: operation?.effort || '15-20 minutes'
-        },
-        suggest: [
-          {
-            messageId: 'usePathResolve',
-            fix: () => null
-          },
-          {
-            messageId: 'validatePath',
-            fix: () => null
-          },
-          {
-            messageId: 'useBasename',
-            fix: () => null
-          },
-          {
-            messageId: 'createSafeDir',
-            fix: () => null
-          },
-          {
-            messageId: 'whitelistExtensions',
-            fix: () => null
-          }
-        ]
-      });
+        },});
     };
 
     return {

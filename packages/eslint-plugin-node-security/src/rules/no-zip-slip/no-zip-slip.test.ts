@@ -309,4 +309,98 @@ describe('no-zip-slip', () => {
       ],
     });
   });
+
+  /**
+   * The two options no test had ever set, so their branches shipped
+   * unexecuted.
+   *
+   * Each is a PAIR on identical source: the default verdict and the configured
+   * verdict, opposite to each other. A case that came out the same either way
+   * would execute the line without proving the branch decides anything.
+   */
+  describe('Options', () => {
+    ruleTester.run('archiveModules', noZipSlip, {
+      valid: [
+        // CONTROL for the widening case: `@my-org/zipkit` is an in-house
+        // wrapper, not a built-in archive module, so the file has no archive
+        // context and the entry-name shape is not judged at all.
+        `
+          const zipkit = require('@my-org/zipkit');
+          const target = path.join(dir, entry.fileName);
+          fs.writeFileSync(target, data);
+        `,
+        // NARROWING: a list that omits `adm-zip` withdraws archive context from
+        // a file that the defaults DO judge — proof the option replaces the
+        // built-in list rather than extending it.
+        {
+          code: `
+            const AdmZip = require('adm-zip');
+            const target = path.join(dir, entry.fileName);
+            fs.writeFileSync(target, data);
+          `,
+          options: [{ archiveModules: ['@my-org/zipkit'] }],
+        },
+      ],
+      invalid: [
+        // WIDENING: naming the in-house wrapper gives the identical first valid
+        // case an archive context, and it reports.
+        {
+          code: `
+            const zipkit = require('@my-org/zipkit');
+            const target = path.join(dir, entry.fileName);
+            fs.writeFileSync(target, data);
+          `,
+          options: [{ archiveModules: ['@my-org/zipkit'] }],
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+        // CONTROL for narrowing: identical source, default options.
+        {
+          code: `
+            const AdmZip = require('adm-zip');
+            const target = path.join(dir, entry.fileName);
+            fs.writeFileSync(target, data);
+          `,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+      ],
+    });
+
+    ruleTester.run('pathValidationFunctions', noZipSlip, {
+      valid: [
+        // The project's own validator, named through the option, suppresses the
+        // finding the default reports below.
+        {
+          code: `
+            const AdmZip = require('adm-zip');
+            const target = assertInsideDest(path.join(dir, entry.fileName));
+            fs.writeFileSync(target, data);
+          `,
+          options: [{ pathValidationFunctions: ['assertInsideDest'] }],
+        },
+      ],
+      invalid: [
+        // CONTROL: identical source, default list — `assertInsideDest` is not
+        // one of validatePath/sanitizePath/checkPath/safePath, so it reports.
+        {
+          code: `
+            const AdmZip = require('adm-zip');
+            const target = assertInsideDest(path.join(dir, entry.fileName));
+            fs.writeFileSync(target, data);
+          `,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+        // The option REPLACES the built-in list: naming only the project's own
+        // validator means `sanitizePath` no longer suppresses.
+        {
+          code: `
+            const AdmZip = require('adm-zip');
+            const target = sanitizePath(path.join(dir, entry.fileName));
+            fs.writeFileSync(target, data);
+          `,
+          options: [{ pathValidationFunctions: ['assertInsideDest'] }],
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+      ],
+    });
+  });
 });

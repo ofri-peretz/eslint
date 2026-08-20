@@ -55,8 +55,6 @@ describe('no-buffer-overread coverage gaps', () => {
         options: [{ reportUnvalidatedIndices: true, boundsCheckFunctions: ['validateIndex'] }],
       },
       { code: 'const idx = Math.min(buf[idx], 3);', options: UNVALIDATED },
-      // hasBoundsCheck: a return statement mentioning buf.length.
-      { code: 'function f() { return buf.length && buf[cursor]; }', options: UNVALIDATED },
       // safetyChecker: an @safe block comment suppresses both report sites.
       { code: '/** @safe */\nbuf[cursor];', options: UNVALIDATED },
       { code: '/** @safe */\nbuf.readUInt8(req.query.off);' },
@@ -94,6 +92,61 @@ describe('no-buffer-overread coverage gaps', () => {
       { code: '// @safe\nbuf[cursor];' },
       // @safe annotation skips both slice and read-method reports
       { code: '// @safe\nbuf.slice(req.query.start);' },
+
+      // ── Structural bounds checking and provenance (post-fix contract) ───
+      // A `Math.min` binding IS resolved now, so the index is validated. This
+      // was asserted as `unsafeBufferAccess` — a "known limitation" produced by
+      // an `isIndexValidated` that walked the index's ancestors looking for a
+      // declarator it can never be inside.
+      {
+        code: 'function f() { const cap = Math.min(buf.length, n); return buf[cap]; }',
+        options: UNVALIDATED,
+      },
+      // A ROOT whose only claim to being input is its spelling. Both of these
+      // were `invalid` fixtures; neither file contains a request.
+      { code: 'const b = buf[userData.pos];' },
+      { code: 'function h2() { const pos = settings.userLimit; return buf[pos]; }' },
+      // `couldBeNegative` used to walk the index's ANCESTORS and attribute the
+      // enclosing declarator's initializer to it: here `-5` initializes `a`,
+      // and has nothing whatever to do with `k`.
+      { code: 'const { [buf[k]]: a } = -5;' },
+
+      // isIndexValidated: a PARAMETER's value is decided by a caller this rule
+      // does not follow, so it is not reported — here the index is a request
+      // root, which is as tainted as an identifier gets.
+      { code: 'function f(req) { return buf[req]; }' },
+      { code: 'function f(buf, i) { return buf[i]; }', options: UNVALIDATED },
+
+      // hasBoundsCheck: the length may sit on EITHER side of the comparison…
+      {
+        code: 'function f(req) { const at = Number(req.query.at); if (buf.length > at) { return buf[at]; } }',
+      },
+      // …and the index may be wrapped in arithmetic or a coercion.
+      {
+        code: 'function f(req) { const at = Number(req.query.at); if (at + 4 <= buf.length) { return buf[at]; } }',
+      },
+      {
+        code: 'function f(req) { const at = req.query.at; if (Number(at) < buf.length) { return buf[at]; } }',
+      },
+
+      // constantNumber: a unary `+`, a `const` folded addition, an operator it
+      // does not model, and an operand it cannot resolve. None is negative.
+      { code: 'const p = +1; const v = buf[p];' },
+      { code: 'const s = 1 + 2; const v = buf[s];' },
+      { code: 'const t = 4 * 2; const v = buf[t];' },
+      { code: 'const u = ~1; const v = buf[u];' },
+      { code: 'let z = -1; const v = buf[z];' },
+      { code: 'const w = unknownThing; const v = buf[w];' },
+      // A unary over something unresolvable resolves to nothing.
+      { code: 'const p2 = -unknownThing; const v = buf[p2];' },
+      // …and a `const` chain deeper than the cap terminates instead of looping.
+      {
+        code: 'const a1 = -a2, a2 = -a3, a3 = -a4, a4 = -a5, a5 = -1; const v = buf[a1];',
+      },
+      // hasBoundsCheck: the index sits on the RIGHT of the guard's arithmetic.
+      {
+        code: 'function f(req) { const at = Number(req.query.at); if (buf.length >= 4 + at) { return buf[at]; } }',
+      },
     ],
     invalid: [
       // ── isIndexValidated / hasBoundsCheck arms ─────────────────────────
@@ -108,12 +161,6 @@ describe('no-buffer-overread coverage gaps', () => {
         options: [{ reportUnvalidatedIndices: true, boundsCheckFunctions: ['validateIndex'] }],
         errors: [{ messageId: 'unsafeBufferAccess' }],
       },
-      // hasBoundsCheck: a declarator initialised from Math.min over buf.length.
-      {
-        code: 'function f() { const cap = Math.min(buf.length, n); return buf[cap]; }',
-        options: UNVALIDATED,
-        errors: [{ messageId: 'unsafeBufferAccess' }],
-      },
       // safetyChecker short-circuits on an @safe annotation, so the guarded
       // report path is exercised in both directions.
       {
@@ -124,11 +171,6 @@ describe('no-buffer-overread coverage gaps', () => {
       // Taint-root walk: req.* member index
       {
         code: 'buf[req.query.idx];',
-        errors: [{ messageId: 'userControlledBufferIndex' }],
-      },
-      // Taint-root walk: root name containing a user keyword
-      {
-        code: 'buf[userData.pos];',
         errors: [{ messageId: 'userControlledBufferIndex' }],
       },
       // Member index text containing a taint keyword segment
@@ -151,11 +193,6 @@ describe('no-buffer-overread coverage gaps', () => {
       // Definition trace: init MemberExpression with taint object text
       {
         code: 'function h(req) { const pos = req.body.index; return buf[pos]; }',
-        errors: [{ messageId: 'userControlledBufferIndex' }],
-      },
-      // Definition trace: taint keyword in the property text
-      {
-        code: 'function h2() { const pos = settings.userLimit; return buf[pos]; }',
         errors: [{ messageId: 'userControlledBufferIndex' }],
       },
       // Definition trace: member init without taint markers
@@ -240,11 +277,6 @@ describe('no-buffer-overread coverage gaps', () => {
         options: UNVALIDATED,
         errors: [{ messageId: 'unsafeBufferAccess' }],
       },
-      // couldBeNegative: declarator ancestor with unary-negative init
-      {
-        code: 'const { [buf[k]]: a } = -5;',
-        errors: [{ messageId: 'negativeBufferIndex' }],
-      },
       // Enclosing if without any buffer-length reference
       {
         code: 'if (ready) { use(buf[cursor]); }',
@@ -268,6 +300,32 @@ describe('no-buffer-overread coverage gaps', () => {
         code: 'const total = buf.length + extra, out2 = wrap2(buf[cursor]);',
         options: UNVALIDATED,
         errors: [{ messageId: 'unsafeBufferAccess' }],
+      },
+      // A MENTION of `buf.length` is not a bounds check. The old test rendered
+      // the enclosing return statement with `sourceCode.getText` and asked
+      // whether the string contained "buf.length" — which a comment, a string
+      // literal or an `&&` guard all satisfy.
+      {
+        code: 'function f() { return buf.length && buf[cursor]; }',
+        options: UNVALIDATED,
+        errors: [{ messageId: 'unsafeBufferAccess' }],
+      },
+      // A comparison against a DIFFERENT buffer's length is not a check on this
+      // one, however the text prints.
+      {
+        code: 'function f(req) { const at = Number(req.query.at); if (at < other.length) { return buf[at]; } }',
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+      // A guard on a DIFFERENT index is not a guard on this one.
+      {
+        code: 'function f(req) { const at = Number(req.query.at); if (other < buf.length) { return buf[at]; } }',
+        errors: [{ messageId: 'userControlledBufferIndex' }],
+      },
+      // The index is a MemberExpression, so there is no binding to look for in
+      // the guard at all.
+      {
+        code: 'function f(req) { if (n < buf.length) { return buf[req.query.i]; } }',
+        errors: [{ messageId: 'userControlledBufferIndex' }],
       },
     ],
   });
@@ -310,28 +368,10 @@ describe('no-buffer-overread coverage gaps', () => {
       });
     });
 
-    it('detects a declarator whose init is a negative Literal (parser-unreachable)', () => {
-      const { listeners, reports } = createWithMockContext(noBufferOverread);
-      const index: Record<string, unknown> = {
-        type: 'Identifier',
-        name: 'i',
-      };
-      const access: Record<string, unknown> = {
-        type: 'MemberExpression',
-        computed: true,
-        object: { type: 'Identifier', name: 'buf' },
-        property: index,
-        parent: {
-          type: 'VariableDeclarator',
-          init: { type: 'Literal', value: -1 },
-          parent: undefined,
-        },
-      };
-      index.parent = access;
-      (listeners.MemberExpression as Listener)(access);
-      expect(reports).toHaveLength(1);
-      expect(reports[0]).toMatchObject({ messageId: 'negativeBufferIndex' });
-    });
+    // A test asserting that a declarator ANCESTOR's negative initializer makes
+    // the index negative used to sit here. It pinned a real defect —
+    // `const { [buf[k]]: a } = -5` has nothing negative about `k` — and the
+    // branch it covered no longer exists.
 
     it('reports a user-controlled member index with line 0 when loc is absent', () => {
       const { listeners, reports } = createWithMockContext(noBufferOverread);

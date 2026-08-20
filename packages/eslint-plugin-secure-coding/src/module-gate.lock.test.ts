@@ -67,8 +67,17 @@ const LOADS = (pkg: string, binding: string): ReadonlyArray<readonly [string, st
 ];
 
 describe('detect-object-injection — the codemod exemption', () => {
-  /** The traversal shape the rule reports on when there is no exemption. */
-  const traversal = `export function visit(node, name) { return node[name]; }`;
+  /**
+   * The traversal shape the rule reports on when there is no exemption.
+   *
+   * A WRITE since 2026-08-19. It was `return node[name]` — a read — and reads
+   * stopped being reported, which silently turned the positive control below
+   * into a pass and every exemption case under it into a vacuous one. That is
+   * the exact failure this control was added to prevent, so it had to move to a
+   * shape the rule still reports. Codemods mutate nodes as readily as they read
+   * them, so the shape is no less realistic.
+   */
+  const traversal = `export function visit(node, name, value) { node[name] = value; }`;
 
   it('reports with no AST library loaded, so the cases below are not vacuous', () => {
     expect(lint(traversal, 'detect-object-injection').length).toBeGreaterThan(0);

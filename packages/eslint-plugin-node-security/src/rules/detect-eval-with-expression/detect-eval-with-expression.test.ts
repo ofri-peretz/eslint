@@ -3,7 +3,7 @@
  * Security: CWE-95 (Code Injection)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { detectEvalWithExpression } from './index';
 
@@ -153,8 +153,6 @@ describe('detect-eval-with-expression', () => {
           errors: [
             {
               messageId: 'useJsonParse',
-              // Note: Rule provides suggestions but fix returns null (no auto-fix)
-              // Test framework requires output for suggestions, so we don't test them here
             },
           ],
         },
@@ -171,7 +169,6 @@ describe('detect-eval-with-expression', () => {
           errors: [
             {
               messageId: 'useObjectAccess',
-              // Note: Rule provides suggestions but fix returns null (no auto-fix)
             },
           ],
         },
@@ -237,7 +234,6 @@ describe('detect-eval-with-expression', () => {
           errors: [
             {
               messageId: 'useTemplateLiteral',
-              // Note: Rule provides suggestions but fix returns null (no auto-fix)
             },
           ],
         },
@@ -352,21 +348,20 @@ describe('detect-eval-with-expression', () => {
           code: 'Function("arg1", "arg2", "return arg1 + arg2");',
           errors: [{ messageId: 'strategyRefactor' }],
         },
-        // Lines 401-403: Edge case where new Function is called as a function
-        // This triggers both CallExpression and NewExpression checks
+        // LOCK-TEST CORRECTION. These two asserted TWO diagnostics for one
+        // site — "CallExpression check" plus "NewExpression check" — which
+        // pinned a duplicate report as correct behaviour. A user reading the
+        // output saw the same finding twice at the same location, and a
+        // baseline counting findings counted it twice. The NewExpression
+        // visitor already covers every `new Function(...)`, invoked or not, so
+        // the CallExpression branch only ever duplicated it and is gone.
         {
           code: '(new Function)(code);',
-          errors: [
-            { messageId: 'strategyRefactor' }, // CallExpression check
-            { messageId: 'strategyRefactor' }  // NewExpression check
-          ],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: '(new Function)("arg1", "return arg1 * 2");',
-          errors: [
-            { messageId: 'strategyRefactor' }, // CallExpression check
-            { messageId: 'strategyRefactor' }  // NewExpression check
-          ],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'new Function(code);',
@@ -443,7 +438,10 @@ describe('vm module code execution (CWE-94)', () => {
        new Worker(path.join(__dirname, 'transform.worker.js'), { workerData: 1 });`,
       // A method of the same name on something that is not the vm module.
       `renderer.runInNewContext(userTemplate);`,
-      `const vm = require('vm'); vm['runInNewContext'](userCode);`,
+      // (`vm['runInNewContext'](userCode)` used to be asserted VALID here. It
+      //  is a code sink spelled with brackets — see the invalid block.)
+      // A computed member whose property cannot be resolved names nothing.
+      `const vm = require('vm'); vm[apiFromConfig](userCode);`,
       // vm is bound, but this export is not a code sink.
       `const vm = require('vm'); vm.createContext(sandbox);`,
       // Destructured, but not a sink export.
@@ -605,20 +603,25 @@ describe('vm module code execution (CWE-94)', () => {
         code: `const vm = require('vm'); const s = buildScript(); vm.runInThisContext(s);`,
         errors: [{ messageId: 'vmCodeExecution' }],
       },
-      // Declared without an initializer, then assigned once.
-      {
-        code: `const vm = require('vm'); let s; s = 'x = 1'; vm.runInThisContext(s);`,
-        errors: [{ messageId: 'vmCodeExecution' }],
-      },
-      // A function parameter is a binding whose definition is not a declarator.
+      // LOCK-TEST CORRECTION: two cases moved from here to `valid`.
+      //   let s; s = 'x = 1'; vm.runInThisContext(s);
+      //   function go(s) { s = 'x = 1'; vm.runInThisContext(s); }
+      // Both asserted a report on a sink whose argument is provably the string
+      // literal 'x = 1' at the moment the call runs. They pinned the
+      // implementation ("the declarator has no initializer", "the definition is
+      // a parameter") rather than the security question, and the same shape
+      // with a real command — `let program = 'a'; if (mode) program = 'b';` —
+      // is ordinary code that a user would receive as a false positive.
+      // A function parameter with no write before the use is genuinely
+      // unresolved, and still reported:
       {
         code: `const vm = require('vm'); function go(s) { vm.runInThisContext(s); }`,
         errors: [{ messageId: 'vmCodeExecution' }],
       },
-      // Written exactly once, but the definition is a parameter, not a
-      // declarator — there is no initializer to prove constant.
+      // …including when the only literal write happens AFTER the sink has
+      // already run the incoming value.
       {
-        code: `const vm = require('vm'); function go(s) { s = 'x = 1'; vm.runInThisContext(s); }`,
+        code: `const vm = require('vm'); function go(s) { vm.runInThisContext(s); s = 'x = 1'; }`,
         errors: [{ messageId: 'vmCodeExecution' }],
       },
       // A declared global resolves to a variable with no definition at all.
@@ -638,5 +641,130 @@ describe('vm module code execution (CWE-94)', () => {
         errors: [{ messageId: 'vmCodeExecution' }],
       },
     ],
+  });
+
+  /**
+   * Lock: this rule offers no suggestions, and says so.
+   *
+   * It declared `hasSuggestions: true` while its only `suggest` entry had
+   * `fix: () => null` — a shape ESLint discards before the user sees it, so
+   * the flag advertised an affordance nobody ever received. The three cases
+   * above used to carry the comment "Rule provides suggestions but fix returns
+   * null (no auto-fix), so we don't test them here", which is a defect written
+   * down rather than fixed.
+   *
+   * If a real suggestion is ever added, this assertion is the thing that has to
+   * be updated deliberately — which is the point.
+   */
+  it('declares hasSuggestions: false, matching the absence of any suggest array', () => {
+    expect(detectEvalWithExpression.meta.hasSuggestions).toBe(false);
+  });
+
+  // ── Rule-corpus regressions ────────────────────────────────────────────
+  // benchmarks/rule-corpus/node-security__detect-eval-with-expression
+  // Every invalid case below was silent, and every valid case was reported,
+  // when the corpus was first measured against this rule.
+  describe('Corpus regressions', () => {
+    ruleTester.run('corpus', detectEvalWithExpression, {
+      valid: [
+        // The program that runs is one of two literals the author wrote.
+        `const vm = require('vm'); let program = 'a = 1'; if (mode) { program = 'a = 2'; } vm.runInNewContext(program, ctx);`,
+        // Moved from `invalid`: provably the literal 'x = 1' at the call.
+        `const vm = require('vm'); let s; s = 'x = 1'; vm.runInThisContext(s);`,
+        `const vm = require('vm'); function go(s) { s = 'x = 1'; vm.runInThisContext(s); }`,
+        // A LOCAL function wearing the sink's name. The binding is the
+        // evidence, and it is a local declaration, not the vm module.
+        `function runInNewContext(name, ctx) { return render(name, ctx); }
+         module.exports = (req) => runInNewContext('invoice', req.body);`,
+        // A sandbox class of the same name out of a project-local module.
+        `const { NodeVM } = require('./isolate'); const s = new NodeVM({}); s.run(req.body.script);`,
+        // `eval` as an object KEY, mapped to a parser.
+        `const HANDLERS = { eval: (v) => Number.parseFloat(v) }; HANDLERS.eval('1');`,
+        // Global-object property that is not an eval sink.
+        `globalThis.structuredClone(payload);`,
+        `globalThis.crypto.randomUUID();`,
+        // A const alias to something that is not eval.
+        `const compile = template; compile(source);`,
+        `const compile = 'eval'; log(compile);`,
+        // An unrelated sequence expression.
+        `const value = (setup(), compute()); value(x);`,
+        // Alias resolution is deliberately shallow — the same depth guard
+        // `provenance.ts` uses. Four hops is past it, and past anything a
+        // human writes.
+        `const a = eval; const b = a; const c = b; const d = c; d(code);`,
+      ],
+      invalid: [
+        // INDIRECT eval — the canonical global-scope spelling.
+        {
+          // The messageId here is `useObjectAccess` — "use direct property
+          // access instead of eval()" — solely because the printed argument
+          // text `req.body` contains a `.`, which matches the `object` entry
+          // of EVAL_PATTERNS. See the note on `detectPattern`: the remediation
+          // shown to the user is chosen by regex over source TEXT.
+          code: `const globalEval = (0, eval); globalEval(req.body);`,
+          errors: [{ messageId: 'useObjectAccess' }],
+        },
+        {
+          code: `(0, eval)(req.body.src);`,
+          errors: [{ messageId: 'useObjectAccess' }],
+        },
+        // The property form.
+        {
+          code: `globalThis.eval(snippet);`,
+          errors: [{ messageId: 'strategyRefactor' }],
+        },
+        {
+          code: `window.eval(snippet);`,
+          errors: [{ messageId: 'strategyRefactor' }],
+        },
+        {
+          code: `global.Function('return 1')();`,
+          errors: [{ messageId: 'strategyRefactor' }],
+        },
+        // eval bound to a local whose name says nothing.
+        {
+          code: `const compile = eval; module.exports = (e) => compile(e);`,
+          errors: [{ messageId: 'strategyRefactor' }],
+        },
+        // A renamed named import of a vm sink. The LOCAL name is not the
+        // export name, and filtering identifier callees by the sink vocabulary
+        // threw the rename away before the binding was ever consulted.
+        {
+          code: `import { runInThisContext as runIt } from 'node:vm'; runIt(source);`,
+          errors: [{ messageId: 'vmCodeExecution' }],
+        },
+        {
+          code: `import { Script as VmScript } from 'node:vm'; new VmScript(source);`,
+          errors: [{ messageId: 'vmCodeExecution' }],
+        },
+        {
+          code: `import { VMScript as Compiled } from 'vm2'; new Compiled(source);`,
+          errors: [{ messageId: 'vm2CodeExecution' }],
+        },
+        {
+          code: `const { NodeVM: Sandbox } = require('vm2'); const s = new Sandbox({}); s.run(source);`,
+          errors: [{ messageId: 'vm2CodeExecution' }],
+        },
+        // A computed member resolved through a constant names the same sink.
+        {
+          code: `const vm = require('node:vm'); const VM_API = 'runInNewContext'; vm[VM_API](source, ctx);`,
+          errors: [{ messageId: 'vmCodeExecution' }],
+        },
+        {
+          code: `const vm = require('vm'); vm['runInNewContext'](userCode);`,
+          errors: [{ messageId: 'vmCodeExecution' }],
+        },
+        // Inline require at the call site creates no binding at all.
+        {
+          code: `require('node:vm').runInNewContext(policySource, context);`,
+          errors: [{ messageId: 'vmCodeExecution' }],
+        },
+        {
+          code: `require('vm2').VMScript;
+                 const s = new (require('vm2').VMScript)(source);`,
+          errors: [{ messageId: 'vm2CodeExecution' }],
+        },
+      ],
+    });
   });
 });

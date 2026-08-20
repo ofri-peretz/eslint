@@ -27,28 +27,46 @@ import {
   type SecurityRuleOptions,
 } from '@interlace/eslint-devkit';
 
+/**
+ * `improperTypeValidation` and `missingNullCheck` used to be declared here too.
+ *
+ * `improperTypeValidation` had two emitters. One fired on `if (userInput)` when the
+ * identifier's spelling contained `req`/`body`/`data`/`input`/`query`/`params` — so
+ * `if (metadata)` reported, because "metadata" contains "data", and a truthiness
+ * check on anything else did not. The other required a CallExpression whose callee is
+ * an Identifier named `typeof`, which no JavaScript program can produce: `typeof` is a
+ * keyword and `typeof(x)` parses as a UnaryExpression. That branch was unreachable by
+ * construction.
+ *
+ * `missingNullCheck` fired on `if (x != null)` — the idiomatic nullish test, and the
+ * remediation this rule's own `unsafeTypeofCheck` message prescribes.
+ */
 type MessageIds =
-  | 'improperTypeValidation'
   | 'unsafeTypeofCheck'
   | 'unsafeInstanceofUsage'
   | 'looseEqualityTypeCheck'
-  | 'missingNullCheck'
-  | 'unreliableConstructorCheck'
-  | 'incompleteTypeValidation'
-  | 'useTypeofCorrectly'
-  | 'useProperTypeGuards'
-  | 'validateUserInput'
-  | 'strategyTypeGuards'
-  | 'strategySchemaValidation'
-  | 'strategyDefensiveProgramming';
+  | 'unreliableConstructorCheck';
 
+/**
+ * `safeTypeCheckFunctions` (default `['isArray', 'isString', 'isNumber',
+ * 'isObject', 'validateType', 'checkType']`) used to be declared here and in
+ * `meta.schema`, and was never read by `create()`. It looked like the
+ * allowlist a consumer would use to teach the rule about their own type
+ * guards; it did nothing.
+ */
+/**
+ * `userInputVariables` (default `['req','request','body','query','params','input',
+ * 'data','userInput']`) used to be declared here and in `meta.schema`. It was the sole
+ * input to `isUserInput`, which asked `userInputVariables.some(w => varName.includes(w))`
+ * — a substring match on a spelling, in a REPORTING path, which CLAUDE.md forbids.
+ * It decided the verdict for every message this rule emits: `metadata` was user input
+ * (it contains "data"), `req.body.profile` was not (its object is a MemberExpression,
+ * not a bare identifier), and renaming a variable turned a real finding off. Nothing
+ * replaced it, because the hazards this rule reports are properties of the OPERATOR,
+ * not of where the value came from: `typeof x === 'object'` admits null whoever wrote
+ * x, and `a == b` coerces whoever wrote a.
+ */
 export interface Options extends SecurityRuleOptions {
-  /** Variables that contain user input and should be validated */
-  userInputVariables?: string[];
-
-  /** Safe type checking functions */
-  safeTypeCheckFunctions?: string[];
-
   /** Whether to allow instanceof in same-realm contexts */
   allowInstanceofSameRealm?: boolean;
 }
@@ -64,24 +82,14 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       description: 'Detects improper type validation in user input handling',
       cwe: 'CWE-1287',
     },
-    hasSuggestions: true,
     messages: {
-      improperTypeValidation: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Improper Type Validation',
-        cwe: 'CWE-1287',
-        description: 'Type validation may be bypassed or incomplete',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/1287.html',
-      }),
       unsafeTypeofCheck: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Unsafe typeof Check',
         cwe: 'CWE-1287',
-        description: 'typeof check misses null values',
+        description: 'typeof x === \'object\' also matches null and arrays',
         severity: 'MEDIUM',
-        fix: 'Use value != null && typeof value === "object"',
+        fix: 'Use value != null && typeof value === "object" && !Array.isArray(value) — Not a finding if the value is already known non-null on this path',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof',
       }),
       unsafeInstanceofUsage: formatLLMMessage({
@@ -90,7 +98,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1287',
         description: 'instanceof may fail across contexts',
         severity: 'LOW',
-        fix: 'Use Array.isArray() or typeof checks',
+        fix: 'Use Array.isArray() or typeof checks — Not a finding if the value never crosses a realm boundary (no vm, iframe, or worker)',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof',
       }),
       looseEqualityTypeCheck: formatLLMMessage({
@@ -99,17 +107,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1287',
         description: 'Loose equality may cause type confusion',
         severity: 'LOW',
-        fix: 'Use strict equality (===) for type checking',
+        fix: 'Use strict equality (===) for type checking — Not a finding if both operands are already the same primitive type',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Equality',
-      }),
-      missingNullCheck: formatLLMMessage({
-        icon: MessageIcons.WARNING,
-        issueName: 'Missing Null Check',
-        cwe: 'CWE-1287',
-        description: 'Type check doesn\'t handle null values',
-        severity: 'MEDIUM',
-        fix: 'Check for both null and undefined',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof',
       }),
       unreliableConstructorCheck: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -117,81 +116,14 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-1287',
         description: 'constructor.name can be spoofed',
         severity: 'MEDIUM',
-        fix: 'Use Object.prototype.toString.call() or duck typing',
+        fix: 'Use Object.prototype.toString.call() or duck typing — Not a finding if the value never came from parsed input',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor',
       }),
-      incompleteTypeValidation: formatLLMMessage({
-        icon: MessageIcons.WARNING,
-        issueName: 'Incomplete Type Validation',
-        cwe: 'CWE-1287',
-        description: 'Type validation is incomplete',
-        severity: 'LOW',
-        fix: 'Use comprehensive type checking',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/1287.html',
-      }),
-      useTypeofCorrectly: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use typeof Correctly',
-        description: 'Use typeof with null checks for objects',
-        severity: 'LOW',
-        fix: 'if (value != null && typeof value === "object")',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof',
-      }),
-      useProperTypeGuards: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Proper Type Guards',
-        description: 'Use proper type guard functions',
-        severity: 'LOW',
-        fix: 'Array.isArray(), Number.isNaN(), etc.',
-        documentationLink: 'https://www.typescriptlang.org/docs/handbook/advanced-types.html#type-guards-and-differentiating-types',
-      }),
-      validateUserInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate User Input',
-        description: 'Validate user input before processing',
-        severity: 'LOW',
-        fix: 'Use schema validation libraries',
-        documentationLink: 'https://joi.dev/',
-      }),
-      strategyTypeGuards: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Type Guards Strategy',
-        description: 'Use type guards for runtime type checking',
-        severity: 'LOW',
-        fix: 'Implement custom type guard functions',
-        documentationLink: 'https://www.typescriptlang.org/docs/handbook/advanced-types.html#type-guards-and-differentiating-types',
-      }),
-      strategySchemaValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Schema Validation Strategy',
-        description: 'Use schema validation for complex inputs',
-        severity: 'LOW',
-        fix: 'Use Joi, Yup, or Zod for input validation',
-        documentationLink: 'https://joi.dev/',
-      }),
-      strategyDefensiveProgramming: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Defensive Programming Strategy',
-        description: 'Use defensive programming techniques',
-        severity: 'LOW',
-        fix: 'Check types and handle edge cases explicitly',
-        documentationLink: 'https://en.wikipedia.org/wiki/Defensive_programming',
-      })
     },
     schema: [
       {
         type: 'object',
         properties: {
-          userInputVariables: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
-          },
-          safeTypeCheckFunctions: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['isArray', 'isString', 'isNumber', 'isObject', 'validateType', 'checkType'], description: 'Function names that count as a type check'
-          },
           allowInstanceofSameRealm: {
             type: 'boolean',
             default: true,
@@ -219,10 +151,10 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  // §B1 — a fixture's deliberately-wrong comparison is the fixture's point.
+  skipTestFiles: true,
   defaultOptions: [
     {
-      userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
-      safeTypeCheckFunctions: ['isArray', 'isString', 'isNumber', 'isObject', 'validateType', 'checkType'],
       allowInstanceofSameRealm: true,
       trustedSanitizers: [],
       trustedAnnotations: [],
@@ -232,7 +164,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      userInputVariables = ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
       allowInstanceofSameRealm = true,
       trustedSanitizers = [],
       trustedAnnotations = [],
@@ -242,7 +173,6 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     const sourceCode = context.sourceCode;
     const filename = context.filename;
 
-    // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
       trustedSanitizers,
       trustedAnnotations,
@@ -250,321 +180,238 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       strictMode,
     });
 
-    /**
-     * Check if a variable is user input
-     */
-    const isUserInput = (varName: string): boolean => {
-      return userInputVariables.some(input => varName.includes(input));
-    };
-
-    /**
-     * Check if a typeof check is unsafe
-     */
-    const isUnsafeTypeof = (node: TSESTree.BinaryExpression): boolean => {
-      if (node.operator !== '===' && node.operator !== '!==') {
-        return false;
-      }
-
-      const left = node.left;
-      const right = node.right;
-
-      // Check for typeof x === 'object' (misses null)
-      if (left.type === 'UnaryExpression' &&
-          left.operator === 'typeof' &&
-          right.type === 'Literal' &&
-          right.value === 'object') {
-        
-        // Check if this node is part of a larger expression that includes a null check
-        let varName = '';
-        if (left.argument.type === 'Identifier') {
-            varName = left.argument.name;
-        }
-
-        if (varName) {
-            let current: TSESTree.Node | undefined = node.parent;
-            let child: TSESTree.Node = node;
-
-            while (current) {
-                if (current.type === 'LogicalExpression' && current.operator === '&&') {
-                    // If we are on the right side, check the left side for null check
-                    if (current.right === child) {
-                        const leftText = sourceCode.getText(current.left);
-                        if (leftText.includes(`${varName} !== null`) || 
-                            leftText.includes(`${varName} != null`)) {
-                            return false;
-                        }
-                    }
-                }
-                
-                if (current.type.includes('Statement') || current.type.includes('Declaration')) {
-                    break;
-                }
-                
-                child = current;
-                current = current.parent as TSESTree.Node | undefined;
-            }
-        }
-
-        return true;
-      }
-
-      return false;
-    };
-
-    /**
-     * Check if instanceof usage is unsafe
-     */
-    const isUnsafeInstanceof = (node: TSESTree.BinaryExpression): boolean => {
-      if (node.operator !== 'instanceof') {
-        return false;
-      }
-
-      if (!allowInstanceofSameRealm) {
-        return true;
-      }
-
-      // instanceof is generally safe within the same realm
-      // but can be problematic across different contexts/windows
-      return false;
-    };
-
-    /**
-     * Check if equality is loose and used for type checking
-     */
-    const isLooseEqualityTypeCheck = (node: TSESTree.BinaryExpression): boolean => {
-      if (node.operator !== '==' && node.operator !== '!=') {
-        return false;
-      }
-
-      const leftText = sourceCode.getText(node.left).toLowerCase();
-      const rightText = sourceCode.getText(node.right).toLowerCase();
-
-      // Check if comparing against null/undefined with loose equality
-      return (leftText.includes('null') || rightText.includes('null') ||
-              leftText.includes('undefined') || rightText.includes('undefined'));
-    };
-
-    /**
-     * Check for unreliable constructor checks
-     */
+    /** `null` or `undefined`, as written. */
     // oxlint-disable-next-line consistent-function-scoping
-    const isUnreliableConstructorCheck = (node: TSESTree.MemberExpression): boolean => {
-      return node.property.type === 'Identifier' &&
-             node.property.name === 'name' &&
-             node.object.type === 'MemberExpression' &&
-             node.object.property.type === 'Identifier' &&
-             node.object.property.name === 'constructor';
+    const isNullish = (node: TSESTree.Node): boolean =>
+      (node.type === 'Literal' && node.raw === 'null') ||
+      (node.type === 'Identifier' && node.name === 'undefined');
+
+    /**
+     * Are these two expressions the same read?
+     *
+     * A STRUCTURAL comparison, so that `value != null && typeof value === 'object'`
+     * recognises its own guard. The predecessor asked whether the printed text of the
+     * left operand CONTAINED the substring `${varName} !== null`, which meant the
+     * guard had to be spelled a particular way and that any identifier whose name
+     * merely contained "null" — `annulled`, `nullable`, `annullment` — satisfied the
+     * neighbouring null test on the operand's spelling alone.
+     */
+    const sameExpression = (a: TSESTree.Node, b: TSESTree.Node): boolean => {
+      if (a.type !== b.type) return false;
+      if (a.type === 'Identifier' && b.type === 'Identifier') return a.name === b.name;
+      if (a.type === 'ThisExpression') return true;
+      if (a.type === 'MemberExpression' && b.type === 'MemberExpression') {
+        if (a.computed !== b.computed) return false;
+        return sameExpression(a.object, b.object) && sameExpression(a.property, b.property);
+      }
+      if (a.type === 'Literal' && b.type === 'Literal') return a.raw === b.raw;
+      return false;
+    };
+
+    /**
+     * Is `operand` proven non-null by another test in the same chain?
+     *
+     * Two chains, because `typeof x === 'object'` and `typeof x !== 'object'`
+     * are guarded by opposite operators. De Morgan, not a special case:
+     *
+     *   x !== null && typeof x === 'object'      accept, then narrow
+     *   x === null || typeof x !== 'object'      reject, then bail
+     *
+     * The second is the more common of the two in real code — it is the early
+     * return at the top of a normaliser — and only the first was recognised.
+     * Measured on 20 repositories: of 60 sampled findings, 47 were
+     * `unsafeTypeofCheck`, and the majority of those were guarded shapes:
+     *
+     *   if (typeof arg !== 'object' || arg === null || Array.isArray(arg))
+     *       mongoose lib/aggregate.js:207 — the textbook check, reported
+     *   if (value === null || typeof value !== 'object') return value;
+     *       axios lib/core/AxiosError.js:34, n8n observation-log-observer.ts:303
+     *   if (value && typeof value === 'object')
+     *       serverless config-schema-handler/index.js:437, knex lib/client.js:57
+     *   if (arg && typeof arg === 'object' && 'message' in arg)
+     *       strapi packages/admin-test-utils/src/setup.ts:56
+     *
+     * A bare truthiness test counts. `x && …` excludes `null`, `undefined`, and
+     * `0`, `''` and `false` besides — it is strictly stronger than `x !== null`,
+     * and it is how the guard is actually written.
+     */
+    const hasNullGuard = (node: TSESTree.BinaryExpression, operand: TSESTree.Node): boolean => {
+      /** `x !== null`, `x != undefined`, or a bare truthy `x`. */
+      const excludesNullish = (expression: TSESTree.Node, negated: boolean): boolean => {
+        if (sameExpression(expression, operand)) return !negated;
+        if (expression.type === 'UnaryExpression' && expression.operator === '!') {
+          return sameExpression(expression.argument, operand) && negated;
+        }
+        if (expression.type !== 'BinaryExpression') return false;
+        const wanted = negated ? ['===', '=='] : ['!==', '!='];
+        if (!wanted.includes(expression.operator)) return false;
+        if (isNullish(expression.right)) return sameExpression(expression.left, operand);
+        if (isNullish(expression.left)) return sameExpression(expression.right, operand);
+        return false;
+      };
+
+      // `typeof x === 'object'` narrows on the TRUE branch, so its guard sits in
+      // an `&&` chain and asserts non-null. `typeof x !== 'object'` bails on the
+      // true branch, so its guard sits in an `||` chain and asserts the
+      // negation. Anything else is not a guard at all.
+      const negated = node.operator === '!==' || node.operator === '!=';
+      const combinator = negated ? '||' : '&&';
+
+      const guards = (expression: TSESTree.Node): boolean => {
+        if (expression.type === 'LogicalExpression' && expression.operator === combinator) {
+          return guards(expression.left) || guards(expression.right);
+        }
+        return excludesNullish(expression, negated);
+      };
+
+      // Walk out to the outermost enclosing chain, then search the whole chain.
+      let chain: TSESTree.Node = node;
+      while (
+        chain.parent?.type === 'LogicalExpression' &&
+        chain.parent.operator === combinator
+      ) {
+        chain = chain.parent;
+      }
+      return chain !== node && guards(chain);
+    };
+
+    /**
+     * Is this operand provably a string, or provably a number?
+     *
+     * `'a' == 'b'` and `n == 1` cannot coerce, so there is no type confusion to report.
+     * A non-computed `.length` is a number by the language's own definition, and a
+     * single-write binding is whatever its initializer is.
+     */
+    const primitiveTypeOf = (
+      node: TSESTree.Node,
+      seen = new Set<string>(),
+    ): 'string' | 'number' | undefined => {
+      if (node.type === 'Literal') {
+        if (typeof node.value === 'string') return 'string';
+        if (typeof node.value === 'number') return 'number';
+        return undefined;
+      }
+      if (node.type === 'TemplateLiteral') return 'string';
+      if (
+        node.type === 'MemberExpression' &&
+        !node.computed &&
+        node.property.type === 'Identifier' &&
+        node.property.name === 'length'
+      ) {
+        return 'number';
+      }
+      if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
+        if (node.callee.name === 'String') return 'string';
+        if (node.callee.name === 'Number' || node.callee.name === 'parseInt') return 'number';
+      }
+      if (node.type !== 'Identifier') return undefined;
+      if (seen.has(node.name)) return undefined;
+      seen.add(node.name);
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (!variable) continue;
+        const writes = variable.references.filter((ref) => ref.isWrite() && ref.writeExpr);
+        if (writes.length === 0) return undefined;
+        const types = writes.map((ref) =>
+          primitiveTypeOf(ref.writeExpr as TSESTree.Expression, seen),
+        );
+        return types.every((type) => type !== undefined && type === types[0]) ? types[0] : undefined;
+      }
+      return undefined;
+    };
+
+    /** `typeof X === 'object'`, which is true for `null` and for every array. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const typeofObjectOperand = (node: TSESTree.BinaryExpression): TSESTree.Node | undefined => {
+      if (node.operator !== '===' && node.operator !== '!==') return undefined;
+      const { left, right } = node;
+      if (
+        left.type === 'UnaryExpression' &&
+        left.operator === 'typeof' &&
+        right.type === 'Literal' &&
+        right.value === 'object'
+      ) {
+        return left.argument;
+      }
+      return undefined;
+    };
+
+    const report = (node: TSESTree.Node, messageId: MessageIds): void => {
+      if (safetyChecker.isSafe(node, context)) return;
+      context.report({
+        node,
+        messageId,
+        data: { filePath: filename, line: String(node.loc.start.line) },
+      });
     };
 
     return {
-      // Check binary expressions for type validation issues
       BinaryExpression(node: TSESTree.BinaryExpression) {
-        // Check for unsafe typeof usage
-        if (isUnsafeTypeof(node)) {
-          const left = node.left as TSESTree.UnaryExpression;
-          
-          let matchesUserInput = false;
-          if (left.argument.type === 'Identifier' && isUserInput(left.argument.name)) {
-              matchesUserInput = true;
-          } else if (left.argument.type === 'MemberExpression' && 
-                     left.argument.object.type === 'Identifier' && 
-                     isUserInput(left.argument.object.name)) {
-              matchesUserInput = true;
-          }
-
-          if (matchesUserInput) {
-                if (safetyChecker.isSafe(node, context)) {
-                    return;
-                }
-
-                context.report({
-                    node: left,
-                    messageId: 'unsafeTypeofCheck',
-                    data: {
-                    filePath: filename,
-                    line: String(node.loc?.start.line ?? 0),
-                    },
-                    suggest: [
-                    {
-                        messageId: 'useTypeofCorrectly',
-                        fix: () => null // Would need complex AST manipulation
-                    },
-                    ],
-                });
-          }
+        // `typeof x === 'object'` admits `null` and admits an array. That is a
+        // property of the OPERATOR, not of the variable's name — the predecessor only
+        // looked when the operand was spelled `req`, `body`, `data`, `input`, `query`
+        // or `params`, so the identical hole one property deeper
+        // (`typeof req.body.profile`), behind optional chaining, or on a renamed local
+        // went unreported, while `metadata` matched because it contains "data".
+        const operand = typeofObjectOperand(node);
+        if (operand && !hasNullGuard(node, operand)) {
+          report(node.left, 'unsafeTypeofCheck');
+          return;
         }
 
-        // Check for unsafe instanceof usage
-        if (isUnsafeInstanceof(node)) {
-          const left = node.left;
-          if (left.type === 'Identifier' && isUserInput(left.name)) {
-            context.report({
-              node,
-              messageId: 'unsafeInstanceofUsage',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
+        if (node.operator === 'instanceof' && !allowInstanceofSameRealm) {
+          report(node, 'unsafeInstanceofUsage');
+          return;
         }
 
-        // Check for loose equality in type checks
-        if (isLooseEqualityTypeCheck(node)) {
-          const left = node.left;
-          const right = node.right;
+        if (node.operator === '==' || node.operator === '!=') {
+          // `x == null` is the idiomatic nullish test — null AND undefined in one
+          // comparison. Core `eqeqeq` exempts it under `smart`/`allow-null` and this
+          // plugin's own `no-insecure-comparison` exempts it in as many words. The
+          // predecessor reported ONLY this shape, and never the type juggling the
+          // message describes: `isLooseEqualityTypeCheck` required the printed text
+          // of an operand to contain "null" or "undefined", so `req.body.otp ==
+          // storedOtp` — the authentication bypass — was silent, and
+          // `value != null && …`, the fix the rule's own message prescribes, was not.
+          if (isNullish(node.left) || isNullish(node.right)) return;
 
-          // Check if this involves user input variables
-          const leftText = sourceCode.getText(left);
-          const rightText = sourceCode.getText(right);
+          // Two values of the same primitive type cannot coerce.
+          const leftType = primitiveTypeOf(node.left);
+          if (leftType !== undefined && leftType === primitiveTypeOf(node.right)) return;
 
-          if ((left.type === 'Identifier' && isUserInput(left.name)) ||
-              (right.type === 'Identifier' && isUserInput(right.name)) ||
-              leftText.includes('null') || rightText.includes('null')) {
-
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            context.report({
-              node: node,
-              messageId: 'looseEqualityTypeCheck',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
+          report(node, 'looseEqualityTypeCheck');
         }
       },
 
-      // Check member expressions for constructor.name usage
+      /**
+       * `x.constructor.name === 'Object'` is spoofable — `constructor` is an ordinary
+       * readable property, so `{"constructor":{"name":"Object"}}` passes.
+       *
+       * Only when the value is COMPARED. It used to fire on any declaration too, which
+       * made `const errorKind = error.constructor.name` — every structured logger's
+       * exception tag — a security finding, though nothing branches on it.
+       */
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (isUnreliableConstructorCheck(node)) {
-          // Check if this involves user input
-          let current: TSESTree.Node | undefined = node;
-          let involvesUserInput = false;
-
-          // Walk up to find if this is used with user input
-          while (current?.parent) {
-            current = current.parent;
-            if (current.type === 'VariableDeclarator' &&
-                current.init === node) {
-              // This is assignment - check if assigned to user input
-              involvesUserInput = true;
-              break;
-            }
-            if (current.type === 'BinaryExpression' &&
-                (current.left === node || current.right === node)) {
-              // Used in comparison - likely type checking
-              involvesUserInput = true;
-              break;
-            }
-          }
-
-          if (involvesUserInput) {
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            context.report({
-              node,
-              messageId: 'unreliableConstructorCheck',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
+        if (node.computed || node.property.type !== 'Identifier') return;
+        if (node.property.name !== 'name') return;
+        const inner = node.object;
+        if (
+          inner.type !== 'MemberExpression' ||
+          inner.computed ||
+          inner.property.type !== 'Identifier' ||
+          inner.property.name !== 'constructor'
+        ) {
+          return;
         }
+        // Only when the value is COMPARED. A node whose parent is a BinaryExpression
+        // is necessarily one of its two operands, so there is nothing further to test.
+        if (node.parent?.type !== 'BinaryExpression') return;
+        report(node, 'unreliableConstructorCheck');
       },
-
-      // Check call expressions for type checking functions
-      CallExpression(node: TSESTree.CallExpression) {
-        const callee = node.callee;
-
-        // Check for safe type checking functions
-        if (callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier') {
-
-          const methodName = callee.property.name;
-          const objectName = callee.object.type === 'Identifier' ? callee.object.name : '';
-
-          // Check for proper type guards
-          if (['isArray', 'isString', 'isNumber', 'isObject'].includes(methodName) &&
-              objectName && ['Array', 'Number', 'String', 'Object'].includes(objectName)) {
-            // This is good - using proper type guards
-            return;
-          }
-        }
-
-        // Check for typeof usage in function calls
-        if (callee.type === 'Identifier' && callee.name === 'typeof') {
-          // This is unusual - typeof is normally a unary operator
-          // But if used as a function call, it's likely wrong
-          context.report({
-            node,
-            messageId: 'improperTypeValidation',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-              severity: 'LOW',
-              safeAlternative: 'Use typeof as unary operator: typeof value',
-            },
-          });
-        }
-      },
-
-      // Check if statements for incomplete type validation
-      IfStatement(node: TSESTree.IfStatement) {
-        const test = node.test;
-
-        // NEW: Check for implicit truthiness check on user input
-        if (test.type === 'Identifier' && isUserInput(test.name)) {
-             if (safetyChecker.isSafe(node, context)) {
-               return;
-             }
-
-             context.report({
-                 node: test,
-                 messageId: 'improperTypeValidation',
-                 data: {
-                     filePath: filename,
-                     line: String(node.loc?.start.line ?? 0),
-                     severity: 'LOW',
-                     safeAlternative: 'Explicitly check for null/undefined or type',
-                 }
-             });
-        }
-
-        // Look for if statements that only check one aspect of type
-        if (test.type === 'BinaryExpression') {
-          const testText = sourceCode.getText(test).toLowerCase();
-
-          // Check for incomplete null checks
-          if ((testText.includes('!= null') || testText.includes('== null')) &&
-              !testText.includes('!== undefined') && !testText.includes('=== undefined')) {
-
-            // Check if this involves user input
-            if ((test.left.type === 'Identifier' && isUserInput(test.left.name)) ||
-                (test.right.type === 'Identifier' && isUserInput(test.right.name))) {
-
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              context.report({
-                node: test,
-                messageId: 'missingNullCheck',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-              });
-            }
-          }
-        }
-      }
     };
   },
 });

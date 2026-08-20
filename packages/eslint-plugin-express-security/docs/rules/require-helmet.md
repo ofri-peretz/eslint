@@ -116,11 +116,11 @@ module.exports = app2;
 
 ## Options
 
-| Option                   | Type       | Default | Description                                                                |
-| ------------------------ | ---------- | ------- | -------------------------------------------------------------------------- |
-| `allowInTests`           | `boolean`  | `false` | Allow missing helmet in test files                                         |
-| `alternativeMiddleware`  | `string[]` | `[]`    | Alternative security headers middleware names to accept                    |
-| `assumeHelmetMiddleware` | `boolean`  | `false` | Skip rule if security headers are provided elsewhere (e.g., reverse proxy) |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing helmet in test files |
+| `alternativeMiddleware` | `string[]` | `[]` | Alternative security headers middleware names to accept |
+| `assumeHelmetMiddleware` | `boolean` | `false` | Skip rule if security headers are provided elsewhere (e.g., reverse proxy) |
 
 ```json
 {

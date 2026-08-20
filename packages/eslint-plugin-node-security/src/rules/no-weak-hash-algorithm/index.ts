@@ -12,8 +12,9 @@
  * @see https://cwe.mitre.org/data/definitions/327.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
 import { makeNameTest } from '../../utils/names';
+import { resolveConstantString } from '../../utils/const-value';
 
 type MessageIds =
   | 'weakHashAlgorithm'
@@ -426,7 +427,7 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
     const isSecurityUse = makeNameTest(securityUseNames);
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const nonCryptoNames = new Set(nonCryptographicNames.map(normalizeName));
 
     /** Is this hash stored under a name that marks it as an identifier? */
@@ -522,34 +523,39 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
      */
     function checkHashArgument(node: TSESTree.CallExpression) {
       for (const arg of node.arguments) {
-        if (arg.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string') {
-          const weakPattern = findWeakHash(arg.value, additionalWeakAlgorithms);
+        // `const ALGO = 'md5'; createHash(ALGO)` runs MD5 exactly as the inline
+        // spelling does. Reading only `arg.type === 'Literal'` made hoisting the
+        // algorithm to a module constant a silencer — see `utils/const-value`.
+        const resolved = resolveConstantString(context.sourceCode, arg);
+        if (resolved === null) continue;
+        const weakPattern = findWeakHash(resolved.value, additionalWeakAlgorithms);
+        if (!weakPattern) continue;
 
-          if (weakPattern) {
-            context.report({
-              node: arg,
-              messageId: 'weakHashAlgorithm',
-              data: {
-                algorithm: weakPattern.name,
-                replacement: weakPattern.replacement,
-              },
-              suggest: [
-                {
-                  messageId: 'useSha256',
-                  fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(arg, `"sha256"`),
-                },
-                {
-                  messageId: 'useSha512',
-                  fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(arg, `"sha512"`),
-                },
-                {
-                  messageId: 'useSha3',
-                  fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(arg, `"sha3-256"`),
-                },
-              ],
-            });
-          }
-        }
+        // Report at the call site the reader is looking at; fix at the
+        // declaration that decides the value.
+        const target = resolved.source;
+        context.report({
+          node: arg,
+          messageId: 'weakHashAlgorithm',
+          data: {
+            algorithm: weakPattern.name,
+            replacement: weakPattern.replacement,
+          },
+          suggest: [
+            {
+              messageId: 'useSha256',
+              fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"sha256"`),
+            },
+            {
+              messageId: 'useSha512',
+              fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"sha512"`),
+            },
+            {
+              messageId: 'useSha3',
+              fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"sha3-256"`),
+            },
+          ],
+        });
       }
     }
 

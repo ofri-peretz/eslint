@@ -74,54 +74,101 @@ Unescaped URL parameters can allow attackers to inject malicious code or manipul
 | 🔐 **Data Integrity** | Malformed URLs can break functionality | URLSearchParams              |
 | 📊 **Compliance**     | Violates security best practices       | Always encode URL parameters |
 
-## Detection Patterns
+## What the rule decides, and how
 
-The rule detects:
+Two structural questions. Neither one looks at how anything is spelled.
 
-- **Template literals**: URL construction with unescaped user input in template strings
-- **String concatenation**: URL construction using `+` operator with unescaped parameters
-- **User input patterns**: `req.query`, `req.params`, `userInput`, `searchParams`
+### 1. Is this an **encoding position**?
+
+The URL's static text is assembled from the template's cooked quasis and the
+string literals of a `+` chain — the URL's *value*, not the expression's printed
+source — and each interpolation is recorded at its offset in that text. A hole
+counts only when it lands in the **path, query or fragment**.
+
+A hole in the authority chooses the scheme or host. That is an open redirect
+(CWE-601) and belongs to `no-insecure-redirects` / `require-url-validation`, so
+`` `https://${host}/v1/status` `` is not reported here.
+
+Absolute text (`https://…`, `//…`) is a URL wherever it is written. Relative
+text (`/v1/items?…`) is only a URL once it reaches a sink — `fetch`, `new URL`,
+`new Request`, `axios`/`ky`, `xhr.open(method, url)`, or a JSX `href`/`src`/
+`action`/`formAction`/`poster` — resolved through one binding hop.
+
+### 2. Is the value **untrusted**?
+
+Proven, never guessed:
+
+| Evidence | Example |
+| --- | --- |
+| a `location` read | `location.search`, `location['hash']`, `document.referrer` |
+| a URL container read | `new URLSearchParams(location.search).get('q')`, `new URL(location.href).pathname` |
+| a request member | `req.query.q`, `request.body.url` |
+| a DOM read | `document.getElementById('q').value`, `event.target.value` in an installed handler, `ref.current.value` on a `useRef` |
+| a form field | `new FormData(form).get('email')` |
+| a parameter of an **exported** function | `export function build(term) {…}` |
+
+An unknown call is opaque — a value passed *into* a function is not the value
+that comes back out. That single rule is what makes `encodeURIComponent(q)`,
+`qs.stringify(o)` and `input.toFixed(2)` clean without any of them being named.
+
+### Deliberately NOT reported
+
+- a parameter of a **module-private** helper — its call sites are in the file
+- a parameter whose type is a closed set: `'asc' | 'desc'`, `number`, `boolean`
+- arithmetic: `` `?page=${page + 1}` ``
+- the same-origin parts of a URL: `location.origin`, `.protocol`, `.host`, and
+  `const { origin } = new URL(location.href)`
+- a shadowed global — a local `class URLSearchParams` is an in-memory map
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Unescaped in template literal
-const url = `https://example.com?q=${req.query.q}`; // ❌ XSS vulnerability
+// A query value read back out of the address bar
+const q = new URLSearchParams(location.search).get('q');
+const url = `https://api.example.com/v1/search?q=${q}`; // ❌
 
-// Unescaped in string concatenation
-const url = 'https://example.com?search=' + userInput; // ❌ XSS vulnerability
+// Text the user typed, off a resolved element
+const field = document.getElementById('site-search');
+const url = `https://api.example.com/v1/search?term=${field.value}`; // ❌
 
-// Unescaped route parameters
-const url = `https://example.com/user/${req.params.id}`; // ❌ Open redirect risk
+// An exported builder: its callers are outside this module
+export function buildSearchUrl(term) {
+  return `https://api.example.com/v1/search?term=${term}`; // ❌
+}
 
-// Unescaped Next.js searchParams
-const url = `https://example.com?redirect=${searchParams.get('url')}`; // ❌ Open redirect
+// Concatenation, with the untrusted operand in TRAILING position
+const url = 'https://internal.example.com/v1/report?filter=' + req.query.filter; // ❌
+
+// A relative URL, once a sink makes it one
+export function loadPage(slug) {
+  return fetch(`/api/v1/pages?slug=${slug}`); // ❌
+}
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Using encodeURIComponent
-const url = `https://example.com?q=${encodeURIComponent(req.query.q)}`; // ✅ Safe
+// Encode the component
+const url = `https://api.example.com/v1/search?q=${encodeURIComponent(req.query.q)}`; // ✅
 
-// Using URLSearchParams
-const params = new URLSearchParams({ q: req.query.q });
-const url = `https://example.com?${params}`; // ✅ Safe
+// Or build the query as an object and let URLSearchParams serialise it
+const params = new URLSearchParams({ q: req.query.q, page: '2' });
+const url = `https://api.example.com/v1/search?${params.toString()}`; // ✅
 
-// Encoding in string concatenation
-const url = 'https://example.com?search=' + encodeURIComponent(userInput); // ✅ Safe
+// Encode a path segment too — `../` and `%2e%2e` walk a route table
+const url = `https://docs.example.com/v2/pages/${encodeURI(slug)}/content`; // ✅
 
-// Encoding route parameters
-const url = `https://example.com/user/${encodeURIComponent(req.params.id)}`; // ✅ Safe
+// A number cannot carry a URL metacharacter
+export function nextPageUrl(page) {
+  return `https://api.example.com/v1/items?page=${page + 1}`; // ✅
+}
 
-// Using URLSearchParams for multiple parameters
-const params = new URLSearchParams({
-  q: searchParams.get('q'),
-  page: searchParams.get('page'),
-});
-const url = `https://example.com?${params}`; // ✅ Safe
+// A closed set is knowable even across a module boundary
+export function sortedUrl(direction: 'asc' | 'desc') {
+  return `https://api.example.com/v1/items?sort=${direction}`; // ✅
+}
 ```
 
 ## Configuration
@@ -131,7 +178,7 @@ const url = `https://example.com?${params}`; // ✅ Safe
   rules: {
     'browser-security/no-unescaped-url-parameter': ['error', {
       allowInTests: false,                    // Allow in test files
-      trustedLibraries: ['url', 'querystring'], // Trusted URL construction libraries
+      trustedLibraries: ['url', 'querystring'], // Module specifiers, resolved through imports
       ignorePatterns: []                     // Additional safe patterns to ignore
     }]
   }
@@ -143,7 +190,7 @@ const url = `https://example.com?${params}`; // ✅ Safe
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Allow unescaped URL parameters in test files |
-| `trustedLibraries` | `string[]` | `["url","querystring"]` | Trusted URL construction libraries |
+| `trustedLibraries` | `string[]` | `["url","querystring"]` | Modules whose exports produce already-encoded URL text |
 | `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
 
 ## Rule Logic Flow
@@ -163,21 +210,22 @@ const url = `https://example.com?${params}`; // ✅ Safe
   }
 }}%%
 flowchart TD
-    A["🔍 TemplateLiteral/BinaryExpression Found"] --> B{"In Test File?"}
-    B -->|Yes & allowInTests| C["✅ Skip"]
-    B -->|No| D{"Matches Ignore Pattern?"}
-    D -->|Yes| C
-    D -->|No| E{"Is URL Construction?"}
-    E -->|No| C
-    E -->|Yes| F{"Check Expressions"}
-    F --> G{"User Input Pattern?"}
-    G -->|No| C
-    G -->|Yes| H{"Inside Encoding Call?"}
-    H -->|Yes| C
-    H -->|No| I["🚨 Report Error"]
-    I --> J["💡 Suggest Fixes"]
-    J --> K["Use encodeURIComponent"]
-    J --> L["Use URLSearchParams"]
+    A["🔍 TemplateLiteral / outermost + chain"] --> B{"Test file & allowInTests?"}
+    B -->|Yes| C["✅ Skip"]
+    B -->|No| D["Assemble the URL's STATIC TEXT<br/>cooked quasis + string literals"]
+    D --> E{"Absolute, relative, or not a URL?"}
+    E -->|Not a URL| C
+    E -->|Relative| F{"Reaches a URL sink?"}
+    F -->|No| C
+    F -->|Yes| G
+    E -->|Absolute| G["For each interpolation"]
+    G --> H{"In the path/query/fragment?"}
+    H -->|No — it's the authority| I["✅ no-insecure-redirects' finding"]
+    H -->|Yes| J{"Trusted-module call, or ignorePattern?"}
+    J -->|Yes| C
+    J -->|No| K{"Proven untrusted?"}
+    K -->|No| C
+    K -->|Yes| L["🚨 Report"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -185,9 +233,9 @@ flowchart TD
     classDef skipNode fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#1f2937
 
     class A startNode
-    class I errorNode
-    class E,F,G,H processNode
-    class C skipNode
+    class L errorNode
+    class D,E,F,G,H,J,K processNode
+    class C,I skipNode
 
 ```
 
@@ -252,47 +300,63 @@ url.searchParams.set('page', '1');
 const finalUrl = url.toString(); // Automatically encoded
 ```
 
-<WhenNotToUse />
+## Known false negatives
 
-<FalseNegativeCTA />
+Deliberate, and each one is a place where the rule would otherwise be guessing.
 
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Values stored in variables are not traced.
+### An object property
 
 ```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
+const cfg = { q: location.search };
+const url = `https://api.example.com/v1/s?q=${cfg.q}`; // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Validate all user inputs.
+**Why:** property-level tracking is not implemented. **Mitigation:** encode at
+the interpolation, which is where the contract lives anyway.
 
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+### A destructured part of a container
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+const { pathname } = new URL(location.href);
+const url = `https://api.example.com/v1/s?p=${pathname}`; // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Why:** a pattern binds a *part* of the initialiser and the resolver cannot say
+which part. The alternative — resolving every destructured name to the whole
+initialiser — reported `const { origin } = new URL(location.href)`, which is the
+one property that carries nothing an attacker chose.
 
-### Dynamic Invocation
-
-**Why**: Dynamic calls not analyzed.
+### A parameter of a module-private helper
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+function build(term) {
+  return `https://api.example.com/v1/s?term=${term}`; // ❌ NOT DETECTED
+}
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Why:** every call site is in this file, so the value is knowable here.
+Reporting it would fire on every string builder in a codebase. **Mitigation:**
+the rule reports at the *exported* boundary instead.
+
+### A wrapper function
+
+```typescript
+const url = `https://api.example.com/v1/s?q=${sanitise(q)}`; // ❌ NOT DETECTED
+```
+
+**Why:** an unknown call is opaque in both directions — a value passed into a
+function is not the value that comes back out. That is the same rule that makes
+`encodeURIComponent(q)` clean, and it cannot be one-sided.
+
+### A free identifier with no declaration
+
+```typescript
+const url = `https://api.example.com/v1/s?q=${searchParams.get('id')}`; // ❌ NOT DETECTED
+```
+
+**Why:** nothing proves `searchParams` is a `URLSearchParams` over inbound text.
+The old rule reported this from the spelling `searchParams`, and reported
+`const PARAM = 'static'` for the same reason.
 
 ## Related Rules
 

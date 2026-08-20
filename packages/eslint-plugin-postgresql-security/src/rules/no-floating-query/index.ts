@@ -4,18 +4,114 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-import { TSESLint, AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  TSESLint,
+  AST_NODE_TYPES,
+  TSESTree,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { NoFloatingQueryOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
 
-export const noFloatingQuery: TSESLint.RuleModule<
-  'noFloatingQuery',
-  NoFloatingQueryOptions
-> = {
+/**
+ * Positions that pass the promise straight through without consuming it.
+ *
+ * `ChainExpression` is optional chaining: `this.db?.query(...)` wraps the call,
+ * so the call's parent is no longer the ExpressionStatement and the whole
+ * detection missed it.
+ *
+ * The other three are CONTROL FLOW, not value consumption. In statement
+ * position, `dirty && pool.query(...)` is `if (dirty) pool.query(...)` with
+ * different punctuation, `ok ? pool.query(a) : pool.query(b)` is an if/else,
+ * and `(other(), pool.query(x))` throws its own value away. All three were
+ * treated as "handled" and all three float. In a value position they stay
+ * transparent and the enclosing position decides, so `const x = cond ?
+ * pool.query(a) : pool.query(b)` is still fine.
+ */
+const TRANSPARENT_POSITIONS: ReadonlySet<string> = new Set([
+  AST_NODE_TYPES.ChainExpression,
+  AST_NODE_TYPES.SequenceExpression,
+  AST_NODE_TYPES.LogicalExpression,
+  AST_NODE_TYPES.ConditionalExpression,
+]);
+
+interface Chain {
+  /** The outermost expression of the promise chain. */
+  readonly root: TSESTree.Node;
+  /** Whether some link in the chain installs a rejection handler. */
+  readonly rejectionHandled: boolean;
+}
+
+/**
+ * Walk `.then(...)` / `.catch(...)` / `.finally(...)` to the end of the chain,
+ * noting whether anything along it can absorb a rejection.
+ *
+ * A one-argument `.then(onFulfilled)` is NOT a rejection handler — it covers
+ * the success path and leaves the failure path as an unhandled rejection — and
+ * `.finally()` is transparent by specification: it re-throws whatever it was
+ * handed. Both were silently accepted because the rule returned on any
+ * MemberExpression parent, so `pool.query(sql).then(cache.set)` and
+ * `pool.query(sql).finally(done)` were invisible.
+ */
+function promiseChain(node: TSESTree.Node): Chain {
+  let current: TSESTree.Node = node;
+  let rejectionHandled = false;
+
+  for (;;) {
+    const member = current.parent;
+    if (
+      member === undefined ||
+      member.type !== AST_NODE_TYPES.MemberExpression ||
+      member.object !== current ||
+      member.property.type !== AST_NODE_TYPES.Identifier
+    ) {
+      break;
+    }
+    const call = member.parent;
+    if (call === undefined || call.type !== AST_NODE_TYPES.CallExpression || call.callee !== member) {
+      break;
+    }
+    const method = member.property.name;
+    if (method === 'catch' || (method === 'then' && call.arguments.length >= 2)) {
+      rejectionHandled = true;
+    }
+    current = call;
+  }
+
+  return { root: current, rejectionHandled };
+}
+
+/**
+ * Whether any binding reference reads the value.
+ *
+ * `const pending = pool.query(...)` only handles the promise if something later
+ * awaits or chains `pending`. When nothing does, the assignment is decoration
+ * and the promise floats exactly as if it were not there — but the rule
+ * returned on every VariableDeclarator and every AssignmentExpression, so the
+ * shape was a guaranteed miss.
+ */
+function isRead(variable: TSESLint.Scope.Variable | undefined): boolean {
+  return variable !== undefined && variable.references.some((ref) => ref.isRead());
+}
+
+function lookup(
+  scope: TSESLint.Scope.Scope,
+  name: string,
+): TSESLint.Scope.Variable | undefined {
+  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+    const variable = current.set.get(name);
+    if (variable !== undefined) return variable;
+  }
+  return undefined;
+}
+
+export const noFloatingQuery: TSESLint.RuleModule<'noFloatingQuery', NoFloatingQueryOptions> = {
   meta: {
     type: 'problem',
     docs: {
-      description: 'Ensure all queries are awaited or returned to prevent unhandled promise rejections.',
+      description:
+        'Ensure all queries are awaited or returned to prevent unhandled promise rejections.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-floating-query.md',
       cwe: 'CWE-391',
       cvss: 5.3,
@@ -29,7 +125,8 @@ export const noFloatingQuery: TSESLint.RuleModule<
         cwe: 'CWE-391',
         effort: 'low',
         fix: 'Add "await" or "return" to handle the query promise.',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise',
       }),
     },
     schema: [],
@@ -52,36 +149,41 @@ export const noFloatingQuery: TSESLint.RuleModule<
           return;
         }
 
-        // Check parent node to see if the promise is handled
-        const parent = node.parent;
-        
-        // Allowed parents:
-        // 1. AwaitExpression: await client.query(...)
-        if (parent?.type === AST_NODE_TYPES.AwaitExpression) return;
-        
-        // 2. ReturnStatement: return client.query(...)
-        if (parent?.type === AST_NODE_TYPES.ReturnStatement) return;
-        
-        // 3. ArrowFunctionExpression (implicit return): () => client.query(...)
-        if (parent?.type === AST_NODE_TYPES.ArrowFunctionExpression) return;
-        
-        // 4. VariableDeclarator: const p = client.query(...) -> Assumed handled if assigned
-        if (parent?.type === AST_NODE_TYPES.VariableDeclarator) return;
-        
-        // 5. MemberExpression: client.query(...).then(...) or .catch(...)
-        if (parent?.type === AST_NODE_TYPES.MemberExpression) return; // check chains? 
+        const { root, rejectionHandled } = promiseChain(node);
 
-        // 6. AssignmentExpression: p = client.query(...)
-        if (parent?.type === AST_NODE_TYPES.AssignmentExpression) return;
-
-        // If specific to typical void usage:
-        // ExpressionStatement: client.query(...); -> This is bad!
-        if (parent?.type === AST_NODE_TYPES.ExpressionStatement) {
-           context.report({
-            node,
-            messageId: 'noFloatingQuery',
-          });
+        // Where the chain's value ends up. Control-flow wrappers pass through;
+        // whatever sits above them is what decides ownership. Every expression
+        // has a parent and `Program` is never transparent, so the walk always
+        // lands on a real node.
+        let owner = root.parent as TSESTree.Node;
+        while (TRANSPARENT_POSITIONS.has(owner.type)) {
+          owner = owner.parent as TSESTree.Node;
         }
+
+        if (owner.type === AST_NODE_TYPES.VariableDeclarator) {
+          if (owner.id.type !== AST_NODE_TYPES.Identifier) return;
+          const [variable] = context.sourceCode.getDeclaredVariables(owner);
+          if (isRead(variable)) return;
+          context.report({ node, messageId: 'noFloatingQuery' });
+          return;
+        }
+
+        if (
+          owner.type === AST_NODE_TYPES.AssignmentExpression &&
+          owner.left.type === AST_NODE_TYPES.Identifier
+        ) {
+          if (isRead(lookup(context.sourceCode.getScope(node), owner.left.name))) return;
+          context.report({ node, messageId: 'noFloatingQuery' });
+          return;
+        }
+
+        // Every other position — an argument, an array element, a property
+        // value, a return, an await, a yield, `void`, an arrow body — hands the
+        // promise to something that can own it. Only a bare statement discards
+        // it outright.
+        if (owner.type !== AST_NODE_TYPES.ExpressionStatement || rejectionHandled) return;
+
+        context.report({ node, messageId: 'noFloatingQuery' });
       },
     };
   },

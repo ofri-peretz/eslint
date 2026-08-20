@@ -42,9 +42,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingCsrf' | 'addCsrf';
+type MessageIds = 'missingCsrf';
 
 export interface Options {
   /** Allow missing CSRF in test files. Default: false */
@@ -185,7 +186,6 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-352',
       cvss: 8.8,
     },
-    hasSuggestions: true,
     messages: {
       missingCsrf: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -197,14 +197,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         fix: 'Add CSRF middleware: app.use(csrf()) or use csurf package. Include csrfToken in forms.',
         documentationLink: 'https://owasp.org/www-community/attacks/csrf',
       }),
-      addCsrf: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add CSRF Protection',
-        description: 'Add CSRF middleware to protect state-changing requests',
-        severity: 'LOW',
-        fix: 'npm install csurf; app.use(csurf({ cookie: true }))',
-        documentationLink: 'https://www.npmjs.com/package/csurf',
-      }),
+
     },
     schema: [
       {
@@ -257,8 +250,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
@@ -391,12 +383,6 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
             node: candidate.node,
             messageId: 'missingCsrf',
             data: { method: candidate.method },
-            suggest: [
-              {
-                messageId: 'addCsrf',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

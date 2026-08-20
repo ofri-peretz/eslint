@@ -135,9 +135,13 @@ describe('no-electron-security-issues', () => {
     ruleTester.run('invalid - direct Node.js API access in renderer', noElectronSecurityIssues, {
       valid: [],
       invalid: [
-        // require() calls in renderer-like files
+        // require() calls in renderer-like files.
+        //
+        // The `require('electron')` is not decoration: the filename says WHICH
+        // Electron file this is, and the import is what says it is one at all.
+        // See the `lock: directNodeAccess needs Electron evidence` block below.
         {
-          code: 'const fs = require("fs");',
+          code: 'const { ipcRenderer } = require("electron"); const fs = require("fs");',
           filename: 'renderer.js',
           errors: [
             {
@@ -146,13 +150,13 @@ describe('no-electron-security-issues', () => {
           ],
         },
         {
-          // Was `view.js`. A bare `view.js` / `ui.js` basename is generic — a Vue view, an
-          // MVC view — so matching it is the same over-matching that made this rule fire on
-          // any path containing the letters "ui". `renderer.*` and `preload.*` remain
-          // matched as basenames because those ARE unambiguous Electron conventions; `view`
-          // and `ui` are only matched as directory segments.
-          code: 'const { exec } = require("child_process");',
-          filename: 'src/views/detail.js',
+          // Was `view.js`, then `src/views/detail.js`. Both were wrong for the same
+          // reason and the second only looked better: `views/` is the Express template
+          // directory and `ui/` is the React components directory, so neither says
+          // anything about Electron. `renderer/` and `preload/` are Electron's own
+          // convention and are the only directory segments still matched.
+          code: 'import { ipcRenderer } from "electron"; const { exec } = require("child_process");',
+          filename: 'src/renderer/detail.js',
           errors: [
             {
               messageId: 'directNodeAccess',
@@ -303,6 +307,7 @@ describe('no-electron-security-issues', () => {
           code: `
             // Renderer Node.js access vulnerability
             // In renderer.js - should not have direct Node access
+            const { ipcRenderer } = require('electron');
             const fs = require('fs');
             const os = require('os');
 
@@ -362,6 +367,7 @@ describe('no-electron-security-issues', () => {
       valid: [
         {
           code: `
+            require("electron");
             /** @safe */
             require("fs");
           `,
@@ -432,7 +438,7 @@ describe('no-electron-security-issues', () => {
       valid: [
         // require() called with a non-literal (dynamic) module name.
         {
-          code: 'require(moduleName);',
+          code: 'require("electron"); require(moduleName);',
           filename: 'renderer.js',
         },
       ],
@@ -441,7 +447,7 @@ describe('no-electron-security-issues', () => {
         // - exercises the MemberExpression branch of isNodeApiCall returning
         // true (as opposed to the require() branch already covered above).
         {
-          code: 'process.exit(1);',
+          code: 'require("electron"); process.exit(1);',
           filename: 'renderer.js',
           errors: [
             {
@@ -539,6 +545,22 @@ describe('no-electron-security-issues', () => {
     it('falls back to line "0" when a Node.js API call node has no loc', () => {
       const { listeners, reports } = createWithMockContext(noElectronSecurityIssues, {
         filename: 'renderer.js',
+        // The Electron evidence probe reads `sourceCode.ast` once, at create()
+        // time. The mock's default is an empty Program, which is correctly read
+        // as "this file loads no Electron" — so the module evidence has to be
+        // supplied for the directNodeAccess branch to be reachable at all.
+        ast: {
+          type: 'Program',
+          body: [
+            {
+              type: 'ImportDeclaration',
+              source: { type: 'Literal', value: 'electron' },
+              specifiers: [],
+            },
+          ],
+          tokens: [],
+          comments: [],
+        },
       });
 
       const syntheticNode = {
@@ -670,11 +692,248 @@ ruleTester.run('lock: renderer detection is segment-based', noElectronSecurityIs
     { code: "const fs = require('fs');", filename: '/' },
   ],
   invalid: [
-    // Real Electron conventions still report.
-    { code: "const fs = require('fs');", filename: 'src/ui/panel.js', errors: 1 },
-    { code: "const fs = require('fs');", filename: 'src/renderer/index.js', errors: 1 },
-    { code: "const fs = require('fs');", filename: 'renderer.js', errors: 1 },
-    { code: "const fs = require('fs');", filename: 'preload.js', errors: 1 },
-    { code: "const fs = require('fs');", filename: 'src/views/main.js', errors: 1 },
+    // Real Electron conventions still report — with the file's own Electron
+    // import supplying the evidence that this is an Electron process at all.
+    {
+      code: "const { ipcRenderer } = require('electron'); const fs = require('fs');",
+      filename: 'src/renderer/index.js',
+      errors: 1,
+    },
+    {
+      code: "const { ipcRenderer } = require('electron'); const fs = require('fs');",
+      filename: 'renderer.js',
+      errors: 1,
+    },
+    {
+      code: "const { contextBridge } = require('electron'); const fs = require('fs');",
+      filename: 'preload.js',
+      errors: 1,
+    },
   ],
+});
+
+/**
+ * Regression lock — `directNodeAccess` needs Electron evidence, not a filename.
+ *
+ * The segment fix above removed the substring half of the defect and kept the
+ * rest: `ui`, `view` and `views` stayed matched as whole directories, so
+ * `src/ui/IconLoader.js` and `app/views/report.js` — the React components
+ * directory and the Express template directory, in projects with no Electron
+ * anywhere — still reported "Direct access to Node.js APIs in renderer
+ * process" on `require('fs')`. `renderer.js` is worse still: it is the name
+ * React, webpack and every static-site generator give their rendering module.
+ *
+ * A file that loads no Electron has no renderer process to be in. Both halves
+ * are locked here: the directory names are gone, and the surviving Electron
+ * conventions no longer decide anything on their own.
+ */
+ruleTester.run('lock: directNodeAccess needs Electron evidence', noElectronSecurityIssues, {
+  valid: [
+    // The three shapes that were measured reporting with no Electron in sight.
+    { code: "const fs = require('fs');", filename: 'src/ui/IconLoader.js' },
+    { code: "const fs = require('fs');", filename: 'app/views/report.js' },
+    { code: "const fs = require('fs');", filename: 'renderer.js' },
+    { code: "const fs = require('fs');", filename: 'src/renderer/markdown.js' },
+    { code: 'process.exit(1);', filename: 'preload.js' },
+    // A relative specifier is not the electron package, however it is spelled.
+    { code: "require('./electron'); const fs = require('fs');", filename: 'renderer.js' },
+  ],
+  invalid: [
+    // Evidence present, in each of the load forms the shared probe recognises.
+    {
+      code: "import { ipcRenderer } from 'electron'; const fs = require('fs');",
+      filename: 'renderer.js',
+      errors: [{ messageId: 'directNodeAccess' }],
+    },
+    {
+      code: "const { ipcRenderer } = require('electron'); process.exit(1);",
+      filename: 'src/renderer/panel.js',
+      errors: [{ messageId: 'directNodeAccess' }],
+    },
+    // An Electron-ecosystem package counts too: nothing else loads it.
+    {
+      code: "import Store from 'electron-store'; const fs = require('fs');",
+      filename: 'preload.js',
+      errors: [{ messageId: 'directNodeAccess' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — a quoted key names the same option as a bare one.
+ *
+ * `checkBrowserWindowOptions` read only `Identifier` keys, so
+ * `{ 'nodeIntegration': true }` was invisible — and `{ 'webPreferences': {…} }`
+ * hid every flag nested inside it, because the `Property` visitor that opens
+ * that object had the same test. Both forms are what a config transcribed from
+ * JSON looks like, and what Prettier's `quoteProps: 'consistent'` produces as
+ * soon as one key in the object needs quotes.
+ */
+ruleTester.run('lock: quoted option keys are the same options', noElectronSecurityIssues, {
+  valid: [
+    // A computed key is a variable, not an option name; still not guessed at.
+    { code: "const k = 'nodeIntegration'; new BrowserWindow({ webPreferences: { [k]: true } });" },
+  ],
+  invalid: [
+    {
+      code: "new BrowserWindow({ webPreferences: { 'nodeIntegration': true } });",
+      errors: [{ messageId: 'nodeIntegrationEnabled' }],
+    },
+    {
+      code: "new BrowserWindow({ 'webPreferences': { 'contextIsolation': false, 'sandbox': false } });",
+      errors: [{ messageId: 'contextIsolationDisabled' }, { messageId: 'missingSandbox' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — the webPreferences flags Electron's own checklist names.
+ *
+ * `enableRemoteModule`, `webviewTag`, `nodeIntegrationInWorker` and
+ * `nodeIntegrationInSubFrames` were absent from the key list, so an app could
+ * hand the renderer synchronous main-process access, or `require` inside a
+ * Worker, and the rule stayed silent while reporting the `nodeIntegration`
+ * three lines above it.
+ */
+ruleTester.run('lock: legacy Electron webPreferences flags', noElectronSecurityIssues, {
+  valid: [
+    { code: 'new BrowserWindow({ webPreferences: { enableRemoteModule: false, webviewTag: false } });' },
+    { code: 'new BrowserWindow({ webPreferences: { nodeIntegrationInWorker: false } });' },
+  ],
+  invalid: [
+    {
+      code: 'new BrowserWindow({ webPreferences: { enableRemoteModule: true } });',
+      errors: [{ messageId: 'legacyElectronFeature' }],
+    },
+    {
+      code: 'new BrowserWindow({ webPreferences: { webviewTag: true } });',
+      errors: [{ messageId: 'legacyElectronFeature' }],
+    },
+    {
+      code: 'new BrowserWindow({ webPreferences: { nodeIntegrationInWorker: true, nodeIntegrationInSubFrames: true } });',
+      errors: [{ messageId: 'nodeIntegrationEnabled' }, { messageId: 'nodeIntegrationEnabled' }],
+    },
+    {
+      code: 'new BrowserWindow({ webPreferences: { allowDisplayingInsecureContent: true } });',
+      errors: [{ messageId: 'insecureContentEnabled' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — an unsafe preload is decided by the path's SHAPE.
+ *
+ * The test was `p.includes('http') || p.includes('remote') ||
+ * p.includes('node_modules')`. Three local files inside the application's own
+ * source were measured reporting "Preload script may expose sensitive APIs":
+ * a preload for the remote-control feature, a preload beside the http client,
+ * and anything under a directory whose name merely contains `node_modules`.
+ */
+ruleTester.run('lock: preload path shape, not path words', noElectronSecurityIssues, {
+  valid: [
+    { code: 'win.webContents.preload = "./preload/remote-control-preload.js";' },
+    { code: 'win.webContents.preload = "./src/http-client/preload.js";' },
+    { code: 'win.webContents.preload = "./tools/node_modules-audit/preload.js";' },
+    { code: 'win.webContents.preload = "file:///opt/app/preload.js";' },
+  ],
+  invalid: [
+    {
+      code: 'win.webContents.preload = "https://cdn.example.com/preload.js";',
+      errors: [{ messageId: 'unsafePreloadScript' }],
+    },
+    {
+      code: 'win.webContents.preload = "//cdn.example.com/preload.js";',
+      errors: [{ messageId: 'unsafePreloadScript' }],
+    },
+    {
+      code: 'win.webContents.preload = "/app/node_modules/@acme/desktop/preload.js";',
+      errors: [{ messageId: 'unsafePreloadScript' }],
+    },
+  ],
+});
+
+/**
+ * Option coverage — each block is a PAIR over identical source whose verdicts
+ * disagree, so deleting the option's branch would turn the suite red. Every report
+ * site in this rule is gated by `safetyChecker.isSafe`, which is the devkit's
+ * `createSafetyChecker` seeded from these three options.
+ */
+ruleTester.run('option: trustedAnnotations extends the safe-comment vocabulary', noElectronSecurityIssues, {
+  valid: [
+    // `@electron-reviewed` is not one of the devkit's SAFE_ANNOTATIONS, so it only
+    // suppresses once the project declares it. The annotation walk starts at the
+    // reported Property and climbs to the enclosing function, which is why the
+    // comment sitting immediately before the property is found.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @electron-reviewed by the desktop team */ nodeIntegration: true } });',
+      options: [{ trustedAnnotations: ['@electron-reviewed'] }],
+    },
+  ],
+  invalid: [
+    // Identical source without the declaration: an unrecognised comment is not
+    // evidence, and nodeIntegration: true still hands the renderer Node.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @electron-reviewed by the desktop team */ nodeIntegration: true } });',
+      errors: [{ messageId: 'nodeIntegrationEnabled' }],
+    },
+  ],
+});
+
+ruleTester.run('option: strictMode revokes annotation-based suppression', noElectronSecurityIssues, {
+  valid: [
+    // `@validated` is a built-in safe annotation, so by default it silences the
+    // report without any configuration at all.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @validated by the hardening checklist */ nodeIntegration: true } });',
+    },
+  ],
+  invalid: [
+    // Same source, strictMode on. `isSafe` returns false unconditionally, so the
+    // comment stops counting — which is the whole point of the flag for a team that
+    // does not trust its own annotations during an audit.
+    {
+      code: 'new BrowserWindow({ webPreferences: { /* @validated by the hardening checklist */ nodeIntegration: true } });',
+      options: [{ strictMode: true }],
+      errors: [{ messageId: 'nodeIntegrationEnabled' }],
+    },
+  ],
+});
+
+ruleTester.run('option: trustedSanitizers whitelists an audited Node-API wrapper', noElectronSecurityIssues, {
+  valid: [
+    // The reported node at the directNodeAccess site is the CallExpression itself,
+    // so `isSanitizedInput` can match it by method name: registering `auditedEnv`
+    // makes `process.auditedEnv(...)` a sanitization call and the report is skipped.
+    {
+      code: 'require("electron"); const home = process.auditedEnv("HOME");',
+      filename: 'renderer.js',
+      options: [{ trustedSanitizers: ['auditedEnv'] }],
+    },
+  ],
+  invalid: [
+    // Same call, same renderer file, no registration — direct Node access from the
+    // renderer process.
+    {
+      code: 'require("electron"); const home = process.auditedEnv("HOME");',
+      filename: 'renderer.js',
+      errors: [{ messageId: 'directNodeAccess' }],
+    },
+    // And strictMode overrides the registration: the sanitizer list is consulted
+    // through `isSafe`, which strict mode short-circuits before it is ever read.
+    {
+      code: 'require("electron"); const home = process.auditedEnv("HOME");',
+      filename: 'renderer.js',
+      options: [{ trustedSanitizers: ['auditedEnv'], strictMode: true }],
+      errors: [{ messageId: 'directNodeAccess' }],
+    },
+  ],
+});
+
+/**
+ * Coverage — a key that is neither an Identifier nor a string literal names no
+ * option. `{ 1: true }` is a numeric key; there is nothing to look up.
+ */
+ruleTester.run('coverage: non-string literal option keys', noElectronSecurityIssues, {
+  valid: ['new BrowserWindow({ webPreferences: { 1: true } });'],
+  invalid: [],
 });

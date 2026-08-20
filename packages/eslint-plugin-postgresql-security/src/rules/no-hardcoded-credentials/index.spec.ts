@@ -26,20 +26,22 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-hardcoded-credentials', noHardcodedCredentials, {
   valid: pg([
-    "new Client({ password: process.env.DB_PASSWORD })",
+    "import { Client } from 'pg';\nnew Client({ password: process.env.DB_PASSWORD })",
     "new Pool({ connectionString: process.env.DATABASE_URL })",
-    "new Client()", // No config, assumes env vars or defaults
+    "import { Client } from 'pg';\nnew Client()", // No config, assumes env vars or defaults
     // Ignored NewExpressions (coverage)
     "new OtherClass({ password: '123' })",
-    "new Client({ ...config })", // Spread element (not Property)
-    "new Client({ ['password']: 'secret' })", // Computed key (ignored by rule for now, but covers line 57)
-    "new Client('some-random-string')", // String but not a protocol match
-    "new Client(123)", // Non-string arg
+    "import { Client } from 'pg';\nnew Client({ ...config })", // Spread element (not Property)
+    "import { Client } from 'pg';\nnew Client('some-random-string')", // String but not a protocol match
+    "import { Client } from 'pg';\nnew Client(123)", // Non-string arg
     "new Pool({ user: 'postgres', database: 'mydb' })", // No password
   ]),
   invalid: pg([
     {
-      code: "new Client({ password: 'mysecretpassword' })",
+      // `Client` has to be IMPORTED to be a Client. Without the import these
+      // fixtures asserted that the rule may decide from the spelling alone,
+      // which is how `new Client(...)` on a test double got reported.
+      code: "import { Client } from 'pg';\nnew Client({ password: 'mysecretpassword' })",
       errors: [{ messageId: 'noHardcodedCredentials' }],
     },
     {
@@ -47,7 +49,14 @@ ruleTester.run('no-hardcoded-credentials', noHardcodedCredentials, {
       errors: [{ messageId: 'noHardcodedCredentials' }],
     },
     {
-      code: "new Client('postgres://user:pass@localhost:5432/db')",
+      code: "import { Client } from 'pg';\nnew Client('postgres://user:pass@localhost:5432/db')",
+      errors: [{ messageId: 'noHardcodedCredentials' }],
+    },
+    {
+      // This was a VALID case, and its own comment said why: "computed key
+      // (ignored by rule for now)". That is a test asserting a defect as
+      // correct behaviour. `{ ['password']: … }` is `{ password: … }`.
+      code: "import { Client } from 'pg';\nnew Client({ ['password']: 'secret' })",
       errors: [{ messageId: 'noHardcodedCredentials' }],
     },
   ]),

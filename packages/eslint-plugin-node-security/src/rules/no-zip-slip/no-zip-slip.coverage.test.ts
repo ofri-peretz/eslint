@@ -177,7 +177,16 @@ describe('no-zip-slip coverage gaps', () => {
       });
     });
 
-    it('reports standalone extraction without destination, and the suggestion fix returns null', () => {
+    /**
+     * The `and the suggestion fix returns null` half of this test's old name
+     * described an INERT suggestion — `{ messageId: 'useSafeArchiveExtraction',
+     * fix: () => null }`. ESLint discards a suggestion whose fixer returns
+     * null before it reaches the user, so the remediation text attached to it
+     * was never shown and `hasSuggestions: true` overstated what the rule
+     * offered. The test asserted that dead shape as if it were the contract.
+     * The suggestion is gone; this now pins that the report carries none.
+     */
+    it('reports standalone extraction without destination, with no suggestion', () => {
       const { listeners, reports } = setup();
       (listeners.CallExpression as Listener)({
         type: 'CallExpression',
@@ -188,12 +197,11 @@ describe('no-zip-slip coverage gaps', () => {
       const report = reports[0] as {
         messageId: string;
         data: { line: string };
-        suggest: { messageId: string; fix: () => null }[];
+        suggest?: unknown;
       };
       expect(report.messageId).toBe('unsafeArchiveExtraction');
       expect(report.data.line).toBe('0');
-      expect(report.suggest[0].messageId).toBe('useSafeArchiveExtraction');
-      expect(report.suggest[0].fix()).toBeNull();
+      expect(report.suggest).toBeUndefined();
     });
 
     it('reports unvalidated archive path with line 0 when loc is absent', () => {

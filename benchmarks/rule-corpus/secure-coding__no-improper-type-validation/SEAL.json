@@ -1,0 +1,75 @@
+{
+  "rule": "secure-coding/no-improper-type-validation",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "node": "24"
+  },
+  "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- secure-coding/no-improper-type-validation"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/index.ts"
+    },
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/secure-coding__no-improper-type-validation/MANIFEST.md"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "6 TP / 0 FP / 6 FN — 100.0% precision, 50.0% recall, 66.7% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-improper-type-validation"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- secure-coding/no-improper-type-validation --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts secure-coding/no-improper-type-validation <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "met",
+      "evidence": "11/11, including the positive control",
+      "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-improper-type-validation"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/no-improper-type-validation"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 367L +1.00±0.89ms · 1468L +5.59±1.90ms · 5872L +11.02±4.04ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "command": "npx tsx scripts/seal-audit.mts secure-coding/no-improper-type-validation"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal secure-coding/no-improper-type-validation' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

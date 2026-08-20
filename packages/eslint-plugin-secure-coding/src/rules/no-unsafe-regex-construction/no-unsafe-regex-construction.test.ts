@@ -283,3 +283,121 @@ ruleTester.run('lock: a RegExp clone is not a new pattern', noUnsafeRegexConstru
     },
   ],
 });
+
+/**
+ * REGRESSION LOCK — TypeScript casts must not hide taint.
+ *
+ * `req.query.x` is typed `string | string[] | ParsedQs | undefined` by Express,
+ * so a TypeScript handler CANNOT pass it where a string is expected without
+ * `as string`. Every taint walker in this repo dispatched on `node.type` and
+ * fell through to its null/false default for `TSAsExpression`, so this rule
+ * reported NOTHING on TypeScript Express code while its suite stayed green —
+ * there was not one cast anywhere in these tests.
+ *
+ * The cast is erased at compile time and changes no value, so unwrapping it is
+ * always sound for provenance. Fixed by `unwrapTypeSyntax` in @interlace/eslint-devkit.
+ *
+ * This block FAILS on the pre-fix rule. Verify with:
+ *   git stash && npx vitest run <this file>   # expect a failure
+ */
+ruleTester.run('no-unsafe-regex-construction-ts-cast-taint', noUnsafeRegexConstruction, {
+  valid: [
+    `const re = new RegExp('^[a-z]+$' as string, 'i');`,
+  ],
+  invalid: [
+    {
+      code: `const re = new RegExp(req.query.q as string, 'i');`,
+      // `suggestions: undefined` asserts the shape without pinning the fixer
+      // text, which is not what this lock is about.
+      errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+    },
+  ],
+});
+
+/**
+ * Regression locks — defects proved by
+ * `benchmarks/rule-corpus/secure-coding__no-unsafe-regex-construction`.
+ *
+ * Every case here fails on the rule as it stood before that corpus was written.
+ */
+ruleTester.run('lock - corpus-proved defects', noUnsafeRegexConstruction, {
+  valid: [
+    // `RegExp.escape` is the ES2025 built-in and the exact remediation this
+    // rule's own suggestion open-codes. `'RegExp.escape'` was on the trusted
+    // list but compared against an Identifier callee's `name`, which no dotted
+    // string can equal, so the entry was unreachable and this reported.
+    {
+      code: 'export const rx = new RegExp(RegExp.escape(req.query.q), "i");',
+    },
+    // The escaper reached under a local alias. The import says what the
+    // function is; `esc` is not one of the four spellings on the list.
+    {
+      code: 'const esc = require("escape-string-regexp"); export const rx = new RegExp(esc(req.query.q), "i");',
+    },
+    {
+      code: 'import { escapeRegExp } from "lodash"; export const rx = new RegExp(escapeRegExp(req.query.q));',
+    },
+    // A `let` whose every write is a source-controlled literal. Counterpart to
+    // the invalid case below: what matters is the provenance of the writes, not
+    // that the binding is reassigned.
+    {
+      code: 'export function f(strict) { let p = "^a"; if (strict) { p = "^a$"; } return new RegExp(p, "u"); }',
+    },
+    // Branch coverage for `isEscaperPackageBinding`: a resolvable import that
+    // is NOT an escaper. `lodash` is the module, `toUpper` is not the export.
+    {
+      code: 'import { toUpper } from "lodash"; export const rx = new RegExp(toUpper("^[a-z]+$"));',
+    },
+    // Branch coverage for `isRegExpConstructor`: a callee binding with no
+    // write at all (a parameter), and a self-referential binding chain that
+    // would recurse forever without the depth bound.
+    {
+      code: 'export function make(Pattern, req) { return new Pattern(req.query.q); }',
+    },
+    {
+      code: 'let head = tail; let tail = head; export function f(req) { return new head(req.query.q); }',
+    },
+    // A local class shadowing the global. It compiles no pattern.
+    {
+      code: 'class RegExp { constructor(d) { this.d = d; } } export const rx = new RegExp(req.query.q);',
+    },
+    // `request` bound to a frozen module constant. The NAME matches the taint
+    // root list; the binding is three literals declared in this file.
+    {
+      code: 'const request = Object.freeze({ query: { pattern: "^GET /v1/" } }); export const rx = new RegExp(request.query.pattern);',
+    },
+  ],
+  invalid: [
+    // ONE BINDING HOP — the dominant real shape. Nobody inlines the sink
+    // argument; they name the value first, and the provenance is still fully
+    // attributable.
+    {
+      code: 'export function f(req) { const filter = req.query.filter; return new RegExp(filter, "i"); }',
+      errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+    },
+    // The conditional-override idiom: two writes, one of them tainted.
+    {
+      code: 'export function f(req) { let p = DEFAULT; if (req.query.p) { p = req.query.p; } return new RegExp(p, "u"); }',
+      errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+    },
+    // A LOCAL function wearing a trusted name. `escape` and `sanitize` were
+    // default-trusted and neither escapes a regex metacharacter — the global
+    // `escape()` is percent-encoding, under which `.` `*` `+` `(` all survive.
+    {
+      code: 'function sanitize(v) { return String(v).trim(); } export const rx = new RegExp(sanitize(req.query.q), "i");',
+      errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+    },
+    // Branch coverage for `isTrustedMemberEscaper`: a PRIVATE method callee.
+    // `#escape` is a non-computed member whose property is a PrivateIdentifier,
+    // not an Identifier, so it names no published escaper and the taint stands.
+    {
+      code: 'export class Search { #escape(v) { return v; } run(req) { return new RegExp(this.#escape(req.query.q), "i"); } }',
+      errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+    },
+    // The constructor itself reached through a const alias.
+    {
+      code: 'const Pattern = RegExp; export function f(req) { return new Pattern(req.query.filter, "i"); }',
+      errors: [{ messageId: 'unsafeRegexConstruction', suggestions: 1 }],
+    },
+  ],
+});

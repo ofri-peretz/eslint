@@ -17,18 +17,25 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { isAnchoredRegexpTest } from '../../utils/regexp-anchoring';
 
-type MessageIds = 'missingOriginCheck' | 'addOriginCheck';
+type MessageIds = 'missingOriginCheck';
 
 export interface Options {
   /** Allow in test files. Default: false */
   allowInTests?: boolean;
-
-  /** Trusted origins that satisfy the check. Default: [] */
-  trustedOrigins?: string[];
 }
+
+/*
+ * `trustedOrigins` was removed. It was declared in the schema and documented
+ * as "origins accepted without an explicit check", but `create()` never
+ * destructured it, so no value a user supplied could reach any decision. It
+ * had no coherent meaning either: this rule asks whether an origin check
+ * EXISTS, and which origins that check then accepts is the application's
+ * business, not the linter's.
+ */
 
 type RuleOptions = [Options?];
 
@@ -137,7 +144,6 @@ export const requirePostmessageOriginCheck = createRule<
       cwe: 'CWE-346',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingOriginCheck: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -150,15 +156,7 @@ export const requirePostmessageOriginCheck = createRule<
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns',
       }),
-      addOriginCheck: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Origin Check',
-        description: 'Validate event.origin before processing message',
-        severity: 'LOW',
-        fix: "if (event.origin !== 'https://expected-origin.com') return;",
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage',
-      }),
+
     },
     schema: [
       {
@@ -168,11 +166,6 @@ export const requirePostmessageOriginCheck = createRule<
             type: 'boolean',
             default: false,
           },
-          trustedOrigins: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [], description: 'Origins accepted without an explicit check'
-          },
         },
         additionalProperties: false,
       },
@@ -181,7 +174,6 @@ export const requirePostmessageOriginCheck = createRule<
   defaultOptions: [
     {
       allowInTests: false,
-      trustedOrigins: [],
     },
   ],
   create(
@@ -191,8 +183,7 @@ export const requirePostmessageOriginCheck = createRule<
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
@@ -374,12 +365,6 @@ export const requirePostmessageOriginCheck = createRule<
           context.report({
             node: handler,
             messageId: 'missingOriginCheck',
-            suggest: [
-              {
-                messageId: 'addOriginCheck',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

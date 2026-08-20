@@ -164,4 +164,4 @@ delete user[key];
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `additionalSensitiveProperties` | `string[]` | `[]` | Extra property-name fragments to treat as sensitive |
+| `additionalSensitiveProperties` | `string[]` | `[]` | Extra sensitive property names, matched as whole words at the END of the name. "pin code", "pin_code" and "pinCode" all match a property called pinCode; "pincode" does not. |

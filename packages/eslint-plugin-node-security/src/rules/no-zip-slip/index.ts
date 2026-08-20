@@ -22,18 +22,21 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+/**
+ * Six more used to sit here: `zipSlipVulnerability`, `validateArchivePaths`,
+ * `sanitizeArchiveNames`, `strategyPathValidation`, `strategySafeLibraries` and
+ * `strategySandboxing`. Every `context.report` in this file names one of the
+ * four below, so none of the six had a report path — and none was lost, either:
+ * `zipSlipVulnerability` interpolated `{{severity}}` and `{{safeAlternative}}`,
+ * placeholders no call site in this rule has ever supplied, so emitting it
+ * would have rendered the literal braces. The remediation text they carried is
+ * already in the `fix:` line of the four messages that do fire.
+ */
 type MessageIds =
-  | 'zipSlipVulnerability'
   | 'unsafeArchiveExtraction'
   | 'pathTraversalInArchive'
   | 'unvalidatedArchivePath'
-  | 'dangerousArchiveDestination'
-  | 'useSafeArchiveExtraction'
-  | 'validateArchivePaths'
-  | 'sanitizeArchiveNames'
-  | 'strategyPathValidation'
-  | 'strategySafeLibraries'
-  | 'strategySandboxing';
+  | 'dangerousArchiveDestination';
 
 export interface Options {
   /** Archive extraction functions to check */
@@ -133,17 +136,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       description: 'Detects zip slip/archive extraction vulnerabilities',
       cwe: 'CWE-22',
     },
-    hasSuggestions: true,
     messages: {
-      zipSlipVulnerability: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Zip Slip Vulnerability',
-        cwe: 'CWE-22',
-        description: 'Archive extraction vulnerable to path traversal',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/22.html',
-      }),
       unsafeArchiveExtraction: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe Archive Extraction',
@@ -180,54 +173,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         fix: 'Extract to safe temporary directory',
         documentationLink: 'https://cwe.mitre.org/data/definitions/22.html',
       }),
-      useSafeArchiveExtraction: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe Archive Extraction',
-        description: 'Use libraries with built-in path validation',
-        severity: 'LOW',
-        fix: 'Use yauzl, safe-archive-extract, or similar safe libraries',
-        documentationLink: 'https://www.npmjs.com/package/yauzl',
-      }),
-      validateArchivePaths: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Archive Paths',
-        description: 'Validate all archive entry paths',
-        severity: 'LOW',
-        fix: 'Check paths don\'t contain ../ and are within destination directory',
-        documentationLink: 'https://snyk.io/research/zip-slip-vulnerability',
-      }),
-      sanitizeArchiveNames: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Sanitize Archive Names',
-        description: 'Sanitize archive entry names',
-        severity: 'LOW',
-        fix: 'Use path.basename() or custom sanitization',
-        documentationLink: 'https://nodejs.org/api/path.html#pathbasenamepath-ext',
-      }),
-      strategyPathValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Path Validation Strategy',
-        description: 'Validate paths before any file operations',
-        severity: 'LOW',
-        fix: 'Check path.startsWith(destination) and no ../ sequences',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/22.html',
-      }),
-      strategySafeLibraries: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Safe Libraries Strategy',
-        description: 'Use archive libraries with built-in safety',
-        severity: 'LOW',
-        fix: 'Use yauzl, adm-zip with validation, or safe-archive-extract',
-        documentationLink: 'https://www.npmjs.com/package/safe-archive-extract',
-      }),
-      strategySandboxing: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Sandboxing Strategy',
-        description: 'Extract archives in sandboxed environment',
-        severity: 'LOW',
-        fix: 'Use temporary directories and restrict permissions',
-        documentationLink: 'https://nodejs.org/api/fs.html#fsopentempdirprefix-options-callback',
-      })
+
     },
     schema: [
       {
@@ -518,12 +464,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
                   filePath: filename,
                   line: String(node.loc?.start.line ?? 0),
                 },
-                suggest: [
-                  {
-                    messageId: 'useSafeArchiveExtraction',
-                    fix: () => null,
-                  },
-                ],
               });
             }
             // For safe relative paths, don't report any error
@@ -560,12 +500,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
                   filePath: filename,
                   line: String(node.loc?.start.line ?? 0),
                 },
-                suggest: [
-                  {
-                    messageId: 'useSafeArchiveExtraction',
-                    fix: () => null
-                  },
-                ],
               });
             }
           }

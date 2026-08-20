@@ -18,9 +18,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'permissiveCors' | 'useWhitelist';
+type MessageIds = 'permissiveCors';
 
 export interface Options {
   /** Allow permissive CORS in test files. Default: false */
@@ -177,7 +178,6 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-942',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       permissiveCors: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -189,15 +189,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny',
       }),
-      useWhitelist: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Origin Whitelist',
-        description: 'Replace with explicit origin whitelist',
-        severity: 'LOW',
-        fix: 'origin: ["https://your-frontend.com", "https://app.your-domain.com"]',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
-      }),
+
     },
     schema: [
       {
@@ -242,8 +234,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
@@ -288,12 +279,6 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
               data: {
                 reason: 'cors() with no options uses permissive defaults',
               },
-              suggest: [
-                {
-                  messageId: 'useWhitelist',
-                  fix: () => null,
-                },
-              ],
             });
             return;
           }
@@ -310,12 +295,6 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
                 node: corsConfigNode,
                 messageId: 'permissiveCors',
                 data: { reason },
-                suggest: [
-                  {
-                    messageId: 'useWhitelist',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }

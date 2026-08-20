@@ -91,3 +91,14 @@ logger.debug({ user: redactPii(user) });
 - Custom logger wrappers (`logEvent`, `audit`, `track`) are detected via the `loggers` rule option allowlist; loggers not on the allowlist are skipped.
 - PII reached via aliasing (`const e = user.email; log(e);`) is tracked one assignment hop; deeper chains require type-aware enabling.
 - PII embedded inside an HTTP request body that incidentally surfaces in an error message (e.g. `JSON.stringify(req.body)` in a `catch` block) is not always reached without type info.
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `consoleMethods` | `string[]` | `["log","error","warn","info"]` | `console` methods treated as a log sink, matched as an exact method name. Replaces the built-in list. |
+| `additionalConsoleMethods` | `string[]` | `[]` | Extra `console` methods, on top of `consoleMethods`. |
+| `piiTerms` | `string[]` | `["email","ssn","password","credit card","phone"]` | Field vocabulary, matched as WHOLE WORDS of an identifier — never as a substring. Multi-word terms such as "credit card" match consecutive segments. Replaces the built-in list. |
+| `additionalPiiTerms` | `string[]` | `[]` | Extra PII field terms, on top of `piiTerms`. |
+| `piiLabels` | `string[]` | `["email:","ssn:","password:","credit card:","creditcard:"]` | String literals that are EXACTLY a field label announcing the next argument. Compared case-insensitively after trimming. Replaces the built-in list. |
+| `additionalPiiLabels` | `string[]` | `[]` | Extra field labels, on top of `piiLabels`. |

@@ -19,9 +19,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unvalidatedInput' | 'useValidation';
+type MessageIds = 'unvalidatedInput';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -71,7 +72,6 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-20',
       cvss: 8,
     },
-    hasSuggestions: true,
     messages: {
       unvalidatedInput: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -85,16 +85,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-project-serverless-top-10/',
       }),
-      useValidation: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Input Validation',
-        description:
-          'Add input validation using Middy validator middleware or a schema library',
-        severity: 'LOW',
-        fix: "import { validator } from '@middy/validator'; middy(handler).use(validator({ inputSchema }))",
-        documentationLink:
-          'https://middy.js.org/docs/middlewares/validator',
-      }),
+
     },
     schema: [
       {
@@ -133,7 +124,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true, additionalProperties = [] } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -448,12 +439,6 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
           data: {
             property: `event.${eventAccess.property}`,
           },
-          suggest: [
-            {
-              messageId: 'useValidation',
-              fix: () => null, // Complex fix requiring schema setup
-            },
-          ],
         });
       },
     };

@@ -1,0 +1,342 @@
+{
+  "generated": "2026-08-16",
+  "rules": {
+    "secure-coding/detect-non-literal-regexp": [
+      "duplicate-coverage",
+      "dynamic-regexp"
+    ],
+    "secure-coding/detect-object-injection": [
+      "dynamic-regexp"
+    ],
+    "secure-coding/detect-weak-password-validation": [],
+    "secure-coding/no-bidi-characters": [
+      "whole-program-text"
+    ],
+    "secure-coding/no-directive-injection": [
+      "nominal-inference-suppress"
+    ],
+    "secure-coding/no-electron-security-issues": [
+      "orphan-message"
+    ],
+    "secure-coding/no-fail-open-auth": [],
+    "secure-coding/no-format-string-injection": [
+      "nominal-inference-report",
+      "textual-matching",
+      "unguarded-recursion"
+    ],
+    "secure-coding/no-graphql-injection": [
+      "duplicate-coverage",
+      "nominal-inference-suppress",
+      "textual-matching",
+      "whole-program-text"
+    ],
+    "secure-coding/no-hardcoded-credentials": [
+      "duplicate-coverage",
+      "unguarded-recursion"
+    ],
+    "secure-coding/no-hardcoded-session-tokens": [
+      "duplicate-coverage",
+      "nominal-inference-report"
+    ],
+    "secure-coding/no-homoglyph-identifiers": [],
+    "secure-coding/no-improper-sanitization": [
+      "textual-matching"
+    ],
+    "secure-coding/no-improper-type-validation": [],
+    "secure-coding/no-insecure-comparison": [
+      "dynamic-regexp"
+    ],
+    "secure-coding/no-ldap-injection": [
+      "orphan-message",
+      "unasserted-message",
+      "unexercised-option",
+      "unguarded-recursion"
+    ],
+    "secure-coding/no-log-injection": [],
+    "secure-coding/no-missing-authentication": [],
+    "secure-coding/no-pii-in-logs": [],
+    "secure-coding/no-privilege-escalation": [],
+    "secure-coding/no-redos-vulnerable-regex": [
+      "duplicate-coverage"
+    ],
+    "secure-coding/no-sensitive-data-exposure": [],
+    "secure-coding/no-sql-injection": [
+      "duplicate-coverage"
+    ],
+    "secure-coding/no-template-injection": [],
+    "secure-coding/no-unchecked-loop-condition": [
+      "duplicate-coverage"
+    ],
+    "secure-coding/no-unlimited-resource-allocation": [
+      "textual-matching"
+    ],
+    "secure-coding/no-unsafe-deserialization": [
+      "textual-matching"
+    ],
+    "secure-coding/no-unsafe-regex-construction": [],
+    "secure-coding/no-weak-password-recovery": [
+      "nominal-inference-report",
+      "textual-matching"
+    ],
+    "secure-coding/no-xpath-injection": [
+      "nominal-inference-report",
+      "unguarded-recursion"
+    ],
+    "secure-coding/no-xxe-injection": [],
+    "secure-coding/require-backend-authorization": [],
+    "secure-coding/require-secure-defaults": [],
+    "node-security/detect-child-process": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/detect-eval-with-expression": [
+      "duplicate-coverage",
+      "dynamic-regexp",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/detect-non-literal-fs-filename": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/detect-suspicious-dependencies": [],
+    "node-security/lock-file": [
+      "no-corpus-fixture"
+    ],
+    "node-security/no-arbitrary-file-access": [
+      "duplicate-coverage",
+      "textual-matching"
+    ],
+    "node-security/no-buffer-overread": [
+      "textual-matching",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-cryptojs": [],
+    "node-security/no-cryptojs-weak-random": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-data-in-temp-storage": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-deprecated-buffer": [],
+    "node-security/no-deprecated-cipher-method": [],
+    "node-security/no-dynamic-algorithm-selection": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-dynamic-command-string": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-dynamic-dependency-loading": [],
+    "node-security/no-dynamic-require": [],
+    "node-security/no-ecb-mode": [
+      "duplicate-coverage"
+    ],
+    "node-security/no-env-injection": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-insecure-http-parser": [],
+    "node-security/no-insecure-key-derivation": [],
+    "node-security/no-insecure-rsa-padding": [
+      "duplicate-coverage",
+      "textual-matching",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-math-random-crypto": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-self-signed-certs": [],
+    "node-security/no-sha1-hash": [
+      "duplicate-coverage"
+    ],
+    "node-security/no-shell-injection": [
+      "duplicate-coverage"
+    ],
+    "node-security/no-ssrf": [
+      "nominal-inference-report",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-static-iv": [],
+    "node-security/no-timing-unsafe-compare": [
+      "unconfigurable-vocabulary",
+      "unguarded-recursion"
+    ],
+    "node-security/no-toctou-vulnerability": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-unbounded-decompression": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-unsafe-buffer-alloc": [
+      "unconfigurable-vocabulary",
+      "unguarded-recursion"
+    ],
+    "node-security/no-unsafe-dynamic-require": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-weak-cipher-algorithm": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-weak-hash-algorithm": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/no-zip-slip": [
+      "duplicate-coverage",
+      "nominal-inference-report",
+      "textual-matching"
+    ],
+    "node-security/prefer-native-crypto": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/require-aead-tag-verification": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/require-dependency-integrity": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/require-secure-credential-storage": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/require-secure-deletion": [
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/require-storage-encryption": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "node-security/require-stream-error-handler": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/detect-mixed-content": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-allow-arbitrary-loads": [
+      "duplicate-coverage"
+    ],
+    "browser-security/no-clickjacking": [
+      "textual-matching"
+    ],
+    "browser-security/no-client-side-auth-logic": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-cookie-auth-tokens": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-credentials-in-query-params": [],
+    "browser-security/no-disabled-certificate-validation": [
+      "duplicate-coverage"
+    ],
+    "browser-security/no-dynamic-service-worker-url": [],
+    "browser-security/no-eval": [],
+    "browser-security/no-filereader-innerhtml": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-http-urls": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-incomplete-url-sanitization": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-innerhtml": [
+      "duplicate-coverage"
+    ],
+    "browser-security/no-insecure-redirects": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-insecure-websocket": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-jwt-in-storage": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-missing-cors-check": [
+      "nominal-inference-suppress"
+    ],
+    "browser-security/no-missing-csrf-protection": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-missing-security-headers": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-password-in-url": [],
+    "browser-security/no-permissive-cors": [],
+    "browser-security/no-postmessage-innerhtml": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-postmessage-wildcard-origin": [
+      "duplicate-coverage"
+    ],
+    "browser-security/no-sensitive-cookie-js": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-sensitive-data-in-analytics": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-sensitive-data-in-cache": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-sensitive-indexeddb": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-sensitive-localstorage": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-sensitive-sessionstorage": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-tracking-without-consent": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-unencrypted-transmission": [
+      "dynamic-regexp",
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-unescaped-url-parameter": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-unsafe-eval-csp": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-unsafe-inline-csp": [
+      "duplicate-coverage"
+    ],
+    "browser-security/no-unvalidated-deeplinks": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-websocket-eval": [],
+    "browser-security/no-websocket-innerhtml": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/no-worker-message-innerhtml": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/require-blob-url-revocation": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/require-cookie-secure-attrs": [],
+    "browser-security/require-csp-headers": [],
+    "browser-security/require-https-only": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/require-mime-type-validation": [],
+    "browser-security/require-postmessage-origin-check": [
+      "duplicate-coverage",
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/require-url-validation": [
+      "unconfigurable-vocabulary"
+    ],
+    "browser-security/require-websocket-wss": [
+      "unconfigurable-vocabulary"
+    ]
+  }
+}

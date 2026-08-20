@@ -61,6 +61,22 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
       code: 'fs.createReadStream(p).pipe(res);',
       filename: '/proj/stream.test.ts',
     },
+    // …and setting the option to its default value changes nothing. Paired
+    // with the `allowInTests: false` case below, which reports on this exact
+    // source and filename: that pair is what proves the option decides
+    // something rather than merely being read.
+    {
+      code: 'fs.createReadStream(p).pipe(res);',
+      filename: '/proj/stream.test.ts',
+      options: [{ allowInTests: true }],
+    },
+    // A non-test filename with the exemption turned off still needs a real
+    // finding to report — the option does not report by itself.
+    {
+      code: "const s = fs.createReadStream(p); s.on('error', log); s.pipe(res);",
+      filename: '/proj/stream.spec.ts',
+      options: [{ allowInTests: false }],
+    },
     // A destructured constructor is a bare identifier callee, and a handled
     // name is still handled however the constructor was imported.
     "const s = createReadStream(p); s.on('error', log); s.pipe(res);",
@@ -137,6 +153,17 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A compression stream constructed inline is the same fact.
     {
       code: 'input.pipe(zlib.createGzip());',
+      errors: [{ messageId: 'unhandledStreamError' }],
+    },
+    // `allowInTests: false` — the option the ledger flagged as never set by any
+    // test, so its early-return branch shipped unexecuted. Byte-identical to
+    // the exempt valid case above except for the option, and the verdict flips.
+    // A test suite that pipes without an error listener really does crash the
+    // runner, so this is a setting someone would reach for.
+    {
+      code: 'fs.createReadStream(p).pipe(res);',
+      filename: '/proj/stream.test.ts',
+      options: [{ allowInTests: false }],
       errors: [{ messageId: 'unhandledStreamError' }],
     },
   ],

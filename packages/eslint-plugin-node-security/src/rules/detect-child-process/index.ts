@@ -17,18 +17,25 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslin
 import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
 import { makeReadsTaintSource } from '../../utils/provenance';
 
+/**
+ * `strategyValidate`, `strategySanitize` and `strategyRestrict` used to sit
+ * here, alongside a `strategy: 'validate' | 'sanitize' | 'restrict' | 'auto'`
+ * option meant to select between them. Neither half was ever finished:
+ * `create()` never read `strategy`, and every `context.report` in this file
+ * names one of the two messages below.
+ *
+ * Not wired up, and deliberately so. The sibling `detect-eval-with-expression`
+ * does implement the same shape, which is presumably where this was copied
+ * from — but there the strategy messages ARE the finding. Here they would
+ * REPLACE a CRITICAL CWE-78 "Command injection" or a HIGH CWE-88 "Argument
+ * injection" with a severity-LOW "Validate Strategy" carrying no CWE and no
+ * description of what was found. Emitting them would downgrade every finding
+ * this rule makes. The advice they held is already the `fix:` line of the two
+ * that fire.
+ */
 type MessageIds =
   | 'childProcessCommandInjection'
-  | 'argumentInjection'
-  | 'useEndOfOptions'
-  | 'useExecFile'
-  | 'useSpawn'
-  | 'useSaferLibrary'
-  | 'validateInput'
-  | 'useShellFalse'
-  | 'strategyValidate'
-  | 'strategySanitize'
-  | 'strategyRestrict';
+  | 'argumentInjection';
 
 export interface Options {
   /** Allow exec() with literal strings. Default: false (stricter) */
@@ -39,9 +46,6 @@ export interface Options {
 
   /** Additional child_process methods to check */
   additionalMethods?: string[];
-
-  /** Strategy for fixing command injection: 'validate', 'sanitize', 'restrict', or 'auto' */
-  strategy?: 'validate' | 'sanitize' | 'restrict' | 'auto';
 
   /**
    * Identifier roots treated as attacker-reachable.
@@ -328,7 +332,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       cvss: 9.8,
       confidence: 'medium',
     },
-    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 44% reduction (55→31 tokens) - removes ❌/✅/📚 labels
       childProcessCommandInjection: formatLLMMessage({
@@ -350,78 +353,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         fix: "Insert a literal '--' before the first attacker-controlled element, or reject values beginning with '-'.",
         documentationLink: 'https://cwe.mitre.org/data/definitions/88.html',
       }),
-      useEndOfOptions: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use end-of-options',
-        description: "Add a literal '--' before user-controlled arguments",
-        severity: 'LOW',
-        fix: "execFile('git', ['ls-remote', '--', remote])",
-        documentationLink: 'https://cwe.mitre.org/data/definitions/88.html',
-      }),
-      useExecFile: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use execFile',
-        description: 'Use execFile() with argument array',
-        severity: 'LOW',
-        fix: 'execFile(cmd, [arg1, arg2], { shell: false })',
-        documentationLink: 'https://nodejs.org/api/child_process.html#child_processexecfilefile-args-options-callback',
-      }),
-      useSpawn: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use spawn',
-        description: 'Use spawn() with separate arguments',
-        severity: 'LOW',
-        fix: 'spawn(cmd, [arg1, arg2], { shell: false })',
-        documentationLink: 'https://nodejs.org/api/child_process.html#child_processspawncommand-args-options',
-      }),
-      useSaferLibrary: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safer Library',
-        description: 'Consider safer command execution libraries',
-        severity: 'LOW',
-        fix: 'Use execa, zx, or cross-spawn instead',
-        documentationLink: 'https://github.com/sindresorhus/execa',
-      }),
-      validateInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Input',
-        description: 'Add input validation and sanitization',
-        severity: 'LOW',
-        fix: 'Validate user input before passing to command',
-        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
-      }),
-      useShellFalse: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Disable Shell',
-        description: 'Use shell: false option',
-        severity: 'LOW',
-        fix: '{ shell: false } to prevent shell interpretation',
-        documentationLink: 'https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows',
-      }),
-      strategyValidate: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Validate Strategy',
-        description: 'Comprehensive input validation',
-        severity: 'LOW',
-        fix: 'Add allowlist validation before command execution',
-        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
-      }),
-      strategySanitize: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Sanitize Strategy',
-        description: 'Sanitize and escape command arguments',
-        severity: 'LOW',
-        fix: 'Escape special characters in command arguments',
-        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
-      }),
-      strategyRestrict: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Restrict Strategy',
-        description: 'Restrict to predefined safe commands',
-        severity: 'LOW',
-        fix: 'Define allowlist of permitted commands',
-        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
-      })
+
     },
     schema: [
       {
@@ -442,12 +374,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: [],
             description: 'Additional child_process methods to check'
-          },
-          strategy: {
-            type: 'string',
-            enum: ['validate', 'sanitize', 'restrict', 'auto'],
-            default: 'auto',
-            description: 'Strategy for fixing command injection (auto = smart detection)'
           },
           taintSources: {
             type: 'array',
@@ -472,7 +398,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       allowLiteralStrings: false,
       allowLiteralSpawn: false,
       additionalMethods: [],
-      strategy: 'auto'
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -1247,10 +1172,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         context.report({
           node: injected,
           messageId: 'argumentInjection',
-          suggest: [
-            { messageId: 'useEndOfOptions', fix: () => null },
-            { messageId: 'validateInput', fix: () => null },
-          ],
         });
         return;
       }
@@ -1316,30 +1237,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
           alternatives,
           steps,
           effort: pattern?.effort || '15-30 minutes'
-        },
-        suggest: [
-          {
-            messageId: 'useExecFile',
-            fix: () => null
-          },
-          {
-            messageId: 'useSpawn',
-            fix: () => null
-          },
-          {
-            messageId: 'useSaferLibrary',
-            fix: () => null
-          },
-          {
-            messageId: 'validateInput',
-            fix: () => null
-          },
-          {
-            messageId: 'useShellFalse',
-            fix: () => null
-          }
-        ]
-      });
+        },});
     };
 
     /**

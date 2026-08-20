@@ -87,11 +87,11 @@ app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
 
 ## Options
 
-| Option            | Type       | Default                                                                     | Description                                                  |
-| ----------------- | ---------- | --------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `allowInTests`    | `boolean`  | `false`                                                                     | Allow in test files                                          |
-| `maxLimit`        | `number`   | `5242880`                                                                   | Largest explicit limit, in bytes, that is not reported (5MB) |
-| `excessiveLimits` | `string[]` | `["10mb","50mb","100mb","500mb","1gb","1GB","10MB","50MB","100MB","500MB"]` | Limits considered excessive                                  |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow in test files |
+| `maxLimit` | `number` | `5242880` | Largest explicit body-parser limit, in bytes, that is not reported |
+| `excessiveLimits` | `string[]` | `["10mb","50mb","100mb","500mb","1gb","1GB","10MB","50MB","100MB","500MB"]` | Limits considered excessive |
 
 ```json
 {

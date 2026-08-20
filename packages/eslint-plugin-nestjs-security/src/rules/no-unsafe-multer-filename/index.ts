@@ -52,8 +52,8 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
-import { isTestFile } from '../../utils/nest-ast';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'clientControlledFilename';
@@ -189,7 +189,7 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
     const { allowInTests = true } = options;
-    if (allowInTests && isTestFile(context.filename)) return {};
+    if (allowInTests && isTestFilePath(context.filename)) return {};
 
     /** The name a handler parameter was given, or null when it is destructured. */
     function paramName(param: TSESTree.Parameter | undefined): string | null {

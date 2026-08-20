@@ -1,0 +1,23 @@
+{
+  "rule": "browser-security/no-incomplete-url-sanitization",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 13,
+  "vulnerable": 6,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-incomplete-url-sanitization",
+      "tp": 6,
+      "fp": 0,
+      "fn": 0,
+      "tn": 7,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -68,10 +68,10 @@ directionality. What is reported is the invisible *override*: `U+202A`–`U+202E
 
 ## Options
 
-| Option                  | Type       | Default | Description                                                              |
-| ----------------------- | ---------- | ------- | ------------------------------------------------------------------------ |
-| `additionalCharacters`  | `string[]` | `[]`    | Extra code points to treat as bidirectional control characters           |
-| `allowDirectionalMarks` | `boolean`  | `false` | Permit `U+200E` / `U+200F` (LRM / RLM), which cannot reorder code         |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `additionalCharacters` | `string[]` | `[]` | Extra code points to treat as bidirectional control characters |
+| `allowDirectionalMarks` | `boolean` | `false` | Permit `U+200E` / `U+200F` (LRM / RLM), which cannot reorder code |
 
 ```js
 {

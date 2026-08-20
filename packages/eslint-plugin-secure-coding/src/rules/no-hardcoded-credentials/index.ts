@@ -12,11 +12,20 @@
  * @see https://cwe.mitre.org/data/definitions/798.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons,
+  compileUserPatterns,
+  type PatternTest,
+} from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
-type MessageIds = 'useEnvironmentVariable' | 'useSecretManager' | 'strategyEnv' | 'strategyConfig' | 'strategyVault' | 'strategyAuto';
+type MessageIds = 'useEnvironmentVariable' | 'useSecretManager';
 
+/**
+ * `strategy` used to be declared here and in `meta.schema`, with an enum of
+ * `env`/`config`/`vault`/`auto`. `create()` never read it. It selected between
+ * the `strategyEnv`/`strategyConfig`/`strategyVault`/`strategyAuto`
+ * suggestions, which were themselves never reported and have been removed.
+ */
 export interface Options {
   /** Patterns to ignore (regex strings). Default: [] */
   ignorePatterns?: string[];
@@ -60,11 +69,18 @@ export interface Options {
     pattern: string;
   }>;
 
-  /** Strategy for fixing hardcoded credentials: 'env', 'config', 'vault', 'auto' */
-  strategy?: 'env' | 'config' | 'vault' | 'auto';
-
   /** Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`). Default: true */
   allowPlaceholders?: boolean;
+
+  /**
+   * Words that mark a value as a self-evident stand-in rather than a secret,
+   * matched as a WHOLE token inside the value. REPLACES the built-in list.
+   * Default: DEFAULT_PLACEHOLDER_WORDS
+   */
+  placeholderWords?: string[];
+
+  /** Extra placeholder words, ON TOP of `placeholderWords`. Default: [] */
+  additionalPlaceholderWords?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -299,12 +315,18 @@ export function isSecretShaped(value: string, minLength: number): boolean {
  * Words that only ever appear in a value a developer expects to replace.
  * Matched as whole words inside the string, so `changeme`, `change-me`,
  * `YOUR_API_KEY`, and `<your-secret-here>` are all covered.
+ *
+ * Fifteen English words deciding whether a finding is suppressed, so this is a
+ * DEFAULT rather than a fixed surface: a house convention spelled differently
+ * (`fillmein`, `nopass`) is added through `additionalPlaceholderWords`, and a
+ * codebase where `sample` or `example` names a real value drops it through
+ * `placeholderWords`. Neither changes that the comparison is whole-token.
  */
-const PLACEHOLDER_WORDS = new Set([
+const DEFAULT_PLACEHOLDER_WORDS = [
   'changeme', 'change', 'replaceme', 'replace', 'yours', 'your',
   'placeholder', 'example', 'sample', 'dummy', 'todo', 'tbd',
   'redacted', 'notreal', 'xxx',
-]);
+];
 
 /**
  * True when the value is a self-evident stand-in rather than a secret.
@@ -322,7 +344,10 @@ const PLACEHOLDER_WORDS = new Set([
  * Verified against benchmarks/corpus/CWE-798/safe/test-placeholder-values.js,
  * where `secret: '<your-secret-here>'` was reported at CVSS 9.8.
  */
-export function isPlaceholderValue(value: string): boolean {
+export function isPlaceholderValue(
+  value: string,
+  words: ReadonlySet<string>,
+): boolean {
   const trimmed = value.trim();
   if (trimmed.length === 0) return false;
 
@@ -338,7 +363,7 @@ export function isPlaceholderValue(value: string): boolean {
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
-  return tokens.some(token => PLACEHOLDER_WORDS.has(token));
+  return tokens.some(token => words.has(token));
 }
 
 /**
@@ -410,6 +435,18 @@ const SECRET_SIDE_SLOT =
  * one of these vendors also issues a server-side credential — Bugsnag has a
  * personal auth token, Sentry an auth token, PostHog a personal API key — and
  * those live in differently-named slots that these patterns do not match.
+ *
+ * @protocol-constant Each entry restates one vendor's published contract — the
+ * npm specifiers that prove their SDK is loaded, and the slot name that vendor
+ * documents as safe to ship to a browser (Sentry's DSN, Segment's write key,
+ * Firebase's web API key). It is a set of third-party API facts rather than a
+ * word list about a domain, and it exists to close a false positive: these keys
+ * ARE hard-coded in client code on purpose. A consumer who could edit it gets
+ * both failure directions at once — deleting an entry re-asserts the very false
+ * positive it was written to close, and adding one turns the allowlist into a
+ * way to name any vendor and have a genuine server-side secret in a
+ * `<vendor>Key` slot go unreported. Widening it is a change to the plugin, made
+ * against the vendor's own documentation, not a consumer setting.
  */
 const PUBLISHABLE_VENDORS: ReadonlyArray<{
   vendor: string;
@@ -529,7 +566,7 @@ type CredentialConfidence = 'structural' | 'ambiguous';
 function looksLikeCredential(
   value: string,
   options: Required<Pick<Options, 'minLength' | 'detectApiKeys' | 'detectPasswords' | 'detectTokens' | 'detectDatabaseStrings' | 'customPatterns'>>,
-  ignorePatterns: RegExp[]
+  ignorePatterns: readonly PatternTest[]
 ): { isCredential: boolean; type: string; confidence: CredentialConfidence } {
   const NONE = { isCredential: false, type: '', confidence: 'ambiguous' as const };
 
@@ -659,39 +696,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         fix: 'Use AWS Secrets Manager, HashiCorp Vault, Azure Key Vault, or similar',
         documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
       }),
-      strategyEnv: formatLLMMessage({
-        icon: MessageIcons.DEVELOPMENT,
-        issueName: 'Environment Variable Strategy',
-        description: 'Move credentials to environment variables',
-        severity: 'MEDIUM',
-        fix: 'Store credentials in environment variables (process.env)',
-        documentationLink: 'https://12factor.net/config',
-      }),
-      strategyConfig: formatLLMMessage({
-        icon: MessageIcons.DEVELOPMENT,
-        issueName: 'Configuration File Strategy',
-        description: 'Store credentials in encrypted configuration files',
-        severity: 'MEDIUM',
-        fix: 'Use encrypted configuration files with proper access controls',
-        documentationLink: 'https://owasp.org/www-project-cheat-sheets/cheatsheets/Configuration_Management_Cheat_Sheet.html',
-      }),
-      strategyVault: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Secret Vault Strategy',
-        cwe: 'CWE-798',
-        description: 'Use dedicated secret management system',
-        severity: 'HIGH',
-        fix: 'Implement HashiCorp Vault, AWS Secrets Manager, or similar secret vault',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
-      }),
-      strategyAuto: formatLLMMessage({
-        icon: MessageIcons.DEVELOPMENT,
-        issueName: 'Context-Aware Strategy',
-        description: 'Apply context-aware credential management',
-        severity: 'MEDIUM',
-        fix: 'Choose strategy based on deployment environment and security requirements',
-        documentationLink: 'https://owasp.org/www-project-cheat-sheets/cheatsheets/Secrets_Management_Cheat_Sheet.html',
-      }),
     },
     schema: [
       {
@@ -753,17 +757,24 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Custom credential patterns to detect',
           },
-          strategy: {
-            type: 'string',
-            enum: ['env', 'config', 'vault', 'auto'],
-            default: 'auto',
-            description: 'Strategy for fixing hardcoded credentials (auto = smart detection)'
-          },
           allowPlaceholders: {
             type: 'boolean',
             default: true,
             description:
               'Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`)',
+          },
+          placeholderWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_PLACEHOLDER_WORDS,
+            description:
+              'Words that mark a value as a self-evident stand-in rather than a secret, matched as a WHOLE token inside the value and never as a substring. Replaces the built-in list. Read only when `allowPlaceholders` is true.',
+          },
+          additionalPlaceholderWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra placeholder words, on top of `placeholderWords`.',
           },
         },
         additionalProperties: false,
@@ -780,8 +791,9 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectTokens: true,
       detectDatabaseStrings: true,
       customPatterns: [],
-      strategy: 'auto',
       allowPlaceholders: true,
+      placeholderWords: DEFAULT_PLACEHOLDER_WORDS,
+      additionalPlaceholderWords: [],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -796,24 +808,25 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectDatabaseStrings = true,
       customPatterns = [],
       allowPlaceholders = true,
+      placeholderWords = DEFAULT_PLACEHOLDER_WORDS,
+      additionalPlaceholderWords = [],
     }: Options = options;
 
+    const placeholderWordSet: ReadonlySet<string> = new Set([
+      ...placeholderWords,
+      ...additionalPlaceholderWords,
+    ]);
+
     const filename = context.filename;
-    const isTestFile = allowInTests && (
-      filename.includes('.test.') ||
-      filename.includes('.spec.') ||
-      filename.includes('.fixture.') ||
-      filename.includes('.mock.') ||
-      filename.includes('__tests__') ||
-      filename.includes('__mocks__') ||
-      filename.includes('/test/') ||
-      filename.includes('/tests/') ||
-      filename.includes('/fixtures/') ||
-      filename.includes('/mocks/')
-    );
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     // Compile ignore patterns to regex
-    const compiledIgnorePatterns = ignorePatterns.map((pattern: string) => new RegExp(pattern));
+    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+    // "Invalid regular expression" out of create(), killing the whole lint
+    // run rather than just this rule. compileUserPattern degrades both to a
+    // substring match.
+    const compiledIgnorePatterns = compileUserPatterns(ignorePatterns as string[]);
 
     const detectionOptions = {
       minLength,
@@ -823,7 +836,6 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectDatabaseStrings,
       customPatterns,
     };
-
 
     /**
      * Variable / property names that hold UI labels and HTML attribute
@@ -1161,7 +1173,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // Self-evident placeholders are not secrets. Gated to non-structural
       // findings only: a JWT, an `sk_live_` key, or a DB connection string
       // keeps its shape whatever words it contains, so those still report.
-      const isPlaceholder = allowPlaceholders && isPlaceholderValue(value);
+      const isPlaceholder = allowPlaceholders && isPlaceholderValue(value, placeholderWordSet);
       if (isPlaceholder && confidence !== 'structural') {
         finalIsCredential = false;
       }

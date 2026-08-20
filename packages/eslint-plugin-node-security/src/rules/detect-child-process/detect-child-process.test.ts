@@ -859,3 +859,70 @@ describe('detect-child-process — coverage completion', () => {
     });
   });
 });
+
+/**
+ * REGRESSION LOCK — TypeScript casts must not hide taint (shared provenance.ts).
+ *
+ * `req.query.url` is typed `string | string[] | ParsedQs | undefined` by Express,
+ * so a TypeScript handler CANNOT concatenate it without `as string`. The shared
+ * taint reader `makeReadsTaintSource` dispatched on `node.type` and fell through
+ * to `default: return false` for `TSAsExpression`, so every rule built on it was
+ * blind to the shape its TypeScript users must write.
+ *
+ * This case FAILS on the pre-fix provenance.ts.
+ */
+ruleTester.run('detect-child-process-ts-cast-taint', detectChildProcess, {
+  valid: [
+    'const { exec } = require("child_process"); exec("git status" as string);',
+  ],
+  invalid: [
+    {
+      code: 'const { exec } = require("child_process"); app.get("/r", (req, res) => { exec("git clone " + (req.query.url as string)); });',
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+  ],
+});
+
+/**
+ * `taintSources` — the option no test had ever set, so the branch that swaps
+ * the rule's taint roots shipped unexecuted.
+ *
+ * Isolating it takes care. `job.query.host` reports under the DEFAULTS, because
+ * `query` is a request property in the shared taint reader whatever the
+ * receiver is called — so a fixture built on `.query` would have proved
+ * nothing about the roots. `job.hostname` has no such property evidence: the
+ * root name is the only thing that can decide it, which is exactly the branch
+ * under test.
+ *
+ * Each pair is the same source under the default and under the option, with
+ * opposite verdicts. Both directions, because the option REPLACES the built-in
+ * roots rather than extending them — the narrowing case is what pins that, and
+ * it is the behaviour a reader must know before writing a config.
+ */
+ruleTester.run('detect-child-process — taintSources', detectChildProcess, {
+  valid: [
+    // CONTROL for widening: `job` is not a default root, and `hostname` is not
+    // a request property, so there is no evidence and nothing is reported.
+    "const cp = require('child_process'); cp.exec('ping -c 1 ' + job.hostname);",
+    // NARROWING: a root list without `req` silences a case the defaults report.
+    {
+      code: "const cp = require('child_process'); cp.exec('ping -c 1 ' + req.hostname);",
+      options: [{ taintSources: ['job'] }],
+    },
+  ],
+  invalid: [
+    // WIDENING: naming the queue payload as a root makes the identical first
+    // valid case report. A job payload really is attacker-reachable whenever
+    // the queue is fed from user input, which is why this option exists.
+    {
+      code: "const cp = require('child_process'); cp.exec('ping -c 1 ' + job.hostname);",
+      options: [{ taintSources: ['job'] }],
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+    // CONTROL for narrowing: identical source, default roots.
+    {
+      code: "const cp = require('child_process'); cp.exec('ping -c 1 ' + req.hostname);",
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+  ],
+});

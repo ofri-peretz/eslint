@@ -97,8 +97,14 @@ const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString,
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `safeParserOptions` | `string[]` | `["noent","resolveExternals","expandEntityReferences","entityResolver"]` | Options that indicate safe configuration |
-| `xmlValidationFunctions` | `string[]` | `["validateXml","sanitizeXml","cleanXml","parseXmlSafe"]` | Functions that validate XML input |
+| `safeParserOptions` | `string[]` | `["noent","resolveExternals","expandEntityReferences","entityResolver","processEntities","dtdload"]` | Parser option keys whose disabled value proves entity expansion is off |
+| `xmlValidationFunctions` | `string[]` | `["validateXml","sanitizeXml","cleanXml","parseXmlSafe"]` | Function names that count as XML input validation |
+| `xmlModules` | `string[]` | `["libxmljs","libxmljs2","xml2js","xml2json","fast-xml-parser","@xmldom/xmldom","xmldom","node-expat","xpath"]` | Module specifiers whose parsers can resolve an external entity, matched against a resolved import binding. Replaces the built-in list. |
+| `additionalXmlModules` | `string[]` | `[]` | Extra XML package specifiers, on top of `xmlModules`. |
+| `xmlParseMethods` | `string[]` | `["parseFromString","parseString","parseStringPromise","parseXml","parseXmlAsync","parseXmlString","parseXML"]` | Method names that only ever parse XML, matched as an exact method name whatever the receiver. Replaces the built-in list. |
+| `additionalXmlParseMethods` | `string[]` | `[]` | Extra XML-only parse method names, on top of `xmlParseMethods`. |
+| `dangerousParserOptions` | `string[]` | `["resolveExternals","expandEntityReferences","noent","processEntities","dtdload"]` | Parser option keys whose `true` value turns entity expansion ON. Replaces the built-in list. |
+| `additionalDangerousParserOptions` | `string[]` | `[]` | Extra entity-expansion option keys, on top of `dangerousParserOptions`. |
 
 ## Error Message Format
 

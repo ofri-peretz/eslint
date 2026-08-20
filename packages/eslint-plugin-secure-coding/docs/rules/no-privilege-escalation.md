@@ -129,6 +129,12 @@ if (hasRole(user, "admin")) { user.role = req.body.role; }
 | `roleCheckPatterns` | `string[]` | `["hasRole","checkRole","isAdmin","isAuthorized","hasPermission","checkPermission","verifyRole","requireRole"]` | Role check patterns to recognize |
 | `userInputPatterns` | `string[]` | `[]` | Additional user input patterns to check (regex strings) |
 | `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
+| `privilegeProperties` | `string[]` | `["role","permission","privilege","access"]` | Property names whose assignment is an authorisation decision, compared case-insensitively as an exact name. Replaces the built-in list. |
+| `additionalPrivilegeProperties` | `string[]` | `[]` | Extra privilege property names, on top of `privilegeProperties`. |
+| `privilegeTerms` | `string[]` | `["setRole","updateRole","elevate","grant role","grant permission","grant access","grant privilege","promote user","promote admin","revoke role","revoke permission","revoke access","revoke privilege"]` | Privilege operations, matched as whole words or whole consecutive phrases of a callee name — never as a substring. Replaces the built-in list. |
+| `additionalPrivilegeTerms` | `string[]` | `[]` | Extra privilege operation terms, on top of `privilegeTerms`. |
+| `barePrivilegeVerbs` | `string[]` | `["grant","promote","revoke"]` | Verbs that count only when they are the WHOLE callee name, because their ordinary English sense dominates otherwise. Replaces the built-in list. |
+| `additionalBarePrivilegeVerbs` | `string[]` | `[]` | Extra bare privilege verbs, on top of `barePrivilegeVerbs`. |
 
 ### Example Configuration
 

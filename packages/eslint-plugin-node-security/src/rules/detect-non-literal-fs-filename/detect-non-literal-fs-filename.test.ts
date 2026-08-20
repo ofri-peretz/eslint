@@ -296,13 +296,29 @@ describe('detect-non-literal-fs-filename', () => {
           code: 'fs.readFile("/path/to/file.txt", callback);',
           options: [{ allowLiterals: true }],
         },
+        /**
+         * MOVED FROM `invalid` on 2026-08-17. This test pinned a false positive.
+         *
+         * It sat directly beside `fs.readFile("../../../etc/passwd")` as though
+         * the two were one shape. They are not: the literal branch tested
+         * `/\.\.[/\\]/`, so it matched every relative path that walks up a
+         * directory, and a census of ALL 37 findings this rule produces over
+         * 3.0M lines of open-source code found exactly that to be its single
+         * largest false-positive class — `cp('../../../docs', …)`,
+         * `readFile('../package.json')`.
+         *
+         * Traversal is an attacker steering a path. A literal is fixed by
+         * whoever typed it, so the only literal worth reporting is one that
+         * already arrives somewhere sensitive. See `targetsSensitiveLocation`
+         * and `literal-paths.test.ts`.
+         */
+        { options: [{ reportUnresolvedPaths: true }], code: 'fs.readFile("../config.json", callback);' },
       ],
       invalid: [
-        // Path traversal patterns in literals should still be flagged as CRITICAL
+        // A hardcoded path is a finding only when it ARRIVES somewhere
+        // sensitive. `../../../etc/passwd` does; `../config.json` does not, and
+        // it moved to `valid` on 2026-08-17 — see the note there.
         { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile("../../../etc/passwd", callback);',
-          errors: [{ messageId: 'fsPathTraversal' }],
-        },
-        { options: [{ reportUnresolvedPaths: true }],           code: 'fs.readFile("../config.json", callback);',
           errors: [{ messageId: 'fsPathTraversal' }],
         },
         // Note: Rule only checks fs.method() directly, not imported/aliased calls
@@ -631,5 +647,78 @@ ruleTester.run('lock: composition depth is bounded', detectNonLiteralFsFilename,
   invalid: [
     // Within the bound, the free name is still found.
     { code: "const fs = require('fs'); fs.readFile(a(b(shallowName)));", errors: 1 },
+  ],
+});
+
+/**
+ * `taintSources` and `additionalMethods` — the two live options no test had
+ * ever set, so their branches shipped unexecuted. (A third,
+ * `allowedExtensions`, was declared in the schema alone and read by nothing;
+ * it is deleted, see the note in the rule source.)
+ *
+ * Each is a PAIR on identical source: default verdict and configured verdict,
+ * opposite to each other.
+ *
+ * `taintSources` REPLACES the built-in `['process']` rather than extending it,
+ * which the narrowing case pins. That matters more here than elsewhere: the
+ * default is deliberately `process` ONLY, because request roots belong to
+ * `no-arbitrary-file-access` and listing them in both rules double-reports one
+ * line at two severities.
+ */
+ruleTester.run('detect-non-literal-fs-filename — taintSources', detectNonLiteralFsFilename, {
+  valid: [
+    // CONTROL for widening: `job` is not a root, so the concatenation carries
+    // no attacker-reachable part.
+    "fs.readFileSync('/etc/app/' + job.env.NAME);",
+    // NARROWING: a root list without `process` silences the case the default
+    // reports — proof the option replaces rather than extends.
+    {
+      code: "fs.readFileSync('/etc/app/' + process.env.NAME);",
+      options: [{ taintSources: ['job'] }],
+    },
+  ],
+  invalid: [
+    // WIDENING: naming the queue payload as a root makes the identical first
+    // valid case report.
+    {
+      code: "fs.readFileSync('/etc/app/' + job.env.NAME);",
+      options: [{ taintSources: ['job'] }],
+      errors: [{ messageId: 'fsPathTraversal' }],
+    },
+    // CONTROL for narrowing: identical source, default roots.
+    {
+      code: "fs.readFileSync('/etc/app/' + process.env.NAME);",
+      errors: [{ messageId: 'fsPathTraversal' }],
+    },
+  ],
+});
+
+ruleTester.run('detect-non-literal-fs-filename — additionalMethods', detectNonLiteralFsFilename, {
+  valid: [
+    // CONTROL: `slurpSync` is not a built-in fs method, so the same traversal
+    // through the same fs binding is not judged.
+    "const fs = require('fs'); fs.slurpSync('/etc/app/' + process.env.NAME);",
+  ],
+  invalid: [
+    // Naming the method makes the identical source report. This is the whole
+    // point of the option: a project whose fs surface includes helpers the
+    // rule has never heard of is otherwise invisible to it.
+    //
+    // Note the receiver still has to resolve to the fs module — the option
+    // extends the METHOD list, it does not make every call on every object a
+    // filesystem write. `myFs.slurpSync(...)` with no `require('fs')` in view
+    // stays quiet even with the option set, which is the correct trade: this
+    // rule reports at CRITICAL and must not fire on an arbitrary method call
+    // that happens to share a name.
+    {
+      code: "const fs = require('fs'); fs.slurpSync('/etc/app/' + process.env.NAME);",
+      options: [{ additionalMethods: ['slurpSync'] }],
+      errors: [{ messageId: 'fsPathTraversal' }],
+    },
+    {
+      code: "import fs from 'node:fs'; fs.slurpSync('/etc/app/' + process.env.NAME);",
+      options: [{ additionalMethods: ['slurpSync'] }],
+      errors: [{ messageId: 'fsPathTraversal' }],
+    },
   ],
 });

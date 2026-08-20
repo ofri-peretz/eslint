@@ -15,15 +15,42 @@
  * - Cause DoS through entity expansion (billion laughs)
  * - Perform SSRF attacks
  *
- * False Positive Reduction:
- * This rule uses security utilities to reduce false positives by detecting:
- * - Safe XML libraries (libxmljs with secure config, xmldom with entity resolution disabled)
- * - Proper parser configuration
- * - JSDoc annotations (@safe, @xxe-safe)
- * - Input validation and sanitization
+ * WHAT THIS RULE USED TO DECIDE FROM, AND WHY IT NO LONGER DOES
+ *
+ * Measured in `benchmarks/rule-corpus/secure-coding__no-xxe-injection/`
+ * (F1 42.1%, recall 33.3%), both halves of the rule were reading spellings:
+ *
+ *   - A receiver was "an XML parser" when its NAME matched `/xml|dom|parser/i`,
+ *     so a `csv-parse` binding called `parser` was a sink and an imported
+ *     `XMLParser` instance called `feedReader` was not.
+ *   - Input was "untrusted" when the argument was a bare identifier whose name
+ *     CONTAINED one of `req body query params input xml data`. So
+ *     `parser.parse(metadata)` was reported (`data` ⊂ `metadata`) while
+ *     `parser.parse(feed)` — the same value, honestly named — was silent, and
+ *     `parser.parse(req.body.feed)`, the single most common written form of the
+ *     bug, was silent too because a MemberExpression is not an Identifier.
+ *
+ * Both are now resolved bindings. A sink is a call whose callee resolves to a
+ * known XML package, or whose receiver was constructed from one, or whose
+ * method name is XML-specific across every parser that has one. Input is
+ * untrusted unless `isStaticExpression` can prove it cannot change.
+ *
+ * Consequences worth stating, because each one closed a measured defect:
+ *   - `libxmljs.parseXml` — the API the fix text below names — was not in the
+ *     method list at all. `parseXML` and `parseXmlString` were; `parseXml`,
+ *     the real one, was not.
+ *   - `parseString(req.body, cb)` imported from xml2js was invisible: only
+ *     member-expression callees were classified.
+ *   - `new XMLHttpRequest()` was reported as an unsafe XML parser on sight.
+ *     XHR parses nothing; it has carried those letters since 1999 and is used
+ *     to POST JSON. That report is gone.
+ *   - `new DOMParser()` was reported on sight too. The BROWSER global cannot
+ *     perform XXE — per the HTML standard user agents do not fetch external
+ *     entities — so only the parse call, and only with non-static input, is
+ *     evidence of anything.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
@@ -39,107 +66,137 @@ export interface Options {
 
   /** Functions that validate/sanitize XML input */
   xmlValidationFunctions?: string[];
+
+  /**
+   * Module specifiers whose parsers can resolve an external entity, matched
+   * against a RESOLVED import binding. REPLACES the built-in list.
+   * Default: DEFAULT_XML_MODULES
+   */
+  xmlModules?: string[];
+
+  /** Extra XML package specifiers, ON TOP of the built-ins. Default: [] */
+  additionalXmlModules?: string[];
+
+  /**
+   * Method names that only ever parse XML, whatever the receiver. REPLACES the
+   * built-in list. Default: DEFAULT_XML_PARSE_METHODS
+   */
+  xmlParseMethods?: string[];
+
+  /** Extra XML-only parse method names, ON TOP of the built-ins. Default: [] */
+  additionalXmlParseMethods?: string[];
+
+  /**
+   * Parser option keys whose `true` value turns entity expansion ON. REPLACES
+   * the built-in list. Default: DEFAULT_DANGEROUS_PARSER_OPTIONS
+   */
+  dangerousParserOptions?: string[];
+
+  /** Extra entity-expansion option keys, ON TOP of the built-ins. Default: [] */
+  additionalDangerousParserOptions?: string[];
 }
 
 type RuleOptions = [Options?];
 
-/**
- * Does this receiver name an XML parser?
- *
- * Allowlist rather than a denylist of non-XML `parse` receivers: a new
- * `csv.parse` or `toml.parse` should be silent by default, and being wrong in
- * that direction costs a false positive on every consumer's JSON handling.
- */
-/**
- * Receivers that name an XML parser.
- *
- * Explicit XML tokens only. The previous shape was `/xml|dom|libxml|parser$/i`,
- * which decided XXE from a name's spelling: the `parser$` SUFFIX matched
- * `jsonParser`, `csvParser`, and `htmlParser`, and an unanchored `dom` matched
- * `random`, `domain`, and `freedom`. A receiver's name is not evidence about
- * the format it parses, so the suffix is gone and `dom` is anchored to the
- * shapes that really are DOM parsers.
- *
- * A receiver named exactly `parser` stays: it is the conventional name for the
- * XML parser in this rule's own sinks, and being anchored it cannot reach
- * `jsonParser`. It is still a name rather than a resolved binding — narrowing
- * it further wants construction-site resolution, not a tighter regex.
- */
-const XML_RECEIVER = /xml|^dom$|domparser|jsdom|libxml|^sax$|^expat$|^parser$/i;
+const DEFAULT_SAFE_PARSER_OPTIONS = [
+  'noent',
+  'resolveExternals',
+  'expandEntityReferences',
+  'entityResolver',
+  'processEntities',
+  'dtdload',
+];
 
-const isXmlReceiver = (node: TSESTree.Node): boolean => {
-  if (node.type === AST_NODE_TYPES.Identifier)
-    return XML_RECEIVER.test(node.name);
-  if (
-    node.type === AST_NODE_TYPES.MemberExpression &&
-    node.property.type === AST_NODE_TYPES.Identifier
-  ) {
-    return XML_RECEIVER.test(node.property.name);
-  }
-  if (
-    node.type === AST_NODE_TYPES.NewExpression &&
-    node.callee.type === AST_NODE_TYPES.Identifier
-  ) {
-    return XML_RECEIVER.test(node.callee.name);
-  }
-  return false;
-};
+const DEFAULT_XML_VALIDATION_FUNCTIONS = [
+  'validateXml',
+  'sanitizeXml',
+  'cleanXml',
+  'parseXmlSafe',
+];
 
 /**
- * Check if this is an XML parsing operation
+ * Packages whose parsers can be made to resolve an external entity.
+ *
+ * Exact module specifiers, matched against a RESOLVED import binding — this is
+ * what the file actually loaded, not what something is called.
+ *
+ * A published package list is never finished: an in-house wrapper around
+ * libxmljs re-exports the same sink under a private specifier and is invisible
+ * here. `additionalXmlModules` is that wrapper's remedy; `xmlModules` is the
+ * remedy for a consumer who has audited one of these off the list.
  */
-const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
-  const callee = node.callee;
+const DEFAULT_XML_MODULES = [
+  'libxmljs',
+  'libxmljs2',
+  'xml2js',
+  'xml2json',
+  'fast-xml-parser',
+  '@xmldom/xmldom',
+  'xmldom',
+  'node-expat',
+  'xpath',
+];
 
-  // Check for XML library method calls
-  if (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier
-  ) {
-    const method = callee.property.name;
+/**
+ * Method names that only ever parse XML, on every library that ships one.
+ *
+ * `parse` is deliberately absent: `JSON.parse`, `Date.parse`, `path.parse` and
+ * `csv-parse` all own it, and this rule reported CWE-611 on `JSON.parse`
+ * before the receiver was checked at all. A bare `parse` is a sink only when
+ * its receiver resolves to an XML package.
+ *
+ * "On every library that ships one" is a claim about the libraries known TODAY.
+ * A consumer whose parser spells it `readXmlDocument` extends the list rather
+ * than losing the check.
+ */
+const DEFAULT_XML_PARSE_METHODS = [
+  'parseFromString',
+  'parseString',
+  'parseStringPromise',
+  'parseXml',
+  'parseXmlAsync',
+  'parseXmlString',
+  'parseXML',
+];
 
-    // These names are XML-specific — the receiver adds nothing.
-    if (['parseFromString', 'parseString', 'parseXmlString', 'parseXML'].includes(method)) {
-      return true;
-    }
+/** Option keys whose enabled value turns entity expansion ON. */
+const DEFAULT_DANGEROUS_PARSER_OPTIONS = [
+  'resolveExternals',
+  'expandEntityReferences',
+  'noent',
+  'processEntities',
+  'dtdload',
+];
 
-    // `parse` is not. `JSON.parse(fs.readFileSync(f, 'utf-8'))` matched this
-    // rule and reported CWE-611 on JSON — measured across this monorepo. So a
-    // bare `parse` has to be positively identified as XML by its receiver;
-    // `Date.parse`, `path.parse`, `url.parse` and `JSON.parse` all fall out.
-    if (method === 'parse') {
-      return isXmlReceiver(callee.object);
-    }
-  }
-
-  // Check for constructor calls
-  if (callee.type === 'Identifier' &&
-      ['DOMParser', 'XMLHttpRequest', 'ActiveXObject'].includes(callee.name)) {
-    return true;
-  }
-
-  return false;
+/**
+ * The statically knowable name of a parser-option key.
+ *
+ * `{ noent: true }` and `{ 'noent': true }` configure the same parser; a
+ * computed key does not name anything the rule can read.
+ */
+const optionKey = (prop: TSESTree.ObjectLiteralElement): string | undefined => {
+  if (prop.type !== AST_NODE_TYPES.Property || prop.computed) return undefined;
+  if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
+  return prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string'
+    ? prop.key.value
+    : undefined;
 };
 
 /**
  * Check if parser options enable dangerous features
  */
-const hasDangerousParserOptions = (optionsNode: TSESTree.Node): boolean => {
-  if (optionsNode.type !== 'ObjectExpression') {
-    return false;
-  }
+const hasDangerousParserOptions = (
+  optionsNode: TSESTree.Node | undefined,
+  dangerousKeys: ReadonlySet<string>,
+): boolean => {
+  if (optionsNode?.type !== AST_NODE_TYPES.ObjectExpression) return false;
 
-  // Check for dangerous options
   for (const prop of optionsNode.properties) {
-    if (prop.type === 'Property' &&
-        prop.key.type === 'Identifier' &&
-        ['resolveExternals', 'expandEntityReferences', 'noent'].includes(prop.key.name)) {
-
-      // Check if the value enables dangerous features
-      if (prop.value.type === 'Literal' && prop.value.value === true) {
-        return true;
-      }
-    }
+    const key = optionKey(prop);
+    if (key === undefined || !dangerousKeys.has(key)) continue;
+    // `prop` is a Property here — `optionKey` returns undefined for anything else.
+    const { value } = prop as TSESTree.Property;
+    if (value.type === AST_NODE_TYPES.Literal && value.value === true) return true;
   }
 
   return false;
@@ -208,10 +265,58 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
           safeParserOptions: {
             type: 'array',
             items: { type: 'string' },
+            // Mirrors the destructuring default in create(). Without it the
+            // schema said "any array of strings, default unspecified" while
+            // the rule behaved as if specific entity-expansion switches were
+            // named, and the generated docs could not state either.
+            default: DEFAULT_SAFE_PARSER_OPTIONS,
+            description: 'Parser option keys whose disabled value proves entity expansion is off',
           },
           xmlValidationFunctions: {
             type: 'array',
             items: { type: 'string' },
+            default: DEFAULT_XML_VALIDATION_FUNCTIONS,
+            description: 'Function names that count as XML input validation',
+          },
+          xmlModules: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_XML_MODULES,
+            description:
+              'Module specifiers whose parsers can resolve an external entity, matched against a resolved import binding. Replaces the built-in list.',
+          },
+          additionalXmlModules: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra XML package specifiers, on top of `xmlModules`.',
+          },
+          xmlParseMethods: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_XML_PARSE_METHODS,
+            description:
+              'Method names that only ever parse XML, matched as an exact method name whatever the receiver. Replaces the built-in list.',
+          },
+          additionalXmlParseMethods: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra XML-only parse method names, on top of `xmlParseMethods`.',
+          },
+          dangerousParserOptions: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_DANGEROUS_PARSER_OPTIONS,
+            description:
+              'Parser option keys whose `true` value turns entity expansion ON. Replaces the built-in list.',
+          },
+          additionalDangerousParserOptions: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description:
+              'Extra entity-expansion option keys, on top of `dangerousParserOptions`.',
           },
         },
         additionalProperties: false,
@@ -220,8 +325,14 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      safeParserOptions: ['noent', 'resolveExternals', 'expandEntityReferences', 'entityResolver'],
-      xmlValidationFunctions: ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],
+      safeParserOptions: DEFAULT_SAFE_PARSER_OPTIONS,
+      xmlValidationFunctions: DEFAULT_XML_VALIDATION_FUNCTIONS,
+      xmlModules: DEFAULT_XML_MODULES,
+      additionalXmlModules: [],
+      xmlParseMethods: DEFAULT_XML_PARSE_METHODS,
+      additionalXmlParseMethods: [],
+      dangerousParserOptions: DEFAULT_DANGEROUS_PARSER_OPTIONS,
+      additionalDangerousParserOptions: [],
     },
   ],
   create(
@@ -232,35 +343,115 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     // (@typescript-eslint/utils applyDefault) always seeds it from
     // `defaultOptions` above, so it can never be undefined at runtime.
     const {
-      safeParserOptions = ['noent', 'resolveExternals', 'expandEntityReferences', 'entityResolver'],
-      xmlValidationFunctions = ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],
+      safeParserOptions = DEFAULT_SAFE_PARSER_OPTIONS,
+      xmlValidationFunctions = DEFAULT_XML_VALIDATION_FUNCTIONS,
+      xmlModules = DEFAULT_XML_MODULES,
+      additionalXmlModules = [],
+      xmlParseMethods = DEFAULT_XML_PARSE_METHODS,
+      additionalXmlParseMethods = [],
+      dangerousParserOptions = DEFAULT_DANGEROUS_PARSER_OPTIONS,
+      additionalDangerousParserOptions = [],
     } = options!;
 
-    const filename = context.filename;
+    const xmlPackages = new Set([...xmlModules, ...additionalXmlModules]);
+    const parseMethods = new Set([...xmlParseMethods, ...additionalXmlParseMethods]);
+    const dangerousKeys = new Set([
+      ...dangerousParserOptions,
+      ...additionalDangerousParserOptions,
+    ]);
 
+    const filename = context.filename;
+    const sourceCode = context.sourceCode;
+
+    const reportData = (node: TSESTree.Node) => ({
+      filePath: filename,
+      line: String(node.loc.start.line),
+    });
+
+    /** Does this expression resolve to something exported by an XML package? */
+    const resolvesToXmlModule = (node: TSESTree.Node): boolean => {
+      const binding = resolveModuleBinding(node, sourceCode.getScope(node));
+      return binding !== undefined && xmlPackages.has(binding.module);
+    };
+
+    /**
+     * The options object a receiver was CONSTRUCTED with.
+     *
+     * fast-xml-parser takes its entity policy on `new XMLParser({...})` and not
+     * on `parse`, so the proof that a call is safe — or dangerous — lives at
+     * the construction site of the receiver, one binding away.
+     */
+    const constructionSite = (callee: TSESTree.Node): TSESTree.NewExpression | undefined => {
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return undefined;
+      const receiver = callee.object;
+
+      if (receiver.type === AST_NODE_TYPES.NewExpression) return receiver;
+      if (receiver.type !== AST_NODE_TYPES.Identifier) return undefined;
+
+      const variable = sourceCode
+        .getScope(receiver)
+        .references.find((reference) => reference.identifier === receiver)?.resolved;
+      const definition = variable?.defs[0];
+      if (definition?.type !== 'Variable') return undefined;
+      // A rebound binding may hold a different parser by the time it is used.
+      if (variable!.references.filter((reference) => reference.isWrite()).length !== 1) {
+        return undefined;
+      }
+      return definition.node.init?.type === AST_NODE_TYPES.NewExpression
+        ? definition.node.init
+        : undefined;
+    };
+
+    /**
+     * Is this call an XML parse?
+     *
+     * Three kinds of evidence, none of them a variable's spelling:
+     *   1. the method name is XML-specific on every library that ships it;
+     *   2. the callee itself resolves to an XML package export — this is what
+     *      catches `parseString(req.body, cb)` imported from xml2js and
+     *      `const parseDocument = libxmljs.parseXml` aliases;
+     *   3. the receiver was constructed from an XML package, which is what
+     *      makes `parser.parse(...)` a sink for fast-xml-parser and node-expat
+     *      while leaving the identically-shaped csv-parse call alone;
+     *   4. the call is passed an option key that exists on nothing but an XML
+     *      parser — `noent`, `resolveExternals`, `expandEntityReferences`.
+     *      Naming one of those is itself a statement about what is being
+     *      parsed, whatever the receiver happens to be bound to.
+     */
+    const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
+      const callee = node.callee;
+
+      if (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        !callee.computed &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
+        parseMethods.has(callee.property.name)
+      ) {
+        return true;
+      }
+
+      if (hasDangerousParserOptions(node.arguments[1], dangerousKeys)) return true;
+
+      if (resolvesToXmlModule(callee)) return true;
+
+      const construction = constructionSite(callee);
+      return construction !== undefined && resolvesToXmlModule(construction.callee);
+    };
 
     /**
      * Check if parser options are secure
      */
-    const hasSecureParserOptions = (optionsNode: TSESTree.Node): boolean => {
-      if (optionsNode.type !== 'ObjectExpression') {
-        return false;
-      }
+    const hasSecureParserOptions = (optionsNode: TSESTree.Node | undefined): boolean => {
+      if (optionsNode?.type !== AST_NODE_TYPES.ObjectExpression) return false;
 
-      // Check for secure options
       for (const prop of optionsNode.properties) {
-        if (prop.type === 'Property' &&
-            prop.key.type === 'Identifier' &&
-            safeParserOptions.includes(prop.key.name)) {
+        const key = optionKey(prop);
+        if (key === undefined || !safeParserOptions.includes(key)) continue;
 
-          // Check if the value is secure
-          if (prop.value.type === 'Literal' && prop.value.value === false) {
-            return true;
-          }
-          if (prop.value.type === 'Literal' && prop.value.value === null) {
-            return true;
-          }
-        }
+        // `prop` is a Property here — `optionKey` returns undefined otherwise.
+        const { value } = prop as TSESTree.Property;
+        if (value.type !== AST_NODE_TYPES.Literal) continue;
+        if (value.value === false || value.value === null) return true;
       }
 
       return false;
@@ -270,140 +461,92 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
      * Check if input has been validated
      */
     const isXmlInputValidated = (xmlSource: TSESTree.Node): boolean => {
-      // Check if the input comes from a validation function
       let current: TSESTree.Node | undefined = xmlSource;
 
       while (current) {
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'Identifier' &&
-            xmlValidationFunctions.includes(current.callee.name)) {
+        if (
+          current.type === AST_NODE_TYPES.CallExpression &&
+          current.callee.type === AST_NODE_TYPES.Identifier &&
+          xmlValidationFunctions.includes(current.callee.name)
+        ) {
           return true;
         }
-        current = current.parent as TSESTree.Node;
+        current = current.parent as TSESTree.Node | undefined;
       }
 
       return false;
     };
 
     /**
-     * Check if input source is untrusted
+     * Can this value be proven not to come from outside the program?
+     *
+     * The question the rule asks is inverted from the one it used to ask.
+     * "Is this untrusted?" has no evidence-based answer at a call site, which
+     * is why the old implementation guessed from spelling. "Can this be proven
+     * constant?" does: a literal, a template with no substitutions, or a
+     * single-assignment `const` folded from those. Everything else — a
+     * parameter, a member access, a call result — is reachable from the wire.
      */
-    const isUntrustedXmlSource = (xmlSource: TSESTree.Node): boolean => {
-      // Check for user input sources
-      if (xmlSource.type === 'Identifier') {
-        const varName = xmlSource.name.toLowerCase();
-
-        // Consider variables with safe/validated names as trusted
-        if (['clean', 'safe', 'validated', 'sanitized', 'validatedxml', 'sanitizedxml'].some(safe =>
-          varName.includes(safe)
-        )) {
-          return false;
-        }
-
-        return ['req', 'request', 'body', 'query', 'params', 'input', 'xml', 'data'].some(keyword =>
-          varName.includes(keyword)
-        );
-      }
-
-      // Check for file system reads (potentially untrusted)
-      let current: TSESTree.Node | undefined = xmlSource;
-      while (current) {
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'MemberExpression' &&
-            current.callee.property.type === 'Identifier' &&
-            ['readFileSync', 'readFile', 'createReadStream'].includes(current.callee.property.name)) {
-          return true; // File input is potentially untrusted
-        }
-        current = current.parent as TSESTree.Node;
-      }
-
-      return false;
-    };
+    const isTrustedXmlSource = (xmlSource: TSESTree.Node): boolean =>
+      isStaticExpression({ node: xmlSource, scope: sourceCode.getScope(xmlSource) });
 
     return {
-      // Check XML parsing calls
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isXmlParsingCall(node)) {
-          return;
-        }
+        if (!isXmlParsingCall(node)) return;
 
-        const args = node.arguments;
-        if (args.length === 0) {
-          return;
-        }
+        const xmlInput = node.arguments[0];
+        if (!xmlInput) return;
 
-        // Check XML input source
-        const xmlInput = args[0];
-        const isUntrusted = isUntrustedXmlSource(xmlInput);
-        const isValidated = isXmlInputValidated(xmlInput);
+        const callOptions = node.arguments[1];
+        const construction = constructionSite(node.callee);
+        const constructionOptions = construction?.arguments[0];
 
-        // Check if this parser call uses secure options
-        const hasSecureOptions = args.length >= 2 && hasSecureParserOptions(args[1]);
-
-        // CRITICAL: Untrusted XML input without validation (only if parser is not secure)
-        if (isUntrusted && !isValidated && !hasSecureOptions) {
+        // Entity expansion switched ON, at either site.
+        if (hasDangerousParserOptions(callOptions, dangerousKeys)) {
           context.report({
-            node: xmlInput,
-            messageId: 'untrustedXmlSource',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
+            node: callOptions as TSESTree.Node,
+            messageId: 'externalEntityEnabled',
+            data: reportData(node),
           });
-        }
-
-        // Check for dangerous parser options
-        if (args.length >= 2) {
-          const optionsArg = args[1];
-
-          if (hasDangerousParserOptions(optionsArg)) {
-            context.report({
-              node: optionsArg,
-              messageId: 'externalEntityEnabled',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-            return;
-          }
-
-          // DOMParser method safety is covered by constructor detection
-          // No need to report unsafeXmlParser for individual method calls
-        }
-      },
-
-      // Check XML parser constructor calls
-      NewExpression(node: TSESTree.NewExpression) {
-        const callee = node.callee;
-        if (callee.type !== 'Identifier' ||
-            !['DOMParser', 'XMLHttpRequest', 'ActiveXObject'].includes(callee.name)) {
           return;
         }
 
-        // Constructor calls for XML parsers are considered unsafe
+        if (hasDangerousParserOptions(constructionOptions, dangerousKeys)) {
+          context.report({
+            node: node.callee,
+            messageId: 'unsafeXmlParser',
+            data: reportData(node),
+          });
+          return;
+        }
+
+        // Entity expansion proven OFF, at either site.
+        if (hasSecureParserOptions(callOptions) || hasSecureParserOptions(constructionOptions)) {
+          return;
+        }
+
+        if (isTrustedXmlSource(xmlInput) || isXmlInputValidated(xmlInput)) return;
+
         context.report({
-          node,
-          messageId: 'unsafeXmlParser',
-          data: {
-            filePath: filename,
-            line: String(node.loc?.start.line ?? 0),
-          },
+          node: xmlInput,
+          messageId: 'untrustedXmlSource',
+          data: reportData(node),
         });
       },
 
-      // Check for dangerous XML literals
+      // A SYSTEM entity declared in the source itself. Multi-line XML is
+      // written as a template literal, so both string forms are read.
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string' && containsDangerousEntities(node.value)) {
-          context.report({
-            node,
-            messageId: 'xxeInjection',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-              safeAlternative: 'Use sanitized XML or remove entity declarations',
-            },
-          });
+          context.report({ node, messageId: 'xxeInjection', data: reportData(node) });
+        }
+      },
+
+      TemplateElement(node: TSESTree.TemplateElement) {
+        // `raw`, not `cooked`: a DOCTYPE carries no escape sequences, and
+        // `cooked` is null for a tagged template with an invalid escape.
+        if (containsDangerousEntities(node.value.raw)) {
+          context.report({ node, messageId: 'xxeInjection', data: reportData(node) });
         }
       },
     };

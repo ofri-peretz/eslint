@@ -11,12 +11,25 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { makeReadsTaintSource } from '../../utils/provenance';
+import { findVariable, makeReadsTaintSource } from '../../utils/provenance';
+import { resolveConstantString } from '../../utils/const-value';
 
-type MessageIds = 'unsafeDynamicRequire';
+type MessageIds = 'unsafeDynamicRequire' | 'unsafeDynamicImport';
 
 export interface Options {
-  /** Allow dynamic import() expressions. Default: false (stricter) */
+  /**
+   * Allow dynamic `import()` expressions. Default: `false` (stricter).
+   *
+   * `false` judges `import(x)` by exactly the same evidence as `require(x)` —
+   * it is the same loader with the same consequence, and in an ESM codebase it
+   * is the ONLY spelling available. It does not mean "report every dynamic
+   * import": `await import(\`./locales/${locale}.json\`)` stays silent for the
+   * same reason its require() twin does.
+   *
+   * For most of this rule's life the option was declared, schema'd, defaulted —
+   * and never read. `import(req.params.name)` was silent in every
+   * configuration, which the corpus caught.
+   */
   allowDynamicImport?: boolean;
 
   /**
@@ -67,6 +80,16 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
         fix: 'Use allowlist: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw Error("Not allowed")',
         documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
+      unsafeDynamicImport: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Dynamic import()',
+        cwe: 'CWE-95',
+        description:
+          'import() resolves and EVALUATES the module it is given, exactly as require() does. This specifier is reachable from request or process input, so an attacker chooses which file executes.',
+        severity: 'CRITICAL',
+        fix: 'Use allowlist: const ALLOWED = { csv: "./formatters/csv" }; const specifier = ALLOWED[name]; if (!specifier) throw Error("Not allowed"); await import(specifier)',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
     },
     schema: [
       {
@@ -106,6 +129,7 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       new Set((options.taintSources ?? DEFAULT_TAINT_SOURCES).map((s) => s.toLowerCase())),
     );
     const reportUnresolvedSpecifiers = options.reportUnresolvedSpecifiers ?? false;
+    const allowDynamicImport = options.allowDynamicImport ?? false;
 
 
     /**
@@ -116,6 +140,11 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
 
     /**
      * Check if a node is a reference to require
+     *
+     * `module.require(x)` is the same loader reached through the module object,
+     * and legacy plugin hosts use it precisely because it resolves relative to
+     * themselves. Matching it is exact membership on a Node built-in, not a name
+     * guess: in a CommonJS file `module` IS the module object.
      */
     const isRequireReference = (node: TSESTree.Node): boolean => {
       if (node.type === 'Identifier' && node.name === 'require') {
@@ -124,7 +153,14 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       if (node.type === 'Identifier' && requireVariables.has(node.name)) {
         return true;
       }
-      return false;
+      return (
+        node.type === 'MemberExpression' &&
+        !node.computed &&
+        node.object.type === 'Identifier' &&
+        node.object.name === 'module' &&
+        node.property.type === 'Identifier' &&
+        node.property.name === 'require'
+      );
     };
 
     /**
@@ -153,6 +189,27 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     const isDangerousSpecifier = (arg: TSESTree.Expression): boolean => {
       if (arg.type === 'Literal') return false;
       if (arg.type === 'TemplateLiteral' && arg.expressions.length === 0) return false;
+
+      // A `const` bound to a string literal is that string. Webpack's resolver
+      // vocabulary calls a specifier a `request`, so `const request =
+      // './loaders/babel-loader.js'` collides head-on with the taint ROOTS,
+      // which match a name: without this the rule reported a hard-coded path
+      // because of how it was spelled.
+      if (resolveConstantString(context.sourceCode, arg) !== null) return false;
+
+      // A bare parameter is a caller-side fact, whatever it is named. The
+      // rule's own contract says so — `reportUnresolvedSpecifiers` exists to
+      // restore the sweep — but the taint roots are matched by NAME, so
+      // `function resolveLoader(request) { require(request) }` was reported
+      // while the identical `function readMock(filePath)` was not. Same
+      // evidence, opposite verdict, decided by the spelling of a parameter.
+      if (arg.type === 'Identifier') {
+        const variable = findVariable(context.sourceCode, arg);
+        if (variable?.defs.length === 1 && variable.defs[0].type === 'Parameter') {
+          return reportUnresolvedSpecifiers;
+        }
+      }
+
       if (readsTaintSource(arg)) return true;
       return reportUnresolvedSpecifiers;
     };
@@ -164,12 +221,37 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
           if (node.init.type === 'Identifier' && node.init.name === 'require') {
             requireVariables.add(node.id.name);
           }
+          // `const requireCjs = createRequire(import.meta.url)` is the
+          // documented way to reach the CJS loader from ESM — the same binding
+          // one call deeper, and the shape every ESM plugin host uses.
+          if (
+            node.init.type === 'CallExpression' &&
+            node.init.callee.type === 'Identifier' &&
+            node.init.callee.name === 'createRequire'
+          ) {
+            requireVariables.add(node.id.name);
+          }
         }
       },
 
+      /**
+       * `import(x)` — the ESM spelling of the same loader.
+       *
+       * Judged by the same evidence as `require(x)`; `allowDynamicImport: true`
+       * opts out entirely for codebases that resolve their own specifiers.
+       */
+      ImportExpression(node: TSESTree.ImportExpression) {
+        if (allowDynamicImport) return;
+        if (!isDangerousSpecifier(node.source)) return;
+        context.report({ node, messageId: 'unsafeDynamicImport' });
+      },
+
       CallExpression(node: TSESTree.CallExpression) {
-        // Check for require() calls (direct or via variable)
-        if (node.callee.type !== 'Identifier') {
+        // Check for require() calls (direct, via variable, or module.require)
+        if (
+          node.callee.type !== 'Identifier' &&
+          node.callee.type !== 'MemberExpression'
+        ) {
           return;
         }
 

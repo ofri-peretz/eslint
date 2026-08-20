@@ -74,10 +74,11 @@ Privacy regulations worldwide require that users provide informed consent before
   }
 }}%%
 flowchart TD
-    A[Analytics Call] --> B{Inside If/Ternary?}
-    B -->|Yes| C[✅ Compliance Pattern]
+    A[Analytics Call] --> B{Enclosing guard tests consent?}
     B -->|No| D[🚨 Potential Privacy Violation]
-    D --> E[💡 Suggest Consent Wrap]
+    B -->|Yes| C{Is the call on the GRANTED branch?}
+    C -->|Yes| E[✅ Compliance Pattern]
+    C -->|No| D
 ```
 
 ### Why This Matters
@@ -90,7 +91,25 @@ flowchart TD
 
 ## Configuration
 
-This rule has no configuration options in the current version.
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `consentIdentifiers` | `string[]` | `["consent","gdpr","optin","cookiesaccepted","trackingallowed"]` | Words that mark an identifier as a consent flag; replaces the default vocabulary |
+
+Consent has no API to bind to — it is a boolean the product decides on — so the
+guard is recognised by NAME. That name test can only ever silence a finding,
+never produce one, so getting the vocabulary wrong costs recall rather than
+trust. It is configurable for exactly that reason:
+
+```json
+{
+  "rules": {
+    "browser-security/no-tracking-without-consent": [
+      "error",
+      { "consentIdentifiers": ["privacyOk", "cmpAccepted"] }
+    ]
+  }
+}
+```
 
 ## Examples
 
@@ -105,6 +124,22 @@ analytics.identify('user_123', { email: 'user@example.com' });
 
 // Global GA tracking call
 gtag('event', 'login');
+
+// A guard that is about something else entirely
+if (isMobile) {
+  analytics.track('Item Purchased');
+}
+
+// The branch where consent was REFUSED
+if (!hasConsent) {
+  analytics.track('Item Purchased');
+}
+
+if (hasConsent) {
+  renderBanner();
+} else {
+  gtag('event', 'login');
+}
 ```
 
 ### ✅ Correct
@@ -126,6 +161,15 @@ function trackEvent(name, data) {
     analytics.track(name, data);
   }
 }
+
+// Short-circuit
+hasConsent && analytics.track('Item Purchased');
+
+// Early return — the idiomatic spelling
+function report(name) {
+  if (!hasConsent) return;
+  analytics.track(name);
+}
 ```
 
 ## Known False Negatives
@@ -134,7 +178,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Abstracted Consent Logic
 
-**Why**: If the consent check is deep within a helper function or a custom library, this rule might flag the call if it's not directly inside a conditional block in the current scope.
+**Why**: If the consent check is deep within a helper function or a custom library, this rule cannot see it — the guard has to be visible from the call site, either as an enclosing `if` / ternary / `&&`, or as an earlier `if (!consent) return;` in the same block.
 
 ```javascript
 // This will be flagged even if myTracker handles consent internally
@@ -155,3 +199,10 @@ myTracker.track('test'); // ❌ NOT DETECTED (as safe)
 - [GDPR Articles 6 & 7 (Consent)](https://gdpr-info.eu/art-6-gdpr/)
 - [Segment.js - Managing User Consent](https://segment.com/docs/privacy/consent-management/)
 - [Google Analytics - User Consent State](https://developers.google.com/analytics/devguides/collection/ga4/consent)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `consentIdentifiers` | `string[]` | `["consent","gdpr","optin","cookiesaccepted","trackingallowed"]` | Words that mark an identifier as a consent flag; replaces the default vocabulary |
+| `analyticsMethods` | `string[]` | `["track","identify","page"]` | Method names on an analytics client that count as a tracking call |

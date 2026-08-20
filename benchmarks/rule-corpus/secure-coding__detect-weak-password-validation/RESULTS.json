@@ -1,0 +1,25 @@
+{
+  "rule": "secure-coding/detect-weak-password-validation",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 18,
+  "vulnerable": 10,
+  "results": [
+    {
+      "name": "Interlace secure-coding/detect-weak-password-validation",
+      "tp": 9,
+      "fp": 0,
+      "fn": 1,
+      "tn": 8,
+      "precision": 1,
+      "recall": 0.9,
+      "specificity": 1,
+      "youdenJ": 0.8999999999999999,
+      "f1": 0.9473684210526316,
+      "crashes": [],
+      "missed": [
+        "vulnerable/07-zod-schema-minimum.ts"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

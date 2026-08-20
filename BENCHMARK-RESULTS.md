@@ -1,6 +1,8 @@
 # Benchmark results — Interlace security plugins
 
-**Measured 2026-08-13** · `eslint-plugin-secure-coding@4.1.0` + `eslint-plugin-browser-security@1.3.2` + `eslint-plugin-node-security@4.12.0` · vs `eslint-plugin-security@4.0.1` · ESLint 10.8.1 · Node 24
+**Sections A / C–H measured 2026-08-13** · `eslint-plugin-secure-coding@4.1.0` + `eslint-plugin-browser-security@1.3.2` + `eslint-plugin-node-security@4.12.0`
+**Section B re-measured 2026-08-17** · `@4.3.0` + `@1.4.1` + `@4.13.1` — see [§B restatement](#b-restatement-2026-08-17)
+vs `eslint-plugin-security@4.0.1` · ESLint 10.8.1 · Node 24
 
 Criteria: [BENCHMARK-CRITERIA.md](./BENCHMARK-CRITERIA.md) · **Exact configuration and rule lists: [BENCHMARK-METHODOLOGY.md](./BENCHMARK-METHODOLOGY.md)** · Full write-up: [BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md](./docs/planning/BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md)
 
@@ -9,8 +11,9 @@ Criteria: [BENCHMARK-CRITERIA.md](./BENCHMARK-CRITERIA.md) · **Exact configurat
 ## The highlight
 
 > **We detect 100% of `eslint-plugin-security`'s live test cases — measured against its own
-> test suite — with 121 rules to its 14. On 23,682 files of real open-source code we report
-> 58 findings per 1,000 files against its 985.**
+> test suite — with 121 rules to its 14. On 3.0M lines of real open-source code we report
+> 0.3 findings per 1,000 LOC against its 7.4, at 2.2× its precision on a hand-labelled
+> stratified sample (28.6% vs 13.0%, n=24 per side).**
 
 One line, if that is all the room there is:
 
@@ -45,15 +48,68 @@ author · `INT` internal — committed runner, our own fixtures; a regression ga
 |---|---|---|---|---|---|
 | B1 | **False positives**, 67 clean labelled fixtures, `recommended` | **0/67 — 0.0%** | 7/67 — 10.4% | **Interlace** | INT |
 | B1a | — same fixtures with **every** rule at `error` (276) | 1/67 — 1.5% | — | — | INT |
-| B2 | **Measured precision**, hand-labelled stratified sample | **≈67%** (12 TP / 6 FP / 4 undecidable of 22) | ≈20% (3 TP / 12 FP / 1 undecidable of 16) | **Interlace** | PUB |
-| B2a | — **prior** sample (20 findings), same sampling method, before the 2026-08-14 precision work | ≈47% (8 TP / 9 FP / 3 undecidable of 20) | — | — | PUB |
+| B2 | **Measured precision**, hand-labelled stratified sample — **2026-08-17, stratified across each side's own top-5 rules** | **28.6%** (6 TP / 15 FP / 3 undecidable of 24) | 13.0% (3 TP / 20 FP / 1 undecidable of 24) | **Interlace** | PUB |
+| B2a | — **prior** samples, before the top-5 stratification: 2026-08-14 | ≈67% (12 TP / 6 FP / 4 undecidable of 22) | ≈20% (3 TP / 12 FP / 1 of 16) | — | PUB |
+| B2b | — 2026-08-13, same method as B2a | ≈47% (8 TP / 9 FP / 3 undecidable of 20) | — | — | PUB |
 | B2b | **TP / FP / FN, labelled corpus** (`ilb-juliet`) | **69 / 0 / 0 — F1 100%** | 10 / 7 / 59 — F1 23.3% | **Interlace** | INT |
-| B3 | Findings per 1,000 files, 20 OSS projects | **58** | 985 | **Interlace** | VOL |
+| B3 | **Findings per 1,000 LOC**, 20 OSS projects (3,036,307 LOC) | **0.3** | 7.4 | **Interlace** | VOL |
+| B3a | — per 1,000 *files* (21,146 files). §A3: a caveat, not the criterion — file size varies 100× across these repos | **50** | 1,065 | — | VOL |
 | B4 | Louder on N of 20 projects | **0 of 20** | 20 of 20 | **Interlace** | VOL |
 | B5 | Output concentrated in a single rule | 18% (`no-http-urls`) | **87%** (`detect-object-injection`) | **Interlace** | PUB |
 | B6 | Fires on the other side's `valid` cases | 15/105 (was 23) | 0/105 | eslint-plugin-security | PUB |
 | B6a | — of which a **defensible scope difference** | **15** (11 shell-free `spawn`, 3 literal `eval`, 1 `new Buffer`) | — | — | PUB |
 | B6b | — of which **genuine noise**, now fixed | **0** (was 8) | — | — | PUB |
+
+#### §B restatement, 2026-08-17
+
+Section B moved because the **harness** changed, not because the plugins got
+noisier. Three §A5/§A3 gates were not implemented in
+`benchmarks/suites/ilb-real-source/run.mjs` and are now:
+
+1. **`*.test.ts` / `*.spec.ts` beside their source were being linted.** `SKIP_DIR`
+   excluded test *directories*; the colocated-sibling convention walked straight
+   past it. Surfaced by the new sampler on its first run, which handed back
+   `no-http-urls` firing on an `expect(isOriginAllowed('http://…'))` assertion.
+2. **Volume was reported per 1,000 files.** §A3 asks for per 1,000 **LOC** — file
+   size varies 100× across this corpus. LOC is now counted on the files that were
+   actually linted, and the run **exits 1** if the two sides' LOC disagree, since
+   §0.2 makes an asymmetric denominator a harness defect rather than a result.
+3. **Files dropped before linting were dropped silently.** Minified skips,
+   unreadable files and parse failures are now tallied and printed. §0.4: a zero
+   is a finding about the harness until shown otherwise.
+
+The B2 precision figure fell from ≈67% to 28.6% for a different reason: **the
+sampling changed to satisfy §A2's "stratified across the top 5 rules by volume"**.
+The earlier samples were not stratified that way, so they under-weighted exactly
+the rules that produce most of our output. 28.6% is the honest number and the
+earlier one was optimistic about a sample, not about the plugins.
+
+Full labelled sample, every verdict with its reason and every ReDoS verdict timed:
+[`benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md`](./benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md).
+
+**What it said to do next, and what happened.** Precision was not evenly
+spread. In that sample `no-unlimited-resource-allocation` scored **0 TP / 5 FP**
+as our loudest rule (173 findings) and `no-toctou-vulnerability` scored
+**0 TP / 4 FP**, both in `recommended`.
+
+**Superseded 2026-08-18.** Both were taken apart:
+
+| Rule | then | now |
+| :--- | ---: | :--- |
+| `no-unlimited-resource-allocation` | 173 findings, 0 TP / 5 FP | **3 findings, 3 TP / 0 FP**, and 2 of 2 on the CWE-770 corpus it previously scored 0 on |
+| `no-toctou-vulnerability` | 59 findings, 0 TP / 4 FP | measured and diagnosed; the fix takes it to 1 finding and is **not shipped** — it is a contract change awaiting a decision |
+| `no-improper-type-validation` | never measured | 2,392 → **1,647** findings |
+
+Per-rule numbers, each with the command that produced it, now live in
+[`benchmarks/RULE-SCORES.md`](./benchmarks/RULE-SCORES.md); per-rule seal state
+and known gaps live in each rule's `SEAL.json`, classified against
+[`ANALYSIS-LIMITS.md`](./ANALYSIS-LIMITS.md).
+
+<!-- seal node-security/detect-non-literal-fs-filename 2026-08-18 -->
+<!-- seal secure-coding/no-redos-vulnerable-regex 2026-08-18 -->
+<!-- seal secure-coding/detect-non-literal-regexp 2026-08-18 -->
+<!-- seal secure-coding/detect-object-injection 2026-08-18 -->
+<!-- seal secure-coding/no-unlimited-resource-allocation 2026-08-18 -->
 
 ### C · Rule surface and configurability
 
@@ -204,8 +260,17 @@ by reading the diff. That is the whole argument for [BENCHMARK-CRITERIA.md](./BE
 
 For calibration, the incumbent's `detect-object-injection` is **87% of its entire output**
 (B5), and a prior analysis found 27% of that rule's findings to be *mechanically provable*
-non-defects. Neither side is clean. The difference is that a maintainer reading our output
-reads 20 findings and finds 8 real ones, rather than reading 985.
+non-defects.
+
+**Neither side is clean, and ours is not clean.** The 2026-08-17 stratified sample
+puts us at 28.6% precision — roughly two findings in three are wrong on real code.
+The defensible statement is comparative and nothing more: a maintainer reading our
+output reads ~50 findings per 1,000 files and finds about 14 real ones, rather than
+reading 1,065 and finding about 138. Less triage for more signal, not a clean tool.
+The per-rule breakdown in
+[SAMPLED-FP-2026-08-17.md](./benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md)
+shows the noise is concentrated in two `recommended` rules, which is actionable
+rather than diffuse.
 
 **"Quieter" is specific to this competitor.** Measured against `eslint-plugin-no-unsanitized`
 — a narrow, precise XSS plugin — **we are louder: 184 findings per 1k files against 127, on
@@ -392,7 +457,7 @@ Cleared for publication. Each is one command from being falsified, which is the 
 - **8.5 OpenSSF Scorecard**, including a clean Vulnerabilities check
 - **121 rules · 75 CWEs · 87 configurable · 64 with automated fix suggestions** — the incumbent ships 14 rules and zero of the rest
 - **Built to be read by your agent**, not just your IDE — 419 structured message IDs and machine-readable CWE/OWASP metadata
-- **58 findings per 1,000 files** across 20 open-source projects against 985 — *volume, not precision; see B2*
+- **0.3 findings per 1,000 LOC** across 20 open-source projects (3.0M LOC) against 7.4, **at 2.2× the precision on a hand-labelled sample — 28.6% vs 13.0%, n=24 per side** — the two halves must travel together per §D2
 
 **Do not publish:** any speed claim unqualified; "quieter" without naming the competitor and
 attaching the sampled precision; or any coverage figure that depends on plugins outside the

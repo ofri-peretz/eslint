@@ -110,3 +110,73 @@ tsRuleTester.run('detect-suspicious-dependencies — module forms', detectSuspic
     },
   ],
 });
+
+/**
+ * Regression lock — four evasions the benchmark corpus proved, each of which
+ * loaded exactly the same impostor package as a case the rule already caught.
+ *
+ * 1. **Sub-path entry points.** `import 'loadsh/fp'` installs the package
+ *    `loadsh`. Comparing the WHOLE specifier pushed the squat's edit distance
+ *    past the threshold, and in the other direction inflated the distance of an
+ *    ordinary deep import (`lodash/debounce.js`) — the rule was wrong about
+ *    both, from the same line.
+ * 2. **Re-exports.** A barrel file is where a modern codebase writes dependency
+ *    names most often, and the rule had no visitor that could ever see one.
+ * 3. **Expression specifiers.** `require(PKG)` with `const PKG = 'loadsh'`, and
+ *    `require('loadsh' as string)`. Demanding a bare `Literal` at the call site
+ *    meant hoisting a dependency name to a module constant — ordinary style —
+ *    deleted the finding.
+ * 4. **`module.createRequire`.** The documented ESM→CJS loader binds the loader
+ *    to a local name, so the callee is never spelled `require`.
+ */
+tsRuleTester.run('detect-suspicious-dependencies — corpus regressions', detectSuspiciousDependencies, {
+  valid: [
+    // A deep import of the REAL package. This is the case the sub-path fix must
+    // not break, and it fails on a rule that compares the whole specifier.
+    { code: "import debounce from 'lodash/debounce.js';" },
+    { code: "import { createElement } from 'react/jsx-runtime';" },
+    { code: "export { useState } from 'react';" },
+    // A re-export with no source declares a local value and loads nothing.
+    { code: 'export const clientName = 1;' },
+    // A `let` can be reassigned between declaration and use, so its initializer
+    // proves nothing — abstain rather than guess.
+    { code: "let pkg = 'react'; pkg = 'reakt'; const r = require(pkg);" },
+    // A loader-shaped call whose callee resolves to something that is not
+    // `module.createRequire`.
+    { code: "const load = (n) => n; const r = load('reakt');" },
+    { code: "const load = 5; export const r = load;" },
+    // A bare `require()` names no module at all.
+    { code: 'export function boot() { return require(); }' },
+    { code: "import { createRequire } from 'node:module'; const req = createRequire(import.meta.url); const ok = req('react');" },
+  ],
+  invalid: [
+    {
+      code: "import fp from 'loadsh/fp';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "export { chunk } from 'loadsh';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "export * from 'raect';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "const PKG = 'loadsh'; const util = require(PKG);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "export const util = require('loadsh' as string);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "const PKG = 'raect'; export async function boot() { return import(PKG); }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "import { createRequire } from 'node:module'; const req = createRequire(import.meta.url); const r = req('raect');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});

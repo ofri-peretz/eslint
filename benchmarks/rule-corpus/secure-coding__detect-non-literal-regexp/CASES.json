@@ -1,0 +1,1832 @@
+{
+  "rule": "secure-coding/detect-non-literal-regexp",
+  "cases": [
+    {
+      "id": "runtimeDecidedPattern-eaa1b81d6fe0",
+      "signature": "eaa1b81d6fe0",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Id.replace);Regex:/\\//g,Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/API/LogManagement.js",
+          "line": 210,
+          "source": "var regex = new RegExp(id.replace(/\\//g, ''));"
+        },
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/API/LogManagement.js",
+          "line": 336,
+          "source": "var regex = new RegExp(id.replace(/\\//g, ''));"
+        },
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/API.js",
+          "line": 1467,
+          "source": "var regex = new RegExp(process_name.replace(/\\//g, ''));"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-b42c7e7e7e87",
+      "signature": "b42c7e7e7e87",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(Mem(Id[Id]),Lit:string))",
+      "context": "ForStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/API/Modules/flagExt.js",
+          "line": 43,
+          "source": "res[i] = new RegExp(mas[i] + '$');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-85c898746122",
+      "signature": "85c898746122",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Id.dirname);Mem(Id.execPath)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/API/Startup.js",
+          "line": 341,
+          "source": "else if (new RegExp(path.dirname(process.execPath)).test(process.env.PATH))"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-425dff1db493",
+      "signature": "425dff1db493",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(Lit:string,Id),Lit:string),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/completion.js",
+          "line": 99,
+          "source": "var tasks = str.match(reg || new RegExp('^' + prefix + '\\\\s[^#]+', 'gm')) || [];"
+        },
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/tools/SysMetrics.js",
+          "line": 108,
+          "source": "var m = mi.match(new RegExp('^' + k + ':\\\\s+(\\\\d+)', 'm'))"
+        },
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/base64/index.js",
+          "line": 37,
+          "source": "const wrapRegex = new RegExp('.{' + lineLength + '}', 'g');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-5771f10afc51",
+      "signature": "5771f10afc51",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(Lit:string,Call(Mem(Mem(….last).replace);Regex:/^--?/g,Lit:string)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/completion.js",
+          "line": 122,
+          "source": "return new RegExp('^' + o.last.replace(/^--?/g, '')).test(it);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-22a586cf22d9",
+      "signature": "22a586cf22d9",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id)",
+      "context": "ForInStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/tools/Config.js",
+          "line": 125,
+          "source": "regexKeys[k] = new RegExp(k);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-93f4125991e9",
+      "signature": "93f4125991e9",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.regex))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/tools/Config.js",
+          "line": 185,
+          "source": "if (this._error(type == '[object String]' && sch.regex && !(new RegExp(sch.regex)).test(value),"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/content-manager/admin/src/utils/validation.ts",
+          "line": 263,
+          "source": ".matches(attribute.regex ? new RegExp(attribute.regex) : /^[A-Za-z0-9-_.~]*$/);"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/content-manager/admin/src/utils/validation.ts",
+          "line": 410,
+          "source": "return schema.matches(new RegExp(attribute.regex), {"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-eba391e5a73d",
+      "signature": "eba391e5a73d",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(Lit:string,Id),Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "modules/pm2-axon/lib/sockets/sub.js",
+          "line": 146,
+          "source": "return new RegExp('^' + str + '$');"
+        },
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/Config.js",
+          "line": 107,
+          "source": "pattern => new RegExp('^' + pattern + '$')"
+        },
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/aws/domains/aws/cloud-formation-wrapper.js",
+          "line": 210,
+          "source": "const regex = new RegExp('/' + stackName + '/')"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-24de6401668b",
+      "signature": "24de6401668b",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Id;Call(Mem(….replace);Regex:/\\//g,Lit:string))))",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "api/src/extensions/lib/get-shared-deps-mapping.ts",
+          "line": 21,
+          "source": "const depRegex = new RegExp(`${escapeRegExp(dep.replace(/\\//g, '_'))}\\\\.[a-zA-Z0-9_-]{8}\\\\.entry\\\\.js`);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-e139d8c85917",
+      "signature": "e139d8c85917",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id,Lit:string)",
+      "context": "ForOfStatement<ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "api/src/services/comments.ts",
+          "line": 129,
+          "source": "comment = comment.replace(new RegExp(mention, 'gm'), userPreviews[uuid] ?? '@Unknown User');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-7b946269782d",
+      "signature": "7b946269782d",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id,Id),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "api/src/services/files/utils/parse-image-metadata.ts",
+          "line": 57,
+          "source": "const tagRegex = new RegExp(`<dc:${x}>(.*?)</dc:${x}>`, 'smig'),"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/src/error-formatting.ts",
+          "line": 111,
+          "source": "const match = value.match(new RegExp(`<${tag}\\\\b[^>]*>([\\\\s\\\\S]*?)<\\\\/${tag}>`, 'i'));"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-80a59d675ff3",
+      "signature": "80a59d675ff3",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Cond(Id,Call(Mem(Id.slice);Lit:number,-(Lit:number)),Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "api/src/services/users.ts",
+          "line": 105,
+          "source": "const regex = new RegExp(wrapped ? policyRegExString.slice(1, -1) : policyRegExString);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-5968e3ec4e67",
+      "signature": "5968e3ec4e67",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Id;Id),Lit:string)",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "api/src/utils/redact-object.ts",
+          "line": 150,
+          "source": "const regexp = new RegExp(escapeRegexString(valueToRedact), 'g');"
+        },
+        {
+          "repo": "sequelize/sequelize",
+          "file": "packages/postgres/src/query.js",
+          "line": 38,
+          "source": "const reg = new RegExp(escapeRegExp(original), 'g');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-acdffed0be93",
+      "signature": "acdffed0be93",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Id;Id)))",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "app/src/stores/insights.ts",
+          "line": 198,
+          "source": "const fieldRegex = new RegExp(`{{\\\\s*?${escapeStringRegexp(relationVar)}\\\\s*?}}`);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-5cd33cfff590",
+      "signature": "5cd33cfff590",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Id;Id)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "app/src/stores/insights.ts",
+          "line": 471,
+          "source": "const regex = new RegExp(`{{\\\\s*?${escapeStringRegexp(field)}\\\\s*?}}`);"
+        },
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/generate-joi.ts",
+          "line": 199,
+          "source": "schema[key] = getStringSchema().pattern(new RegExp(`^${escapeRegExp(compareValue)}.*`), {"
+        },
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/generate-joi.ts",
+          "line": 209,
+          "source": "schema[key] = getStringSchema().pattern(new RegExp(`^${escapeRegExp(compareValue)}.*`), {"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-7faf2ba5366f",
+      "signature": "7faf2ba5366f",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "packages/env/src/constants/directus-variables.ts",
+          "line": 334,
+          "source": "export const DIRECTUS_VARIABLES_REGEX: RegExp[] = DIRECTUS_VARIABLES.map((name) => new RegExp(`^${name}$`));"
+        },
+        {
+          "repo": "directus/directus",
+          "file": "packages/env/src/constants/type-map.ts",
+          "line": 105,
+          "source": "new RegExp(`^${name}$`),"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/frontend-vite-config/source-packages.ts",
+          "line": 68,
+          "source": "? [{ find: new RegExp(`^${pattern}$`), replacement: resolve(src, 'index.ts') }]"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-5b33a0953c44",
+      "signature": "5b33a0953c44",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Id;Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "packages/env/src/lib/cast.ts",
+          "line": 25,
+          "source": "return new RegExp(String(value));"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-d3e37aa29099",
+      "signature": "d3e37aa29099",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Id;Id)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/generate-joi.ts",
+          "line": 220,
+          "source": "schema[key] = getStringSchema().pattern(new RegExp(`^${escapeRegExp(compareValue)}.*`, 'i'), {"
+        },
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/generate-joi.ts",
+          "line": 230,
+          "source": "schema[key] = getStringSchema().pattern(new RegExp(`^${escapeRegExp(compareValue)}.*`, 'i'), {"
+        },
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/generate-joi.ts",
+          "line": 262,
+          "source": "schema[key] = getStringSchema().pattern(new RegExp(`.*${escapeRegExp(compareValue)}$`, 'i'), {"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-85835e172a73",
+      "signature": "85835e172a73",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Cond(Id,Call(Mem(….slice);Lit:number,-(Lit:number)),Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "directus/directus",
+          "file": "packages/utils/shared/generate-joi.ts",
+          "line": 378,
+          "source": ".regex(new RegExp(wrapped ? (compareValue as any).slice(1, -1) : compareValue));"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-14918c74e8ac",
+      "signature": "14918c74e8ac",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Call(Mem(….map);ArrowFunctionExpression).join);Lit:string),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "knex/knex",
+          "file": "lib/dialects/sqlite3/schema/internal/tokenizer.js",
+          "line": 2,
+          "source": "const compiledRegex = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-5187b387b4b5",
+      "signature": "5187b387b4b5",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "knex/knex",
+          "file": "scripts/update-changelog.mjs",
+          "line": 105,
+          "source": "const versionHeader = new RegExp(`^#{1,3} ${escVersion}(\\\\s|$)`, 'm');"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/agents/src/runtime/memory/observation-log-observer.ts",
+          "line": 39,
+          "source": "const SENSITIVE_KEY_PATTERN = new RegExp("
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/expression-runtime/src/extensions/string-extensions.ts",
+          "line": 270,
+          "source": ".replace(new RegExp(`\\\\${quoteChar}`, 'g'), `\\\\${quoteChar}`)}${quoteChar}`;"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-4321c4f859d2",
+      "signature": "4321c4f859d2",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id,Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "louislam/uptime-kuma",
+          "file": "server/monitor-types/globalping.js",
+          "line": 357,
+          "source": "const regex = new RegExp(keyword, \"i\");"
+        },
+        {
+          "repo": "louislam/uptime-kuma",
+          "file": "src/util.js",
+          "line": 266,
+          "source": "return this.replace(new RegExp(str, \"g\"), newStr);"
+        },
+        {
+          "repo": "louislam/uptime-kuma",
+          "file": "src/util.ts",
+          "line": 428,
+          "source": "return this.replace(new RegExp(str, \"g\"), newStr);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-82cfeb455a72",
+      "signature": "82cfeb455a72",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id,Cond(Call(Mem(Id.includes);Lit:string),Id,Tpl(Id)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/agents/src/sdk/guardrails/patterns.ts",
+          "line": 32,
+          "source": "return new RegExp(source, flags.includes('g') ? flags : `${flags}g`);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-0b9fd5ded448",
+      "signature": "0b9fd5ded448",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Id.join);Lit:string)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/computer-use/src/config.ts",
+          "line": 439,
+          "source": "return new RegExp(`^${escapedParts.join('.+')}$`).test(originUrl.hostname);"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/instance-ai/eval/mock-quirks.ts",
+          "line": 292,
+          "source": "return new RegExp(`^${parts.join('\\\\.')}$`).test(hostname);"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/server.ts",
+          "line": 445,
+          "source": "const nonUIRoutesRegex = new RegExp(`^/(${nonUIRoutes.join('|')})/?.*$`);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-d3a57184a1f2",
+      "signature": "d3a57184a1f2",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Id;Id),Cond(Id,Lit:string,Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/computer-use/src/tools/filesystem/search-files.ts",
+          "line": 92,
+          "source": "const regex = new RegExp(escapeRegex(query), ignoreCase ? 'i' : '');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-619936aa42dc",
+      "signature": "619936aa42dc",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Call(…;…).join);Lit:string)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/expression-runtime/src/runtime/jmespath.ts",
+          "line": 32,
+          "source": "const unsafeJmespathPropertyPattern = new RegExp("
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/core/folders/folders.constants.ts",
+          "line": 15,
+          "source": "export const FOLDER_NAME_ILLEGAL_CHARACTERS_REGEX = new RegExp("
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/utils.ts",
+          "line": 395,
+          "source": "const unsafeObjectPropertyTokenPattern = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-701dcd18a133",
+      "signature": "701dcd18a133",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.pattern),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/computer-use/graders/trace.ts",
+          "line": 57,
+          "source": "const re = new RegExp(grader.pattern, 'i');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-7c97c615a1e7",
+      "signature": "7c97c615a1e7",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Call(Mem(….map);Id).join);Lit:string),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/evaluations/harness/conversation-seed.ts",
+          "line": 406,
+          "source": "const mentionRe = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-76eb964ae49b",
+      "signature": "76eb964ae49b",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;TaggedTemplateExpression)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/instance-ai/src/tools/workflows/detect-array-input-collapse.ts",
+          "line": 36,
+          "source": "const usedAsArray = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-29c4c456dac4",
+      "signature": "29c4c456dac4",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id)",
+      "context": "ForInStatement<ForInStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/json-schema-to-zod/src/parsers/parse-object.ts",
+          "line": 107,
+          "source": "const regex = new RegExp(patternPropertyKey);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-54bf64d144b0",
+      "signature": "54bf64d144b0",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/json-schema-to-zod/src/parsers/parse-string.ts",
+          "line": 42,
+          "source": "zs.regex(new RegExp(pattern), errorMsg),"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/node-cli/src/test-utils/matchers.ts",
+          "line": 123,
+          "source": "const matches = content ? new RegExp(pattern).test(content) : false;"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/validation/display-options.ts",
+          "line": 123,
+          "source": "const regex = new RegExp(regexPattern);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-edffe4989772",
+      "signature": "edffe4989772",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Mem(Id.pattern).source),Cond(Call(Mem(Mem(….flags).includes);Lit:string),Mem(Mem(Id.pattern).flags),Tpl(Mem(Mem(….pattern).flags))))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/mcp-browser/src/redaction/redact.ts",
+          "line": 15,
+          "source": "regex: new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-240a46cc8bbb",
+      "signature": "240a46cc8bbb",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Call(…;…).join);Lit:string)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/nodes-langchain/nodes/Guardrails/actions/checks/secretKeys.ts",
+          "line": 181,
+          "source": "const extPattern = new RegExp("
+        },
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/aws/package/compile/events/http-api.js",
+          "line": 19,
+          "source": "const methodPattern = new RegExp("
+        },
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/aws/package/compile/events/http-api.js",
+          "line": 23,
+          "source": "const methodPathPattern = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-15e066e444cb",
+      "signature": "15e066e444cb",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Arr[…].join);Lit:string)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/nodes-langchain/nodes/agents/Agent/agents/SqlAgent/execute.ts",
+          "line": 62,
+          "source": "const pattern = new RegExp(`\\\\b(${[...BLOCKED_SQL_OPERATIONS].join('|')})\\\\b`, 'i');"
+        },
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/css/syntax.js",
+          "line": 6857,
+          "source": "const _SUBSTITUTION_RE = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-0629428f46f4",
+      "signature": "0629428f46f4",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(Lit:string,Call(Mem(….replace);Lit:string,Lit:string)),Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/typeorm/src/find-options/FindOptionsUtils.ts",
+          "line": 278,
+          "source": "const regexp = new RegExp('^' + prefix.replace('.', '\\\\.') + '\\\\.');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-0b505d928603",
+      "signature": "0b505d928603",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(Tpl(),Tpl(Cond(…,…,…))),Tpl()),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/typeorm/src/query-builder/QueryBuilder.ts",
+          "line": 715,
+          "source": "new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-7834953b9551",
+      "signature": "7834953b9551",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id,Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/typeorm/src/util/OrmUtils.ts",
+          "line": 306,
+          "source": "new RegExp(`\"${columnName}\" varchar CHECK\\\\s*\\\\(\\\\s*\"${columnName}\"\\\\s+IN\\\\s*`),"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/mcp/tools/workflow-builder/skills-used.ts",
+          "line": 8,
+          "source": "const SKILL_ID_PATTERN = new RegExp(`^(?:${skillNameSource}:)?${skillNameSource}$`);"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/playwright/composables/ProjectComposer.ts",
+          "line": 50,
+          "source": "const match = path.match(new RegExp(`/${beforeWord}/([^/]+)/${afterWord}`));"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-1c96f6e81c8e",
+      "signature": "1c96f6e81c8e",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(Lit:string,Id),Lit:string)",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/codegen/parse-workflow-code.ts",
+          "line": 83,
+          "source": "const pattern = new RegExp('(?<!\\\\\\\\)\\\\$\\\\{' + escapedVarName, 'g');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-b5169306097b",
+      "signature": "b5169306097b",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id),Lit:string)",
+      "context": "WhileStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/@n8n/workflow-sdk/src/generate-types/generate-types.ts",
+          "line": 3841,
+          "source": "const requiredRegex = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-bf5a1ef34295",
+      "signature": "bf5a1ef34295",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id),Lit:string)",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/credentials/external-secrets.utils.ts",
+          "line": 48,
+          "source": "new RegExp(`\\\\$secrets\\\\s*\\\\.\\\\s*(${SECRETS_PROVIDER_KEY_PATTERN})(?=\\\\s*\\\\.|\\\\s*\\\\[)`, 'g'),"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/credentials/external-secrets.utils.ts",
+          "line": 60,
+          "source": "new RegExp(`\\\\$secrets\\\\s*\\\\[\\\\s*['\"](${SECRETS_PROVIDER_KEY_PATTERN})['\"]\\\\s*\\\\]`, 'g'),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-ba578feddd1f",
+      "signature": "ba578feddd1f",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id,Cond(Id,Id,Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/agents/agent-knowledge-mirror.service.ts",
+          "line": 643,
+          "source": "return new RegExp(source, caseSensitive ? undefined : 'i');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-fbc2c852e47a",
+      "signature": "fbc2c852e47a",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Mem(Id.type)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/agents/integrations/agent-chat-bridge.ts",
+          "line": 127,
+          "source": "const actionToolNamePattern = new RegExp(`^${integration.type}(_\\\\d+)?_action$`);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-ef54854a1478",
+      "signature": "ef54854a1478",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Id.join);Lit:string)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/cli/src/modules/instance-ai/eval/mock-quirks.ts",
+          "line": 264,
+          "source": "return new RegExp(`^${parts.join('/')}$`, 'i').test(pathname);"
+        },
+        {
+          "repo": "sequelize/sequelize",
+          "file": "packages/utils/src/common/_internal/integer-regexp.ts",
+          "line": 72,
+          "source": "const newRegExp = new RegExp(`^-?[${characterSet.join('')}]+$`, 'i');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-e12b303b7088",
+      "signature": "e12b303b7088",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.pattern),Mem(Id.flags))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/app/utils/safeRegex.worker.ts",
+          "line": 24,
+          "source": "const regex = new RegExp(request.pattern, request.flags);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-b8a5f19a5cdb",
+      "signature": "b8a5f19a5cdb",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.pattern),Call(Id;Mem(Id.flags)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/app/utils/safeRegex.worker.ts",
+          "line": 35,
+          "source": "request.input.matchAll(new RegExp(request.pattern, withGlobalFlag(request.flags))),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-b76250a81edb",
+      "signature": "b76250a81edb",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Call(Mem(….map);ArrowFunctionExpression).join);Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/shared/editors/plugins/codemirror/completions/datatype.completions.ts",
+          "line": 1558,
+          "source": "const DATATYPE_REGEX = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-7ec2fcb37620",
+      "signature": "7ec2fcb37620",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Arr[…].join);Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/src/features/shared/editors/plugins/codemirror/completions/nonDollar.completions.ts",
+          "line": 14,
+          "source": "const combinedRegex = new RegExp([dateTime.source, math.source, object.source].join('|'));"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/playwright/playwright-projects.ts",
+          "line": 17,
+          "source": "const CONTAINER_ONLY = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-4e6a031df644",
+      "signature": "4e6a031df644",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id,Id,Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/frontend/editor-ui/vite/i18n-locales-hmr-helpers.ts",
+          "line": 7,
+          "source": "const match = file.match(new RegExp(`${pathSep}locales${pathSep}([^${pathSep}]+)\\\\.json$`));"
+        },
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/aws/utils/find-and-group-deployments.js",
+          "line": 6,
+          "source": "const regex = new RegExp(`${prefix}/${service}/${stage}/(.+-.+-.+-.+)/(.+)`)"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-4a349d0c5b51",
+      "signature": "4a349d0c5b51",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Id.escapeRegex);Mem(Id.methodName))))",
+      "context": "ForOfStatement<ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/core/impact-analyzer.ts",
+          "line": 223,
+          "source": "const methodPattern = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-268d2987cf96",
+      "signature": "268d2987cf96",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Id.escapeRegex);Id)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/core/impact-analyzer.ts",
+          "line": 307,
+          "source": "(name) => new RegExp(`\\\\.${ImpactAnalyzer.escapeRegex(name)}(?![a-zA-Z0-9_])`),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-ceac2ae0e94d",
+      "signature": "ceac2ae0e94d",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Mem(Id.fixtureObjectName)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/core/inventory-analyzer.ts",
+          "line": 353,
+          "source": "const pattern = new RegExp(`this\\\\.${config.fixtureObjectName}\\\\.(\\\\w+)`, 'g');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-e42b89679bef",
+      "signature": "e42b89679bef",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.source),Cond(Call(Mem(Mem(….flags).includes);Lit:string),Mem(Id.flags),+(Mem(Id.flags),Lit:string)))",
+      "context": "ForOfStatement<ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/rules/api-purity.rule.ts",
+          "line": 61,
+          "source": "const regex = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-6d9db3d25761",
+      "signature": "6d9db3d25761",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id))",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/rules/selector-purity.rule.ts",
+          "line": 152,
+          "source": "const directPagePattern = new RegExp(`(?<!\\\\w)page\\\\.${method}`);"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/rules/selector-purity.rule.ts",
+          "line": 156,
+          "source": "const thisPagePattern = new RegExp(`this\\\\.page\\\\.${method}`);"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/janitor/src/utils/paths.ts",
+          "line": 158,
+          "source": "const regex = new RegExp(`^${regexPattern}$`);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-454c9ce82111",
+      "signature": "454c9ce82111",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id,Id))",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/testing/playwright/playwright-projects.ts",
+          "line": 246,
+          "source": "grep: new RegExp(`@mode:${name}|@capability:${name}`),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-a5f4d7fcdede",
+      "signature": "a5f4d7fcdede",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(ThisExpression.pattern);),Mem(ThisExpression.flags))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/node-reference-parser-utils.ts",
+          "line": 18,
+          "source": "if (!this.regExp) this.regExp = new RegExp(this.pattern(), this.flags);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-c55378a97d30",
+      "signature": "c55378a97d30",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Id.replacePattern);Id),Lit:string)",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/node-reference-parser-utils.ts",
+          "line": 147,
+          "source": "new RegExp(pattern.replacePattern(preparedOldName), 'g'),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-165e95e7525d",
+      "signature": "165e95e7525d",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id,Id)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/safe-regex.ts",
+          "line": 98,
+          "source": "exec: (pattern, input, flags) => new RegExp(pattern, flags).exec(input),"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/safe-regex.ts",
+          "line": 99,
+          "source": "test: (pattern, input, flags) => new RegExp(pattern, flags).test(input),"
+        },
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/safe-regex.ts",
+          "line": 101,
+          "source": "input.replace(new RegExp(pattern, flags), replacement),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-abd66699b561",
+      "signature": "abd66699b561",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id,Call(Id;Id))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "n8n-io/n8n",
+          "file": "packages/workflow/src/safe-regex.ts",
+          "line": 103,
+          "source": "Array.from(input.matchAll(new RegExp(pattern, globalFlag(flags)))),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-ad4d4e088f53",
+      "signature": "ad4d4e088f53",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(Lit:string,Call(Mem(….replace);Id,Id)),Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "nestjs/nest",
+          "file": "packages/core/middleware/builder.ts",
+          "line": 121,
+          "source": "regex: new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-a489a9031f1c",
+      "signature": "a489a9031f1c",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(Mem(Id.source),Lit:string),Mem(Id.flags))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "nestjs/nest",
+          "file": "packages/platform-fastify/adapters/fastify-adapter.ts",
+          "line": 702,
+          "source": "? new RegExp(re.source + '$', re.flags)"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-cef386b6a990",
+      "signature": "cef386b6a990",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(Lit:string,+(Id,Lit:number)),Lit:string),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "nodemailer/nodemailer",
+          "file": "lib/mime-funcs/index.js",
+          "line": 57,
+          "source": "return new RegExp('^.{' + (lineLength + 1) + ',}', 'm').test(str);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-94c0d2139ffb",
+      "signature": "94c0d2139ffb",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Mem(Id.name),Mem(Id.name)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "lib/commands/cache.js",
+          "line": 15,
+          "source": "const searchMFH = new RegExp(`^make-fetch-happen:request-cache:.*(?<!/[@a-zA-Z]+)/${parsed.name}/-/(${parsed.name}[^/]+."
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-9960af4d62c4",
+      "signature": "9960af4d62c4",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Mem(Id.escapedName)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "lib/commands/cache.js",
+          "line": 16,
+          "source": "const searchPack = new RegExp(`^make-fetch-happen:request-cache:.*/${parsed.escapedName}$`)"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-beea24c323f8",
+      "signature": "beea24c323f8",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Id.slice);Lit:number))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "lib/utils/format-search-stream.js",
+          "line": 32,
+          "source": "return words.match(new RegExp(pattern.slice(1)))"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-23148247201f",
+      "signature": "23148247201f",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(Id,Lit:string))",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "npm/cli",
+          "file": "workspaces/arborist/lib/tracker.js",
+          "line": 64,
+          "source": "if (key.match(new RegExp(section + ':'))) {"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-c68c0241f9fd",
+      "signature": "c68c0241f9fd",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.$regex))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/Adapters/Storage/Mongo/MongoTransform.js",
+          "line": 581,
+          "source": "return new RegExp(atom.$regex);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-f9751d4102fe",
+      "signature": "f9751d4102fe",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.validatorPattern))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/Config.js",
+          "line": 440,
+          "source": "passwordPolicy.validatorPattern = new RegExp(passwordPolicy.validatorPattern);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-8f887d793a83",
+      "signature": "8f887d793a83",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(Lit:string,Id),Lit:string))",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/Config.js",
+          "line": 832,
+          "source": "new RegExp('^' + pattern + '$');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-f5c4b51ba6fd",
+      "signature": "f5c4b51ba6fd",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id,Id)",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/LiveQuery/ParseLiveQueryServer.ts",
+          "line": 618,
+          "source": "new RegExp(pattern, flags);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-47e99f1829b1",
+      "signature": "47e99f1829b1",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id.requestMethods))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/middlewares.js",
+          "line": 742,
+          "source": "const regExp = new RegExp(route.requestMethods);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-9883f2da25cd",
+      "signature": "9883f2da25cd",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Cond(===(Call(Mem(….charAt);Lit:number),Lit:string),Id,+(Lit:string,Id)))",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "parse-community/parse-server",
+          "file": "src/middlewares.js",
+          "line": 805,
+          "source": "const regex = new RegExp(path.charAt(0) === '^' ? path : '^' + path);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-e448a26f7071",
+      "signature": "e448a26f7071",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Mem(Mem(Mem(….schema).definitions).awsS3BucketName).pattern))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/aws/package/compile/events/s3/index.js",
+          "line": 143,
+          "source": "!new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-6f1f7b13798a",
+      "signature": "6f1f7b13798a",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Mem(ThisExpression.options).query))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "serverless/serverless",
+          "file": "packages/serverless/lib/plugins/plugin/search.js",
+          "line": 31,
+          "source": "const regex = new RegExp(this.options.query)"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-e01de438e763",
+      "signature": "e01de438e763",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id,Id),Lit:string)",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/cli/create-strapi-app/src/utils/parse-to-chalk.ts",
+          "line": 19,
+          "source": "const regex = new RegExp(`{${color}}(.*?){/${color}}`, 'g');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-aa2c1f48863f",
+      "signature": "aa2c1f48863f",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;||(Id,Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/content-type-builder/admin/src/components/FormModal/attributes/validation/common.ts",
+          "line": 129,
+          "source": "new RegExp(value || '');"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/content-type-builder/admin/src/components/FormModal/attributes/validation/common.ts",
+          "line": 158,
+          "source": "new RegExp(value || '');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-11491c952fec",
+      "signature": "11491c952fec",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Mem(Id.attr).regex))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/core/src/services/entity-validator/validators.ts",
+          "line": 536,
+          "source": "return schema.matches(new RegExp(metas.attr.regex));"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-15df1befad47",
+      "signature": "15df1befad47",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Mem(Mem(Id.win32).sep),Mem(Mem(Id.posix).sep)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/core/src/utils/filepath-to-prop-path.ts",
+          "line": 20,
+          "source": "fp.split(new RegExp(`[\\\\${path.win32.sep}|${path.posix.sep}]`, 'g')),"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-41eadeb249de",
+      "signature": "41eadeb249de",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id),Id)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/core/utils/src/template.ts",
+          "line": 10,
+          "source": "return new RegExp(`<%=\\\\s*(${oneOfVariables})\\\\s*%>`, flags);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-ca719a1dd90a",
+      "signature": "ca719a1dd90a",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "Call(Id;Id,Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/plugins/users-permissions/server/src/controllers/validation/email-template.js",
+          "line": 30,
+          "source": "const regexPatternWithGlobal = RegExp(pattern, 'g');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-1309df862e33",
+      "signature": "1309df862e33",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Mem(Id.CODEMOD_EXTENSION)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "packages/utils/upgrade/src/modules/codemod/codemod.ts",
+          "line": 50,
+          "source": "formatted = formatted.replace(new RegExp(`\\\\.${constants.CODEMOD_EXTENSION}$`, 'i'), '');"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-bc3aeeb9c20e",
+      "signature": "bc3aeeb9c20e",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Call(…;…).join);Id)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "scripts/front/verify-translations/patterns.ts",
+          "line": 166,
+          "source": "const build = (hole: string) => new RegExp(`^${parts.map(escapeRegExp).join(hole)}$`);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-babcbc7ffbd8",
+      "signature": "babcbc7ffbd8",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Mem(Id.source).slice);Lit:number,-(Lit:number)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/ConcatenationScope.js",
+          "line": 28,
+          "source": "const MODULE_REFERENCE_SCAN_REGEXP = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-b4194fd7187d",
+      "signature": "b4194fd7187d",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Mem(Id.require)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/DefinePlugin.js",
+          "line": 614,
+          "source": "const WEBPACK_REQUIRE_FUNCTION_REGEXP = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-a1804b19a116",
+      "signature": "a1804b19a116",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Cond(Call(Mem(….isArray);Id),Tpl(Call(…;…)),Id)),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/ManifestPlugin.js",
+          "line": 100,
+          "source": "new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-4c3dc16f1ea7",
+      "signature": "4c3dc16f1ea7",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Mem(Id[Lit:number]),Mem(Id[Lit:number]))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/cli.js",
+          "line": 751,
+          "source": "return new RegExp(match[1], match[2]);"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-840bee4fb1fa",
+      "signature": "840bee4fb1fa",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Id;Id),Id,Call(Id;Id)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/dependencies/ContextDependencyHelpers.js",
+          "line": 114,
+          "source": "const regExp = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-5048fe6671c2",
+      "signature": "5048fe6671c2",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Id;Id),Mem(Mem(Id.wrappedContextRegExp).source),Call(Id;Id)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/dependencies/ContextDependencyHelpers.js",
+          "line": 210,
+          "source": "const regExp = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-e0117899cf4e",
+      "signature": "e0117899cf4e",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Call(Mem(Id.replace);Regex:/[-[\\]{}()*+?.\\\\^$|]/g,Lit:string)))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/logging/createConsoleLogger.js",
+          "line": 52,
+          "source": "const regExp = new RegExp("
+        },
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/stats/DefaultStatsPresetPlugin.js",
+          "line": 309,
+          "source": "const regExp = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-526a4ac93387",
+      "signature": "526a4ac93387",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Call(Mem(….from);Call(…;),Id).join);Lit:string),Lit:string)",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/optimize/RealContentHashPlugin.js",
+          "line": 267,
+          "source": "const hashRegExp = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-b52cec93eed5",
+      "signature": "b52cec93eed5",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Call(Mem(Id.read);),Call(Mem(Id.read);))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/serialization/RegExpObjectSerializer.js",
+          "line": 27,
+          "source": "return new RegExp(context.read(), context.read());"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-082b6b349b42",
+      "signature": "082b6b349b42",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;+(+(+(+(…,…),Tpl(…)),Lit:string),Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/util/extractSourceMap.js",
+          "line": 30,
+          "source": "const sourceMappingURLRegex = new RegExp("
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-96654c5f0d94",
+      "signature": "96654c5f0d94",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Tpl(Id),Cond(Id,Lit:string,Lit:string))",
+      "context": "",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/util/globUtils.js",
+          "line": 311,
+          "source": "return new RegExp(`^${source}$`, caseSensitive ? \"\" : \"i\");"
+        }
+      ]
+    },
+    {
+      "id": "runtimeDecidedPattern-d1136bf98c8e",
+      "signature": "d1136bf98c8e",
+      "verdict": "unreviewed",
+      "messageId": "runtimeDecidedPattern",
+      "shape": "New(Id;Id)",
+      "context": "ForOfStatement",
+      "firstSeen": "this run",
+      "examples": [
+        {
+          "repo": "webpack/webpack",
+          "file": "lib/util/magicComment.js",
+          "line": 68,
+          "source": "? new RegExp(val)"
+        }
+      ]
+    }
+  ]
+}

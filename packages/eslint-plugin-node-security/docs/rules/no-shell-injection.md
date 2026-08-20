@@ -101,3 +101,9 @@ the package.
 
 - [`detect-child-process`](./detect-child-process.md)
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `requireModuleEvidence` | `boolean` | `true` | Only report when the callee resolves to child_process. Turning this off restores the pre-2026-08 behaviour, where any callee named exec/execSync/spawn was treated as a shell sink — which reported better-sqlite3 db.exec(sql) as CWE-78 at CVSS 9.8. |

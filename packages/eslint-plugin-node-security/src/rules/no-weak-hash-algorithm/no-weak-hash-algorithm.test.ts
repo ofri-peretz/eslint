@@ -449,4 +449,70 @@ describe('no-weak-hash-algorithm', () => {
       ],
     });
   });
+
+  /**
+   * FN lock — the algorithm name held in a `const`.
+   *
+   * `const HASH_ALGORITHM = 'md5'` at the top of a module is ordinary style, and
+   * it silenced the rule entirely: `checkHashArgument` read
+   * `arg.type === 'Literal'` and an `Identifier` fell through. Both invalid
+   * cases below are QUIET on the pre-fix rule.
+   *
+   * The suggestion rewrites the DECLARATION rather than the use site, because
+   * replacing `HASH_ALGORITHM` with `"sha256"` at the call would leave the
+   * broken constant in the file for the next caller.
+   */
+  describe('Algorithm held in a const', () => {
+    ruleTester.run('no-weak-hash-algorithm', noWeakHashAlgorithm, {
+      valid: [
+        // `algo` is never declared — nothing to resolve, so nothing to report.
+        // (This is what the existing `createHash(algo)` fixtures rely on, and it
+        // must keep holding now that identifiers ARE followed.)
+        `const signature = crypto.createHash(algo).update(body).digest('hex');`,
+        // A const carrying a modern algorithm must not begin reporting.
+        `const ALGO = 'sha256'; const signature = crypto.createHash(ALGO).update(token).digest('hex');`,
+        // A `let` can be reassigned between the declaration and the call.
+        `let algo = 'md5'; algo = negotiate(); const signature = crypto.createHash(algo).update(token).digest('hex');`,
+        // A literal that is neither a string nor a number is not an algorithm
+        // name. `null` and a regex reach `resolveConstantString` and must come
+        // back unresolved rather than throwing or stringifying.
+        `const signature = crypto.createHash(null).update(token).digest('hex');`,
+        `const signature = crypto.createHash(/md5/).update(token).digest('hex');`,
+        // Neither is a call. The argument is not a literal AND not an
+        // identifier, so there is nothing to resolve one hop through.
+        `const signature = crypto.createHash(pickAlgo()).update(token).digest('hex');`,
+        // A const alias bound to a non-string literal: the hop resolves, the
+        // value does not.
+        `const ALGO = null; const signature = crypto.createHash(ALGO).update(token).digest('hex');`,
+        // No visible security use — the default classification still applies to
+        // the const-held form, exactly as it does to the inline one.
+        `const ALGO = 'md5'; const etag = crypto.createHash(ALGO).update(body).digest('hex');`,
+      ],
+      invalid: [
+        {
+          code: `const HASH_ALGORITHM = 'md5';\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const HASH_ALGORITHM = "sha256";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');` },
+              { messageId: 'useSha512', output: `const HASH_ALGORITHM = "sha512";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');` },
+              { messageId: 'useSha3', output: `const HASH_ALGORITHM = "sha3-256";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');` },
+            ],
+          }],
+        },
+        // Backticks spell the same constant as quotes.
+        {
+          code: `const ALGO = \`sha1\`;\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }`,
+          errors: [{
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: `const ALGO = "sha256";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }` },
+              { messageId: 'useSha512', output: `const ALGO = "sha512";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }` },
+              { messageId: 'useSha3', output: `const ALGO = "sha3-256";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }` },
+            ],
+          }],
+        },
+      ],
+    });
+  });
 });

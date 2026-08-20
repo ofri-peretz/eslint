@@ -19,9 +19,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unsafeInnerhtml' | 'sanitizeContent';
+type MessageIds = 'unsafeInnerhtml';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -78,7 +79,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-79',
       cvss: 8.1,
     },
-    hasSuggestions: true,
     messages: {
       unsafeInnerhtml: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -93,14 +93,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/FileReader',
       }),
-      sanitizeContent: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Sanitize File Content',
-        description: 'Use textContent or sanitize with DOMPurify',
-        severity: 'LOW',
-        fix: 'const sanitized = DOMPurify.sanitize(e.target.result);\nelement.innerHTML = sanitized;',
-        documentationLink: 'https://github.com/cure53/DOMPurify',
-      }),
+
     },
     schema: [
       {
@@ -122,7 +115,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
   ) {
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -224,12 +217,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
               data: {
                 method: node.left.property.name,
               },
-              suggest: [
-                {
-                  messageId: 'sanitizeContent',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }
@@ -262,12 +249,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
                 data: {
                   method: node.callee.property.name,
                 },
-                suggest: [
-                  {
-                    messageId: 'sanitizeContent',
-                    fix: () => null,
-                  },
-                ],
               });
               break;
             }

@@ -10,15 +10,28 @@
  * @see https://cwe.mitre.org/data/definitions/459.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  identifierWords,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+
+import { resolveConstantString } from '../../utils/const-value';
 
 type MessageIds = 'violationDetected';
 
 export interface Options {
   /**
-   * Extra property-name fragments (case-insensitive substrings) to treat as
-   * sensitive, on top of the built-in list. Default: []
+   * Extra sensitive property names, on top of the built-in list.
+   *
+   * Matched as whole words at the END of the property name, exactly like the
+   * built-ins — see `isSensitiveName`. Write them the way you would say them:
+   * `'pin code'`, `'pin_code'` and `'pinCode'` all match a property called
+   * `pinCode`; `'pincode'` does not, because it is one word and the property is
+   * two. Default: []
    */
   additionalSensitiveProperties?: string[];
 }
@@ -26,7 +39,7 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Property-name fragments that mark a value as a secret whose lifetime matters.
+ * Property names that mark a value as a secret whose lifetime matters.
  *
  * `delete` unbinds a property; it does not scrub the string, and every other
  * reference (a spread copy, a log line, an already-serialised response body)
@@ -35,16 +48,55 @@ type RuleOptions = [Options?];
  *
  * Matching is on the property NAME, deliberately: the value at a `delete` site
  * is not available to a syntactic rule, so the name is the only signal there
- * is. The cost of that is bounded by keeping this list narrow.
+ * is. What bounds the cost of that is `isSensitiveName` below, not the length
+ * of this list.
+ *
+ * The list is written as head nouns and as the compounds whose head is too
+ * generic to list alone (`key` matches `keyboard`, `keyCode`, `objectKey`), so
+ * `secret key` and `private key` are spelled out while `token` is not — the
+ * head-final match already covers `refreshToken`, `accessToken`, `userToken`.
  */
-const SENSITIVE_PROPERTY_FRAGMENTS = [
+const SENSITIVE_PROPERTY_NAMES = [
   'password', 'passwd', 'pwd', 'passphrase',
-  'secret', 'apikey', 'api_key',
-  'token', 'jwt', 'bearer',
-  'credential', 'privatekey', 'private_key', 'signingkey', 'signing_key',
-  'sessionid', 'session_id', 'refreshtoken', 'refresh_token',
-  'ssn', 'creditcard', 'credit_card', 'cardnumber', 'card_number', 'cvv',
+  'secret', 'token', 'jwt', 'bearer', 'credential',
+  'api key', 'secret key', 'private key', 'signing key', 'encryption key', 'access key',
+  'session id', 'ssn', 'credit card', 'card number', 'cvv',
 ];
+
+/**
+ * Is this property name a credential — as opposed to something ABOUT one?
+ *
+ * The old test was `name.toLowerCase().includes(fragment)`, and the corpus
+ * showed what that costs on ordinary code:
+ *
+ *   usage.totalTokens          an LLM usage COUNT
+ *   parser.tokenizerState      a lexer's scratch state
+ *   parser.tokenBuffer         a buffer of lexical tokens
+ *   options.secretsManagerArn  a POINTER to a secret, not a secret
+ *   tls.privateKeyPath         a FILENAME, readable in any process listing
+ *
+ * All five were reported at MEDIUM as leaked credentials. Whole-word matching
+ * alone fixes only two of them (`secrets` and `tokenizer` stop matching); the
+ * other three still contain the word.
+ *
+ * The invariant that separates them is grammatical, not lexical: English
+ * compound nouns are head-final. `refreshToken` IS a token; `tokenBuffer` is a
+ * buffer. `privateKeyPath` is a path. So the credential phrase must END the
+ * identifier — it has to be the thing the property IS, not a modifier on
+ * something else. That is one rule rather than a growing list of exceptions,
+ * and it costs recall only on names like `passwordHash`, which is the
+ * suppressing direction and the cheap one.
+ */
+function isSensitiveName(name: string, phrases: readonly string[]): boolean {
+  const words = identifierWords(name);
+  if (words.length === 0) return false;
+  return phrases.some((phrase) => {
+    const needle = identifierWords(phrase);
+    if (needle.length === 0 || needle.length > words.length) return false;
+    const start = words.length - needle.length;
+    return needle.every((word, offset) => words[start + offset] === word);
+  });
+}
 
 export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
   name: 'require-secure-deletion',
@@ -75,7 +127,8 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra property-name fragments to treat as sensitive',
+            description:
+              'Extra sensitive property names, matched as whole words at the END of the name. "pin code", "pin_code" and "pinCode" all match a property called pinCode; "pincode" does not.',
           },
         },
         additionalProperties: false,
@@ -85,39 +138,61 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ additionalSensitiveProperties: [] }],
   create(context, [options = {}]) {
     const { additionalSensitiveProperties = [] } = options as Options;
-    const fragments = [
-      ...SENSITIVE_PROPERTY_FRAGMENTS,
-      ...additionalSensitiveProperties.map((f) => f.toLowerCase()),
-    ];
+    const phrases = [...SENSITIVE_PROPERTY_NAMES, ...additionalSensitiveProperties];
 
     /** The property name being deleted, or undefined if it isn't statically known. */
     function deletedPropertyName(node: TSESTree.Node): string | undefined {
       // `delete obj?.password` wraps the member expression in a ChainExpression.
-      const argument = node.type === 'ChainExpression' ? node.expression : node;
-      if (argument.type !== 'MemberExpression') return undefined;
+      const argument = node.type === AST_NODE_TYPES.ChainExpression ? node.expression : node;
+      if (argument.type !== AST_NODE_TYPES.MemberExpression) return undefined;
       const property = argument.property;
-      if (!argument.computed && property.type === 'Identifier') return property.name;
-      if (argument.computed && property.type === 'Literal' && typeof property.value === 'string') {
-        return property.value;
-      }
-      return undefined;
+      if (!argument.computed && property.type === AST_NODE_TYPES.Identifier) return property.name;
+      // `const SECRET_FIELD = 'password'; delete user[SECRET_FIELD]`. A
+      // redaction helper that keeps its field list in one place is better code
+      // than the inline version, and reading only the property node made it
+      // invisible. `resolveConstantString` is `const`-and-one-hop only, so an
+      // unresolvable key still abstains.
+      const resolved = resolveConstantString(context.sourceCode, property);
+      return resolved?.value;
+    }
+
+    function reportIfSensitive(node: TSESTree.Node, property: string | undefined): void {
+      // Only a `delete` of a *named, statically known, sensitive* property is
+      // reportable. Firing on every `delete obj.prop` produced 120 findings
+      // on a 1,470-file corpus with no security content whatsoever — the rule
+      // was a `delete` detector, not a secret-cleanup detector.
+      if (!property) return;
+      if (!isSensitiveName(property, phrases)) return;
+      context.report({ node, messageId: 'violationDetected', data: { property } });
     }
 
     return {
       UnaryExpression(node: TSESTree.UnaryExpression) {
         if (node.operator !== 'delete') return;
+        reportIfSensitive(node, deletedPropertyName(node.argument));
+      },
 
-        // Only a `delete` of a *named, statically known, sensitive* property is
-        // reportable. Firing on every `delete obj.prop` produced 120 findings
-        // on a 1,470-file corpus with no security content whatsoever — the rule
-        // was a `delete` detector, not a secret-cleanup detector.
-        const property = deletedPropertyName(node.argument);
-        if (!property) return;
-
-        const normalized = property.toLowerCase().replace(/[^a-z0-9_]/g, '');
-        if (!fragments.some((fragment) => normalized.includes(fragment))) return;
-
-        context.report({ node, messageId: 'violationDetected', data: { property } });
+      /**
+       * `Reflect.deleteProperty(record, 'password')` — the delete operator as a
+       * function, which is what proxy traps and generic serialisers call. It
+       * scrubs exactly as little as `delete` and formed no UnaryExpression, so
+       * the rule could not see it at all.
+       */
+      CallExpression(node: TSESTree.CallExpression) {
+        const callee = node.callee;
+        if (
+          callee.type !== AST_NODE_TYPES.MemberExpression ||
+          callee.computed ||
+          callee.object.type !== AST_NODE_TYPES.Identifier ||
+          callee.object.name !== 'Reflect' ||
+          callee.property.type !== AST_NODE_TYPES.Identifier ||
+          callee.property.name !== 'deleteProperty'
+        ) {
+          return;
+        }
+        const key = node.arguments[1];
+        if (!key) return;
+        reportIfSensitive(node, resolveConstantString(context.sourceCode, key)?.value);
       },
     };
   },

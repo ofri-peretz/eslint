@@ -86,4 +86,266 @@ describe('no-unsafe-query', () => {
       ]),
     });
   });
+
+  /**
+   * Regression locks for the four defects
+   * `benchmarks/rule-corpus/postgresql-security__no-unsafe-query` proved. Each
+   * `invalid` case below was SILENT on the shipped rule; each `valid` case was
+   * REPORTED by it. Reverting any one fix turns exactly one of these red.
+   */
+  describe('corpus regressions', () => {
+    ruleTester.run('the sink set is not just `query`', noUnsafeQuery, {
+      valid: pg([
+        // The sink names are exact membership against a closed API surface —
+        // a method merely CONTAINING them is not one.
+        "db.queryBuilder(`DELETE FROM s WHERE id = ${id}`)",
+        "db.executeMigration(`DELETE FROM s WHERE id = ${id}`)",
+      ]),
+      invalid: pg([
+        // FN #1 — `execute` is the spelling mysql2-shaped code carries over,
+        // and node-postgres accepts it on a prepared statement. The rule
+        // matched only `query`, so this walked straight past.
+        {
+          code: 'db.execute(`DELETE FROM sessions WHERE id = ${req.params.id}`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: "db.execute('DELETE FROM sessions WHERE id = ' + id)",
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+      ]),
+    });
+
+    ruleTester.run('a LOCAL builder resolves to what it returns', noUnsafeQuery, {
+      valid: pg([
+        // An IMPORTED call must NOT resolve — `format` and `escapeIdentifier`
+        // are the documented remediations for this weakness, and reporting
+        // them hands a developer their own fix as the finding.
+        "import { format } from 'pg-format';\ndb.query(format('SELECT * FROM %I', table));",
+        "import { escapeIdentifier } from 'pg';\ndb.query('SELECT * FROM t ORDER BY ' + escapeIdentifier(req.query.sort));",
+        // A local helper that returns something other than a built string is
+        // not a query builder.
+        "const build = () => CONSTANT_SQL;\ndb.query(build());",
+        "function build() { return 'SELECT 1'; }\ndb.query(build());",
+        // A block that does more than return is not read: the string could be
+        // reassigned in between, and guessing there is how a precise rule
+        // becomes a noisy one.
+        'function build(t) { log(t); return `SELECT * FROM t WHERE a = ${t}`; }\ndb.query(build(x));',
+        'function build(t) { return; }\ndb.query(build(x));',
+        // A builder whose interpolations all fold to literals is still safe.
+        "const T = 'users';\nconst build = () => `SELECT * FROM ${T}`;\ndb.query(build());",
+        // Not an identifier callee — nothing to resolve.
+        'db.query(sqlHelpers.build(req.query.tag));',
+        // A callee that resolves to no binding in this file at all.
+        'db.query(unknownBuilder(req.query.tag));',
+        // A binding written more than once: the call could reach either
+        // implementation, so neither is substituted.
+        'let build = (t) => `SELECT * FROM t WHERE a = ${t}`;\nbuild = other;\ndb.query(build(x));',
+        // Written once, but by assignment rather than an initialiser.
+        'let build;\nbuild = (t) => `SELECT * FROM t WHERE a = ${t}`;\ndb.query(build(x));',
+        // A binding that resolves to something that is not a function.
+        'const build = other;\ndb.query(build(x));',
+      ]),
+      invalid: pg([
+        // FN #2 — SQL assembled by a helper, then executed. The sink saw a
+        // CallExpression, which is neither concat nor template, so the whole
+        // injection disappeared.
+        {
+          code: "const build = (t) => `SELECT * FROM logs WHERE tag = '${t}'`;\ndb.query(build(req.query.tag));",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // Found by the adversarial wave, not the corpus: every builder written
+        // the ORDINARY way has a BlockStatement body, and only the concise
+        // arrow was ever substituted.
+        {
+          code: "const build = function (t) { return 'SELECT * FROM logs WHERE tag = ' + t; };\ndb.query(build(req.query.tag));",
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        {
+          code: 'const build = (t) => { return `SELECT * FROM logs WHERE tag = ${t}`; };\ndb.query(build(req.query.tag));',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // A `function` DECLARATION is a `FunctionName` definition with no
+        // initialiser, so it resolved to nothing at all.
+        {
+          code: "function build(t) { return 'SELECT * FROM logs WHERE tag = ' + t; }\ndb.query(build(req.query.tag));",
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+      ]),
+    });
+
+    ruleTester.run('interpolation that folds to a literal is not a finding', noUnsafeQuery, {
+      valid: pg([
+        // FP #1 — nothing here can change. The interpolated value is a `const`
+        // string written three lines up, and the rule called it an injection.
+        "const TABLE = 'users';\nexport function all() { return db.query(`SELECT * FROM ${TABLE} WHERE active = true`); }",
+        "const COL = 'name';\ndb.query('SELECT ' + COL + ' FROM users');",
+        "const A = 'users', B = 'id';\ndb.query(`SELECT * FROM ${A} ORDER BY ${B}`);",
+        // Nested built strings fold too.
+        "const T = 'users';\ndb.query(`SELECT * FROM ${`${T}`}`);",
+      ]),
+      invalid: pg([
+        // A binding that IS reassigned does not fold — the value at the sink is
+        // whatever was written last, and one of the writes is a request value.
+        {
+          code: "let table = 'users';\ntable = req.query.t;\ndb.query(`SELECT * FROM ${table}`);",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // One static part does not make the whole statement static.
+        {
+          code: "const TABLE = 'users';\ndb.query(`SELECT * FROM ${TABLE} WHERE id = ${req.params.id}`);",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // Nested, with a raw value at the bottom.
+        {
+          code: "db.query(`SELECT * FROM t WHERE a = ${`${req.query.a}`}`);",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+      ]),
+    });
+
+    ruleTester.run('being called `query` is not evidence of being SQL', noUnsafeQuery, {
+      valid: pg([
+        // FP #2 — an analytics client in a file that also happens to hold a pg
+        // pool. The rule fired on the METHOD NAME, with no evidence at all
+        // that the string was a statement.
+        "import { analytics } from '../lib/analytics';\ndb.query('SELECT 1');\nanalytics.query(`event:${req.query.name}`);",
+        // A single verb is not a statement. `'update ' + name` is a status
+        // message far more often than it is SQL.
+        "logger.query('update ' + name);",
+        "cache.query(`selected: ${count}`);",
+        // A GraphQL document handed to an Apollo client.
+        "import { client } from '../lib/gql';\nclient.query({ query: USER_QUERY, variables: { id } });",
+      ]),
+      invalid: pg([
+        // The statement shapes that ARE evidence, each built from a raw value.
+        {
+          code: "db.query('INSERT INTO users VALUES (' + val + ')')",
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        {
+          code: 'db.query(`UPDATE users SET name = \'${req.body.name}\' WHERE id = 1`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: 'db.query(`DELETE FROM users WHERE id = ${req.params.id}`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: 'db.query(`WITH recent AS (SELECT * FROM logs WHERE tag = ${t}) SELECT * FROM recent`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: 'db.query(`CREATE TABLE ${req.body.name} (id int)`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: 'db.query(`COPY users FROM ${path}`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: 'db.query(`GRANT ALL ON ${tbl} TO app`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: 'db.query(`MERGE INTO t USING s ON t.id = ${id}`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: 'db.query(`REPLACE INTO t VALUES (${v})`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // A bare projection has no FROM clause; demanding one cost recall.
+        {
+          code: 'db.query(`SELECT nextval(${seq})`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+      ]),
+    });
+
+    // NOT wrapped in `pg()` — this is the module gate itself. A textbook
+    // injection in a file with no PostgreSQL client belongs to
+    // `secure-coding/no-sql-injection`, and reporting it here would bill the
+    // same line twice.
+    ruleTester.run('the module gate still abstains', noUnsafeQuery, {
+      valid: [
+        'db.query(`SELECT * FROM users WHERE id = ${req.params.id}`);',
+        "db.execute('DELETE FROM sessions WHERE id = ' + id);",
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('the config-object form is the same call', noUnsafeQuery, {
+      valid: pg([
+        // The remediation, written the other documented way.
+        "db.query({ text: 'SELECT * FROM t WHERE a = $1', values: [req.query.a] });",
+        // A config object with no `text`.
+        'db.query({ values: [req.query.a] });',
+        // A PARAMETER assigned once inside the body: written exactly once, but
+        // its definition is not a declaration and carries no initialiser.
+        'export function run(config) { config = { text: `SELECT * FROM t WHERE a = ${req.query.a}` }; return db.query(config); }',
+        // A `text` that folds to a literal.
+        "const T = 'users';\ndb.query({ text: `SELECT * FROM ${T}` });",
+      ]),
+      invalid: pg([
+        // FN — node-postgres' config-object form. The SQL is interpolated
+        // exactly as in the string form, and only the first argument was ever
+        // read as a string. The same gap existed on no-transaction-on-pool.
+        {
+          code: "db.query({ text: `SELECT * FROM reports WHERE owner = '${req.query.owner}'` });",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        {
+          code: "db.query({ 'text': 'SELECT * FROM t WHERE a = ' + req.query.a });",
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        // The object reached through one binding hop.
+        {
+          code: 'const config = { text: `SELECT * FROM t WHERE a = ${req.query.a}` };\ndb.query(config);',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+      ]),
+    });
+
+    ruleTester.run('sink-argument shapes', noUnsafeQuery, {
+      valid: pg([
+        // No first argument at all.
+        'db.query();',
+        // A spread cannot be read as the query text.
+        'db.query(...args);',
+        // A computed sink property is not a name we can match.
+        'db[method](`SELECT * FROM t WHERE a = ${a}`);',
+        // Not a member call.
+        'query(`SELECT * FROM t WHERE a = ${a}`);',
+        // An identifier that was never assigned query text.
+        'db.query(unknownSql);',
+        // A binding holding a plain, non-built statement.
+        "const q = 'SELECT * FROM users';\ndb.query(q);",
+        // A binding whose init is not string-ish is not tracked.
+        'const q = buildIt();\ndb.query(q);',
+      ]),
+      invalid: pg([
+        // One binding hop between the request and the sink.
+        {
+          code: "const owner = req.query.owner;\nconst sql = `SELECT * FROM reports WHERE owner = '${owner}'`;\ndb.query(sql);",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // `+=` where the seed alone is not a statement but the whole is.
+        {
+          code: "let q = 'SELECT * FROM p WHERE 1=1';\nq += ` AND name = '${name}'`;\ndb.query(q);",
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // `+=` onto a binding this file never declared.
+        {
+          code: 'q += `SELECT * FROM t WHERE a = ${a}`;\ndb.query(q);',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+        // A TypeScript cast is erased; the value underneath is still raw.
+        {
+          code: 'db.query(`SELECT * FROM reports WHERE owner = \'${req.query.owner as string}\'`)',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
+      ]),
+    });
+  });
 });

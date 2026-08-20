@@ -82,3 +82,151 @@ describe('no-select-all', () => {
     });
   });
 });
+
+/**
+ * REGRESSION LOCKS — every defect the rule corpus
+ * (`benchmarks/rule-corpus/postgresql-security__no-select-all`) proved.
+ *
+ * BEFORE: TP 3 / FP 2 / FN 5 — precision 60.0%, recall 37.5%, F1 46.2%.
+ * AFTER:  12 / 0 / 0 — 100% on the corpus including the adversarial wave.
+ *
+ * Each case below fails on the pre-fix rule, which read only a plain string
+ * `Literal` and pattern-matched the raw text without ever separating the
+ * statement from the comments and literals inside it.
+ */
+describe('no-select-all — regression locks', () => {
+  ruleTester.run('argument forms the driver accepts', noSelectAll, {
+    valid: [],
+    invalid: pg([
+      {
+        // A template literal with no interpolation is a plain string, and
+        // multi-line SQL arrives that way constantly.
+        code: 'pool.query(`SELECT *\n FROM users WHERE id = $1`, [id]);',
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // Interpolated expressions must become a neutral token, not vanish —
+        // dropping them would splice SELECT onto FROM.
+        code: 'pool.query(`SELECT * FROM ${schema}.accounts WHERE id = $1`, [id]);',
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // node-postgres' documented `{ text, values }` config form.
+        code: "pool.query({ text: 'SELECT * FROM invoices WHERE a = $1', values: [a] });",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // …and the same object with a quoted key.
+        code: "pool.query({ 'text': 'SELECT * FROM settings' });",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // One binding hop: a repository hoists its statements to constants.
+        code: "const FIND = 'SELECT * FROM sessions WHERE token = $1'; pool.query(FIND, [t]);",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('star spellings', noSelectAll, {
+    valid: [],
+    invalid: pg([
+      {
+        // A table-qualified star is the same defect, and it is the one that
+        // shows up in joins.
+        code: "pool.query('SELECT u.*, o.id FROM users u JOIN orders o ON o.customer_id = u.id');",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // `DISTINCT ON (...)` sits between the keyword and the star.
+        code: "pool.query('SELECT DISTINCT ON (user_id) * FROM events ORDER BY user_id');",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // The star inside a CTE is materialised just the same.
+        code: "pool.query('WITH recent AS (SELECT * FROM events) SELECT kind FROM recent');",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // A `''` escape before… the star must not swallow the statement.
+        code: `pool.query("SELECT u.* FROM users u WHERE u.name = 'O''Brien'");`,
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        // An outer star with an EXISTS subquery below it still reports.
+        code: "pool.query('SELECT * FROM users u WHERE EXISTS (SELECT 1 FROM orders o WHERE o.c = u.id)');",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('stars that are not a select list', noSelectAll, {
+    valid: pg([
+      // `count(*)` reads no columns at all; it is by far the most common star
+      // in real SQL and reporting it is pure noise.
+      "pool.query('SELECT count(*) AS n FROM users');",
+      "pool.query('SELECT kind, COUNT( * ) AS n FROM events GROUP BY kind');",
+      // Postgres never evaluates the select list of an EXISTS subquery.
+      "pool.query('SELECT id FROM users u WHERE EXISTS (SELECT * FROM orders o WHERE o.c = u.id)');",
+      // The star ranges over a set-returning function whose columns are fixed
+      // by the call — the batch-insert remediation this plugin recommends.
+      "pool.query('INSERT INTO users (id, n) SELECT * FROM unnest($1::int[], $2::text[])', [a, b]);",
+      "pool.query('SELECT * FROM json_to_recordset($1::json) AS x(sku text, cents int)', [p]);",
+      // A `--` comment, a block comment, and a single-quoted literal. Stripping
+      // comments before literals lets a `--` inside a string eat the statement;
+      // stripping literals first lets an apostrophe in a comment do the same.
+      "pool.query(`-- was: SELECT * FROM users\\n SELECT id, email FROM users`);",
+      "pool.query(`/* do not use SELECT * here */ SELECT id FROM invoices`);",
+      `pool.query("SELECT statement FROM audit WHERE statement = 'SELECT * FROM users'");`,
+      "pool.query(`-- don't use the star here\\n SELECT id, email FROM users`);",
+      `pool.query("SELECT id, pattern FROM rules WHERE pattern = '-- * --'");`,
+      // A dollar-quoted body is a literal; `$1` is a placeholder, not a tag.
+      'pool.query(`SELECT proname FROM pg_proc WHERE prosrc = $$SELECT * FROM u$$ AND n = $1`, [n]);',
+      // Multiplication.
+      "pool.query('SELECT line_id, quantity * unit_price AS total FROM order_lines');",
+      // A star after a comma with no SELECT before it is not a select list.
+      "pool.query('INSERT INTO foo VALUES (1, *)');",
+      // A binding written more than once is not readable evidence.
+      "let sql = 'SELECT id FROM t'; sql = 'SELECT * FROM t'; pool.query(sql);",
+      // Not the sink.
+      "pool.on('error', (e) => console.error('SELECT * FROM pool', e));",
+      "pool.query(123);",
+      "pool.query();",
+    ]),
+    invalid: [],
+  });
+});
+
+/**
+ * Coverage of the abstention paths: every place the rule decides it cannot
+ * read the statement. Each of these is a QUIET verdict for a stated reason, not
+ * an accident — the positive control for all of them is the corpus's
+ * `vulnerable/` set, which proves the same shapes report when the SQL is
+ * readable.
+ */
+describe('no-select-all — unreadable statements abstain', () => {
+  ruleTester.run('malformed and unreadable SQL', noSelectAll, {
+    valid: [
+      // No PostgreSQL client in the file: the plugin does not run at all.
+      "db.query('SELECT * FROM users');",
+      ...pg([
+        // A `--` comment that runs to the end of the string, an unterminated
+        // block comment, and an unterminated dollar quote. Each consumes the
+        // remainder rather than looping or throwing.
+        "pool.query('SELECT id FROM t -- trailing note');",
+        "pool.query('SELECT id FROM t /* unterminated');",
+        "pool.query('SELECT id FROM t WHERE x = $$unterminated');",
+        // A config object with no `text` key, and an argument the rule cannot
+        // read at all.
+        'pool.query({ values: [1] });',
+        'pool.query(buildSql());',
+        // Bindings that are not readable evidence: a reassigned parameter, a
+        // declaration with no initialiser, and an alias of another binding.
+        "function f(sql) { sql = 'SELECT * FROM t'; pool.query(sql); }",
+        "function f() { let sql; sql = 'SELECT * FROM t'; pool.query(sql); }",
+        "const a = b; pool.query(a);",
+      ]),
+    ],
+    invalid: [],
+  });
+});

@@ -92,7 +92,7 @@ helper. Machine-readable equivalents ship via the
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**30 published plugins · 465 rules** — 21 security plugins (260 rules), 7 code-quality plugins (107 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-08-05 from the source tree — never hand-typed.</sub>
+**30 published plugins · 477 rules** — 21 security plugins (272 rules), 7 code-quality plugins (107 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-08-13 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -103,38 +103,38 @@ that match your stack; ignore the other twenty-eight.
 
 ### 🔒 Security — languages, platforms & SDKs
 
-<sub>18 plugins · 209 rules</sub>
+<sub>18 plugins · 220 rules</sub>
 
-| Package                                                                                                | Rules | What it catches                                                                                                                                                                                                                             | Docs                                                                                                                                       | Downloads                                                                                              |
-| :----------------------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)       |    45 | Detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps                                                                                                                     | [docs](https://eslint.interlace.tools/docs/security/plugin-browser-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)   | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-browser-security?style=flat-square&label=)    |
-| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)             |    37 | Detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto                                                                                                 | [docs](https://eslint.interlace.tools/docs/security/plugin-node-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-node-security?style=flat-square&label=)       |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)             |    28 | Detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs                                                                                                            | [docs](https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=github&utm_medium=referral&utm_campaign=monorepo)      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding?style=flat-square&label=)       |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)   |    19 | Detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText                                                                                                              | [docs](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security?style=flat-square&label=)  |
-| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security)       |    16 | Detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-mongodb-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)   | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mongodb-security?style=flat-square&label=)    |
-| [`eslint-plugin-jwt-security`](https://www.npmjs.com/package/eslint-plugin-jwt-security)               |    13 | Detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify                                                                                                                                | [docs](https://eslint.interlace.tools/docs/security/plugin-jwt?utm_source=github&utm_medium=referral&utm_campaign=monorepo)                | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-jwt-security?style=flat-square&label=)        |
-| [`eslint-plugin-postgresql-security`](https://www.npmjs.com/package/eslint-plugin-postgresql-security) |    13 | Detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL                                                                                                                                           | [docs](https://eslint.interlace.tools/docs/security/plugin-pg?utm_source=github&utm_medium=referral&utm_campaign=monorepo)                 | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-postgresql-security?style=flat-square&label=) |
-| [`eslint-plugin-knex-security`](https://www.npmjs.com/package/eslint-plugin-knex-security)             |     5 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-knex-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-knex-security?style=flat-square&label=)       |
-| [`eslint-plugin-drizzle-security`](https://www.npmjs.com/package/eslint-plugin-drizzle-security)       |     4 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-drizzle-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)   | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-drizzle-security?style=flat-square&label=)    |
-| [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security)       |     4 | Catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell                                             | [readme](./packages/eslint-plugin-mcp-sdk-security)                                                                                        | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mcp-sdk-security?style=flat-square&label=)    |
-| [`eslint-plugin-prisma-security`](https://www.npmjs.com/package/eslint-plugin-prisma-security)         |     4 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-prisma-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-prisma-security?style=flat-square&label=)     |
-| [`eslint-plugin-sequelize-security`](https://www.npmjs.com/package/eslint-plugin-sequelize-security)   |     4 | Detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials | [docs](https://eslint.interlace.tools/docs/security/plugin-sequelize-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-sequelize-security?style=flat-square&label=)  |
-| [`eslint-plugin-typeorm-security`](https://www.npmjs.com/package/eslint-plugin-typeorm-security)       |     4 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-typeorm-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)   | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-typeorm-security?style=flat-square&label=)    |
-| [`eslint-plugin-anthropic-security`](https://www.npmjs.com/package/eslint-plugin-anthropic-security)   |     3 | Catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input                                                                                             | [readme](./packages/eslint-plugin-anthropic-security)                                                                                      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-anthropic-security?style=flat-square&label=)  |
-| [`eslint-plugin-gemini-security`](https://www.npmjs.com/package/eslint-plugin-gemini-security)         |     3 | Catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input                                                                                                                     | [readme](./packages/eslint-plugin-gemini-security)                                                                                         | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-gemini-security?style=flat-square&label=)     |
-| [`eslint-plugin-mysql-security`](https://www.npmjs.com/package/eslint-plugin-mysql-security)           |     3 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-mysql-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mysql-security?style=flat-square&label=)      |
-| [`eslint-plugin-openai-security`](https://www.npmjs.com/package/eslint-plugin-openai-security)         |     3 | Catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input                                                                                                                                      | [readme](./packages/eslint-plugin-openai-security)                                                                                         | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-openai-security?style=flat-square&label=)     |
-| [`eslint-plugin-sqlite-security`](https://www.npmjs.com/package/eslint-plugin-sqlite-security)         |     1 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-sqlite-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-sqlite-security?style=flat-square&label=)     |
+| Package                                                                                                | Rules | What it catches                                                                                                                                                                                                                             | Docs                                                                                                                                        | Downloads                                                                                              |
+| :----------------------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------- |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)       |    46 | Detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps                                                                                                                     | [docs](https://eslint.interlace.tools/docs/security/plugin-browser-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-browser-security?style=flat-square&label=)    |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)             |    42 | Detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto                                                                                                 | [docs](https://eslint.interlace.tools/docs/security/plugin-node-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-node-security?style=flat-square&label=)       |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)             |    33 | Detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs                                                                                                            | [docs](https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=github&utm_medium=referral&utm_campaign=monorepo)       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding?style=flat-square&label=)       |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)   |    19 | Detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText                                                                                                              | [docs](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security?style=flat-square&label=)  |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security)       |    16 | Detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-mongodb-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mongodb-security?style=flat-square&label=)    |
+| [`eslint-plugin-jwt-security`](https://www.npmjs.com/package/eslint-plugin-jwt-security)               |    13 | Detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify                                                                                                                                | [docs](https://eslint.interlace.tools/docs/security/plugin-jwt-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)        | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-jwt-security?style=flat-square&label=)        |
+| [`eslint-plugin-postgresql-security`](https://www.npmjs.com/package/eslint-plugin-postgresql-security) |    13 | Detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL                                                                                                                                           | [docs](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-postgresql-security?style=flat-square&label=) |
+| [`eslint-plugin-knex-security`](https://www.npmjs.com/package/eslint-plugin-knex-security)             |     5 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-knex-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-knex-security?style=flat-square&label=)       |
+| [`eslint-plugin-drizzle-security`](https://www.npmjs.com/package/eslint-plugin-drizzle-security)       |     4 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-drizzle-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-drizzle-security?style=flat-square&label=)    |
+| [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security)       |     4 | Catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell                                             | [readme](./packages/eslint-plugin-mcp-sdk-security)                                                                                         | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mcp-sdk-security?style=flat-square&label=)    |
+| [`eslint-plugin-prisma-security`](https://www.npmjs.com/package/eslint-plugin-prisma-security)         |     4 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-prisma-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-prisma-security?style=flat-square&label=)     |
+| [`eslint-plugin-sequelize-security`](https://www.npmjs.com/package/eslint-plugin-sequelize-security)   |     4 | Detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials | [docs](https://eslint.interlace.tools/docs/security/plugin-sequelize-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-sequelize-security?style=flat-square&label=)  |
+| [`eslint-plugin-typeorm-security`](https://www.npmjs.com/package/eslint-plugin-typeorm-security)       |     4 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-typeorm-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-typeorm-security?style=flat-square&label=)    |
+| [`eslint-plugin-anthropic-security`](https://www.npmjs.com/package/eslint-plugin-anthropic-security)   |     3 | Catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input                                                                                             | [readme](./packages/eslint-plugin-anthropic-security)                                                                                       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-anthropic-security?style=flat-square&label=)  |
+| [`eslint-plugin-gemini-security`](https://www.npmjs.com/package/eslint-plugin-gemini-security)         |     3 | Catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input                                                                                                                     | [readme](./packages/eslint-plugin-gemini-security)                                                                                          | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-gemini-security?style=flat-square&label=)     |
+| [`eslint-plugin-mysql-security`](https://www.npmjs.com/package/eslint-plugin-mysql-security)           |     3 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-mysql-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mysql-security?style=flat-square&label=)      |
+| [`eslint-plugin-openai-security`](https://www.npmjs.com/package/eslint-plugin-openai-security)         |     3 | Catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input                                                                                                                                      | [readme](./packages/eslint-plugin-openai-security)                                                                                          | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-openai-security?style=flat-square&label=)     |
+| [`eslint-plugin-sqlite-security`](https://www.npmjs.com/package/eslint-plugin-sqlite-security)         |     1 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-sqlite-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-sqlite-security?style=flat-square&label=)     |
 
 ### 🏗️ Security — application frameworks
 
-<sub>3 plugins · 51 rules</sub>
+<sub>3 plugins · 52 rules</sub>
 
 | Package                                                                                          | Rules | What it catches                                                                                                                     | Docs                                                                                                                                     | Downloads                                                                                           |
 | :----------------------------------------------------------------------------------------------- | ----: | :---------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
 | [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |    28 | Detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production | [docs](https://eslint.interlace.tools/docs/security/plugin-express-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-express-security?style=flat-square&label=) |
 | [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)   |    14 | Detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details            | [docs](https://eslint.interlace.tools/docs/security/plugin-lambda-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-lambda-security?style=flat-square&label=)  |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |     9 | Detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields                               | [docs](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security?style=flat-square&label=)  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |    10 | Detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields                               | [docs](https://eslint.interlace.tools/docs/security/plugin-nestjs-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security?style=flat-square&label=)  |
 
 ### 🧭 Architecture
 
@@ -225,40 +225,296 @@ built the fix and measured it before shipping — findings went **29 → 2,243**
 corpus, and a hand-read of the new ones put precision at **~25%**. We reverted it, and
 [documented the gap](./BENCHMARK-RESULTS.md) rather than closing it badly.
 
+### The words we use, in plain terms
+
+Every number below depends on these, so they are defined once here rather than
+assumed.
+
+**Severity — what ESLint does when a rule fires.** You set it per rule in your
+config, and our presets set it for you:
+
+| Severity | In your config | What happens |
+| :------- | :------------- | :----------- |
+| **`error`** | `'error'` or `2` | Reported as an error and **`eslint` exits non-zero — your build fails.** |
+| **`warn`** | `'warn'` or `1` | Reported, but the exit code stays 0. Your build passes; you see it and decide. |
+| **off / opt-in** | `'off'`, `0`, or simply not in the preset | The rule does not run at all. Ours are still shipped and documented — you turn them on deliberately. |
+
+That is why a severity is a promise: `error` interrupts you and `warn` does not.
+
+**The four outcomes.** Every finding is one of these, and the pair of words for
+the two that matter:
+
+- **TP** (true positive) — the rule fired and the code really was vulnerable. Signal.
+- **FP** (false positive) — the rule fired and the code was fine. Noise.
+- **FN** (false negative) — the code was vulnerable and the rule stayed quiet. A miss.
+- **TN** — the code was fine and the rule stayed quiet. Correct silence.
+
+**Precision** = TP / (TP + FP). *Of the findings you are shown, what share are
+real?* This is the number that decides whether you keep the tool on. **Recall** =
+TP / (TP + FN) — *of the real problems, what share did we catch?* You cannot
+maximise both, which is the tradeoff section below.
+
+**`n` — the sample size.** How many individual findings we pulled out of real
+repositories and read one at a time, labelling each TP, FP, or *undecidable*. `n
+= 20` means twenty findings judged by hand. It matters because a percentage from
+a small `n` is mostly luck: at `n = 4`, reclassifying one finding moves precision
+by 25 points.
+
+**Sampled precision vs fixture precision.** *Fixture* precision is measured on
+test files we wrote — it is a regression gate and says nothing about your code.
+*Sampled* precision is measured on open-source repositories we did not write.
+Only the second one predicts your afternoon, and it is the only one the bars below
+use.
+
+### The severity contract — what each tier promises
+
+Nobody in this space publishes a precision bar, so we set ours and publish where we
+sit against it. A severity is a **promise about your triage time**, and it is the
+only part of a lint finding a consumer plans around:
+
+| Tier                         | Promise to you                                              | Bar                             |
+| :--------------------------- | :---------------------------------------------------------- | :------------------------------ |
+| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable.      | **≤ 5%** effective false positives |
+| **`warn`** in `recommended`  | Fix these, but not today. Same accuracy, lower urgency.       | **≤ 5%** effective false positives |
+| **Off by default** (opt-in)  | A paranoid sweep. You asked for it; expect to triage.         | No floor — **but the rate is published** |
+| **The preset, as a whole**   | What you actually install.                                    | **≤ 5%** across every rule it enables |
+
+**Severity signals urgency, not confidence.** `warn` used to carry a lower
+accuracy bar here — 70%, i.e. three wrong findings in ten. That was incoherent:
+a noisy `warn` costs a reader exactly as much attention as a noisy `error`, and
+the only difference is whether the build also fails. Anything we switch on for
+you meets the same bar; the tier tells you how soon to care.
+
+**And the bar that matters is the preset's, not the rule's.** You install a
+config, not a rule. Twenty rules each sitting at a defensible 5% do not compose
+into a 5% experience, so the aggregate carries its own budget.
+
+#### Why 5%, and why "effective"
+
+The number is not ours. Google admits an analyzer into code review only while
+its effective false-positive rate stays under 10%, and its actual fleet average
+runs just under 5% — measured across the largest continuously-linted codebase
+anyone has published on. Above roughly 10%, developers stop reading a tool, then
+switch it off. We take the fleet average rather than the ceiling because we are
+asking you to enable a preset you did not tune.
+
+**Effective** is the load-bearing word, also Google's. A finding counts against
+us when it is wrong — *and* when it is right but you would not act on it: the
+message did not explain itself, or the issue was too trivial to be worth the
+interruption. A correct finding nobody understands costs a reader exactly what a
+wrong one costs. That makes message quality a precision property, not polish.
+
+Three rules follow from that, and they bind us more than they bind anyone else:
+
+1. **A rule may not ship at a tier it has not been measured against.** Unmeasured
+   means opt-in, however good it looks on our fixtures.
+2. **The sample is for that rule specifically**, on code we did not write, each
+   finding labelled TP / FP / undecidable with a reason
+   ([protocol](./BENCHMARK-CRITERIA.md#a2-precision--three-tiers-never-conflated)).
+   A rule's precision measured inside a mixed sample of four rules is not that rule's
+   precision.
+3. **A rule that misses its bar is a defect, and gets fixed.** Demotion is the
+   stopgap that protects you today — `no-unsafe-deserialization` went `error` → `warn`
+   on 2026-05-09 at 76% Wild hits, locked by a test so it cannot quietly return — but a
+   demoted rule is an open defect, not a resolved one. Shipping below the bar of the
+   tier you sit at is not an accepted state here; see
+   [the open list](./BENCHMARK-RESULTS.md) and the scoreboard below.
+
+#### Reachability is how the bar gets met
+
+A 5% bar is not reached by tuning thresholds. It is reached by changing what a
+rule is willing to assert.
+
+**Reachability** — can attacker-controlled input actually arrive at this
+expression — is the lever the commercial tools pulled to cut alert volume by a
+reported 92–95%, and it is the difference between the two contracts a rule can
+have:
+
+| Contract | Behaviour | Result |
+| :--- | :--- | :--- |
+| *Report unless proven safe* | the final branch returns "report" | every unprovable case is a finding |
+| *Report only when reachable* | the final branch returns "quiet" | an unprovable case is silence |
+
+The first is not a stricter version of the second — it is a different product.
+`detect-object-injection` ships the first contract and produces **14,696**
+findings across our 20-repository corpus at 0 confirmed true positives in the
+sample. No threshold fixes that; only the contract does.
+
+So: **anything enabled by default asserts reachability.** A rule that cannot
+resolve a path from an untrusted source to the sink stays quiet by default, and
+the paranoid sweep — report on shape alone — remains available opt-in, with its
+rate published. This is what our taint analysis already approximates; the change
+is making it the precondition rather than the tiebreak.
+
+#### When a rule is too rare to score — the census criterion
+
+A ratio needs findings to compute. `detect-non-literal-fs-filename` produces
+**one** finding across 3.04M lines of mature open-source code, and that finding
+is real. There is no sample size at which that becomes 70% — at `n = 1` the
+defensible lower bound is 20.7%, and the bar needs `n ≥ 9`. A rule can be
+correct and still be unscoreable.
+
+So a rule whose whole output on the corpus is smaller than the `n` its tier
+requires is scored a different way, and it is a **stricter** test, not a waiver:
+
+| | ratio criterion | census criterion |
+| :--- | :--- | :--- |
+| Applies when | findings ≥ required `n` | findings < required `n` |
+| What is judged | a stratified **sample** | **every finding**, no sampling |
+| Passing | the tier's percentage | **zero false positives** |
+| Published | the rate and its `n` | the finding count and the labels |
+
+Sampling lets a rule hide its worst findings behind the ones you happened to
+draw. A census cannot: one false positive anywhere in the output fails it. That
+is why this is not the easy road — `detect-non-literal-fs-filename` needed three
+rounds of fixes to get from 37 findings to 1, and any of the 36 removed would
+have failed it.
+
+**A rule may not choose which criterion it is judged by.** The finding count
+decides, and the count is published beside the verdict.
+
+#### How big a sample the bar actually needs
+
+A percentage from 20 findings is not evidence for a 95% claim. If you read 20
+findings and all 20 are real, the true rate could still be 85% and you got a good
+draw. So the bars carry a required `n`, derived from the **Wilson score interval** —
+the standard statistical answer to *"given what we saw, what is the worst the true
+rate plausibly is?"*, at 95% confidence. That worst case is the number we hold
+ourselves to, not the raw percentage.
+
+With a **perfect** sample — every finding a true positive:
+
+| Sample size    |  n=20 |  n=50 | **n=73** | n=100 |
+| :------------- | ----: | ----: | -------: | ----: |
+| Defensible precision | 83.9% | 92.9% | **95.1%** | 96.3% |
+
+So the `error` bar needs **n ≥ 73 with zero false positives**, or n ≥ 150 with one.
+`n ≥ 20` — §A2's minimum — is enough to *publish a rate*, never enough to *clear the
+`error` bar*. We got this wrong when the contract was first written and are saying so
+rather than quietly restating it.
+
+### What these bars cost — the tradeoffs
+
+Every one of these choices buys something and spends something. In order of how much
+it will annoy you:
+
+**A 95% `error` bar means very few rules will ever be `error`.** Most real security
+coverage therefore lives at `warn` or behind an opt-in preset, and a team that wants
+breadth has to go and enable it. We think a small trustworthy `error` set beats a
+large one you learn to skip — but if your threat model wants maximum coverage at any
+noise level, our defaults are the wrong shape for you and `strict` is one line away.
+
+**Raising precision costs recall, and we have paid it.** A precision sweep in this
+repo took false positives 10 → 3 while false negatives went 18 → 34. We shipped a
+recall fix for `no-unsafe-regex-construction` that took findings 29 → 2,243 at ~25%
+precision and **reverted it**, documenting the gap instead. A high bar systematically
+biases us toward missing things. That is a deliberate trade, not an oversight, and the
+misses are published alongside the wins.
+
+**A 5% bar cuts against recall, and we measure the cut.** Buying precision by
+going quiet is the mirror failure, and we have committed it: one sweep took false
+positives from 10 to 3 while false negatives went from 18 to 34, and the
+precision number alone read as progress. So precision is never reported without
+**Youden's J** — sensitivity + specificity − 1 — the OWASP Benchmark's headline
+score, which a tool cannot raise by reporting more OR by reporting less. It is
+the guard against optimising the number we happen to be looking at.
+
+**Opt-in rules have no floor, and some are genuinely noisy.** `detect-object-injection`
+measured 0/13 on real code. It stays exported because a team hunting prototype
+pollution specifically may want it — but "no floor" means what it says, and turning on
+every rule will hand you our worst numbers.
+
+**Measurement is the bottleneck, not analysis.** 73 hand-labelled findings per
+`error`-tier rule, across 121 rules, is thousands of judgements. That is why 117 rules
+are unscored, and why they get measured in descending order of how loud they are on
+real code rather than in the order we find them interesting. Expect this scoreboard to
+fill in slowly.
+
+**We label our own findings.** The person deciding TP or FP wrote the rule, which is a
+real bias. The mitigation is that every label ships with its reason and its file and
+line, so you can disagree with any single one and recompute
+([the labelled samples](./benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md)).
+It is not independent review, and we do not call it that.
+
+### Where we actually sit, 2026-08-17
+
+Honest status, because a published bar with no scoreboard is marketing:
+
+| Rule                             | Ships at     | Sampled precision      | Meets bar     |
+| :------------------------------- | :----------- | :--------------------- | :------------ |
+| `no-redos-vulnerable-regex`      | `error`      | ≥4/22 TP, 18 unclassified | **unscored** |
+| `detect-non-literal-fs-filename` | `warn`       | **1/1 — census, all 1 finding labelled** | **yes** (census criterion) |
+| `detect-object-injection`        | opt-in       | 0/13                    | n/a (opt-in)  |
+| `detect-non-literal-regexp`      | opt-in       | 3/10                    | n/a (opt-in)  |
+| **the other 117 rules**          | various      | **not yet measured**    | **unscored**  |
+
+That table is the current state of a programme, not a boast. Four rules have been
+through per-rule measurement on real code; 117 have not. The ReDoS row says
+*unscored* rather than a percentage because the generic timing sweep that produced
+it can **confirm** a slow pattern and cannot **prove** a fast one — two patterns it
+called flat were 167 ms and 956 ms under a crafted input. A method that only errs
+one way does not get to report a precision figure.
+
+**Every row above that sits below its tier's bar is an open defect with an owner.**
+`detect-non-literal-fs-filename` ships at `warn` against a 70% bar and has no
+qualifying measurement; `no-redos-vulnerable-regex` ships at `error` unscored. Neither
+is an accepted state. The work is: raise the sample to the size the tier needs, fix
+what the sample exposes, re-measure, and demote in the meantime if the gap is wide.
+Rules below their bar block new rule work — we would rather have ten rules that hold
+their promise than a hundred that do not.
+
+**Why publish this at all.** Because the alternative is the industry norm: ship 121
+rules at `error`, publish an F1 from your own fixtures, and let the user discover the
+noise. Our corpus F1 is 100% and our measured real-code precision is 28.6% — those
+are both true, and only one of them predicts your afternoon.
+
 ### The same corpus, six plugins, one command
 
 Every community ESLint security plugin, scored on identical labelled fixtures from
 `benchmarks/corpus/` — **our own CWE corpus, not NIST Juliet**; the suite that scores it was
 [renamed for exactly that reason](./CLAIMS.md):
 
-| Plugin | TP | FP | FN | F1 |
-| :----- | -: | -: | -: | -: |
-| **Interlace** | **69** | **0** | **0** | **100%** |
-| eslint-plugin-sonarjs | 27 | 9 | 42 | 51.4% |
-| eslint-plugin-security | 10 | 7 | 59 | 23.3% |
-| @microsoft/eslint-plugin-sdl | 6 | 2 | 63 | 15.6% |
-| eslint-plugin-no-unsanitized | 4 | 1 | 65 | 10.8% |
-| eslint-plugin-security-node | 4 | 3 | 65 | 10.5% |
+| Plugin                       |     TP |    FP |    FN |       F1 |
+| :--------------------------- | -----: | ----: | ----: | -------: |
+| **Interlace**                | **69** | **0** | **0** | **100%** |
+| eslint-plugin-sonarjs        |     27 |     9 |    42 |    51.4% |
+| eslint-plugin-security       |     10 |     7 |    59 |    23.3% |
+| @microsoft/eslint-plugin-sdl |      6 |     2 |    63 |    15.6% |
+| eslint-plugin-no-unsanitized |      4 |     1 |    65 |    10.8% |
+| eslint-plugin-security-node  |      4 |     3 |    65 |    10.5% |
 
 Read that with the caveat attached: **the fixtures are ours**, so a perfect score there is
 a regression gate wearing a benchmark's clothes. The number that survives contact with code
 we did not write is the away-turf one — **51/51 live cases on `eslint-plugin-security`'s own
 RuleTester suite**, which they wrote to define their own true positives.
 
-And on 20 open-source projects (23,682 files, 2.37M SLOC), sampled and hand-labelled on both
-sides:
+And on 20 open-source projects (21,146 files, 3.04M LOC), sampled and hand-labelled on both
+sides, `recommended` vs `recommended`:
 
-| | Interlace | eslint-plugin-security |
-| :-- | --: | --: |
-| Findings | 1,375 | 23,325 |
-| Measured precision | **67%** | 20% |
-| Findings you read per real issue | **1.5** | 5.0 |
+|                                  |  Interlace | eslint-plugin-security |
+| :------------------------------- | ---------: | ---------------------: |
+| Findings                         |      1,059 |                 22,530 |
+| Findings per 1,000 LOC           |    **0.3** |                    7.4 |
+| Measured precision (n=24/side)   |  **28.6%** |                  13.0% |
+| Findings you read per real issue |    **3.5** |                    7.7 |
 
-They still find more real issues in absolute terms, because they fire 18× more often. Our
-precision moved 47% → 67% on 2026-08-14 by deleting name-matching, not by adding analysis —
-`no-xpath-injection` reported a Zod schema, `no-improper-sanitization` treated a pipe as
-unescaped HTML, and `no-http-urls` reported the guard that checks for `http://`. Each fix is
-measured before and after in [BENCHMARK-RESULTS.md](./BENCHMARK-RESULTS.md).
+**28.6% is not a good number and we are not going to dress it up.** Roughly two in
+three of our findings on real code are wrong. It beats the incumbent by 2.2× and that
+is the only claim it supports.
+
+It replaces a **67%** we published on 2026-08-14. That figure was not falsified —
+the sample was. §A2 requires stratifying across the top 5 rules by volume, and the
+older sample did not, so it under-weighted exactly the rules that produce most of the
+output. Re-sampled correctly, the number fell. The measurement got better; the plugins
+did not get worse.
+
+The noise is **concentrated, not diffuse**, which is the actionable part:
+`no-unlimited-resource-allocation` scored 0 TP / 5 FP and is the loudest rule in
+`recommended`; `no-toctou-vulnerability` scored 0 TP / 4 FP and never names the *check*
+its reported *use* races. Two rules, most of the noise. Every finding is labelled with
+its reason in
+[SAMPLED-FP-2026-08-17.md](./benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md),
+including the ones that embarrass us.
 
 ### What this is not
 
@@ -266,7 +522,7 @@ measured before and after in [BENCHMARK-RESULTS.md](./BENCHMARK-RESULTS.md).
   SBOM, no secret-history scanning. That is a different product at a different price.
 - **75 CWEs**, of roughly 900 — the ones an AST can see.
 - **"Quieter" is measured against `eslint-plugin-security`.** Against a narrow
-  single-purpose plugin such as `eslint-plugin-no-unsanitized` we report *more*, and we say so.
+  single-purpose plugin such as `eslint-plugin-no-unsanitized` we report _more_, and we say so.
 
 [Full results](./BENCHMARK-RESULTS.md) · [Criteria](./BENCHMARK-CRITERIA.md) · [Methodology and exact rule lists](./BENCHMARK-METHODOLOGY.md) · [Raw data](./benchmarks/results/published/benchmark-2026-08-14.json)
 
@@ -285,37 +541,37 @@ maps to the evidence file that produced it, carries a verification date, goes
 
 ![last verified](https://ofri-peretz.github.io/eslint/badges/verified.svg) ![corpus](https://ofri-peretz.github.io/eslint/badges/corpus.svg) ![file-set parity](https://ofri-peretz.github.io/eslint/badges/parity.svg)
 
-| Stack | Cold | Warm | Findings | Files |
-| :--- | :---: | :---: | :---: | :---: |
-| **Interlace on ESLint** | ![cold](https://ofri-peretz.github.io/eslint/badges/ours-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/ours-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/ours-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/ours-files.svg) |
-| **Interlace on oxlint** | ![cold](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-files.svg) |
-| Community plugins (ESLint) | ![cold](https://ofri-peretz.github.io/eslint/badges/competitor-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/competitor-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/competitor-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/competitor-files.svg) |
-| oxlint built-ins *(different scope)* | ![cold](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-files.svg) |
+| Stack                                |                                    Cold                                    |                                    Warm                                    |                                      Findings                                      |                                    Files                                     |
+| :----------------------------------- | :------------------------------------------------------------------------: | :------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
+| **Interlace on ESLint**              |     ![cold](https://ofri-peretz.github.io/eslint/badges/ours-cold.svg)     |     ![warm](https://ofri-peretz.github.io/eslint/badges/ours-warm.svg)     |     ![findings](https://ofri-peretz.github.io/eslint/badges/ours-findings.svg)     |     ![files](https://ofri-peretz.github.io/eslint/badges/ours-files.svg)     |
+| **Interlace on oxlint**              | ![cold](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-cold.svg)  | ![warm](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-warm.svg)  | ![findings](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-findings.svg)  | ![files](https://ofri-peretz.github.io/eslint/badges/ours-oxlint-files.svg)  |
+| Community plugins (ESLint)           |  ![cold](https://ofri-peretz.github.io/eslint/badges/competitor-cold.svg)  |  ![warm](https://ofri-peretz.github.io/eslint/badges/competitor-warm.svg)  |  ![findings](https://ofri-peretz.github.io/eslint/badges/competitor-findings.svg)  |  ![files](https://ofri-peretz.github.io/eslint/badges/competitor-files.svg)  |
+| oxlint built-ins _(different scope)_ | ![cold](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-cold.svg) | ![warm](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-warm.svg) | ![findings](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-findings.svg) | ![files](https://ofri-peretz.github.io/eslint/badges/oxlint-stock-files.svg) |
 
 **Cold** = `--no-cache`. **Warm** = `--cache`, primed — the number you feel on
 every save and every CI run.
 
-`Interlace on oxlint` runs the *same rulesets* through the oxlint engine via our
+`Interlace on oxlint` runs the _same rulesets_ through the oxlint engine via our
 [JS-plugin shims](./tools/oxlint-plugins/). Same rules, different engine.
 
 ### Head-to-head, by job
 
 Whole-plugin comparisons mislead in both directions: a plugin bundles jobs its
-rival does not have, so an aggregate delta is partly a difference in *scope*
+rival does not have, so an aggregate delta is partly a difference in _scope_
 rather than speed. The unit of comparison here is a **job** — a concrete
 capability — with the specific rules named on both sides.
 
 ![head-to-head](https://ofri-peretz.github.io/eslint/badges/jobs-summary.svg) ![uncontested](https://ofri-peretz.github.io/eslint/badges/jobs-uncontested.svg)
 
-| Job | Result |
-| :--- | :---: |
-| Circular dependencies | ![circular deps](https://ofri-peretz.github.io/eslint/badges/job-circular-dependencies.svg) |
-| DOM XSS sinks | ![dom xss](https://ofri-peretz.github.io/eslint/badges/job-dom-xss-sinks-innerhtml-and-friends.svg) |
-| Hardcoded secrets | ![secrets](https://ofri-peretz.github.io/eslint/badges/job-hardcoded-secrets-credentials.svg) |
-| Command / shell injection | ![command injection](https://ofri-peretz.github.io/eslint/badges/job-command-shell-injection.svg) |
-| ReDoS | ![redos](https://ofri-peretz.github.io/eslint/badges/job-redos-catastrophic-backtracking.svg) |
-| Path traversal | ![path traversal](https://ofri-peretz.github.io/eslint/badges/job-path-traversal-non-literal-fs-access.svg) |
-| Timing-attack comparison | ![timing](https://ofri-peretz.github.io/eslint/badges/job-timing-attack-unsafe-comparison.svg) |
+| Job                       |                                                   Result                                                    |
+| :------------------------ | :---------------------------------------------------------------------------------------------------------: |
+| Circular dependencies     |         ![circular deps](https://ofri-peretz.github.io/eslint/badges/job-circular-dependencies.svg)         |
+| DOM XSS sinks             |     ![dom xss](https://ofri-peretz.github.io/eslint/badges/job-dom-xss-sinks-innerhtml-and-friends.svg)     |
+| Hardcoded secrets         |        ![secrets](https://ofri-peretz.github.io/eslint/badges/job-hardcoded-secrets-credentials.svg)        |
+| Command / shell injection |      ![command injection](https://ofri-peretz.github.io/eslint/badges/job-command-shell-injection.svg)      |
+| ReDoS                     |        ![redos](https://ofri-peretz.github.io/eslint/badges/job-redos-catastrophic-backtracking.svg)        |
+| Path traversal            | ![path traversal](https://ofri-peretz.github.io/eslint/badges/job-path-traversal-non-literal-fs-access.svg) |
+| Timing-attack comparison  |       ![timing](https://ofri-peretz.github.io/eslint/badges/job-timing-attack-unsafe-comparison.svg)        |
 
 Two of those rows are losses. They stay: a table where every row favours us is
 authored, not measured. The full breakdown — including where competitors are
@@ -340,7 +596,7 @@ Named, versioned, and linked — so you can check we did not pick a weak opponen
 
 - **Scope**: only our **SDK-agnostic** plugins — `secure-coding`, `node-security`, `browser-security`, `import-next`. Framework-bound plugins (pg, jwt, nestjs-security…) have no comparable competitor; an uncontested win there tells you nothing.
 - **Corpus**: two real repos — [nestjs](https://github.com/nestjs/nest) (Node) and [shadcn-ui](https://github.com/shadcn-ui/ui) (frontend), shallow-cloned at a recorded commit SHA.
-- **Same file set**: every stack lints an identical glob, and parity is *asserted* — a run where the stacks saw different files is refused, not published.
+- **Same file set**: every stack lints an identical glob, and parity is _asserted_ — a run where the stacks saw different files is refused, not published.
 - **Median of N** after a discarded warmup, with min–max spread recorded so a noisy machine is visible rather than hidden.
 - **Failures are recorded, never dropped.** A crash cannot be timed as a fast run; a stack that processed 0 files fails the gate instead of rendering an impossibly fast bar.
 - **oxlint built-ins** run a different rule scope (no secrets, injection, or CSP analysis). Shown for context and excluded from "fastest" highlighting — a different job, not a peer.
@@ -422,7 +678,7 @@ The UI in this repo's docs site is built on
 tokens ship from `@interlace/ui`, and the look-and-feel doctrine (layout,
 typography, colour, motion, a11y, keyboard, …) is authored there, not here.
 Browse it at **[storybook.interlace.tools](https://storybook.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=monorepo)**
-→ *Philosophy*, or read the sources in
+→ _Philosophy_, or read the sources in
 [`docs/philosophies/`](https://github.com/ofri-peretz/interlace/tree/main/docs/philosophies).
 
 ## Links

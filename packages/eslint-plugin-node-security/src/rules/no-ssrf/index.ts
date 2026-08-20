@@ -20,6 +20,8 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  unwrapTypeSyntax,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { bindingInit } from '../../utils/provenance';
 
@@ -148,6 +150,16 @@ function makeCarriesUntrustedUrl(
 ): (node: TSESTree.Node) => boolean {
   const carries = (node: TSESTree.Node, depth: number): boolean => {
     if (depth > 6) return false;
+
+    // `fetch(req.query.url as string)` — the cast is erased at compile time and
+    // reads exactly what `req.query.url` reads. Without this the switch falls
+    // through to `default: return false`, and since Express types
+    // `req.query.url` as `string | string[] | ParsedQs | undefined`, the cast is
+    // MANDATORY for a TypeScript handler to compile. The rule was therefore
+    // silent on TypeScript Express code — the shape most of its audience writes.
+    const bare = unwrapTypeSyntax(node);
+    if (bare !== node) return carries(bare, depth + 1);
+
     switch (node.type) {
       case AST_NODE_TYPES.Identifier: {
         const init = bindingInit(sourceCode, node);
@@ -365,8 +377,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
     );
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     if (isTestFile) return {};
 
     return {

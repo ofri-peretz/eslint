@@ -89,6 +89,21 @@ ruleTester.run('lock-file', lockFile, {
       filename: deeplyNestedFileInLockedProject(),
       options: [{ packageManager: 'pnpm' }],
     },
+    // `'any'` spelled out. This repo commits package-lock.json, so the `any`
+    // arm has to accept it — the same result as omitting the option, which is
+    // exactly the equivalence the schema's `default: 'any'` now claims.
+    {
+      code: 'const validAny = 1',
+      filename: __filename,
+      options: [{ packageManager: 'any' }],
+    },
+    // `any` also accepts a pnpm-only project — proof the arm really searches
+    // all three names rather than falling back to package-lock.json.
+    {
+      code: 'const anyAcceptsPnpm = 1',
+      filename: deeplyNestedFileInLockedProject(),
+      options: [{ packageManager: 'any' }],
+    },
   ],
 
   invalid: [
@@ -114,10 +129,38 @@ ruleTester.run('lock-file', lockFile, {
       code: "const invalidOutside = 1",
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'npm' }],
-      errors: [{ 
+      errors: [{
         messageId: 'violationDetected',
         data: { packageManager: 'npm', lockFile: 'package-lock.json' }
       }]
-    }
+    },
+    // The DEFAULT path, previously untested: no option at all. It must report
+    // `any` and list all three candidate names, which is what the schema's
+    // `default: 'any'` promises a reader.
+    {
+      code: "const invalidNoOption = 1",
+      filename: projectWithoutLockFile(),
+      errors: [{
+        messageId: 'violationDetected',
+        data: {
+          packageManager: 'any',
+          lockFile: 'package-lock.json | yarn.lock | pnpm-lock.yaml',
+        },
+      }],
+    },
+    // …and spelling `'any'` explicitly must be indistinguishable from omitting
+    // it. If these two ever diverge, the documented default is a lie.
+    {
+      code: "const invalidExplicitAny = 1",
+      filename: projectWithoutLockFile(),
+      options: [{ packageManager: 'any' }],
+      errors: [{
+        messageId: 'violationDetected',
+        data: {
+          packageManager: 'any',
+          lockFile: 'package-lock.json | yarn.lock | pnpm-lock.yaml',
+        },
+      }],
+    },
   ],
 });

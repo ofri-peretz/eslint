@@ -46,6 +46,7 @@
     "**/benchmark/test-files/**",
     "tools/oxlint-plugins/**",
     "benchmarks/corpus/**",
+    "benchmarks/rule-corpus/**",
     "benchmarks/results/**",
     "**/storybook-static/**",
     "apps/docs/test-results/**",

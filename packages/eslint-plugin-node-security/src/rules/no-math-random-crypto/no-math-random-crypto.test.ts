@@ -135,4 +135,67 @@ describe('no-math-random-crypto', () => {
       ],
     });
   });
+
+  /**
+   * FN lock — the accumulator loop, the commonest insecure token generator.
+   *
+   * ```js
+   * let token = '';
+   * for (let i = 0; i < 32; i++) {
+   *   token += CHARS[Math.floor(Math.random() * CHARS.length)];
+   * }
+   * ```
+   *
+   * This was QUIET. The declarator arm of `isCryptoContext` cannot see it —
+   * `let token = ''` initialises to an empty string and `Math.random()` never
+   * appears beneath that declarator. Every character comes from the `+=`, whose
+   * left side is an `Identifier`, and the AssignmentExpression arm handled only
+   * `MemberExpression`. So `const token = Math.random().toString(36)` reported
+   * while the textbook loop that produces a real, guessable session token did
+   * not.
+   *
+   * The existing `genRandomString` fixture above passes on the unfixed rule for
+   * an unrelated reason — the FUNCTION name matches `/random.*string/i` — which
+   * is exactly why it never surfaced this gap. The cases below carry no
+   * crypto-named function and no crypto-named declarator; the assignment target
+   * is the only evidence in the file.
+   */
+  describe('accumulator loops', () => {
+    ruleTester.run('no-math-random-crypto', noMathRandomCrypto, {
+      valid: [
+        // The same loop shape accumulating something that is not a credential.
+        // `+=` on a neutral name is not evidence of a security decision.
+        `let label = ''; for (let i = 0; i < 8; i++) { label += CHARS[Math.floor(Math.random() * CHARS.length)]; }`,
+        // Retry jitter accumulated across attempts.
+        `let delay = 0; delay += Math.random() * 100;`,
+        // An index into a collection.
+        `let idx = 0; idx = Math.floor(Math.random() * items.length);`,
+      ],
+      invalid: [
+        // The archetype: a session token built one character at a time.
+        {
+          code: `const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                 let token = '';
+                 for (let i = 0; i < 32; i++) {
+                   token += CHARS[Math.floor(Math.random() * CHARS.length)];
+                 }`,
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+        // Same shape, plain `=` inside the loop body rather than `+=`.
+        {
+          code: `let otp = '';
+                 for (let i = 0; i < 6; i++) {
+                   otp = otp + String(Math.floor(Math.random() * 10));
+                 }`,
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+        // A password assembled into a pre-declared binding.
+        {
+          code: `let password;
+                 password = Array.from({ length: 12 }, () => POOL[Math.floor(Math.random() * POOL.length)]).join('');`,
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+      ],
+    });
+  });
 });

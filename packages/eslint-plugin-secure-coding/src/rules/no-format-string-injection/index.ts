@@ -21,7 +21,12 @@
  * - Trusted formatting libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isModuleBinding,
+  isStaticExpression,
+  unwrapTypeSyntax,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 // Temporarily remove complex imports to fix type issues
 // import {
@@ -32,11 +37,9 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'formatStringInjection'
-  | 'unsafeFormatSpecifier'
   | 'userControlledFormatString'
   | 'missingFormatValidation'
-  | 'escapeFormatString'
-  | 'useSafeFormatting';
+  | 'escapeFormatString';
 
 export interface Options {
   /** Functions that use format strings */
@@ -48,20 +51,74 @@ export interface Options {
   /** Variables that contain user input */
   userInputVariables?: string[];
 
-  /** Safe formatting libraries */
-  safeFormatLibraries?: string[];
+  /**
+   * The `user*` name family this rule treats as user input on top of
+   * `userInputVariables`. REPLACES the built-in list; compared
+   * case-insensitively as a WHOLE name or a whole dotted SEGMENT.
+   * Default: DEFAULT_USER_INPUT_ALIASES
+   */
+  userInputAliases?: string[];
+
+  /** Extra aliases, ON TOP of the built-ins. Default: [] */
+  additionalUserInputAliases?: string[];
 
   /** Additional function names to consider as sanitizers */
   trustedSanitizers?: string[];
 
-  /** Additional JSDoc annotations to consider as safe markers */
-  trustedAnnotations?: string[];
-
-  /** Disable all false positive detection (strict mode) */
-  strictMode?: boolean;
+  /**
+   * `safeFormatLibraries`, `trustedAnnotations` and `strictMode` used to be
+   * declared here, in `meta.schema` and in both copies of the defaults.
+   * `create()` destructures only `formatSpecifiers`, `userInputVariables` and
+   * `trustedSanitizers`, and nothing else in the body reads them.
+   *
+   * `strictMode` is the one that mattered: this rule does not use the devkit's
+   * `createSafetyChecker` at all (that import is commented out below) but a
+   * local `safetyChecker` that hard-codes the `@safe-format` annotation. So
+   * `strictMode: true` could not revoke that suppression, and
+   * `trustedAnnotations` could not add to it — measured, not inferred:
+   * `/* @safe-format *\/ util.format(fmt, req.body.name)` stays QUIET under
+   * `strictMode: true`, and `/* @fmt-reviewed *\/` still reports with
+   * `trustedAnnotations: ['@fmt-reviewed']`.
+   */
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * The `user*` name family this rule treats as user input, on top of whatever
+ * `userInputVariables` declares.
+ *
+ * WHOLE NAMES, never substrings. The predicate was
+ * `lowerName.includes(input.toLowerCase())` over `userInputVariables`, and that
+ * list contains `data`, `params`, `request` and `input` — so the following were
+ * measured being reported as attacker-controlled format strings, one probe
+ * each:
+ *
+ *   console.error(paymentData, orderId)      // `data` ⊂ paymentData
+ *   console.info(validationParams, reqId)    // `params` ⊂ validationParams
+ *   util.format(metadata, id)                // `data` ⊂ metadata
+ *
+ * None of the three is user input, and none is even a format string. Exact
+ * membership against a declared list is a contract an option can honour; a
+ * substring of one is a coincidence of spelling.
+ *
+ * Nine English spellings of one convention, so this is a DEFAULT: a codebase
+ * that names the request object something else extends it through
+ * `additionalUserInputAliases`, and one where `user` is an ordinary domain noun
+ * — a user RECORD, not a user's INPUT — drops it through `userInputAliases`.
+ * Neither changes that the comparison is whole-name.
+ */
+const DEFAULT_USER_INPUT_ALIASES = [
+  'user',
+  'userinput',
+  'userdata',
+  'userparam',
+  'userparams',
+  'usermessage',
+  'usertemplate',
+  'userformat',
+  'uservar',
+];
 
 export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-format-string-injection',
@@ -84,15 +141,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
       }),
-      unsafeFormatSpecifier: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unsafe Format Specifier',
-        cwe: 'CWE-134',
-        description: 'User input may contain format specifiers',
-        severity: 'MEDIUM',
-        fix: 'Escape or validate user input before formatting',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
-      }),
+      // `unsafeFormatSpecifier` ("User input may contain format specifiers")
+      // was reported only where the format string was a constant literal —
+      // the case where a user's specifiers are NOT interpreted. With that
+      // report removed the message had no remaining path, so it is gone too.
       userControlledFormatString: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'User Controlled Format String',
@@ -120,14 +172,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Replace % with %% in user input',
         documentationLink: 'https://nodejs.org/api/util.html#utilformatformat-args',
       }),
-      useSafeFormatting: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Safe Formatting',
-        description: 'Use safe string formatting methods',
-        severity: 'LOW',
-        fix: 'Use template literals or safe format libraries',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals',
-      })
     },
     schema: [
       {
@@ -148,27 +192,24 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
           },
-          safeFormatLibraries: {
+          userInputAliases: {
             type: 'array',
             items: { type: 'string' },
-            default: ['mustache', 'handlebars', 'ejs', 'pug'], description: 'Templating libraries that escape their own input'
+            default: DEFAULT_USER_INPUT_ALIASES,
+            description:
+              'The user-input name family recognised on top of `userInputVariables`, compared case-insensitively as a whole name or a whole dotted segment — never as a substring. Replaces the built-in list.',
+          },
+          additionalUserInputAliases: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra user-input aliases, on top of `userInputAliases`.',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
             description: 'Additional function names to consider as format string sanitizers',
-          },
-          trustedAnnotations: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
-          },
-          strictMode: {
-            type: 'boolean',
-            default: false,
-            description: 'Disable all false positive detection (strict mode)',
           },
         },
         additionalProperties: false,
@@ -180,10 +221,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
-      safeFormatLibraries: ['mustache', 'handlebars', 'ejs', 'pug'],
+      userInputAliases: DEFAULT_USER_INPUT_ALIASES,
+      additionalUserInputAliases: [],
       trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
-      trustedAnnotations: [],
-      strictMode: false,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -191,16 +231,17 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
       userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
-      safeFormatLibraries: ['mustache', 'handlebars', 'ejs', 'pug'],
+      userInputAliases: DEFAULT_USER_INPUT_ALIASES,
+      additionalUserInputAliases: [],
       trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
-      trustedAnnotations: [],
-      strictMode: false,
     };
 
     const options: Required<Options> = { ...defaultOptions, ...context.options[0] } as Required<Options>;
     const {
       formatSpecifiers,
       userInputVariables,
+      userInputAliases,
+      additionalUserInputAliases,
       trustedSanitizers,
     } = options;
     const filename = context.filename;
@@ -235,25 +276,56 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if a variable contains user input
+     * Is this identifier one the project declared as user input?
+     *
+     * Two vocabularies, both matched as WHOLE NAMES and both configurable:
+     * `userInputVariables` (the project's own declarations) and
+     * `userInputAliases` / `additionalUserInputAliases` (the `user*` family,
+     * documented on `DEFAULT_USER_INPUT_ALIASES` above).
      */
-    const isUserInput = (varName: string): boolean => {
-      const lowerName = varName.toLowerCase();
-      return userInputVariables.some(input => lowerName.includes(input.toLowerCase())) ||
-             lowerName === 'user' ||
-             lowerName.includes('userinput') ||
-             lowerName.includes('userdata') ||
-             lowerName.includes('userparam') ||
-             lowerName.includes('usermessage') ||
-             lowerName.includes('usertemplate') ||
-             lowerName.includes('userformat') ||
-             lowerName.includes('uservar');
-    };
+    const declaredUserInput: ReadonlySet<string> = new Set(
+      [...userInputVariables, ...userInputAliases, ...additionalUserInputAliases].map((name) =>
+        name.toLowerCase(),
+      ),
+    );
+
+    const isUserInput = (varName: string): boolean =>
+      declaredUserInput.has(varName.toLowerCase());
+
+    /**
+     * The same question for a dotted path, asked one SEGMENT at a time.
+     *
+     * `request.body.layout` is user input because a whole segment of it is
+     * `request`; `paymentData.total` is not, because no segment of it is any
+     * declared name. Comparing the joined path as one string is what let
+     * `metadata.id` through.
+     */
+    const isUserInputPath = (path: string): boolean =>
+      path.split('.').some((segment) => isUserInput(segment));
 
     /**
      * Check if a node represents user input (including member expressions)
      */
-    const isUserInputNode = (node: TSESTree.Node): boolean => {
+    const isUserInputNode = (rawNode: TSESTree.Node): boolean => {
+      // `req.query.pattern as string` is `req.query.pattern`. The cast is
+      // erased before anything runs, and Express + TypeScript forces one at
+      // nearly every query-parameter read (`string | string[] | ParsedQs`), so
+      // leaving the wrapper on meant the typed half of the ecosystem went
+      // unreported while the untyped half did not.
+      const node = unwrapTypeSyntax(rawNode);
+
+      // `flag ? DEFAULT_FORMAT : req.query.fmt` and `req.query.fmt ?? DEFAULT`
+      // both put the request value in the format position on at least one path.
+      // A finding that a reviewer can defeat by adding a fallback is not a
+      // finding, and both spellings are what a "make it configurable" commit
+      // produces.
+      if (node.type === 'ConditionalExpression') {
+        return isUserInputNode(node.consequent) || isUserInputNode(node.alternate);
+      }
+      if (node.type === 'LogicalExpression') {
+        return isUserInputNode(node.left) || isUserInputNode(node.right);
+      }
+
       if (node.type === 'Identifier') {
         return isUserInput(node.name) || dangerousVariables.has(node.name);
       }
@@ -275,7 +347,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
         // Check other user input patterns
         const fullName = getMemberExpressionName(node);
-        return isUserInput(fullName);
+        return isUserInputPath(fullName);
       }
 
       return false;
@@ -319,7 +391,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
              ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name);
     };
 
-    // oxlint-disable-next-line consistent-function-scoping
     const isFormatFunctionCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
@@ -329,6 +400,19 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           callee.object.name === 'util' &&
           callee.property.type === 'Identifier' &&
           callee.property.name === 'format') {
+        return true;
+      }
+
+      // `const { format } = require('node:util')` / `import { format } from 'util'`
+      // — the idiomatic import, and the shape that made the sink disappear:
+      // matching the spelling `util.format` meant the rule saw a call to
+      // something named `format` and had no opinion about it. Resolved through
+      // the binding instead of the receiver's name, so `const { format: fmt }`
+      // and `node:util` both count and a local helper called `format` does not.
+      if (
+        callee.type === 'Identifier' &&
+        isModuleBinding(callee, context.sourceCode.getScope(callee), 'util', ['format'])
+      ) {
         return true;
       }
 
@@ -353,6 +437,27 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     // Track variables that have been validated/sanitized
     const validatedVariables = new Set<string>();
     const dangerousVariables = new Set<string>();
+
+    /**
+     * Is the format string a constant this file can read?
+     *
+     * CWE-134 is "the FORMAT STRING is attacker-controlled". It is not
+     * "an argument substituted into a constant format string is
+     * attacker-controlled" — `util.format` and `console.log` substitute
+     * arguments verbatim and never re-scan them for specifiers, so
+     * `util.format('%s', req.body.format)` prints the user's `%d` as the
+     * literal text `%d`. That call is the RECOMMENDED mitigation, and this
+     * rule used to report it (see the note at the CallExpression report
+     * site).
+     *
+     * Resolved through scope rather than by name, so `const fmt = 'User: %s'`
+     * one line up counts, and a parameter or a re-assigned binding does not.
+     */
+    const isStaticFormatString = (fmtNode: TSESTree.Node): boolean =>
+      isStaticExpression({
+        node: fmtNode,
+        scope: context.sourceCode.getScope(fmtNode),
+      });
 
     /**
      * Check if input has been validated/sanitized
@@ -546,17 +651,40 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           // console.log(userMessage) is equivalent to console.log("%s", userMessage) but is generally safe
           if (!hasSpecifiersInFormat && args.length === 2 && isConsoleMethod(node)) {
             // Don't report
-          } else if (hasSpecifiersInFormat && hasUserInputInArgs) {
+          } else if (
+            hasSpecifiersInFormat &&
+            hasUserInputInArgs &&
+            // THE FIX, and it removes a false positive this suite used to
+            // assert as correct behaviour.
+            //
+            // Three fixtures pinned the safe pattern as the vulnerability:
+            //
+            //   console.log('Format: %s', userMessage)
+            //   util.format('%s', req.body.format)
+            //   const formatStr = 'User: %s, Data: %j';
+            //   util.format(formatStr, user, data)
+            //
+            // In every one the format string is a constant and the untrusted
+            // value is an ARGUMENT. That is CWE-134's remediation, not
+            // CWE-134: substituted values are emitted verbatim, so a `%d`
+            // inside `req.body.format` reaches the output as the two
+            // characters `%d`. The offered suggestion made it worse — it
+            // rewrote the argument to `.replace(/%/g, '%%')`, doubling every
+            // literal percent sign in the user's data.
+            //
+            // A constant format string is now out of scope for this site.
+            // The genuine finding — an attacker-controlled format string — is
+            // still reported here when the first argument does not resolve to
+            // a constant, and by the `userControlledFormatString` path.
+            !isStaticFormatString(firstArg)
+          ) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
 
-            // Choose message ID based on format string type
-            const messageId = firstArg.type === 'Literal' ? 'unsafeFormatSpecifier' : 'missingFormatValidation';
-
             context.report({
               node: node,
-              messageId,
+              messageId: 'missingFormatValidation',
               data: {
                 filePath: filename,
                 line: String(node.loc?.start.line ?? 0),
@@ -729,6 +857,40 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
               },
             });
           }
+        }
+      },
+
+      /**
+       * `const { fmt } = req.query` / `const [first] = req.body.patterns`.
+       *
+       * The declarator visitor below returns immediately unless the id is a
+       * plain Identifier, so destructuring — the idiomatic way an Express
+       * handler reads its query and body — carried the taint nowhere and
+       * `util.format(fmt, token)` two lines later was silent. Every name the
+       * pattern binds comes from the same tainted initialiser, and the scope
+       * manager already knows which names those are.
+       */
+      'VariableDeclarator[id.type!="Identifier"]': function (
+        node: TSESTree.VariableDeclarator,
+      ) {
+        if (!node.init || !isUserInputNode(node.init)) return;
+        for (const variable of context.sourceCode.getDeclaredVariables(node)) {
+          dangerousVariables.add(variable.name);
+        }
+      },
+
+      /**
+       * `let fmt = 'user=%s'; fmt = req.query.fmt;`
+       *
+       * A re-assignment is not a declaration, so nothing tracked it: the
+       * binding was judged on the literal it was declared with and stayed
+       * trusted for the rest of the file. A `let` whose writes are all literals
+       * is still untouched — only a write of user input marks it.
+       */
+      AssignmentExpression: function (node: TSESTree.AssignmentExpression) {
+        if (node.left.type !== 'Identifier') return;
+        if (isUserInputNode(node.right)) {
+          dangerousVariables.add(node.left.name);
         }
       },
 

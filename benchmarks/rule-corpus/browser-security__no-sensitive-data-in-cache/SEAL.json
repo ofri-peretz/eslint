@@ -1,0 +1,75 @@
+{
+  "rule": "browser-security/no-sensitive-data-in-cache",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-browser-security@1.4.1",
+    "node": "24"
+  },
+  "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- browser-security/no-sensitive-data-in-cache"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-browser-security/src/rules/no-sensitive-data-in-cache/index.ts"
+    },
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/browser-security__no-sensitive-data-in-cache/MANIFEST.md"
+    },
+    "duel": {
+      "state": "met",
+      "evidence": "13 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs browser-security/no-sensitive-data-in-cache"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- browser-security/no-sensitive-data-in-cache --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts browser-security/no-sensitive-data-in-cache <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "1 probe(s) failing",
+      "command": "npx tsx scripts/rule-seal-probe.mts browser-security/no-sensitive-data-in-cache"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/no-sensitive-data-in-cache"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 164L +1.64±0.69ms · 656L +7.80±1.20ms · 2624L +21.42±2.10ms — 2.7x time for 4.0x lines (656→2624), linear",
+      "command": "npx tsx scripts/seal-audit.mts browser-security/no-sensitive-data-in-cache"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal browser-security/no-sensitive-data-in-cache' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

@@ -59,6 +59,7 @@ store.add({ theme: 'dark', language: 'en' });
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `additionalPatterns` | `string[]` | `[]` | Extra terms that name a secret, added to the built-in vocabulary rather than replacing it. Matched as whole words against the store or key name, never as a substring — so `token` does not match `tokenizer`. Use this for domain secrets the built-in list cannot know about, e.g. `entitlementGrant`. |
 
 ```json
 {

@@ -1,0 +1,25 @@
+{
+  "rule": "node-security/detect-suspicious-dependencies",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 25,
+  "vulnerable": 15,
+  "results": [
+    {
+      "name": "Interlace node-security/detect-suspicious-dependencies",
+      "tp": 15,
+      "fp": 1,
+      "fn": 0,
+      "tn": 9,
+      "precision": 0.9375,
+      "recall": 1,
+      "specificity": 0.9,
+      "youdenJ": 0.8999999999999999,
+      "f1": 0.967741935483871,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": [
+        "safe/10-reactn-real-package.js"
+      ]
+    }
+  ]
+}

@@ -73,12 +73,168 @@ describe('no-transaction-on-pool', () => {
     ruleTester.run('invalid - dangerous patterns', noTransactionOnPool, {
       valid: [],
       invalid: pg([
-        // Triggers noTransactionOnPool
+        // Triggers noTransactionOnPool.
+        //
+        // `pool` used to be undeclared here and this still passed, because the
+        // rule matched `objectName.includes('pool')`.
         {
-          code: `pool.query('BEGIN')`,
+          code: `const pool = new Pool();\npool.query('BEGIN')`,
           errors: [{ messageId: 'noTransactionOnPool' }],
         },
       ]),
+    });
+  });
+
+  /**
+   * Regression locks for the defects
+   * `benchmarks/rule-corpus/postgresql-security__no-transaction-on-pool`
+   * proved. The rule scored 36.4% F1 on that corpus, and both of its false
+   * positives were the registered name-inference debt firing on working code.
+   */
+  describe('corpus regressions', () => {
+    ruleTester.run('the receiver is resolved, not spelled', noTransactionOnPool, {
+      valid: pg([
+        // FP — a correctly checked-out CLIENT whose name contains "pool". The
+        // transaction here is the REMEDIATION, and it was the finding.
+        "const connectionPool = new Pool();\nasync function f() { const poolClient = await connectionPool.connect(); await poolClient.query('BEGIN'); }",
+        // FP — a ride-sharing API client. It shares four letters with a
+        // connection pool and nothing else.
+        "import { carpoolClient } from '../lib/carpool-api';\ncarpoolClient.query('BEGIN', { riderId });",
+        // A dedicated Client is one connection by construction.
+        "import { Client } from 'pg';\nconst c = new Client();\nc.query('BEGIN');",
+        // A `Pool` from a package that is not PostgreSQL.
+        "import { Pool as Workers } from 'generic-pool';\nconst workers = new Workers();\nworkers.query('BEGIN');",
+        // A handle this file cannot prove is a pool — the correct transaction
+        // shape passes a CLIENT in exactly like this.
+        "export async function run(handle) { await handle.query('BEGIN'); }",
+        // A pool reassigned elsewhere may hold something else by the time it
+        // is used.
+        "let pool = new Pool();\npool = fallback;\npool.query('BEGIN');",
+        // Declared, but not from a `new`.
+        "const pool = getPool();\npool.query('BEGIN');",
+        // `this.x` that was never assigned a pool.
+        "class R { async f() { await this.pool.query('BEGIN'); } }",
+        // A `new` on a locally declared class resolves to no module at all.
+        "class LocalPool {}\nconst p = new LocalPool();\np.query('BEGIN');",
+        // A receiver that is neither an identifier nor `this.x`.
+        "getPool().query('BEGIN');",
+        "registry.pools.main.query('BEGIN');",
+        // A PARAMETER assigned once inside the body: written exactly once, but
+        // its definition is not a declaration and carries no initialiser.
+        "export function f(pool) { pool = new Pool(); pool.query('BEGIN'); }",
+        // Class fields the PropertyDefinition arm must skip.
+        "class R { [KEY] = new Pool(); }",
+        "class R { pool; }",
+        "class R { pool = getPool(); }",
+        "class R { pool = new LocalThing(); }",
+        // A `this.x = …` assignment that is not a `new`, and a computed one.
+        "class R { constructor() { this.pool = getPool(); } }",
+        // A `this.x = new …` whose constructor is not a pg Pool.
+        "class LocalThing {}\nclass R { constructor() { this.pool = new LocalThing(); } async f() { await this.pool.query('BEGIN'); } }",
+        "class R { constructor() { this[KEY] = new Pool(); } }",
+        "class R { constructor() { this.pool += new Pool(); } }",
+      ]),
+      invalid: pg([
+        // FN — a real Pool bound to `db`. Nothing about the weakness depends
+        // on the identifier being spelled `pool`.
+        {
+          code: "const db = new Pool();\ndb.query('BEGIN');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        // FN — the pool held on `this`, the ordinary repository shape. The
+        // receiver is a MemberExpression, which the rule skipped entirely.
+        {
+          code: "class R { constructor() { this.pool = new Pool(); } async f() { await this.pool.query('BEGIN'); } }",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        // The same, as a class field.
+        {
+          code: "class R { pool = new Pool(); async f() { await this.pool.query('COMMIT'); } }",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        // The namespace spelling of the constructor.
+        {
+          code: "import pg from 'pg';\nconst db = new pg.Pool();\ndb.query('BEGIN');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+      ]),
+    });
+
+    ruleTester.run('the statement is parsed, not upper-cased and split', noTransactionOnPool, {
+      valid: pg([
+        // Identifiers that merely START with a keyword.
+        "const pool = new Pool();\npool.query('SELECT beginning_balance, committed_total FROM ledger');",
+        "const pool = new Pool();\npool.query('SELECT * FROM sprints WHERE ended_at IS NULL');",
+        // "BEGIN" as data, not as a statement.
+        "const pool = new Pool();\npool.query('SELECT * FROM events WHERE marker = $1', ['BEGIN']);",
+        // An interpolated statement is not statically known.
+        'const pool = new Pool();\npool.query(`BEGIN ${level}`);',
+        // A config object with no `text`.
+        "const pool = new Pool();\npool.query({ values: ['BEGIN'] });",
+        // A first argument that is neither string, template nor object.
+        'const pool = new Pool();\npool.query(42);',
+      ]),
+      invalid: pg([
+        // FN — a template literal with no interpolation is a plain string, and
+        // multi-line SQL arrives that way constantly.
+        {
+          code: 'const pool = new Pool();\npool.query(`BEGIN`);',
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        // FN — `START TRANSACTION` is the SQL-standard spelling of BEGIN, and
+        // `END` is a synonym for COMMIT. Neither was in the keyword set.
+        {
+          code: "const pool = new Pool();\npool.query('START TRANSACTION');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        {
+          code: "const pool = new Pool();\npool.query('END');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        {
+          code: "const pool = new Pool();\npool.query('SAVEPOINT sp1');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        {
+          code: "const pool = new Pool();\npool.query('RELEASE SAVEPOINT sp1');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        // Lowercase, padded, and with an isolation level.
+        {
+          code: "const pool = new Pool();\npool.query('  begin transaction isolation level serializable;  ');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        // FN (adversarial) — node-postgres also takes a config object.
+        {
+          code: "const pool = new Pool();\npool.query({ text: 'BEGIN' });",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        {
+          code: "const pool = new Pool();\npool.query({ 'text': `ROLLBACK` });",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+      ]),
+    });
+
+    // NOT wrapped — a file with no PostgreSQL client does no work at all.
+    ruleTester.run('the module gate still abstains', noTransactionOnPool, {
+      valid: ["const pool = new Pool();\npool.query('BEGIN');"],
+      invalid: [],
+    });
+
+    ruleTester.run('scoped PostgreSQL packages count too', noTransactionOnPool, {
+      valid: [],
+      invalid: [
+        {
+          code: "import { Pool } from '@vercel/postgres';\nconst db = new Pool();\ndb.query('BEGIN');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        // The module itself is the constructor.
+        {
+          code: "const Pool = require('pg-pool');\nconst db = new Pool();\ndb.query('BEGIN');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+      ],
     });
   });
 });

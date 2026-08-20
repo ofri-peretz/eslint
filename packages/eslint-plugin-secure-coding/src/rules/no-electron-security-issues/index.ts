@@ -20,7 +20,7 @@
  * - Trusted Electron security patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -28,7 +28,6 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'electronSecurityIssue'
   | 'nodeIntegrationEnabled'
   | 'contextIsolationDisabled'
   | 'webSecurityDisabled'
@@ -37,20 +36,121 @@ type MessageIds =
   | 'directNodeAccess'
   | 'insecureIpcPattern'
   | 'missingSandbox'
-  | 'enableSecurityFeatures'
-  | 'useContextIsolation'
-  | 'securePreloadScripts'
-  | 'strategySecureDefaults'
-  | 'strategyProcessSeparation'
-  | 'strategyInputValidation';
+  | 'legacyElectronFeature';
 
+/**
+ * Does this file load Electron?
+ *
+ * The `directNodeAccess` check used to answer "is this a renderer?" from the
+ * FILENAME alone, which is a name deciding a security verdict. Measured, not
+ * inferred: `const fs = require('fs')` in `src/ui/IconLoader.js`,
+ * `app/views/report.js` and `renderer.js` all reported "Direct access to
+ * Node.js APIs in renderer process" in projects containing no Electron at all —
+ * and `ui/`, `views/` and `renderer.js` are the React components directory, the
+ * Express template directory and the name every bundler, SSG and React
+ * reconciler gives its rendering module.
+ *
+ * A file that never loads Electron has no renderer process to be in. The
+ * filename now narrows WHICH Electron file this is; this probe establishes THAT
+ * it is one.
+ *
+ * The cost is a renderer that uses Node and imports nothing from Electron —
+ * possible under `nodeIntegration: true`, where `require('fs')` needs no
+ * Electron import. That file is indistinguishable from an ordinary Node module
+ * read one file at a time, and the window that enabled `nodeIntegration` is
+ * reported at its own definition site by `nodeIntegrationEnabled`.
+ */
+const fileUsesElectron = createModuleEvidence({
+  packages: ['electron'],
+  scopes: ['@electron'],
+  // `electron-store`, `electron-log`, `electron-updater`: an app-side package
+  // that only exists inside an Electron process.
+  prefixes: ['electron-'],
+});
+
+/**
+ * `webPreferences` entries whose insecure value is a literal, and the finding
+ * each one produces.
+ *
+ * Exact membership against Electron's own option names — never a substring
+ * test. Every entry is on Electron's "Security, Native Capabilities, and Your
+ * Responsibility" checklist.
+ */
+const INSECURE_WEB_PREFERENCES: ReadonlyMap<
+  string,
+  { insecureValue: boolean; messageId: MessageIds }
+> = new Map([
+  ['nodeIntegration', { insecureValue: true, messageId: 'nodeIntegrationEnabled' }],
+  // Same capability, granted to a Worker or to nested frames. Both were missing
+  // outright, so an app could hand the renderer `require` through a worker and
+  // the rule stayed quiet.
+  ['nodeIntegrationInWorker', { insecureValue: true, messageId: 'nodeIntegrationEnabled' }],
+  ['nodeIntegrationInSubFrames', { insecureValue: true, messageId: 'nodeIntegrationEnabled' }],
+  ['contextIsolation', { insecureValue: false, messageId: 'contextIsolationDisabled' }],
+  ['webSecurity', { insecureValue: false, messageId: 'webSecurityDisabled' }],
+  ['allowRunningInsecureContent', { insecureValue: true, messageId: 'insecureContentEnabled' }],
+  ['allowDisplayingInsecureContent', { insecureValue: true, messageId: 'insecureContentEnabled' }],
+  ['sandbox', { insecureValue: false, messageId: 'missingSandbox' }],
+  ['enableRemoteModule', { insecureValue: true, messageId: 'legacyElectronFeature' }],
+  ['webviewTag', { insecureValue: true, messageId: 'legacyElectronFeature' }],
+]);
+
+/**
+ * The option name a property declares, whether or not the key is quoted.
+ *
+ * `{ 'nodeIntegration': true }` names the same option as
+ * `{ nodeIntegration: true }`, and reading only `Identifier` keys let the
+ * quoted form through untouched — including `{ 'webPreferences': { … } }`,
+ * which hid every flag nested inside it. Config objects transcribed from JSON,
+ * and any project on Prettier's `quoteProps: 'consistent'`, are written that
+ * way.
+ *
+ * A computed key is a variable, so its text is not the option name; those are
+ * skipped rather than guessed at.
+ */
+/**
+ * `https://cdn/x.js`, `//cdn/x.js` — a specifier the OS will fetch rather than
+ * open. `file:` is a local path written long-hand and is not one.
+ */
+const REMOTE_SPECIFIER = /^(?:[a-z][a-z0-9+.-]*:)?\/\//i;
+
+/**
+ * Is this preload path outside the application's own source?
+ *
+ * Decided from the SHAPE of the path, not from words inside it. The test was
+ * `p.includes('http') || p.includes('remote') || p.includes('node_modules')`,
+ * which reported three local files measured in a single probe:
+ * `./preload/remote-control-preload.js`, `./src/http-client/preload.js`, and
+ * anything under a directory called `my-node_modules-mirror`. A preload script
+ * named after the feature it controls is not a preload script fetched from a
+ * remote host, and a rule that cannot tell them apart is reading the spelling.
+ */
+function isOffProjectPreload(preloadPath: string): boolean {
+  if (REMOTE_SPECIFIER.test(preloadPath) && !/^file:/i.test(preloadPath)) {
+    return true;
+  }
+  // A whole path segment, so `node_modules/@acme/preload.js` counts and
+  // `./tools/node_modules-audit/preload.js` does not.
+  return preloadPath.split(/[\\/]/).includes('node_modules');
+}
+
+function propertyName(property: TSESTree.Node): string | null {
+  if (property.type !== 'Property' || property.computed) return null;
+  if (property.key.type === 'Identifier') return property.key.name;
+  if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
+    return property.key.value;
+  }
+  return null;
+}
+
+/**
+ * `allowInDev` and `safePreloadPatterns` (default `['contextBridge',
+ * 'ipcRenderer']`) used to be declared here and in `meta.schema`. Neither was
+ * ever read by `create()`. `allowInDev` in particular promised that the rule
+ * would stand down in development builds, which it never did — a promise worth
+ * removing rather than leaving a consumer to rely on.
+ */
 export interface Options extends SecurityRuleOptions {
-  /** Allow insecure settings in development */
-  allowInDev?: boolean;
-
-  /** Safe preload script patterns */
-  safePreloadPatterns?: string[];
-
   /** Allowed IPC channels */
   allowedIpcChannels?: string[];
 }
@@ -67,15 +167,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-16',
     },
     messages: {
-      electronSecurityIssue: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Electron Security Issue',
-        cwe: 'CWE-16',
-        description: 'Electron security vulnerability detected',
-        severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security',
-      }),
       nodeIntegrationEnabled: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Node Integration Enabled',
@@ -148,69 +239,22 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         fix: 'Enable sandbox for untrusted content',
         documentationLink: 'https://electronjs.org/docs/tutorial/sandbox',
       }),
-      enableSecurityFeatures: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Enable Security Features',
-        description: 'Enable Electron security features',
-        severity: 'LOW',
-        fix: 'Set contextIsolation: true, nodeIntegration: false',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security',
+      legacyElectronFeature: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Legacy Electron Feature Enabled ({{option}})',
+        cwe: 'CWE-16',
+        description:
+          '{{option}} is enabled in webPreferences. It widens what renderer content can reach past the context bridge: enableRemoteModule gives the renderer synchronous access to main-process objects, and webviewTag re-enables <webview>, whose own options a compromised page can rewrite. Both are off by default in current Electron because of it.',
+        severity: 'HIGH',
+        fix: 'Remove {{option}} (or set it to false) and expose the specific capability through contextBridge backed by an ipcMain handler.',
+        documentationLink:
+          'https://electronjs.org/docs/latest/tutorial/security#12-verify-webview-options-before-creation',
       }),
-      useContextIsolation: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Context Isolation',
-        description: 'Use context isolation for security',
-        severity: 'LOW',
-        fix: 'Enable contextIsolation in BrowserWindow options',
-        documentationLink: 'https://electronjs.org/docs/tutorial/context-isolation',
-      }),
-      securePreloadScripts: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Secure Preload Scripts',
-        description: 'Use secure preload scripts',
-        severity: 'LOW',
-        fix: 'Limit APIs exposed in preload scripts',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#3-enable-context-isolation-for-remote-content',
-      }),
-      strategySecureDefaults: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Secure Defaults Strategy',
-        description: 'Use secure defaults for Electron applications',
-        severity: 'LOW',
-        fix: 'Start with secure configuration and relax only when necessary',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security',
-      }),
-      strategyProcessSeparation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Process Separation Strategy',
-        description: 'Separate main and renderer processes properly',
-        severity: 'LOW',
-        fix: 'Keep Node.js APIs in main process, use IPC for communication',
-        documentationLink: 'https://electronjs.org/docs/tutorial/application-architecture',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate all inputs in Electron applications',
-        severity: 'LOW',
-        fix: 'Validate IPC messages and user inputs',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#7-do-not-use-the-ipc-transport-for-sensitive-data',
-      })
     },
     schema: [
       {
         type: 'object',
         properties: {
-          allowInDev: {
-            type: 'boolean',
-            default: false,
-            description: 'Allow insecure settings in development'
-          },
-          safePreloadPatterns: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['contextBridge', 'ipcRenderer'], description: 'Preload-script APIs treated as safe'
-          },
           allowedIpcChannels: {
             type: 'array',
             items: { type: 'string' },
@@ -240,8 +284,6 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowInDev: false,
-      safePreloadPatterns: ['contextBridge', 'ipcRenderer'],
       allowedIpcChannels: [],
       trustedSanitizers: [],
       trustedAnnotations: [],
@@ -257,6 +299,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
     const filename = context.filename;
+    // Computed once per file, at create() time, from the shared devkit probe.
+    const usesElectron = fileUsesElectron(context.sourceCode.ast);
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -280,49 +324,28 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
      */
     const checkBrowserWindowOptions = (optionsNode: TSESTree.ObjectExpression): void => {
       for (const prop of optionsNode.properties) {
-        if (prop.type === 'Property' &&
-            prop.key.type === 'Identifier') {
+        const key = propertyName(prop);
+        if (key === null) continue;
+        const setting = INSECURE_WEB_PREFERENCES.get(key);
+        if (!setting) continue;
 
-          const key = prop.key.name;
-          const value = prop.value;
+        const value = (prop as TSESTree.Property).value;
+        if (value.type !== 'Literal' || value.value !== setting.insecureValue) continue;
 
-          // Check for insecure boolean options
-          if (['nodeIntegration', 'contextIsolation', 'webSecurity', 'allowRunningInsecureContent', 'sandbox'].includes(key)) {
-            if (value.type === 'Literal') {
-              const isInsecure = (
-                (key === 'nodeIntegration' && value.value === true) ||
-                (key === 'contextIsolation' && value.value === false) ||
-                (key === 'webSecurity' && value.value === false) ||
-                (key === 'allowRunningInsecureContent' && value.value === true) ||
-                (key === 'sandbox' && value.value === false)
-              );
-
-              if (isInsecure) {
-                // FALSE POSITIVE REDUCTION
-                if (safetyChecker.isSafe(prop, context)) {
-                  continue;
-                }
-
-                const messageId = (
-                  key === 'nodeIntegration' ? 'nodeIntegrationEnabled' :
-                  key === 'contextIsolation' ? 'contextIsolationDisabled' :
-                  key === 'webSecurity' ? 'webSecurityDisabled' :
-                  key === 'allowRunningInsecureContent' ? 'insecureContentEnabled' :
-                  'missingSandbox'
-                );
-
-            context.report({
-              node: prop,
-              messageId,
-              data: {
-                filePath: filename,
-                line: String(prop.loc?.start.line ?? 0),
-              },
-            });
-              }
-            }
-          }
+        // FALSE POSITIVE REDUCTION
+        if (safetyChecker.isSafe(prop, context)) {
+          continue;
         }
+
+        context.report({
+          node: prop,
+          messageId: setting.messageId,
+          data: {
+            filePath: filename,
+            line: String(prop.loc?.start.line ?? 0),
+            option: key,
+          },
+        });
       }
     };
 
@@ -379,17 +402,22 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
      * Check for direct Node.js API access in renderer-like files
      */
     const isRendererFile = (): boolean => {
-      // Match path SEGMENTS, never substrings of the whole path.
+      // A path SEGMENT, never a substring — and only segments that mean
+      // "Electron renderer" and nothing else.
       //
       // This was `fileName.includes('ui')` against the absolute path, so the rule fired or
       // stayed silent depending on whether any ancestor directory happened to contain the
       // letters "ui" — `suites`, `build`, `guide`, `require`, `quick`. Linting the same file
-      // from two different working directories gave two different answers, and any project
-      // with a `ui/` folder had every Node API call in every file reported.
+      // from two different working directories gave two different answers.
       //
-      // `renderer` and `preload` still match as a prefix of the basename
-      // (`renderer.ts`, `preload.js`), which is the real Electron convention. `ui` and
-      // `view` are only ever whole directory segments.
+      // Splitting into segments fixed the substring half and kept `ui`, `view` and `views`
+      // as whole directories, which left the reported symptom in place: `src/ui/**` is the
+      // components directory in essentially every React and Vue app, and `views/` is the
+      // Express template directory. Neither says anything about Electron, and both were
+      // measured still reporting every `require('fs')` beneath them. They are gone.
+      //
+      // `renderer` and `preload` remain — those ARE Electron's own convention — and they no
+      // longer decide anything on their own: `fileUsesElectron` has to agree.
       const segments = filename.toLowerCase().split(/[\\/]/).filter(Boolean);
       if (segments.length === 0) return false;
       const base = segments[segments.length - 1].replace(/\.[cm]?[jt]sx?$/, '');
@@ -401,10 +429,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         base.startsWith('renderer.') ||
         base.startsWith('preload.') ||
         dirs.includes('renderer') ||
-        dirs.includes('preload') ||
-        dirs.includes('ui') ||
-        dirs.includes('view') ||
-        dirs.includes('views')
+        dirs.includes('preload')
       );
     };
 
@@ -456,8 +481,10 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
             checkIpcCall(node);
           }
 
-          // Check for Node.js API usage in renderer files
-          if (isRendererFile() && isNodeApiCall(node)) {
+          // Check for Node.js API usage in renderer files.
+          // Two conditions, and the module evidence is the load-bearing one: the
+          // filename says WHICH Electron file this is, the import says THAT it is one.
+          if (isRendererFile() && usesElectron && isNodeApiCall(node)) {
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
@@ -484,14 +511,11 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
           if (node.left.type === 'MemberExpression' &&
               node.left.property.type === 'Identifier' &&
               node.left.property.name === 'preload') {
-
             if (node.right.type === 'Literal' && typeof node.right.value === 'string') {
               const preloadPath = node.right.value;
 
-              // Check for potentially unsafe preload patterns
-              if (preloadPath.includes('node_modules') ||
-                  preloadPath.includes('http') ||
-                  preloadPath.includes('remote')) {
+              // Check for potentially unsafe preload patterns.
+              if (isOffProjectPreload(preloadPath)) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -515,7 +539,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       // Check for insecure webPreferences patterns
       Property(node: TSESTree.Property) {
         try {
-          if (node.key.type === 'Identifier' && node.key.name === 'webPreferences') {
+          if (propertyName(node) === 'webPreferences') {
             if (node.value.type === 'ObjectExpression') {
               checkBrowserWindowOptions(node.value);
             }

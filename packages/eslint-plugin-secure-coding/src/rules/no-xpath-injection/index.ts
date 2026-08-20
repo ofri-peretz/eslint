@@ -23,7 +23,12 @@
  * - Trusted XPath libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  isStaticExpression,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -35,15 +40,24 @@ type MessageIds =
   | 'xpathInjection'
   | 'unsafeXpathConcatenation'
   | 'unvalidatedXpathInput'
-  | 'dangerousXpathExpression'
-  | 'useParameterizedXpath'
-  | 'escapeXpathInput'
-  | 'validateXpathQueries'
-  | 'strategyParameterizedQueries'
-  | 'strategyInputValidation'
-  | 'strategySafeConstruction';
+  | 'dangerousXpathExpression';
 
 export interface Options extends SecurityRuleOptions {
+  /**
+   * Also report CONSTANT XPath containing ordinary axis syntax (`//`, `text()`,
+   * `..`, `/*`). Default: `false`.
+   *
+   * These are not vulnerabilities. `//` is the descendant axis and appears in
+   * essentially every XPath ever written; a constant expression has nothing to
+   * inject into. With this on, `xpath.select("//users/user[@active=1]", doc)`
+   * reports CWE-643 at CVSS 9.8 — which is what the rule did unconditionally,
+   * at `error` in `recommended`.
+   *
+   * `xpathInjection`, the messageId that requires a dynamic expression, is
+   * unaffected and still reports.
+   */
+  reportDangerousConstructs?: boolean;
+
   /** XPath-related function names to check */
   xpathFunctions?: string[];
 
@@ -52,6 +66,16 @@ export interface Options extends SecurityRuleOptions {
 
   /** Functions that validate/sanitize XPath input */
   xpathValidationFunctions?: string[];
+
+  /**
+   * Module specifiers whose exports evaluate an XPath expression, matched
+   * against a RESOLVED import binding. REPLACES the built-in list.
+   * Default: DEFAULT_XPATH_PACKAGES
+   */
+  xpathPackages?: string[];
+
+  /** Extra XPath package specifiers, ON TOP of the built-ins. Default: [] */
+  additionalXpathPackages?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -94,7 +118,17 @@ const XPATH_SYNTAX = new RegExp(
   // `/*` is the XPath wildcard node test — a whole location step, so nothing
   // follows it but the next step. `**/*.graphql`, `${dir}/*.extension.toml`
   // and `/** … */` are globs and comments; they continue past the `*`.
-  `\\/\\/|\\/\\*(?![\\w.*/-])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
+  // The descendant axis is `//` IMMEDIATELY followed by a node test — a name,
+  // `*`, `@` or `.`. A bare `//` with nothing after it in the same literal is a
+  // protocol-relative URL:
+  //
+  //   return '//' + host + '/assets/' + asset;      a CDN href builder
+  //
+  // which reported CWE-643 at CVSS 9.8. `://` is already stripped before this
+  // runs, so the scheme-ful form was handled; this is the scheme-less one.
+  // Where the string really is `'//' + tagName + '[@id=1]'`, the `[@`
+  // alternative still carries it.
+  `\\/\\/(?=[A-Za-z_*@.])|\\/\\*(?![\\w.*/-])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
 );
 
 /**
@@ -117,6 +151,43 @@ function looksLikeXpath(text: string): boolean {
   return XPATH_SYNTAX.test(text.replace(/:\/\//g, ' '));
 }
 
+/**
+ * Packages whose exports evaluate an XPath expression.
+ *
+ * Used to decide whether a BARE call — `select(expr, doc)`, `evaluate(ctx)` —
+ * is an XPath evaluator. As a member call the receiver disambiguates, but a
+ * bare identifier carries nothing but its spelling, and `select` and
+ * `evaluate` are two of the most reused verbs in the ecosystem:
+ *
+ *   store.pipe(select(selectUserProfile))     @ngrx/store
+ *   evaluate(userContext)                     any feature-flag SDK
+ *
+ * Both reported CWE-643 at CVSS 9.8 in files containing no XML at all. The
+ * import is the evidence; the name never was.
+ *
+ * Six published specifiers, so it is a DEFAULT and not a fact about the world:
+ * a house wrapper that re-exports `xpath.select` under a private specifier
+ * carries the same sink and is not on any list npm can enumerate.
+ * `additionalXpathPackages` is that wrapper's remedy.
+ */
+const DEFAULT_XPATH_PACKAGES = [
+  'xpath',
+  'xmldom-xpath',
+  'xpath.js',
+  'libxmljs',
+  'libxmljs2',
+  '@xmldom/xmldom',
+];
+
+function isXpathModuleExport(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  xpathPackages: ReadonlySet<string>,
+): boolean {
+  const binding = resolveModuleBinding(node, scope);
+  return binding !== undefined && xpathPackages.has(binding.module);
+}
+
 export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-xpath-injection',
   meta: {
@@ -126,7 +197,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects XPath injection vulnerabilities',
       cwe: 'CWE-643',
     },
-    hasSuggestions: true,
     messages: {
       xpathInjection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -166,62 +236,21 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Restrict XPath to safe patterns and validate expressions',
         documentationLink: 'https://cwe.mitre.org/data/definitions/643.html',
       }),
-      useParameterizedXpath: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Parameterized XPath',
-        description: 'Use parameterized XPath queries',
-        severity: 'LOW',
-        fix: 'Construct XPath with proper escaping and validation',
-        documentationLink:
-          'https://owasp.org/www-community/attacks/XPATH_Injection',
-      }),
-      escapeXpathInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Escape XPath Input',
-        description: 'Escape special characters in XPath input',
-        severity: 'LOW',
-        fix: 'Use xpath.escape() or equivalent escaping function',
-        documentationLink: 'https://www.npmjs.com/package/xpath-escape',
-      }),
-      validateXpathQueries: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate XPath Queries',
-        description: 'Validate XPath queries against allowed patterns',
-        severity: 'LOW',
-        fix: 'Whitelist allowed XPath operations and validate syntax',
-        documentationLink:
-          'https://owasp.org/www-community/attacks/XPATH_Injection',
-      }),
-      strategyParameterizedQueries: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Parameterized Queries Strategy',
-        description: 'Use parameterized XPath construction',
-        severity: 'LOW',
-        fix: 'Build XPath queries programmatically with escaped parameters',
-        documentationLink:
-          'https://owasp.org/www-community/attacks/XPATH_Injection',
-      }),
-      strategyInputValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Validation Strategy',
-        description: 'Validate XPath input at application boundary',
-        severity: 'LOW',
-        fix: 'Validate XPath syntax and restrict to safe operations',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/643.html',
-      }),
-      strategySafeConstruction: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Safe Construction Strategy',
-        description: 'Use safe XPath construction libraries',
-        severity: 'LOW',
-        fix: 'Use libraries that provide safe XPath building',
-        documentationLink: 'https://www.npmjs.com/package/xpath-builder',
-      }),
+
     },
     schema: [
       {
         type: 'object',
         properties: {
+          reportDangerousConstructs: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Also report constant XPath containing ordinary axis syntax ' +
+              '(//, text(), .., /*). These are not vulnerabilities; a constant ' +
+              'expression has nothing to inject into. Off by default because ' +
+              'it reported essentially every XPath in existence at CVSS 9.8.',
+          },
           xpathFunctions: {
             type: 'array',
             items: { type: 'string' },
@@ -231,6 +260,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
               'selectNodes',
               'xpath',
               'select',
+              'select1',
             ],
             description: 'XPath evaluation methods treated as query sinks',
           },
@@ -271,6 +301,19 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Disable all false positive detection (strict mode)',
           },
+          xpathPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_XPATH_PACKAGES,
+            description:
+              'Module specifiers whose exports evaluate an XPath expression, matched against a resolved import binding. Replaces the built-in list.',
+          },
+          additionalXpathPackages: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra XPath package specifiers, on top of `xpathPackages`.',
+          },
         },
         additionalProperties: false,
       },
@@ -278,12 +321,15 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
+      xpathPackages: DEFAULT_XPATH_PACKAGES,
+      additionalXpathPackages: [],
       xpathFunctions: [
         'evaluate',
         'selectSingleNode',
         'selectNodes',
         'xpath',
         'select',
+        'select1',
       ],
       safeXpathConstructors: [
         'buildXPath',
@@ -305,12 +351,16 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
+      reportDangerousConstructs = false,
+      xpathPackages = DEFAULT_XPATH_PACKAGES,
+      additionalXpathPackages = [],
       xpathFunctions = [
         'evaluate',
         'selectSingleNode',
         'selectNodes',
         'xpath',
         'select',
+        'select1',
       ],
       xpathValidationFunctions = [
         'validateXPath',
@@ -322,6 +372,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       trustedAnnotations = [],
       strictMode = false,
     }: Options = options;
+
+    const xpathPackageSet = new Set([...xpathPackages, ...additionalXpathPackages]);
 
     const sourceCode = context.sourceCode;
     const filename = context.filename;
@@ -388,14 +440,33 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
      */
     function isXpathSinkCall(call: TSESTree.CallExpression): boolean {
       const callee = call.callee;
-      const name =
-        callee.type === AST_NODE_TYPES.Identifier
-          ? callee.name
-          : callee.type === AST_NODE_TYPES.MemberExpression &&
-              callee.property.type === AST_NODE_TYPES.Identifier
-            ? callee.property.name
-            : null;
-      return name !== null && xpathFunctions.includes(name);
+      // Plain statements rather than a nested ternary.
+      //
+      // As a `? :` chain, istanbul attributed the whole nested alternate to one
+      // cond-expr and reported it 0/44 taken — yet deleting that arm broke 17
+      // tests, so it was plainly being executed. The counter was misleading, and
+      // a coverage number nobody can act on is worse than none.
+      //
+      // Also drops the old `name !== null &&` guard: `xpathFunctions.includes('')`
+      // is false for any configured list, so it was a condition no input could
+      // exercise.
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        // A bare call needs the IMPORT as evidence — see `isXpathModuleExport`.
+        return (
+          xpathFunctions.includes(callee.name) &&
+          isXpathModuleExport(callee, sourceCode.getScope(callee), xpathPackageSet)
+        );
+      }
+      // Returned as one expression rather than an `if` plus a trailing
+      // `return false`. Every caller arrives with either an Identifier or a
+      // MemberExpression callee, so that trailing statement was unreachable —
+      // istanbul flagged it, and the 100% gate would otherwise have demanded a
+      // test for a case the code cannot receive.
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
+        xpathFunctions.includes(callee.property.name)
+      );
     }
 
     function reachesXpathSink(node: TSESTree.Node): boolean {
@@ -478,10 +549,13 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         );
       }
 
-      // Check for XPath library calls
+      // Check for XPath library calls. Same import gate as `isXpathSinkCall`:
+      // a bare `select(...)` / `evaluate(...)` is only an XPath evaluator when
+      // the identifier resolves to an XPath package.
       if (
         callee.type === 'Identifier' &&
-        xpathFunctions.includes(callee.name)
+        xpathFunctions.includes(callee.name) &&
+        isXpathModuleExport(callee, sourceCode.getScope(callee), xpathPackageSet)
       ) {
         return true;
       }
@@ -494,6 +568,20 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     const containsDangerousXpath = (xpathText: string): boolean => {
+      // OFF BY DEFAULT — see `reportDangerousConstructs`.
+      //
+      // Every pattern below is ordinary XPath. `//` is the descendant axis and
+      // appears in essentially every XPath ever written; `text()` is how you
+      // read a node's content. Probed on the shipped rule,
+      // `xpath.select("//users/user[@active=1]", doc)` — a constant with no
+      // interpolation anywhere — reported CWE-643 at CVSS 9.8.
+      //
+      // This rule's own header already states the principle: "A constant string
+      // has nothing to inject into." The `xpathInjection` messageId, which
+      // requires a dynamic expression, is the one that carries the finding, and
+      // it still fires on the interpolated case.
+      if (!reportDangerousConstructs) return false;
+
       // Dangerous XPath patterns that allow traversal or injection
       const dangerousPatterns = [
         /\.\./, // Parent directory traversal
@@ -785,12 +873,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
                 filePath: filename,
                 line: String(node.loc?.start.line ?? 0),
               },
-              suggest: [
-                {
-                  messageId: 'useParameterizedXpath',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }

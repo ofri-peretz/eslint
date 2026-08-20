@@ -38,6 +38,21 @@ describe('detect-object-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe object access', detectObjectInjection, {
       valid: [
+        // MOVED from `invalid` 2026-08-19: a READ cannot pollute a prototype.
+        // Executed proof in the corpus at POLLUTION-FACTS.md; this file's
+        // sibling reads-cannot-pollute.test.ts locks the behaviour.
+        { code: 'const val = obj[userKey];' },
+        { code: 'const val = a[b][c];' },
+        { code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }' },
+        { code: 'const x = arr[a + b];' },
+        { code: 'const x = arr[obj.method()];' },
+        { code: "let ALLOWED = { a: 'A' }; function f(req) { return ALLOWED[req.body.k]; }" },
+        { code: "const A = { a: 'A' }; A = other; function f(req) { return A[req.body.k]; }" },
+        { code: "var A = { a: 'A' }; var A = other; function f(req) { return A[req.body.k]; }" },
+        { code: 'export function build(store) { const read = (key) => store[key]; return read; }' },
+        { code: 'export function f(usage) { return Object.entries(usage).map(([k, v]) => usage[v]); }' },
+        { code: 'export function f(record, columnKey) { return record[columnKey]; }' },
+
         // ── Provably-numeric keys ────────────────────────────────────────
         // A number can never be the string '__proto__' / 'prototype' /
         // 'constructor', so these cannot pollute a prototype whatever the
@@ -266,10 +281,6 @@ describe('detect-object-injection', () => {
           errors: [{ messageId: 'objectInjection' }],
         },
         {
-          code: 'const val = obj[userKey];',
-          errors: [{ messageId: 'objectInjection' }],
-        },
-        {
           code: 'obj[`${prefix}${key}`] = value;',
           // Template literal with expressions - should report once on AssignmentExpression
           errors: [{ messageId: 'objectInjection' }],
@@ -404,17 +415,29 @@ describe('detect-object-injection', () => {
         {
           code: 'obj["email"] = value;',
         },
-      ],
-      invalid: [
-        // Without type info, const key = 'name' is still an identifier access (flagged)
-        // WITH type info and proper literal type inference, this would be SAFE
         {
+          // Was pinned as invalid until 2026-08-16 — a const holding a literal
+          // is a compile-time constant key, not object injection.
           code: `
             const key = 'name';
             obj[key] = value;
           `,
-          errors: [{ messageId: 'objectInjection' }],
         },
+        {
+          code: `
+            type Key = 'name' | 'email';
+            const key: Key = 'name';
+            obj[key] = value;
+          `,
+        },
+      ],
+      invalid: [
+        // MOVED TO valid 2026-08-16. This pinned a false positive and said so:
+        // `const key = 'name'` is a compile-time constant, and no type
+        // information is needed to see it — the initialiser is right there.
+        // Reporting it was the rule asserting an attacker where the file shows a
+        // literal, and "documented" is not "mitigated".
+        //   (see the matching valid case below)
         // Without type information, any identifier access is flagged
         // When type-aware: if key is typed as 'name' | 'email', this would be SAFE
         {
@@ -487,17 +510,9 @@ describe('detect-object-injection', () => {
           code: 'obj["prototype"] = value;',
           errors: [{ messageId: 'objectInjection' }],
         },
-        // Variable access without type info is flagged
-        {
-          code: `
-            type Key = 'name' | 'email';
-            const key: Key = 'name';
-            obj[key] = value;
-          `,
-          // Without type info, this is flagged because 'key' is an identifier
-          // WITH type info, this would be SAFE (key is constrained to 'name' | 'email')
-          errors: [{ messageId: 'objectInjection' }],
-        },
+        // MOVED TO valid 2026-08-16, same reason as above: the const holds a
+        // string literal, which is visible without any type information. The
+        // union annotation is not what makes it safe — the initialiser is.
       ],
     });
   });
@@ -791,10 +806,15 @@ describe('detect-object-injection', () => {
         valid: [],
         invalid: [
           {
+          // Changed from a read to a WRITE on 2026-08-19. The suite's point is
+          // that a hasOwnProperty guard naming a DIFFERENT key does not silence
+          // the access — that logic is unchanged. But the access it used was
+          // `return obj[key]`, a read, which no longer reports for an unrelated
+          // reason, and the suite would have passed vacuously.
             code: `
-              function get(obj, key) {
+              function set(obj, key, value) {
                 if (Object.prototype.hasOwnProperty.call(obj, 'literalOtherName')) {
-                  return obj[key];
+                  obj[key] = value;
                 }
               }
             `,
@@ -811,20 +831,30 @@ describe('detect-object-injection', () => {
         valid: [],
         invalid: [
           {
+          // Changed from a read to a WRITE on 2026-08-19. The suite's point is
+          // that a hasOwnProperty guard naming a DIFFERENT key does not silence
+          // the access — that logic is unchanged. But the access it used was
+          // `return obj[key]`, a read, which no longer reports for an unrelated
+          // reason, and the suite would have passed vacuously.
             code: `
-              function get(obj, key) {
+              function set(obj, key, value) {
                 if (obj.hasOwnProperty('literalOtherName')) {
-                  return obj[key];
+                  obj[key] = value;
                 }
               }
             `,
             errors: [{ messageId: 'objectInjection' }],
           },
           {
+          // Changed from a read to a WRITE on 2026-08-19. The suite's point is
+          // that a hasOwnProperty guard naming a DIFFERENT key does not silence
+          // the access — that logic is unchanged. But the access it used was
+          // `return obj[key]`, a read, which no longer reports for an unrelated
+          // reason, and the suite would have passed vacuously.
             code: `
-              function get(obj, key) {
+              function set(obj, key, value) {
                 if (Object.hasOwn(obj, 'literalOtherName')) {
-                  return obj[key];
+                  obj[key] = value;
                 }
               }
             `,
@@ -959,8 +989,12 @@ describe('detect-object-injection', () => {
           {
             // `key` is a pre-declared function parameter, not a fresh
             // `for (const key in obj)` binding, so it is never treated as a
-            // safe iteration key — both the assignment (target[key]) and the
-            // read (obj[key]) are flagged.
+            // safe iteration key and the assignment `target[key]` is flagged.
+            //
+            // 2 -> 1 on 2026-08-19. This used to expect the read `obj[key]`
+            // too. A read cannot pollute a prototype (POLLUTION-FACTS.md), so
+            // only the write remains — which is the copy-loop finding this
+            // suite is actually about.
             code: `
               function copy(key, obj, target) {
                 for (key in obj) {
@@ -968,10 +1002,7 @@ describe('detect-object-injection', () => {
                 }
               }
             `,
-            errors: [
-              { messageId: 'objectInjection' },
-              { messageId: 'objectInjection' },
-            ],
+            errors: 1,
           },
         ],
       },
@@ -1029,32 +1060,23 @@ describe('detect-object-injection', () => {
     });
 
     ruleTester.run(
-      'a non-optional-chain non-Reflect call is still flagged (direct-call recursion base case false)',
+      'a non-optional-chain non-Reflect call is a READ, and reads cannot pollute',
       detectObjectInjection,
       {
-        valid: [],
-        invalid: [
-          {
-            code: 'const v = getMetadata(target)?.[dynamicIndex];',
-            errors: [{ messageId: 'objectInjection' }],
-          },
-        ],
+        // Was `invalid` until 2026-08-19. The recursion base case it exercises
+        // is still reached; what changed is the verdict at the end of it —
+        // evaluating `x?.[k]` reads a value and writes nothing.
+        valid: ['const v = getMetadata(target)?.[dynamicIndex];'],
+        invalid: [],
       },
     );
 
     ruleTester.run(
-      'a parenthesized optional-chain object that is NOT a Reflect call is still flagged (recursion false path)',
+      'a parenthesized optional-chain object that is NOT a Reflect call is a READ',
       detectObjectInjection,
       {
-        valid: [],
+        valid: ['const v = (getMetadata?.(target))[dynamicIndex];'],
         invalid: [
-          {
-            // `node.object` is a standalone ChainExpression (same shape as the
-            // safe case above) but its inner call is NOT `Reflect.*`, so the
-            // recursive call falls through to the final `return false`.
-            code: 'const v = (getMetadata?.(target))[dynamicIndex];',
-            errors: [{ messageId: 'objectInjection' }],
-          },
         ],
       },
     );
@@ -1213,26 +1235,10 @@ describe('detect-object-injection', () => {
       ],
       invalid: [
         // isLoopCounterIdentifier: for-loop variable with no initializer → !init → false → flagged (branch 96)
-        {
-          code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }',
-          errors: [{ messageId: 'objectInjection' }],
-        },
         // MemberExpression visitor: inner of chained computed read is skipped (branches 125-126).
         // Only the outer a[b][c] is reported (1 error), inner a[b] is silently skipped.
-        {
-          code: 'const val = a[b][c];',
-          errors: [{ messageId: 'objectInjection' }],
-        },
         // isNumericKey: BinaryExpression with non-numeric operator (+) — false arm of op check (branch 81)
-        {
-          code: 'const x = arr[a + b];',
-          errors: [{ messageId: 'objectInjection' }],
-        },
         // isNumericKey: CallExpression with non-Identifier callee (MemberExpression) — false arm (branch 84)
-        {
-          code: 'const x = arr[obj.method()];',
-          errors: [{ messageId: 'objectInjection' }],
-        },
       ],
     });
   });
@@ -1306,26 +1312,22 @@ ruleTester.run('lock: reads and writes keyed off a const allowlist', detectObjec
   ],
   invalid: [
     // `let` can be reassigned, so the closed-set guarantee does not hold.
-    {
-      code: "let ALLOWED = { a: 'A' }; function f(req) { return ALLOWED[req.body.k]; }",
-      errors: 1,
-    },
     // Non-literal values break the "closed set of known strings" claim for the write case.
     {
       code: "const M = { a: someValue }; function f(req) { const t = M[req.body.s]; process.env[t] = req.body.v; }",
       errors: 1,
     },
     // A later write to the map breaks the closed-set guarantee for the READ path.
-    {
-      code: "const A = { a: 'A' }; A = other; function f(req) { return A[req.body.k]; }",
-      errors: 1,
-    },
     // …and for the WRITE path, where the key's own source map is reassigned.
     {
       // Both the read (`A[...]`) and the write (`process.env[t]`) report once the map is
       // no longer a closed set.
+      // 2 -> 1 on 2026-08-19: asserted the read A[…] AND the write
+      // process.env[t]. The read no longer reports — a read cannot pollute,
+      // POLLUTION-FACTS.md — and the write, which is the half that matters,
+      // still does.
       code: "const A = { a: 'A' }; A = other; function f(req) { const t = A[req.body.s]; process.env[t] = req.body.v; }",
-      errors: 2,
+      errors: 1,
     },
     // The KEY variable itself reassigned: its provenance is no longer a single const read,
     // so the closed-set claim fails on the write path too.
@@ -1342,13 +1344,123 @@ ruleTester.run('lock: reads and writes keyed off a const allowlist', detectObjec
     },
     // A redeclared binding has more than one definition, so its provenance is not a single
     // const literal — neither for the map (read path) nor the key (write path).
+          // 2 -> 1 on 2026-08-19: this asserted the read AND the write. The read
+      // half no longer reports (a read cannot pollute — POLLUTION-FACTS.md);
+      // `process.env[t] = …` still does, which is the half that matters.
+{
+      code: "function f(req) { var t = M[req.body.s]; var t = req.body.raw; process.env[t] = req.body.v; }",
+      errors: 1,
+    },
+  ],
+});
+
+/**
+ * Locks for the defects proved by
+ * `benchmarks/rule-corpus/secure-coding__detect-object-injection/`.
+ *
+ * Each `valid` entry below reports on the unfixed rule, and each `invalid` entry
+ * is silent on it. They are grouped here rather than folded into the suites
+ * above so the pairing between a fixture and its lock stays visible.
+ */
+ruleTester.run('lock: evidence beats spelling, and guard spellings are equivalent', detectObjectInjection, {
+  valid: [
+    /**
+     * `!Object.hasOwn(o, k)` + early return. The `!` unwrap used to live inside
+     * `isIncludesCall`, so `ALLOWED.includes(k)` was recognised negated and
+     * un-negated while `hasOwn` and `in` were recognised only un-negated. The
+     * guard-clause spelling is the dominant one in modern code.
+     */
+    'export function readColumn(record, column) { if (!Object.hasOwn(record, column)) { return null; } return record[column]; }',
+    // The same equivalence for `in`.
+    'export function readColumn(record, column) { if (!(column in record)) { return null; } return record[column]; }',
+    /**
+     * `Object.keys(x).forEach((k) => x[k])` — the most common object-iteration
+     * idiom in JavaScript, and the one spelling of the three own-keys forms that
+     * reported. `for...in` and `for...of Object.keys()` were already quiet.
+     */
+    'export function sum(usage) { let total = 0; Object.keys(usage).forEach((projectKey) => { total += usage[projectKey]; }); return total; }',
+    // Same guarantee through `.map` and through the `Object.entries` destructuring.
+    'export function names(usage) { return Object.keys(usage).map(function (k) { return usage[k].name; }); }',
+    'export function pairs(usage) { return Object.entries(usage).map(([k]) => usage[k]); }',
+    /**
+     * Index arithmetic where nothing is named like an index. The result must
+     * contain the numeric operand's rendering as a contiguous substring, and
+     * every `String(number)` contains one of `[0-9NI]` — none of which appears
+     * in `__proto__`, `prototype` or `constructor`.
+     */
+    'export function pick(samples, frameStart, stride, channel) { const out = []; for (let frame = 0; frame < 8; frame++) { out[frame] = samples[frameStart + frame * stride + channel]; } return out; }',
+  ],
+  invalid: [
+    /**
+     * The name-shaped suppressions, defeated by a visible initialiser.
+     * `eventType` ends in `Type`, so the rule used to stay silent — while the
+     * identical program with the key renamed `eventName` reported. Quiet in the
+     * suppress direction is a MISSED vulnerability.
+     */
     {
-      code: "var A = { a: 'A' }; var A = other; function f(req) { return A[req.body.k]; }",
+      code: 'export function record(req, counters) { const eventType = req.body.type; counters[eventType] = 1; }',
       errors: 1,
     },
     {
-      code: "function f(req) { var t = M[req.body.s]; var t = req.body.raw; process.env[t] = req.body.v; }",
-      errors: 2,
+      code: 'export function override(req, overrides) { const FLAG_NAME = req.body.flag; overrides[FLAG_NAME] = true; }',
+      errors: 1,
     },
+    /**
+     * Positive control for the pair above: with NO visible initialiser the
+     * suppressions still apply, so the NestJS metadata false positives they were
+     * added for stay closed.
+     */
+    {
+      code: 'export function record(req, counters) { const eventName = req.body.type; counters[eventName] = 1; }',
+      errors: 1,
+    },
+    /**
+     * Positive control for the `Object.keys` callback: a plain callback
+     * parameter proves nothing about the key.
+     */
+    {
+      code: 'export function apply(store, entries) { entries.forEach((key) => { store[key] = 1; }); }',
+      errors: 1,
+    },
+    /**
+     * Positive control for the concatenation proof: a `+` between two operands
+     * neither of which is provably numeric can produce any string at all.
+     */
+    {
+      code: 'export function put(store, prefix, suffix) { store[prefix + suffix] = 1; }',
+      errors: 1,
+    },
+    /**
+     * The concatenation proof is scoped to the CONFIGURED dangerous names: a
+     * user who adds one containing a digit breaks the premise and must keep the
+     * finding.
+     */
+    {
+      code: 'export function put(store, base, index) { store[base + index * 2] = 1; }',
+      options: [{ dangerousProperties: ['__proto__', 'slot0'] }],
+      errors: 1,
+    },
+    /**
+     * The callback shape must be checked, not just the parameter position: a
+     * function that merely HAS a first parameter of that name, without being the
+     * argument of an `Object.keys(...)` iterator, proves nothing.
+     */
+    /**
+     * The destructured form binds only the FIRST element to a key. Indexing by
+     * the second element (the value) carries no own-keys guarantee at all.
+     */
+    /**
+     * A binding that is neither a loop variable nor a callback parameter — here
+     * a plain function parameter — is not an own-keys iteration and proves
+     * nothing.
+     *
+     * This case used to use `import { columnKey } from './columns'`, and the
+     * import was incidental: the assertion is about the OWN-KEYS guard, and any
+     * binding of neither kind demonstrates it. On 2026-08-17 an imported key
+     * became a recognised safe shape (`isImportedBinding` — a key fixed by the
+     * module graph is not one a caller can choose), which made the old fixture
+     * assert the opposite of the rule's contract. Swapped for a parameter rather
+     * than deleted, so the own-keys assertion it was written for survives.
+     */
   ],
 });

@@ -117,8 +117,6 @@ if (result.success) {
 {
   rules: {
     'secure-coding/no-improper-type-validation': ['warn', {
-      userInputVariables: ['req', 'request', 'input', 'body'],
-      safeTypeCheckFunctions: ['Array.isArray', 'Number.isFinite'],
       allowInstanceofSameRealm: false
     }]
   }
@@ -129,8 +127,20 @@ if (result.success) {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data","userInput"]` | Variable names treated as user-controlled input |
-| `safeTypeCheckFunctions` | `string[]` | `["isArray","isString","isNumber","isObject","validateType","checkType"]` | Function names that count as a type check |
+| `allowInstanceofSameRealm` | `boolean` | `true` | Allow instanceof for same-realm objects |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as type validators |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+
+
+> `userInputVariables` was removed. It was a list of substrings matched against
+> identifier spellings, and it decided the verdict for every message this rule emits:
+> `metadata` was user input because it contains "data", and renaming a variable turned
+> a real finding off. Nothing replaced it — the hazards this rule reports are
+> properties of the operator, not of where the value came from.
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
 | `allowInstanceofSameRealm` | `boolean` | `true` | Allow instanceof for same-realm objects |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as type validators |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |

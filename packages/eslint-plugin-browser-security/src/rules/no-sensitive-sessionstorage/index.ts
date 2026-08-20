@@ -9,6 +9,22 @@
  * Detects storing sensitive data in sessionStorage
  * CWE-922: Insecure Storage of Sensitive Information
  *
+ * ## Rule partition
+ *
+ * **Owns:** a write to **`sessionStorage`** — bare, `window.`/`self.`/
+ * `globalThis.`-qualified, computed or optional-chained — whose resolved key
+ * names a **non-bearer** secret by whole word.
+ *
+ * **Defers to:**
+ * - `no-jwt-in-storage` — bearer credentials and provable JWT values.
+ * - `no-sensitive-localstorage` — everything written to `localStorage`.
+ * - `no-sensitive-indexeddb`, `no-sensitive-data-in-cache` — the other media.
+ *
+ * The old vocabulary was a regex list applied by `.test()`, which meant `/pin/i`
+ * reported `sessionStorage.setItem('spinner-visible', '1')` and `/cvc/`,
+ * `/ssn/`, `/auth/` behaved the same way. It is now whole-word membership over
+ * a shared vocabulary — see `utils/sensitive-value-evidence.ts`.
+ *
  * @see https://cwe.mitre.org/data/definitions/922.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -17,52 +33,32 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'sensitiveInSessionStorage' | 'useSecureStorage';
+import {
+  hasProvableJwtValue,
+  memberName,
+  namesBearerCredential,
+  namesNonBearerSecret,
+  NON_BEARER_SECRET_TERMS,
+  resolveKeyText,
+  resolveStorageArea,
+} from '../../utils/sensitive-value-evidence';
+
+/** The single global this rule guards, however it is spelled. */
+const SESSION_STORAGE: ReadonlySet<string> = new Set(['sessionStorage']);
+
+type MessageIds = 'sensitiveInSessionStorage';
 
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
-  /** Additional sensitive key patterns */
+  /** Extra whole-word terms to treat as sensitive */
   additionalPatterns?: string[];
 }
 
 type RuleOptions = [Options?];
-
-// Sensitive data patterns
-const SENSITIVE_PATTERNS = [
-  /password/i,
-  /passwd/i,
-  /secret/i,
-  /apikey/i,
-  /api[_-]?key/i,
-  /private[_-]?key/i,
-  /auth[_-]?token/i,
-  /access[_-]?token/i,
-  /refresh[_-]?token/i,
-  /bearer/i,
-  /credential/i,
-  /ssn/i,
-  /social[_-]?security/i,
-  /credit[_-]?card/i,
-  /card[_-]?number/i,
-  /cvv/i,
-  /cvc/i,
-  /pin/i,
-  /encryption[_-]?key/i,
-];
-
-/**
- * Check if key matches sensitive patterns
- */
-function isSensitiveKey(key: string, additionalPatterns: string[] = []): boolean {
-  const allPatterns = [
-    ...SENSITIVE_PATTERNS,
-    ...additionalPatterns.map((p) => new RegExp(p, 'i')),
-  ];
-  return allPatterns.some((pattern) => pattern.test(key));
-}
 
 export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-sessionstorage',
@@ -74,7 +70,6 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-922',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       sensitiveInSessionStorage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -89,110 +84,84 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#local-storage',
       }),
-      useSecureStorage: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Secure Storage',
-        description: 'Use HttpOnly cookies or server-side sessions',
-        severity: 'LOW',
-        fix: 'Server: res.cookie("session", value, { httpOnly: true, secure: true })',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
-      }),
     },
     schema: [
       {
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
-          additionalPatterns: { type: 'array', items: { type: 'string' }, description: 'Extra key-name patterns to treat as sensitive' },
+          additionalPatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Extra whole-word key terms to treat as sensitive',
+          },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: true }],
+  defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
     const { allowInTests = true, additionalPatterns = [] } = options as Options;
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};
     }
 
+    function check(
+      node: TSESTree.Node,
+      key: string | null,
+      valueNode: TSESTree.Node,
+    ): void {
+      if (key === null) return;
+
+      // Structural deferral to no-jwt-in-storage, before user patterns.
+      if (
+        namesBearerCredential(key) ||
+        hasProvableJwtValue(valueNode, context.sourceCode)
+      ) {
+        return;
+      }
+
+      if (!namesNonBearerSecret(key, [...NON_BEARER_SECRET_TERMS, ...additionalPatterns])) return;
+
+      context.report({
+        node,
+        messageId: 'sensitiveInSessionStorage',
+        data: { key },
+      });
+    }
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+        if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
+        if (memberName(callee, context.sourceCode) !== 'setItem') return;
+        if (resolveStorageArea(callee.object, context.sourceCode, SESSION_STORAGE) === null) return;
 
-        if (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.object.type === AST_NODE_TYPES.Identifier &&
-          callee.object.name === 'sessionStorage' &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          callee.property.name === 'setItem'
-        ) {
-          const keyArg = node.arguments[0];
-          if (!keyArg) return;
+        const keyArg = node.arguments[0];
+        const valueArg = node.arguments[1];
+        if (keyArg === undefined || valueArg === undefined) return;
 
-          let keyValue: string | null = null;
-
-          if (
-            keyArg.type === AST_NODE_TYPES.Literal &&
-            typeof keyArg.value === 'string'
-          ) {
-            keyValue = keyArg.value;
-          } else if (keyArg.type === AST_NODE_TYPES.Identifier) {
-            keyValue = keyArg.name;
-          }
-
-          if (keyValue && isSensitiveKey(keyValue, additionalPatterns)) {
-            context.report({
-              node,
-              messageId: 'sensitiveInSessionStorage',
-              data: { key: keyValue },
-              suggest: [
-                { messageId: 'useSecureStorage', fix: () => null },
-              ],
-            });
-          }
-        }
+        check(node, resolveKeyText(keyArg, context.sourceCode), valueArg);
       },
 
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (node.left.type !== AST_NODE_TYPES.MemberExpression) return;
-
-        const obj = node.left.object;
-        if (
-          obj.type !== AST_NODE_TYPES.Identifier ||
-          obj.name !== 'sessionStorage'
-        ) {
+        if (resolveStorageArea(node.left.object, context.sourceCode, SESSION_STORAGE) === null) {
           return;
         }
 
-        let keyValue: string | null = null;
+        const key = node.left.computed
+          ? resolveKeyText(node.left.property, context.sourceCode)
+          : memberName(node.left);
 
-        if (
-          node.left.property.type === AST_NODE_TYPES.Literal &&
-          typeof node.left.property.value === 'string'
-        ) {
-          keyValue = node.left.property.value;
-        } else if (node.left.property.type === AST_NODE_TYPES.Identifier) {
-          keyValue = node.left.property.name;
-        }
-
-        if (keyValue && isSensitiveKey(keyValue, additionalPatterns)) {
-          context.report({
-            node,
-            messageId: 'sensitiveInSessionStorage',
-            data: { key: keyValue },
-            suggest: [
-              { messageId: 'useSecureStorage', fix: () => null },
-            ],
-          });
-        }
+        check(node, key, node.right);
       },
     };
   },

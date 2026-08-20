@@ -58,3 +58,10 @@ if (response.ok) {
   }
 }
 ```
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `authKeywords` | `string[]` | `["admin","authenticated","authorized","isAdmin","isAuthenticated","role"]` | Storage keys indicating a client-side authorization decision, matched whole-word against the key segments. |
+| `credentialProperties` | `string[]` | `["password","secret","token"]` | Property names treated as credentials in an equality comparison. |

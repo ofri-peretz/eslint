@@ -13,7 +13,7 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
 /**
@@ -43,7 +43,11 @@ const fileUsesAstTooling = createModuleEvidence({
   ],
 });
 
-type MessageIds = 'insecureComparison' | 'useStrictEquality' | 'timingUnsafeComparison';
+type MessageIds =
+  | 'insecureComparison'
+  | 'useStrictEquality'
+  | 'useTimingSafeEqual'
+  | 'timingUnsafeComparison';
 
 export interface Options {
   /** Allow insecure comparison in test files. Default: false */
@@ -59,8 +63,28 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-comparison',
   meta: {
     type: 'problem',
-    deprecated: true,
-    replacedBy: ['node-security/no-timing-unsafe-compare'],
+    // NOT deprecated, and the pointer that said otherwise was losing users a
+    // whole weakness class.
+    //
+    // This rule reported two things: CWE-208 (comparing a secret with an
+    // operator that short-circuits, leaking timing) and CWE-697 (`==` coercing
+    // types before it compares). It was marked `deprecated` with
+    // `replacedBy: ['node-security/no-timing-unsafe-compare']`, which covers the
+    // FIRST of those and nothing else — probed: `no-timing-unsafe-compare` is
+    // QUIET on `if (userRole == "admin")`.
+    //
+    // And this is the ONLY rule in the ecosystem carrying CWE-697 — verified by
+    // grepping every plugin. So a user who did as they were told, disabled this
+    // and enabled the replacement, silently lost type-coercion detection
+    // entirely, with the deprecation notice reassuring them nothing was missing.
+    // A wrong `replacedBy` is worse than none: it converts a considered
+    // migration into a coverage hole.
+    //
+    // The CWE-208 half does overlap `node-security/no-timing-unsafe-compare`,
+    // which is the better implementation of it. That is a real partition
+    // question, but it is answered by narrowing this rule's timing head, not by
+    // retiring the only owner of a different weakness. Recorded in
+    // RULE-QUALITY-PROGRAM.md.
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-insecure-comparison.md',
       description: 'Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities',
@@ -78,7 +102,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-697',
         description: 'Insecure comparison operator ({{operator}}) detected - can lead to type coercion vulnerabilities',
         severity: 'HIGH',
-        fix: 'Use strict equality ({{strictOperator}}) instead: {{example}}',
+        fix: 'Use strict equality ({{strictOperator}}) instead: {{example}} — Not a finding if the comparison is against null, which tests null and undefined together on purpose',
         documentationLink: 'https://cwe.mitre.org/data/definitions/697.html',
       }),
       useStrictEquality: formatLLMMessage({
@@ -86,8 +110,25 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         issueName: 'Use Strict Equality',
         description: 'Use strict equality operator',
         severity: 'LOW',
-        fix: 'Replace == with === and != with !==',
+        fix: 'Replace == with === and != with !== — Not a finding if the comparison is the idiomatic `x == null` nullish test',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality',
+      }),
+      /**
+       * The timing finding's own suggestion, because reusing `useStrictEquality`
+       * for it mislabelled the rewrite. That suggestion's fix replaces the
+       * comparison with `crypto.timingSafeEqual(...)`, but its text said "Use
+       * strict equality operator / Replace == with ===" — so a user was told to
+       * do the very thing the finding above it warns about (`===` is what leaks
+       * the timing), and the code they actually got was something else entirely.
+       * A mislabelled rewrite on a security rule is worse than no suggestion.
+       */
+      useTimingSafeEqual: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use A Constant-Time Comparison',
+        description: 'Compare secrets in constant time, not with an operator that short-circuits',
+        severity: 'LOW',
+        fix: 'Rewrite as crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) — Not a finding if neither side is a secret the caller can guess one character at a time',
+        documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
       timingUnsafeComparison: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -95,7 +136,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-208',
         description: 'Secret comparison with {{operator}} can leak timing information',
         severity: 'HIGH',
-        fix: 'Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))',
+        fix: 'Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) — Not a finding if the compared value is public, such as an id or a status',
         documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
     },
@@ -119,6 +160,19 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
+  // NOT `skipTestFiles: true`, unlike its siblings, and the seal probe's §B1
+  // therefore fails here on purpose.
+  //
+  // This rule already owns the question through `allowInTests`, which a
+  // concurrent hardening pass deliberately defaulted to FALSE: a test that
+  // compares an API key with `===` is demonstrating the bug the rule exists to
+  // find, and several repositories keep real fixtures in `__tests__`. Setting
+  // `skipTestFiles` would make that option dead code — it is checked at line
+  // 266, and the devkit gate runs first — and would silently flip the default
+  // the option was given.
+  //
+  // Whoever reconciles §B1 with `allowInTests` across the plugin should do it
+  // in one pass, not by half-overriding one rule.
   defaultOptions: [
     {
       allowInTests: false,
@@ -135,7 +189,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
     // Codemods and AST-walker tools legitimately compare AST identifiers
@@ -198,10 +252,22 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       ) {
         const variable = scope.variables.find((v) => v.name === node.name);
         if (!variable) continue;
-        if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return false;
-        const [def] = variable.defs;
-        if (!def || def.type !== 'Variable' || !def.node.init) return false;
-        return isStringTyped(def.node.init, seen);
+        // EVERY write, not "exactly one write". The single-write rule was a proxy for
+        // "provably a string", and it is the wrong proxy for the commonest shape there
+        // is — `let mode = 'animated'; if (x) mode = 'static';`. Both writes are string
+        // literals, so `mode == 'static'` cannot coerce, yet the binding has two writes
+        // and the exemption was refused. Reading the writes themselves answers the
+        // actual question, and a binding with no writes at all (a parameter, an import)
+        // still proves nothing and still returns false.
+        const writes = variable.references.filter((ref) => ref.isWrite());
+        if (writes.length === 0) return false;
+        // `writeExpr` is absent for a write with no inspectable expression and
+        // is typed as nullable, so `!== undefined` alone does not narrow it.
+        // A write we cannot read proves nothing, which is a refusal.
+        return writes.every((ref) => {
+          const written = ref.writeExpr;
+          return written != null && isStringTyped(written, seen);
+        });
       }
       return false;
     }
@@ -227,6 +293,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         'apikey', 'api_key', 'secretkey', 'secret_key', 'privatekey', 'private_key',
         'signature', 'hmac', 'digest', 'checksum', 'nonce', 'otp',
         'passwordhash', 'password_hash', 'hashedpassword', 'hashed_password',
+        'credential', 'credentials',
       ]);
 
       /**
@@ -241,59 +308,146 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           .split(/[^A-Za-z0-9]+/)
           .filter(Boolean)
           .map((p) => p.toLowerCase());
-        return [...parts, parts.join(''), parts.join('_'), name.toLowerCase()];
+        // ADJACENT PAIRS. A two-word secret name only matched when the whole
+        // identifier was exactly those two words: `apiKey` hit the `apikey` entry,
+        // but `SERVICE_API_KEY` split to ['service','api','key'] and matched
+        // nothing — `key` alone is deliberately not a secret word, so the most
+        // literally-named credential in the corpus went unreported. Joining
+        // neighbouring segments finds `api`+`key` wherever it sits in the name,
+        // and the keyword set stays closed, so this widens the match without
+        // widening what counts as a secret.
+        const pairs: string[] = [];
+        for (let i = 0; i + 1 < parts.length; i += 1) {
+          pairs.push(parts[i] + parts[i + 1], `${parts[i]}_${parts[i + 1]}`);
+        }
+        return [...parts, ...pairs, parts.join(''), parts.join('_'), name.toLowerCase()];
       };
 
-      /** Every identifier / property name appearing inside an expression. */
+      /**
+       * Every name the VALUE of an expression is known by — including the names it
+       * carried one binding ago.
+       *
+       * The comparison site is not where a secret is named. `const expected =
+       * config.callback.token; if (presented !== expected)` writes no secret word at
+       * the `!==`, and reading only that line missed it; so did `const { token: t } =
+       * session; t === presented`, and so did the computed-key spelling
+       * `req.headers['x-api-key']`. All three are the same secret, written the way
+       * real code writes it. Each hop below is a resolution through the SCOPE — the
+       * binding's own writes, the destructuring key that produced it, the string
+       * literal that is the property name — never a guess from the spelling at hand.
+       */
+      const scopeAtNode = sourceCode.getScope(node);
+
+      /** The key names a destructuring pattern binds `target` under, e.g. `{ token: t }` → 'token'. */
       // oxlint-disable-next-line consistent-function-scoping
-      const namesIn = (expr: TSESTree.Node): string[] => {
-        const out: string[] = [];
-        const walk = (n: TSESTree.Node): void => {
-          if (n.type === 'Identifier') out.push(n.name);
-          else if (n.type === 'MemberExpression') {
-            walk(n.object);
-            if (!n.computed && n.property.type === 'Identifier') out.push(n.property.name);
-            else walk(n.property);
-          } else if (n.type === 'CallExpression') {
-            walk(n.callee);
+      const destructuringKeys = (pattern: TSESTree.Node, target: TSESTree.Identifier): string[] => {
+        const keys: string[] = [];
+        const walkPattern = (n: TSESTree.Node): void => {
+          if (n.type === 'ObjectPattern') {
+            for (const property of n.properties) {
+              if (property.type !== 'Property') continue;
+              if (property.value === target && !property.computed && property.key.type === 'Identifier') {
+                keys.push(property.key.name);
+              }
+              walkPattern(property.value);
+            }
+          } else if (n.type === 'ArrayPattern') {
+            for (const element of n.elements) if (element) walkPattern(element);
+          } else if (n.type === 'AssignmentPattern') {
+            walkPattern(n.left);
           }
         };
+        walkPattern(pattern);
+        return keys;
+      };
+
+      const namesIn = (expr: TSESTree.Node): string[] => {
+        const out: string[] = [];
+        const visited = new Set<TSESTree.Node>();
+        const walk = (n: TSESTree.Node): void => {
+          if (visited.has(n)) return;
+          visited.add(n);
+          if (n.type === 'Identifier') {
+            out.push(n.name);
+            resolveIdentifier(n);
+          } else if (n.type === 'MemberExpression') {
+            walk(n.object);
+            if (!n.computed && n.property.type === 'Identifier') out.push(n.property.name);
+            // `req.headers['x-api-key']` — a computed key that is a string literal is
+            // the same property name as `req.headers.xApiKey`, just spelled with
+            // brackets. Read it; anything non-literal is walked as an expression.
+            else if (n.computed && n.property.type === 'Literal' && typeof n.property.value === 'string') {
+              out.push(n.property.value);
+            } else walk(n.property);
+          } else if (n.type === 'CallExpression') {
+            walk(n.callee);
+          } else if (n.type === 'ConditionalExpression') {
+            // Either branch can be the secret, so both count.
+            walk(n.consequent);
+            walk(n.alternate);
+          } else if (
+            n.type === 'TSAsExpression' ||
+            n.type === 'TSSatisfiesExpression' ||
+            n.type === 'TSNonNullExpression'
+          ) {
+            walk(n.expression);
+          }
+        };
+
+        /** Follow an identifier to what it was bound from, one binding at a time. */
+        function resolveIdentifier(identifier: TSESTree.Identifier): void {
+          for (
+            let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+            scope;
+            scope = scope.upper
+          ) {
+            const variable = scope.variables.find((v) => v.name === identifier.name);
+            if (!variable) continue;
+            const writes = variable.references.filter((ref) => ref.isWrite());
+            // More than one write and the value at the comparison is not knowable from
+            // any single initializer, so nothing is claimed.
+            if (writes.length === 1 && writes[0].writeExpr) walk(writes[0].writeExpr);
+            for (const def of variable.defs) {
+              if (def.type !== 'Variable') continue;
+              out.push(...destructuringKeys(def.node.id, def.name));
+            }
+            return;
+          }
+        }
+
         walk(expr);
         return out;
       };
 
-      const isSecurityContext = ((): boolean => {
-         let current: TSESTree.Node | undefined = node;
-         while (current) {
-             if ((current.type === 'FunctionDeclaration' || 
-                  current.type === 'FunctionExpression' || 
-                  current.type === 'ArrowFunctionExpression') && 
-                  'id' in current && current.id?.name) {
-                 if (/security|auth|crypto|hash|token|secret|insecure|verify|validate/i.test(current.id.name)) {
-                     return true;
-                 }
-             }
-             if (current.type === 'MethodDefinition' && current.key.type === 'Identifier') {
-                  if (/security|auth|crypto|hash|token|secret|insecure|verify|validate/i.test(current.key.name)) {
-                     return true;
-                 }
-             }
-             current = current.parent;
-         }
-         return false;
-      })();
-
-      const isPotentialSecret = (expr: TSESTree.Expression): boolean => {
-        const segments = namesIn(expr).flatMap(nameSegments);
-        if (segments.some(segment => secretKeywords.has(segment))) return true;
-
-        // In security contexts, treat generic terms as potential secrets
-        if (isSecurityContext) {
-            const contextKeywords = new Set(['provided', 'expected', 'actual', 'input', 'value', 'data']);
-            return segments.some(segment => contextKeywords.has(segment));
-        }
-        return false;
-      };
+      /**
+       * Does this operand name a secret?
+       *
+       * REMOVED, deliberately: an `isSecurityContext` escalation that walked up to the
+       * enclosing function or method, tested its NAME against
+       * `/security|auth|crypto|hash|token|secret|insecure|verify|validate/`, and — if it
+       * matched — promoted the generic words `provided`, `expected`, `actual`, `input`,
+       * `value` and `data` to secrets. Two names, both generic, decided a CWE-208
+       * finding between them, with no evidence from the values at all. The same
+       * comparison reported or stayed silent purely on the enclosing function's
+       * spelling:
+       *
+       *   function validateAddress(value) { return value === 'US'; }   // reported
+       *   function normalizeAddress(value) { return value === 'US'; }  // silent
+       *
+       * `validate` is the single commonest verb in application code — every Zod
+       * refinement, every schema method, every form checker — and `value` is the single
+       * commonest parameter name, so the pair fires on ordinary business logic. It cost
+       * three false positives in this rule's corpus (a country-code validator, an
+       * order-state machine, an asset-hash helper) and bought nothing: a real credential
+       * is named by its own word, and `secretKeywords` already matches those. The rule's
+       * own test suite asserted this behaviour as correct; those cases are now `valid`.
+       *
+       * See CLAUDE.md, "A rule decides by evidence. Never by a name."
+       */
+      const isPotentialSecret = (expr: TSESTree.Expression): boolean =>
+        namesIn(expr)
+          .flatMap(nameSegments)
+          .some((segment) => secretKeywords.has(segment));
 
       // Timing-safe comparison for secrets even with strict equality
       if ((node.operator === '===' || node.operator === '!==') &&
@@ -340,9 +494,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           },
           suggest: [
             {
-              messageId: 'useStrictEquality', // This messageId usage might be wrong for timing safe output, but kept for now or reused?
-               // Wait, previous code used useStrictEquality as suggest?
-               // Ah, the previous code had a fix/suggest structure.
+              messageId: 'useTimingSafeEqual',
               fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(node, example),
             },
           ],

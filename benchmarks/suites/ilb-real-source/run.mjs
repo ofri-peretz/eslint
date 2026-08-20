@@ -103,6 +103,28 @@ const ADOPTION_REPOS = [
 const args = process.argv.slice(2);
 const asJson = args.includes('--json');
 const limitArg = args.find((a) => a.startsWith('--limit='));
+// §A2: `--sample=N` dumps N findings per side, stratified by repo and by the top
+// 5 rules, for hand-labelling. Without it the run only produces volume, and §A3
+// forbids publishing a volume ratio with no sampled-FP number beside it.
+const sampleN = Number((args.find((a) => a.startsWith('--sample=')) ?? '=0').split('=')[1]);
+/**
+ * `--sample-rules=a/b,c/d` samples THOSE rules instead of the top 5 by volume.
+ *
+ * §A2's default stratification is by volume, which is right for an ecosystem
+ * claim — it weights the sample the way a consumer's inbox is weighted. It is
+ * useless for sealing one rule: of the four locked rules only
+ * `no-redos-vulnerable-regex` reaches the top 5, so the other three came back
+ * with no real-source precision number at all and "sealed" meant "sealed on
+ * fixtures we wrote".
+ *
+ * A per-rule sample is a DIFFERENT claim from the ecosystem one and must never
+ * be reported as the ecosystem precision — it deliberately over-weights a rule
+ * the volume sample would barely see.
+ */
+const sampleRules = (args.find((a) => a.startsWith('--sample-rules=')) ?? '=')
+  .split('=')[1]
+  .split(',')
+  .filter(Boolean);
 const corpusArg = (args.find((a) => a.startsWith('--corpus=')) ?? '--corpus=popular').split('=')[1];
 const CORPORA = { popular: REPOS, adoption: ADOPTION_REPOS, all: [...REPOS, ...ADOPTION_REPOS] };
 const chosen = CORPORA[corpusArg];
@@ -134,13 +156,66 @@ const tsParser = await load('@typescript-eslint/parser');
 // Same fatal stale-dist guard as head-to-head.mjs. A published-vs-local mix silently
 // measures unreleased code; that has already restated this file's numbers once.
 const req = (await import('node:module')).createRequire(import.meta.url);
+
+/**
+ * Newest mtime under a directory, so `dist` can be compared against `src`.
+ *
+ * Cheap enough to run on four packages; it walks source trees, not the corpus.
+ */
+const newestMtime = (dir) => {
+  let newest = 0;
+  (function walk(d) {
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) { walk(p); continue; }
+      const m = fs.statSync(p).mtimeMs;
+      if (m > newest) newest = m;
+    }
+  })(dir);
+  return newest;
+};
+
 const stale = [];
+const unbuilt = [];
 for (const n of ['eslint-plugin-secure-coding', 'eslint-plugin-browser-security', 'eslint-plugin-node-security', competitorArg]) {
   let dir = path.dirname(req.resolve(n));
   while (!fs.existsSync(path.join(dir, 'package.json'))) dir = path.dirname(dir);
+  // The build COPIES package.json into `dist`, so the upward walk stops there
+  // and reports the package root as `<pkg>/dist`. Harmless for the version
+  // print, fatal for the src-vs-dist comparison below: it looked for
+  // `<pkg>/dist/dist`, found nothing, and every package came back "src is 56
+  // years newer than dist".
+  if (path.basename(dir) === 'dist') dir = path.dirname(dir);
   const { version } = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
-  if (dir.includes(`${path.sep}packages${path.sep}`)) stale.push(`${n}@${version}`);
-  if (!asJson) console.log(`  resolved ${n}@${version}`);
+  const local = dir.includes(`${path.sep}packages${path.sep}`);
+  if (local) stale.push(`${n}@${version}`);
+
+  // The gate that was missing, and it cost two full 15-minute runs.
+  //
+  // `--allow-local` says "measure the working tree deliberately". It never
+  // checked that the working tree had been BUILT: this runner resolves the
+  // package through its `main`, i.e. `dist/`, so an unbuilt source change is
+  // measured as if it had never been made. Two censuses came back byte-identical
+  // across a fix that removes 50 findings from a single file, and the only
+  // reason it was caught is that the totals were suspiciously equal.
+  //
+  // A silent no-op is the worst shape a benchmark result can take, because it
+  // reads as "the change did nothing" — a finding — rather than as "the change
+  // was not present", which is a fact about the harness (§0.4).
+  if (local) {
+    const srcAt = newestMtime(path.join(dir, 'src'));
+    const distAt = newestMtime(path.join(dir, 'dist'));
+    if (srcAt > distAt) unbuilt.push(`${n} — src is ${Math.round((srcAt - distAt) / 1000)}s newer than dist`);
+  }
+  if (!asJson) console.log(`  resolved ${n}@${version}${local ? ' (local)' : ''}`);
+}
+if (unbuilt.length) {
+  console.error(`\nRefusing to run: local package(s) have unbuilt source changes.\n  ${unbuilt.join('\n  ')}`);
+  console.error('\nThis runner loads `dist`, so those edits would be silently absent from');
+  console.error('the result. Build first:  npx turbo run build --filter=<package>');
+  process.exit(1);
 }
 if (stale.length && !args.includes('--allow-local')) {
   console.error(`\nRefusing to run: ${stale.join(', ')} resolved to the monorepo dist, not npm.`);
@@ -160,7 +235,13 @@ if (stale.length && !args.includes('--allow-local')) {
 // repo was 48/48 false positives, three quarters of them purely because spec/ was linted.
 // This omission invalidated the previous 20-repo table for BOTH sides.
 const SKIP_DIR = /(^|\/)(node_modules|dist|build|\.next|\.nuxt|coverage|vendor|public|fixtures?|__fixtures__|test|tests|__tests__|spec|specs|e2e|benchmarks?|examples?|docs?)(\/|$)/;
-const SKIP_FILE = /\.(min|bundle|chunk)\.[cm]?jsx?$/;
+// `.test.` / `.spec.` colocated with source. SKIP_DIR only catches test
+// DIRECTORIES, and the modern convention is a sibling file — n8n keeps
+// `src/config.test.ts` next to `src/config.ts`. The §A2 sampler surfaced one on
+// its first run (`no-http-urls` firing on an `expect(isOriginAllowed('http://…'))`
+// assertion), which is the §A5 "test directories excluded" gate failing on a
+// technicality of where the test lives.
+const SKIP_FILE = /(\.(min|bundle|chunk)\.[cm]?jsx?|\.(test|spec)\.[cm]?[jt]sx?)$/;
 const MAX_AVG_LINE = 500; // a proxy for "minified", independent of filename
 
 const clone = (repo) => {
@@ -222,10 +303,38 @@ const recommendedOf = (plugin, prefix) => {
     : all(plugin, prefix);
 };
 
+// A rule named by `--sample-rules` is enabled explicitly. `detect-non-literal-regexp`
+// is deliberately NOT in `recommended` (see the plugin index for the measurement
+// that removed it), so without this it would contribute zero samples and the run
+// would report a clean sheet for a rule it never ran — §0.4, a zero is a finding
+// about the harness until shown otherwise.
+const forced = Object.fromEntries(sampleRules.map((r) => [r, 'error']));
+/**
+ * `--all-rules` enables every rule on OUR side, not just `recommended`.
+ *
+ * This is not a comparison mode and the competitor column is meaningless under
+ * it — it is a per-rule VOLUME CENSUS, to answer "which of our rules are loud on
+ * real code" for the rules a preset-based run never switches on. That question
+ * had no answer: `detect-object-injection` turned out to be our single loudest
+ * rule at 15,306 findings and was invisible in every previous table purely
+ * because it sits outside `recommended`.
+ *
+ * A rule at zero here is a rule to investigate, not a rule to be pleased about
+ * (§0.4). Silence on 3M lines usually means the sink never appears — or that
+ * nothing arms it, which is the `detect-non-literal-fs-filename` failure that
+ * scored TP 0/6 while reporting nothing at all.
+ */
+const allRules = args.includes('--all-rules');
+const ourRules = allRules
+  ? { ...all(sc, 'secure-coding'), ...all(bs, 'browser-security'), ...all(ns, 'node-security') }
+  : {
+      ...recommendedOf(sc, 'secure-coding'),
+      ...recommendedOf(bs, 'browser-security'),
+      ...recommendedOf(ns, 'node-security'),
+    };
 const US = mk({ 'secure-coding': sc, 'browser-security': bs, 'node-security': ns }, {
-  ...recommendedOf(sc, 'secure-coding'),
-  ...recommendedOf(bs, 'browser-security'),
-  ...recommendedOf(ns, 'node-security'),
+  ...ourRules,
+  ...forced,
 });
 const THEM = mk({ [competitorPrefix]: sec }, recommendedOf(sec, competitorPrefix));
 
@@ -255,19 +364,30 @@ const THEM_PREFIXES = [competitorPrefix];
 const belongsToSuite = (ruleId, prefixes) =>
   prefixes.some((prefix) => ruleId.startsWith(`${prefix}/`));
 
-const count = async (engine, files, root, prefixes) => {
+const count = async (engine, files, root, prefixes, repo) => {
   let findings = 0;
   let foreign = 0;
+  // §A5 gate: "every intended file was actually linted". These were `continue`
+  // with no tally, so a parser that choked on a whole repo read as a quiet zero.
+  let skippedMinified = 0;
+  let unreadable = 0;
+  let lintFailed = 0;
+  let loc = 0;
   const byRule = {};
+  const samples = [];
   for (const f of files) {
     let code;
-    try { code = fs.readFileSync(f, 'utf8'); } catch { continue; }
-    const lines = code.split('\n').length;
-    if (code.length / Math.max(lines, 1) > MAX_AVG_LINE) continue; // minified
+    try { code = fs.readFileSync(f, 'utf8'); } catch { unreadable++; continue; }
+    const srcLines = code.split('\n');
+    const lines = srcLines.length;
+    if (code.length / Math.max(lines, 1) > MAX_AVG_LINE) { skippedMinified++; continue; } // minified
     let res;
     try {
       res = await engine.lintText(code, { filePath: `case${path.extname(f)}` });
-    } catch { continue; }
+    } catch { lintFailed++; continue; }
+    // Only files that were actually linted contribute LOC, so the §A3 denominator
+    // matches the numerator.
+    loc += lines;
     for (const m of res[0]?.messages ?? []) {
       if (!m.ruleId) continue;
       // A rule the suite does not own is the repo's own config leaking in, never
@@ -278,9 +398,60 @@ const count = async (engine, files, root, prefixes) => {
       }
       findings++;
       byRule[m.ruleId] = (byRule[m.ruleId] ?? 0) + 1;
+      if (sampleN) {
+        samples.push({
+          repo,
+          rule: m.ruleId,
+          file: path.relative(root, f).split(path.sep).join('/'),
+          line: m.line,
+          message: m.message,
+          src: (srcLines[m.line - 1] ?? '').trim().slice(0, 200),
+        });
+      }
     }
   }
-  return { findings, byRule, foreign };
+  return { findings, byRule, foreign, loc, skippedMinified, unreadable, lintFailed, samples };
+};
+
+/**
+ * §A2 sampling protocol: ">=20 findings per side, stratified across repos AND
+ * across the top 5 rules by volume".
+ *
+ * Round-robin over (rule, repo) buckets rather than taking the first N: the
+ * repos are walked in star order, so a head-of-list slice is n8n's top rule and
+ * nothing else — which is the shape of sample that produced the 10-finding
+ * "read" this protocol exists to replace.
+ */
+const stratify = (samples, byRule, n) => {
+  const topRules = sampleRules.length
+    ? sampleRules
+    : Object.entries(byRule).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([r]) => r);
+  const buckets = new Map();
+  for (const s of samples) {
+    if (!topRules.includes(s.rule)) continue;
+    const k = `${s.rule} :: ${s.repo}`;
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(s);
+  }
+  const queues = [...buckets.values()];
+  const out = [];
+  // Bound by the DEEPEST bucket, not by "some bucket is non-empty". The queues
+  // are read by index and never drained, so `queues.some((q) => q.length)` stays
+  // true forever — and when the corpus holds fewer findings than the requested
+  // n, `out.length < n` also stays true. Asking for 40 samples of a rule with 37
+  // findings hung the run after it had walked all 20 repositories.
+  //
+  // Returning fewer than n is the correct answer to "sample 40 from 37", and the
+  // caller prints the actual count so a short sample cannot be mistaken for a
+  // full one.
+  const deepest = Math.max(0, ...queues.map((q) => q.length));
+  for (let i = 0; out.length < n && i < deepest; i++) {
+    for (const q of queues) {
+      if (out.length >= n) break;
+      if (q.length > i) out.push(q[i]);
+    }
+  }
+  return out;
 };
 
 const rows = [];
@@ -288,14 +459,28 @@ const rows = [];
 // full of inline rule configs, which is worth knowing when reading the totals.
 let foreignTotal = 0;
 const usRules = {}, themRules = {};
+const usSamples = [], themSamples = [];
+const dropped = { skippedMinified: 0, unreadable: 0, lintFailed: 0 };
 for (const { repo, stars, surface } of selected) {
   const dir = clone(repo);
   const files = collect(dir);
-  const u = await count(US, files, dir, US_PREFIXES);
-  const t = await count(THEM, files, dir, THEM_PREFIXES);
+  const u = await count(US, files, dir, US_PREFIXES, repo);
+  const t = await count(THEM, files, dir, THEM_PREFIXES, repo);
   for (const [r, c] of Object.entries(u.byRule)) usRules[r] = (usRules[r] ?? 0) + c;
   for (const [r, c] of Object.entries(t.byRule)) themRules[r] = (themRules[r] ?? 0) + c;
-  rows.push({ repo, stars, surface, files: files.length, us: u.findings, them: t.findings });
+  usSamples.push(...u.samples);
+  themSamples.push(...t.samples);
+  for (const k of Object.keys(dropped)) dropped[k] += u[k];
+  rows.push({
+    repo, stars, surface,
+    files: files.length,
+    // LOC is measured on OUR pass; both sides walk the same file list through the
+    // same filters, so `u.loc` and `t.loc` agree — asserted below rather than
+    // assumed, because an asymmetric denominator is exactly the §0.2 defect.
+    loc: u.loc,
+    locThem: t.loc,
+    us: u.findings, them: t.findings,
+  });
   foreignTotal += u.foreign + t.foreign;
   if (!asJson) {
     console.log(`${repo.padEnd(32)} files ${String(files.length).padStart(5)}   them ${String(t.findings).padStart(6)}   us ${String(u.findings).padStart(6)}`);
@@ -305,22 +490,76 @@ for (const { repo, stars, surface } of selected) {
 const totalUs = rows.reduce((a, r) => a + r.us, 0);
 const totalThem = rows.reduce((a, r) => a + r.them, 0);
 const totalFiles = rows.reduce((a, r) => a + r.files, 0);
+const totalLoc = rows.reduce((a, r) => a + r.loc, 0);
+
+// §0.2: "both sides run identically … any asymmetry is a defect in the harness,
+// not a result." If the two passes linted different amounts of code, every
+// per-LOC number below is comparing different denominators.
+const asym = rows.filter((r) => r.loc !== r.locThem);
+if (asym.length) {
+  console.error(`\nHARNESS DEFECT: ${asym.length} repo(s) linted a different LOC per side:`);
+  for (const r of asym) console.error(`  ${r.repo}  us ${r.loc}  them ${r.locThem}`);
+  process.exit(1);
+}
+
+const per1k = (n) => ((n / totalLoc) * 1000).toFixed(1);
+const samples = sampleN
+  ? { us: stratify(usSamples, usRules, sampleN), them: stratify(themSamples, themRules, sampleN) }
+  : null;
 
 if (asJson) {
-  console.log(JSON.stringify({ rows, totalUs, totalThem, totalFiles, usRules, themRules }, null, 1));
+  console.log(JSON.stringify({ rows, totalUs, totalThem, totalFiles, totalLoc, usRules, themRules, dropped, samples }, null, 1));
 } else {
-  console.log(`\nTOTAL  ${totalFiles} files   them ${totalThem}   us ${totalUs}`);
-  console.log(`Per 1k files: them ${((totalThem / totalFiles) * 1000).toFixed(0)}   us ${((totalUs / totalFiles) * 1000).toFixed(0)}`);
+  console.log(`\nTOTAL  ${totalFiles} files / ${totalLoc.toLocaleString()} LOC   them ${totalThem}   us ${totalUs}`);
+  // §A3 reports per 1,000 LOC. Per-file is kept only as a caveat line: file size
+  // varies 100x across these repos, so it ranks repos, not noise.
+  console.log(`Per 1k LOC:   them ${per1k(totalThem)}   us ${per1k(totalUs)}`);
+  console.log(`Per 1k files: them ${((totalThem / totalFiles) * 1000).toFixed(0)}   us ${((totalUs / totalFiles) * 1000).toFixed(0)}   (caveat, not the criterion)`);
+  console.log(
+    `Dropped before linting: ${dropped.skippedMinified} minified, ` +
+      `${dropped.unreadable} unreadable, ${dropped.lintFailed} parse failures.`,
+  );
   console.log(`\nLouder on ${rows.filter((r) => r.us > r.them).length} of ${rows.length} repos.`);
   console.log(
     `Excluded ${foreignTotal} "rule not found" messages from inline configs in the ` +
       `target repos — they carry a ruleId but belong to neither plugin.`,
   );
+  if (allRules) {
+    // The census: EVERY rule, loudest first, with the rules that never fired
+    // listed explicitly rather than omitted. An absent row reads as "fine"; a
+    // named zero reads as "unverified", which is what it is.
+    const enabled = Object.keys(ourRules);
+    const rows = enabled
+      .map((r) => [r, usRules[r] ?? 0])
+      .sort((a, b) => b[1] - a[1]);
+    const fired = rows.filter(([, c]) => c > 0);
+    console.log(`\nPER-RULE CENSUS — ${enabled.length} rules enabled, ${fired.length} fired, ${enabled.length - fired.length} silent`);
+    console.log('   findings   per 1k LOC   rule');
+    for (const [r, c] of fired) {
+      console.log(`  ${String(c).padStart(9)}  ${((c / totalLoc) * 1000).toFixed(2).padStart(11)}   ${r}`);
+    }
+    console.log('\nSILENT on 3M lines — each is unverified, not proven precise (§0.4):');
+    for (const [r] of rows.filter(([, c]) => c === 0)) console.log(`    ${r}`);
+  }
   console.log('\nOur top rules by volume:');
   Object.entries(usRules).sort((a, b) => b[1] - a[1]).slice(0, 10).forEach(([r, c]) => console.log(`  ${String(c).padStart(6)}  ${r}`));
   console.log(`\n${competitorArg} top rules by volume:`);
   Object.entries(themRules).sort((a, b) => b[1] - a[1]).slice(0, 10).forEach(([r, c]) => console.log(`  ${String(c).padStart(6)}  ${r}`));
   console.log('\nThese are FINDING COUNTS, not false positives. A higher number is not');
   console.log('automatically worse — it is only worse if the extra findings are wrong.');
-  console.log('Hand-read a sample before quoting any of this.');
+  if (!samples) {
+    console.log('Run again with --sample=20 and hand-label before quoting any of this.');
+  } else {
+    for (const [side, list] of [['US', samples.us], [competitorArg, samples.them]]) {
+      console.log(`\n=== §A2 SAMPLE — ${side} (n=${list.length}) ===`);
+      list.forEach((s, i) => {
+        console.log(`\n[${i + 1}] ${s.rule}`);
+        console.log(`    ${s.repo}  ${s.file}:${s.line}`);
+        console.log(`    src: ${s.src}`);
+        console.log(`    msg: ${s.message}`);
+      });
+    }
+    console.log('\nLabel every one TP / FP / undecidable with a reason, and report the');
+    console.log('undecidable count — a high one means the message failed to explain itself.');
+  }
 }

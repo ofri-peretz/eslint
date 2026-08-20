@@ -1,6 +1,6 @@
 ---
 title: require-secure-credential-storage
-description: This rule detects a credential written to localStorage, sessionStorage or AsyncStorage without encryption
+description: This rule detects a credential written to localStorage, sessionStorage, AsyncStorage or process.env without encryption
 tags: ['security', 'node']
 category: security
 severity: high
@@ -12,7 +12,7 @@ autofix: false
 
 
 <!-- @rule-summary -->
-This rule detects a credential written to localStorage, sessionStorage or AsyncStorage without encryption
+This rule detects a credential written to localStorage, sessionStorage, AsyncStorage or process.env without encryption
 <!-- @/rule-summary -->
 
 **Severity:** 🔴 CRITICAL  
@@ -21,7 +21,9 @@ This rule detects a credential written to localStorage, sessionStorage or AsyncS
 
 ## Rule Details
 
-This rule detects when credentials are stored using `localStorage.setItem()` or `fs.writeFile()` without encryption. Insecure credential storage (plaintext, weak encryption) leads to credential theft if the device is compromised or local storage is accessed.
+This rule detects when a credential is stored via `setItem()` on client persistent storage — `localStorage`, `sessionStorage`, React Native's `AsyncStorage` — or assigned into `process.env`, without encryption. Insecure credential storage (plaintext, weak encryption) leads to credential theft if the device is compromised, local storage is read, or the environment is inherited by a child process.
+
+`fs.writeFile()` is **not** this rule; disk writes belong to [`require-storage-encryption`](./require-storage-encryption.md).
 
 ### Why This Matters
 
@@ -93,16 +95,16 @@ localStorage.setItem('pass', weakEncrypted);
 
 **Mitigation**: Use vetted encryption libraries (SubtleCrypto, Node crypto). Enforce AES-256-GCM minimum.
 
-### SessionStorage vs LocalStorage
+### IndexedDB
 
-**Why**: We only check `localStorage`. `sessionStorage` and `IndexedDB` are not analyzed.
+**Why**: `localStorage`, `sessionStorage` and `AsyncStorage` are analyzed. `IndexedDB` is not.
 
 ```typescript
-// ❌ NOT DETECTED - sessionStorage
-sessionStorage.setItem('token', authToken); // Still unencrypted!
+// ❌ NOT DETECTED - IndexedDB
+store.put({ id: 1, token: authToken }); // Still unencrypted!
 ```
 
-**Mitigation**: Apply encryption requirement to all browser storage APIs. Use Content Security Policy.
+**Mitigation**: Apply the encryption requirement to all persistent storage APIs.
 
 ## ⚙️ Configuration
 
@@ -120,11 +122,40 @@ This rule has no configuration options. It requires `encrypt()` wrapper for all 
 - [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto)
 - [Node.js Crypto Module](https://nodejs.org/api/crypto.html)
 
+## The Node sink: `process.env`
+
+```typescript
+// ❌ CWE-526 — a credential assigned into the environment
+process.env.SESSION_TOKEN = sessionToken;
+process.env.NPM_TOKEN = await vault.read('npm/token');
+```
+
+Everything the rule used to check — `localStorage`, `sessionStorage`,
+`AsyncStorage` — is a browser or React Native global. **None of them exists in
+Node**, so on a pure server codebase this rule had no reachable sink at all: it
+was a browser rule filed under Node, quiet on every project it ran against.
+
+Disk writes could not simply be added here;
+[`require-storage-encryption`](./require-storage-encryption.md) owns those, and
+duplicating them recreates the double-reporting defect the two rules were split
+apart to fix. `process.env` is the sink neither rule claimed, and it is the one
+Node actually has.
+
+Why the assignment is a finding:
+
+- every child process the app spawns **inherits** the value;
+- it is readable at `/proc/<pid>/environ` by anything running as the same user;
+- crash dumps and the environment snapshots error reporters upload capture it
+  verbatim.
+
+Reading `process.env.TOKEN` is fine and universal — only the **write** reports.
+
 ## Not a finding
 
 This rule owns **client persistent storage** — `localStorage`, `sessionStorage` and React
-Native's `AsyncStorage`, all of which keep what you give them in the clear. Writes to disk
-belong to [`require-storage-encryption`](./require-storage-encryption.md).
+Native's `AsyncStorage`, all of which keep what you give them in the clear — plus
+**the Node environment**. Writes to disk belong to
+[`require-storage-encryption`](./require-storage-encryption.md).
 
 | Code | Why it is silent |
 | --- | --- |
@@ -132,6 +163,10 @@ belong to [`require-storage-encryption`](./require-storage-encryption.md).
 | `localStorage.setItem('authToken', encrypt(token))` | Encrypted on the way in. |
 | `cache.setItem('password', pwd)` | `setItem` on something that is not a persistent store. |
 | `localStorage.setItem('key', publicKey)` | `key` alone is not evidence — it matches `keyboard`, `keyCode`, `objectKey`. |
+| `process.env.PORT = '3000'` | The overwhelmingly common use of this assignment. No credential named. |
+| `const t = process.env.AUTH_TOKEN` | A read, not a write. |
+| `process.env.API_TOKEN = encrypt(raw)` | Encrypted on the way in. |
+| `process.env[dynamicKey] = v` | A computed key with no readable name is no evidence. |
 
 **If it fires**, the key or the value named a credential. Note that an *encrypt-looking
 variable* is not proof: `setItem('authToken', encrypted)` still reports, because nothing

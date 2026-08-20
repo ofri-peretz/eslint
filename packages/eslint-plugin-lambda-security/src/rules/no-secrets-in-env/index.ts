@@ -13,10 +13,10 @@
  * @see https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
-type MessageIds = 'secretsInEnv' | 'useSecretsManager';
+type MessageIds = 'secretsInEnv';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -55,7 +55,6 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-798',
       cvss: 9.8,
     },
-    hasSuggestions: true,
     messages: {
       secretsInEnv: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -66,14 +65,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
         fix: 'Use AWS Secrets Manager: const secret = await secretsClient.send(new GetSecretValueCommand({ SecretId: "{{varName}}" }))',
         documentationLink: 'https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html',
       }),
-      useSecretsManager: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Secrets Manager',
-        description: 'Store secrets in AWS Secrets Manager instead of env vars',
-        severity: 'LOW',
-        fix: 'import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager"',
-        documentationLink: 'https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html',
-      }),
+
     },
     schema: [
       {
@@ -95,7 +87,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true, additionalPatterns = [] } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -152,7 +144,6 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'secretsInEnv',
               data: { varName: envVarName },
-              suggest: [{ messageId: 'useSecretsManager', fix: () => null }],
             });
           }
         }
@@ -184,7 +175,6 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
                 node,
                 messageId: 'secretsInEnv',
                 data: { varName: propName },
-                suggest: [{ messageId: 'useSecretsManager', fix: () => null }],
               });
               break;
             }

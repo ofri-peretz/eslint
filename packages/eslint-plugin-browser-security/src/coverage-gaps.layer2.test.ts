@@ -13,12 +13,10 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createWithMockContext } from '@interlace/eslint-devkit';
-import type { TSESLint } from '@interlace/eslint-devkit';
 
 import { noClickjacking } from './rules/no-clickjacking';
 import { noInsecureRedirects } from './rules/no-insecure-redirects';
 import { noMissingCorsCheck } from './rules/no-missing-cors-check';
-import { noMissingCsrfProtection } from './rules/no-missing-csrf-protection';
 import { noMissingSecurityHeaders } from './rules/no-missing-security-headers';
 import { noSensitiveCookieJs } from './rules/no-sensitive-cookie-js';
 import { noSensitiveDataInCache } from './rules/no-sensitive-data-in-cache';
@@ -116,9 +114,11 @@ describe('no-clickjacking (layer 2: synthetic nodes without loc)', () => {
       parent: null,
       loc: undefined,
     });
+    // The CSS is read from the literal chunks now, not from the printed
+    // source of the whole template, so the synthetic node has to carry them.
     call(listeners, 'TemplateLiteral', {
       type: 'TemplateLiteral',
-      quasis: [],
+      quasis: [{ type: 'TemplateElement', value: { raw: 'style opacity: 0', cooked: 'style opacity: 0' } }],
       expressions: [],
       parent: null,
       loc: undefined,
@@ -215,40 +215,6 @@ describe('no-missing-cors-check (layer 2)', () => {
     };
     call(listeners, 'CallExpression', node);
     expect(reports).toHaveLength(0);
-  });
-});
-
-describe('no-missing-csrf-protection (layer 2)', () => {
-  it('suggestion fix returns null when the first argument is missing', () => {
-    const { listeners, reports } = createWithMockContext(noMissingCsrfProtection, {
-      sourceText: '',
-    });
-    // Sparse arguments: length >= 2 but arguments[0] is undefined.
-    const node = {
-      type: 'CallExpression',
-      callee: {
-        type: 'MemberExpression',
-        object: { type: 'Identifier', name: 'app' },
-        property: { type: 'Identifier', name: 'post' },
-      },
-      arguments: [undefined, { type: 'Identifier', name: 'handler' }],
-      parent: null,
-    };
-    call(listeners, 'CallExpression', node);
-    expect(reports).toHaveLength(1);
-    const report = reports[0] as TSESLint.ReportDescriptor<string> & {
-      suggest: { messageId: string; fix: (f: unknown) => unknown }[];
-    };
-    expect(report.messageId).toBe('missingCsrfProtection');
-    const inserted: unknown[] = [];
-    const fixer = {
-      insertTextAfter: (...args: unknown[]) => {
-        inserted.push(args);
-        return { range: [0, 0], text: ', csrf()' };
-      },
-    };
-    expect(report.suggest[0].fix(fixer)).toBeNull();
-    expect(inserted).toHaveLength(0);
   });
 });
 

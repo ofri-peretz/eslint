@@ -256,8 +256,46 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   //
   // Kept exported and opt-in-able for teams that want the paranoid sweep and
   // will triage it.
-  // Demoted 2026-05-09 — 91% Edge ratio.
+  //
+  // `no-redos-vulnerable-regex` — RESTORED 2026-08-20, having been removed on
+  // 2026-08-18 as "roughly 28.6% precision, against a 95% bar".
+  //
+  // That 28.6% was the INSTRUMENT. The classification came from
+  // `scripts/redos-classify.mts`, a hand-rolled attack generator that pumped
+  // inputs and timed them: 0 exponential, 6 polynomial, 15 "unreproduced" — and
+  // the 15 unreproduced were counted against the rule. Failing to reproduce
+  // catastrophic backtracking by guessing at attack strings is not evidence that
+  // a pattern is safe; it is evidence that the generator did not find the input.
+  //
+  // The rule now consults `recheck`, a third-party automaton analysis, and may
+  // only ever REMOVE a finding it disproves. Measured 2026-08-20 over the same
+  // 20-repository corpus, the oracle's verdict on what the rule reports:
+  //
+  //   vulnerable    100   84.0%
+  //   safe            2    1.7%
+  //   unknown         1    0.8%
+  //   (16 excerpts too short to extract a literal from)
+  //
+  // 100 of the 103 patterns that could be extracted cleanly are confirmed
+  // vulnerable by an analysis we did not write, and the two "safe" are artefacts
+  // of the extractor rather than rule output.
+  //
+  // What that measurement does NOT establish, stated plainly because the
+  // demotion's real argument lives here: the rule consults the same oracle
+  // before reporting, so the oracle agreeing afterwards is close to guaranteed.
+  // It is strong evidence of CORRECTNESS and none at all of ACTIONABILITY — the
+  // 2026-08-18 note observed that the genuine findings are polynomial and need a
+  // 20,000-character input to bite, and `effectiveFp` remains unmet in this
+  // rule's seal record. A consumer who considers a polynomial ReDoS not worth
+  // fixing should turn it off; that is a different judgement from the one the
+  // removal was made on, and it was never measured.
+  //
+  // It is restored because the stated reason for removing it is refuted, the
+  // corpus manifest names this plugin as the owner of CWE-1333, and the recall
+  // gate has been red since — the ecosystem shipping no ReDoS coverage while
+  // eslint-plugin-sonarjs detects all three corpus fixtures.
   'secure-coding/no-redos-vulnerable-regex': 'error',
+
   'secure-coding/no-unsafe-regex-construction': 'error',
 
   // Critical - Credentials
@@ -353,6 +391,9 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       'secure-coding/no-hardcoded-credentials': 'error',
+      // Restored 2026-08-20. It left flagship and `recommended` on 2026-08-18 on
+      // a measurement of ~28.6% precision, and that measurement was the
+      // instrument, not the rule — see the note on `recommendedRules`.
       'secure-coding/no-redos-vulnerable-regex': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,

@@ -15,16 +15,26 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { constInitializerOf, resolveConstantString } from '../../utils/const-value';
 
+/**
+ * Three more used to sit here: `evalWithExpression`, `useFunctionConstructor`
+ * and `useSaferAlternative`. `selectStrategyMessage` is the only thing that
+ * decides a messageId in this rule, and it can return exactly six of the eight
+ * below — the three deleted were never among them. Nor could they have been
+ * emitted usefully: `evalWithExpression` interpolates `{{safeAlternative}}` and
+ * `useSaferAlternative` interpolates `{{alternative}}`, and no call site in
+ * this file passes either placeholder at the top level of `data`, so both would
+ * have rendered literal braces to the user. Deleted rather than wired, because
+ * there is no lost report path to restore — the six that are reachable already
+ * cover every pattern category.
+ */
 type MessageIds =
   | 'vmCodeExecution'
   | 'vm2CodeExecution'
-  | 'evalWithExpression'
   | 'useJsonParse'
   | 'useObjectAccess'
   | 'useTemplateLiteral'
-  | 'useFunctionConstructor'
-  | 'useSaferAlternative'
   | 'strategyRemove'
   | 'strategyRefactor'
   | 'strategyValidate';
@@ -144,24 +154,38 @@ function requiredModule(node: TSESTree.Node | null | undefined): string | null {
 /**
  * Which export of a tracked module this callee refers to.
  *
- * Handles both spellings a file can use: the member form off a namespace
- * (`vm.runInNewContext`, `vm2.NodeVM`) and the destructured/named form
- * (`const { NodeVM } = require('vm2')`), including renames — the map stores the
- * *exported* name, so `const { NodeVM: Sandbox }` still resolves to 'NodeVM'.
+ * Handles every spelling a file can use: the member form off a namespace
+ * (`vm.runInNewContext`, `vm2.NodeVM`), the destructured/named form
+ * (`const { NodeVM } = require('vm2')`) including renames — the map stores the
+ * *exported* name, so `const { NodeVM: Sandbox }` still resolves to 'NodeVM' —
+ * and the inline `require('node:vm').runInNewContext(…)`, which creates no
+ * local binding at all and so was invisible to a binding-only lookup.
+ *
+ * `name` is passed in rather than derived here because a computed member
+ * (`vm[VM_API]`) needs the rule's constant resolver to name it, and that
+ * resolver needs the SourceCode this module-scope helper does not have.
  */
 function resolveModuleMember(
   callee: TSESTree.Node,
   bindings: ReadonlyMap<string, string>,
+  modules: ReadonlySet<string>,
+  name: string | null,
 ): string | null {
-  const name = calleeTrailingName(callee);
   if (name === null) return null;
   if (callee.type === 'Identifier') {
     const bound = bindings.get(name);
     return bound !== undefined && bound !== NAMESPACE ? bound : null;
   }
+  // A non-null `name` came from `calleeTrailingName`/`trailingName`, and both
+  // produce one only for an Identifier or a MemberExpression — the Identifier
+  // case returned above, so this is the member form. A `!== 'MemberExpression'`
+  // guard here would be an unreachable branch pretending to be a check.
   const { object } = callee as TSESTree.MemberExpression;
-  if (object.type !== 'Identifier') return null;
-  return bindings.get(object.name) === NAMESPACE ? name : null;
+  if (object.type === 'Identifier') {
+    return bindings.get(object.name) === NAMESPACE ? name : null;
+  }
+  const inline = requiredModule(object);
+  return inline !== null && modules.has(inline) ? name : null;
 }
 
 /** The trailing name of a callee: `vm.Script` → 'Script', `VMScript` → same. */
@@ -250,7 +274,12 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       cvss: 9.8,
       confidence: 'high',
     },
-    hasSuggestions: true,
+    // `false`: no `context.report` in this file passes a `suggest` array. It was
+    // `true` while the rule's only suggestion had `fix: () => null`, which
+    // ESLint discards — so the flag advertised an affordance that reached no
+    // user. A consumer or an integration reading `hasSuggestions` is entitled
+    // to believe it.
+    hasSuggestions: false,
     messages: {
       vmCodeExecution: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -273,16 +302,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         severity: 'CRITICAL',
         fix: 'Stop using vm2. Run untrusted code out-of-process under an OS-level boundary (a separate process with dropped privileges, a container, or isolated-vm), or remove the need to execute caller-supplied source.',
         documentationLink: 'https://github.com/patriksimek/vm2/issues/533',
-      }),
-      // 🎯 Token optimization: 38% reduction (47→29 tokens) - compact format saves LLM processing
-      evalWithExpression: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'eval() with dynamic code',
-        cwe: 'CWE-95',
-        description: 'eval() with dynamic code',
-        severity: 'CRITICAL',
-        fix: '{{safeAlternative}}',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       useJsonParse: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -311,24 +330,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         // oxlint-disable-next-line no-template-curly-in-string
         fix: 'Replace eval() with template literals: `Hello ${name}`',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
-      }),
-      useFunctionConstructor: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unsafe eval() for function creation',
-        cwe: 'CWE-95',
-        description: 'Use Function constructor with validation instead of eval()',
-        severity: 'HIGH',
-        fix: 'Replace eval() with validated Function constructor',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
-      }),
-      useSaferAlternative: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Unsafe eval() usage detected',
-        cwe: 'CWE-95',
-        description: 'eval() with dynamic code execution detected',
-        severity: 'HIGH',
-        fix: '{{alternative}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       strategyRemove: formatLLMMessage({
@@ -472,12 +473,69 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Global objects that expose `eval` as a property.
+     *
+     * `globalThis.eval(src)` is how isomorphic code reaches eval without a
+     * bundler's static analysis noticing, and it is the same sink. Exact
+     * membership against a closed set of global names — not a substring test.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const GLOBAL_OBJECTS = new Set(['globalThis', 'global', 'window', 'self']);
+
+    /**
+     * Which eval-like function this callee ultimately names, if any.
+     *
+     * `eval` is reachable by four spellings that all execute the same string:
+     *
+     *   eval(src)                  the bare identifier
+     *   (0, eval)(src)             INDIRECT eval — the canonical way to force
+     *                              global-scope evaluation, and what bundlers
+     *                              emit
+     *   globalThis.eval(src)       the property form
+     *   const c = eval; c(src)     bound to a local whose name says nothing
+     *
+     * Matching only the first made the other three silent while looking, in the
+     * rule's own tests, like full coverage. The binding is resolved through the
+     * scope analyser: `queue.run` and `HANDLERS.eval` stay quiet because they
+     * do not resolve to eval, not because of how they are spelled.
+     */
+    const evalCalleeName = (
+      callee: TSESTree.Node,
+      depth = 0,
+    ): string | null => {
+      if (depth > 3) return null;
+      if (callee.type === 'Identifier') {
+        if (evalFunctions.has(callee.name)) return callee.name;
+        const init = constInitializerOf(context.sourceCode, callee);
+        return init ? evalCalleeName(init, depth + 1) : null;
+      }
+      if (callee.type === 'SequenceExpression') {
+        // The grammar gives a sequence at least two operands, so the last one
+        // always exists; a `?:` for the empty case would be a branch no input
+        // can reach.
+        const [last] = callee.expressions.slice(-1) as [TSESTree.Expression];
+        return evalCalleeName(last, depth + 1);
+      }
+      if (
+        callee.type === 'MemberExpression' &&
+        !callee.computed &&
+        callee.object.type === 'Identifier' &&
+        GLOBAL_OBJECTS.has(callee.object.name) &&
+        callee.property.type === 'Identifier' &&
+        evalFunctions.has(callee.property.name)
+      ) {
+        return callee.property.name;
+      }
+      return null;
+    };
+
+    /**
      * Check call expressions for dangerous eval usage
      */
     const checkCallExpression = (node: TSESTree.CallExpression) => {
       // Check if it's a call to an eval-like function
-      if (node.callee.type === 'Identifier' &&
-          evalFunctions.has(node.callee.name)) {
+      const evalName = evalCalleeName(node.callee);
+      if (evalName !== null) {
 
         // Skip if it's a literal string and literals are allowed
         if (allowLiteralStrings &&
@@ -488,7 +546,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
 
         // Skip if it's a direct string literal (safe)
         if (node.arguments.length > 0 &&
-            node.callee.name === 'eval' &&
+            evalName === 'eval' &&
             isLiteralString(node.arguments[0])) {
           return;
         }
@@ -496,11 +554,25 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         const expression = extractExpression(node);
         const pattern = detectPattern(expression);
         const steps = generateRefactoringSteps(pattern);
-        const strategyMessageId = selectStrategyMessage(pattern);
 
+        // The `suggest:` array that used to hang off this report offered ONE
+        // suggestion, repeating the report's own messageId, with
+        // `fix: () => null`. ESLint discards a suggestion whose fixer returns
+        // null before it reaches the user, so nothing was ever offered and
+        // `hasSuggestions: true` overstated the rule. The suite even recorded
+        // the fact — "Rule provides suggestions but fix returns null (no
+        // auto-fix), so we don't test them here" — which is documenting a
+        // defect rather than mitigating it. The remediation text it carried is
+        // already in `data.safeAlternative` and `data.steps` of the report
+        // itself, which the user actually sees.
+        //
+        // `selectStrategyMessage(pattern)` is inlined rather than held in a
+        // local: at the report site the local told a reader nothing about which
+        // message this is, and any static reader of this file saw the VARIABLE
+        // name where a messageId belongs.
         context.report({
           node,
-          messageId: strategyMessageId,
+          messageId: selectStrategyMessage(pattern),
           data: {
             expression,
             patternCategory: pattern?.category || 'dynamic code execution',
@@ -508,45 +580,14 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
             steps,
             effort: pattern?.effort || '15-30 minutes'
           },
-          suggest: pattern ? [
-            {
-              messageId: strategyMessageId,
-              data: {
-                safeAlternative: pattern.safeAlternative,
-                alternative: pattern.safeAlternative
-              },
-              fix: () => null // Complex refactoring, cannot auto-fix safely
-            }
-          ] : undefined
         });
       }
 
-      // Also check for Function constructor usage
-      if (node.callee.type === 'NewExpression' &&
-          node.callee.callee.type === 'Identifier' &&
-          node.callee.callee.name === 'Function') {
-
-        const expression = extractExpression(node);
-        const pattern = detectPattern(expression);
-        const strategyMessageId = selectStrategyMessage(pattern);
-
-        context.report({
-          node,
-          messageId: strategyMessageId,
-          data: {
-            expression: `new Function(${expression})`,
-            patternCategory: 'function constructor',
-            safeAlternative: 'Arrow function or regular function',
-            steps: [
-              '   1. Replace Function constructor with arrow function',
-              '   2. Use regular function declaration',
-              '   3. Validate any dynamic parts',
-              '   4. Consider module imports instead'
-            ].join('\n'),
-            effort: '10 minutes'
-          }
-        });
-      }
+      // `new Function(body)()` — the immediately-invoked spelling — used to be
+      // reported HERE as well as by `checkNewExpression` below, so one site
+      // produced two identical diagnostics at the same location. The
+      // NewExpression visitor already covers every `new Function(...)`, invoked
+      // or not; this branch only ever duplicated it.
     };
 
     /**
@@ -558,11 +599,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         const sourceCode = context.sourceCode;
         const expression = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
         const pattern = detectPattern(expression);
-        const strategyMessageId = selectStrategyMessage(pattern);
 
         context.report({
           node,
-          messageId: strategyMessageId,
+          messageId: selectStrategyMessage(pattern),
           data: {
             expression: `new Function(${expression})`,
             patternCategory: 'function constructor',
@@ -630,13 +670,31 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       if (node.type !== 'Identifier') return false;
       const variable = findVariable(node);
       if (!variable) return false;
-      if (variable.references.filter((ref) => ref.isWrite()).length !== 1) {
-        return false;
-      }
-      const [def] = variable.defs;
-      if (!def || def.node.type !== 'VariableDeclarator') return false;
-      const init = def.node.init;
-      return init != null && isStaticStringNode(init);
+
+      // The LAST write before this call decides, which is the same
+      // straight-line model `provenance.ts` uses. Counting writes instead of
+      // reading them made
+      //
+      //   let program = 'result = rows.length';
+      //   if (mode === 'sum') program = 'result = total(rows)';
+      //   vm.runInNewContext(program, ctx);
+      //
+      // a report: two writes, both of them constants the author typed, so the
+      // program that runs is one of two strings the author wrote.
+      //
+      // Position is load-bearing in the other direction too. "Every write is
+      // static" would excuse `function go(s) { vm.run(s); s = 'x = 1'; }`,
+      // where the literal is assigned AFTER the sink has already run the
+      // parameter. No write before the use means unresolved, which stays
+      // reported.
+      const lastWrite = variable.references
+        .filter((ref) => ref.isWrite())
+        .map((ref) => ref.writeExpr)
+        .filter((write): write is TSESTree.Node => write != null)
+        .filter((write) => write.range[1] <= node.range[0])
+        .sort((a, b) => a.range[1] - b.range[1])
+        .at(-1);
+      return lastWrite !== undefined && isStaticStringNode(lastWrite);
     };
 
     /** Record `local` as bound to `imported` from a tracked module. */
@@ -676,6 +734,19 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       context.report({ node, messageId, data: { api } });
     };
 
+    /**
+     * The trailing name of a callee, resolving a computed property through a
+     * constant: `vm[VM_API]` where `const VM_API = 'runInNewContext'` names the
+     * same sink as `vm.runInNewContext`.
+     */
+    const trailingName = (callee: TSESTree.Node): string | null => {
+      if (callee.type === 'MemberExpression' && callee.computed) {
+        // A computed property is an expression, never a PrivateIdentifier.
+        return resolveConstantString(context.sourceCode, callee.property)?.value ?? null;
+      }
+      return calleeTrailingName(callee);
+    };
+
     /** `<sandbox>.run(source)` — the vm2 execution entry point. */
     const isVm2Run = (
       node: TSESTree.CallExpression,
@@ -683,12 +754,17 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       const { callee } = node;
       if (callee.type !== 'MemberExpression') return false;
-      if (calleeTrailingName(callee) !== 'run') return false;
+      if (trailingName(callee) !== 'run') return false;
       if (callee.object.type === 'Identifier') {
         return sandboxes.has(callee.object.name);
       }
       if (callee.object.type !== 'NewExpression') return false;
-      const constructed = resolveModuleMember(callee.object.callee, vm2Bindings);
+      const constructed = resolveModuleMember(
+        callee.object.callee,
+        vm2Bindings,
+        VM2_MODULES,
+        trailingName(callee.object.callee),
+      );
       return constructed !== null && VM2_SANDBOX_CONSTRUCTORS.has(constructed);
     };
 
@@ -698,6 +774,8 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         const constructed = resolveModuleMember(
           candidate.init.callee,
           vm2Bindings,
+          VM2_MODULES,
+          trailingName(candidate.init.callee),
         );
         if (constructed !== null && VM2_SANDBOX_CONSTRUCTORS.has(constructed)) {
           sandboxes.add(candidate.local);
@@ -705,7 +783,8 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       }
 
       for (const node of pendingVmCalls) {
-        const vmApi = resolveModuleMember(node.callee, vmBindings);
+        const name = trailingName(node.callee);
+        const vmApi = resolveModuleMember(node.callee, vmBindings, VM_MODULES, name);
         if (vmApi !== null && VM_CODE_SINK_METHODS.has(vmApi)) {
           reportVmSite(node, node.arguments[0], 'vmCodeExecution', vmApi);
           continue;
@@ -716,12 +795,13 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       }
 
       for (const node of pendingVmNews) {
-        const vmCtor = resolveModuleMember(node.callee, vmBindings);
+        const name = trailingName(node.callee);
+        const vmCtor = resolveModuleMember(node.callee, vmBindings, VM_MODULES, name);
         if (vmCtor !== null && VM_CODE_CONSTRUCTORS.has(vmCtor)) {
           reportVmSite(node, node.arguments[0], 'vmCodeExecution', vmCtor);
           continue;
         }
-        const vm2Ctor = resolveModuleMember(node.callee, vm2Bindings);
+        const vm2Ctor = resolveModuleMember(node.callee, vm2Bindings, VM2_MODULES, name);
         if (vm2Ctor !== null && VM2_CODE_CONSTRUCTORS.has(vm2Ctor)) {
           reportVmSite(node, node.arguments[0], 'vm2CodeExecution', vm2Ctor);
         }
@@ -731,16 +811,29 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         checkCallExpression(node);
-        // Cheap name filter first: only calls that could name a vm sink are
-        // worth carrying to Program:exit.
-        const name = calleeTrailingName(node.callee);
+        // A LOCAL name is not the export name. `import { runInThisContext as
+        // runIt } from 'node:vm'` calls the sink as `runIt(…)`, so filtering
+        // identifier callees by the sink vocabulary threw the renamed import
+        // away before `resolveModuleMember` — which exists to resolve exactly
+        // that rename — ever saw it. Every identifier callee is carried; the
+        // binding decides at Program:exit, which is the whole point of
+        // deferring.
+        if (node.callee.type === 'Identifier') {
+          pendingVmCalls.push(node);
+          return;
+        }
+        const name = trailingName(node.callee);
         if (name !== null && (VM_CODE_SINK_METHODS.has(name) || name === 'run')) {
           pendingVmCalls.push(node);
         }
       },
       NewExpression(node: TSESTree.NewExpression) {
         checkNewExpression(node);
-        const name = calleeTrailingName(node.callee);
+        if (node.callee.type === 'Identifier') {
+          pendingVmNews.push(node);
+          return;
+        }
+        const name = trailingName(node.callee);
         if (
           name !== null &&
           (VM_CODE_CONSTRUCTORS.has(name) || VM2_CODE_CONSTRUCTORS.has(name))

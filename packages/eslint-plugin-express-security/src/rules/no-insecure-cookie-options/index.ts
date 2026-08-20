@@ -18,6 +18,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'insecureCookie' | 'addSecureFlags';
@@ -234,8 +235,7 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
@@ -293,12 +293,6 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
                 data: {
                   issues: issues.join('; '),
                 },
-                suggest: [
-                  {
-                    messageId: 'addSecureFlags',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }

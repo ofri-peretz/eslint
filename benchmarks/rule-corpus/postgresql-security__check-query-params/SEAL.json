@@ -1,0 +1,75 @@
+{
+  "rule": "postgresql-security/check-query-params",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-postgresql-security@2.1.0",
+    "node": "24"
+  },
+  "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- postgresql-security/check-query-params"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-postgresql-security/src/rules/check-query-params/index.ts"
+    },
+    "corpus": {
+      "state": "unmet",
+      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
+      "command": "cat benchmarks/rule-corpus/postgresql-security__check-query-params/MANIFEST.md"
+    },
+    "duel": {
+      "state": "met",
+      "evidence": "16 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs postgresql-security/check-query-params"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "no CASES.json — the rule has never been classified against real code",
+      "command": "npm run cases -- postgresql-security/check-query-params --update"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "sink shapes not probed with the CWE family enabled",
+      "command": "npx tsx scripts/probe-rule.mts postgresql-security/check-query-params <siblings> -- '<snippet>'"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "4 probe(s) failing",
+      "command": "npx tsx scripts/rule-seal-probe.mts postgresql-security/check-query-params"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/check-query-params"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 501L +0.68±0.75ms · 2004L +0.00±4.16ms · 8016L +0.00±18.98ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "command": "npx tsx scripts/seal-audit.mts postgresql-security/check-query-params"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "command": "grep -n 'seal postgresql-security/check-query-params' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": []
+}

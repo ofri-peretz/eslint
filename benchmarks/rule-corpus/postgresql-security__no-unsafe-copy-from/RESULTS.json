@@ -1,0 +1,23 @@
+{
+  "rule": "postgresql-security/no-unsafe-copy-from",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 26,
+  "vulnerable": 14,
+  "results": [
+    {
+      "name": "Interlace postgresql-security/no-unsafe-copy-from",
+      "tp": 14,
+      "fp": 0,
+      "fn": 0,
+      "tn": 12,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

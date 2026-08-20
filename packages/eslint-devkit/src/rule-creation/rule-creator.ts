@@ -120,6 +120,20 @@ export interface RuleCreateAndOptions<
     optionsWithDefault: Readonly<Options>,
   ) => TSESLint.RuleListener;
   defaultOptions?: Readonly<Options>;
+  /**
+   * BENCHMARK-CRITERIA.md §B1: "self-skips test files — by path and by filename
+   * (`*.spec.*`, `*.test.*`), **independent of the harness**".
+   *
+   * Opt-in rather than default-on, deliberately. Every plugin in this monorepo
+   * shares one `createRule`, so flipping the default would silently cut findings
+   * for consumers of all 19 published packages on a patch bump — and it would be
+   * wrong for the non-security plugins, where a naming or complexity rule
+   * *should* apply to a test file.
+   *
+   * Set it as each rule goes through the lock protocol, alongside the test that
+   * pins it.
+   */
+  skipTestFiles?: boolean;
 }
 
 export interface RuleWithMeta<
@@ -146,6 +160,56 @@ export type RuleModuleWithName<
   Docs = unknown,
 > = TSESLint.RuleModule<MessageIds, Options, Docs> & { name: string };
 
+/**
+ * Test files, decided from the path STRUCTURE — never from a substring of the
+ * whole path.
+ *
+ * `filename.includes('test')` makes a rule's verdict depend on where the repo is
+ * checked out: the same file reports from `~/src/app` and stays silent from
+ * `~/latest/app`. That has already shipped here once. So: the basename decides
+ * the `*.test.*` / `*.spec.*` case, and exact SEGMENT equality decides the
+ * directory case.
+ *
+ * `spec` is in the list because parse-server keeps its entire suite there — it
+ * was the omission that invalidated a 20-repo benchmark run for both sides.
+ */
+const TEST_DIR_SEGMENTS = new Set([
+  '__tests__',
+  '__test__',
+  'test',
+  'tests',
+  'spec',
+  'specs',
+  'e2e',
+  '__mocks__',
+  // Not underscore-wrapped: MSW and the hand-rolled predicate in
+  // secure-coding/no-hardcoded-credentials both use a plain `mocks/`.
+  'mocks',
+  'fixtures',
+  '__fixtures__',
+]);
+// `fixture` and `mock` are here because the rules that already hand-rolled this
+// predicate included them — test data and stand-ins are as much scaffolding as
+// the assertions that consume them. `e2e-spec` is Nest's own generator output
+// (`app.e2e-spec.ts`); the mongodb, nestjs and jwt predicates this replaced all
+// carried it, and `\.spec\.` does not match it — the char before `spec` is `-`.
+const TEST_BASENAME = /\.(test|spec|fixture|mock|e2e-spec)\.[cm]?[jt]sx?$/;
+
+export function isTestFilePath(filename: string): boolean {
+  if (!filename || filename === '<input>' || filename === '<text>') return false;
+  // Split at the last separator rather than `split(…).pop()`: `pop()` is typed
+  // `string | undefined` while `split` always yields at least one element, so
+  // the `?? ''` fallback it needs is unreachable — an uncoverable branch, which
+  // in a repo at a 100% threshold is just a permanent hole.
+  const slash = Math.max(filename.lastIndexOf('/'), filename.lastIndexOf('\\'));
+  if (TEST_BASENAME.test(filename.slice(slash + 1))) return true;
+  if (slash < 0) return false; // a bare filename has no directory to inspect
+  return filename
+    .slice(0, slash)
+    .split(/[\\/]/)
+    .some((segment) => TEST_DIR_SEGMENTS.has(segment));
+}
+
 function createRuleInternal<
   Options extends readonly unknown[],
   MessageIds extends string,
@@ -155,6 +219,7 @@ function createRuleInternal<
   defaultOptions,
   meta,
   name,
+  skipTestFiles,
 }: Readonly<RuleWithMeta<Options, MessageIds, Docs>>): RuleModuleWithName<
   MessageIds,
   Options,
@@ -163,6 +228,10 @@ function createRuleInternal<
   const resolvedDefaultOptions = (defaultOptions ?? []) as Options;
   return {
     create(context) {
+      // Returning an empty listener object, not `undefined`: ESLint treats a
+      // rule that visits nothing as a rule with no findings, which is exactly
+      // the intent, and it costs no traversal.
+      if (skipTestFiles && isTestFilePath(context.filename)) return {};
       return create(
         context,
         applyDefault(resolvedDefaultOptions, context.options),

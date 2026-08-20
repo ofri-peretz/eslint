@@ -94,15 +94,15 @@ class UsersController {
 
 ## Options
 
-| Option                 | Type       | Default | Description                                              |
-| ---------------------- | ---------- | ------- | -------------------------------------------------------- |
-| `allowInTests`         | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files          |
-| `detectGlobalGuards`   | `boolean`  | `true`  | Look for globally registered guards before reporting     |
-| `requiredGuards`       | `string[]` | `[]`    | Guard names that must be present                         |
-| `allowPublicDecorator` | `boolean`  | `true`  | Treat a `@Public()` decorator as intentionally unguarded |
-| `assumeGlobalGuards`   | `boolean`  | `false` | Assume global guards exist even if none are found        |
-| `authDecorators`       | `string[]` | `[]`    | Extra decorator names that count as authentication       |
-| `publicRoutes`         | `string[]` | —       | Route paths that may be left unguarded                   |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `detectGlobalGuards` | `boolean` | `true` | Look for globally registered guards before reporting |
+| `requiredGuards` | `string[]` | `[]` | Guard names that must be present |
+| `allowPublicDecorator` | `boolean` | `true` | Treat a `@Public()` decorator as intentionally unguarded |
+| `assumeGlobalGuards` | `boolean` | `false` | Assume global guards exist even if none are found |
+| `authDecorators` | `string[]` | `[]` | Extra decorator names that count as authentication |
+| `publicRoutes` | `string[]` | — | Route paths that may be left unguarded |
 
 ```typescript
 {

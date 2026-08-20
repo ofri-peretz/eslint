@@ -43,9 +43,9 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-import { isTestFile } from '../../utils/nest-ast';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds = 'missingWhitelist';
@@ -173,7 +173,7 @@ export const requireValidationPipeWhitelist = createRule<
 
     const { allowInTests = true, requireForbidNonWhitelisted = false } =
       options;
-    if (allowInTests && isTestFile(context.filename)) return {};
+    if (allowInTests && isTestFilePath(context.filename)) return {};
 
     return {
       NewExpression(node: TSESTree.NewExpression) {

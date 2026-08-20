@@ -20,9 +20,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'credentialsWildcard' | 'useExplicitOrigins';
+type MessageIds = 'credentialsWildcard';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -125,7 +126,6 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-942',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       credentialsWildcard: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -138,15 +138,7 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-25124',
       }),
-      useExplicitOrigins: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Explicit Origins',
-        description: 'Replace wildcard with explicit origin whitelist',
-        severity: 'LOW',
-        fix: 'origin: ["https://your-frontend.com"]',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
-      }),
+
     },
     schema: [
       {
@@ -177,8 +169,7 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
@@ -199,12 +190,6 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
             context.report({
               node: corsConfigNode,
               messageId: 'credentialsWildcard',
-              suggest: [
-                {
-                  messageId: 'useExplicitOrigins',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }

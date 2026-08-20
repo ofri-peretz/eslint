@@ -15,15 +15,17 @@
  * @see https://cwe.mitre.org/data/definitions/338.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { makeNameTest } from '../../utils/names';
+import { identifierWords, makeNameTest } from '../../utils/names';
+import { findVariable } from '../../utils/provenance';
 import {
   formatLLMMessage,
   MessageIcons,
   createRule,
   AST_NODE_TYPES,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'mathRandomCrypto' | 'useRandomBytes' | 'useRandomUUID';
+type MessageIds = 'mathRandomCrypto';
 
 export interface Options {
   /** Allow Math.random() in test files. Default: false */
@@ -51,8 +53,117 @@ const CRYPTO_WORDS: readonly string[] = [
   'encryption', 'apikey',
 ];
 
+const CRYPTO_WORD_SET: ReadonlySet<string> = new Set(CRYPTO_WORDS);
+
+/**
+ * Words that make the value a DURATION.
+ *
+ * A number of milliseconds cannot be a credential, whatever service it belongs
+ * to. `const authRetryDelay = BASE_MS * 2 ** attempt + Math.random() * BASE_MS`
+ * is retry jitter against the auth service — the same fixture as plain backoff
+ * with the service named in the variable — and it reported purely because
+ * `auth` is a word in it. Matched as the LAST word only: `delayToken` is a
+ * token, `tokenDelay` is a delay.
+ */
+const DURATION_TAILS: ReadonlySet<string> = new Set([
+  'delay', 'timeout', 'interval', 'jitter', 'backoff', 'ms', 'millis',
+  'milliseconds', 'seconds', 'duration', 'wait', 'sleep', 'ttl', 'deadline',
+  'elapsed', 'latency', 'budget',
+]);
+
+/**
+ * Words that make the value a QUANTITY — the same argument as
+ * {@link DURATION_TAILS}, one dimension over.
+ *
+ * `const tokenCount = Math.floor(200 + Math.random() * 1800)` in an LLM cost
+ * simulator carries the strongest word in the vocabulary and is a number of
+ * tokens, not a token. Nothing in CRYPTO_WORDS names a credential that is also
+ * a count, so this subtracts no true positive.
+ */
+const QUANTITY_TAILS: ReadonlySet<string> = new Set([
+  'count', 'counts', 'length', 'size', 'total', 'limit', 'quota', 'offset',
+  'index', 'rank', 'score', 'percent', 'ratio', 'rate', 'version', 'page',
+]);
+
+/**
+ * Crypto vocabulary that is ALSO ordinary English, keyed to the qualifiers that
+ * settle which sense is meant.
+ *
+ * `code` earns its place in CRYPTO_WORDS because of "verification code", but
+ * unqualified it is the commonest non-security noun in a Node codebase: an
+ * HTTP status, an exit code, a country code. `key` is the same story — this
+ * corpus caught `const cacheKey = \`_=${Math.floor(Math.random() * 1e9)}\``,
+ * a CDN cache-buster.
+ *
+ * Both halves are EXACT word membership after {@link identifierWords}, never a
+ * substring: `httpCode` splits to `['http','code']` and `http` is listed, so
+ * the `code` match is a collision. `verifyCode` splits to `['verify','code']`,
+ * `verify` is not listed, and the finding stands — as it also would on
+ * `verify` alone, which is a strong word.
+ */
+const NON_SECURITY_QUALIFIERS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['code', new Set([
+    'http', 'status', 'error', 'err', 'exit', 'country', 'zip', 'postal',
+    'area', 'language', 'lang', 'locale', 'currency', 'promo', 'coupon',
+    'discount', 'color', 'colour', 'qr', 'bar', 'region', 'iso', 'mime',
+    'media', 'sort', 'source', 'char', 'unicode', 'ascii', 'airport',
+  ])],
+  ['key', new Set([
+    'cache', 'map', 'object', 'row', 'index', 'partition', 'primary',
+    'foreign', 'sort', 'storage', 'translation', 'locale', 'i18n', 'react',
+    'idempotency', 'shortcut', 'keyboard', 'press', 'modifier',
+  ])],
+]);
+
 /** Does this name suggest the value is a security value? */
-const nameSuggestsCrypto = makeNameTest(CRYPTO_WORDS);
+const baseNameSuggestsCrypto = makeNameTest(CRYPTO_WORDS);
+
+/**
+ * Does this name suggest the value is a security value, after the two
+ * collision classes the corpus proved?
+ *
+ * The base test is still the word list — this rule decides by name by design,
+ * and the header comment above records why the list is what it is. What is
+ * added here is subtraction only: a name that the list matched can be ruled
+ * OUT by exact word membership, never ruled in.
+ */
+function nameSuggestsCrypto(name: string): boolean {
+  if (!baseNameSuggestsCrypto(name)) return false;
+
+  // Non-empty by construction: the base test cannot match a name with no words.
+  const words = identifierWords(name);
+  const tail = words[words.length - 1] as string;
+  if (DURATION_TAILS.has(tail) || QUANTITY_TAILS.has(tail)) return false;
+
+  const matched = words.filter((word) => CRYPTO_WORD_SET.has(word));
+  // No whole-word hit means the base test matched through its long-substring
+  // path (`apikey`, `password`, `session`) — those spellings are unambiguous.
+  if (matched.length === 0) return true;
+
+  return !matched.every((word) => {
+    const qualifiers = NON_SECURITY_QUALIFIERS.get(word);
+    return qualifiers !== undefined && words.some((other) => qualifiers.has(other));
+  });
+}
+
+/**
+ * Is this expression a read of `Math.random` itself?
+ *
+ * Both spellings. `Math['random']()` is what a property-mangling build step or
+ * a `no-restricted-properties` workaround leaves behind, and it produces the
+ * identical value from the identical PRNG — only the callee's property node
+ * type changes, from Identifier to Literal.
+ */
+function isMathRandomProperty(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
+  if (node.object.type !== AST_NODE_TYPES.Identifier) return false;
+  if (node.object.name !== 'Math') return false;
+  const property = node.property;
+  if (!node.computed) {
+    return property.type === AST_NODE_TYPES.Identifier && property.name === 'random';
+  }
+  return property.type === AST_NODE_TYPES.Literal && property.value === 'random';
+}
 
 // Function names that suggest cryptographic usage
 const CRYPTO_FUNCTION_PATTERNS = [
@@ -86,7 +197,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       cvss: 5.3,
       confidence: 'medium',
     },
-    hasSuggestions: true,
     messages: {
       mathRandomCrypto: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -99,25 +209,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation',
       }),
-      useRandomBytes: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use randomBytes',
-        description:
-          'Use crypto.randomBytes() for cryptographically secure random values',
-        severity: 'LOW',
-        fix: 'crypto.randomBytes(32).toString("hex")',
-        documentationLink:
-          'https://nodejs.org/api/crypto.html#cryptorandombytessize-callback',
-      }),
-      useRandomUUID: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use randomUUID',
-        description: 'Use crypto.randomUUID() for UUID generation',
-        severity: 'LOW',
-        fix: 'crypto.randomUUID()',
-        documentationLink:
-          'https://nodejs.org/api/crypto.html#cryptorandomuuidoptions',
-      }),
+
     },
     schema: [
       {
@@ -143,12 +235,139 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = false } = options as Options;
+    const sourceCode = context.sourceCode;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
-    function isCryptoContext(node: TSESTree.Node): boolean {
+    /**
+     * The declarator this identifier is bound to, when the binding has exactly
+     * one definition and is never written again after it.
+     *
+     * "Never written again" rather than `const`: `var secureRandom =
+     * Math.random` in a CommonJS file is every bit as determined as the `const`
+     * spelling, and the keyword is a style choice rather than evidence. A
+     * binding that IS reassigned — `let rand = Math.random; rand = injected;` —
+     * is rejected, because its initialiser then proves nothing about the value
+     * at the call site.
+     */
+    function stableDeclarator(
+      id: TSESTree.Identifier,
+    ): TSESTree.VariableDeclarator | undefined {
+      const variable = findVariable(sourceCode, id);
+      if (!variable || variable.defs.length !== 1) return undefined;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return undefined;
+      const reassigned = variable.references.some(
+        (reference) => reference.writeExpr != null && !reference.init,
+      );
+      return reassigned ? undefined : def.node;
+    }
+
+    /**
+     * Is this callee `Math.random`, however it was bound?
+     *
+     * Beyond the two member spellings, the binding is resolved through the
+     * scope analyser so the three aliasing shapes are the same sink:
+     *
+     * ```js
+     * const secureRandom = Math.random;   // a local wearing a trusted name
+     * const { random } = Math;            // shortening the call site
+     * const rng = { next: Math.random };  // the "pluggable RNG" with one impl
+     * ```
+     */
+    function isMathRandomCallee(callee: TSESTree.Node): boolean {
+      if (isMathRandomProperty(callee)) return true;
+
+      // `rng.next()` where `rng` is a stable object literal.
+      if (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        !callee.computed &&
+        callee.object.type === AST_NODE_TYPES.Identifier &&
+        callee.property.type === AST_NODE_TYPES.Identifier
+      ) {
+        const init = stableDeclarator(callee.object)?.init;
+        if (!init || init.type !== AST_NODE_TYPES.ObjectExpression) return false;
+        const wanted = callee.property.name;
+        return init.properties.some(
+          (property) =>
+            property.type === AST_NODE_TYPES.Property &&
+            !property.computed &&
+            property.key.type === AST_NODE_TYPES.Identifier &&
+            property.key.name === wanted &&
+            isMathRandomProperty(property.value),
+        );
+      }
+
+      if (callee.type !== AST_NODE_TYPES.Identifier) return false;
+      const declarator = stableDeclarator(callee);
+      const init = declarator?.init;
+      if (!declarator || !init) return false;
+
+      if (declarator.id.type === AST_NODE_TYPES.Identifier) {
+        return isMathRandomProperty(init);
+      }
+      if (declarator.id.type !== AST_NODE_TYPES.ObjectPattern) return false;
+      if (init.type !== AST_NODE_TYPES.Identifier || init.name !== 'Math') return false;
+      return declarator.id.properties.some((property) => {
+        if (property.type !== AST_NODE_TYPES.Property || property.computed) return false;
+        if (property.value.type !== AST_NODE_TYPES.Identifier) return false;
+        if (property.value.name !== callee.name) return false;
+        const key = property.key;
+        if (key.type === AST_NODE_TYPES.Identifier) return key.name === 'random';
+        return key.type === AST_NODE_TYPES.Literal && key.value === 'random';
+      });
+    }
+
+    /**
+     * How many `const` hops the crypto meaning is allowed to be away from the
+     * `Math.random()` call. Two covers `raw` → `apiKey` and the one-alias
+     * relay; beyond that the flow stops being visible in one glance and the
+     * answer stops being trustworthy.
+     */
+    const MAX_BINDING_HOPS = 2;
+
+    /**
+     * Does any LATER use of this binding sit in a crypto context?
+     *
+     * The security meaning is routinely attached one statement after the draw:
+     *
+     * ```js
+     * const raw = Math.random().toString(36).slice(2);
+     * const apiKey = `sk_live_${raw}`;
+     * ```
+     *
+     * and, the same shape one indent deeper, a helper whose NAME is the only
+     * thing that says "token":
+     *
+     * ```js
+     * function makeSessionToken() {
+     *   const raw = Math.random().toString(36).slice(2);
+     *   return raw;
+     * }
+     * ```
+     *
+     * The ancestor walk cannot see either — `raw` is not a crypto name, and the
+     * `FunctionDeclaration` arm below only ever tested CRYPTO_FUNCTION_PATTERNS,
+     * so `makeSessionToken` failed a check that the `ReturnStatement` arm (which
+     * also consults nameSuggestsCrypto) would have passed. Following the
+     * BINDING forward puts both back under the same predicate rather than
+     * widening any name list.
+     */
+    function usedInCryptoContext(id: TSESTree.Identifier, depth: number): boolean {
+      const variable = findVariable(sourceCode, id);
+      if (!variable) return false;
+      // `reference.init` skips the declarator's own write — the only reference
+      // that is the identifier we started from. Every other reference is a
+      // later USE, which is the question being asked.
+      return variable.references.some(
+        (reference) =>
+          !reference.init &&
+          isCryptoContext(reference.identifier as TSESTree.Node, depth),
+      );
+    }
+
+    function isCryptoContext(node: TSESTree.Node, depth = 0): boolean {
       // Check variable declaration context
       let current: TSESTree.Node | undefined = node.parent;
       while (current) {
@@ -157,6 +376,9 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
             if (nameSuggestsCrypto(varName)) {
+              return true;
+            }
+            if (depth < MAX_BINDING_HOPS && usedInCryptoContext(current.id, depth + 1)) {
               return true;
             }
           }
@@ -170,7 +392,24 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check assignment to crypto-named property
+        // Check assignment to a crypto-named target.
+        //
+        // The bare-identifier arm is what catches the single commonest way an
+        // insecure token is written:
+        //
+        // ```js
+        // let token = '';
+        // for (let i = 0; i < 32; i++) {
+        //   token += CHARS[Math.floor(Math.random() * CHARS.length)];
+        // }
+        // ```
+        //
+        // The declarator arm above cannot see it — `let token = ''` initialises
+        // to an empty string, and `Math.random()` never appears under that
+        // declarator. Every character of the token comes from the `+=`, whose
+        // left side is an `Identifier`, and only the `MemberExpression` shape
+        // was handled. So the textbook accumulator loop was silent while
+        // `const token = Math.random().toString(36)` reported.
         if (current.type === AST_NODE_TYPES.AssignmentExpression) {
           if (
             current.left.type === AST_NODE_TYPES.MemberExpression &&
@@ -178,6 +417,11 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           ) {
             const propName = current.left.property.name;
             if (nameSuggestsCrypto(propName)) {
+              return true;
+            }
+          }
+          if (current.left.type === AST_NODE_TYPES.Identifier) {
+            if (nameSuggestsCrypto(current.left.name)) {
               return true;
             }
           }
@@ -238,29 +482,13 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (isTestFile) return;
 
-        // Check for Math.random()
-        if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          node.callee.object.name === 'Math' &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'random'
-        ) {
+        // Check for Math.random(), in any of its bindings
+        if (isMathRandomCallee(node.callee)) {
           // Check if used in cryptographic context
           if (isCryptoContext(node)) {
             context.report({
               node,
               messageId: 'mathRandomCrypto',
-              suggest: [
-                {
-                  messageId: 'useRandomBytes',
-                  fix: () => null, // Complex refactoring
-                },
-                {
-                  messageId: 'useRandomUUID',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }

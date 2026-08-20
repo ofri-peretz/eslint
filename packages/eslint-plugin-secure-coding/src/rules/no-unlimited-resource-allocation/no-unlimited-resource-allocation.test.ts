@@ -276,21 +276,50 @@ describe('no-unlimited-resource-allocation', () => {
             }
           `,
         },
-      ],
-      invalid: [
-        // Variable-size allocations in loops are genuinely risky
+        // CONTROL for the two invalid cases below: the same allocations, in a
+        // loop nobody outside the process can lengthen. Without this pair the
+        // invalid cases would also pass on a rule that reports every loop.
         {
           code: `
-            for (let i = 0; i < 10; i++) {
-              const buf = Buffer.alloc(userSize); // dynamic size from user input
+            function handler(req) {
+              for (let i = 0; i < 10; i++) {
+                const buf = Buffer.alloc(1024 * 1024);
+              }
+            }
+          `,
+        },
+        // 107 of the 173 findings this rule produced on the 20-repo corpus
+        // were this expression. `Set` takes an ITERABLE, not a size: copying
+        // one allocates what the program already holds, and no input makes it
+        // larger.
+        {
+          code: `
+            for (const scc of components) {
+              const sccSet = new Set(scc);
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // The finding is the TRIP COUNT, not the size. A fixed 1 MB taken an
+        // invoker-chosen number of times exhausts the same heap.
+        {
+          code: `
+            function handler(req) {
+              const count = Number(req.query.count);
+              for (let i = 0; i < count; i++) {
+                const buf = Buffer.alloc(1024 * 1024);
+              }
             }
           `,
           errors: [{ messageId: 'resourceAllocationInLoop' }],
         },
         {
           code: `
-            while (condition) {
-              const arr = new Array(dynamicCount); // variable size, not literal
+            function handler(req) {
+              while (req.body.more) {
+                const arr = new Array(64);
+              }
             }
           `,
           errors: [{ messageId: 'resourceAllocationInLoop' }],
@@ -311,8 +340,12 @@ describe('no-unlimited-resource-allocation', () => {
             },
           ],
         },
+        // Was `new Array(inputSize)`, which reported because the printed text
+        // of `inputSize` CONTAINS 'input'. That same substring is what made
+        // mongoose's `fs.readFileSync(path.resolve(cwd, inputFile))` a false
+        // positive on the corpus.
         {
-          code: 'const arr = new Array(inputSize);',
+          code: 'function h(req) { const arr = new Array(req.body.count); }',
           errors: [
             {
               messageId: 'unlimitedMemoryAllocation',
@@ -494,14 +527,21 @@ describe('no-unlimited-resource-allocation', () => {
     ruleTester.run('config - custom user input variables', noUnlimitedResourceAllocation, {
       valid: [
         {
-          code: 'const buf = Buffer.alloc(customSize);',
-          options: [{ userInputVariables: ['otherSize'] }],
+          code: 'const buf = Buffer.alloc(incoming.body.size);',
+          options: [{ userInputVariables: ['otherRoot'] }],
+        },
+        // The option renames the ROOT. It does not make a bare identifier
+        // evidence of anything — `customRoot` with no request-surface access
+        // is still only a name.
+        {
+          code: 'const buf = Buffer.alloc(customRoot);',
+          options: [{ userInputVariables: ['customRoot'] }],
         },
       ],
       invalid: [
         {
-          code: 'const buf = Buffer.alloc(customSize);',
-          options: [{ userInputVariables: ['customSize'] }],
+          code: 'const buf = Buffer.alloc(incoming.body.size);',
+          options: [{ userInputVariables: ['incoming'] }],
           errors: [
             {
               messageId: 'userControlledResourceSize',
@@ -559,7 +599,52 @@ describe('no-unlimited-resource-allocation', () => {
 
   describe('Complex Resource Allocation Scenarios', () => {
     ruleTester.run('complex - real-world DoS through resource exhaustion', noUnlimitedResourceAllocation, {
-      valid: [],
+      valid: [
+        // Was invalid, asserting BOTH `unlimitedMemoryAllocation` and
+        // `userControlledResourceSize` on a `cache.set(...)` whose value
+        // contains a `Buffer.alloc`. Two separate reasons it is no longer a
+        // finding, and neither is a matter of taste:
+        //
+        //  - the memory report came from
+        //    `calleeText.includes('set') && text.includes('Buffer.alloc')`,
+        //    which also matches `offset`, `reset` and `dataset`. It produced 0
+        //    findings on the 20-repo corpus and is deleted.
+        //  - `data` is a PARAMETER. That a function's argument is named `data`
+        //    says nothing about its callers, and assuming otherwise is what
+        //    reported uptime-kuma's base64 encoder and mongoose's build script.
+        //
+        // Nothing in this snippet establishes that anyone outside the process
+        // chooses `data.length`.
+        {
+          code: `
+            const userCache = new Map();
+
+            function cacheUserData(userId, data) {
+              userCache.set(userId, {
+                data,
+                timestamp: Date.now(),
+                largeBuffer: Buffer.alloc(data.length * 2)
+              });
+            }
+          `,
+        },
+        // Was invalid as "billion laughs". xml2js parses through sax-js, which
+        // rejects custom entity references outright — measured against
+        // xml2js 0.6.2 / sax 1.6.1, see the locked cases in the wild-corpus
+        // block at the bottom of this file.
+        {
+          code: `
+            const xml2js = require('xml2js');
+
+            function parseXML(xmlString) {
+              const parser = new xml2js.Parser();
+              parser.parseString(xmlString, (err, result) => {
+                // Process result
+              });
+            }
+          `,
+        },
+      ],
       invalid: [
         {
           code: `
@@ -580,25 +665,6 @@ describe('no-unlimited-resource-allocation', () => {
           errors: [
             {
               messageId: 'unlimitedFileOperations',
-            },
-          ],
-        },
-        {
-          code: `
-            // Billion laughs attack - XML expansion
-            const xml2js = require('xml2js');
-
-            function parseXML(xmlString) {
-              // DANGEROUS: XML parser with no limits can expand exponentially
-              const parser = new xml2js.Parser();
-              parser.parseString(xmlString, (err, result) => {
-                // Process result
-              });
-            }
-          `,
-          errors: [
-            {
-              messageId: 'unlimitedMemoryAllocation',
             },
           ],
         },
@@ -650,24 +716,17 @@ describe('no-unlimited-resource-allocation', () => {
             },
           ],
         },
+        // The unbounded-cache case moved to `valid` — see the block below.
+        // A handler that DOES prove the size is invoker-supplied still
+        // reports, which is the control that keeps the move honest.
         {
           code: `
-            // Cache with unlimited growth
-            const userCache = new Map();
-
-            function cacheUserData(userId, data) {
-              // DANGEROUS: Cache grows without bounds
-              userCache.set(userId, {
-                data,
-                timestamp: Date.now(),
-                largeBuffer: Buffer.alloc(data.length * 2) // Grows with data size
-              });
-            }
+            app.post('/cache', (req, res) => {
+              const entry = Buffer.alloc(Number(req.body.bytes));
+              store.set(req.body.key, entry);
+            });
           `,
           errors: [
-            {
-              messageId: 'unlimitedMemoryAllocation',
-            },
             {
               messageId: 'userControlledResourceSize',
             },
@@ -694,9 +753,11 @@ describe('no-unlimited-resource-allocation', () => {
           code: 'const arr = Array(req.query.length);',
           errors: [{ messageId: 'unlimitedMemoryAllocation' }],
         },
-        // new Array() variations
+        // new Array() variations. Was `new Array(input)` — a bare parameter
+        // name. `input` is in the root list, but a root is evidence only when
+        // it is read through a request surface.
         {
-          code: 'const arr = new Array(input);',
+          code: 'function h(input) { const arr = new Array(input.query.n); }',
           errors: [{ messageId: 'unlimitedMemoryAllocation' }],
         },
       ],
@@ -769,16 +830,12 @@ describe('no-unlimited-resource-allocation', () => {
             }
           `,
         },
-        // `new Set(dynamicEntries)` in a loop is exercised as an *invalid*
-        // case just below (it must reach the report path so the `Set`
-        // sub-check of the callee-text OR-chain gets evaluated - `Buffer`,
-        // `Array`, and `Map` are all false for this callee, so only `Set`
-        // decides whether the OR is entered at all).
-        // Assignment to array element in loop, with a *dynamic* (non-literal)
-        // size - exercises the true side of the
-        // `parent.type === 'AssignmentExpression' && parent.left.type === 'MemberExpression'`
-        // pre-allocated-pattern branch (the literal-size early-return above
-        // does NOT apply here, since the size isn't a numeric literal).
+        // Assignment to an array element in a loop the invoker cannot
+        // lengthen. The dedicated `parent.type === 'AssignmentExpression'`
+        // exemption this used to exercise is gone: once the loop bound is what
+        // decides the finding, `buffers[i] = Buffer.alloc(n)` inside an
+        // invoker-controlled loop is unbounded too, and the container is sized
+        // by that same loop.
         {
           code: `
             const buffers = [];
@@ -802,23 +859,27 @@ describe('no-unlimited-resource-allocation', () => {
         },
       ],
       invalid: [
-        // Dynamic-size allocation in loop without assignment (still risky)
+        // A for-of over a request-supplied collection: the invoker decides how
+        // many times this allocates.
         {
           code: `
-            for (let i = 0; i < 10; i++) {
-              const b = Buffer.alloc(userSize);
+            function handler(req) {
+              for (const item of req.body.items) {
+                const b = Buffer.alloc(4096);
+              }
             }
           `,
           errors: [{ messageId: 'resourceAllocationInLoop' }],
         },
-        // `new Set(dynamicEntries)` inside a loop, not assigned to an array
-        // element and not annotated `@safe` - reaches the report path so
-        // the `newCalleeText.includes('Set')` branch of the callee-text
-        // OR-chain is actually evaluated (Buffer/Array/Map are all false).
+        // NewExpression spelling of the same finding, and the control for the
+        // `new Set(scc)` valid case above — what changed is the LOOP, not the
+        // constructor.
         {
           code: `
-            for (let i = 0; i < 10; i++) {
-              const s = new Set(dynamicEntries);
+            function handler(req) {
+              for (const key in req.query) {
+                const s = new Set(entries);
+              }
             }
           `,
           errors: [{ messageId: 'resourceAllocationInLoop' }],
@@ -965,19 +1026,33 @@ describe('corpus regression — ZIP bomb detection', () => {
  * these arms need a synthetic node.
  */
 describe('resourceAllocationInLoop line fallback', () => {
-  const loopedCall = (type: 'CallExpression' | 'NewExpression') => ({
-    type,
-    callee: { type: 'Identifier', name: 'Array' },
-    arguments: [{ type: 'Identifier', name: 'n' }],
-    parent: {
-      type: 'WhileStatement',
-      parent: undefined,
-    },
-  });
+  // `while (req.body)` — a request-surface read on a request root, the shape
+  // the rule needs, and one a synthetic node can carry without a resolvable
+  // scope.
+  const loopedCall = (type: 'CallExpression' | 'NewExpression') => {
+    const root: Record<string, unknown> = { type: 'Identifier', name: 'req' };
+    const test = {
+      type: 'MemberExpression',
+      computed: false,
+      object: root,
+      property: { type: 'Identifier', name: 'body' },
+    };
+    root.parent = test;
+    return {
+      type,
+      callee: { type: 'Identifier', name: 'Array' },
+      arguments: [{ type: 'Identifier', name: 'n' }],
+      parent: {
+        type: 'WhileStatement',
+        test,
+        parent: null,
+      },
+    };
+  };
 
   it('CallExpression falls back to line 0 when loc is missing', () => {
     const { listeners, reports } = createWithMockContext(noUnlimitedResourceAllocation, {
-      sourceText: 'while (c) { Array(n); }',
+      sourceText: 'while (req.body) { Array(n); }',
     });
     (listeners.CallExpression as (n: unknown) => void)(loopedCall('CallExpression'));
     const inLoop = reports.filter((r) => r.messageId === 'resourceAllocationInLoop');
@@ -987,7 +1062,7 @@ describe('resourceAllocationInLoop line fallback', () => {
 
   it('NewExpression falls back to line 0 when loc is missing', () => {
     const { listeners, reports } = createWithMockContext(noUnlimitedResourceAllocation, {
-      sourceText: 'while (c) { new Array(n); }',
+      sourceText: 'while (req.body) { new Array(n); }',
     });
     (listeners.NewExpression as (n: unknown) => void)(loopedCall('NewExpression'));
     const inLoop = reports.filter((r) => r.messageId === 'resourceAllocationInLoop');
@@ -1035,6 +1110,34 @@ describe('corpus regression — XML parsing and array iteration', () => {
         name: 'gunzip with a maxSize limit',
         code: `const zlib = require('zlib'); const g = zlib.createGunzip({maxSize: 1000});`,
       },
+      // axios lib/adapters/http.js:1193 — the output bound is spelled as a
+      // byte count on the piped stream rather than as `maxOutputLength`.
+      {
+        name: 'the decompressed bytes are counted and capped',
+        code: `const zlib = require('zlib');
+          function onResponse(res, limit) {
+            const streams = [];
+            streams.push(zlib.createUnzip());
+            let totalResponseBytes = 0;
+            res.on('data', (chunk) => {
+              totalResponseBytes += chunk.length;
+              if (totalResponseBytes > limit) { throw new Error('too big'); }
+            });
+          }`,
+      },
+      // `.byteLength` is the same accumulator, spelled for a Buffer.
+      {
+        name: 'byteLength counted and capped',
+        code: `const zlib = require('zlib');
+          function onResponse(res, limit) {
+            const g = zlib.createUnzip();
+            let total = 0;
+            res.on('data', (chunk) => {
+              total += chunk.byteLength;
+              if (total >= limit) { throw new Error('too big'); }
+            });
+          }`,
+      },
       // A receiver that is not a plain identifier resolves to no binding.
       {
         name: 'a nested receiver',
@@ -1042,6 +1145,38 @@ describe('corpus regression — XML parsing and array iteration', () => {
       },
       // Not an XML module, so `new` does not bind a parser.
       { name: 'an unrelated constructor', code: `const d = new Date(); d.parseString(x);` },
+
+      // These four were INVALID until 2026-08-18, on the premise that
+      // `xml2js.parseString` is a billion-laughs sink. The premise was never
+      // measured. It is false: xml2js parses through sax-js, which rejects
+      // custom entity references outright.
+      //
+      //   xml2js 0.6.2 / sax 1.6.1, all answering `Invalid character entity`:
+      //     <!DOCTYPE d [<!ENTITY a "HELLO">]><d>&a;</d>
+      //     <!DOCTYPE d [<!ENTITY a "xx"><!ENTITY b "&a;&a;&a;">]><d>&b;</d>
+      //     <!ENTITY xxe SYSTEM "file:///etc/passwd">
+      //     nine-level billion laughs → error in 1 ms, 0 characters expanded
+      //
+      // 24 of this rule's 173 corpus findings were this shape, every one of
+      // them in n8n, every one naming a vulnerability the parser cannot have.
+      // They are valid now and locked that way, so the path cannot return
+      // without someone re-measuring the parser first.
+      {
+        name: 'xml2js.parseString cannot expand entities',
+        code: `const xml2js = require('xml2js'); xml2js.parseString(xmlString, cb);`,
+      },
+      {
+        name: 'parseStringPromise via the module',
+        code: `const xml2js = require('xml2js'); xml2js.parseStringPromise(xmlString);`,
+      },
+      {
+        name: 'a bare named import',
+        code: `import {parseString} from 'xml2js'; parseString(xmlString, cb);`,
+      },
+      {
+        name: 'an instance constructed from a bare named import',
+        code: `import {Parser} from 'xml2js'; const p = new Parser(); p.parseString(xmlString, cb);`,
+      },
     ],
     invalid: [
       // Shopify CLI .../services/function/binaries.ts:315 — the one real
@@ -1049,6 +1184,27 @@ describe('corpus regression — XML parsing and array iteration', () => {
       {
         name: 'binaries.ts:315 — gunzip with no output limit',
         code: `const gzip = require('zlib'); const gunzip = gzip.createGunzip();`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      // CONTROLS for the byte-count guard: each half alone is not a bound.
+      // nodemailer lib/fetch/index.js:282 counts nothing at all.
+      {
+        name: 'counting bytes without comparing them is not a bound',
+        code: `const zlib = require('zlib');
+          function onResponse(res) {
+            const g = zlib.createUnzip();
+            let total = 0;
+            res.on('data', (chunk) => { total += chunk.length; });
+          }`,
+        errors: [{ messageId: 'unlimitedFileOperations' }],
+      },
+      {
+        name: 'comparing an unrelated value is not a bound',
+        code: `const zlib = require('zlib');
+          function onResponse(res, limit) {
+            const g = zlib.createUnzip();
+            if (res.statusCode > limit) { return; }
+          }`,
         errors: [{ messageId: 'unlimitedFileOperations' }],
       },
       {
@@ -1071,26 +1227,298 @@ describe('corpus regression — XML parsing and array iteration', () => {
         code: `const zlib = require('zlib'); const g = zlib.createGunzip(opts);`,
         errors: [{ messageId: 'unlimitedFileOperations' }],
       },
-      // Real XML entity-expansion sinks must still report.
+    ],
+  });
+});
+
+/**
+ * Schema options that nothing else in this file sets.
+ *
+ * `safeResourceFunctions`, `trustedSanitizers` and `strictMode` all shipped
+ * with their branches never executed by a test. Each is covered below by a PAIR
+ * over the SAME source text — one entry that sets the option, one that does
+ * not — whose verdicts disagree. Setting an option and asserting the default
+ * answer would execute the line while proving nothing: the branch could be
+ * deleted and this suite would stay green.
+ */
+describe('no-unlimited-resource-allocation — option differentials', () => {
+  // A user-controlled allocation size routed through a project-local clamp.
+  // The rule has no way to know `clampToQuota` bounds anything, so by default
+  // it reports; `safeResourceFunctions` is how a project tells it.
+  const CLAMPED_ALLOC = `
+    function upload(req) {
+      return Buffer.alloc(clampToQuota(req.body.size));
+    }
+  `;
+
+  ruleTester.run('option safeResourceFunctions', noUnlimitedResourceAllocation, {
+    valid: [
+      // Registering the clamp satisfies hasSizeValidation, which is the only
+      // thing standing between this call and a userControlledResourceSize
+      // report. Drop the option and the invalid twin below fires.
       {
-        name: 'xml2js.parseString via the module',
-        code: `const xml2js = require('xml2js'); xml2js.parseString(xmlString, cb);`,
+        code: CLAMPED_ALLOC,
+        options: [{ safeResourceFunctions: ['clampToQuota'] }],
+      },
+    ],
+    invalid: [
+      // Identical source on the defaults (validateSize / checkLimits /
+      // limitResource / safeAlloc): the clamp is an unknown name, the size is
+      // still request-derived, so it reports.
+      {
+        code: CLAMPED_ALLOC,
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+
+  // The same allocation with nothing wrapping the size at all.
+  const RAW_ALLOC = `
+    function upload(req) {
+      return Buffer.alloc(req.body.size);
+    }
+  `;
+
+  ruleTester.run('option trustedSanitizers', noUnlimitedResourceAllocation, {
+    valid: [
+      // Note WHAT this option can reach in this rule: every report site hands
+      // safetyChecker.isSafe the ALLOCATION call itself, never the size
+      // expression, so the name that has to be registered is the allocator's —
+      // `Buffer.alloc` is matched on its member name `alloc`. That is the only
+      // shape of `trustedSanitizers` this rule can honour, and it reads as
+      // "our pooled .alloc() is capped internally".
+      {
+        code: RAW_ALLOC,
+        options: [{ trustedSanitizers: ['alloc'] }],
+      },
+    ],
+    invalid: [
+      // Same source, default (empty) trustedSanitizers. Membership is exact, so
+      // nothing in the built-in SANITIZATION_FUNCTIONS list matches `alloc`.
+      {
+        code: RAW_ALLOC,
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+
+  ruleTester.run('option strictMode', noUnlimitedResourceAllocation, {
+    valid: [
+      {
+        code: RAW_ALLOC,
+        options: [{ trustedSanitizers: ['alloc'] }],
+      },
+    ],
+    invalid: [
+      // strictMode forces safetyChecker.isSafe to false unconditionally, so the
+      // trustedSanitizers entry that silenced the valid twin stops being
+      // honoured. The userControlledResourceSize site is guarded only by
+      // isSafe, so nothing else can account for the disagreement.
+      {
+        code: RAW_ALLOC,
+        options: [{ trustedSanitizers: ['alloc'], strictMode: true }],
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+});
+
+/**
+ * Every arm of the two predicates the 2026-08-18 rewrite introduced.
+ *
+ * `isInvokerControlled` and `couldBeASize` are both recursive switches, and a
+ * switch arm that no test enters is a decision nobody has checked. Each case
+ * below is a PAIR over the same shape — one that must report, one that must
+ * not — so an arm cannot be deleted and leave this file green.
+ */
+describe('no-unlimited-resource-allocation — predicate arms', () => {
+  ruleTester.run('isInvokerControlled', noUnlimitedResourceAllocation, {
+    valid: [
+      // computed member, index NOT invoker-supplied
+      { name: 'computed index from a local', code: 'function h(i) { const b = Buffer.alloc(sizes[i]); }' },
+      { name: 'conditional, neither arm supplied', code: 'function h(f) { const b = Buffer.alloc(f ? 8 : 16); }' },
+      { name: 'template of locals', code: 'function h(n) { const a = Array(`${n}`); }' },
+      { name: 'await of a local', code: 'async function h(p) { const b = Buffer.alloc(await p); }' },
+      { name: 'a cast local', code: 'function h(n) { const b = Buffer.alloc(n as number); }' },
+      { name: 'a non-null local', code: 'function h(n) { const b = Buffer.alloc(n!); }' },
+      // The walk is bounded. Thirteen bindings deep the answer is "unknown",
+      // and unknown reports nothing — a cap that reported would turn every
+      // long chain into a finding.
+      {
+        name: 'beyond the depth cap',
+        code: `function h(req) {
+          const a1 = req.body.n; const a2 = f(a1); const a3 = f(a2); const a4 = f(a3);
+          const a5 = f(a4); const a6 = f(a5); const a7 = f(a6); const a8 = f(a7);
+          const a9 = f(a8); const a10 = f(a9); const a11 = f(a10); const a12 = f(a11);
+          const a13 = f(a12); const a14 = f(a13);
+          const b = Buffer.alloc(a14);
+        }`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'computed index IS invoker-supplied',
+        code: 'function h(req) { const b = Buffer.alloc(sizes[req.body.i]); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'one arm of a conditional',
+        code: 'function h(req, f) { const b = Buffer.alloc(f ? req.body.n : 16); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'interpolated into a template',
+        code: 'function h(req) { const a = Array(`${req.body.n}`); }',
         errors: [{ messageId: 'unlimitedMemoryAllocation' }],
       },
       {
-        name: 'parseStringPromise via the module',
-        code: `const xml2js = require('xml2js'); xml2js.parseStringPromise(xmlString);`,
-        errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+        name: 'awaited',
+        code: 'async function h(req) { const b = Buffer.alloc(await req.body.n); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
       },
       {
-        name: 'a bare named import',
-        code: `import {parseString} from 'xml2js'; parseString(xmlString, cb);`,
-        errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+        name: 'cast',
+        code: 'function h(req) { const b = Buffer.alloc(req.body.n as number); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
       },
       {
-        name: 'an instance constructed from a bare named import',
-        code: `import {Parser} from 'xml2js'; const p = new Parser(); p.parseString(xmlString, cb);`,
-        errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+        name: 'non-null asserted',
+        code: 'function h(req) { const b = Buffer.alloc(req.body.n!); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+
+  // `couldBeASize` gates ONLY the overloaded `new Buffer(x)`. Each pair is the
+  // same call with a numeric-shaped argument and a content-shaped one.
+  ruleTester.run('couldBeASize', noUnlimitedResourceAllocation, {
+    valid: [
+      { name: 'a string from the request is content', code: 'function h(req) { const b = new Buffer(req.body.name); }' },
+      { name: 'a request array is content', code: 'function h(req) { const b = new Buffer(req.body.bytes.slice()); }' },
+      // `+` is arithmetic AND string concatenation. The encoding argument is
+      // what settles it — Node only accepts one on the string overload.
+      { name: 'string concatenation with an encoding', code: 'function h(req) { const b = new Buffer(req.body.a + req.body.b, "utf8"); }' },
+      { name: 'an encoding beside a numeric-looking argument', code: 'function h(req) { const b = new Buffer(Number(req.body.n), "utf8"); }' },
+      { name: 'a local of unknown shape', code: 'function h(req) { const v = req.body.v; const b = new Buffer(v); }' },
+      { name: 'a cast of content', code: 'function h(req) { const b = new Buffer(req.body.v as string); }' },
+      { name: 'a non-null content', code: 'function h(req) { const b = new Buffer(req.body.v!); }' },
+      { name: 'a conditional over content', code: 'function h(req) { const b = new Buffer(f ? req.body.a : req.body.b); }' },
+      { name: 'a fallback over content', code: 'function h(req) { const b = new Buffer(req.body.a || req.body.b); }' },
+      { name: 'a plain numeric literal is bounded', code: 'const b = new Buffer(64);' },
+      { name: 'an array literal is content', code: 'function h(req) { const b = new Buffer([req.body.a, 2, 3]); }' },
+      // A declaration with no initializer resolves to nothing to follow.
+      { name: 'a binding with no initializer', code: 'function h(req) { let v; v = req.body.n; const b = new Buffer(v); }' },
+    ],
+    invalid: [
+      {
+        name: 'Number() is a size',
+        code: 'function h(req) { const b = new Buffer(Number(req.body.n)); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'Math.floor() is a size',
+        code: 'function h(req) { const b = new Buffer(Math.floor(req.body.n)); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'arithmetic is a size',
+        code: 'function h(req) { const b = new Buffer(req.body.n * 2); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'unary coercion is a size',
+        code: 'function h(req) { const b = new Buffer(+req.body.n); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'bitwise-not truncation is a size',
+        code: 'function h(req) { const b = new Buffer(~req.body.n); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: '.length is a size',
+        code: 'function h(req) { const b = new Buffer(req.body.chunk.length); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'through a local binding',
+        code: 'function h(req) { const n = Number(req.body.n); const b = new Buffer(n); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'one numeric arm of a conditional',
+        code: 'function h(req) { const b = new Buffer(f ? Number(req.body.n) : req.body.s); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'one numeric arm of a fallback',
+        code: 'function h(req) { const b = new Buffer(Number(req.body.n) || req.body.s); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'a cast of a size',
+        code: 'function h(req) { const b = new Buffer(Number(req.body.n) as number); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'a non-null size',
+        code: 'function h(req) { const b = new Buffer(Number(req.body.n)!); }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+    ],
+  });
+
+  ruleTester.run('enclosingLoop', noUnlimitedResourceAllocation, {
+    valid: [
+      // The allocation is in what the loop ITERATES OVER, so it runs once —
+      // the for-of twin of the `for (var e = Array(t), u = 0; …)` init case.
+      {
+        name: 'allocation in the iterated expression',
+        code: 'function h(req) { for (const x of new Set(req.body.items)) { use(x); } }',
+      },
+      {
+        name: 'allocation in the for-in right',
+        code: 'function h(req) { for (const k in new Map(req.body.entries)) { use(k); } }',
+      },
+      // `for (;;)` has no test, so there is no bound to read.
+      {
+        name: 'a loop with no test establishes no bound',
+        code: 'function h(req) { for (;;) { const s = new Set(entries); break; } }',
+      },
+      // The clamp is on the binding, not at the call — the corpus safe
+      // fixture's shape, `benchmarks/corpus/CWE-770/safe/buffer-alloc-clamped.js`.
+      {
+        name: 'a clamp one line above the allocation',
+        code: 'function h(req) { const size = Math.min(Number(req.body.n), 65536); const b = Buffer.alloc(size); }',
+      },
+      // @safe on each of the two report paths.
+      {
+        name: '@safe on the call path',
+        code: `function h(req) {
+          /** @safe */
+          for (const x of req.body.items) { Buffer.alloc(64); }
+        }`,
+      },
+      {
+        name: '@safe on the new path',
+        code: `function h(req) {
+          /** @safe */
+          for (const x of req.body.items) { const s = new Set(entries); }
+        }`,
+      },
+    ],
+    invalid: [
+      // `for (;;)` has no test, so this path establishes no loop bound — the
+      // report that survives is the SIZE one, from a different branch.
+      {
+        name: 'a loop with no test still reports the size',
+        code: 'function h(req) { for (;;) { const b = Buffer.alloc(req.body.n); break; } }',
+        errors: [{ messageId: 'userControlledResourceSize' }],
+      },
+      {
+        name: 'do-while bounded by the request',
+        code: 'function h(req) { do { const b = Buffer.alloc(64); } while (req.body.more); }',
+        errors: [{ messageId: 'resourceAllocationInLoop' }],
       },
     ],
   });

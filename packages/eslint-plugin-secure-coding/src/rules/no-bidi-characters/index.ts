@@ -109,7 +109,9 @@ export const noBidiCharacters = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
-          additionalCharacters: { type: 'array', items: { type: 'string' } },
+          // The destructuring in create() defaults this to `[]`; the schema
+          // said nothing, so the generated docs could not state the default.
+          additionalCharacters: { type: 'array', items: { type: 'string' }, default: [] },
           allowDirectionalMarks: { type: 'boolean', default: false },
         },
         additionalProperties: false,

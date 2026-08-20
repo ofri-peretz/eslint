@@ -74,6 +74,15 @@ const output = sprintf(format, ...args);
 
 ```typescript
 util.format("User: %s, Age: %d", name, age);
+
+// Untrusted data as an ARGUMENT is the mitigation, not the vulnerability:
+// util.format substitutes values verbatim and never re-scans them, so a "%d"
+// inside req.body.format reaches the output as the two characters "%d".
+util.format("%s", req.body.format);
+
+// A const-bound literal is still a constant format string.
+const template = "User: %s, Data: %j";
+util.format(template, user, data);
 ```
 
 ## Configuration
@@ -97,10 +106,9 @@ util.format("User: %s, Age: %d", name, age);
 | `formatFunctions` | `string[]` | `["util.format","console.log","console.error","console.warn","sprintf","printf","vsprintf"]` | Functions whose first argument is a format string |
 | `formatSpecifiers` | `string[]` | `["%s","%d","%i","%f","%j","%o","%O","%c","%%"]` | Format specifiers recognised in a format string |
 | `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data","userInput"]` | Variable names treated as user-controlled input |
-| `safeFormatLibraries` | `string[]` | `["mustache","handlebars","ejs","pug"]` | Templating libraries that escape their own input |
+| `userInputAliases` | `string[]` | `["user","userinput","userdata","userparam","userparams","usermessage","usertemplate","userformat","uservar"]` | The user-input name family recognised on top of `userInputVariables`, compared case-insensitively as a whole name or a whole dotted segment — never as a substring. Replaces the built-in list. |
+| `additionalUserInputAliases` | `string[]` | `[]` | Extra user-input aliases, on top of `userInputAliases`. |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as format string sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 
 ## Error Message Format
 

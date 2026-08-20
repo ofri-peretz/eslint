@@ -1,0 +1,71 @@
+{
+  "rule": "secure-coding/no-redos-vulnerable-regex",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 28,
+  "vulnerable": 14,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-redos-vulnerable-regex",
+      "tp": 14,
+      "fp": 0,
+      "fn": 0,
+      "tn": 14,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    },
+    {
+      "name": "eslint-plugin-security [detect-unsafe-regex]",
+      "tp": 9,
+      "fp": 7,
+      "fn": 5,
+      "tn": 7,
+      "precision": 0.5625,
+      "recall": 0.6428571428571429,
+      "specificity": 0.5,
+      "youdenJ": 0.1428571428571428,
+      "f1": 0.6000000000000001,
+      "crashes": [],
+      "missed": [
+        "vulnerable/06-runtime-built-nested-quantifier.js",
+        "vulnerable/09-string-raw-pattern.js",
+        "vulnerable/10-pattern-source-constant.js",
+        "vulnerable/11-concatenated-pattern-source.js",
+        "vulnerable/14-template-charclass-interpolation.js"
+      ],
+      "falsePositives": [
+        "safe/01-stripe-js-origin.js",
+        "safe/02-ipv4-bounded.js",
+        "safe/03-disjoint-alternation.js",
+        "safe/05-semver-core.js",
+        "safe/09-quantifier-dense-but-linear.js",
+        "safe/10-bounded-under-unbounded-but-separated.js",
+        "safe/12-lookaround-and-lazy.js"
+      ]
+    },
+    {
+      "name": "eslint-plugin-regexp [no-super-linear-backtracking]",
+      "tp": 11,
+      "fp": 0,
+      "fn": 3,
+      "tn": 14,
+      "precision": 1,
+      "recall": 0.7857142857142857,
+      "specificity": 1,
+      "youdenJ": 0.7857142857142856,
+      "f1": 0.88,
+      "crashes": [],
+      "missed": [
+        "vulnerable/02-email-validator-nested-quantifier.js",
+        "vulnerable/06-runtime-built-nested-quantifier.js",
+        "vulnerable/14-template-charclass-interpolation.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

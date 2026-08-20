@@ -13,7 +13,7 @@
  * @see https://www.npmjs.com/package/crypto-hash
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'sha1Deprecated'
@@ -91,7 +91,7 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     // Track if sha1 was imported from crypto-hash
     let sha1ImportedFromCryptoHash = false;

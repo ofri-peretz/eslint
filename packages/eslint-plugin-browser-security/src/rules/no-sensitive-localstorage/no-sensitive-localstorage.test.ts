@@ -20,55 +20,50 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
   valid: [
     // Non-sensitive data
-    {
-      code: `localStorage.setItem('theme', 'dark');`,
-    },
-    // User preferences
-    {
-      code: `localStorage.setItem('language', 'en');`,
-    },
-    // Non-sensitive bracket access
-    {
-      code: `localStorage['settings'] = JSON.stringify(settings);`,
-    },
+    { code: `localStorage.setItem('theme', 'dark');` },
+    { code: `localStorage.setItem('language', 'en');` },
+    { code: `localStorage['settings'] = JSON.stringify(settings);` },
     // Test file with allowInTests
     {
-      code: `localStorage.setItem('token', jwt);`,
+      code: `localStorage.setItem('password', pw);`,
       options: [{ allowInTests: true }],
       filename: 'auth.test.ts',
     },
-    // sessionStorage with checkSessionStorage: false
+
+    // --- the partition -------------------------------------------------------
+    // Bearer credentials belong to no-jwt-in-storage…
+    { code: `localStorage.setItem('access_token', jwt);` },
+    { code: `localStorage.setItem('sessionId', id);` },
+    // …and a provable JWT value likewise, whatever the key is called.
     {
-      code: `sessionStorage.setItem('token', jwt);`,
-      options: [{ checkSessionStorage: false }],
+      code: `localStorage.setItem('secret_backup', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhIjoxfQ.sig');`,
     },
+    // sessionStorage belongs to no-sensitive-sessionstorage by default.
+    { code: `sessionStorage.setItem('password', pw);` },
+    { code: `sessionStorage.setItem('api_key', k);` },
+
+    // --- whole-word, not substring ------------------------------------------
+    // Every one reported on the shipped rule.
+    { code: `localStorage.setItem('article-author', name);` },
+    { code: `localStorage.setItem('tokenizer-config', cfg);` },
+    { code: `localStorage.setItem('user-session', id);` },
+    { code: `localStorage.setItem('creditLimit', 5000);` },
+    { code: `localStorage.setItem('passwordLength', '12');` },
 
     // --- Judge the key that is WRITTEN, not the constant that holds it ------
-    // All six corpus findings, from okta-signin-widget's sessionStorageHelper.
-    // Every one reports on the old code, which matched the IDENTIFIER
-    // `…_SESSION_STORAGE_KEY` — whose "session" and "key" are the name of the
-    // storage API, not of anything secret. The strings they resolve to match
-    // no sensitive pattern at all, and two of them hold a page URL and a
-    // timestamp.
+    // The okta-signin-widget shape: a constant named after the storage API.
     {
       code: `
-        const STATE_HANDLE_SESSION_STORAGE_KEY = 'osw-oie-state-handle';
-        sessionStorage.setItem(STATE_HANDLE_SESSION_STORAGE_KEY, stateHandle);
+        const STATE_HANDLE_LOCAL_STORAGE_KEY = 'osw-oie-state-handle';
+        localStorage.setItem(STATE_HANDLE_LOCAL_STORAGE_KEY, stateHandle);
       `,
     },
     {
       code: `
-        const LAST_INITIATED_LOGIN_URL_SESSION_STORAGE_KEY = 'osw-oie-last-initiated-login-url';
-        sessionStorage.setItem(LAST_INITIATED_LOGIN_URL_SESSION_STORAGE_KEY, window.location.href);
+        const LAST_INITIATED_LOGIN_URL_LOCAL_STORAGE_KEY = 'osw-oie-last-initiated-login-url';
+        localStorage.setItem(LAST_INITIATED_LOGIN_URL_LOCAL_STORAGE_KEY, window.location.href);
       `,
     },
-    {
-      code: `
-        const RESEND_TIMESTAMP_SESSION_STORAGE_KEY = 'osw-oie-resend-timestamp';
-        sessionStorage.setItem(RESEND_TIMESTAMP_SESSION_STORAGE_KEY, timestampStr);
-      `,
-    },
-    // Same resolution through the bracket-assignment path.
     {
       code: `
         const PREFS_LOCAL_STORAGE_KEY = 'ui-prefs';
@@ -78,116 +73,65 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
     // A key expression we cannot resolve to a string at all says nothing.
     { code: `localStorage.setItem(makeKey(id), value);` },
     { code: `localStorage[computeKey()] = value;` },
+    // setItem without a value is not a write we can judge.
+    { code: `localStorage.setItem('password');` },
+    // Not a member-expression assignment target.
+    { code: `[a] = b;` },
   ],
   invalid: [
-    // Token in localStorage
-    {
-      code: `localStorage.setItem('token', jwt);`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
-    },
-    // accessToken
-    {
-      code: `localStorage.setItem('accessToken', token);`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
-    },
-    // Password
     {
       code: `localStorage.setItem('password', pwd);`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // API key
     {
       code: `localStorage.setItem('api_key', key);`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // Bracket assignment
     {
-      code: `localStorage['authToken'] = token;`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
+      code: `localStorage.setItem('private_key', pem);`,
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // sessionStorage
     {
-      code: `sessionStorage.setItem('jwt', token);`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
+      code: `localStorage.setItem('creditCardNumber', pan);`,
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // refresh_token
-    {
-      code: `localStorage.setItem('refresh_token', refreshToken);`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
-    },
-    // Variable key that looks sensitive (identifier detection)
+    // Unresolvable identifier key falls back to its spelling.
     {
       code: `localStorage.setItem(password, value);`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // Identifier property access with sensitive name
+    // Non-computed member access IS the key name.
     {
       code: `localStorage.secret = secretValue;`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // Bracket with string literal
     {
       code: `localStorage['apiKey'] = keyValue;`,
-      errors: [
-        {
-          messageId: 'sensitiveLocalStorage',
-        },
-      ],
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // allowInTests: false in test file
+    // allowInTests: false in a test file
     {
-      code: `localStorage.setItem('token', jwt);`,
+      code: `localStorage.setItem('password', pw);`,
       filename: 'auth.test.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
+    },
+    // checkSessionStorage: true deliberately re-enables the overlap.
+    {
+      code: `sessionStorage.setItem('password', pw);`,
+      options: [{ checkSessionStorage: true }],
       errors: [
         {
           messageId: 'sensitiveLocalStorage',
+          data: { key: 'password', storage: 'sessionStorage' },
         },
       ],
     },
 
     // --- FN locks for the resolution change --------------------------------
-    // Resolution CATCHES a sensitive key an unremarkable constant name hides —
-    // the old code judged `K` and saw nothing.
     {
       code: `
-        const K = 'refresh_token';
+        const K = 'private_key';
         localStorage.setItem(K, value);
       `,
       errors: [{ messageId: 'sensitiveLocalStorage' }],
@@ -199,17 +143,159 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
       `,
       errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // A binding that cannot be resolved falls back to the spelling, which is
-    // the only evidence left. `let` reassignment makes it unknowable.
+    // A binding that cannot be resolved falls back to the spelling.
     {
-      code: `
-        function save(accessToken, value) { localStorage.setItem(accessToken, value); }
-      `,
+      code: `function save(apiKey, value) { localStorage.setItem(apiKey, value); }`,
       errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
-    // Non-computed member access IS the key name, not a variable to resolve.
+  ],
+});
+
+/**
+ * Regression lock — `window.localStorage` is `localStorage`.
+ */
+ruleTester.run('lock: the global may be spelled out', noSensitiveLocalstorage, {
+  valid: [
+    { code: 'myLocalStorageWrapper.setItem("password", pw);' },
+    { code: 'top.localStorage.setItem("password", pw);' },
+    { code: 'window[storageName].setItem("password", pw);' },
+  ],
+  invalid: [
     {
-      code: `localStorage.authToken = value;`,
+      code: 'window.localStorage.setItem("password", pw);',
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+          data: { key: 'password', storage: 'localStorage' },
+        },
+      ],
+    },
+    {
+      code: 'globalThis.localStorage.setItem("apiKey", k);',
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+          data: { key: 'apiKey', storage: 'localStorage' },
+        },
+      ],
+    },
+    {
+      code: 'window.localStorage.privateKey = t;',
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+          data: { key: 'privateKey', storage: 'localStorage' },
+        },
+      ],
+    },
+  ],
+});
+
+/**
+ * Regression lock — computed and optional-chained sinks.
+ */
+ruleTester.run(
+  'lock: computed and optional-chained sinks',
+  noSensitiveLocalstorage,
+  {
+    valid: [
+      { code: `localStorage['getItem']('password');` },
+      { code: `localStorage[method]('password', pw);` },
+    ],
+    invalid: [
+      {
+        code: `localStorage['setItem']('password', pw);`,
+        errors: [{ messageId: 'sensitiveLocalStorage' }],
+      },
+      {
+        code: `window.localStorage?.setItem('api_key', k);`,
+        errors: [{ messageId: 'sensitiveLocalStorage' }],
+      },
+    ],
+  },
+);
+
+/**
+ * `sensitivePatterns` REPLACES the default vocabulary. The same code must give
+ * a different verdict with and without it, or the option proves nothing.
+ */
+ruleTester.run(
+  'option: sensitivePatterns replaces the vocabulary',
+  noSensitiveLocalstorage,
+  {
+    valid: [
+      // `password` is in the DEFAULT list but not in this one.
+      {
+        code: 'localStorage.setItem("password", pw);',
+        options: [{ sensitivePatterns: ['dossier'] }],
+      },
+      // And a project word is not sensitive by default.
+      { code: 'localStorage.setItem("dossier", d);' },
+      // A configured bearer term still cannot resurrect the double report —
+      // the deferral is structural and runs first.
+      {
+        code: 'localStorage.setItem("access_token", t);',
+        options: [{ sensitivePatterns: ['token'] }],
+      },
+    ],
+    invalid: [
+      {
+        code: 'localStorage.setItem("password", pw);',
+        errors: [
+          {
+            messageId: 'sensitiveLocalStorage',
+            data: { key: 'password', storage: 'localStorage' },
+          },
+        ],
+      },
+      {
+        code: 'localStorage.setItem("dossier", d);',
+        options: [{ sensitivePatterns: ['dossier'] }],
+        errors: [
+          {
+            messageId: 'sensitiveLocalStorage',
+            data: { key: 'dossier', storage: 'localStorage' },
+          },
+        ],
+      },
+    ],
+  },
+);
+
+/**
+ * ADVERSARIAL WAVE — the three shapes that took this rule to 78.6% recall on
+ * `benchmarks/rule-corpus/browser-security__no-sensitive-localstorage`.
+ */
+ruleTester.run('lock: adversarial wave', noSensitiveLocalstorage, {
+  valid: [
+    // `localStorage` as a local binding is not the browser global.
+    {
+      code: `export function seed(localStorage) { localStorage.setItem('password', 'fake'); }`,
+    },
+    { code: `const { localStorage: store } = fakeWindow; store.setItem('password', pw);` },
+  ],
+  invalid: [
+    {
+      code: `const WRITE = 'setItem'; localStorage[WRITE]('user_password', pw);`,
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
+    },
+    {
+      code: 'localStorage.setItem(`user:${id}:api_key`, key);',
+      errors: [{ messageId: 'sensitiveLocalStorage' }],
+    },
+    {
+      code: `const { localStorage: store } = window; store.setItem('private_key', pem);`,
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+          data: { key: 'private_key', storage: 'localStorage' },
+        },
+      ],
+    },
+    // Keys are usually plural. Whole-word matching must fold regular plurals or
+    // it trades a false-positive class for a false-negative one.
+    {
+      code: `localStorage.setItem('passwords', JSON.stringify(vault));`,
       errors: [{ messageId: 'sensitiveLocalStorage' }],
     },
   ],

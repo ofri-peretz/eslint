@@ -45,9 +45,12 @@ const SCHEMA_BENCH_ENUM: Set<string> = new Set(
 const BENCH_DIR_TO_NAME: Record<string, string> = {
   'ilb-arena': 'ILB-Arena',
   'ilb-arena-quality': 'ILB-Arena-Quality',
-  // The schema enum carries the original name; the directory was renamed but
-  // the contract value was not. Map to the enum value, never the dir name.
-  'ilb-cwe-corpus': 'ILB-Juliet',
+  // `ilb-cwe-corpus` was once ILB-Juliet, and this map preserved the old enum
+  // value because the enum had not been updated. It has been now: the bench
+  // does NOT run the Juliet test suite — it runs this repo's own CWE corpus —
+  // so labelling its results ILB-Juliet misrepresented what was measured. The
+  // emitted results have always said ILB-CWE-Corpus; only the enum lagged.
+  'ilb-cwe-corpus': 'ILB-CWE-Corpus',
   // Legacy aliases — kept so backfill can still recognize pre-2026-05-13 result
   // dirs. The `ilb-juliet-cwe/` directory is an orphan from an earlier schema
   // pass; leave it labeled with the legacy bench name until it's pruned

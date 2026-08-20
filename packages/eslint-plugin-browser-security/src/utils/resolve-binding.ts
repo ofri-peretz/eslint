@@ -41,6 +41,18 @@ export function resolveInitializer(
     if (variable.references.filter((ref) => ref.isWrite()).length > 1) {
       return undefined;
     }
+    // A name bound by a PATTERN holds one PIECE of the initialiser, not the
+    // initialiser — so returning `init` here is imprecise, and it was reported as
+    // the root cause of an `origin` false positive. Refusing to resolve patterns
+    // was tried and is WRONG: it costs a real detection,
+    // `const [params] = useSearchParams(); window.open(params.get('next'))`, where
+    // element 0 genuinely carries the taint. Destructuring propagates taint; that
+    // is the common case, and the general resolver must not break it.
+    //
+    // The `origin` case is not a resolution bug at all — it is rule semantics.
+    // `new URL(x)` is a container: what is READ OUT of it decides steerability,
+    // and `origin` is precisely the part that is not. That belongs in `url-taint`,
+    // which is where it now lives, not in a helper that only knows about bindings.
     return def.node.init ?? undefined;
   }
   return undefined;

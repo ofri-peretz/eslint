@@ -9,17 +9,42 @@
  * Requires Secure and SameSite attributes when setting cookies
  * CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute
  *
+ * ## Rule partition
+ *
+ * **Owns:** the ATTRIBUTES of a `document.cookie` write — is `Secure` present,
+ * is `SameSite` present. Independent of what the cookie holds; it fires on
+ * `theme=dark` exactly as it fires on `sid=…`.
+ *
+ * **Complementary, not duplicate**, with `no-cookie-auth-tokens` and
+ * `no-sensitive-cookie-js`: those two report *what* is in the cookie (a
+ * credential a script can read, CWE-1004) and this one reports *how it travels*
+ * (cleartext HTTP, CWE-614; cross-site, CWE-352). Both findings can be true of
+ * one line and each needs a different edit, so the overlap is deliberate and is
+ * excluded from the storage/cookie partition matrix.
+ *
+ * ## What was wrong before
+ *
+ * - Only `Literal` and `TemplateLiteral` right-hand sides were understood, so
+ *   the commonest spelling in real code was silently unchecked:
+ *   `document.cookie = 'sid=' + id + '; Secure; SameSite=Strict'` reported
+ *   nothing — not even a false positive, just nothing. Concatenation is now
+ *   folded to its static parts.
+ * - Cookie DELETION (`document.cookie = 'sid=; Max-Age=0'`) was reported for
+ *   missing attributes on a value that no longer exists.
+ *
  * @see https://cwe.mitre.org/data/definitions/614.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  AST_NODE_TYPES,
-  createRule,
-  formatLLMMessage,
-  MessageIcons,
-} from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingSecure' | 'missingSameSite' | 'addSecureAttrs';
+import {
+  cookieNameFrom,
+  isCookieDeletion,
+  isDocumentCookieTarget,
+  staticCookieText,
+} from '../../utils/sensitive-value-evidence';
+
+type MessageIds = 'missingSecure' | 'missingSameSite';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -38,7 +63,6 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-614',
       cvss: 6.5,
     },
-    hasSuggestions: true,
     messages: {
       missingSecure: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -66,15 +90,6 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite',
       }),
-      addSecureAttrs: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Secure Attributes',
-        description: 'Add Secure and SameSite attributes',
-        severity: 'LOW',
-        fix: 'document.cookie = "name=value; Secure; SameSite=Strict"',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
-      }),
     },
     schema: [
       {
@@ -90,8 +105,7 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(context.filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -99,46 +113,27 @@ export const requireCookieSecureAttrs = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check for document.cookie = ...
-        if (
-          node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.object.type === AST_NODE_TYPES.Identifier &&
-          node.left.object.name === 'document' &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          node.left.property.name === 'cookie'
-        ) {
-          let cookieValue = '';
+        if (!isDocumentCookieTarget(node.left)) return;
 
-          if (
-            node.right.type === AST_NODE_TYPES.Literal &&
-            typeof node.right.value === 'string'
-          ) {
-            cookieValue = node.right.value;
-          } else if (node.right.type === AST_NODE_TYPES.TemplateLiteral) {
-            cookieValue = node.right.quasis.map((q) => q.value.raw).join('');
-          }
+        const cookieText = staticCookieText(node.right, context.sourceCode);
 
-          // Skip if no cookie value to analyze
-          if (!cookieValue) return;
+        // Nothing statically known — abstain rather than guess. A report here
+        // would be about a string the rule has never seen.
+        if (cookieText === null) return;
 
-          const hasSecure = /;\s*secure/i.test(cookieValue);
-          const hasSameSite = /;\s*samesite/i.test(cookieValue);
+        // A statically-known cookie NAME is the minimum evidence that this is a
+        // set rather than an arbitrary string. `name + '=' + value` tells us
+        // nothing about what attributes the interpolations carry.
+        if (cookieNameFrom(cookieText) === null) return;
 
-          if (!hasSecure) {
-            context.report({
-              node,
-              messageId: 'missingSecure',
-              suggest: [{ messageId: 'addSecureAttrs', fix: () => null }],
-            });
-          }
+        if (isCookieDeletion(cookieText)) return;
 
-          if (!hasSameSite) {
-            context.report({
-              node,
-              messageId: 'missingSameSite',
-              suggest: [{ messageId: 'addSecureAttrs', fix: () => null }],
-            });
-          }
+        if (!/;\s*secure\s*(?:;|$)/i.test(cookieText)) {
+          context.report({ node, messageId: 'missingSecure' });
+        }
+
+        if (!/;\s*samesite\s*=/i.test(cookieText)) {
+          context.report({ node, messageId: 'missingSameSite' });
         }
       },
     };

@@ -12,7 +12,8 @@
  * @see https://blog.cloudflare.com/why-are-some-images-more-secure-than-others/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import { resolveConstantString } from '../../utils/const-value';
 
 type MessageIds =
   | 'ecbMode'
@@ -90,7 +91,7 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
     const { allowInTests = false } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
@@ -107,31 +108,36 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
 
       if (isCipherCall && node.arguments.length >= 1) {
         const algorithmArg = node.arguments[0];
-        if (algorithmArg.type === AST_NODE_TYPES.Literal && typeof algorithmArg.value === 'string') {
-          const algorithm = algorithmArg.value.toLowerCase();
-          if (algorithm.includes('-ecb') || algorithm.endsWith('ecb')) {
-            const gcmReplacement = algorithm.replace(/-?ecb$/, '-gcm');
-            
-            context.report({
-              node: algorithmArg,
-              messageId: 'ecbMode',
-              suggest: [
-                {
-                  messageId: 'useGcm',
-                  fix: (fixer: TSESLint.RuleFixer) => {
-                    return fixer.replaceText(algorithmArg, `"${gcmReplacement}"`);
-                  },
+        // `const MODE = 'aes-256-ecb'; createCipheriv(MODE, …)` is still ECB.
+        // Matching only an inline literal made a module constant a silencer —
+        // see `utils/const-value`.
+        const resolved = resolveConstantString(context.sourceCode, algorithmArg);
+        if (resolved === null) return;
+        const algorithm = resolved.value.toLowerCase();
+        if (algorithm.includes('-ecb') || algorithm.endsWith('ecb')) {
+          const gcmReplacement = algorithm.replace(/-?ecb$/, '-gcm');
+          // Report at the call site; rewrite whichever node holds the string.
+          const target = resolved.source;
+
+          context.report({
+            node: algorithmArg,
+            messageId: 'ecbMode',
+            suggest: [
+              {
+                messageId: 'useGcm',
+                fix: (fixer: TSESLint.RuleFixer) => {
+                  return fixer.replaceText(target, `"${gcmReplacement}"`);
                 },
-                {
-                  messageId: 'useCbc',
-                  fix: (fixer: TSESLint.RuleFixer) => {
-                    const cbcReplacement = algorithm.replace(/-?ecb$/, '-cbc');
-                    return fixer.replaceText(algorithmArg, `"${cbcReplacement}"`);
-                  },
+              },
+              {
+                messageId: 'useCbc',
+                fix: (fixer: TSESLint.RuleFixer) => {
+                  const cbcReplacement = algorithm.replace(/-?ecb$/, '-cbc');
+                  return fixer.replaceText(target, `"${cbcReplacement}"`);
                 },
-              ],
-            });
-          }
+              },
+            ],
+          });
         }
       }
     }

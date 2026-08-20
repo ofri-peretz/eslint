@@ -19,9 +19,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingAuthCheck' | 'addAuthCheck';
+type MessageIds = 'missingAuthCheck';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -86,7 +87,6 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-862',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingAuthCheck: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -99,16 +99,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
         fix: "Add authorization check: const claims = event.requestContext.authorizer?.claims; if (!claims?.sub) { return { statusCode: 401 } }",
         documentationLink: 'https://cwe.mitre.org/data/definitions/862.html',
       }),
-      addAuthCheck: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Authorization Check',
-        description:
-          'Check event.requestContext.authorizer for API Gateway or implement custom JWT validation',
-        severity: 'LOW',
-        fix: "const userId = event.requestContext.authorizer?.claims?.sub; if (!userId) throw new Error('Unauthorized');",
-        documentationLink:
-          'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html',
-      }),
+
     },
     schema: [
       {
@@ -146,7 +137,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -207,12 +198,6 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
             node: opNode,
             messageId: 'missingAuthCheck',
             data: { operation },
-            suggest: [
-              {
-                messageId: 'addAuthCheck',
-                fix: () => null,
-              },
-            ],
           });
         }
       }

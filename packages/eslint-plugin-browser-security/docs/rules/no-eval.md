@@ -112,12 +112,35 @@ const parser = new Parser();
 const result = parser.evaluate(expression);
 ```
 
+## If you also use eslint-plugin-node-security
+
+Set `deferDynamicPayloads: true`.
+
+```js
+'browser-security/no-eval': ['error', { deferDynamicPayloads: true }]
+```
+
+`node-security/detect-eval-with-expression` covers dynamic `eval()` payloads and
+classifies them (json / math / template / object), which is more than this rule
+can say. Without the option **both rules report the same line** — measured: two
+findings for `eval(userInput)` and for `new Function(body)()`.
+
+The default is `false`, so this rule covers `eval()` on its own. That is
+deliberate: eslint-plugin-browser-security does not depend on
+eslint-plugin-node-security, and until 2026-08-16 the deferral was
+unconditional — which left anyone installing this plugin alone with **no eval
+coverage at all**, while `eval("2 + 2")` still reported at CVSS 9.8.
+
+Between the two failure modes, a duplicate finding is visible and one config
+line away; a silent hole in code-injection coverage is neither.
+
 ## Options
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
 | `allowFunctionConstructor` | `boolean` | `false` | Allow `new Function(...)` while still reporting `eval()` |
+| `deferDynamicPayloads` | `boolean` | `false` | Let node-security/detect-eval-with-expression own dynamic eval() payloads. Enable when both plugins are installed, to avoid one line being reported twice. Off by default so browser-security covers eval() on its own. |
 
 ```json
 {

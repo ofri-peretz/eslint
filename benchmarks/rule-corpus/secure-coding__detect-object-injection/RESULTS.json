@@ -1,0 +1,56 @@
+{
+  "rule": "secure-coding/detect-object-injection",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 28,
+  "vulnerable": 14,
+  "results": [
+    {
+      "name": "Interlace secure-coding/detect-object-injection",
+      "tp": 14,
+      "fp": 0,
+      "fn": 0,
+      "tn": 14,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    },
+    {
+      "name": "eslint-plugin-security [detect-object-injection]",
+      "tp": 9,
+      "fp": 7,
+      "fn": 5,
+      "tn": 7,
+      "precision": 0.5625,
+      "recall": 0.6428571428571429,
+      "specificity": 0.5,
+      "youdenJ": 0.1428571428571428,
+      "f1": 0.6000000000000001,
+      "crashes": [],
+      "missed": [
+        "vulnerable/01-express-settings-write.js",
+        "vulnerable/05-object-assign-request-body.js",
+        "vulnerable/07-dynamic-handler-dispatch.js",
+        "vulnerable/11-constructor-prototype-traversal.js",
+        "vulnerable/12-proto-traversal-bracket.js"
+      ],
+      "falsePositives": [
+        "safe/01-array-index-loop.js",
+        "safe/03-allowlist-guard.js",
+        "safe/04-const-lookup-table.js",
+        "safe/05-hasown-guard.js",
+        "safe/07-object-keys-foreach.js",
+        "safe/09-buffer-offset-arithmetic.js",
+        "safe/14-mass-assignment-allowlisted.js"
+      ]
+    },
+    {
+      "name": "sonarjs",
+      "unavailable": true
+    }
+  ]
+}

@@ -261,6 +261,150 @@ describe('no-redos-vulnerable-regex', () => {
     });
   });
 
+  // ---------------------------------------------------------------------
+  // Regression locks. Every case below FAILS on the rule as it stood before
+  // the corpus at benchmarks/rule-corpus/secure-coding__no-redos-vulnerable-regex
+  // was written.
+  // ---------------------------------------------------------------------
+  describe('Regression - bounded range under an unbounded quantifier', () => {
+    // scslre clears `([a-zA-Z0-9]{2,4})+` and reports `([a-zA-Z0-9]+)+`,
+    // although both are exponential. The rule now re-runs the analyser on the
+    // same pattern with variable bounded ranges relaxed to `{m,}`.
+    //
+    // The first fixture is the Stack Overflow email validator, timed on V8 at
+    // 73ms for a 44-character input and doubling every four characters.
+    ruleTester.run('invalid - {m,n} nested under + still reports', noRedosVulnerableRegex, {
+      valid: [],
+      invalid: [
+        {
+          code: String.raw`const EMAIL_RE = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;`,
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        {
+          code: String.raw`const CHUNKS = /^([A-Za-z0-9+/]{2,4})+={0,2}$/;`,
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        // Lazy variant: the rewritten quantifier has to keep the `?`.
+        {
+          code: String.raw`const LAZY = /^([a-z]{2,4}?)+$/;`,
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+      ],
+    });
+
+    // The relaxation is scoped on purpose, and these are the cases that pin
+    // the scope. Relaxing globally turns every one of them into a false
+    // positive: `?` becomes `{0,}` (Stripe), a flat run of bounded ranges
+    // loses the finite total that makes it safe (the phone number), and a
+    // fixed-width `{n}` is not a range at all (the indent matcher).
+    ruleTester.run('valid - the relaxation does not over-report', noRedosVulnerableRegex, {
+      valid: [
+        String.raw`const STRIPE = /^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/;`,
+        String.raw`const PHONE = /^\+?[0-9]{1,3}[- ]?\(?[0-9]{1,4}\)?[- ]?[0-9]{3,10}$/;`,
+        String.raw`const IPV4 = /^(\d{1,3}\.){3}\d{1,3}$/;`,
+        // Bounded ranges DO sit under an unbounded quantifier here, and each
+        // iteration is still terminated by a mandatory character the inner
+        // class cannot match.
+        String.raw`const TAG_CHAIN = /^(?:[a-z]{2,4}-)+$/;`,
+        String.raw`const WRAPPED = /^(?:.{1,80}\n)+$/;`,
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('Regression - runtime-built patterns are analysed, not pattern-matched', () => {
+    // Both of these were reported as a nested quantifier by the three text
+    // regexes that used to run over the joined template text. Neither can
+    // backtrack: `{2}` is fixed-width, and `(\.\d+)*` needs a literal `.` to
+    // start each iteration.
+    ruleTester.run('valid - linear runtime-built patterns', noRedosVulnerableRegex, {
+      valid: [
+        'const indent = new RegExp(`^(?: {${indentSize}})+`);',
+        String.raw`const tag = new RegExp(` + '`^${prefix}\\\\d+${separator}(\\\\.\\\\d+)*$`' + ');',
+        'const domain = new RegExp(`^[\\\\w.+-]+@${allowed}(\\\\.[a-z]{2,63})*$`);',
+      ],
+      invalid: [],
+    });
+
+    // …and the shape the branch exists for still reports, including when the
+    // interpolation lands inside a character class.
+    ruleTester.run('invalid - catastrophic runtime-built patterns', noRedosVulnerableRegex, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const re = new RegExp(`^(${fragment}+)+$`);',
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        {
+          code: 'const re = new RegExp(`^([${allowedChars}]+)+$`, "i");',
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+      ],
+    });
+  });
+
+  describe('Regression - the pattern source is resolved, not required to be inline', () => {
+    ruleTester.run('invalid - resolvable pattern sources', noRedosVulnerableRegex, {
+      valid: [],
+      invalid: [
+        // One binding hop.
+        {
+          code: [
+            String.raw`const DISPLAY_NAME_SOURCE = '^(\\w+\\s*)+$';`,
+            'export const matcher = new RegExp(DISPLAY_NAME_SOURCE);',
+          ].join('\n'),
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        // String.raw — the idiomatic way to write a backslash-heavy source.
+        {
+          code: 'const matcher = new RegExp(String.raw`^(\\w+\\s*)+$`);',
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        // Concatenation of static fragments.
+        {
+          code: [
+            "const CHARS = '[a-z0-9]';",
+            "const matcher = new RegExp('^(' + CHARS + '+)+$');",
+          ].join('\n'),
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        // Two hops, through a template literal.
+        {
+          code: [
+            "const INNER = '[a-z0-9]';",
+            'const OUTER = `^(${INNER}+)+$`;',
+            'const matcher = new RegExp(OUTER);',
+          ].join('\n'),
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+      ],
+    });
+
+    // Resolution is scope-based, so it declines when the binding does not
+    // determine one value — and it never guesses from the spelling.
+    ruleTester.run('valid - unresolvable or non-determining sources', noRedosVulnerableRegex, {
+      valid: [
+        // A parameter is not a `const`.
+        'export function build(source) { return new RegExp(source); }',
+        // Declared but never initialised.
+        'let source; export const re = new RegExp(source);',
+        // Written twice: neither value is certain, so neither is used.
+        ["let source = '^[a-z]+$';", "source = '^(\\\\w+\\\\s*)+$';", 'export const re = new RegExp(source);'].join('\n'),
+        // Not declared anywhere in the file.
+        'export const re = new RegExp(externalPattern);',
+        // Cyclic initialisers must terminate rather than recurse forever.
+        'let a = b; let b = a; export const re = new RegExp(a);',
+        // A local `String` is somebody else's function, so `String.raw` here
+        // is not the built-in and its text is not a pattern.
+        [
+          'const String = { raw: () => "" };',
+          'export const re = new RegExp(String.raw`^(\\\\w+\\\\s*)+$`);',
+        ].join('\n'),
+      ],
+      invalid: [],
+    });
+  });
+
   describe('Layer 2 — synthetic AST (parser-unreachable branches)', () => {
     // checkNewRegExp is only ever invoked by the CallExpression/NewExpression
     // listeners, so `node.type` is always one of those two in practice. The
@@ -411,9 +555,98 @@ describe('no-redos-vulnerable-regex', () => {
 
       expect(reports).toHaveLength(1);
       expect(reports[0].messageId).toBe('redosVulnerable');
+      // `Runtime-built ` marks the pattern as assembled at runtime; the rest of
+      // the name is the analyser's verdict on `^(<placeholder>+)+$`, not a
+      // shape guess.
       expect(reports[0].data?.vulnerabilityName).toBe(
-        'Runtime-built nested quantifier',
+        'Runtime-built Self-loop quantifier (exponential backtracking)',
       );
+    });
+  });
+
+  /**
+   * Coverage locks for the two binding-resolution paths reached only from real
+   * source: splicing a template literal's holes, and refusing to resolve a
+   * name that is declared more than once.
+   */
+  describe('coverage - template splicing and multi-definition bindings', () => {
+    ruleTester.run('template holes are spliced through their bindings', noRedosVulnerableRegex, {
+      valid: [
+        // Every hole resolves to a literal that keeps the pattern linear, so
+        // the spliced result is analysed and cleared rather than guessed at.
+        {
+          code: [
+            'const digits = "[0-9]";',
+            'const anchorEnd = "$";',
+            'export const zip = new RegExp(`^${digits}{5}${anchorEnd}`);',
+          ].join('\n'),
+        },
+      ],
+      invalid: [
+        // Two holes, so the splice loop runs more than once. Neither half is
+        // vulnerable alone; the catastrophic nesting only exists in the
+        // assembled pattern, which is exactly what splicing is for.
+        {
+          code: [
+            'const group = "(a+)";',
+            'const repeat = "+";',
+            'export const re = new RegExp(`^${group}${repeat}$`);',
+          ].join('\n'),
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        // The template reaches the constructor through a BINDING rather than
+        // inline. A template written directly as the argument is handled by the
+        // constructor branch; only this indirection routes it through the
+        // generic pattern resolver, which is where the holes are spliced.
+        {
+          code: [
+            'const group = "(a+)";',
+            'const source = `^${group}+$`;',
+            'export const re = new RegExp(source);',
+          ].join('\n'),
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+        // Same indirection for String.raw, the idiomatic way to write a
+        // backslash-heavy pattern without doubling every escape.
+        {
+          code: [
+            'const group = "(\\\\w+)";',
+            'const source = String.raw`^${group}+$`;',
+            'export const re = new RegExp(source);',
+          ].join('\n'),
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+      ],
+    });
+
+    ruleTester.run('two relaxable ranges exercise the edit sort', noRedosVulnerableRegex, {
+      valid: [],
+      invalid: [
+        // TWO variable bounded ranges nested under unbounded quantifiers. The
+        // relaxation rewrites both, so the edit list has to be ordered before
+        // it is applied — with one range the comparator is never called.
+        {
+          code: 'export const re = /^([a-z]{2,4})+([0-9]{2,4})+$/;',
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+      ],
+    });
+
+    ruleTester.run('a name declared twice is not resolved', noRedosVulnerableRegex, {
+      valid: [
+        // `var` permits redeclaration, so this binding has two definitions and
+        // no single initializer can be trusted to describe it. Declining to
+        // resolve is the correct answer: picking either declaration would be
+        // reading code the author did not necessarily run.
+        {
+          code: [
+            'var pattern = "(a+)+$";',
+            'var pattern = "^[a-z]+$";',
+            'export const re = new RegExp(pattern);',
+          ].join('\n'),
+        },
+      ],
+      invalid: [],
     });
   });
 });

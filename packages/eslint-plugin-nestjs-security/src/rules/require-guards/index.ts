@@ -19,6 +19,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
@@ -32,7 +33,6 @@ import {
   isAccessControlDecorator,
   isControllerClass,
   isRouteHandler,
-  isTestFile,
   memberName,
   superClassName,
   type ClassNode,
@@ -43,7 +43,7 @@ import { getProjectContext } from '../../utils/project-context';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
 type MessageIds =
-  'missingGuards' | 'emptyGuards' | 'missingRequiredGuard' | 'addGuards';
+  'missingGuards' | 'emptyGuards' | 'missingRequiredGuard';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -243,7 +243,6 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-306',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingGuards: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -288,14 +287,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         fix: 'Add one of the required guards: @UseGuards({{firstRequired}})',
         documentationLink: 'https://docs.nestjs.com/guards',
       }),
-      addGuards: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Authentication Guard',
-        description: 'Add @UseGuards decorator to protect this endpoint',
-        severity: 'LOW',
-        fix: 'import { UseGuards } from "@nestjs/common"; @UseGuards(AuthGuard)',
-        documentationLink: 'https://docs.nestjs.com/guards',
-      }),
+
     },
     schema: [
       {
@@ -390,7 +382,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    if (allowInTests && isTestFile(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
@@ -847,7 +839,6 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'missingGuards',
               data: { name },
-              suggest: [{ messageId: 'addGuards', fix: () => null }],
             });
             continue;
           }
@@ -863,7 +854,6 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'emptyGuards',
               data: { name },
-              suggest: [{ messageId: 'addGuards', fix: () => null }],
             });
             continue;
           }
@@ -881,7 +871,6 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
                 required: requiredGuards.join(', '),
                 firstRequired: requiredGuards[0],
               },
-              suggest: [{ messageId: 'addGuards', fix: () => null }],
             });
           }
         }

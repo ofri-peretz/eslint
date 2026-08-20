@@ -18,6 +18,7 @@ import {
   AST_NODE_TYPES,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -40,11 +41,41 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Default insecure protocol patterns
+ * Default insecure protocol patterns.
+ *
+ * ## Rule partition — cleartext transport (CWE-319 / CWE-311)
+ *
+ * **This rule owns the NON-WEB cleartext protocols** — `ftp:` `tcp:`
+ * `mongodb:` `redis:` `mysql:`. Nothing else in this package detects them, and
+ * a `mongodb://user:pass@host` connection string is a materially different
+ * finding from a cleartext page asset: it usually carries credentials, and it
+ * survives being copied to staging with only the host swapped.
+ *
+ * `http://` and `ws://` were removed from these defaults. They were never this
+ * rule's to report:
+ *
+ * - `http://` is owned by `require-https-only` (a `fetch`/`axios` URL
+ *   argument), `detect-mixed-content` (a subresource position) and
+ *   `no-http-urls` (everything else). All three carry richer messages — the
+ *   URL itself, compliance tags, an `allowedHosts` escape hatch — while this
+ *   rule said only "using insecure protocol http://".
+ * - `ws://` is owned by `require-websocket-wss` (the `new WebSocket(…)`
+ *   argument, where it ships an autofix) and `no-insecure-websocket`.
+ *
+ * Measured before the change: `const API_BASE = "http://api.acme-corp.io"` drew
+ * three reports, `fetch("http://api.acme-corp.io")` drew four, and
+ * `new WebSocket("ws://live.acme-corp.io")` drew three. This rule was one of
+ * the duplicates in all three, and contributed no fact the owner did not
+ * already state.
+ *
+ * A project that genuinely wants the second opinion can still ask for it:
+ * `insecureProtocols` is user-configurable, and listing `'http://'` there opts
+ * back into the doubling deliberately rather than by default.
+ *
+ * `SECURE_ALTERNATIVES` deliberately keeps its `http://` and `ws://` entries so
+ * that an explicit opt-in still gets the right remediation and autofix.
  */
 const DEFAULT_INSECURE_PROTOCOLS = [
-  'http://',
-  'ws://',
   'ftp://',
   'tcp://',
   'mongodb://',
@@ -71,25 +102,40 @@ const SECURE_ALTERNATIVES: Record<string, string> = {
 function containsInsecureProtocol(
   value: string,
   insecureProtocols: string[],
-  secureAlternatives: Record<string, string>,
 ): { isInsecure: boolean; protocol: string } {
-  const lowerValue = value.toLowerCase();
+  // Leading whitespace only — the scheme must START the value.
+  //
+  // The test used to be `value.includes(protocol)`, which matches the scheme
+  // ANYWHERE, so any sentence that mentions one reported:
+  //
+  //   'Connection strings must not use redis:// or mysql://; use TLS variants.'
+  //
+  // That is a string explaining the rule, reported BY the rule. Found by the
+  // corpus. A URL's scheme is at position 0 by definition, and every sibling in
+  // this family already anchored (`/^http:\/\//i`, `startsWith('ws://')`) — this
+  // rule was the only one that did not, so the family disagreed about what
+  // counts as a URL.
+  const lowerValue = value.toLowerCase().trimStart();
 
   for (const protocol of insecureProtocols) {
     const lowerProtocol = protocol.toLowerCase();
-    // Check if the protocol appears in the value (as a URL scheme)
-    if (lowerValue.includes(lowerProtocol)) {
-      // Check if it's not already using the secure version
-      const secureAlternative = secureAlternatives[lowerProtocol];
-      if (secureAlternative) {
-        // Only report if secure version is not present
-        if (!lowerValue.includes(secureAlternative.toLowerCase())) {
-          return { isInsecure: true, protocol };
-        }
-      } else {
-        // No secure alternative defined, so it's insecure
-        return { isInsecure: true, protocol };
-      }
+    if (lowerValue.startsWith(lowerProtocol)) {
+      // A "the secure variant appears somewhere in the string, so skip it"
+      // check used to sit here. It was compensating for the unanchored match
+      // above — it is what let `'see http:// vs https:// docs'` through. With
+      // the scheme anchored, that string no longer matches at all, and the
+      // check had become a pure FALSE NEGATIVE generator:
+      //
+      //   'http://evil.acme-corp.io/?next=https://ok.acme-corp.io'
+      //
+      // starts with a cleartext scheme, mentions `https://` in its query, and
+      // was therefore exempt. An attacker-supplied query parameter turned the
+      // rule off.
+      //
+      // The secure variants need no special case: `rediss://`, `ftps://` and
+      // `mongodb+srv://` all fail `startsWith` against their insecure
+      // counterparts, because the character after the scheme name differs.
+      return { isInsecure: true, protocol };
     }
   }
 
@@ -300,8 +346,7 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
         : SECURE_ALTERNATIVES;
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
@@ -339,11 +384,7 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       // not, so the carve-out could never be the thing that returned. Removed rather than
       // covered — a test for an unreachable branch documents nothing.
 
-      const { isInsecure, protocol } = containsInsecureProtocol(
-        value,
-        protocolsToCheck,
-        secureAlternativesToUse,
-      );
+      const { isInsecure, protocol } = containsInsecureProtocol(value, protocolsToCheck);
 
       if (isInsecure) {
         // NOTE: localhost URLs in test files already returned above, so no
@@ -401,11 +442,7 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       // Check each quasis (static parts) and expressions
       for (const quasi of node.quasis) {
         const value = quasi.value.raw;
-        const { isInsecure, protocol } = containsInsecureProtocol(
-          value,
-          protocolsToCheck,
-          secureAlternativesToUse,
-        );
+        const { isInsecure, protocol } = containsInsecureProtocol(value, protocolsToCheck);
 
         if (isInsecure) {
           const secureProtocol =

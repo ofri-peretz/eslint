@@ -39,12 +39,22 @@ const RE_DECL_SUGGEST = /hasSuggestions\s*:\s*true/;
 const RE_IMPL_SUGGEST = /\bsuggest\s*:/;
 
 /**
- * Drop whole-line comments before pattern matching, so prose like
- * `// suggest: see docs` can't read as an implementation. Only full-line
- * comments are stripped — a trailing `//` would eat the `https://` in a
- * `docs.url` on the same line.
+ * Drop comments before pattern matching, so prose like `// suggest: see docs`
+ * can't read as an implementation.
+ *
+ * BLOCK comments count, and missing them was a live false positive:
+ * `no-innerhtml`'s header explains why its inert suggestion was deleted, and it
+ * quotes `hasSuggestions: true` while doing so. The rule declares no such thing —
+ * the only occurrence in the file is that sentence — and this lock reported it as
+ * declared-not-implemented. A checker matching printed source flags a rule for
+ * DESCRIBING the defect it fixed, which is the same fault the ecosystem's own
+ * `textual-matching` check exists to report on rules.
+ *
+ * Line comments are stripped only when they own the whole line — a trailing `//`
+ * would eat the `https://` in a `docs.url` on the same line.
  */
-const stripLineComments = (content: string) => content.replaceAll(/^[ \t]*\/\/.*$/gm, '');
+const stripComments = (content: string) =>
+  content.replaceAll(/\/\*[\s\S]*?\*\//g, '').replaceAll(/^[ \t]*\/\/.*$/gm, '');
 
 interface RuleSource {
   plugin: string;
@@ -100,7 +110,7 @@ it('finds the rule sources to lock (sanity floor)', () => {
 describe('meta.hasSuggestions matches suggest: usage', () => {
   const drift = ruleSources
     .map((src) => {
-      const content = stripLineComments(fs.readFileSync(src.file, 'utf8'));
+      const content = stripComments(fs.readFileSync(src.file, 'utf8'));
       return {
         ...src,
         declared: RE_DECL_SUGGEST.test(content),

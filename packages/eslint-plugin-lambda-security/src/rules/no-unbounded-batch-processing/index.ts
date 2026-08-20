@@ -19,9 +19,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'unboundedBatch' | 'addBatchLimit';
+type MessageIds = 'unboundedBatch';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -54,7 +55,6 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-770',
       cvss: 5.5,
     },
-    hasSuggestions: true,
     messages: {
       unboundedBatch: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -68,15 +68,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html',
       }),
-      addBatchLimit: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Batch Size Limit',
-        description: 'Add a maximum batch size check before processing',
-        severity: 'LOW',
-        fix: 'const MAX_BATCH_SIZE = 10; const records = event.Records.slice(0, MAX_BATCH_SIZE);',
-        documentationLink:
-          'https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html',
-      }),
+
     },
     schema: [
       {
@@ -107,7 +99,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -162,12 +154,6 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
             node: batchNode,
             messageId: 'unboundedBatch',
             data: { source },
-            suggest: [
-              {
-                messageId: 'addBatchLimit',
-                fix: () => null,
-              },
-            ],
           });
         }
       }

@@ -88,9 +88,8 @@ if (allowedDirectives.includes(directive)) {
 {
   rules: {
     'secure-coding/no-directive-injection': ['error', {
-      trustedDirectives: ['onClick', 'onChange', 'onSubmit'],
-      frameworks: ['react', 'angular', 'vue'],
-      allowDynamicInComponents: false
+      userInputVariables: ['req', 'request', 'body', 'query', 'params'],
+      trustedSanitizers: ['sanitizeDirective']
     }]
   }
 }
@@ -100,10 +99,7 @@ if (allowedDirectives.includes(directive)) {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `trustedDirectives` | `string[]` | `["ngIf","ngFor","ngClass","v-if","v-for","v-bind","v-on"]` | Template directives treated as safe |
 | `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data","userInput"]` | Variable names treated as user-controlled input |
-| `frameworks` | `string[]` | `["angular","vue","react","svelte"]` | Template frameworks to analyse |
-| `allowDynamicInComponents` | `boolean` | `false` | Allow dynamic directives inside component code |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as template sanitizers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |

@@ -19,9 +19,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'permissivePolicy' | 'useLeastPrivilege';
+type MessageIds = 'permissivePolicy';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -47,7 +48,6 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-732',
       cvss: 6.5,
     },
-    hasSuggestions: true,
     messages: {
       permissivePolicy: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -61,15 +61,7 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege',
       }),
-      useLeastPrivilege: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Apply Least Privilege',
-        description: 'Restrict permissions to specific resources and actions',
-        severity: 'LOW',
-        fix: 'Replace "*" with specific ARNs and action names',
-        documentationLink:
-          'https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html',
-      }),
+
     },
     schema: [
       {
@@ -96,7 +88,7 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -131,12 +123,6 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
               property: propertyName,
               value: value.value,
             },
-            suggest: [
-              {
-                messageId: 'useLeastPrivilege',
-                fix: () => null,
-              },
-            ],
           });
         }
       }
@@ -156,12 +142,6 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
                   property: propertyName,
                   value: element.value,
                 },
-                suggest: [
-                  {
-                    messageId: 'useLeastPrivilege',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }

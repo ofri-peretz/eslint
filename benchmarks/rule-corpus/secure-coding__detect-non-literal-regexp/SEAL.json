@@ -1,0 +1,92 @@
+{
+  "rule": "secure-coding/detect-non-literal-regexp",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "node": "24"
+  },
+  "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- secure-coding/detect-non-literal-regexp"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-secure-coding/src/rules/detect-non-literal-regexp/index.ts"
+    },
+    "corpus": {
+      "state": "met",
+      "evidence": "MANIFEST.md: every fixture is a case where this rule and the eslint-plugin-security original should disagree — the callable `RegExp(x)` form, `globalThis.RegExp`, the captured-native binding, and patterns the program fully decides.",
+      "command": "cat benchmarks/rule-corpus/secure-coding__detect-non-literal-regexp/MANIFEST.md"
+    },
+    "duel": {
+      "state": "met",
+      "evidence": "16 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/detect-non-literal-regexp"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no adversarial wave recorded",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "unmet",
+      "evidence": "93 case(s): 0 enforce, 0 exempt, 0 undecided, 93 unreviewed",
+      "command": "npm run cases -- secure-coding/detect-non-literal-regexp"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "PROBED 2026-08-18 and FAILED. `new RegExp(req.query.p)` is reported by BOTH this rule and secure-coding/no-unsafe-regex-construction.",
+      "command": "npx tsx scripts/probe-rule.mts secure-coding/detect-non-literal-regexp secure-coding/no-redos-vulnerable-regex secure-coding/no-unsafe-regex-construction -- 'function h(req){ return new RegExp(req.query.p); }'"
+    },
+    "behaviour": {
+      "state": "met",
+      "evidence": "11/11, including the positive control",
+      "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/detect-non-literal-regexp"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/detect-non-literal-regexp"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 445L +1.21±1.46ms · 1780L +0.83±3.57ms · 7120L +11.53±3.19ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-non-literal-regexp"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "command": "grep -n 'seal secure-coding/detect-non-literal-regexp' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "cwe-400-double-report-with-no-unsafe-regex-construction",
+      "kind": "partition",
+      "limit": null,
+      "summary": "`new RegExp(req.query.p)` is reported by this rule AND by secure-coding/no-unsafe-regex-construction.",
+      "why": "Open work, not a limit. The two rules make different claims about the same expression — \"the pattern is not a literal\" and \"user input reaches a regex unescaped\" — and both are true, which is precisely why a consumer gets two findings for one line.",
+      "reopenWhen": "immediately — this is a defect, listed here so it is not lost"
+    },
+    {
+      "id": "throughput-not-established",
+      "kind": "performance",
+      "limit": "L10",
+      "summary": "The rule's marginal CPU cost does not clear the noise floor at two or more sizes, so no growth curve can be read.",
+      "why": "Harness cost (parser + scope construction) is ~70ms at 8000 lines and dominates; the difference between two such measurements is larger than the rule's own contribution at 500 and 2000 lines. The same rule has measured +1.50ms and +0.00ms at 500 lines on consecutive runs. The property is decidable; the instrument is not sharp enough.",
+      "reopenWhen": "a CPU profile attributing samples to the rule's own frames exists, or the sizes are raised until two points clear the floor"
+    }
+  ]
+}

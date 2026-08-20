@@ -19,9 +19,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'exposedErrorDetails' | 'sanitizeError';
+type MessageIds = 'exposedErrorDetails';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -55,7 +56,6 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-209',
       cvss: 4.3,
     },
-    hasSuggestions: true,
     messages: {
       exposedErrorDetails: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -68,15 +68,7 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
         fix: 'Return generic error message. Log detailed errors server-side: console.error(error)',
         documentationLink: 'https://cwe.mitre.org/data/definitions/209.html',
       }),
-      sanitizeError: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Sanitize Error Response',
-        description: 'Return a generic error message without internal details',
-        severity: 'LOW',
-        fix: 'return { statusCode: 500, body: JSON.stringify({ message: "Internal server error" }) }',
-        documentationLink:
-          'https://owasp.org/www-community/Improper_Error_Handling',
-      }),
+
     },
     schema: [
       {
@@ -103,7 +95,7 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -171,12 +163,6 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
               data: {
                 property: sensitiveProperty,
               },
-              suggest: [
-                {
-                  messageId: 'sanitizeError',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }
@@ -203,12 +189,6 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
                 data: {
                   property: 'error object',
                 },
-                suggest: [
-                  {
-                    messageId: 'sanitizeError',
-                    fix: () => null,
-                  },
-                ],
               });
             }
           }

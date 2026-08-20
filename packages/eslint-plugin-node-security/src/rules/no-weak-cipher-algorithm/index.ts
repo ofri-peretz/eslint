@@ -12,7 +12,8 @@
  * @see https://cwe.mitre.org/data/definitions/327.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import { resolveConstantString } from '../../utils/const-value';
 
 type MessageIds =
   | 'weakCipherAlgorithm'
@@ -185,7 +186,7 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
     } = options as Options;
 
     const filename = context.filename;
-    const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     /**
      * Check if a call expression uses a weak cipher
@@ -218,30 +219,35 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
      */
     function checkCipherArgument(node: TSESTree.CallExpression) {
       const firstArg = node.arguments[0];
-      if (firstArg?.type === AST_NODE_TYPES.Literal && typeof firstArg.value === 'string') {
-        const weakPattern = findWeakCipher(firstArg.value, additionalWeakCiphers);
+      if (firstArg === undefined) return;
+      // `const CIPHER = 'des-ede3'; createCipheriv(CIPHER, …)` is Triple DES
+      // whether or not the name is spelled at the call site — see
+      // `utils/const-value`.
+      const resolved = resolveConstantString(context.sourceCode, firstArg);
+      if (resolved === null) return;
+      const weakPattern = findWeakCipher(resolved.value, additionalWeakCiphers);
+      if (!weakPattern) return;
 
-        if (weakPattern) {
-          context.report({
-            node: firstArg,
-            messageId: 'weakCipherAlgorithm',
-            data: {
-              algorithm: weakPattern.name,
-              replacement: weakPattern.replacement,
-            },
-            suggest: [
-              {
-                messageId: 'useAes256Gcm',
-                fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(firstArg, `"aes-256-gcm"`),
-              },
-              {
-                messageId: 'useChaCha20',
-                fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(firstArg, `"chacha20-poly1305"`),
-              },
-            ],
-          });
-        }
-      }
+      // Report where the reader is; fix where the value is decided.
+      const target = resolved.source;
+      context.report({
+        node: firstArg,
+        messageId: 'weakCipherAlgorithm',
+        data: {
+          algorithm: weakPattern.name,
+          replacement: weakPattern.replacement,
+        },
+        suggest: [
+          {
+            messageId: 'useAes256Gcm',
+            fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"aes-256-gcm"`),
+          },
+          {
+            messageId: 'useChaCha20',
+            fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"chacha20-poly1305"`),
+          },
+        ],
+      });
     }
 
     return {

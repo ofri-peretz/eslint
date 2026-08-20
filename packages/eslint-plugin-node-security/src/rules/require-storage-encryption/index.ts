@@ -10,7 +10,11 @@
  * @see https://cwe.mitre.org/data/definitions/311.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import {
   isEncrypted,
   isFileWrite,
@@ -40,11 +44,12 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-312',
-        description: 'Require encryption for persistent storage detected - Storage without encryption',
+        description:
+          'Require encryption for persistent storage detected - Storage without encryption',
         severity: 'HIGH',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/312.html',
-      })
+      }),
     },
     schema: [],
   },
@@ -60,7 +65,8 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
        */
       CallExpression(node: TSESTree.CallExpression) {
         if (!isFileWrite(node)) return;
-        if (!storesACredential(node) || isEncrypted(node)) return;
+        if (!storesACredential(node) || isEncrypted(node, context.sourceCode))
+          return;
         context.report({ node, messageId: 'violationDetected' });
       },
     };

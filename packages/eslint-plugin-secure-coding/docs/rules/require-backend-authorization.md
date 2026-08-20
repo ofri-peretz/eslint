@@ -150,3 +150,14 @@ if (mode === 'ADMIN') { ... }
 
 - [CWE-602: Client-Side Enforcement of Server-Side Security](https://cwe.mitre.org/data/definitions/602.html)
 - [OWASP: Insecure Direct Object Reference (IDOR)](https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `authProperties` | `string[]` | `["role","roles","isAdmin","isAuthenticated","isAuthorized","permissions","admin"]` | Property names that hold an authorization claim, matched as an exact property name. Replaces the built-in list. |
+| `additionalAuthProperties` | `string[]` | `[]` | Extra claim property names, on top of `authProperties`. |
+| `browserGlobals` | `string[]` | `["window","document","localStorage","sessionStorage","navigator"]` | Globals whose unresolved reference proves the file runs in a browser. Replaces the built-in list. |
+| `additionalBrowserGlobals` | `string[]` | `[]` | Extra browser-only globals, on top of `browserGlobals`. |
+| `serverModules` | `string[]` | `["express","fastify","koa","@hapi/hapi","@nestjs/common","@nestjs/core","next/server","http","https","node:http","node:https"]` | Module specifiers that can only load in a server process; importing one suppresses the finding. Replaces the built-in list. |
+| `additionalServerModules` | `string[]` | `[]` | Extra server-only module specifiers, on top of `serverModules`. |

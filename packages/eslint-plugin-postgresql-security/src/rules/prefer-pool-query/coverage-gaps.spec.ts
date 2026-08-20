@@ -69,10 +69,15 @@ const ruleTester = new RuleTester({
 
 describe('prefer-pool-query — coverage gaps (Layer 1)', () => {
   ruleTester.run('uninvoked query member access', preferPoolQuery, {
-    valid: [],
-    invalid: pg([
+    valid: pg([
       {
-        name: 'client.query referenced without a call still counts as single-query usage',
+        // REGRESSION LOCK. This case used to assert a REPORT, on the reasoning
+        // that `client.query` taken as a value "still counts as single-query
+        // usage". It does not: the method is extracted and handed somewhere
+        // else, so how many times it runs — and against what — is not knowable
+        // from this file. The handle has escaped, which is the same reason
+        // `doSomething(client)` abstains.
+        name: 'client.query taken as a value is an escape, not a single-shot query',
         code: `
           async function f() {
             const client = await pool.connect();
@@ -80,9 +85,9 @@ describe('prefer-pool-query — coverage gaps (Layer 1)', () => {
             client.release();
           }
         `,
-        errors: [{ messageId: 'preferPoolQuery' }],
       },
     ]),
+    invalid: [],
   });
 });
 

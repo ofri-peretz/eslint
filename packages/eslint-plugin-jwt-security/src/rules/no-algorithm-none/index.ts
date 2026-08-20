@@ -20,12 +20,12 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   isVerifyOperation,
   isSignOperation,
   getOptionsArgument,
-  isTestFile,
 } from '../../utils';
 import type { NoAlgorithmNoneOptions } from '../../types';
 
@@ -161,7 +161,7 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
     const filename = context.filename;
 
     // Skip test files if configured
-    if (allowInTests && isTestFile(filename)) {
+    if (allowInTests && isTestFilePath(filename)) {
       return {};
     }
 

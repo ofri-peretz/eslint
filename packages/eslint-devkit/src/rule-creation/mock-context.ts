@@ -60,7 +60,20 @@ export function createWithMockContext(
 ): MockContextResult {
   const reports: TSESLint.ReportDescriptor<string>[] = [];
   const filename = opts.filename ?? 'mock.ts';
-  const emptyScope = { variables: [], references: [], childScopes: [] };
+  // Shaped like a real `Scope`, not merely enough to satisfy yesterday's rule.
+  // `set` (the name→Variable Map) and `upper` (the parent link) are how ESLint
+  // itself resolves a binding, and a rule that climbs the scope chain — the
+  // correct way to answer "is this identifier the intrinsic, or a parameter
+  // that shadows it" — throws on a mock that omits them. Two Layer-2 tests
+  // failed that way on 2026-08-18 when `no-redos-vulnerable-regex` moved off
+  // matching `callee.name === 'RegExp'`.
+  const emptyScope = {
+    variables: [],
+    references: [],
+    childScopes: [],
+    set: new Map(),
+    upper: null,
+  };
   const sourceCode = {
     ast: opts.ast ?? { type: 'Program', body: [], tokens: [], comments: [] },
     text: opts.sourceText ?? '',

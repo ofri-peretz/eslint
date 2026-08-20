@@ -233,15 +233,16 @@ contains, so those still report.
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `ignorePatterns` | `string[]` | `[]` | Regex patterns to ignore |
-| `allowInTests` | `boolean` | `true` | Skip credentials in test files |
+| `allowInTests` | `boolean` | `true` | Allow credentials in test files |
 | `minLength` | `number` | `8` | Minimum length for credential detection |
 | `detectApiKeys` | `boolean` | `true` | Detect API keys |
 | `detectPasswords` | `boolean` | `true` | Detect passwords |
 | `detectTokens` | `boolean` | `true` | Detect tokens |
 | `detectDatabaseStrings` | `boolean` | `true` | Detect database connection strings |
 | `customPatterns` | `object[]` | `[]` | Custom credential patterns to detect |
-| `strategy` | `"env"` \| `"config"` \| `"vault"` \| `"auto"` | `"auto"` | Strategy for fixing hardcoded credentials (auto = smart detection) |
 | `allowPlaceholders` | `boolean` | `true` | Skip self-evident placeholder values (`<your-secret-here>`, `changeme`, `xxxxxxxx`) |
+| `placeholderWords` | `string[]` | `["changeme","change","replaceme","replace","yours","your","placeholder","example","sample","dummy","todo","tbd","redacted","notreal","xxx"]` | Words that mark a value as a self-evident stand-in rather than a secret, matched as a WHOLE token inside the value and never as a substring. Replaces the built-in list. Read only when `allowPlaceholders` is true. |
+| `additionalPlaceholderWords` | `string[]` | `[]` | Extra placeholder words, on top of `placeholderWords`. |
 
 ### Ignoring Test Credentials
 

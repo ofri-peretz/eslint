@@ -19,12 +19,12 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 import {
   decoratorCall,
   enclosingClass,
   hasDecorator,
-  isTestFile,
   isTrueLiteral,
   memberName,
   objectProperties,
@@ -35,7 +35,7 @@ import {
   isSensitiveName,
 } from '../../utils/sensitive-names';
 
-type MessageIds = 'exposedField' | 'useExcludeDecorator';
+type MessageIds = 'exposedField';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -90,7 +90,6 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-200',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       exposedField: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -104,16 +103,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         fix: 'Add @Exclude() decorator or use class-transformer to exclude from responses',
         documentationLink: 'https://docs.nestjs.com/techniques/serialization',
       }),
-      useExcludeDecorator: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Exclude Decorator',
-        description:
-          'Use @Exclude() from class-transformer to hide sensitive fields',
-        severity: 'LOW',
-        fix: 'import { Exclude } from "class-transformer"; @Exclude() fieldName: string;',
-        documentationLink:
-          'https://github.com/typestack/class-transformer#excludeexpose',
-      }),
+
     },
     schema: [
       {
@@ -142,7 +132,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
 
     const { allowInTests = true, sensitivePatterns = [] } = options as Options;
 
-    if (allowInTests && isTestFile(context.filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
@@ -307,7 +297,6 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'exposedField',
           data: { field: propName },
-          suggest: [{ messageId: 'useExcludeDecorator', fix: () => null }],
         });
       },
     };

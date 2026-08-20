@@ -19,9 +19,10 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'workerInnerhtml' | 'sanitizeWorkerData';
+type MessageIds = 'workerInnerhtml';
 
 export interface Options {
   /** Allow in test files. Default: true */
@@ -44,7 +45,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-79',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       workerInnerhtml: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -59,14 +59,7 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/Worker/message_event',
       }),
-      sanitizeWorkerData: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Sanitize Worker Data',
-        description: 'Use textContent or sanitize with DOMPurify',
-        severity: 'LOW',
-        fix: 'const sanitized = DOMPurify.sanitize(event.data);\nelement.innerHTML = sanitized;',
-        documentationLink: 'https://github.com/cure53/DOMPurify',
-      }),
+
     },
     schema: [
       {
@@ -83,7 +76,7 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
   ) {
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
-    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = isTestFilePath(filename);
 
     if (allowInTests && isTestFile) {
       return {};
@@ -183,7 +176,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'workerInnerhtml',
               data: { method: node.left.property.name },
-              suggest: [{ messageId: 'sanitizeWorkerData', fix: () => null }],
             });
           }
         }
@@ -214,7 +206,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
                 node,
                 messageId: 'workerInnerhtml',
                 data: { method: node.callee.property.name },
-                suggest: [{ messageId: 'sanitizeWorkerData', fix: () => null }],
               });
               break;
             }

@@ -9,15 +9,27 @@
  * Forbid `require()` calls with expressions (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import {
+  compileUserPatterns,
+  createRule,
+  isStaticExpression,
+  matchesAnyUserPattern,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'dynamicRequire';
 
 export interface Options {
-  /** Allow dynamic requires in specific contexts */
+  /** Allow dynamic requires in specific contexts. Default: `[]` */
   allowContexts?: ('test' | 'config' | 'build' | 'runtime')[];
-  /** Allow specific patterns of dynamic requires */
+  /**
+   * Regex patterns matched against the SOURCE TEXT of the require argument. A
+   * match suppresses the report. Default: `[]`.
+   *
+   * Was declared here, in the schema and in `defaultOptions`, and read by
+   * nothing — `create()` destructured `allowContexts` alone. A consumer who
+   * configured it got no suppression and no complaint. Now implemented.
+   */
   allowPatterns?: string[];
 }
 
@@ -60,12 +72,15 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
               type: 'string',
               enum: ['test', 'config', 'build', 'runtime'],
             },
+            default: [],
             description: 'Allow dynamic requires in specific contexts.',
           },
           allowPatterns: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Regex patterns for allowed dynamic require paths.',
+            default: [],
+            description:
+              'Regex patterns matched against the source text of the require argument; a match suppresses the report.',
           },
         },
         additionalProperties: false,
@@ -81,9 +96,21 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     const [options] = context.options;
     const {
       allowContexts = [],
+      allowPatterns = [],
     } = options || {};
 
     const filename = context.filename || '';
+
+    // Compiled once per file rather than once per `require()`: a rule that
+    // rebuilds a RegExp inside a visitor pays for it on every node.
+    //
+    // `compileUserPatterns`, not a bare `new RegExp`. A user pattern reaches
+    // this line, and a bare constructor has two measured failure modes here —
+    // `[` throws "Invalid regular expression" out of `create()`, killing the
+    // whole lint run rather than just this rule, and `(a+)+$` takes tens of
+    // seconds on a single file. The devkit helper degrades both to a plain
+    // substring match. `no-timing-unsafe-compare` learned this first.
+    const allowed = compileUserPatterns(allowPatterns, '');
 
     function isInAllowedContext(): boolean {
       if (allowContexts.includes('test') && (filename.includes('.test.') || filename.includes('.spec.') || filename.includes('/__tests__/'))) {
@@ -131,6 +158,25 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
           // Nothing an attacker can steer — a literal, a const chain, `__dirname`.
           if (isFixedSpecifier(requireArg)) {
             return;
+          }
+
+          // An explicitly allowed shape. Matched against the SOURCE TEXT of the
+          // argument, because the whole point of the option is to describe
+          // expressions the rule cannot resolve — `require(\`./locales/${lang}\`)`
+          // — which have no value to match against.
+          //
+          // Text matching in a rule is normally forbidden here (see CLAUDE.md,
+          // "AST, not printed source"). Two things make this the exception, and
+          // both must hold: the pattern comes from the CONSUMER, not from a
+          // vocabulary baked into the rule, and it can only ever SUPPRESS. A
+          // text match that suppresses costs recall in the config that asked
+          // for it; a text match that reports costs a stranger's trust. Only
+          // the second is the defect class the doctrine is about.
+          if (allowed.length > 0) {
+            const text = context.sourceCode.getText(requireArg);
+            if (matchesAnyUserPattern(allowed, text)) {
+              return;
+            }
           }
 
           // Report dynamic require

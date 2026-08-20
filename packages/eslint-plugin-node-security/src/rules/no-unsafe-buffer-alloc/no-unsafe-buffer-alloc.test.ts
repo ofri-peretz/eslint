@@ -24,9 +24,10 @@ describe('no-unsafe-buffer-alloc', () => {
       { code: 'Buffer.allocUnsafeSlow(64).fill(0);' },
       // Not the global Buffer.
       { code: 'pool.allocUnsafe(64)' },
+      // A bare `allocUnsafe` whose binding this file cannot see is unresolved,
+      // which is not the same as safe — but it is not evidence either.
       { code: 'allocUnsafe(64)' },
-      // Computed access is not resolved (documented false negative).
-      { code: 'Buffer["allocUnsafe"](64)' },
+      { code: 'const { allocUnsafe } = pool;\nallocUnsafe(64);' },
       // Member read without a call.
       { code: 'const fn = Buffer.allocUnsafe;' },
       // Unrelated Buffer members.
@@ -262,6 +263,221 @@ describe('no-unsafe-buffer-alloc', () => {
         stillReports('const b = Buffer.allocUnsafe(n); send(x, b);'),
         // `copy` at a fixed destination offset covers one fixed slice.
         stillReports('const b = Buffer.allocUnsafe(n); src.copy(b, 0, 0, 4); send(b);'),
+
+        // ── rule-corpus regression: the OMITTED offset ────────────────────
+        // `writeUInt32BE(value)` defaults to offset 0 and still writes four
+        // bytes. It was waved through by "a one-argument write covers the
+        // buffer", a rule meant for `buf.write(str)` / `src.copy(dst)`.
+        // benchmarks/rule-corpus/…/vulnerable/13-implicit-offset-partial-write.js
+        stillReports(
+          'const header = Buffer.allocUnsafe(16); header.writeUInt32BE(len); socket.write(header);',
+        ),
+        // Fixed offsets that do NOT add up: 4 of 16 bytes.
+        stillReports(
+          'const h = Buffer.allocUnsafe(16); h.writeUInt32BE(a, 0); socket.write(h);',
+        ),
+        // Fixed offsets, but the allocation size is not a resolvable constant,
+        // so there is nothing to compare the covered bytes against.
+        stillReports(
+          'const h = Buffer.allocUnsafe(size); h.writeUInt32BE(a, 0); h.writeUInt32BE(b, 4); socket.write(h);',
+        ),
+        // A write that runs PAST the end must not be able to finish the
+        // coverage of the allocation it overflows.
+        stillReports(
+          'const h = Buffer.allocUnsafe(8); h.writeUInt32BE(a, 0); h.writeBigUInt64BE(b, 4); socket.write(h);',
+        ),
+        // A computed offset leaves the span unknown.
+        stillReports(
+          'const h = Buffer.allocUnsafe(8); h.writeUInt32BE(a, 0); h.writeUInt32BE(b, off); socket.write(h);',
+        ),
+        // An allocation too large to track byte by byte.
+        stillReports(
+          'const h = Buffer.allocUnsafe(1000000); h.writeUInt32BE(a, 0); socket.write(h);',
+        ),
+        // byteMapFor: sizes there is nothing to map — absent, spread, zero,
+        // fractional, and a string that is not a byte count at all.
+        stillReports('const b = Buffer.allocUnsafe(); send(b);'),
+        stillReports('const b = Buffer.allocUnsafe(...args); send(b);'),
+        stillReports('const b = Buffer.allocUnsafe(0); send(b);'),
+        stillReports('const b = Buffer.allocUnsafe(1.5); send(b);'),
+        stillReports('const b = Buffer.allocUnsafe("8"); send(b);'),
+        // A partial write whose span is NOT fixed-width — `write` runs for a
+        // runtime length, so it contributes no decidable coverage even with a
+        // byte map in hand.
+        stillReports('const b = Buffer.allocUnsafe(8); b.write(s, 0); send(b);'),
+      ],
+    });
+  });
+
+  // ── The allocator is reached by resolution, not by spelling ────────────
+  //
+  // `Buffer["allocUnsafe"](64)` sat in `valid` above, annotated "computed
+  // access is not resolved (documented false negative)". Documenting a defect
+  // is not mitigating it: a config-driven pool picks its allocator exactly
+  // that way, and a hot-path serializer destructures it.
+  describe('Allocator resolution', () => {
+    ruleTester.run('computed and destructured allocators', noUnsafeBufferAlloc, {
+      valid: [
+        // The key resolves to the SAFE allocator.
+        { code: "const M = 'alloc';\nconst b = Buffer[M](64);\nsend(b);" },
+        // A computed key this file cannot resolve is not evidence.
+        { code: 'const b = Buffer[pick()](64);\nsend(b);' },
+        // Destructured off something that is not `Buffer`.
+        { code: 'const { allocUnsafe } = pool;\nsend(allocUnsafe(64));' },
+        // Destructured, but not an unsafe allocator.
+        { code: 'const { alloc } = Buffer;\nsend(alloc(64));' },
+        // A computed destructuring key is not read.
+        { code: 'const { [k]: make } = Buffer;\nsend(make(64));' },
+        // A non-computed property that is not an Identifier.
+        { code: 'class C { static #allocUnsafe; m() { return Buffer.#allocUnsafe(4); } }' },
+        // A parameter binding has no initializer to resolve.
+        { code: 'function f(allocUnsafe) { return allocUnsafe(64); }' },
+        // Neither a member expression nor an identifier.
+        { code: 'send((0, Buffer.alloc)(64));' },
+      ],
+      invalid: [
+        // vulnerable/08 — computed member with a `const` string key. The
+        // suggestion is withheld: `Buffer[alloc](n)` would not compile.
+        {
+          code: "const ALLOCATOR = 'allocUnsafe';\nconst slot = Buffer[ALLOCATOR](64);\nsend(slot);",
+          errors: [{ messageId: 'unsafeAlloc' }],
+        },
+        {
+          code: 'const slot = Buffer["allocUnsafeSlow"](64);\nsend(slot);',
+          errors: [{ messageId: 'unsafeAllocSlow' }],
+        },
+        // vulnerable/09 — destructured off `Buffer`, and off the required
+        // module object.
+        {
+          code: 'const { allocUnsafe } = Buffer;\nconst p = allocUnsafe(64);\nsend(p);',
+          errors: [{ messageId: 'unsafeAlloc' }],
+        },
+        {
+          code: "const { allocUnsafeSlow } = require('node:buffer').Buffer;\nconst p = allocUnsafeSlow(64);\nsend(p);",
+          errors: [{ messageId: 'unsafeAllocSlow' }],
+        },
+      ],
+    });
+  });
+
+  // ── Coverage evidence the rule was blind to ───────────────────────────
+  describe('Covering writes reached by resolution', () => {
+    /** One `unsafeAlloc` report whose suggestion swaps in the safe allocator. */
+    const stillReports = (code: string) => ({
+      code,
+      errors: [
+        {
+          messageId: 'unsafeAlloc' as const,
+          suggestions: [
+            {
+              messageId: 'useSafeAlloc' as const,
+              output: code.replace('allocUnsafe', 'alloc'),
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('covering writes', noUnsafeBufferAlloc, {
+      valid: [
+        // `Buffer.byteLength(json)` sizes an allocation from a value already in
+        // memory. `buffer` is in WIRE_NAMES as a conventional PARAMETER name,
+        // which made every `Buffer.*`-sized allocation read as wire-derived.
+        // benchmarks/rule-corpus/…/safe/07-alloc-from-bytelength.js
+        { code: 'const b = Buffer.alloc(Buffer.byteLength(json, "utf8")); b.write(json, 0);' },
+        {
+          code: "import { Buffer } from 'node:buffer';\nconst b = Buffer.alloc(Buffer.byteLength(json, 'utf8'));\nb.write(json, 0);",
+        },
+        // A `let` whose every write is a numeric literal this module chose.
+        // benchmarks/rule-corpus/…/safe/10-let-numeric-writes.js
+        {
+          code: 'function reserve(fast) { let capacity = 1024; if (fast) { capacity = 65536; } return Buffer.alloc(capacity); }',
+        },
+        // Nothing in this file writes the size, so there is no evidence.
+        { code: 'const b = Buffer.alloc(sizeFromElsewhere);' },
+        // A spread into `Math.min` is not counted as a bound, but `readsWire`
+        // does not walk spread arguments either, so the whole expression is
+        // unresolved rather than clamped. Documented, not claimed as safe.
+        { code: 'function reserve(req) { return Buffer.alloc(Math.min(...req.body.sizes)); }' },
+        // byteMapFor: no size argument, and a spread size argument.
+        { code: 'const b = Buffer.alloc(); send(b);' },
+        { code: 'const b = Buffer.alloc(...args); send(b);' },
+        // A NAMED IMPORT of `randomFillSync` fills the buffer exactly as
+        // `crypto.randomFillSync` does. Insisting on a member expression made
+        // the one idiom where `allocUnsafe` is unambiguously right a finding.
+        // benchmarks/rule-corpus/…/safe/05-covered-by-randomfill.js
+        {
+          code: "import { randomFillSync } from 'node:crypto';\nexport function nonce(size) { const v = Buffer.allocUnsafe(size); randomFillSync(v); return v; }",
+        },
+        {
+          code: "const { randomFillSync } = require('crypto');\nfunction nonce(size) { const v = Buffer.allocUnsafe(size); randomFillSync(v); return v; }",
+        },
+        // Fixed offsets that DO add up: bytes 0..7 of an eight-byte header.
+        // benchmarks/rule-corpus/…/safe/12-fixed-offsets-fully-covering.js
+        {
+          code: 'const h = Buffer.allocUnsafe(8); h.writeUInt32BE(a, 0); h.writeUInt32BE(b, 4); socket.write(h);',
+        },
+        // …including through a `const` size alias.
+        {
+          code: 'const N = 4;\nconst h = Buffer.allocUnsafe(N); h.writeUInt16BE(a, 0); h.writeUInt16BE(b, 2); socket.write(h);',
+        },
+        // A moving offset in a loop still covers a fixed-width writer.
+        {
+          code: 'const b = Buffer.allocUnsafe(n); for (let i = 0; i < n; i++) { b.writeUInt8(src[i], i); } send(b);',
+        },
+        // Overlapping fixed writes: the second re-covers bytes the first
+        // already had, and only the new bytes count towards completion.
+        {
+          code: 'const h = Buffer.allocUnsafe(4); h.writeUInt16BE(a, 0); h.writeUInt32BE(b, 0); socket.write(h);',
+        },
+        // The depth cap terminates a long member chain rather than the walk
+        // running away. `new Array(a.b.…​.length)` is eleven hops.
+        {
+          code: 'function d(chunk) { return new Array(a.b.c.d.e.f.g.h.i.j.k.length); }',
+        },
+      ],
+      invalid: [
+        // The same free-function shape, NOT resolved to node:crypto.
+        stillReports(
+          'function nonce(size) { const v = Buffer.allocUnsafe(size); randomFillSync(v); return v; }',
+        ),
+        stillReports(
+          "import { randomFillSync } from './my-rng';\nfunction nonce(size) { const v = Buffer.allocUnsafe(size); randomFillSync(v); return v; }",
+        ),
+        stillReports(
+          "const { randomFillSync } = require('./my-rng');\nfunction nonce(size) { const v = Buffer.allocUnsafe(size); randomFillSync(v); return v; }",
+        ),
+        // markFixedWrite: a `partial` use whose write is not a method call at
+        // all — a computed byte assignment — and one whose parent IS the call
+        // (`src.copy(b, …)`). Neither contributes coverage.
+        stillReports('const b = Buffer.allocUnsafe(8); b[i] = 1; send(b);'),
+        stillReports('const b = Buffer.allocUnsafe(8); src.copy(b, 0, 0, 4); send(b);'),
+        // The `let` whose last write before the sink comes off the request.
+        // benchmarks/rule-corpus/…/vulnerable/11-let-reassigned-from-request.js
+        {
+          code: 'function reserve(req) { let capacity = 1024; if (req.query.capacity) { capacity = Number(req.query.capacity); } return Buffer.alloc(capacity); }',
+          errors: [{ messageId: 'unboundedAllocation' }],
+        },
+        // `Math.min` between two values the SAME peer supplies is not a clamp.
+        // benchmarks/rule-corpus/…/vulnerable/12-math-min-against-attacker.js
+        {
+          code: 'function reserve(req) { const a = Number(req.body.want); const b = Number(req.body.max); return Buffer.alloc(Math.min(a, b)); }',
+          errors: [{ messageId: 'unboundedAllocation' }],
+        },
+        // A LOCAL binding spelled `Buffer` is not the namespace — here it is a
+        // decoder parameter holding bytes off the wire, and the length read out
+        // of it is the peer's.
+        {
+          code: 'function decode(Buffer) { return new Uint8Array(Buffer.length); }',
+          errors: [{ messageId: 'unboundedAllocation' }],
+        },
+        // TypeScript: the cast a decoder must write to compile used to fall
+        // through `readsWire`'s switch and silence the whole arm.
+        // benchmarks/rule-corpus/…/vulnerable/07-decoder-length-prefix.ts
+        {
+          code: 'function decode(chunk: Buffer) { const count = chunk.readUInt32BE(0) as number; return new Uint8Array(count); }',
+          errors: [{ messageId: 'unboundedAllocation' }],
+        },
       ],
     });
   });

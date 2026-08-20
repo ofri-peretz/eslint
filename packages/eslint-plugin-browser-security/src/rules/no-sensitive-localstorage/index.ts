@@ -6,8 +6,26 @@
 
 /**
  * ESLint Rule: no-sensitive-localstorage
- * Detects storing sensitive data (tokens, passwords, keys) in localStorage
+ * Detects storing sensitive data (passwords, keys, regulated identifiers) in localStorage
  * CWE-922: Insecure Storage of Sensitive Information
+ *
+ * ## Rule partition
+ *
+ * **Owns:** a write to **`localStorage`** — bare, `window.`/`self.`/`globalThis.`-
+ * qualified, computed or optional-chained — whose resolved key names a
+ * **non-bearer** secret by whole word: `password`, `api key`, `private key`,
+ * `ssn`, `credit card`, `cvv`, `seed phrase`, …
+ *
+ * **Defers to:**
+ * - `no-jwt-in-storage` — bearer credentials (`token`, `jwt`, `bearer`, `auth`,
+ *   `session`, `sid`, `credential`) and provable JWT values, in EITHER storage
+ *   area. The deferral is structural and runs before the user's
+ *   `sensitivePatterns` are consulted, so re-adding `'token'` to that option
+ *   cannot resurrect the double report.
+ * - `no-sensitive-sessionstorage` — everything written to `sessionStorage`.
+ *   `checkSessionStorage` now defaults to **false** for that reason; setting it
+ *   to `true` deliberately re-enables the overlap.
+ * - `no-sensitive-indexeddb`, `no-sensitive-data-in-cache` — the other media.
  *
  * @see https://cwe.mitre.org/data/definitions/922.html
  * @see https://owasp.org/www-community/vulnerabilities/Insecure_Storage
@@ -18,65 +36,35 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
-import { resolveStringKey } from '../../utils/resolve-binding';
+import {
+  hasProvableJwtValue,
+  memberName,
+  namesBearerCredential,
+  namesNonBearerSecret,
+  NON_BEARER_SECRET_TERMS,
+  resolveKeyText,
+  resolveStorageArea,
+} from '../../utils/sensitive-value-evidence';
 
-type MessageIds = 'sensitiveLocalStorage' | 'useHttpOnlyCookie';
+type MessageIds = 'sensitiveLocalStorage';
 
 export interface Options {
   /** Allow in test files. Default: false */
   allowInTests?: boolean;
 
-  /** Sensitive key patterns to detect. Default includes common token/password patterns */
+  /** Whole-word terms to treat as sensitive. REPLACES the default vocabulary. */
   sensitivePatterns?: string[];
 
-  /** Also check sessionStorage. Default: true */
+  /**
+   * Also check sessionStorage. Default: **false** — `no-sensitive-sessionstorage`
+   * owns that medium. See the rule partition above.
+   */
   checkSessionStorage?: boolean;
 }
 
 type RuleOptions = [Options?];
-
-const DEFAULT_SENSITIVE_PATTERNS = [
-  'token',
-  'jwt',
-  'access_token',
-  'accessToken',
-  'refresh_token',
-  'refreshToken',
-  'id_token',
-  'idToken',
-  'auth',
-  'password',
-  'passwd',
-  'secret',
-  'api_key',
-  'apiKey',
-  'private_key',
-  'privateKey',
-  'session',
-  'sessionId',
-  'credential',
-  'bearer',
-];
-
-/**
- * Check if key matches sensitive patterns.
- *
- * Applied to the key the code *actually writes*, never to the spelling of the
- * constant that holds it. All six corpus findings for this rule came from
- * matching the identifier `STATE_HANDLE_SESSION_STORAGE_KEY` — whose "session"
- * and "key" come from the name of the storage API, not from anything secret —
- * when the string it resolves to is `'osw-oie-state-handle'`, which matches
- * nothing. One of them stored a timestamp; another stored
- * `window.location.href`.
- *
- * Left as a substring test on purpose: the fix here is *what* gets tested, not
- * how. See resolveStringKey in utils/resolve-binding.ts.
- */
-function isSensitiveKey(key: string, patterns: string[]): boolean {
-  const lowerKey = key.toLowerCase();
-  return patterns.some((pattern) => lowerKey.includes(pattern.toLowerCase()));
-}
 
 export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-localstorage',
@@ -85,31 +73,21 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-localstorage.md',
       description:
-        'Disallow storing sensitive data like tokens and passwords in localStorage',
+        'Disallow storing sensitive data like passwords and keys in localStorage',
       cwe: 'CWE-922',
       cvss: 5.5,
     },
-    hasSuggestions: true,
     messages: {
       sensitiveLocalStorage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Sensitive Data in localStorage',
         cwe: 'CWE-922',
         description:
-          'Storing "{{key}}" in {{storage}} is dangerous. localStorage is vulnerable to XSS attacks - any script on the page can access it.',
+          'Storing "{{key}}" in {{storage}} is dangerous. {{storage}} is readable by every script on the page, so any XSS reads it.',
         severity: 'HIGH',
-        fix: 'Use httpOnly cookies for tokens, or encrypt data before storage.',
+        fix: 'Keep the secret server-side, or derive a short-lived value the client can hold instead.',
         documentationLink:
           'https://owasp.org/www-community/vulnerabilities/Insecure_Storage',
-      }),
-      useHttpOnlyCookie: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use HttpOnly Cookie',
-        description: 'Store authentication tokens in httpOnly cookies instead',
-        severity: 'LOW',
-        fix: 'Set tokens via Set-Cookie header with httpOnly and secure flags.',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
       }),
     },
     schema: [
@@ -123,11 +101,11 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
           sensitivePatterns: {
             type: 'array',
             items: { type: 'string' },
-            default: DEFAULT_SENSITIVE_PATTERNS,
+            default: [...NON_BEARER_SECRET_TERMS],
           },
           checkSessionStorage: {
             type: 'boolean',
-            default: true,
+            default: false,
           },
         },
         additionalProperties: false,
@@ -137,8 +115,8 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInTests: false,
-      sensitivePatterns: DEFAULT_SENSITIVE_PATTERNS,
-      checkSessionStorage: true,
+      sensitivePatterns: [...NON_BEARER_SECRET_TERMS],
+      checkSessionStorage: false,
     },
   ],
   create(
@@ -147,95 +125,80 @@ export const noSensitiveLocalstorage = createRule<RuleOptions, MessageIds>({
   ) {
     const {
       allowInTests = false,
-      sensitivePatterns = DEFAULT_SENSITIVE_PATTERNS,
-      checkSessionStorage = true,
+      sensitivePatterns = [...NON_BEARER_SECRET_TERMS],
+      checkSessionStorage = false,
     } = options as Options;
 
-    const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(context.filename);
 
     if (isTestFile) {
       return {};
     }
 
-    const storageObjects = ['localStorage'];
+    const storageObjects = new Set(['localStorage']);
     if (checkSessionStorage) {
-      storageObjects.push('sessionStorage');
+      storageObjects.add('sessionStorage');
+    }
+
+    function check(
+      node: TSESTree.Node,
+      storage: string,
+      key: string | null,
+      valueNode: TSESTree.Node,
+    ): void {
+      if (key === null) return;
+
+      // Structural deferral to no-jwt-in-storage. Runs BEFORE the user's
+      // patterns so a configured 'token' cannot re-create the double report.
+      if (
+        namesBearerCredential(key) ||
+        hasProvableJwtValue(valueNode, context.sourceCode)
+      ) {
+        return;
+      }
+
+      if (!namesNonBearerSecret(key, sensitivePatterns)) return;
+
+      context.report({
+        node,
+        messageId: 'sensitiveLocalStorage',
+        data: { key, storage },
+      });
     }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
+        if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
+        if (memberName(callee, context.sourceCode) !== 'setItem') return;
 
-        // Check for localStorage.setItem() or sessionStorage.setItem()
-        if (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.object.type === AST_NODE_TYPES.Identifier &&
-          storageObjects.includes(callee.object.name) &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          callee.property.name === 'setItem'
-        ) {
-          const keyArg = node.arguments[0];
+        const storage = resolveStorageArea(callee.object, context.sourceCode, storageObjects);
+        if (storage === null) return;
 
-          if (!keyArg) {
-            return;
-          }
+        const keyArg = node.arguments[0];
+        const valueArg = node.arguments[1];
+        if (keyArg === undefined || valueArg === undefined) return;
 
-          const keyValue = resolveStringKey(keyArg, context.sourceCode);
-
-          if (keyValue && isSensitiveKey(keyValue, sensitivePatterns)) {
-            context.report({
-              node,
-              messageId: 'sensitiveLocalStorage',
-              data: {
-                key: keyValue,
-                storage: callee.object.name,
-              },
-              suggest: [
-                {
-                  messageId: 'useHttpOnlyCookie',
-                  fix: () => null,
-                },
-              ],
-            });
-          }
-        }
+        check(
+          node,
+          storage,
+          resolveKeyText(keyArg, context.sourceCode),
+          valueArg,
+        );
       },
 
-      // Also check direct assignment: localStorage['token'] = value
+      // `localStorage['password'] = value` and `localStorage.password = value`.
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (node.left.type !== AST_NODE_TYPES.MemberExpression) {
-          return;
-        }
+        if (node.left.type !== AST_NODE_TYPES.MemberExpression) return;
 
-        const obj = node.left.object;
-        if (obj.type !== AST_NODE_TYPES.Identifier || !storageObjects.includes(obj.name)) {
-          return;
-        }
+        const storage = resolveStorageArea(node.left.object, context.sourceCode, storageObjects);
+        if (storage === null) return;
 
-        // `localStorage.token = v` — the identifier IS the key. `localStorage[K] = v`
-        // — the identifier is a *variable holding* the key, so resolve it.
-        const keyValue = node.left.computed
-          ? resolveStringKey(node.left.property, context.sourceCode)
-          : node.left.property.name;
+        const key = node.left.computed
+          ? resolveKeyText(node.left.property, context.sourceCode)
+          : memberName(node.left);
 
-        if (keyValue && isSensitiveKey(keyValue, sensitivePatterns)) {
-          context.report({
-            node,
-            messageId: 'sensitiveLocalStorage',
-            data: {
-              key: keyValue,
-              storage: obj.name,
-            },
-            suggest: [
-              {
-                messageId: 'useHttpOnlyCookie',
-                fix: () => null,
-              },
-            ],
-          });
-        }
+        check(node, storage, key, node.right);
       },
     };
   },

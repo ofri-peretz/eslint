@@ -1,0 +1,23 @@
+{
+  "rule": "secure-coding/require-secure-defaults",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 15,
+  "vulnerable": 7,
+  "results": [
+    {
+      "name": "Interlace secure-coding/require-secure-defaults",
+      "tp": 7,
+      "fp": 0,
+      "fn": 0,
+      "tn": 8,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

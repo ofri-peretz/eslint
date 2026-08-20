@@ -129,7 +129,73 @@ pool.query('SELECT * FROM users WHERE id = ' + req.params.id); // → pg/no-unsa
   attribution on purpose. That call is the documented fix for this very
   finding, so reporting it would flag code that is already correct.
 
+## Why this rule exists alongside the driver plugins
+
+This rule is the **complement** of `postgresql-security`, `mysql-security`,
+`prisma-security` and the rest: it reports only in a file that imports no known
+SQL driver, so exactly one rule owns any given `db.query(...)` site.
+
+That is not a small remainder. Most applications do not import `pg` in every
+route file — they import their own module:
+
+```js
+import { db } from '../lib/db';
+db.query(`SELECT * FROM users WHERE email = '${req.query.email}'`);   // reported here
+```
+
+Measured on `benchmarks/rule-corpus/secure-coding__no-sql-injection/`, where
+every vulnerable fixture takes this shape:
+
+| Plugin | Caught |
+| --- | --- |
+| `secure-coding/no-sql-injection` | 5 of 8 (7 of 8 with the option below) |
+| `postgresql-security/no-unsafe-query` | **0 of 8** |
+| sonarjs | **0 of 8** |
+| eslint-plugin-security | **0 of 8** |
+
+The driver plugins report zero because the driver import is in a different file.
+Without this rule, that code is uncovered.
+
 ## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `reportUnattributedInterpolation` | `boolean` | `false` | Report SQL built by interpolation even when the interpolated value cannot be traced to a request in this file (a property of `this`, a property of a non-request object, a helper return). Parameterise either way. Set false to report only attributable taint. |
+| `treatParametersAsUntrusted` | `boolean` | `true` | Treat a function parameter spliced into statement text as an untrusted inlet — nothing in this file constrains what a caller passes. Set false to report only values traceable to a request within the linted file. |
+| `requestRoots` | `string[]` | `["req","request","ctx","event"]` | Identifier roots that denote an inbound request. Matched exactly. |
+| `requestProperties` | `string[]` | `["query","params","body","headers","cookies","url","path"]` | Request properties that carry caller-supplied data. Matched exactly. |
+| `sinkMethods` | `string[]` | `["query","execute"]` | Method names that execute a raw SQL string. Matched exactly against the called member name. |
+| `queryTextProperties` | `string[]` | `["text","sql"]` | Properties of a driver query-config object that hold the statement text. Matched exactly. |
+| `transparentCalls` | `string[]` | `["String"]` | Ambient global calls that pass their argument through unchanged, so taint survives them. Matched exactly, and only when the file declares no binding of that name. |
+
+
+### `reportUnattributedInterpolation` (default: `false`)
+
+Report SQL built by interpolation even when the value cannot be traced to a
+request **in this file** — a function parameter, a property of `this`, a
+helper's return.
+
+```js
+// silent by default, reported with the option on
+export function search(term) {
+  return db.query("SELECT * FROM items WHERE name LIKE '%" + term + "%'");
+}
+```
+
+The fix for CWE-89 is to parameterise regardless of provenance, so there is a
+good argument for turning this on. It is off by default because this rule's
+attribution model distinguishes *caller-supplied* from *server-set* values —
+`req.locals.id` is set by middleware, and reporting it is a false positive.
+Defaulting the stricter mode on would reintroduce findings that were measured
+away, on a rule that ships at `error` in `recommended`.
+
+An escaping call is never reported at either setting:
+
+```js
+db.query('SELECT * FROM users ORDER BY ' + escapeIdentifier(req.query.sort));  // quiet
+```
+
+
 
 None.
 

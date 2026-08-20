@@ -45,7 +45,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'sensitiveQueryParam' | 'moveToBody';
+type MessageIds = 'sensitiveQueryParam';
 
 export interface Options {
   /** Additional sensitive parameter names (extends the defaults). Default: [] */
@@ -106,7 +106,6 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
   name: 'no-sensitive-data-in-query',
   meta: {
     type: 'problem',
-    hasSuggestions: true,
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-sensitive-data-in-query.md',
       description:
@@ -125,15 +124,7 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
         fix: 'Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/598.html',
       }),
-      moveToBody: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Move the secret out of the query string',
-        description:
-          'Accept the value from the POST body or an Authorization header instead',
-        severity: 'LOW',
-        fix: "app.post('/login', (req, res) => { const { password } = req.body; })",
-        documentationLink: 'https://cwe.mitre.org/data/definitions/598.html',
-      }),
+
     },
     schema: [
       {
@@ -236,7 +227,6 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'sensitiveQueryParam',
         data: { name },
-        suggest: [{ messageId: 'moveToBody', fix: () => null }],
       });
     }
 

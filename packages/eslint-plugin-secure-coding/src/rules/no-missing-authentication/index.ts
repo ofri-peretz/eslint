@@ -13,17 +13,25 @@
  * @see https://owasp.org/www-community/vulnerabilities/Improper_Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
+  compileUserPattern,
+  compileUserPatterns,
+  matchesAnyUserPattern,
+  nameHasAnyWord,
+} from '@interlace/eslint-devkit';
+import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingAuthentication' | 'addAuthentication';
+type MessageIds = 'missingAuthentication';
 
 export interface Options {
   /** Allow missing authentication in test files. Default: false */
   allowInTests?: boolean;
   
-  /** Test file pattern regex string. Default: '\\.(test|spec)\\.(ts|tsx|js|jsx)$' */
-  testFilePattern?: string;
+  /**
+   * Override which filenames `allowInTests` applies to, as a regex string.
+   * Unset, the shared structural predicate (`isTestFilePath`) decides.
+   */
+  testFilePattern?: string | null;
   
   /** Authentication middleware patterns to recognize. Default: ['authenticate', 'auth', 'requireAuth', 'isAuthenticated'] */
   authMiddlewarePatterns?: string[];
@@ -31,8 +39,22 @@ export interface Options {
   /** Route handler patterns to check. Default: ['get', 'post', 'put', 'delete', 'patch', 'all'] */
   routeHandlerPatterns?: string[];
   
-  /** Additional patterns to ignore. Default: [] */
+  /**
+   * Route paths that need no authentication. REPLACES the built-in list, and
+   * supplying it also widens matching to the whole registration text.
+   * Default: DEFAULT_PUBLIC_ROUTE_PATTERNS
+   */
   ignorePatterns?: string[];
+
+  /**
+   * Object names that denote an HTTP application or router, matched as WHOLE
+   * WORDS and used only when the binding cannot be resolved to a framework
+   * factory call. REPLACES the built-in list. Default: ROUTER_NAME_WORDS
+   */
+  routerNameWords?: string[];
+
+  /** Extra router-object name words, ON TOP of `routerNameWords`. Default: [] */
+  additionalRouterNameWords?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -102,11 +124,161 @@ const DEFAULT_ROUTE_HANDLER_PATTERNS = [
 ];
 
 /**
+ * Object names that denote an HTTP application or router, matched as WHOLE
+ * WORDS and used only when the binding cannot be resolved to a factory call
+ * (an imported router, a function parameter).
+ *
+ * The shipped rule used `objectName.includes(name)`. `app` is a substring of
+ * `wrapper` and of `dataMapper`, so `wrapper.get(key)` on an LRU cache and
+ * `dataMapper.delete(id)` on a persistence layer were both reported as
+ * unauthenticated HTTP routes — in files that import no HTTP server at all.
+ *
+ * Nine English words standing in for evidence, so this is a DEFAULT rather than
+ * a fixed surface: a codebase where `server` or `route` is an ordinary domain
+ * noun drops it through `routerNameWords`, and one whose routers are called
+ * something else adds to it through `additionalRouterNameWords`. Neither
+ * changes that the comparison is whole-word.
+ */
+const ROUTER_NAME_WORDS = [
+  'app',
+  'router',
+  'route',
+  'server',
+  'express',
+  'fastify',
+  'koa',
+  'hapi',
+];
+
+/**
+ * Factories whose return value IS an application or router.
+ *
+ * @protocol-constant These are the exported factory call signatures of the Node
+ * HTTP frameworks themselves — `express()`, `fastify()`, `polka()`,
+ * `restify()`, `connect()`, `new Koa()`, `Router()`. They are the EVIDENCE path
+ * that replaced name inference: `const api = express.Router()` is a router
+ * whatever the binding is called, which is the whole reason `ROUTER_NAME_WORDS`
+ * is only a fallback. Turning the evidence into a tunable vocabulary would put
+ * the guess back — a consumer who deleted `express` would lose the one signal
+ * that resolves `const api = express()` and fall through to spelling, and one
+ * who added an ordinary factory would have every object it returns treated as
+ * an unauthenticated HTTP router. A house framework belongs in
+ * `routerNameWords`, which is the supported knob.
+ */
+const ROUTER_FACTORY_NAMES = new Set(['express', 'Router', 'fastify', 'polka', 'restify', 'connect', 'Koa']);
+
+/**
+ * Members whose call returns an application, router or server.
+ *
+ * @protocol-constant The member half of the same framework API surface —
+ * `express.Router()`, `app.router()`, `http.createServer()`, `restify.Server()`
+ * — published by those libraries and Node's own `http`/`https` modules. It is
+ * read only to resolve a binding to a factory CALL, never to judge a name, so
+ * it is a set of call signatures rather than a vocabulary. A consumer who could
+ * edit it could drop `createServer` and make every `http.createServer()` route
+ * invisible to the rule, or add a member and have an unrelated builder's result
+ * reported as an unauthenticated route.
+ */
+const ROUTER_FACTORY_MEMBERS = new Set(['Router', 'router', 'Server', 'server', 'createServer']);
+
+/**
+ * Express's `app.route(path).get(handler).post(handler)` chaining, straight out
+ * of the Express 4 routing guide. The registration's object is the `route()`
+ * call rather than the app, so a check that requires an Identifier object never
+ * looks at these routes at all.
+ *
+ * Returns the `route()` call itself, whose first argument is the path.
+ */
+function routeChainBase(node: TSESTree.Node): TSESTree.CallExpression | null {
+  let current: TSESTree.Node = node;
+
+  while (
+    current.type === AST_NODE_TYPES.CallExpression &&
+    current.callee.type === AST_NODE_TYPES.MemberExpression
+  ) {
+    const property = current.callee.property;
+    if (property.type === AST_NODE_TYPES.Identifier && property.name === 'route') {
+      return current;
+    }
+    current = current.callee.object;
+  }
+
+  return null;
+}
+
+/**
+ * A binding whose initialiser PROVES it is not an HTTP router.
+ *
+ * `const routeCache = new Map()` and `const serverStats = new Map()` both carry
+ * a router word as a genuine whole segment, so whole-word matching cannot save
+ * them — only the resolved initialiser can. Resolved evidence outranks the
+ * name in both directions.
+ */
+function isDefinitelyNotRouter(init: TSESTree.Node): boolean {
+  return (
+    // a NewExpression that isRouterFactory has already rejected
+    init.type === AST_NODE_TYPES.NewExpression ||
+    init.type === AST_NODE_TYPES.ObjectExpression ||
+    init.type === AST_NODE_TYPES.ArrayExpression
+  );
+}
+
+/** `express()`, `express.Router()`, `new Koa()`, `Hapi.server()` — resolvable evidence. */
+function isRouterFactory(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.CallExpression && node.type !== AST_NODE_TYPES.NewExpression) {
+    return false;
+  }
+
+  const callee = node.callee;
+  if (callee.type === AST_NODE_TYPES.Identifier) {
+    return ROUTER_FACTORY_NAMES.has(callee.name);
+  }
+  if (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.property.type === AST_NODE_TYPES.Identifier
+  ) {
+    return ROUTER_FACTORY_MEMBERS.has(callee.property.name);
+  }
+  return false;
+}
+
+/** The dotted name a middleware argument refers to, or null for a literal/inline function. */
+function referencedName(node: TSESTree.Node): string | null {
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    return node.name;
+  }
+  if (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    node.property.type === AST_NODE_TYPES.Identifier
+  ) {
+    const objectPart =
+      node.object.type === AST_NODE_TYPES.Identifier ? `${node.object.name}.` : '';
+    return `${objectPart}${node.property.name}`;
+  }
+  return null;
+}
+
+/**
+ * Is this argument an authentication middleware?
+ *
+ * Matched on the RESOLVED callee name as whole words, never on the argument's
+ * printed source text. The shipped rule ran
+ * `sourceCode.getText(arg).toLowerCase().includes(pattern)`, so `auth` matched
+ * inside `getAuthorReport` and `session` inside `renderSessionRoster`: two
+ * ordinary domain nouns — a CMS author, a conference talk — that silenced the
+ * rule on genuinely unauthenticated routes.
+ */
+function isAuthMiddlewareArg(arg: TSESTree.Node, authPatterns: string[]): boolean {
+  const target = arg.type === AST_NODE_TYPES.CallExpression ? arg.callee : arg;
+  const name = referencedName(target);
+  return name !== null && nameHasAnyWord(name, authPatterns);
+}
+
+/**
  * Check if a node is inside an authentication middleware call
  */
 function isInsideAuthMiddleware(
   node: TSESTree.Node,
-  sourceCode: TSESLint.SourceCode,
   authPatterns: string[]
 ): boolean {
   let current: TSESTree.Node | null = node;
@@ -131,20 +303,18 @@ function isInsideAuthMiddleware(
       
       // Check if it's an authentication middleware call
       if (callee.type === 'Identifier') {
-        const calleeName = callee.name.toLowerCase();
-        if (authPatterns.some(pattern => calleeName.includes(pattern.toLowerCase()))) {
+        if (nameHasAnyWord(callee.name, authPatterns)) {
           return true;
         }
       }
-      
+
       // Check if it's a member expression like app.use(auth())
       if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
         const propertyName = callee.property.name.toLowerCase();
         if (propertyName === 'use' || propertyName === 'all') {
           // Check if any argument is an auth middleware
           for (const arg of callExpr.arguments) {
-            const argText = sourceCode.getText(arg);
-            if (authPatterns.some(pattern => argText.toLowerCase().includes(pattern.toLowerCase()))) {
+            if (isAuthMiddlewareArg(arg, authPatterns)) {
               return true;
             }
           }
@@ -167,15 +337,14 @@ function isInsideAuthMiddleware(
  * Check if a string matches any ignore pattern
  */
 function matchesIgnorePattern(text: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
-    try {
-      const regex = new RegExp(pattern, 'i');
-      return regex.test(text);
-    } catch {
-      // Invalid regex - treat as literal string match
-      return text.toLowerCase().includes(pattern.toLowerCase());
-    }
-  });
+  // The try/catch here already handled an INVALID pattern. It did nothing for a
+  // VALID but catastrophic one: `ignorePatterns: ['(a+)+$']` against a 30-char
+  // route path took 58.2s on a single file (control: 1.65s), because
+  // backtracking explodes inside a regex that compiles perfectly well.
+  //
+  // compileUserPattern covers both, and hoisting the compile out of the
+  // per-call loop is a bonus rather than the point.
+  return matchesAnyUserPattern(compileUserPatterns(patterns, 'i'), text);
 }
 
 export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
@@ -188,7 +357,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-287',
       cvss: 9.8,
     },
-    hasSuggestions: true,
     messages: {
       missingAuthentication: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -199,14 +367,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
         fix: 'Add authentication middleware: app.{{method}}(\'{{path}}\', authenticate(), handler)',
         documentationLink: 'https://cwe.mitre.org/data/definitions/287.html',
       }),
-      addAuthentication: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Authentication',
-        description: 'Add authentication middleware before route handler',
-        severity: 'LOW',
-        fix: 'app.get("/path", authenticate(), handler)',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/287.html',
-      }),
+
     },
     schema: [
       {
@@ -232,13 +393,41 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
           ignorePatterns: {
             type: 'array',
             items: { type: 'string' },
+            default: DEFAULT_PUBLIC_ROUTE_PATTERNS,
+            description:
+              'Route paths that are public by definition and need no authentication. Replaces the built-in list; supplying it also widens matching from the route path to the whole registration text.',
+          },
+          routerNameWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ROUTER_NAME_WORDS,
+            description:
+              'Object names that denote an HTTP application or router, compared as WHOLE WORDS and never as a substring. Read only when the binding cannot be resolved to a framework factory call. Replaces the built-in list.',
+          },
+          additionalRouterNameWords: {
+            type: 'array',
+            items: { type: 'string' },
             default: [],
-            description: 'Additional patterns to ignore',
+            description: 'Extra router-object name words, on top of `routerNameWords`.',
           },
           testFilePattern: {
-            type: 'string',
-            default: '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
-            description: 'Test file pattern regex string',
+            // `null` IS the default, and saying so in the schema is the point.
+            //
+            // The option is genuinely three-state: a string overrides which
+            // filenames `allowInTests` covers, and "not set" means the shared
+            // structural predicate decides. There is no string that expresses
+            // the second — `''` compiles to a regex matching every path, which
+            // would silence the rule everywhere — so the default was left
+            // implicit in the destructuring and `option-without-default` fired,
+            // correctly: a default that lives only in `create()` is one the
+            // docs cannot state and a consumer cannot read.
+            //
+            // Naming `null` gives the third state a value, so the schema and the
+            // runtime agree and both are readable.
+            type: ['string', 'null'],
+            default: null,
+            description:
+              'Override which filenames `allowInTests` applies to. Null — the default — leaves it to the shared structural predicate.',
           },
         },
         additionalProperties: false,
@@ -248,10 +437,11 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInTests: false,
-      testFilePattern: '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
       authMiddlewarePatterns: DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns: DEFAULT_ROUTE_HANDLER_PATTERNS,
       ignorePatterns: DEFAULT_PUBLIC_ROUTE_PATTERNS,
+      routerNameWords: ROUTER_NAME_WORDS,
+      additionalRouterNameWords: [],
     },
   ],
   create(
@@ -260,16 +450,79 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
   ) {
     const {
       allowInTests = false,
-      testFilePattern = '\\.(test|spec)\\.(ts|tsx|js|jsx)$',
+      testFilePattern,
       authMiddlewarePatterns = DEFAULT_AUTH_MIDDLEWARE_PATTERNS,
       routeHandlerPatterns = DEFAULT_ROUTE_HANDLER_PATTERNS,
       ignorePatterns = DEFAULT_PUBLIC_ROUTE_PATTERNS,
+      routerNameWords = ROUTER_NAME_WORDS,
+      additionalRouterNameWords = [],
     } = options as Options;
 
+    const routerWords = [...routerNameWords, ...additionalRouterNameWords];
+
     const filename = context.filename;
-    const testFileRegex = new RegExp(testFilePattern);
-    const isTestFile = allowInTests && testFileRegex.test(filename);
+    // Guarded: a user pattern reaches `new RegExp` here. Measured before this
+    // change: `(a+)+$` took 45-58s on a single file, and `[` threw
+    // "Invalid regular expression" out of create(), killing the whole lint
+    // run rather than just this rule. compileUserPattern degrades both to a
+    // substring match.
+    // Unset — the normal case — the shared structural predicate decides, so the
+    // verdict cannot depend on where the repo is checked out. A user who sets
+    // the option still overrides it exactly.
+    const isTestFile =
+      allowInTests &&
+      (testFilePattern == null
+        ? isTestFilePath(filename)
+        : compileUserPattern(testFilePattern).test(filename));
     const sourceCode = context.sourceCode;
+
+    /**
+     * DEFAULT_PUBLIC_ROUTE_PATTERNS describes ROUTE PATHS — `/login`,
+     * `/healthz`, `/metrics`. The shipped rule also tested them against
+     * `sourceCode.getText(node)`, the ENTIRE registration including the
+     * handler body, and `status` is on that list. Every Express handler that
+     * writes `res.status(500)` therefore silenced the rule about its own
+     * missing authentication:
+     *
+     *   app.get('/admin/accounts', async (req, res) => {   // reported
+     *     try { res.json(await listUsers()); }
+     *     catch { res.status(500).end(); }                 // NOT reported
+     *   });
+     *
+     * A user-supplied `ignorePatterns` is a deliberate escape hatch, so it
+     * keeps matching the whole call; the built-in path list does not.
+     */
+    const scansWholeCallText =
+      (context.options[0] as Options | undefined)?.ignorePatterns !== undefined;
+
+    /**
+     * Does this object denote an HTTP application or router?
+     *
+     * Preferred evidence is the resolved binding — `const api =
+     * express.Router()` is a router whatever it is called, which is also why
+     * the shipped rule missed it: `api` contains none of its hard-coded
+     * substrings. The whole-word name check is only the fallback for bindings
+     * this file cannot resolve, such as an imported router.
+     */
+    function looksLikeRouter(object: TSESTree.Identifier): boolean {
+      const scope = sourceCode.getScope(object);
+      const reference = scope.references.find((ref) => ref.identifier === object);
+      const resolved = reference?.resolved;
+
+      for (const def of resolved?.defs ?? []) {
+        const parent = (def.name as TSESTree.Node).parent;
+        if (parent?.type === AST_NODE_TYPES.VariableDeclarator && parent.init) {
+          if (isRouterFactory(parent.init)) {
+            return true;
+          }
+          if (isDefinitelyNotRouter(parent.init)) {
+            return false;
+          }
+        }
+      }
+
+      return nameHasAnyWord(object.name, routerWords);
+    }
 
     /**
      * Find variable declaration for an identifier
@@ -321,8 +574,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       
       // Check if init is a CallExpression to auth middleware
       if (declarator.init.type === 'CallExpression' && declarator.init.callee.type === 'Identifier') {
-        const calleeName = declarator.init.callee.name.toLowerCase();
-        return authMiddlewarePatterns.some(pattern => calleeName.includes(pattern.toLowerCase()));
+        return nameHasAnyWord(declarator.init.callee.name, authMiddlewarePatterns);
       }
       
       return false;
@@ -341,20 +593,28 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
         const property = node.callee.property;
         const object = node.callee.object;
         
-        // Only check if the object looks like an Express app/router
-        // Must be an identifier like 'app', 'router', 'server', etc.
-        if (object.type !== 'Identifier') {
-          return; // Skip member chains like db.users.get()
+        // Only check if the object looks like an Express app/router: either an
+        // identifier like `app` / `router`, or the `app.route(path)` call that
+        // Express's own chaining API puts there.
+        let chainedPath: TSESTree.CallExpressionArgument | undefined;
+
+        if (object.type === 'Identifier') {
+          if (!looksLikeRouter(object)) {
+            return; // Skip non-router objects like stmt.get(), db.get()
+          }
+        } else {
+          const base = routeChainBase(object);
+          const baseObject = base?.callee.type === 'MemberExpression' ? base.callee.object : undefined;
+          if (
+            !base ||
+            baseObject?.type !== AST_NODE_TYPES.Identifier ||
+            !looksLikeRouter(baseObject)
+          ) {
+            return; // Skip member chains like db.users.get()
+          }
+          chainedPath = base.arguments[0];
         }
-        
-        const objectName = object.name.toLowerCase();
-        const routerLikeNames = ['app', 'router', 'server', 'route', 'express', 'fastify', 'koa', 'hapi'];
-        const looksLikeRouter = routerLikeNames.some(name => objectName.includes(name));
-        
-        if (!looksLikeRouter) {
-          return; // Skip non-router objects like stmt.get(), db.get()
-        }
-        
+
         if (property.type === 'Identifier') {
           const methodName = property.name.toLowerCase();
           
@@ -376,13 +636,16 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
               }
             }
 
+            // In `app.route('/admin').get(handler)` the path lives on the
+            // `route()` call and this call's arguments are ALL handlers.
+            const pathArgument = chainedPath ?? node.arguments[0];
+
             // Extract route path if available
             let routePath = 'unknown';
-            if (node.arguments.length > 0 && node.arguments[0].type === 'Literal') {
-              routePath = String(node.arguments[0].value);
-            } else if (node.arguments.length > 0) {
-              const pathText = sourceCode.getText(node.arguments[0]);
-              routePath = pathText;
+            if (pathArgument !== undefined && pathArgument.type === 'Literal') {
+              routePath = String(pathArgument.value);
+            } else if (pathArgument !== undefined) {
+              routePath = sourceCode.getText(pathArgument);
             }
 
             const text = sourceCode.getText(node);
@@ -392,27 +655,31 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             if (matchesIgnorePattern(routePath, ignorePatterns)) {
               return;
             }
-            if (matchesIgnorePattern(text, ignorePatterns)) {
+            if (scansWholeCallText && matchesIgnorePattern(text, ignorePatterns)) {
               return;
             }
 
+            // The LAST argument of a route registration is the HANDLER, not
+            // middleware, so its own name is not evidence of anything.
+            // `router.get('/talks/:id/roster', renderSessionRoster)` has no
+            // middleware at all; reading `session` out of the handler's name
+            // is what let an unauthenticated route pass.
+            //
+            // `use` is exempt: `app.use('/api', authenticate())` legitimately
+            // mounts middleware as its final argument.
+            const firstMiddlewareIndex = chainedPath === undefined ? 1 : 0;
+            const middlewareArgs =
+              methodName === 'use'
+                ? node.arguments.slice(firstMiddlewareIndex)
+                : node.arguments.slice(firstMiddlewareIndex, -1);
+
             // Check if authentication middleware is present in arguments
             let hasAuth = false;
-            for (const arg of node.arguments) {
-              const argText = sourceCode.getText(arg);
-              if (authMiddlewarePatterns.some(pattern =>
-                argText.toLowerCase().includes(pattern.toLowerCase())
-              )) {
+            for (const arg of middlewareArgs) {
+              if (isAuthMiddlewareArg(arg, authMiddlewarePatterns)) {
                 hasAuth = true;
                 break;
               }
-
-              // NOTE: a prior "is this argument a CallExpression whose callee
-              // name matches an auth pattern" check was removed as provably
-              // redundant: `argText` above is the full source text of `arg`,
-              // which for a CallExpression always begins with the callee's
-              // own text. Any pattern that matches `calleeName` therefore
-              // already matches `argText` and is caught by the check above.
 
               // Check if argument is an identifier assigned from auth middleware
               if (arg.type === 'Identifier' && isIdentifierFromAuthMiddleware(arg)) {
@@ -427,7 +694,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
               if (lastArg.type === 'ArrowFunctionExpression' || 
                   lastArg.type === 'FunctionExpression') {
                 // Check if the handler is inside an auth middleware call
-                if (isInsideAuthMiddleware(lastArg, sourceCode, authMiddlewarePatterns)) {
+                if (isInsideAuthMiddleware(lastArg, authMiddlewarePatterns)) {
                   hasAuth = true;
                 }
               }
@@ -442,12 +709,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
                   method: methodName,
                   path: routePath,
                 },
-                suggest: [
-                  {
-                    messageId: 'addAuthentication',
-                    fix: (_fixer: TSESLint.RuleFixer) => null,
-                  },
-                ],
               });
             }
           }

@@ -39,9 +39,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   createRule,
+  isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingRateLimiting' | 'addRateLimiting';
+type MessageIds = 'missingRateLimiting';
 
 export interface Options {
   /** Allow missing rate limiting in test files. Default: false */
@@ -136,7 +137,6 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-770',
       cvss: 7.5,
     },
-    hasSuggestions: true,
     messages: {
       missingRateLimiting: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -148,14 +148,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         fix: 'Add rate limiting: npm install express-rate-limit; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }))',
         documentationLink: 'https://www.npmjs.com/package/express-rate-limit',
       }),
-      addRateLimiting: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Add Rate Limiting',
-        description: 'Add rate-limiting middleware to protect against abuse',
-        severity: 'LOW',
-        fix: "import rateLimit from 'express-rate-limit'; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }));",
-        documentationLink: 'https://www.npmjs.com/package/express-rate-limit',
-      }),
+
     },
     schema: [
       {
@@ -208,8 +201,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
     }
 
     const filename = context.filename;
-    const isTestFile =
-      allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = allowInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};
@@ -327,12 +319,6 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
               method: credentialRoute.method,
               path: credentialRoute.path,
             },
-            suggest: [
-              {
-                messageId: 'addRateLimiting',
-                fix: () => null,
-              },
-            ],
           });
         }
       },

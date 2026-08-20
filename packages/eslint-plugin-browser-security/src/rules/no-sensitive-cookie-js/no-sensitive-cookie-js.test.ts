@@ -19,134 +19,122 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-cookie-js', noSensitiveCookieJs, {
   valid: [
-    // Non-sensitive cookies are allowed
+    { code: `document.cookie = 'theme=dark';` },
+    { code: `document.cookie = 'locale=en-US';` },
+    { code: `const all = document.cookie;` },
+    { code: `myObj.cookie = 'password=abc';` },
+    { code: `document.cookie = 'password=abc';`, filename: 'auth.test.ts' },
+
+    // --- the partition -------------------------------------------------------
+    // Bearer credentials belong to no-cookie-auth-tokens.
+    { code: `document.cookie = 'access_token=abc; Secure; SameSite=Strict';` },
+    { code: `document.cookie = 'sessionId=xyz';` },
+    { code: `document.cookie = 'jwt=abc';` },
+
+    // --- whole-word on the cookie NAME --------------------------------------
+    { code: `document.cookie = 'author=jane';` },
+    { code: `document.cookie = 'creditLimit=5000';` },
+    { code: `document.cookie = 'passwordLength=12';` },
+
+    // Deletion is a clear-down, not a leak.
+    { code: `document.cookie = 'api_key=; Max-Age=0';` },
+
+    // Nothing statically known.
+    { code: `document.cookie = name + '=' + value;` },
+    { code: `document.cookie = 'Secure';` },
+  ],
+  invalid: [
     {
-      code: `document.cookie = "theme=dark";`,
+      code: `document.cookie = 'api_key=sk-live-abc123';`,
+      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'api_key' } }],
     },
     {
-      code: `document.cookie = "locale=en-US";`,
+      code: `document.cookie = 'password=secret123';`,
+      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'password' } }],
     },
     {
-      code: `document.cookie = "preference=compact";`,
-    },
-    // Cookie with security attributes but non-sensitive
-    {
-      code: `document.cookie = "visited=true; Secure; SameSite=Strict";`,
-    },
-    // Not document.cookie
-    {
-      code: `myObj.cookie = "token=abc123";`,
+      code: `document.cookie = 'privateKey=' + pem;`,
+      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'privateKey' } }],
     },
     {
-      code: `cookies.set("token", "abc123");`,
+      code: `document.cookie = \`ssn=\${value}; Secure\`;`,
+      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'ssn' } }],
     },
-    // Reading cookies is fine
     {
-      code: `const allCookies = document.cookie;`,
-    },
-    // Test files allowed by default
-    {
-      code: `document.cookie = "token=abc123";`,
+      code: `document.cookie = 'password=abc';`,
       filename: 'auth.test.ts',
+      options: [{ allowInTests: false }],
+      errors: [{ messageId: 'sensitiveCookieJs' }],
+    },
+  ],
+});
+
+/**
+ * Regression lock — left-nested concatenation.
+ *
+ * PRE-EXISTING DEFECT, now fixed. `extractCookieKey(value.left)` only saw a
+ * literal when the concatenation had exactly two terms, so the most common real
+ * spelling reported NOTHING — not a false positive, just silence.
+ */
+ruleTester.run('lock: left-nested concatenation', noSensitiveCookieJs, {
+  valid: [],
+  invalid: [
+    {
+      code: `document.cookie = 'api_key=' + key + '; Path=/';`,
+      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'api_key' } }],
     },
     {
-      code: `document.cookie = "sessionId=xyz";`,
-      filename: 'session.spec.js',
+      code: `document.cookie = 'user_password=' + pw + '; Secure' + '; SameSite=Lax';`,
+      errors: [
+        { messageId: 'sensitiveCookieJs', data: { key: 'user_password' } },
+      ],
     },
-    // Template literal with non-sensitive key
+  ],
+});
+
+/**
+ * Regression lock — the sink may be spelled out or computed.
+ */
+ruleTester.run('lock: sink spellings', noSensitiveCookieJs, {
+  valid: [
+    { code: `top.document.cookie = 'password=abc';` },
+    { code: `document[prop] = 'password=abc';` },
+  ],
+  invalid: [
     {
-      code: 'document.cookie = `theme=${theme}`;',
+      code: `window.document.cookie = 'user_password=x; Secure';`,
+      errors: [
+        { messageId: 'sensitiveCookieJs', data: { key: 'user_password' } },
+      ],
     },
-    // Binary expression with non-sensitive key
     {
-      code: `document.cookie = "lang=" + language;`,
+      code: `document['cookie'] = 'cvv=' + c;`,
+      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'cvv' } }],
+    },
+  ],
+});
+
+/**
+ * `sensitivePatterns` REPLACES the default vocabulary; the bearer deferral is
+ * structural and runs first, so configuring `'token'` cannot re-create the
+ * double report with no-cookie-auth-tokens.
+ */
+ruleTester.run('option: sensitivePatterns', noSensitiveCookieJs, {
+  valid: [
+    {
+      code: `document.cookie = 'password=abc';`,
+      options: [{ sensitivePatterns: ['dossier'] }],
+    },
+    {
+      code: `document.cookie = 'access_token=abc';`,
+      options: [{ sensitivePatterns: ['token'] }],
     },
   ],
   invalid: [
-    // Sensitive: token
     {
-      code: `document.cookie = "token=abc123";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'token' } }],
-    },
-    {
-      code: `document.cookie = "authToken=xyz789";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'authToken' } }],
-    },
-    // Sensitive: session
-    {
-      code: `document.cookie = "sessionId=sess_abc123";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'sessionId' } }],
-    },
-    {
-      code: `document.cookie = "session_id=12345";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'session_id' } }],
-    },
-    // Sensitive: jwt
-    {
-      code: `document.cookie = "jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'jwt' } }],
-    },
-    // Sensitive: access_token
-    {
-      code: `document.cookie = "access_token=token123";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'access_token' } }],
-    },
-    // Sensitive: refresh_token
-    {
-      code: `document.cookie = "refresh_token=refresh123";`,
-      errors: [
-        { messageId: 'sensitiveCookieJs', data: { key: 'refresh_token' } },
-      ],
-    },
-    // Sensitive: api_key
-    {
-      code: `document.cookie = "api_key=sk-live-abc123";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'api_key' } }],
-    },
-    // Sensitive: password
-    {
-      code: `document.cookie = "password=secret123";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'password' } }],
-    },
-    // Template literal with sensitive key
-    {
-      code: 'document.cookie = `token=${token}; Secure`;',
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'token' } }],
-    },
-    // Binary expression with sensitive key
-    {
-      code: `document.cookie = "sessionId=" + sessionValue;`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'sessionId' } }],
-    },
-    // With security attributes (still flagged - should be HttpOnly)
-    {
-      code: `document.cookie = "token=abc; Secure; SameSite=Strict";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'token' } }],
-    },
-    // Test file with allowInTests: false
-    {
-      code: `document.cookie = "token=abc123";`,
-      filename: 'auth.test.ts',
-      options: [{ allowInTests: false }],
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'token' } }],
-    },
-    // Custom sensitive pattern
-    {
-      code: `document.cookie = "customSecret=value";`,
-      options: [{ sensitivePatterns: ['customSecret'] }],
-      errors: [
-        { messageId: 'sensitiveCookieJs', data: { key: 'customSecret' } },
-      ],
-    },
-    // Credential
-    {
-      code: `document.cookie = "credential=cred123";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'credential' } }],
-    },
-    // Bearer
-    {
-      code: `document.cookie = "bearer=abc123";`,
-      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'bearer' } }],
+      code: `document.cookie = 'dossier=abc';`,
+      options: [{ sensitivePatterns: ['dossier'] }],
+      errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'dossier' } }],
     },
   ],
 });

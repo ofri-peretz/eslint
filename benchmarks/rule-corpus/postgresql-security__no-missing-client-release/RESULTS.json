@@ -1,0 +1,23 @@
+{
+  "rule": "postgresql-security/no-missing-client-release",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 20,
+  "vulnerable": 10,
+  "results": [
+    {
+      "name": "Interlace postgresql-security/no-missing-client-release",
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "tn": 10,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

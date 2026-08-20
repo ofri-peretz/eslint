@@ -195,5 +195,5 @@ obj[method](userInput);
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowLiterals` | `boolean` | `true` | Allow literal string patterns |
-| `trustedEscapingFunctions` | `string[]` | `["escapeRegex","escape","sanitize"]` | Trusted functions that escape input |
+| `trustedEscapingFunctions` | `string[]` | `["escapeRegex","escapeRegExp","escapeStringRegexp","regexpEscape"]` | Trusted functions that escape input |
 | `maxPatternLength` | `number` | `100` | Maximum pattern length for dynamic regex |

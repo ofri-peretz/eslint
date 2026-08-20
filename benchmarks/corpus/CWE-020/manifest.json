@@ -3,7 +3,8 @@
   "name": "Improper Input Validation (validation-bypass cluster)",
   "owasp": "A03:2021",
   "severity": "HIGH",
-  "expectedPlugins": ["eslint-plugin-secure-coding"],
+  "expectedPlugins": ["eslint-plugin-browser-security"],
+  "expectedPluginsNote": "Was eslint-plugin-secure-coding, and had been wrong since these fixtures landed in #290 — not broken by any later change. They are candidate-research fixtures, written for rules that were PLANNED for secure-coding; the rules were then built in browser-security instead (no-incomplete-url-sanitization, no-insecure-redirects, require-postmessage-origin-check), which is where a redirect allowlist, a postMessage origin test and a URL scheme check belong. The only secure-coding rule carrying CWE-020 is no-graphql-injection, which could never fire on a URL substring check. Every fixture here IS detected, with accurate messages, by the plugin now named. Safe to correct: expectedPlugins reaches ilb-cwe-corpus output metadata only and does not gate scoring — every plugin is run against every fixture — so this restates no published number.",
   "fixtures": {
     "vulnerable": [
       {

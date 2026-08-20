@@ -24,45 +24,64 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * Every fixture that is meant to check a client OUT now binds a real pool.
+ *
+ * These cases used to call `pool.connect()` with nothing named `pool` declared
+ * anywhere in the file. They passed because the rule matched the METHOD NAME
+ * alone — which is also why `broker.connect()` and `WebSocket.connect(...)`,
+ * neither of which has a `release()` to call, were reported as leaked
+ * PostgreSQL clients.
+ */
+const declarePool = (code: string): string => `const pool = new Pool();\n${code}`;
+
 ruleTester.run('no-missing-client-release', noMissingClientRelease, {
   valid: pg([
     {
-       code: "async function f() { await pool.connect(); }",
-       name: 'Ignored: No assignment'
+      code: declarePool('async function f() { await pool.connect(); }'),
+      name: 'Ignored: No assignment',
     },
     {
-       code: "async function f() { const { release } = await pool.connect(); release(); }",
-       name: 'Ignored: Destructuring'
-    }, 
-    {
-       code: "async function f() { const client = await pool.other(); }",
-       name: 'Ignored: Not connect'
+      code: declarePool(
+        'async function f() { const { release } = await pool.connect(); release(); }',
+      ),
+      name: 'Ignored: Destructuring',
     },
-    `
+    {
+      code: declarePool('async function f() { const client = await pool.other(); }'),
+      name: 'Ignored: Not connect',
+    },
+    {
+      code: declarePool(
+        'async function f() { const client = await notAPool.connect(); }',
+      ),
+      name: 'Ignored: receiver is not a proven pg Pool',
+    },
+    declarePool(`
     async function noAwait() {
        const client = pool.connect();
-       client.release(); 
+       try { await client.query('SELECT 1'); } finally { client.release(); }
     }
-    `
+    `),
   ]),
   invalid: pg([
     {
-      code: `
+      code: declarePool(`
       async function query() {
         const client = await pool.connect();
         await client.query('SELECT 1');
       }
-      `,
+      `),
       errors: [{ messageId: 'missingClientRelease' }],
     },
     {
-      code: `
+      code: declarePool(`
       async function query() {
         const c = await pool.connect();
         // Forgot to release c
       }
-      `,
+      `),
       errors: [{ messageId: 'missingClientRelease' }],
-    }
+    },
   ]),
 });

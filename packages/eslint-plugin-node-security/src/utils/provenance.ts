@@ -23,7 +23,7 @@
  * `no-buffer-overread` report on identifiers it had never seen declared.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, unwrapTypeSyntax } from '@interlace/eslint-devkit';
 
 type SourceCode = TSESLint.SourceCode;
 
@@ -70,7 +70,9 @@ export function bindingInit(
   if (!variable || variable.defs.length !== 1) return undefined;
   const def = variable.defs[0];
   if (def.type !== 'Variable') return undefined;
-  return def.node.init ?? undefined;
+  // `const u = req.query.url as string` must hand back the member expression,
+  // not the cast wrapper, or every caller has to know about type syntax.
+  return def.node.init ? unwrapTypeSyntax(def.node.init) : undefined;
 }
 
 /**
@@ -99,7 +101,10 @@ export function constLiteralOf(
   const init = def.node.init;
   if (!init) return undefined;
   if (init.type === AST_NODE_TYPES.Literal) return init;
-  if (init.type === AST_NODE_TYPES.TemplateLiteral && init.expressions.length === 0) {
+  if (
+    init.type === AST_NODE_TYPES.TemplateLiteral &&
+    init.expressions.length === 0
+  ) {
     return init;
   }
   return undefined;
@@ -107,8 +112,16 @@ export function constLiteralOf(
 
 /** Property names that carry request data whatever the receiver is called. */
 const REQUEST_PROPERTY_NAMES: ReadonlySet<string> = new Set([
-  'headers', 'query', 'body', 'params', 'cookies', 'searchparams', 'rawbody',
-  'querystringparameters', 'pathparameters', 'formdata',
+  'headers',
+  'query',
+  'body',
+  'params',
+  'cookies',
+  'searchparams',
+  'rawbody',
+  'querystringparameters',
+  'pathparameters',
+  'formdata',
 ]);
 
 /**
@@ -131,6 +144,19 @@ export function makeReadsTaintSource(
 ): (node: TSESTree.Node) => boolean {
   const reads = (node: TSESTree.Node, depth: number): boolean => {
     if (depth > 6) return false;
+
+    // `req.query.url as string` reads exactly what `req.query.url` reads — the
+    // cast is erased at compile time. Without this, the switch below falls
+    // through to `default: return false`.
+    //
+    // The cast is not stylistic. Express types `req.query.url` as
+    // `string | string[] | ParsedQs | undefined`, so a TypeScript handler MUST
+    // write it to compile. The omission silenced no-ssrf and
+    // no-timing-unsafe-compare on every TypeScript Express codebase, while
+    // their suites stayed green — neither suite contained a single `as string`.
+    const bare = unwrapTypeSyntax(node);
+    if (bare !== node) return reads(bare, depth + 1);
+
     switch (node.type) {
       case AST_NODE_TYPES.Identifier: {
         if (roots.has(node.name.toLowerCase())) return true;
@@ -174,10 +200,41 @@ export function makeReadsTaintSource(
         return reads(node.object, depth + 1);
       }
       case AST_NODE_TYPES.TemplateLiteral:
-        return node.expressions.some((expression) => reads(expression, depth + 1));
+        return node.expressions.some((expression) =>
+          reads(expression, depth + 1),
+        );
       case AST_NODE_TYPES.BinaryExpression:
         return (
-          reads(node.left as TSESTree.Node, depth + 1) || reads(node.right, depth + 1)
+          reads(node.left as TSESTree.Node, depth + 1) ||
+          reads(node.right, depth + 1)
+        );
+      // `req.headers['x-api-key'] || ''` — the defensive default every Express
+      // handler writes. The value at the use site is the header on the request
+      // that carries one, and the literal only on the request that does not, so
+      // the tainted operand is the one that decides whether the sink is
+      // reachable. Omitting this case sent the commonest shape in Node request
+      // handling to `default: return false`, and a fixture written to isolate
+      // exactly that hop (`no-timing-unsafe-compare`
+      // `vulnerable/16-header-default-idiom.js`) sat in the corpus as a miss.
+      //
+      // All three operators, for the same reason: `??` is `||` with a narrower
+      // falsy test, and `&&` returns its right operand — `req.query.q && q` is
+      // the request either way.
+      case AST_NODE_TYPES.LogicalExpression:
+        return reads(node.left, depth + 1) || reads(node.right, depth + 1);
+      // `cond ? req.query.a : 'default'` is the ternary spelling of the same
+      // idiom, and had the same hole.
+      //
+      // The TEST is deliberately NOT walked. `req.query.debug ? 'verbose' :
+      // 'quiet'` lets an attacker choose between two values the program author
+      // wrote; that is control dependence, not data flow, and counting it would
+      // taint every value in every request-conditional branch — including
+      // `req.query.mode === 'a' ? './handlers/a' : './handlers/b'`, whose
+      // require target is a closed set of the author's own strings. Only the
+      // branches carry the value.
+      case AST_NODE_TYPES.ConditionalExpression:
+        return (
+          reads(node.consequent, depth + 1) || reads(node.alternate, depth + 1)
         );
       case AST_NODE_TYPES.AwaitExpression:
         return reads(node.argument, depth + 1);

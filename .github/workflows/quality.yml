@@ -123,6 +123,14 @@ jobs:
       # sources, and each runs in well under a second. A separate job would
       # spend more time on checkout and setup than on the check.
       - run: npm run lint:name-inference
+      # The FULL rule-audit ratchet. The pre-commit hook runs a scoped version
+      # that only sees rules whose own files changed; a shared-util edit can
+      # move a rule's findings without touching it, so this run — every rule,
+      # every check — is the one that actually holds the line.
+      #
+      # ~340ms of analysis over 121 rules, so it belongs in this job rather
+      # than paying for its own checkout.
+      - run: npm run rule-audit:gate
 
   recall:
     name: Detection Recall (CWE corpus)

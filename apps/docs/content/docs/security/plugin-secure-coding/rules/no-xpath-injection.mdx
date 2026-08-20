@@ -93,12 +93,15 @@ const safeId = validateId(userInput); const xpath = `/users/user[@id="${safeId}"
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `xpathFunctions` | `string[]` | `["evaluate","selectSingleNode","selectNodes","xpath","select"]` | XPath evaluation methods treated as query sinks |
+| `reportDangerousConstructs` | `boolean` | `false` | Also report constant XPath containing ordinary axis syntax (//, text(), .., /*). These are not vulnerabilities; a constant expression has nothing to inject into. Off by default because it reported essentially every XPath in existence at CVSS 9.8. |
+| `xpathFunctions` | `string[]` | `["evaluate","selectSingleNode","selectNodes","xpath","select","select1"]` | XPath evaluation methods treated as query sinks |
 | `safeXpathConstructors` | `string[]` | `["buildXPath","createXPath","safeXPath","xpathBuilder"]` | Builders that produce a parameterized XPath expression |
 | `xpathValidationFunctions` | `string[]` | `["validateXPath","escapeXPath","sanitizeXPath","cleanXPath"]` | Function names that escape or validate XPath input |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as XPath sanitizers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| `xpathPackages` | `string[]` | `["xpath","xmldom-xpath","xpath.js","libxmljs","libxmljs2","@xmldom/xmldom"]` | Module specifiers whose exports evaluate an XPath expression, matched against a resolved import binding. Replaces the built-in list. |
+| `additionalXpathPackages` | `string[]` | `[]` | Extra XPath package specifiers, on top of `xpathPackages`. |
 
 ## Error Message Format
 

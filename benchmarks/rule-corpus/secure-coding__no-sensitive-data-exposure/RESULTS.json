@@ -1,0 +1,25 @@
+{
+  "rule": "secure-coding/no-sensitive-data-exposure",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 27,
+  "vulnerable": 14,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-sensitive-data-exposure",
+      "tp": 13,
+      "fp": 0,
+      "fn": 1,
+      "tn": 13,
+      "precision": 1,
+      "recall": 0.9285714285714286,
+      "specificity": 1,
+      "youdenJ": 0.9285714285714286,
+      "f1": 0.962962962962963,
+      "crashes": [],
+      "missed": [
+        "vulnerable/13-innocuous-column-names.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

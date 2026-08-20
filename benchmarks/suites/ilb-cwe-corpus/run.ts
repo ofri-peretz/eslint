@@ -24,6 +24,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { ESLint } from "eslint";
+import { captureMethodology } from "../../lib/methodology.ts";
+import { getToolchain } from "../../lib/toolchain.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = path.resolve(__dirname, "..", "..");
@@ -239,10 +241,18 @@ async function main() {
     console.log("");
   }
 
+  // The envelope carries a squash-proof methodology receipt. `methodologyCommit`
+  // is a branch SHA and this repo squash-merges, so it never enters main's
+  // history; the durable receipt is the content hash + the paths it covers.
+  const { methodologyHash, methodologyPaths } = captureMethodology(import.meta.url);
+
   const data = {
     bench: "ILB-CWE-Corpus",
-    version: "1.0",
+    benchVersion: "1.0",
     timestamp: new Date().toISOString(),
+    methodologyHash,
+    methodologyPaths,
+    toolchain: getToolchain(),
     environment: {
       nodeVersion: process.version,
       eslintVersion: (() => {

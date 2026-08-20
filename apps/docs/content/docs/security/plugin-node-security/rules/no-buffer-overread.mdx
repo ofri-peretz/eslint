@@ -99,13 +99,38 @@ if (index >= 0 && index < buffer.length) { const byte = buffer[index]; }
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `bufferMethods` | `string[]` | `["readUInt8","readUInt16LE","readUInt32LE","readInt8","readInt16LE","readInt32LE","writeUInt8","writeUInt16LE","writeUInt32LE","slice","copy"]` | Buffer read/write methods checked for bounds |
+| `bufferMethods` | `string[]` | `["readUInt8","readInt8","readUInt16LE","readUInt16BE","readInt16LE","readInt16BE","readUInt32LE","readUInt32BE","readInt32LE","readInt32BE","readBigUInt64LE","readBigUInt64BE","readBigInt64LE","readBigInt64BE","readFloatLE","readFloatBE","readDoubleLE","readDoubleBE","readUIntLE","readUIntBE","readIntLE","readIntBE","writeUInt8","writeUInt16LE","writeUInt32LE","slice","subarray","copy"]` | Buffer read/write methods checked for bounds |
 | `boundsCheckFunctions` | `string[]` | `["validateIndex","checkBounds","safeIndex","validateBufferIndex"]` | Function names that count as a bounds check |
 | `bufferTypes` | `string[]` | `["Buffer","Uint8Array","ArrayBuffer","DataView"]` | Constructor names treated as buffer types |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as buffer index validators |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `untrustedSources` | `string[]` | `["req","request","event","ctx","context"]` | Identifier roots treated as carrying an inbound request (default: req, request, event, ctx, context). Replaces the list; [] disables root-based taint. |
+| `bufferParameterNames` | `string[]` | `["buf","buffer","bytes"]` | Parameter spellings treated as a Buffer when the type is not otherwise visible (default: buf, buffer, bytes). Whole-name match, never substring. Replaces the list; [] drops the convention. |
 | `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
 | `reportUnvalidatedIndices` | `boolean` | `false` | Report every index that cannot be proven validated. Restores the pre-inversion behaviour. |
+
+### Tuning the two identifier vocabularies
+
+`untrustedSources` and `bufferParameterNames` are the only two places where this
+rule decides from a *spelling* rather than from evidence, and both are on the
+reporting path — so both are yours to set.
+
+```jsonc
+{
+  "node-security/no-buffer-overread": ["error", {
+    // A Koa app that names the request context `koaCtx`. The list REPLACES the
+    // default, so restate the defaults you still want.
+    "untrustedSources": ["req", "request", "ctx", "koaCtx"],
+    // A codebase where `bytes` is a byte COUNT, not a Buffer.
+    "bufferParameterNames": ["buf", "buffer"]
+  }]
+}
+```
+
+Setting either to `[]` switches that inference off entirely: with
+`untrustedSources: []` no index is user-controlled by virtue of its root, and
+with `bufferParameterNames: []` only bindings whose initializer this rule can
+see are treated as buffers.
 
 ## Error Message Format
 

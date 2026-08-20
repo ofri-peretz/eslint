@@ -663,3 +663,134 @@ ruleTester.run('lock: dangerousChars is HTML, not shell', noImproperSanitization
     { code: 'el.innerHTML = "<div>" + userInput + "</div>";', errors: 2 },
   ],
 });
+
+/**
+ * Option coverage — `safeSanitizers`, `trustedSanitizers`,
+ * `trustedAnnotations`, `strictMode`.
+ *
+ * Every block below is a PAIR over one unchanged snippet: the `valid` entry
+ * sets the option, the `invalid` entry runs the same source without it (or
+ * with the option that overrides it), and the two verdicts disagree. An option
+ * that produced the default verdict would execute the line while proving
+ * nothing — the branch could be deleted and this file would stay green.
+ *
+ * `zzzWrap` and `@zzz-reviewed` are chosen so that no built-in list can match
+ * them: `trustedSanitizers` extends `SANITIZATION_FUNCTIONS` by exact name,
+ * the rule's own sanitizer set is exact too, and `@zzz-reviewed` contains none
+ * of the built-in `SAFE_ANNOTATIONS` as a substring.
+ */
+ruleTester.run(
+  'option: safeSanitizers accepts a project sanitizer at innerHTML',
+  noImproperSanitization,
+  {
+    valid: [
+      {
+        // `safeSanitizers` REPLACES the default list rather than extending it,
+        // so this configuration trusts `zzzWrap` and nothing else. That is
+        // enough for the innerHTML assignment: the right-hand side is now a
+        // recognised sanitizer call.
+        code: 'el.innerHTML = zzzWrap(req.body.comment);',
+        options: [{ safeSanitizers: ['zzzWrap'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Identical source under the defaults, where `zzzWrap` is not a known
+        // sanitizer and `req.body` reaches innerHTML unescaped.
+        code: 'el.innerHTML = zzzWrap(req.body.comment);',
+        errors: [{ messageId: 'insufficientXssProtection' }],
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'option: trustedSanitizers accepts a project sanitizer in output text',
+  noImproperSanitization,
+  {
+    valid: [
+      {
+        // The output-literal path treats a concatenation as authored text only
+        // when every leaf is a literal or a named sanitizer call.
+        // `trustedSanitizers` is what adds `zzzWrap` to that set, so both
+        // markup literals stop reporting.
+        code: 'res.send("<p>" + zzzWrap(req.query.name) + "</p>");',
+        options: [{ trustedSanitizers: ['zzzWrap'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, option withheld: `zzzWrap` is an arbitrary call, so the
+        // concatenation is tainted and each markup literal reports.
+        code: 'res.send("<p>" + zzzWrap(req.query.name) + "</p>");',
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+    ],
+  },
+);
+
+ruleTester.run(
+  'option: trustedAnnotations silences unescaped output',
+  noImproperSanitization,
+  {
+    valid: [
+      {
+        // `hasSafeAnnotation` climbs from each literal to the enclosing call,
+        // whose leading comment carries the custom annotation.
+        code: '/* @zzz-reviewed by appsec */\nres.send("<p>" + req.query.name + "</p>");',
+        options: [{ trustedAnnotations: ['@zzz-reviewed'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, same comment, option withheld: the comment matches none
+        // of the built-in annotations, so both markup literals report.
+        code: '/* @zzz-reviewed by appsec */\nres.send("<p>" + req.query.name + "</p>");',
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+    ],
+  },
+);
+
+/**
+ * `strictMode` only reaches report sites guarded by `safetyChecker.isSafe`.
+ *
+ * It is paired here against `trustedAnnotations` rather than against
+ * `trustedSanitizers`, because the sanitizer set also feeds the rule's own
+ * authored-text check (`isSafeText`), which returns before the safety checker
+ * is ever consulted — a strictMode pair built on that snippet would stay quiet
+ * in both directions and assert nothing.
+ */
+ruleTester.run(
+  'option: strictMode overrides trustedAnnotations',
+  noImproperSanitization,
+  {
+    valid: [
+      {
+        // Same snippet as the trustedAnnotations pair above: quiet only
+        // because the annotation is trusted.
+        code: '/* @zzz-reviewed by appsec */\nres.send("<p>" + req.query.name + "</p>");',
+        options: [{ trustedAnnotations: ['@zzz-reviewed'] }],
+      },
+    ],
+    invalid: [
+      {
+        // Same source, same annotation list, plus `strictMode`. The checker
+        // now returns false unconditionally, so the annotation stops
+        // suppressing and both findings return.
+        code: '/* @zzz-reviewed by appsec */\nres.send("<p>" + req.query.name + "</p>");',
+        options: [{ trustedAnnotations: ['@zzz-reviewed'], strictMode: true }],
+        errors: [
+          { messageId: 'unsafeReplaceSanitization' },
+          { messageId: 'unsafeReplaceSanitization' },
+        ],
+      },
+    ],
+  },
+);

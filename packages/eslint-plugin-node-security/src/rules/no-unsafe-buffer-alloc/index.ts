@@ -75,14 +75,16 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
+import { resolveConstant, resolveConstantString } from '../../utils/const-value';
+import { findVariable } from '../../utils/provenance';
 
 type MessageIds =
   | 'unsafeAlloc'
   | 'unsafeAllocSlow'
   | 'useSafeAlloc'
-  | 'unboundedAllocation'
-  | 'clampAllocation';
+  | 'unboundedAllocation';
 
 /** The two uninitialized-memory allocators on `Buffer`. */
 const UNSAFE_ALLOCATORS = new Set(['allocUnsafe', 'allocUnsafeSlow']);
@@ -171,10 +173,21 @@ const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
  *
  * A protocol decoder is the one place where a length field is genuinely
  * attacker-authored, and it is always spelled as one of these.
+ *
+ * Every name here denotes a BUFFER, and that is the whole justification for
+ * the list: a size derived from one — `chunk.readUInt32BE(0)` — is a size the
+ * peer wrote. `bytes` used to sit here and does the opposite: in Node it
+ * overwhelmingly names a COUNT (`randomBytes(bytes)`, `bytesRead`, a
+ * `highWaterMark` in bytes), so `Buffer.allocUnsafe(bytes)` in a nonce helper
+ * was reported as "the peer picks the allocation" on the strength of the
+ * spelling alone — renaming the parameter to `n` silenced it, which is the
+ * definition of a name-inference false positive. Removed; the decoder shapes
+ * this list exists for (`benchmarks/corpus/CWE-770/vulnerable/*`) still report
+ * through `chunk`/`req`.
  */
 const WIRE_NAMES: ReadonlySet<string> = new Set([
   'chunk', 'chunks', 'buffer', 'buf', 'data', 'payload', 'frame', 'packet',
-  'bytes', 'raw', 'message', 'msg',
+  'raw', 'message', 'msg',
 ]);
 
 /**
@@ -215,6 +228,90 @@ const METADATA_PROPERTIES: ReadonlySet<string> = new Set([
   'length', 'byteLength', 'byteOffset', 'buffer',
 ]);
 
+/**
+ * How many bytes each FIXED-WIDTH writer puts down.
+ *
+ * Two things need this. First, `coversWholeBuffer` used to accept any
+ * one-argument write as covering — the `buf.write(str)` / `src.copy(dst)`
+ * idiom — which also waved through `header.writeUInt32BE(len)`, where the
+ * omitted offset means 0 and only FOUR bytes of a sixteen-byte header are
+ * written. Second, a header written entirely at LITERAL offsets is decidably
+ * covered, and reporting it asks the reader to re-derive the arithmetic on
+ * every visit.
+ *
+ * `write`, `set`, `copy` and `fill` are deliberately absent: their span
+ * depends on a runtime value, so they are judged by the offset rule instead.
+ */
+const WRITE_WIDTHS: ReadonlyMap<string, number> = new Map([
+  ['writeUInt8', 1], ['writeInt8', 1],
+  ['writeUInt16LE', 2], ['writeUInt16BE', 2], ['writeInt16LE', 2], ['writeInt16BE', 2],
+  ['writeUInt32LE', 4], ['writeUInt32BE', 4], ['writeInt32LE', 4], ['writeInt32BE', 4],
+  ['writeFloatLE', 4], ['writeFloatBE', 4],
+  ['writeDoubleLE', 8], ['writeDoubleBE', 8],
+  ['writeBigInt64LE', 8], ['writeBigInt64BE', 8],
+  ['writeBigUInt64LE', 8], ['writeBigUInt64BE', 8],
+]);
+
+/**
+ * The largest allocation whose byte-by-byte coverage is worth tracking.
+ *
+ * The map below is a `Uint8Array` of the allocation's size, so an unbounded
+ * cap would let `Buffer.allocUnsafe(1e9)` allocate a gigabyte inside the
+ * linter. Fixed-offset coverage is a HEADER idiom; past a few kilobytes the
+ * shape is a loop, which the offset rule already recognises.
+ */
+const MAX_TRACKED_ALLOCATION = 4096;
+
+/** The two specifiers that resolve to Node's built-in `buffer` module. */
+const BUFFER_MODULES: ReadonlySet<string> = new Set(['buffer', 'node:buffer']);
+
+/** The two specifiers that resolve to Node's built-in `crypto` module. */
+const CRYPTO_MODULES: ReadonlySet<string> = new Set(['crypto', 'node:crypto']);
+
+/** Entropy writers that fill their FIRST argument. */
+const RANDOM_FILL_CALLS: ReadonlySet<string> = new Set(['randomFill', 'randomFillSync']);
+
+/** `require('crypto')` / `require('node:crypto')`. */
+function isCryptoModuleRequire(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.Identifier &&
+    node.callee.name === 'require' &&
+    node.arguments[0]?.type === AST_NODE_TYPES.Literal &&
+    typeof node.arguments[0].value === 'string' &&
+    CRYPTO_MODULES.has(node.arguments[0].value)
+  );
+}
+
+/** `require('buffer')` / `require('node:buffer')`. */
+function isBufferModuleRequire(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.Identifier &&
+    node.callee.name === 'require' &&
+    node.arguments[0]?.type === AST_NODE_TYPES.Literal &&
+    typeof node.arguments[0].value === 'string' &&
+    BUFFER_MODULES.has(node.arguments[0].value)
+  );
+}
+
+/**
+ * Is this expression the `Buffer` constructor object?
+ *
+ * `Buffer`, or `require('node:buffer').Buffer` — the receiver an allocator is
+ * destructured off in hot-path code.
+ */
+function isBufferObject(node: TSESTree.Node): boolean {
+  if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'Buffer';
+  return (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    !node.computed &&
+    node.property.type === AST_NODE_TYPES.Identifier &&
+    node.property.name === 'Buffer' &&
+    isBufferModuleRequire(node.object)
+  );
+}
+
 /** Is this node inside a loop body? */
 function isInsideLoop(node: TSESTree.Node): boolean {
   let current: TSESTree.Node | undefined = node.parent;
@@ -246,9 +343,43 @@ function isInsideLoop(node: TSESTree.Node): boolean {
  */
 function coversWholeBuffer(call: TSESTree.CallExpression, method: string): boolean {
   if (method === 'fill') return true;
+  const width = WRITE_WIDTHS.get(method);
+  if (width !== undefined) {
+    // A fixed-width writer puts down `width` bytes wherever it lands, so a
+    // one-argument call is NOT the "copy the whole thing in" idiom — the
+    // omitted offset just means 0. Only a MOVING offset inside a loop walks
+    // the allocation.
+    const offset = call.arguments[1];
+    return (
+      offset !== undefined &&
+      offset.type !== AST_NODE_TYPES.Literal &&
+      isInsideLoop(call)
+    );
+  }
   if (call.arguments.length === 1) return true;
   const offset = call.arguments[1];
   return offset.type !== AST_NODE_TYPES.Literal && isInsideLoop(call);
+}
+
+/**
+ * The byte range a fixed-width write covers, when both ends are decidable.
+ *
+ * `header.writeUInt32BE(streamId, 4)` covers bytes 4..7. The offset must be a
+ * numeric literal (or omitted, which means 0); anything computed leaves the
+ * span unknown and the write stays merely partial.
+ */
+function fixedWriteSpan(
+  call: TSESTree.CallExpression,
+  method: string,
+): { start: number; end: number } | null {
+  const width = WRITE_WIDTHS.get(method);
+  if (width === undefined) return null;
+  const offset = call.arguments[1];
+  if (offset === undefined) return { start: 0, end: width };
+  if (offset.type !== AST_NODE_TYPES.Literal || typeof offset.value !== 'number') {
+    return null;
+  }
+  return { start: offset.value, end: offset.value + width };
 }
 
 /** The name a callee resolves to, for `f()`, `o.f()` and `this.#f()`. */
@@ -333,12 +464,13 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         fix: 'Clamp the length against the maximum the protocol actually permits, before allocating: `if (length > MAX_LENGTH) throw new Error("too long")`, or `new Array(Math.min(length, MAX_LENGTH))`. A guard that only rejects implausibly huge values is not a fix for `new Array` — those are the sizes V8 makes free. The damaging lengths are the plausible ones just below the packed-elements limit.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/789.html',
       }),
-      clampAllocation: 'Clamp the size against the maximum the protocol permits.',
     },
     schema: [],
   },
   defaultOptions: [],
   create(context) {
+    const sourceCode = context.sourceCode;
+
     // ── CWE-789: allocation sized by a length field off the wire ──────────
     //
     // `redis/ioredis` `lib/resp/decoder.ts:669` is the archetype:
@@ -368,15 +500,15 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     const pendingAllocations: { node: TSESTree.Node; size: TSESTree.Node }[] = [];
     /** Call sites to record at Program:exit, once every binding is known. */
     const pendingCallSites: (TSESTree.CallExpression | TSESTree.NewExpression)[] = [];
-    /**
-     * `name = <expr>` bindings.
-     *
-     * A size is almost never used where it is produced: it is parsed into a
-     * local and allocated from the local one line later. Without this hop
-     * `const size = Number(url.searchParams.get('size')); Buffer.alloc(size)`
-     * reads as an unremarkable identifier.
-     */
-    const bindings = new Map<string, TSESTree.Node>();
+
+    // A size is almost never used where it is produced: it is parsed into a
+    // local and allocated from the local one line later, and following that hop
+    // is what makes `const size = Number(url.searchParams.get('size'));
+    // Buffer.alloc(size)` visible. That hop used to run through a file-wide
+    // `Map<name, init>`, which cannot tell one scope's `size` from another's —
+    // the exact defect `provenance.ts` was written to retire. The scope
+    // analyser's own write references subsume it and honour shadowing, so the
+    // map is gone.
 
     /** Does this expression read bytes off the wire? */
     function readsWire(node: TSESTree.Node, depth = 0): boolean {
@@ -387,8 +519,25 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       // ordinary handler code — see
       // benchmarks/corpus/CWE-770/vulnerable/buffer-alloc-user.js.
       if (depth > 10) return false;
+      // `chunk.readUInt32BE(0) as number` reads exactly what the call reads —
+      // the cast is erased at compile time. Without this the switch below falls
+      // through to `default: return false`, and a TypeScript decoder (which
+      // must write the cast to compile) silences the whole CWE-789 arm.
+      const bare = unwrapTypeSyntax(node);
+      if (bare !== node) return readsWire(bare, depth + 1);
+
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
+          // `Buffer.byteLength(json)` sizes an allocation from a value already
+          // in memory, and `Buffer` is not wire data — but `buffer` is in
+          // WIRE_NAMES because it is a conventional PARAMETER name for bytes
+          // off a socket. Resolving the binding is what tells the two apart:
+          // the global (or an import from `node:buffer`) is the namespace.
+          if (node.name === 'Buffer') {
+            const bound = findVariable(sourceCode, node);
+            if (bound === null || bound.defs.length === 0) return false;
+            if (bound.defs[0].type === 'ImportBinding') return false;
+          }
           const lower = node.name.toLowerCase();
           if (WIRE_NAMES.has(lower) || REQUEST_ROOTS.has(lower)) return true;
           const owner = enclosingFunction(node);
@@ -400,8 +549,21 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
               if (index !== null && indices.has(index)) return true;
             }
           }
-          const bound = bindings.get(node.name);
-          return bound !== undefined && readsWire(bound, depth + 1);
+          // The LAST write before this use, not the declarator.
+          // `let capacity = 1024; if (…) capacity = Number(req.query.capacity);
+          // Buffer.alloc(capacity)` reaches the sink carrying the request, and
+          // reading the declarator alone answers `1024` — a false negative that
+          // looks exactly like a safe constant. Taking "any write" instead
+          // would invert it, reporting a value that has since been overwritten
+          // with a literal.
+          const variable = findVariable(sourceCode, node);
+          const lastWrite = (variable?.references ?? [])
+            .map((reference) => reference.writeExpr)
+            .filter((write): write is TSESTree.Node => write != null)
+            .filter((write) => write.range[1] <= node.range[0])
+            .sort((a, b) => a.range[1] - b.range[1])
+            .at(-1);
+          return lastWrite !== undefined && readsWire(lastWrite, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression:
           return readsWire(node.object, depth + 1);
@@ -467,6 +629,12 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
      *
      * `Math.min(length, MAX)` clamps it outright; an enclosing comparison on
      * the same identifier is the guard-clause spelling of the same thing.
+     *
+     * A clamp is only a clamp against a bound the PEER CANNOT MOVE.
+     * `Math.min(req.body.windowBytes, req.body.maxWindowBytes)` wears the shape
+     * of a mitigation while leaving both operands in the attacker's hands, and
+     * accepting it on shape alone made the fake mitigation quieter than no
+     * mitigation at all. At least one operand has to be out of reach.
      */
     function isClamped(size: TSESTree.Node): boolean {
       if (
@@ -477,7 +645,10 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         size.callee.property.type === AST_NODE_TYPES.Identifier &&
         size.callee.property.name === 'min'
       ) {
-        return true;
+        return size.arguments.some(
+          (argument) =>
+            argument.type !== AST_NODE_TYPES.SpreadElement && !readsWire(argument),
+        );
       }
       if (size.type !== AST_NODE_TYPES.Identifier) return false;
       const name = size.name;
@@ -572,7 +743,6 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       context.report({
         node,
         messageId: 'unboundedAllocation',
-        suggest: [{ messageId: 'clampAllocation', fix: () => null }],
       });
     }
 
@@ -613,18 +783,59 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       }
       // `src.copy(buf, offset)` / `crypto.randomFillSync(buf)`.
       if (parent.type === AST_NODE_TYPES.CallExpression && parent.arguments[0] === identifier) {
-        const callee = parent.callee;
-        if (
-          callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.computed ||
-          callee.property.type !== AST_NODE_TYPES.Identifier ||
-          !DESTINATION_ARGUMENT_CALLS.has(callee.property.name)
-        ) {
-          return 'read';
-        }
-        return coversWholeBuffer(parent, callee.property.name) ? 'covering' : 'partial';
+        const method = destinationArgumentCallee(parent.callee);
+        if (method === null) return 'read';
+        return coversWholeBuffer(parent, method) ? 'covering' : 'partial';
       }
       return 'read';
+    }
+
+    /**
+     * The name of a call that writes THROUGH its first argument, if this is one.
+     *
+     * `crypto.randomFillSync(buf)` was recognised and the named-import spelling
+     * of the same call — `import { randomFillSync } from 'node:crypto'` — was
+     * not, because the test insisted on a member expression. That is a false
+     * positive on the one idiom where `allocUnsafe` is unambiguously correct: a
+     * buffer that exists only to be overwritten with entropy.
+     *
+     * A bare identifier is accepted only when its binding resolves to
+     * `node:crypto` — `copy` as a free function is somebody else's `copy`, not
+     * `Buffer#copy`.
+     */
+    function destinationArgumentCallee(callee: TSESTree.Node): string | null {
+      if (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        !callee.computed &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
+        DESTINATION_ARGUMENT_CALLS.has(callee.property.name)
+      ) {
+        return callee.property.name;
+      }
+      if (
+        callee.type !== AST_NODE_TYPES.Identifier ||
+        !RANDOM_FILL_CALLS.has(callee.name)
+      ) {
+        return null;
+      }
+      const variable = findVariable(sourceCode, callee);
+      if (variable === null || variable.defs.length === 0) return null;
+      const def = variable.defs[0];
+      if (def.type === 'ImportBinding') {
+        // `import x = require('crypto')` carries its specifier elsewhere and
+        // binds the module object, not the filler, so it stays unresolved.
+        const declaration = def.parent;
+        return declaration.type === AST_NODE_TYPES.ImportDeclaration &&
+          CRYPTO_MODULES.has(declaration.source.value)
+          ? callee.name
+          : null;
+      }
+      // `const { randomFillSync } = require('node:crypto')`
+      return def.type === 'Variable' &&
+        def.node.init !== null &&
+        isCryptoModuleRequire(def.node.init)
+        ? callee.name
+        : null;
     }
 
     /**
@@ -661,15 +872,127 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         .filter((reference) => reference.identifier !== declarator.id)
         .sort((a, b) => a.identifier.range[0] - b.identifier.range[0]);
 
+      // Byte map for the fixed-offset case. A header stamped field by field at
+      // LITERAL offsets — `writeUInt32BE(id, 0); writeUInt32BE(len, 4)` on an
+      // eight-byte allocation — is fully covered, and the arithmetic is
+      // decidable without knowing a single runtime value. Judging those writes
+      // "partial" made the commonest legitimate use of `allocUnsafe` in
+      // protocol code a permanent finding.
+      const covered = byteMapFor(call);
+      let remaining = covered === null ? -1 : covered.length;
+
       for (const use of uses) {
         const kind = classifyUse(use.identifier as TSESTree.Identifier);
         // Metadata reads disclose nothing, and a partial write is not a read —
         // neither settles the question, so keep looking for the first one that
         // does.
-        if (kind === 'metadata' || kind === 'partial') continue;
+        if (kind === 'metadata') continue;
+        if (kind === 'partial') {
+          if (covered !== null) {
+            remaining -= markFixedWrite(covered, use.identifier as TSESTree.Identifier);
+            if (remaining === 0) return true;
+          }
+          continue;
+        }
         return kind === 'covering';
       }
       return false;
+    }
+
+    /**
+     * A zeroed byte map the size of this allocation, when that size is a
+     * resolvable constant small enough to be a header.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function byteMapFor(call: TSESTree.CallExpression): Uint8Array | null {
+      const argument = call.arguments[0];
+      if (argument === undefined || argument.type === AST_NODE_TYPES.SpreadElement) {
+        return null;
+      }
+      const resolved = resolveConstant(sourceCode, argument);
+      if (resolved === null || typeof resolved.value !== 'number') return null;
+      const size = resolved.value;
+      if (!Number.isInteger(size) || size <= 0 || size > MAX_TRACKED_ALLOCATION) {
+        return null;
+      }
+      return new Uint8Array(size);
+    }
+
+    /**
+     * Mark the bytes this use writes, and report how many were newly covered.
+     *
+     * A span that does not fit inside the allocation contributes NOTHING. A
+     * write running off the end is a different weakness (CWE-787) — in Node it
+     * throws `ERR_OUT_OF_RANGE` — and it must not be able to "finish" the
+     * coverage of the buffer it overflows.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function markFixedWrite(covered: Uint8Array, identifier: TSESTree.Identifier): number {
+      const member = identifier.parent;
+      if (
+        member.type !== AST_NODE_TYPES.MemberExpression ||
+        member.property.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return 0;
+      }
+      const call = member.parent;
+      if (call.type !== AST_NODE_TYPES.CallExpression) return 0;
+      const span = fixedWriteSpan(call, member.property.name);
+      if (span === null || span.start < 0 || span.end > covered.length) return 0;
+      let added = 0;
+      for (let index = span.start; index < span.end; index += 1) {
+        if (covered[index] === 0) {
+          covered[index] = 1;
+          added += 1;
+        }
+      }
+      return added;
+    }
+
+    /**
+     * Which uninitialized allocator does this callee reach, if any?
+     *
+     * Three spellings, all of them ordinary code, all of them the same
+     * allocation:
+     *
+     * ```js
+     * Buffer.allocUnsafe(n)                                   // the obvious one
+     * const ALLOCATOR = 'allocUnsafe'; Buffer[ALLOCATOR](n)   // config-driven pool
+     * const { allocUnsafe } = Buffer; allocUnsafe(n)          // hoisted hot path
+     * ```
+     *
+     * A callee-shape test saw only the first. The computed key is resolved
+     * through `resolveConstantString` and the destructured binding through the
+     * scope analyser, so all three are decided by what the call *reaches*
+     * rather than by how it is written.
+     */
+    function unsafeAllocator(callee: TSESTree.Node): string | null {
+      if (callee.type === AST_NODE_TYPES.MemberExpression) {
+        if (!isBufferObject(callee.object)) return null;
+        const name = callee.computed
+          ? resolveConstantString(sourceCode, callee.property)?.value
+          : callee.property.type === AST_NODE_TYPES.Identifier
+            ? callee.property.name
+            : undefined;
+        return name !== undefined && UNSAFE_ALLOCATORS.has(name) ? name : null;
+      }
+      if (callee.type !== AST_NODE_TYPES.Identifier) return null;
+      // `const { allocUnsafe } = Buffer` — the binding's own parent is the
+      // destructuring property, so the KEY is read directly.
+      const variable = findVariable(sourceCode, callee);
+      if (variable === null || variable.defs.length === 0) return null;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable' || def.node.init === null) return null;
+      if (!isBufferObject(def.node.init)) return null;
+      const property = def.name.parent;
+      if (
+        property.type !== AST_NODE_TYPES.Property ||
+        property.computed ||
+        property.key.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return null;
+      }
+      return UNSAFE_ALLOCATORS.has(property.key.name) ? property.key.name : null;
     }
 
     /**
@@ -697,15 +1020,6 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     }
 
     return {
-      // Bindings first: a size parsed on one line and allocated on the next is
-      // the normal spelling, and `readsWire` cannot follow it until the whole
-      // file has been seen.
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (node.init !== null && node.id.type === AST_NODE_TYPES.Identifier) {
-          bindings.set(node.id.name, node.init);
-        }
-      },
-
       NewExpression(node: TSESTree.NewExpression) {
         pendingCallSites.push(node);
         const size = allocationSize(node);
@@ -723,33 +1037,37 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         if (size !== null) pendingAllocations.push({ node, size });
 
         const callee = node.callee;
-        if (
-          callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.computed ||
-          callee.object.type !== AST_NODE_TYPES.Identifier ||
-          callee.object.name !== 'Buffer' ||
-          callee.property.type !== AST_NODE_TYPES.Identifier ||
-          !UNSAFE_ALLOCATORS.has(callee.property.name)
-        ) {
-          return;
-        }
+        const allocator = unsafeAllocator(callee);
+        if (allocator === null) return;
 
         if (isFilledInPlace(node)) return;
         if (isCoveredBeforeRead(node)) return;
 
+        // The suggestion rewrites the PROPERTY, so it exists only for the
+        // spelling that has one. `Buffer[ALLOCATOR](n)` would become
+        // `Buffer[alloc](n)` — a reference to an undeclared binding — and a
+        // destructured `allocUnsafe(n)` has no property to rewrite at all.
+        const rewritable =
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          !callee.computed &&
+          callee.property.type === AST_NODE_TYPES.Identifier
+            ? callee.property
+            : null;
+
         context.report({
           node,
-          messageId:
-            callee.property.name === 'allocUnsafe'
-              ? 'unsafeAlloc'
-              : 'unsafeAllocSlow',
-          suggest: [
-            {
-              messageId: 'useSafeAlloc',
-              fix: (fixer: TSESLint.RuleFixer) =>
-                fixer.replaceText(callee.property, 'alloc'),
-            },
-          ],
+          messageId: allocator === 'allocUnsafe' ? 'unsafeAlloc' : 'unsafeAllocSlow',
+          ...(rewritable === null
+            ? {}
+            : {
+                suggest: [
+                  {
+                    messageId: 'useSafeAlloc' as const,
+                    fix: (fixer: TSESLint.RuleFixer) =>
+                      fixer.replaceText(rewritable, 'alloc'),
+                  },
+                ],
+              }),
         });
       },
     };
