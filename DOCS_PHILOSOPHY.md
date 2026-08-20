@@ -56,7 +56,7 @@ When a docs-related change is proposed, check it against the principles AND the 
 
 **Common failure modes.** (1) Drift between handwritten frontmatter and the underlying source. (2) Frontmatter overrides that silently break sidebars when files move.
 
-**Our verdict — extend (priority: medium).** Treat each rule's `meta.docs` + `meta.schema` as the source of truth and codegen the MDX page (frontmatter included) at build time. Slug = `/<plugin>/<rule-name>` derived purely from filesystem. Hand-edits to generated pages should be rejected by CI — any prose enrichment lives in a sibling `<rule>.notes.mdx` partial that the generator splices in. **Next step:** have `sync-rule-docs.ts` emit `[plugin]/meta.json` and `[plugin]/rules/meta.json` with deterministic ordering (recommended-first, then alphabetical).
+**Our verdict — extend (priority: medium).** Treat each rule's `meta.docs` + `meta.schema` as the source of truth and codegen the MDX page (frontmatter included) at build time. Slug = `/<plugin>/<rule-name>` derived purely from filesystem. Hand-edits to generated pages should be rejected by CI — any prose enrichment lives in a sibling `<rule>.notes.mdx` partial that the generator splices in. **Next step:** have `sync-rules-docs.ts` emit `[plugin]/meta.json` and `[plugin]/rules/meta.json` with deterministic ordering (recommended-first, then alphabetical).
 
 ---
 
@@ -77,7 +77,7 @@ When a docs-related change is proposed, check it against the principles AND the 
 
 **Common failure modes.** (1) Component sprawl — dozens of one-off widgets nobody can find. (2) MDX files unreadable as plaintext, breaking grep, diff review, and LLM ingestion.
 
-**Our verdict — extend (priority: medium).** Stay aggressively Markdown-first. Allow only a tiny global registry: `<RuleMeta>`, `<RuleExample bad good>`, `<RuleOptions schema>`, `<Callout>`, plus the existing `Steps/Tabs/Accordion`. Forbid arbitrary imports in rule pages (lint-enforced). Every component must degrade to a sensible plaintext block when stripped, so `cat path/to/rule.mdx` is still useful to Claude/Cursor/Copilot. **Next step:** add the rule-domain MDX components and emit them from `sync-rule-docs.ts`.
+**Our verdict — extend (priority: medium).** Stay aggressively Markdown-first. Allow only a tiny global registry: `<RuleMeta>`, `<RuleExample bad good>`, `<RuleOptions schema>`, `<Callout>`, plus the existing `Steps/Tabs/Accordion`. Forbid arbitrary imports in rule pages (lint-enforced). Every component must degrade to a sensible plaintext block when stripped, so `cat path/to/rule.mdx` is still useful to Claude/Cursor/Copilot. **Next step:** add the rule-domain MDX components and emit them from `sync-rules-docs.ts`.
 
 ---
 
@@ -140,7 +140,7 @@ When a docs-related change is proposed, check it against the principles AND the 
 
 **Common failure modes.** (1) Twoslash applied to every code block, pushing build time from seconds to minutes. (2) Setup hidden by `---cut---` so confusingly that the snippet no longer reproduces standalone.
 
-**Our verdict — extend (priority: high).** Rule examples are TypeScript and the entire promise of an ESLint rule is "this code is wrong / this code is right" — Twoslash's `// @errors:` is literally the right primitive. Use Twoslash on every "incorrect" example to assert the diagnostic the rule emits (cross-checked against a snapshot run of the rule), and on "correct" examples to prove they typecheck. Plain Shiki for short config fences and CLI invocations. The agent-consumption story is huge: LLMs ingesting our docs see real types, not hand-waved pseudo-TS. **Next step:** enable `createFileSystemTypesCache()` and update `sync-rule-docs.ts` to default examples to ` ```ts twoslash ` blocks with `// @errors:` annotations sourced from rule test fixtures.
+**Our verdict — extend (priority: high).** Rule examples are TypeScript and the entire promise of an ESLint rule is "this code is wrong / this code is right" — Twoslash's `// @errors:` is literally the right primitive. Use Twoslash on every "incorrect" example to assert the diagnostic the rule emits (cross-checked against a snapshot run of the rule), and on "correct" examples to prove they typecheck. Plain Shiki for short config fences and CLI invocations. The agent-consumption story is huge: LLMs ingesting our docs see real types, not hand-waved pseudo-TS. **Next step:** enable `createFileSystemTypesCache()` and update `sync-rules-docs.ts` to default examples to ` ```ts twoslash ` blocks with `// @errors:` annotations sourced from rule test fixtures.
 
 ---
 
@@ -247,7 +247,7 @@ When a docs-related change is proposed, check it against the principles AND the 
 
 **Common failure modes.** (1) Runtime CMS fetches that break docs when the CMS goes down. (2) Generating docs from source but allowing hand-edits to the generated files — guarantees silent loss on next build.
 
-**Our verdict — extend, formalize (priority: low/ongoing).** Source-projection is non-negotiable for us. `meta.docs.description`, `meta.schema`, `meta.fixable`, `meta.type` already exist in every rule — they are the canonical truth. Build-time generate the rule page skeleton from `packages/*/src/rules/*.ts`; let authors only edit the narrative `## Why this rule` and `## When to disable` sections in a sibling MDX. Emit the same source as `/rules.json` for agent consumption. CI must fail on drift. We already have this hybrid (build-time sync via `sync-rule-docs.ts` + runtime fetch for changelog/READMEs via `remote-*` components); the work is **formalizing the contract**. **Next step:** document the sync contract (which `packages/*` fields → which MDX frontmatter) and add a CI check that fails when a package rule lacks a synced doc.
+**Our verdict — extend, formalize (priority: low/ongoing).** Source-projection is non-negotiable for us. `meta.docs.description`, `meta.schema`, `meta.fixable`, `meta.type` already exist in every rule — they are the canonical truth. Build-time generate the rule page skeleton from `packages/*/src/rules/*.ts`; let authors only edit the narrative `## Why this rule` and `## When to disable` sections in a sibling MDX. Emit the same source as `/rules.json` for agent consumption. CI must fail on drift. We already have this hybrid (build-time sync via `sync-rules-docs.ts` + runtime fetch for changelog/READMEs via `remote-*` components); the work is **formalizing the contract**. **Next step:** document the sync contract (which `packages/*` fields → which MDX frontmatter) and add a CI check that fails when a package rule lacks a synced doc.
 
 ---
 
@@ -369,16 +369,16 @@ Built right, an agent answers "which Interlace rule catches hardcoded credential
 
 | # | Topic | Decision | Priority | Where it lives |
 |---|-------|----------|----------|----------------|
-| 1 | Page conventions | extend | medium | `scripts/sync-rule-docs.ts` |
+| 1 | Page conventions | extend | medium | `apps/docs/scripts/sync-rules-docs.ts` |
 | 2 | Markdown / MDX | extend | medium | `src/mdx-components.tsx` + new rule-domain components |
 | 3 | Math | use-as-is (off) | none | — |
 | 4 | Mermaid | build-our-own ✓ | low | `@interlace/ui/mdx/mermaid` |
-| 5 | Twoslash | extend | **high** | `source.config.ts`, `sync-rule-docs.ts` |
+| 5 | Twoslash | extend | **high** | `source.config.ts`, `sync-rules-docs.ts` |
 | 6 | Navigation | extend | medium | `src/lib/source.ts`, new faceted index page |
 | 7 | i18n | use-as-is (off) | none | `src/lib/i18n.ts` (scaffold only) |
 | 8 | Feedback | extend | medium | new `<Feedback />` integration → PostHog |
 | 9 | OG | extend | medium | `src/app/og/docs/[...slug]/route.ts` |
-| 10 | Content sourcing | extend ✓ (formalize) | ongoing | `scripts/sync-rule-docs.ts` + drift CI |
+| 10 | Content sourcing | extend ✓ (formalize) | ongoing | `apps/docs/scripts/sync-rules-docs.ts` + drift CI |
 | 11 | OpenAPI | build-our-own (RuleSpec) | **high** | new `/api/rules/[plugin]/[rule].json` |
 | 12 | Story/Storybook | build-our-own (RulePlayground) | low (RFC) | future |
 | 13 | TypeScript | build-our-own (JSON-Schema-driven) | medium | `src/lib/rule-metadata-schema.ts` |

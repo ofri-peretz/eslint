@@ -122,7 +122,7 @@ grep -r "// Insecure pattern" packages/*/docs/rules/*.md
 grep -r "import-js/" packages/*/docs/rules/*.md
 
 # Re-sync docs after fixing
-pnpm tsx scripts/sync-rule-docs.ts
+cd apps/docs && npm run sync:rules
 ```
 
 ---
