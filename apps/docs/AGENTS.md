@@ -69,11 +69,12 @@ content/
 
 ## Content Sync
 
-Documentation is synced from package source files. See `scripts/sync-rule-docs.ts`.
+Documentation is synced from package source files. See `apps/docs/scripts/sync-rules-docs.ts`
+(plural `rules`), which is wired up as `npm run sync:rules` in `apps/docs`.
 
 ```bash
 # Sync rule docs from packages
-npx tsx scripts/sync-rule-docs.ts
+cd apps/docs && npm run sync:rules
 ```
 
 ## Key Routes

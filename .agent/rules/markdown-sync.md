@@ -25,7 +25,7 @@ These scripts are located in `scripts/` and perform deeper content validation an
 | :-------------------------------- | :----------------------------------------------------------------------------------------- | :--------------------------- |
 | `scripts/check-markdown-links.ts` | Validates that all internal links in markdown files resolve to existing files and anchors. | Pre-commit / CI              |
 | `scripts/sync-readme-rules.ts`    | Automatically updates the "Rules" tables in package READMEs based on source code metadata. | After adding/modifying rules |
-| `scripts/sync-rule-docs.ts`       | Synchronizes rule documentation files with source code.                                    | After adding/modifying rules |
+| `apps/docs/scripts/sync-rules-docs.ts` (`npm run sync:rules` in `apps/docs`) | Synchronizes rule documentation files with source code. | After adding/modifying rules |
 | `scripts/validate-docs.ts`        | General validation for documentation integrity (metadata, structure).                      | Pre-deployment               |
 
 ### Usage
