@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-sensitive-data-exposure"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-sensitive-data-exposure"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.02ms · 8000L +9.54ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "state": "met",
+      "evidence": "marginal over a no-op control: 2100L +2.65±0.67ms · 7980L +6.53±2.23ms · 31920L +30.01±4.53ms — 2.5x time for 3.8x lines (2100→7980), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-sensitive-data-exposure"
     },
     "recorded": {

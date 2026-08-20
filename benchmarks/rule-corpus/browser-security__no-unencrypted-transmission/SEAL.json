@@ -57,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "evidence": "95.38% statements, 92.16% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-unencrypted-transmission"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.21ms · 2000L +0.06ms · 8000L +0.03ms — 0.3x time for 4x lines (500→2000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 152L +0.18±0.10ms · 608L +1.06±1.60ms · 2432L +4.52±2.52ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-unencrypted-transmission"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-unencrypted-transmission' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

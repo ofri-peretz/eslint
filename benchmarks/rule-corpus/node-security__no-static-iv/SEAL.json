@@ -56,18 +56,18 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-static-iv"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-static-iv"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.14ms · 2000L +1.93ms · 8000L +8.11ms — 4.2x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 504L +0.75±0.99ms · 2016L +2.01±2.69ms · 8064L +14.77±11.92ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-static-iv"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/no-static-iv' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

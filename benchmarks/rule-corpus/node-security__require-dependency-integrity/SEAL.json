@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/require-dependency-integrity"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/require-dependency-integrity"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.03ms · 8000L +2.12ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 352L +0.25±0.10ms · 1408L +0.40±1.35ms · 5632L +4.14±4.63ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/require-dependency-integrity"
     },
     "recorded": {

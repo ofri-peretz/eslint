@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts browser-security/no-incomplete-url-sanitization"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-incomplete-url-sanitization"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.42ms · 2000L +1.27ms · 8000L +0.01ms — 0.0x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 123L +0.03±0.07ms · 492L +0.61±0.50ms · 1968L +2.19±4.67ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-incomplete-url-sanitization"
     },
     "recorded": {

@@ -57,12 +57,12 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "evidence": "100.00% statements, 98.92% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/require-mime-type-validation"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.06ms · 2000L +0.15ms · 8000L +0.00ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 271L +0.39±0.52ms · 1084L +1.30±2.82ms · 4336L +2.92±3.40ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/require-mime-type-validation"
     },
     "recorded": {

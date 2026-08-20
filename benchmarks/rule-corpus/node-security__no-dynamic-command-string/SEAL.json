@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-dynamic-command-string"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-dynamic-command-string"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.15ms · 2000L +1.84ms · 8000L +1.04ms — 0.6x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 453L +0.64±1.70ms · 1812L +2.84±0.07ms · 7248L +6.31±0.73ms — 2.2x time for 4.0x lines (1812→7248), linear",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-dynamic-command-string"
     },
     "recorded": {

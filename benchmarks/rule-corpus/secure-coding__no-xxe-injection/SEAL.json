@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-xxe-injection"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-xxe-injection"
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.44ms · 2000L +0.11ms · 8000L +7.03ms — 0.2x time for 4x lines (500→2000), linear",
+      "evidence": "marginal over a no-op control: 2010L +0.45±1.16ms · 8040L +2.91±0.66ms · 32160L +10.81±10.72ms — 3.7x time for 4.0x lines (8040→32160), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-xxe-injection"
     },
     "recorded": {

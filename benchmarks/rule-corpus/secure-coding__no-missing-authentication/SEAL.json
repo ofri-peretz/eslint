@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-missing-authentication"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-missing-authentication"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.05ms · 2000L +0.07ms · 8000L +11.01ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "state": "met",
+      "evidence": "marginal over a no-op control: 2215L +2.60±1.48ms · 7974L +7.94±2.05ms · 31896L +25.43±2.27ms — 3.2x time for 4.0x lines (7974→31896), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-missing-authentication"
     },
     "recorded": {

@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts browser-security/require-url-validation"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/require-url-validation"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.00ms · 8000L +0.14ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — not-established then linear. First: 206L +0.22±0.42ms · 824L +0.16±1.37ms · 3296L +4.83±2.24ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/require-url-validation"
     },
     "recorded": {

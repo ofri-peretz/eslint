@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-pii-in-logs"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-pii-in-logs"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.03ms · 2000L +1.29ms · 8000L +0.41ms — 0.3x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 2052L +1.17±1.00ms · 7980L +4.27±2.32ms · 31920L +16.08±2.96ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-pii-in-logs"
     },
     "recorded": {

@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-unsafe-regex-construction"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-unsafe-regex-construction"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.03ms · 2000L +0.07ms · 8000L +0.05ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 1830L +0.57±2.01ms · 8052L +2.10±3.61ms · 31842L +0.00±9.97ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unsafe-regex-construction"
     },
     "recorded": {

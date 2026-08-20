@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-xpath-injection"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-xpath-injection"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.09ms · 2000L +0.03ms · 8000L +4.26ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "state": "met",
+      "evidence": "marginal over a no-op control: 1840L +2.18±0.26ms · 8096L +6.10±5.64ms · 32016L +15.99±27.58ms — 2.8x time for 4.4x lines (1840→8096), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-xpath-injection"
     },
     "recorded": {

@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 1968L +1.14±1.16ms · 8036L +3.95±2.18ms · 31980L +19.94±15.51ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 164L +0.17±0.07ms · 656L +1.96±2.36ms · 2624L +9.49±4.72ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/detect-non-literal-fs-filename"
     },
     "recorded": {
-      "state": "met",
-      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal node-security/detect-non-literal-fs-filename' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

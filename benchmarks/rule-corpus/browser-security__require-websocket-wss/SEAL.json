@@ -57,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "evidence": "97.06% statements, 94.29% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/require-websocket-wss"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.01ms · 2000L +0.00ms · 8000L +0.09ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 150L +0.00±0.27ms · 600L +1.66±0.99ms · 2400L +1.79±1.08ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/require-websocket-wss"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/require-websocket-wss' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

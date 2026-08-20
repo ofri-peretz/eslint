@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-privilege-escalation"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-privilege-escalation"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.00ms · 8000L +0.15ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "state": "met",
+      "evidence": "marginal over a no-op control: 2084L +5.54±1.14ms · 7815L +17.73±1.25ms · 31781L +80.81±8.36ms — 4.6x time for 4.1x lines (7815→31781), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-privilege-escalation"
     },
     "recorded": {

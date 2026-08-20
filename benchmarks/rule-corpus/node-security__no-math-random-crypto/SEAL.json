@@ -56,18 +56,18 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-math-random-crypto"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-math-random-crypto"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.28ms · 8000L +0.00ms — 0.0x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 903L +2.74±0.55ms · 3612L +4.85±1.43ms · 14448L +9.00±10.38ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-math-random-crypto"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/no-math-random-crypto' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

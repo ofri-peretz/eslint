@@ -62,7 +62,7 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 2020L +1.75±1.44ms · 8080L +4.40±2.25ms · 31916L +17.23±4.05ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 2020L +0.81±0.51ms · 8080L +4.95±2.04ms · 31916L +15.98±10.13ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
     },
     "recorded": {

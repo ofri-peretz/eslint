@@ -57,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "evidence": "96.67% statements, 94.59% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-insecure-redirects"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.05ms · 2000L +0.15ms · 8000L +0.06ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 280L +0.43±0.70ms · 1120L +1.03±2.96ms · 4480L +6.81±12.23ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-insecure-redirects"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-insecure-redirects' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-unchecked-loop-condition"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-unchecked-loop-condition"
     },
     "throughput": {
       "state": "met",
-      "evidence": "marginal over a no-op control: 500L +1.30ms · 2000L +16.12ms · 8000L +0.00ms — 0.0x time for 4x lines (2000→8000), linear",
+      "evidence": "marginal over a no-op control: 2060L +3.99±1.34ms · 8240L +17.43±1.76ms · 31930L +54.87±17.96ms — 3.1x time for 3.9x lines (8240→31930), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unchecked-loop-condition"
     },
     "recorded": {

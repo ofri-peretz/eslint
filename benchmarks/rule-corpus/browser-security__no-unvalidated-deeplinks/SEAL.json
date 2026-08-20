@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts browser-security/no-unvalidated-deeplinks"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-unvalidated-deeplinks"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.11ms · 2000L +0.07ms · 8000L +0.68ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 190L +0.00±0.32ms · 760L +0.57±1.36ms · 3040L +0.00±7.90ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-unvalidated-deeplinks"
     },
     "recorded": {

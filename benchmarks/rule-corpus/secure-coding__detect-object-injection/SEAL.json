@@ -61,8 +61,8 @@
       "command": "npx vitest run --coverage src/rules/detect-object-injection"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 2008L +2.94±0.76ms · 8032L +10.11±3.21ms · 32128L +35.75±5.48ms — 3.5x time for 4.0x lines (8032→32128), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 502L +1.33±2.25ms · 2008L +6.49±2.61ms · 8032L +26.19±10.38ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-object-injection"
     },
     "recorded": {

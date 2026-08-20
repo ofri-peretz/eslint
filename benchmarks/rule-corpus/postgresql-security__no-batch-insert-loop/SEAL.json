@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts postgresql-security/no-batch-insert-loop"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-batch-insert-loop"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.20ms · 2000L +0.89ms · 8000L +0.00ms — 0.0x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 531L +0.81±0.41ms · 2124L +0.00±4.22ms · 8496L +7.84±9.07ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/no-batch-insert-loop"
     },
     "recorded": {

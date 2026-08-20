@@ -62,7 +62,7 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 1780L +1.90±5.00ms · 8010L +6.16±2.78ms · 32040L +26.84±2.12ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 445L +1.21±1.46ms · 1780L +0.83±3.57ms · 7120L +11.53±3.19ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/detect-non-literal-regexp"
     },
     "recorded": {

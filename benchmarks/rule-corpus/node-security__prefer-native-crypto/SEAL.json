@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/prefer-native-crypto"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/prefer-native-crypto"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.77ms · 2000L +0.00ms · 8000L +0.75ms — 0.0x time for 4x lines (500→2000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 374L +1.09±0.56ms · 1496L +0.22±2.22ms · 5984L +12.55±3.69ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/prefer-native-crypto"
     },
     "recorded": {

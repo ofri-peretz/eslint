@@ -56,18 +56,18 @@
       "command": "npx tsx scripts/rule-seal-probe.mts browser-security/no-cookie-auth-tokens"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-cookie-auth-tokens"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.11ms · 2000L +0.07ms · 8000L +0.91ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 143L +0.38±0.47ms · 572L +2.26±0.45ms · 2288L +9.16±2.95ms — 4.1x time for 4.0x lines (572→2288), linear",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-cookie-auth-tokens"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-cookie-auth-tokens' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

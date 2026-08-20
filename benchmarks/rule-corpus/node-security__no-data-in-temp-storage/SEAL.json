@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-data-in-temp-storage"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-data-in-temp-storage"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.06ms · 2000L +1.89ms · 8000L +12.47ms — 6.6x time for 4x lines (2000→8000), SUPERLINEAR",
+      "evidence": "marginal over a no-op control: 443L +0.33±0.32ms · 1772L +1.79±0.41ms · 7088L +11.57±6.24ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-data-in-temp-storage"
     },
     "recorded": {

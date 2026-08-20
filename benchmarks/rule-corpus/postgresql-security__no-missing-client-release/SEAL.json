@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts postgresql-security/no-missing-client-release"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-missing-client-release"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.13ms · 2000L +0.08ms · 8000L +0.12ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 343L +0.17±0.98ms · 1372L +2.14±1.21ms · 5488L +6.20±4.36ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/no-missing-client-release"
     },
     "recorded": {

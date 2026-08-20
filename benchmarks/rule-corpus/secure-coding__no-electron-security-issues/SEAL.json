@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-electron-security-issues"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-electron-security-issues"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.14ms · 2000L +2.42ms · 8000L +0.21ms — 0.1x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 458L +2.11±0.41ms · 1832L +2.39±2.50ms · 7328L +11.74±12.17ms — 1.1x time for 4.0x lines (458→1832), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-electron-security-issues"
     },
     "recorded": {

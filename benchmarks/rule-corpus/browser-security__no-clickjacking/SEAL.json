@@ -57,12 +57,12 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "evidence": "97.33% statements, 95.32% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-clickjacking"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.06ms · 2000L +0.23ms · 8000L +0.13ms — 0.6x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 248L +0.00±0.69ms · 992L +2.78±0.65ms · 3968L +9.12±6.02ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-clickjacking"
     },
     "recorded": {

@@ -57,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "evidence": "99.59% statements, 98.80% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-missing-security-headers"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.63ms · 2000L +0.00ms · 8000L +7.40ms — 0.0x time for 4x lines (500→2000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 245L +0.10±0.14ms · 980L +2.46±1.03ms · 3920L +9.69±6.62ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-missing-security-headers"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-missing-security-headers' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

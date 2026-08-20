@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-unsafe-dynamic-require"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-unsafe-dynamic-require"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.03ms · 2000L +0.20ms · 8000L +0.12ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 375L +0.75±0.42ms · 1500L +1.27±3.29ms · 6000L +6.31±10.19ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-unsafe-dynamic-require"
     },
     "recorded": {

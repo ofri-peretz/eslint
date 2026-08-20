@@ -57,17 +57,17 @@
     },
     "coverage": {
       "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "evidence": "97.22% statements, 97.06% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-sensitive-localstorage"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.00ms · 2000L +0.06ms · 8000L +0.55ms — NOT ESTABLISHED: fewer than two sizes clear the 0.2ms floor, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — not-established then linear. First: 178L +0.96±0.51ms · 712L +5.04±1.54ms · 2848L +19.63±3.61ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-sensitive-localstorage"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-sensitive-localstorage' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

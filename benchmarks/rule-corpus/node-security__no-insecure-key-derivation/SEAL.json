@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-insecure-key-derivation"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-insecure-key-derivation"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 500L +0.04ms · 2000L +0.29ms · 8000L +5.60ms — 19.0x time for 4x lines (2000→8000), SUPERLINEAR",
+      "evidence": "marginal over a no-op control: 388L +1.24±1.99ms · 1552L +0.00±1.76ms · 6208L +4.14±4.79ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-insecure-key-derivation"
     },
     "recorded": {

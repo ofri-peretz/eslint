@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts postgresql-security/no-unsafe-search-path"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-unsafe-search-path"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +0.43ms · 2000L +0.04ms · 8000L +4.05ms — 0.1x time for 4x lines (500→2000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 427L +0.95±0.83ms · 1708L +0.00±2.65ms · 6832L +2.71±5.74ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/no-unsafe-search-path"
     },
     "recorded": {

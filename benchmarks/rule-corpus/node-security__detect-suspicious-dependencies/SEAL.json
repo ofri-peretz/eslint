@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/detect-suspicious-dependencies"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/detect-suspicious-dependencies"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +1.04ms · 2000L +0.21ms · 8000L +0.31ms — 1.5x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 437L +0.84±0.19ms · 1748L +5.09±2.02ms · 6992L +5.68±6.67ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/detect-suspicious-dependencies"
     },
     "recorded": {

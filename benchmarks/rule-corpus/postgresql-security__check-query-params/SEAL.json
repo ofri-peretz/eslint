@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts postgresql-security/check-query-params"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/check-query-params"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +1.73ms · 2000L +0.09ms · 8000L +0.00ms — 0.1x time for 4x lines (500→2000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 501L +0.68±0.75ms · 2004L +0.00±4.16ms · 8016L +0.00±18.98ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/check-query-params"
     },
     "recorded": {

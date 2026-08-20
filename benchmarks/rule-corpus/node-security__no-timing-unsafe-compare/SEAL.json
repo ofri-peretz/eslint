@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-timing-unsafe-compare"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-timing-unsafe-compare"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +1.48ms · 2000L +0.18ms · 8000L +3.30ms — 0.1x time for 4x lines (500→2000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 1036L +1.56±0.39ms · 4144L +13.36±4.47ms · 16576L +13.00±21.62ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-timing-unsafe-compare"
     },
     "recorded": {

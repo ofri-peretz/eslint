@@ -56,13 +56,13 @@
       "command": "npx tsx scripts/rule-seal-probe.mts node-security/no-buffer-overread"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "not measured — run without --skip-coverage",
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
       "command": "npx vitest run --coverage src/rules/no-buffer-overread"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 500L +1.12ms · 2000L +2.54ms · 8000L +0.04ms — 0.0x time for 4x lines (2000→8000), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 417L +0.76±0.71ms · 1668L +1.21±1.04ms · 6672L +8.51±2.36ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-buffer-overread"
     },
     "recorded": {
