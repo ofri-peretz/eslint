@@ -1,3 +1,102 @@
+## 5.1.0
+
+### Minor Changes
+
+- [#581](https://github.com/ofri-peretz/eslint/pull/581) [`ab9c48a`](https://github.com/ofri-peretz/eslint/commit/ab9c48a651803d95faeb2257a77cbceec95badbf) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-child-process` no longer calls a shell-free spawn "command injection".
+
+  `spawn`, `execFile` and `fork` default to `{ shell: false }`. When the executable
+  name is attacker-steerable the defect is real, but it is process control, not
+  shell-metacharacter injection — and the rule reported it as CWE-78 at CVSS 9.8
+  with the advice _"use execFile/spawn with `{shell: false}`"_, which is what the
+  reported line already did. Remediation that is a no-op on the line it is attached
+  to is a finding nobody can act on.
+
+  Measured against eslint-plugin-security's own `valid` corpus, this fired on 11 of
+  their 19 valid cases for this class — the single largest source of our findings
+  on code a competitor labelled clean.
+
+  Those findings now report **`untrustedProgram`** — CWE-114, HIGH — whose fix is
+  to resolve the name against an allowlist of permitted executables. Nothing
+  becomes silent and nothing new is reported: the same calls report, saying what is
+  actually true about them. `exec`/`execSync`, an explicit `shell: true`, a literal
+  shell binary (`spawn('bash', ['-c', …])`) and eval flags (`-c`, `-e`, `/c`) all
+  still report CWE-78, because a shell really is in the picture.
+
+  If you match on `messageId`, add `untrustedProgram` alongside
+  `childProcessCommandInjection`. The rule's own docs already described this split
+  correctly — the code was the half that disagreed.
+
+- [#583](https://github.com/ofri-peretz/eslint/pull/583) [`ccf90e6`](https://github.com/ofri-peretz/eslint/commit/ccf90e634c8a92e9cef201a4544576afe7aab176) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-non-literal-fs-filename` now sees through a computed key.
+
+  `readFileSync(cfg[prop])` was silent while `readFileSync(dir)` reported — the
+  weaker evidence produced the louder verdict. A computed key selects _which_
+  value you get, so an unknowable key makes the result unknowable however
+  well-known the object is; `containsFreeVariable` simply had no MemberExpression
+  case and never visited the key.
+
+  The object is deliberately not walked. ESLint resolves no Node globals by
+  default, so `process` reads as a free variable and recursing into the object
+  would report every `process.env.HOME` in existence. Static keys name one fixed
+  slot and are left to the checks that already own them — `import.meta.url` stays
+  quiet.
+
+  Measured over the 20-repository real-source corpus — 21,394 files, 3.10M lines —
+  this rule reports **0 findings**, unchanged by the new branch. Because the branch
+  only ever adds a `true`, findings can only increase, so zero after means zero
+  before: the recall came with no new noise.
+
+  This closes the last uncovered case on eslint-plugin-security's own must-detect
+  corpus, taking weighted parity to **51/51 (100%)** with `fires-on-valid`
+  unchanged.
+
+### Patch Changes
+
+- [#584](https://github.com/ofri-peretz/eslint/pull/584) [`ef52590`](https://github.com/ofri-peretz/eslint/commit/ef52590a1eb212ee5a66cb69da579ac69a2c778d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `detect-child-process` no longer reads `-c` as an eval flag for every binary.
+
+  `usesShell` treated any of `-c`, `-e`, `/c` in argv as proof that the next entry
+  is source text, whatever program was being run. But a flag only means what the
+  program parsing it says it means. Found on the 20-repository real-source corpus,
+  in n8n's `scripts/dev-up.mjs`:
+
+  ```js
+  execFileSync('gh', [
+    'codespace',
+    'ports',
+    'visibility',
+    `${port}:org`,
+    '-c',
+    name,
+  ]);
+  ```
+
+  `-c` there is gh's own `--codespace`. Every argv entry is a literal or a template
+  of literals, no shell is anywhere near it, and the rule reported CWE-78 command
+  injection at CVSS 9.8. Deciding by a token rather than by the program that parses
+  it is precisely what `lint:name-inference` exists to catch — committed by a
+  security rule.
+
+  Each binary now carries its OWN tokens, because a shared set is the same defect
+  one level up:
+
+  |                     | evaluates                       | does not                        |
+  | ------------------- | ------------------------------- | ------------------------------- |
+  | `php`               | `-r`                            | `-e` — that is `--profile-info` |
+  | `deno`              | `eval` (a subcommand)           | `-e` — no such option           |
+  | `node` / `bun`      | `-e`, `--eval`, `-p`, `--print` |                                 |
+  | `python`            | `-c`                            | `-e`                            |
+  | `perl`              | `-e`, `-E`                      |                                 |
+  | `ruby`, `osascript` | `-e`                            |                                 |
+
+  Shells are not in the table: a literal `sh`/`bash`/`cmd`/`powershell` command is
+  already treated as a shell before flags are consulted.
+
+  The gate only ever suppresses, and only when the command is a **literal** naming
+  a binary we can place. `execFileSync(bin, ['-c', name])` keeps the conservative
+  union, because an unnameable binary may well be a shell.
+
+  Real-source findings **7 → 5** over 21,394 files. `php -r`, `deno eval`,
+  `node -p` and `perl -E` now report where they previously did not.
+
 ## 5.0.0
 
 ### Major Changes
