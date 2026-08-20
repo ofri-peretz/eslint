@@ -167,9 +167,24 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   ];
   const noop = { create: () => ({}) };
 
-  const SIZES = [2000, 8000, 32000];
+  // Multiples of the fixture set, not absolute line counts.
+  //
+  // Targeting 32000 lines meant repeating a 304-line fixture set 105 times, and
+  // since fixtures are linted as separate files that is 3360 `verify` calls per
+  // run — 282,000 for one size on one rule once trials and passes multiply out.
+  // The audit went from ~20s a rule to minutes, and almost all of it was fixed
+  // per-verify overhead on ten-line files, which is precisely what the no-op
+  // subtraction exists to cancel. Paying it 282,000 times to cancel it is not a
+  // measurement, it is a tax.
+  //
+  // Multiples give the same thing the sizes were for — a 4x-per-step growth
+  // curve — at a cost that scales with the corpus instead of against it. Rules
+  // whose own cost then falls under the instrument's error report NOT
+  // ESTABLISHED, which is the honest answer and already the answer for most of
+  // them.
+  const SIZE_MULTIPLES = [1, 4, 16];
   const NOISE_FLOOR_MS = 0.2;
-  const PASSES = 5;
+  const PASSES = 3;
   const best = (r: unknown, files: number): number => {
     const config = configFor(r);
     const run = (): void => {
@@ -201,7 +216,7 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   // single no-op-vs-no-op control was no better: that control is itself one
   // sample, and it read 0.20 / 1.53 / 8.57 ms for one rule at one size on three
   // consecutive runs. An error bar estimated from one draw is not an error bar.
-  const TRIALS = 7;
+  const TRIALS = 5;
   const median = (xs: number[]): number => {
     const sorted = [...xs].sort((a, b) => a - b);
     return sorted[Math.floor(sorted.length / 2)];
@@ -246,110 +261,155 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
       .verify(source, [{ files: [LINTABLE], languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const, parserOptions: { ecmaFeatures: { jsx: true } } }, rules: {} }], name)
       .some((m) => m.fatal);
 
-  const marginal: number[] = [];
-  const floors: number[] = [];
-  const timings: string[] = [];
-  const usable: boolean[] = [];
-  const actual: number[] = [];
-  for (const target of SIZES) {
-    const files = Math.max(1, Math.round(target / unit.length));
-    actual.push(files * unit.length);
-    // A fixture that is never LINTED is worse than one that never parses: it
-    // costs nothing, so it times as fast and the axis passes on an empty run.
-    // Proven reachable — the previous revision's glob left every .jsx and .ts
-    // fixture unmatched, and the numbers it published were measuring nothing.
-    const unlinted = fixtureFiles.findIndex((f, i) => {
-      const seen = linter.verify(f.code, configFor(rule), `lintcheck${i}${f.ext}`);
-      return seen.some((m) => /No matching configuration/.test(m.message));
-    });
-    if (unlinted !== -1) {
-      throw new Error(
-        `fixture #${unlinted} (${fixtureFiles[unlinted].ext}) is not matched by the throughput config for ${ruleId} — ` +
-          `it would be timed as a zero-cost run. Add its extension to LINTABLE.`,
-      );
-    }
-
-    const broken = fixtureFiles.findIndex((f, i) => !parses(f.code, `probe${i}${f.ext}`));
-    if (broken !== -1) {
-      usable.push(false);
-      marginal.push(0);
-      floors.push(Infinity);
-      timings.push(`${target}L VOID (fixture #${broken} does not parse)`);
-      continue;
-    }
-    usable.push(true);
-
-    // Per size the rule's marginal cost is a small difference between two large
-    // timings, so ONE difference is not a measurement — it is a sample of a
-    // noisy quantity. Take K paired trials, alternating rule and no-op so both
-    // see the same machine, and report the MEDIAN with the median absolute
-    // deviation as its error.
-    const differences: number[] = [];
-    for (let trial = 0; trial < TRIALS; trial += 1) {
-      differences.push(best(rule, files) - best(noop, files));
-    }
-    const centre = median(differences);
-    const cost = Math.max(0, centre);
-    const mad = median(differences.map((d) => Math.abs(d - centre))) * 1.4826;
-    const floor = Math.max(mad * 3, NOISE_FLOOR_MS);
-    marginal.push(cost);
-    floors.push(floor);
-    timings.push(`${actual[actual.length - 1]}L +${cost.toFixed(2)}±${mad.toFixed(2)}ms`);
-  }
-
-  // Judge the growth on the largest PAIR of sizes whose smaller member is above
-  // the noise floor, and compare it against that pair's own line ratio.
+  // A verdict that does not reproduce is not a verdict.
   //
-  // Dividing the 8000-line cost by the 500-line one looks obvious and is wrong
-  // whenever the 500-line cost rounds to zero: the ratio is undefined, and the
-  // first version of this check silently substituted 1 and called it linear.
-  // `detect-object-injection` measures +0.00 / +0.30 / +18.41 ms — a 61x rise
-  // across a 4x rise in lines, reported as "1.0x, linear". Three checks in this
-  // session have now failed in the flattering direction; a comparison that
-  // cannot be made must be reported as such, never resolved to a pass.
-  let verdict: Axis;
-  let index = SIZES.length - 2;
-  while (index >= 0 && (!usable[index] || !usable[index + 1] || marginal[index] < floors[index])) index -= 1;
+  // Three revisions of this axis were tuned by widening the noise floor — a
+  // constant, then one MAD-derived estimate, then five MADs — and each time the
+  // same unchanged rule still read `linear, met` on one run and
+  // `NOT ESTABLISHED` on the next, because the estimate of the noise is itself
+  // noisy. No multiplier fixes that; it is the wrong knob.
+  //
+  // So the property is tested directly: measure twice, and publish a verdict
+  // only when both measurements agree on it. Disagreement is not a tie to be
+  // broken, it is the finding — this harness cannot resolve that rule's cost
+  // today, and NOT ESTABLISHED says so.
+  const measureOnce = (): Axis => {
+    const marginal: number[] = [];
+    const floors: number[] = [];
+    const timings: string[] = [];
+    const usable: boolean[] = [];
+    const actual: number[] = [];
+    for (const multiple of SIZE_MULTIPLES) {
+      const files = multiple;
+      actual.push(files * unit.length);
+      // A fixture that is never LINTED is worse than one that never parses: it
+      // costs nothing, so it times as fast and the axis passes on an empty run.
+      // Proven reachable — the previous revision's glob left every .jsx and .ts
+      // fixture unmatched, and the numbers it published were measuring nothing.
+      const unlinted = fixtureFiles.findIndex((f, i) => {
+        const seen = linter.verify(f.code, configFor(rule), `lintcheck${i}${f.ext}`);
+        return seen.some((m) => /No matching configuration/.test(m.message));
+      });
+      if (unlinted !== -1) {
+        throw new Error(
+          `fixture #${unlinted} (${fixtureFiles[unlinted].ext}) is not matched by the throughput config for ${ruleId} — ` +
+            `it would be timed as a zero-cost run. Add its extension to LINTABLE.`,
+        );
+      }
 
-  if (index < 0) {
-    // Fewer than two sizes are above the noise floor, so there is no curve to
-    // read. That is NOT a pass — it is an unmeasurable, and the difference
-    // matters: `detect-object-injection` measures +0.01 / +0.03 / +11.30 ms,
-    // where the first two are noise and the third is real, and an earlier
-    // version of this branch called that "below the noise floor at every size"
-    // and marked it met.
+      const broken = fixtureFiles.findIndex((f, i) => !parses(f.code, `probe${i}${f.ext}`));
+      if (broken !== -1) {
+        usable.push(false);
+        marginal.push(0);
+        floors.push(Infinity);
+        timings.push(`${actual[actual.length - 1]}L VOID (fixture #${broken} does not parse)`);
+        continue;
+      }
+      usable.push(true);
+
+      // Per size the rule's marginal cost is a small difference between two large
+      // timings, so ONE difference is not a measurement — it is a sample of a
+      // noisy quantity. Take K paired trials, alternating rule and no-op so both
+      // see the same machine, and report the MEDIAN with the median absolute
+      // deviation as its error.
+      const differences: number[] = [];
+      for (let trial = 0; trial < TRIALS; trial += 1) {
+        differences.push(best(rule, files) - best(noop, files));
+      }
+      const centre = median(differences);
+      const cost = Math.max(0, centre);
+      const mad = median(differences.map((d) => Math.abs(d - centre))) * 1.4826;
+      // Five MADs, not three.
+      //
+      // At three, `detect-object-injection` read +8.10±2.39ms at one size on one
+      // run and +0.30±3.72ms on the next, landing just above the floor once and
+      // well below it the other time — so the axis said "linear, met" and then
+      // "NOT ESTABLISHED" for unchanged code. That is the moving ruler this
+      // instrument has already been fixed for twice.
+      //
+      // A wider floor costs some `met` verdicts on rules whose cost genuinely
+      // sits in the borderline band, and buys a verdict that does not depend on
+      // which run you looked at. NOT ESTABLISHED is the honest answer for a cost
+      // this harness cannot separate from its own noise, and it is never the
+      // flattering one.
+      const floor = Math.max(mad * 5, NOISE_FLOOR_MS);
+      marginal.push(cost);
+      floors.push(floor);
+      timings.push(`${actual[actual.length - 1]}L +${cost.toFixed(2)}±${mad.toFixed(2)}ms`);
+    }
+
+    // Judge the growth on the largest PAIR of sizes whose smaller member is above
+    // the noise floor, and compare it against that pair's own line ratio.
     //
-    // The subtraction itself is sound; the sizes are wrong. Harness cost at
-    // 8000 lines is ~70 ms, so a sub-millisecond rule cost is below the
-    // resolution of a difference between two ~70 ms measurements — the same
-    // rule measured +1.50 ms and +0.00 ms at 500 lines on consecutive runs.
-    // Measuring this properly needs either sizes large enough to lift the rule
-    // cost above the floor at more than one point, or a CPU profile attributing
-    // samples to the rule's own frames. Until one of those is built, the axis
-    // reports what it is: not established.
-    verdict = {
+    // Dividing the 8000-line cost by the 500-line one looks obvious and is wrong
+    // whenever the 500-line cost rounds to zero: the ratio is undefined, and the
+    // first version of this check silently substituted 1 and called it linear.
+    // `detect-object-injection` measures +0.00 / +0.30 / +18.41 ms — a 61x rise
+    // across a 4x rise in lines, reported as "1.0x, linear". Three checks in this
+    // session have now failed in the flattering direction; a comparison that
+    // cannot be made must be reported as such, never resolved to a pass.
+    let verdict: Axis;
+    let index = SIZE_MULTIPLES.length - 2;
+    while (index >= 0 && (!usable[index] || !usable[index + 1] || marginal[index] < floors[index])) index -= 1;
+
+    if (index < 0) {
+      // Fewer than two sizes are above the noise floor, so there is no curve to
+      // read. That is NOT a pass — it is an unmeasurable, and the difference
+      // matters: `detect-object-injection` measures +0.01 / +0.03 / +11.30 ms,
+      // where the first two are noise and the third is real, and an earlier
+      // version of this branch called that "below the noise floor at every size"
+      // and marked it met.
+      //
+      // The subtraction itself is sound; the sizes are wrong. Harness cost at
+      // 8000 lines is ~70 ms, so a sub-millisecond rule cost is below the
+      // resolution of a difference between two ~70 ms measurements — the same
+      // rule measured +1.50 ms and +0.00 ms at 500 lines on consecutive runs.
+      // Measuring this properly needs either sizes large enough to lift the rule
+      // cost above the floor at more than one point, or a CPU profile attributing
+      // samples to the rule's own frames. Until one of those is built, the axis
+      // reports what it is: not established.
+      verdict = {
+        state: 'unmet',
+        evidence:
+          `marginal over a no-op control: ${timings.join(' · ')} — NOT ESTABLISHED: ` +
+          `fewer than two sizes clear the instrument's own measured error, so no growth curve can be read`,
+        command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+      };
+    } else {
+      const lineRatio = actual[index + 1] / actual[index];
+      const growth = marginal[index + 1] / marginal[index];
+      // 1.6x headroom over the line ratio absorbs measurement noise without
+      // absorbing an order of growth.
+      const linear = growth <= lineRatio * 1.6;
+      verdict = {
+        state: linear ? 'met' : 'unmet',
+        evidence:
+          `marginal over a no-op control: ${timings.join(' · ')} — ` +
+          `${growth.toFixed(1)}x time for ${lineRatio.toFixed(1)}x lines (${actual[index]}→${actual[index + 1]}), ` +
+          `${linear ? 'linear' : 'SUPERLINEAR'}`,
+        command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+      };
+    }
+
+    return verdict;
+  };
+
+  const first = measureOnce();
+  const second = measureOnce();
+  const classify = (axis: Axis): string =>
+    /NOT ESTABLISHED/.test(axis.evidence) ? 'not-established' : /SUPERLINEAR/.test(axis.evidence) ? 'superlinear' : 'linear';
+
+  if (classify(first) !== classify(second)) {
+    return {
       state: 'unmet',
       evidence:
-        `marginal over a no-op control: ${timings.join(' · ')} — NOT ESTABLISHED: ` +
-        `fewer than two sizes clear the instrument's own measured error, so no growth curve can be read`,
-      command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
-    };
-  } else {
-    const lineRatio = actual[index + 1] / actual[index];
-    const growth = marginal[index + 1] / marginal[index];
-    // 1.6x headroom over the line ratio absorbs measurement noise without
-    // absorbing an order of growth.
-    const linear = growth <= lineRatio * 1.6;
-    verdict = {
-      state: linear ? 'met' : 'unmet',
-      evidence:
-        `marginal over a no-op control: ${timings.join(' · ')} — ` +
-        `${growth.toFixed(1)}x time for ${lineRatio.toFixed(1)}x lines (${actual[index]}→${actual[index + 1]}), ` +
-        `${linear ? 'linear' : 'SUPERLINEAR'}`,
+        `NOT REPRODUCIBLE: two consecutive measurements disagreed — ` +
+        `${classify(first)} then ${classify(second)}. ` +
+        `First: ${first.evidence.replace(/^marginal over a no-op control: /, '')}`,
       command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
     };
   }
-  return verdict;
+  return first;
 };
 
 const dirs = fs
