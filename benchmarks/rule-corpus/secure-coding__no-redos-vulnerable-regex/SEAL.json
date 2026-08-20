@@ -61,13 +61,13 @@
       "command": "npx vitest run --coverage src/rules/no-redos-vulnerable-regex"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 2200L +12.48±4.54ms · 7920L +30.94±4.54ms · 32120L +141.13±9.88ms — 4.6x time for 4.1x lines (7920→32120), linear",
+      "state": "unmet",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — not-established then linear. First: 440L +2.54±1.38ms · 1760L +15.29±3.20ms · 7040L +35.96±19.92ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-redos-vulnerable-regex"
     },
     "recorded": {
-      "state": "met",
-      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal secure-coding/no-redos-vulnerable-regex' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

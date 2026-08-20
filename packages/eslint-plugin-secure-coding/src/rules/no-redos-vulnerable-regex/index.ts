@@ -353,7 +353,26 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       //
       // 5 is the last bound under 3 ms; 8 is already 140 ms, which is a denial
       // of service at request volume even though it looks small.
-      const bounded = /\)\{(\d+)(?:,(\d+))?\}/.exec(pattern);
+      // The bounded-quantifier shortcut applies only when there is NO group
+      // under an UNBOUNDED quantifier anywhere in the pattern.
+      //
+      // Without that condition it read the FIRST `){n}` in the pattern and, if
+      // that bound was small, declared the whole thing linear. The CVE-2017-18342
+      // class email pattern in benchmarks/corpus/CWE-1333 is:
+      //
+      //   ^([a-zA-Z0-9])(([\-.]|[_]+)?([a-zA-Z0-9]+))*(@){1}[a-z0-9]+...
+      //
+      // Its `(@){1}` is a bound of 1, so the shortcut fired and suppressed the
+      // finding — while the `(...)*` self-loop three groups earlier is the
+      // actual vulnerability. BOTH independent analysers flag this pattern:
+      // scslre reports a Self ambiguity and `recheck` returns `vulnerable`. A
+      // regex over the pattern TEXT overrode them, which is the same defect
+      // this rule reports on other people's code.
+      //
+      // The measured shapes the shortcut exists for are unaffected — `^(a+){1,3}$`
+      // and the rest of the timing table have no group under `*` or `+`.
+      const groupUnderUnboundedQuantifier = /\)[*+]/.test(pattern);
+      const bounded = groupUnderUnboundedQuantifier ? null : /\)\{(\d+)(?:,(\d+))?\}/.exec(pattern);
       if (bounded !== null) {
         const max = bounded[2] !== undefined ? Number(bounded[2]) : Number(bounded[1]);
         if (max <= MAX_SAFE_REPETITION) return true;

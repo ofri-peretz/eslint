@@ -196,13 +196,36 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
  * This test exists because the rule has drifted back into a preset before. Do
  * not restore it without a fresh measurement that clears the tier's bar.
  */
-describe('no-redos-vulnerable-regex is opt-in until measured', () => {
-  it('is absent from recommended', () => {
-    expect(configs.recommended.rules?.['secure-coding/no-redos-vulnerable-regex']).toBeUndefined();
+/**
+ * These four assertions were the inverse until 2026-08-20 — they pinned the
+ * rule OUT of both presets, under the heading "opt-in until measured".
+ *
+ * It has now been measured, and the measurement that removed it was the
+ * instrument. The 28.6% came from a hand-rolled attack generator that pumped
+ * inputs and timed them, counting 15 "unreproduced" patterns against the rule;
+ * failing to guess an attack string is not evidence a pattern is safe. The rule
+ * now consults `recheck`, and over the same 20-repository corpus 100 of the 103
+ * cleanly-extractable patterns it reports are confirmed vulnerable by that
+ * independent analysis.
+ *
+ * A lock test that pins a defect is worse than no lock at all, and this one
+ * pinned a rule out of the presets on a number its own author later disproved.
+ */
+describe('no-redos-vulnerable-regex ships in the presets', () => {
+  it('is in recommended', () => {
+    expect(configs.recommended.rules?.['secure-coding/no-redos-vulnerable-regex']).toBe('error');
   });
 
-  it('is absent from flagship', () => {
-    expect(configs.flagship.rules?.['secure-coding/no-redos-vulnerable-regex']).toBeUndefined();
+  it('is in flagship', () => {
+    expect(configs.flagship.rules?.['secure-coding/no-redos-vulnerable-regex']).toBe('error');
+  });
+
+  it('is what makes the ecosystem detect CWE-1333 at all', () => {
+    // benchmarks/corpus/CWE-1333/manifest.json names eslint-plugin-secure-coding
+    // as the owner. With the rule out of the preset the ecosystem scored 0/3 on
+    // that corpus while eslint-plugin-sonarjs scored 3/3, and the recall gate
+    // had been red since the removal.
+    expect(configs.recommended.rules?.['secure-coding/no-redos-vulnerable-regex']).toBeDefined();
   });
 
   it('is still exported, so a team that wants it can turn it on', () => {
