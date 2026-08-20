@@ -1,6 +1,6 @@
 {
   "name": "@interlace/eslint-devkit",
-  "version": "1.16.0",
+  "version": "1.16.1",
   "description": "Toolkit for building ESLint plugins in TypeScript — AST helpers, type utilities, rule-creation scaffolding, security benchmarks, and SARIF output.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
