@@ -36,7 +36,12 @@
  * `x` reads.
  */
 import type { TSESTree } from '@typescript-eslint/utils';
-import { AST_NODE_TYPES } from '@typescript-eslint/utils';
+// The VALUE comes from the local shim, never from the peer. `@typescript-eslint/utils`
+// is an optional peer of this package, so a value import survives into the
+// published output as a runtime `require` that npm has not installed — the
+// no-runtime-optional-peer test exists for exactly this, and this file was the
+// one place that still did it. `import type` above is fine: types are erased.
+import { AST_NODE_TYPES } from '../ast-node-types';
 
 /**
  * Wrappers that are pure type syntax — erased at compile time, no runtime effect.
