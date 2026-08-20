@@ -97,6 +97,23 @@ const SHELL_BINARIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Binaries for which an EVAL_FLAG really does mean "the next argv entry is
+ * source text" — every shell, plus the language runtimes that take a `-e`.
+ *
+ * `-c` is not a universal token. `gh codespace ports visibility 8080:org -c NAME`
+ * passes `-c` as gh's own `--codespace`, and reading it as an eval flag reported
+ * CWE-78 command injection at CVSS 9.8 on an argv of literals — found in
+ * n8n's `scripts/dev-up.mjs` on the 20-repo real-source corpus. Deciding by a
+ * TOKEN rather than by the program that parses it is the same defect
+ * `lint:name-inference` exists to catch.
+ */
+const EVAL_CAPABLE_BINARIES: ReadonlySet<string> = new Set([
+  ...SHELL_BINARIES,
+  'node', 'nodejs', 'deno', 'bun',
+  'python', 'python2', 'python3', 'ruby', 'perl', 'php', 'osascript',
+]);
+
+/**
  * Flags whose following argument is SOURCE TEXT rather than a filename or a
  * value: `sh -c`, `node -e`, `cmd /c`, `perl -e`. Any binary invoked with one
  * of these is an interpreter for that call, so the literal-command exemption
@@ -616,8 +633,18 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // hazard under a different binary. Reading the flag rather than
       // enumerating interpreters keeps `execFile('node', [scriptPath])` — a
       // path, not a program — out of it.
+      //
+      // …but only for a binary that can actually interpret one. When the command
+      // is a LITERAL naming a program we know is not an interpreter, its flags
+      // are its own — see EVAL_CAPABLE_BINARIES. A non-literal command stays
+      // conservative: we cannot name the program, so we cannot rule it out.
+      const evalFlagsWouldBeInterpreted =
+        command === undefined ||
+        command.type !== AST_NODE_TYPES.Literal ||
+        typeof command.value !== 'string' ||
+        EVAL_CAPABLE_BINARIES.has(command.value.replace(/^.*[/\\]/, '').toLowerCase());
       const argv = node.arguments[1];
-      if (argv?.type === AST_NODE_TYPES.ArrayExpression) {
+      if (evalFlagsWouldBeInterpreted && argv?.type === AST_NODE_TYPES.ArrayExpression) {
         for (const element of argv.elements) {
           if (
             element?.type === AST_NODE_TYPES.Literal &&
