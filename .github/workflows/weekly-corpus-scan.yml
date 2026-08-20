@@ -24,9 +24,20 @@ on:
   schedule:
     - cron: "0 6 * * 1" # 06:00 UTC Monday
   workflow_dispatch:
-  # Run on demand for a PR that changes rule logic, via the label.
+  # Automatic for any PR that changes rule LOGIC, and on demand via the label
+  # for anything else.
+  #
+  # It was label-only until 2026-08-20. On that day six PRs changed rule logic
+  # and none carried the label, so none were scanned — including two that fixed
+  # false positives this scan is built to catch (a shell-free `spawn` reported
+  # as CWE-78 command injection at CVSS 9.8, and `gh … -c NAME` read as a shell
+  # eval flag). A gate that depends on remembering to ask for it is not a gate.
   pull_request:
-    types: [labeled]
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - 'packages/eslint-plugin-*/src/rules/**'
+      - 'packages/eslint-devkit/src/**'
+      - '.agent/corpus-findings-budget.json'
 
 concurrency:
   group: weekly-corpus-scan-${{ github.ref }}
@@ -38,9 +49,10 @@ permissions:
 jobs:
   scan:
     name: Scan pinned corpus
-    # The label gate keeps this off every unrelated PR while still letting a
-    # rule change ask for the measurement before it merges.
-    if: github.event_name != 'pull_request' || github.event.label.name == 'run-corpus-scan'
+    # `paths:` already limits pull_request runs to rule-logic changes, so the
+    # only thing left to filter is a `labeled` event that named some OTHER
+    # label — those would otherwise re-run the scan on every label edit.
+    if: github.event.action != 'labeled' || github.event.label.name == 'run-corpus-scan'
     runs-on: ubuntu-latest
     # Eight shallow clones plus a fresh rig install. Observed ~6 min locally
     # with a warm clone cache and no cache in CI; 25 leaves room for a slow
