@@ -67,7 +67,6 @@ Keep derived files (READMEs, tags, doc sections) in sync with their canonical so
 | `sync-git-tags.ts` | Sync git tags with `package.json` versions |
 | `sync-philosophy.ts` | Propagate the Philosophy section across plugin READMEs |
 | `sync-readme-rules.ts` | Refresh per-plugin rule tables in READMEs |
-| `sync-rule-docs.ts` | Refresh `apps/docs/` content from `packages/*/docs/` |
 | `sync-source-versions.ts` | Sync source-code version constants |
 
 ## Generators (5 scripts)
