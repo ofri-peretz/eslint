@@ -16,7 +16,11 @@ would report every `process.env.HOME` in existence. Static keys name one fixed
 slot and are left to the checks that already own them — `import.meta.url` stays
 quiet.
 
-Measured over 654 files of real source: **73 findings before, 73 after** — the
-recall came with no new noise. This closes the last uncovered case on
-eslint-plugin-security's own must-detect corpus, taking weighted parity to
-**51/51 (100%)** with `fires-on-valid` unchanged.
+Measured over the 20-repository real-source corpus — 21,394 files, 3.10M lines —
+this rule reports **0 findings**, unchanged by the new branch. Because the branch
+only ever adds a `true`, findings can only increase, so zero after means zero
+before: the recall came with no new noise.
+
+This closes the last uncovered case on eslint-plugin-security's own must-detect
+corpus, taking weighted parity to **51/51 (100%)** with `fires-on-valid`
+unchanged.

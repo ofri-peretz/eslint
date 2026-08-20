@@ -17,9 +17,10 @@
  * The object is deliberately NOT recursed into, and the `process.env` cases
  * below are why: ESLint resolves no Node globals by default, so `process`
  * reads as a free variable and walking the object would report every
- * `process.env.HOME` in existence. Measured over 654 files of our own source,
- * the key-only branch added ZERO findings while fixing the corpus case — the
- * recall came without the noise, which is the only reason it ships.
+ * `process.env.HOME` in existence. Measured over the 20-repository real-source
+ * corpus — 21,394 files, 3.10M lines — this rule reports zero findings, and the
+ * branch only ever adds a `true`, so zero after means zero before. The recall
+ * came without noise, which is the only reason it ships.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { detectNonLiteralFsFilename } from './index';
