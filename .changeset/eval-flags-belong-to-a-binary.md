@@ -19,11 +19,24 @@ injection at CVSS 9.8. Deciding by a token rather than by the program that parse
 it is precisely what `lint:name-inference` exists to catch — committed by a
 security rule.
 
-Eval flags are now honoured only for binaries that can interpret them: every
-shell, plus `node`, `deno`, `bun`, `python`, `ruby`, `perl`, `php`, `osascript`.
-The gate only ever suppresses, and only when the command is a **literal** naming
-a binary we can place — `execFileSync(bin, ['-c', name])` keeps the conservative
-reading, because an unnameable binary may well be a shell.
+Each binary now carries its OWN tokens, because a shared set is the same defect
+one level up:
 
-Real-source findings **7 → 5** over 21,394 files. `sh -c`, `node -e` and
-`cmd /c` all still report, pinned as FN guards.
+| | evaluates | does not |
+|---|---|---|
+| `php` | `-r` | `-e` — that is `--profile-info` |
+| `deno` | `eval` (a subcommand) | `-e` — no such option |
+| `node` / `bun` | `-e`, `--eval`, `-p`, `--print` | |
+| `python` | `-c` | `-e` |
+| `perl` | `-e`, `-E` | |
+| `ruby`, `osascript` | `-e` | |
+
+Shells are not in the table: a literal `sh`/`bash`/`cmd`/`powershell` command is
+already treated as a shell before flags are consulted.
+
+The gate only ever suppresses, and only when the command is a **literal** naming
+a binary we can place. `execFileSync(bin, ['-c', name])` keeps the conservative
+union, because an unnameable binary may well be a shell.
+
+Real-source findings **7 → 5** over 21,394 files. `php -r`, `deno eval`,
+`node -p` and `perl -E` now report where they previously did not.

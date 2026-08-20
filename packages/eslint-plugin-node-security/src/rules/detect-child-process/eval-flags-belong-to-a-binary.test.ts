@@ -26,6 +26,15 @@
  * command is a literal naming a binary we can place. A command we cannot name
  * keeps the old conservative reading, because then we genuinely do not know what
  * parses the flag — the `execFileSync(bin, ['-c', name])` case below.
+ *
+ * The first version of this fix shared ONE flag set across every interpreter,
+ * which is the same defect one level up: it claimed `php -e` and `deno -e` were
+ * eval — PHP's `-e` emits debugger/profiler information, Deno has no `-e` — and
+ * missed `php -r`, `deno eval`, `node -p` and `perl -E`. Wrong in both
+ * directions. Caught in review on #584; the per-binary cases below are the lock.
+ *
+ * Sources: `--help` on this machine for node, python3, ruby and perl; the CLI
+ * manuals for php and deno.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { detectChildProcess } from './index';
@@ -45,6 +54,21 @@ ruleTester.run('detect-child-process — eval flags belong to a binary', detectC
       name: 'a literal non-interpreter keeps its own flags',
       code: `const { execFileSync } = require('child_process'); execFileSync('docker', ['ps', '-c', 'x']);`,
     },
+    {
+      // PHP's -e is `--profile-info`, not eval. Its eval flag is -r, below.
+      name: "php -e generates debugger info, it does not evaluate",
+      code: `const { execFileSync } = require('child_process'); execFileSync('php', ['-e', x]);`,
+    },
+    {
+      // Deno evaluates through the `eval` SUBCOMMAND; it has no -e.
+      name: 'deno has no -e',
+      code: `const { execFileSync } = require('child_process'); execFileSync('deno', ['-e', x]);`,
+    },
+    {
+      // Python evaluates with -c. `-e` is not a Python option at all.
+      name: 'python -e is not a python option',
+      code: `const { execFileSync } = require('child_process'); execFileSync('python3', ['-e', x]);`,
+    },
   ],
   invalid: [
     {
@@ -61,6 +85,37 @@ ruleTester.run('detect-child-process — eval flags belong to a binary', detectC
     {
       name: 'cmd /c really is source text',
       code: `const { spawn } = require('child_process'); spawn('cmd', ['/c', line]);`,
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+    {
+      // FN GUARD: php really does run code, just not through -e.
+      name: 'php -r runs code',
+      code: `const { execFileSync } = require('child_process'); execFileSync('php', ['-r', x]);`,
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+    {
+      // FN GUARD: deno's eval is a subcommand, so the token carries no dash.
+      name: 'deno eval runs code',
+      code: `const { execFileSync } = require('child_process'); execFileSync('deno', ['eval', x]);`,
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+    {
+      // FN GUARD: found while checking `node --help` for this review — -p
+      // evaluates and prints, and was missing from the original flag list.
+      name: 'node -p evaluates and prints',
+      code: `const { execFileSync } = require('child_process'); execFileSync('node', ['-p', x]);`,
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+    {
+      // FN GUARD: perl -E is -e with feature bundles enabled. Also missing.
+      name: 'perl -E is -e with features enabled',
+      code: `const { execFileSync } = require('child_process'); execFileSync('perl', ['-E', x]);`,
+      errors: [{ messageId: 'childProcessCommandInjection' }],
+    },
+    {
+      // FN GUARD: python's own eval flag still reports.
+      name: 'python -c runs code',
+      code: `const { execFileSync } = require('child_process'); execFileSync('python3', ['-c', x]);`,
       errors: [{ messageId: 'childProcessCommandInjection' }],
     },
     {

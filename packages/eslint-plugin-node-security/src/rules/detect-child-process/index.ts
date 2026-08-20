@@ -97,21 +97,39 @@ const SHELL_BINARIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Binaries for which an EVAL_FLAG really does mean "the next argv entry is
- * source text" — every shell, plus the language runtimes that take a `-e`.
+ * Per binary, the argv tokens that make the NEXT entry source text.
  *
- * `-c` is not a universal token. `gh codespace ports visibility 8080:org -c NAME`
- * passes `-c` as gh's own `--codespace`, and reading it as an eval flag reported
- * CWE-78 command injection at CVSS 9.8 on an argv of literals — found in
- * n8n's `scripts/dev-up.mjs` on the 20-repo real-source corpus. Deciding by a
- * TOKEN rather than by the program that parses it is the same defect
- * `lint:name-inference` exists to catch.
+ * A flag means only what the program parsing it says it means, and that is true
+ * ACROSS interpreters as much as between an interpreter and `gh`. An earlier
+ * version of this fix used one shared set for every runtime, which claimed
+ * `php -e` and `deno -e` were eval — PHP's `-e` generates debugger/profiler
+ * information and Deno has no `-e` at all — while missing `php -r`,
+ * `deno eval`, `node -p` and `perl -E`. Wrong in both directions, from the same
+ * root cause the fix was written to remove. Caught in review on #584.
+ *
+ * Verified against `--help` on this machine for node, python3, ruby and perl;
+ * against the CLI manuals for php (`-r` runs code, `-e` does not) and deno
+ * (`deno eval <code>`, a SUBCOMMAND, hence the token with no dash).
+ *
+ * Shells are absent on purpose: `usesShell` already returns true for any literal
+ * SHELL_BINARIES command before reaching here, whatever flags follow.
  */
-const EVAL_CAPABLE_BINARIES: ReadonlySet<string> = new Set([
-  ...SHELL_BINARIES,
-  'node', 'nodejs', 'deno', 'bun',
-  'python', 'python2', 'python3', 'ruby', 'perl', 'php', 'osascript',
+const EVAL_INVOCATIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['node', new Set(['-e', '--eval', '-p', '--print'])],
+  ['nodejs', new Set(['-e', '--eval', '-p', '--print'])],
+  ['bun', new Set(['-e', '--eval', '-p', '--print'])],
+  ['deno', new Set(['eval'])],
+  ['python', new Set(['-c'])],
+  ['python2', new Set(['-c'])],
+  ['python3', new Set(['-c'])],
+  ['ruby', new Set(['-e'])],
+  ['perl', new Set(['-e', '-E'])],
+  ['php', new Set(['-r'])],
+  ['osascript', new Set(['-e'])],
 ]);
+
+/** Nothing this binary accepts turns an argument into source text. */
+const NO_EVAL_TOKENS: ReadonlySet<string> = new Set();
 
 /**
  * Flags whose following argument is SOURCE TEXT rather than a filename or a
@@ -121,6 +139,10 @@ const EVAL_CAPABLE_BINARIES: ReadonlySet<string> = new Set([
  */
 const EVAL_FLAGS: ReadonlySet<string> = new Set([
   '-c', '-e', '--eval', '-e:', '/c', '/k', '-command', '-encodedcommand',
+  // Completing the union so an UNNAMEABLE binary is judged against every token
+  // any known interpreter accepts — `-p`/`--print` (node), `-E` (perl),
+  // `-r` (php), and deno's `eval` subcommand.
+  '-p', '--print', '-e', '-r', 'eval',
 ]);
 
 /**
@@ -634,22 +656,25 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // enumerating interpreters keeps `execFile('node', [scriptPath])` — a
       // path, not a program — out of it.
       //
-      // …but only for a binary that can actually interpret one. When the command
-      // is a LITERAL naming a program we know is not an interpreter, its flags
-      // are its own — see EVAL_CAPABLE_BINARIES. A non-literal command stays
-      // conservative: we cannot name the program, so we cannot rule it out.
-      const evalFlagsWouldBeInterpreted =
-        command === undefined ||
-        command.type !== AST_NODE_TYPES.Literal ||
-        typeof command.value !== 'string' ||
-        EVAL_CAPABLE_BINARIES.has(command.value.replace(/^.*[/\\]/, '').toLowerCase());
+      // …but only the tokens THIS binary treats that way. A command we can name
+      // gets its own set — possibly empty, which is how `gh … -c NAME` stops
+      // being command injection. A command we cannot name keeps the union,
+      // because an unnameable binary may well be a shell.
+      const namedBinary =
+        command !== undefined &&
+        command.type === AST_NODE_TYPES.Literal &&
+        typeof command.value === 'string'
+          ? command.value.replace(/^.*[/\\]/, '').toLowerCase()
+          : null;
+      const evalTokens =
+        namedBinary === null ? EVAL_FLAGS : (EVAL_INVOCATIONS.get(namedBinary) ?? NO_EVAL_TOKENS);
       const argv = node.arguments[1];
-      if (evalFlagsWouldBeInterpreted && argv?.type === AST_NODE_TYPES.ArrayExpression) {
+      if (argv?.type === AST_NODE_TYPES.ArrayExpression) {
         for (const element of argv.elements) {
           if (
             element?.type === AST_NODE_TYPES.Literal &&
             typeof element.value === 'string' &&
-            EVAL_FLAGS.has(element.value.toLowerCase())
+            evalTokens.has(element.value.toLowerCase())
           ) {
             return true;
           }
