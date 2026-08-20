@@ -263,6 +263,31 @@ const targetsSensitiveLocation = (pathStr: string): boolean => {
   // for `../` anywhere and never noticed; anything anchored at the start does.
   const unquoted = pathStr.replace(/^['"`]|['"`]$/g, '');
   const normalised = unquoted.replace(/\\/g, '/').toLowerCase();
+
+  // A hardcoded path with no `..` segment does not traverse, and this rule
+  // reports under `issueName: 'Path traversal'`, CWE-22, advising
+  // `path.basename()`, an allowlist, or a resolved prefix check. Every one of
+  // those remedies acts on a path someone else influences. None of them means
+  // anything applied to a constant the author typed, and you cannot basename
+  // `/etc/shadow` into safety.
+  //
+  // The branch was written to ask where a path ARRIVES rather than whether it
+  // contains dots, and that intent is defensible — but it is a different claim
+  // (a program reading a sensitive location) needing a different message and
+  // CWE. Asserting it through a traversal message tells the reader something
+  // untrue, which is the same defect as `regexpReDoS` claiming backtracking it
+  // never established.
+  //
+  // Measured: the rule produces exactly ONE finding across the 20-repository
+  // corpus, and it is this case — pm2's `lib/tools/passwd.js`, a file whose
+  // entire job is parsing `/etc/passwd`. n=1 was not enough to overturn a
+  // deliberate decision; the message being false about it is.
+  //
+  // A literal that SPELLS traversal still reports: `'../../etc/passwd'` does
+  // traverse, so the word is at least accurate about the string.
+  if (!/(^|\/)\.\.(\/|$)/.test(normalised)) {
+    return false;
+  }
   // Strip leading `./` and `../` segments — they say where the path STARTS, and
   // the question here is where it ENDS.
   const withoutPrefix = normalised.replace(/^(?:\.{1,2}\/)+/, '');

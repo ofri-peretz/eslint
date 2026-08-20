@@ -66,6 +66,33 @@ const ruleTester = new RuleTester({
 describe('detect-non-literal-fs-filename — literal paths', () => {
   ruleTester.run('detect-non-literal-fs-filename', detectNonLiteralFsFilename, {
     valid: [
+    {
+      // MOVED from `invalid` on 2026-08-19, overturning a deliberate decision.
+      //
+      // The branch was written to ask where a path ARRIVES rather than whether
+      // it contains dots, and this case was its clearest statement: an absolute
+      // path to a sensitive file, no `..` anywhere. The intent is defensible.
+      // The MESSAGE is not. This rule reports `issueName: 'Path traversal'`,
+      // CWE-22, and advises `path.basename()`, an allowlist, or a resolved
+      // prefix check — remedies that all act on a path someone else influences.
+      // A constant the author typed has no such influence, and you cannot
+      // basename `/etc/shadow` into safety.
+      //
+      // "A program reads a sensitive location" is a real concern and a
+      // different claim; it needs its own message and CWE, not this one's.
+      // Reporting it here is the same defect as `regexpReDoS` asserting
+      // backtracking it never established, found the same week by the same
+      // method.
+      //
+      // Evidence that made it decidable: across the 20-repository corpus this
+      // rule produces exactly ONE finding, and it is this shape — pm2's
+      // `lib/tools/passwd.js`, whose entire job is parsing `/etc/passwd`.
+      // n=1 was not enough to overturn a deliberate decision. The message being
+      // false about it is.
+      name: 'a bare absolute path does not traverse, whatever it names',
+      code: `import fs from 'fs';
+export const read = () => fs.readFileSync('/etc/shadow', 'utf8');`,
+    },
       {
         // serverless/packages/sf-core/scripts/prepareDistributionTarballs.js:34
         name: 'a relative literal in a build script — both arguments literal',
@@ -143,12 +170,7 @@ export function read(req) {
 export const read = () => fs.readFileSync('../../etc/passwd', 'utf8');`,
         errors: 1,
       },
-      {
-        name: 'the absolute form of the same target',
-        code: `import fs from 'fs';
-export const read = () => fs.readFileSync('/etc/shadow', 'utf8');`,
-        errors: 1,
-      },
+
       {
         name: 'a hardcoded SSH private key read',
         code: `import fs from 'fs';
