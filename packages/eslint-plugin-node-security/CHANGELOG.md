@@ -1,3 +1,230 @@
+## 5.0.0
+
+### Major Changes
+
+- [#574](https://github.com/ofri-peretz/eslint/pull/574) [`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Remove schema options that were never read
+
+  About two dozen options were declared in `meta.schema`, documented, and read by
+  nothing in `create()` — in any revision `git log -S` can reach. Because each
+  rule sets `additionalProperties: false`, a consumer who configured one got no
+  validation error either: the option validated cleanly and did nothing.
+
+  **This is a breaking change for anyone who set one.** Removing them turns a
+  silent no-op into a config error, which is the point — the alternative is
+  leaving options that look like the escape hatch you reach for when a rule is
+  noisy, and are not.
+
+  Three worth naming, because they read exactly like that escape hatch:
+
+  - `secure-coding/no-improper-sanitization` — `trustedLibraries`
+  - `secure-coding/no-improper-type-validation` — `safeTypeCheckFunctions`
+  - `secure-coding/no-electron-security-issues` — `allowInDev` (promised the rule
+    would stand down in dev builds; it never did)
+
+  Also removed: `prefer-native-crypto.severity` and `no-cryptojs.severity`
+  (unimplementable — ESLint takes severity from the config entry),
+  `detect-child-process.strategy`, `detect-non-literal-fs-filename.allowedExtensions`,
+  `no-clickjacking.trustedSanitizers`, and
+  `require-postmessage-origin-check.trustedOrigins`.
+
+  Several were implemented rather than deleted, where the rule could honour them:
+  `no-dynamic-require.allowPatterns`, `no-toctou-vulnerability.fsMethods` (whose
+  advertised default was also wrong — three methods where the code had six), and
+  `no-buffer-overread.trustedSanitizers` (which was being handed the buffer
+  _access_ when the finding is about the _index_).
+
+  If you have one of the removed options in your config, delete it. It was not
+  affecting your results.
+
+- [#574](https://github.com/ofri-peretz/eslint/pull/574) [`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Rules now say only what they proved
+
+  This release is a quality pass, not a feature release. Every change below was
+  driven by measuring the rules against **20 real repositories, 21,394 files,
+  3.10M lines** — not against our own fixtures, which is where the defects had
+  been hiding.
+
+  ## Half of `detect-object-injection`'s output could not be the weakness it named
+
+  The rule reports CWE-1321, prototype pollution. **49% of its findings were
+  reads**, and a read cannot pollute a prototype:
+
+  ```js
+  const o = {},
+    k = '__proto__';
+  const v = o[k]; // Object.prototype unchanged
+  ```
+
+  That is executed, not argued — there is no key, no object and no runtime where
+  evaluating `obj[k]` as an expression writes anything. Reads are no longer
+  reported, **except** where the value is invoked: `const h = handlers[k]; h()`
+  is a read, and `{"action":"constructor"}` hands you the Object constructor.
+
+  **14,910 findings → 5,751**, with recall proven intact — 100% F1 and 100%
+  Youden's J against the rule's corpus, unchanged before and after.
+
+  A read of an attacker-chosen key can still disclose something it should not.
+  That is CWE-200, a different weakness, and reporting it under a CWE-1321 message
+  told you the wrong thing.
+
+  ## `detect-non-literal-regexp` stopped claiming a vulnerability it cannot decide
+
+  Every one of its findings reported `issueName: 'ReDoS vulnerability'`. The rule
+  establishes that a pattern is not a literal. Catastrophic backtracking is a
+  property of an automaton and needs one to decide — `no-redos-vulnerable-regex`
+  decides it with `recheck`, an independent oracle, at 98.1% precision.
+  `new RegExp(escapeRegExp(name))` is not a literal and cannot backtrack;
+  `/(x+x+)+y/` is a literal and does.
+
+  **Breaking:** the messageId is now `runtimeDecidedPattern`. If you key on
+  messageIds in a formatter, SARIF pipeline or CI check, update it. The message
+  states what was established and names the two rules that decide what it cannot.
+
+  Also removed: a table that matched `**`, `++` and `??` **as text in your source**
+  and escalated findings to CRITICAL on that basis. It never changed the verdict,
+  only the severity, on a textual guess at the one thing this rule proves nothing
+  about.
+
+  ## Recall: three spellings reached `RegExp` past both regex rules
+
+  Found by attacking the rules deliberately rather than by waiting for a bug
+  report. All three were silent in `detect-non-literal-regexp` **and**
+  `no-redos-vulnerable-regex`:
+
+  ```js
+  const { RegExp: R } = globalThis;
+  new R(p); // destructured intrinsic
+  class My extends RegExp {}
+  new My(p); // subclassed
+  Reflect.construct(RegExp, [p]); // constructed reflectively
+  ```
+
+  **Cost: zero.** Both rules report exactly what they reported before across all
+  3.10M lines. Coverage against evasion, bought at no additional noise.
+
+  The same pass narrowed a clone exemption that was too generous:
+  `new RegExp(re.source, re.flags)` is exempt only when the file can see that
+  `re` is a regex. Any object can carry `.source` and `.flags`, and
+  `JSON.parse(body)` is one.
+
+  It also stopped reporting a pattern read from a frozen table — the shape this
+  rule's own documentation recommends as the safe alternative:
+
+  ```js
+  const PATTERNS = { email: '^[a-z]+@[a-z]+$' } as const;
+  new RegExp(PATTERNS.email);       // no longer a finding
+  ```
+
+  `const` prevents rebinding and not mutation, so the table is only trusted when
+  nothing in the file writes through it. `PATTERNS.email = req.body.p` anywhere,
+  even in another function, puts it back in play. Computed lookups —
+  `PATTERNS[key]` — still report, because the key is chosen at runtime.
+
+  ## `detect-non-literal-fs-filename` no longer calls a constant a traversal
+
+  `fs.readFileSync('/etc/shadow')` reported under CWE-22 path traversal, advising
+  `path.basename()`. Nothing is traversed and nothing is attacker-steered; you
+  cannot basename a constant into safety. A hardcoded path is now a finding only
+  if it actually contains a `..` segment.
+
+  "A program reads a sensitive location" is a real concern, and a different one —
+  it needs its own message and CWE rather than borrowing this rule's.
+
+  ## `allowInTests` no longer depends on where your repo is checked out
+
+  Ninety-eight rules each carried their own copy of
+  `/\.(test|spec)\.(ts|tsx|js|jsx)$/`. They now share one predicate, so the answer
+  cannot drift between rules or change with the path a file happens to sit at.
+
+  `no-privilege-escalation` and `no-missing-authentication` gain a
+  `testFilePattern` option for projects whose test layout differs. Unset — the
+  default — the shared predicate decides.
+
+  ## How the claims above are checked
+
+  Precision and recall numbers come from head-to-head runs against the
+  corresponding upstream rules on a shared corpus, and every behaviour change is
+  measured on the 20 repositories before and after. Where a claim could not be
+  settled by analysis it was settled by execution: the prototype-pollution probe
+  runs on Node 24, and the regex-clone claim is confirmed by `recheck` returning
+  the same verdict for a pattern and its copy.
+
+  Two things are recorded rather than fixed, because we would rather name a limit
+  than paper over it: recognising an escaped interpolation
+  (`new RegExp(escapeRegExp(x))`) requires knowing what a function returns, which
+  is interprocedural analysis these rules do not do; and
+  `detect-non-literal-fs-filename` has an unresolved question about whether a
+  hardcoded path to a sensitive location is a finding at all.
+
+### Minor Changes
+
+- [#574](https://github.com/ofri-peretz/eslint/pull/574) [`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Rules decide by evidence, and every vocabulary is now an option
+
+  A large sweep replacing name-substring inference with resolved evidence, and
+  exposing the word lists that remained as configurable options with explicit
+  defaults.
+
+  **Expect new findings on code that was previously silent.** These are rules
+  shipping at `error` in `recommended`, so this will surface in consumer repos.
+  The findings are not new bugs in your code; they are shapes the rules could not
+  previously see.
+
+  ## What will newly report
+
+  The largest single source is `secure-coding/no-sql-injection`, where a function
+  parameter is now treated as a caller-supplied inlet by default
+  (`treatParametersAsUntrusted`, default `true`). Before, a taint root had to be
+  visible in the same file, so the commonest real shape in a codebase —
+
+  ```js
+  export function search(term) {
+    return db.query(`SELECT * FROM items WHERE name LIKE '%${term}%'`);
+  }
+  ```
+
+  — was silent. Set `treatParametersAsUntrusted: false` to restore the old
+  behaviour.
+
+  Also newly detected across the ecosystem: SQL assembled by a local helper and
+  then executed (arguments are now bound across the call boundary); `+=` append
+  builders and `Array#join`; the driver query-config object
+  (`db.query({ text, values })`); big-endian `Buffer.read*BE` readers, which is
+  what a network protocol parser actually uses; `req.headers['x'] || ''`, which
+  previously terminated the taint walk; uppercase URL schemes (`HTTP://`,
+  `WS://`), which evaded three rules and one autofix; and `window.fetch` /
+  `self.fetch` / `globalThis.fetch`, the last of which is the only spelling
+  available inside a Worker.
+
+  ## What will stop reporting
+
+  False positives that decided from a spelling. Among the measured ones:
+  `if (passengers.length >= 4)` reported as a weak password requirement;
+  `localStorage.getItem("recipe-casserole-draft")` as client-side auth logic
+  (`role` ⊂ `casserole`); `carpoolClient.query('BEGIN')` — a ride-sharing API — as
+  a transaction on a pg Pool; `poolClient.query('BEGIN')`, which is the
+  _remediation_; `const PARAM = "static"` as an unescaped URL parameter; and
+  `<link rel="canonical">` as mixed content, which every SSR app has.
+
+  `postgresql-security/prevent-double-release` no longer infers release state from
+  a flag's spelling, so it stops flagging a correct guard named `settled` and
+  starts catching a genuine double release guarded by a flag that is never
+  assigned.
+
+  ## New options
+
+  Every vocabulary that decides a report is now an option with an explicit default
+  matching the previous behaviour exactly, in both `defaultOptions` and
+  `meta.schema`, with an `additional*` variant where extending rather than
+  replacing is the common case. Sets that are a fixed API surface rather than a
+  vocabulary — Node's `createCipheriv`, the Service Worker `Cache` write methods,
+  CSP directive names, IANA media types, the ldapjs call signature — are
+  deliberately **not** configurable: making them so would let a consumer silence a
+  rule on precisely the shapes it exists to find.
+
+### Patch Changes
+
+- Updated dependencies [[`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d)]:
+  - @interlace/eslint-devkit@1.16.1
+
 ## 4.13.1
 
 ### Patch Changes
