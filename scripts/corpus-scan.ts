@@ -34,7 +34,7 @@
  *   tsx scripts/corpus-scan.ts --json      # machine-readable report on stdout
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
@@ -57,15 +57,24 @@ const PLUGINS = [
  * Pinned to a commit, not a branch: a moving target turns "this rule
  * regressed" and "they refactored" into the same signal.
  */
+// Resolved 2026-08-20 from each repository's default branch. The comment above
+// has said "pinned to a commit, not a branch" since this file was written, and
+// the list said `master` / `main` — so the corpus moved under the ratchet, and
+// every upstream refactor arrived looking exactly like a rule regression. That
+// is the failure the comment predicts, and it is why eight rules sat over
+// budget with no rule change to explain them.
+//
+// Advancing a pin is now a deliberate commit that shows up in review, which is
+// the same standard `--update` already applies to the budget itself.
 const TARGETS: ReadonlyArray<{ repo: string; ref: string }> = [
-  { repo: 'okta/okta-auth-js', ref: 'master' },
-  { repo: 'auth0/express-openid-connect', ref: 'master' },
-  { repo: 'stripe/stripe-js', ref: 'master' },
-  { repo: 'twilio/twilio-node', ref: 'main' },
-  { repo: 'redis/ioredis', ref: 'main' },
-  { repo: 'paypal/paypal-checkout-components', ref: 'main' },
-  { repo: 'okta/okta-signin-widget', ref: 'master' },
-  { repo: 'Shopify/cli', ref: 'main' },
+  { repo: 'okta/okta-auth-js', ref: '17efe6a87db904c7bf8de9abb8e5961580f6a30c' },
+  { repo: 'auth0/express-openid-connect', ref: '94a08dd6c214a5a427a70110898e0e2099e5daab' },
+  { repo: 'stripe/stripe-js', ref: '16f79edb92e1e74c8da01c975cf85520b8f14c5b' },
+  { repo: 'twilio/twilio-node', ref: 'c8a4c27de84ec3838726da878cb9ca04a438ec59' },
+  { repo: 'redis/ioredis', ref: 'c0cd66cad8bc3d6fb02e2021f32ae2a88506ee97' },
+  { repo: 'paypal/paypal-checkout-components', ref: '861ab38f819840054eaed903bfc1ce32eb9b535f' },
+  { repo: 'okta/okta-signin-widget', ref: '0fec2f240ae83e5303c2e5e822989e7f82a3eaec' },
+  { repo: 'Shopify/cli', ref: 'cdcb458232c1482f13ae502b72112afb827f9135' },
 ];
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -264,18 +273,35 @@ function main(): number {
   for (const { repo, ref } of TARGETS) {
     const dir = path.join(WORK, repo.replace('/', '__'));
     try {
-      if (!existsSync(dir)) {
-        log(`Cloning ${repo}@${ref}…`);
-        sh('git', [
-          'clone',
-          '--depth',
-          '1',
-          '--branch',
-          ref,
-          '--quiet',
-          `https://github.com/${repo}.git`,
-          dir,
-        ]);
+      // `git clone --branch` takes a branch or tag, never a SHA, so a pinned
+      // commit needs init + fetch. Kept shallow: one commit, no history.
+      //
+      // The cached clone is also VERIFIED against the pin rather than trusted.
+      // Reusing whatever `dir` happens to hold is how a scan silently measures
+      // the wrong code — the cache survives a pin change, and the run would
+      // report numbers for the old commit under the new pin's name.
+      const headMatches = (): boolean => {
+        if (!existsSync(path.join(dir, '.git'))) return false;
+        try {
+          return sh('git', ['-C', dir, 'rev-parse', 'HEAD']).trim() === ref;
+        } catch {
+          return false;
+        }
+      };
+      if (!headMatches()) {
+        if (existsSync(dir)) {
+          log(`Cached ${repo} is not at ${ref.slice(0, 8)} — refetching…`);
+          rmSync(dir, { recursive: true, force: true });
+        }
+        log(`Fetching ${repo}@${ref.slice(0, 8)}…`);
+        // Through the hardening, not a bare mkdirSync — `private-cache-dir`
+        // rejects a relative path or one inside the shared tmpdir, and the
+        // scratch-space lock test asserts every directory here goes via it.
+        ensurePrivateDir(dir, CACHE_HOME);
+        sh('git', ['-C', dir, 'init', '--quiet']);
+        sh('git', ['-C', dir, 'remote', 'add', 'origin', `https://github.com/${repo}.git`]);
+        sh('git', ['-C', dir, 'fetch', '--depth', '1', '--quiet', 'origin', ref]);
+        sh('git', ['-C', dir, 'checkout', '--quiet', 'FETCH_HEAD']);
       }
       for (const [rule, n] of scanTarget(dir, configPath)) {
         totals.set(rule, (totals.get(rule) ?? 0) + n);
