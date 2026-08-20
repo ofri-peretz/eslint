@@ -77,9 +77,20 @@ flowchart TD
 
 ### Two different findings
 
-The rule reports **two distinct defects**, and it is worth knowing which one you are looking at because the fixes differ.
+The rule reports **three distinct defects**, and it is worth knowing which one you are looking at because the fixes differ.
 
 **CWE-78 — command injection (`childProcessCommandInjection`).** A shell sits between your command and the OS, so an attacker-steered value can start a *second* process with `;`, `|`, backticks or `$()`. This needs `exec`/`execSync`, an explicit `shell: true`, a shell binary (`sh`, `bash`, `cmd`, …), or an eval flag (`-c`, `-e`, `/c`). The fix is to remove the shell.
+
+**CWE-114 — untrusted program (`untrustedProgram`).** No shell runs, so metacharacters are inert, but the *executable name itself* is attacker-steerable — they choose which program starts:
+
+```typescript
+spawn(req.body.cmd, ['--version']);
+// cmd = "curl"  → whatever they name, with your process's privileges
+```
+
+Removing the shell does not help; there is no shell. Resolve the name against a fixed allowlist of permitted executables instead.
+
+Before 2026-08-20 these were reported as CWE-78 at CVSS 9.8, carrying the advice *"use execFile/spawn with `{shell: false}`"* — which the reported line already did. Remediation that is a no-op on the line it is attached to is a finding nobody can act on; it fired on 11 of the 19 `valid` cases in eslint-plugin-security's own corpus for this class.
 
 **CWE-88 — argument injection (`argumentInjection`).** No shell is involved and no second process can start, but the callee still parses its *own* options. An attacker-steered argv entry that begins with `-` becomes a flag:
 

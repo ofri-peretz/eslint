@@ -22,7 +22,7 @@ import { makeReadsTaintSource } from '../../utils/provenance';
  * here, alongside a `strategy: 'validate' | 'sanitize' | 'restrict' | 'auto'`
  * option meant to select between them. Neither half was ever finished:
  * `create()` never read `strategy`, and every `context.report` in this file
- * names one of the two messages below.
+ * names one of the three messages below.
  *
  * Not wired up, and deliberately so. The sibling `detect-eval-with-expression`
  * does implement the same shape, which is presumably where this was copied
@@ -30,11 +30,12 @@ import { makeReadsTaintSource } from '../../utils/provenance';
  * REPLACE a CRITICAL CWE-78 "Command injection" or a HIGH CWE-88 "Argument
  * injection" with a severity-LOW "Validate Strategy" carrying no CWE and no
  * description of what was found. Emitting them would downgrade every finding
- * this rule makes. The advice they held is already the `fix:` line of the two
+ * this rule makes. The advice they held is already the `fix:` line of the three
  * that fire.
  */
 type MessageIds =
   | 'childProcessCommandInjection'
+  | 'untrustedProgram'
   | 'argumentInjection';
 
 export interface Options {
@@ -342,6 +343,31 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         severity: 'CRITICAL',
         fix: 'Use execFile/spawn with {shell: false} and array args',
         documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
+      }),
+      /**
+       * No shell was invoked, so this is not CWE-78.
+       *
+       * `spawn`/`execFile` default to `{ shell: false }`. When the BINARY is
+       * attacker-steerable the defect is real — the caller chooses which program
+       * runs — but that is process control, not shell-metacharacter injection,
+       * and the two need different advice.
+       *
+       * Measured 2026-08-20 against eslint-plugin-security's own `valid` corpus:
+       * `spawn(str)` drew `childProcessCommandInjection` at CVSS 9.8, telling
+       * the reader to "use execFile/spawn with {shell: false}" — which is what
+       * the reported line already does. Remediation that is a no-op on the line
+       * it is attached to is a finding no developer can act on, and it fired on
+       * 11 of their 19 valid cases for this class.
+       */
+      untrustedProgram: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Untrusted program',
+        cwe: 'CWE-114',
+        description:
+          'The executable name is attacker-steerable. No shell runs here, so metacharacters are inert — but the caller still chooses which program executes.',
+        severity: 'HIGH',
+        fix: 'Resolve the name against a fixed allowlist of permitted executables before spawning it.',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/114.html',
       }),
       argumentInjection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -1226,9 +1252,11 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       const steps = pattern ? generateRefactoringSteps(pattern) : 'Review and secure command execution';
       const alternatives = pattern?.safeAlternatives.join(', ') || 'execFile, spawn with validation'; 
 
+      // CWE-78 is a claim about a SHELL parsing metacharacters. Make it only
+      // when a shell is actually in the picture; otherwise say what is true.
       context.report({
         node,
-        messageId: 'childProcessCommandInjection',
+        messageId: usesShell(node, method) ? 'childProcessCommandInjection' : 'untrustedProgram',
         data: {
           method,
           args,
