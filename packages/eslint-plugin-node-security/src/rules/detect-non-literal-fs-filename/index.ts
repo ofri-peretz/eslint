@@ -1152,6 +1152,24 @@ allowLiterals = false,
             (containsFreeVariable(node.left, depth + 1) ||
               containsFreeVariable(node.right, depth + 1))
           );
+        // A COMPUTED key, and deliberately not the object.
+        //
+        // `obj[k]` selects which value you get, so an unknowable `k` makes the
+        // result unknowable however well-known `obj` is. That is strictly more
+        // opaque than the bare `readFile(filename)` this function already
+        // reports, yet `import.meta[prop]` and `cfg[prop]` were silent while
+        // `dir` reported — the weaker evidence produced the louder verdict.
+        //
+        // The object is NOT recursed into, and the reason is measured rather
+        // than stylistic: ESLint resolves no Node globals by default, so
+        // `process` reads as a free variable, and walking the object would make
+        // every `process.env.HOME` a finding. A static key names one fixed slot
+        // and is left to `isBuildTimeConstant` and the taint reader above.
+        //
+        // Last open case on eslint-plugin-security's own corpus:
+        // `fs.readFileSync(path.resolve(import.meta[prop], './index.html'))`.
+        case AST_NODE_TYPES.MemberExpression:
+          return node.computed && containsFreeVariable(node.property, depth + 1);
         default:
           return false;
       }
