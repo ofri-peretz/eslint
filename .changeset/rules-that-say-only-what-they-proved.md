@@ -71,6 +71,29 @@ The same pass narrowed a clone exemption that was too generous:
 `re` is a regex. Any object can carry `.source` and `.flags`, and
 `JSON.parse(body)` is one.
 
+It also stopped reporting a pattern read from a frozen table — the shape this
+rule's own documentation recommends as the safe alternative:
+
+```js
+const PATTERNS = { email: '^[a-z]+@[a-z]+$' } as const;
+new RegExp(PATTERNS.email);       // no longer a finding
+```
+
+`const` prevents rebinding and not mutation, so the table is only trusted when
+nothing in the file writes through it. `PATTERNS.email = req.body.p` anywhere,
+even in another function, puts it back in play. Computed lookups —
+`PATTERNS[key]` — still report, because the key is chosen at runtime.
+
+## `detect-non-literal-fs-filename` no longer calls a constant a traversal
+
+`fs.readFileSync('/etc/shadow')` reported under CWE-22 path traversal, advising
+`path.basename()`. Nothing is traversed and nothing is attacker-steered; you
+cannot basename a constant into safety. A hardcoded path is now a finding only
+if it actually contains a `..` segment.
+
+"A program reads a sensitive location" is a real concern, and a different one —
+it needs its own message and CWE rather than borrowing this rule's.
+
 ## `allowInTests` no longer depends on where your repo is checked out
 
 Ninety-eight rules each carried their own copy of
