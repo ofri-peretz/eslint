@@ -17,37 +17,44 @@ CodeQL calls it a polynomial ReDoS. So does `recheck` — **2nd degree
 polynomial**, which matters because `recheck` is the oracle our own
 `no-redos-vulnerable-regex` consults.
 
-**Our own rule does not report it.** That is not a tuning gap, it is structural:
-the oracle may only ever REMOVE a finding, so the rule's recall is bounded by
-`scslre`, and anything scslre misses the oracle never gets asked about. We have
-a second opinion wired to veto and not to contribute.
+**Our own rule does not report it**, and the reason I first gave was wrong.
 
-That is the finding worth keeping from this batch, and it is a design question
-for the rule rather than a defect in these three files:
-
-- Letting the oracle ADD findings would catch this class, at whatever precision
-  cost `recheck`'s own false positives carry — unmeasured.
-- Keeping it veto-only holds precision and accepts the recall bound.
-
-Either way it should be a decision with a number attached, not an accident.
-
-### Why the three files are not being rewritten today
-
-The obvious linear rewrite is not one. Measured:
+I wrote that the oracle "may only ever REMOVE a finding, so recall is bounded by
+`scslre`". Measured 2026-08-20 against the RULE rather than the analyser it is
+built on, over all 2,136 regex literals in `packages/*/src` (730 re-embeddable
+in a probe file; the rest do not survive extraction, a limit of the harness, not
+the rule):
 
 ```
-  before   vulnerable   2nd degree polynomial
-  after    vulnerable   2nd degree polynomial     (classic /\*[^*]*\*+(?:[^/*][^*]*\*+)*\/ form)
-  6/6 identical output on the shapes these rules parse
+  the rule reports                    9
+  recheck says vulnerable            41
+  vulnerable, rule silent            32   = 31 polynomial deg 2 + 1 deg 3
+                                          + ZERO exponential
 ```
 
-Both forms carry the same verdict, so the rewrite buys nothing but churn. And
-the threat model is narrow: the "attacker input" is source code being linted,
-so the worst case is a developer slowing their own build with their own file.
-Timed at 16,000 repetitions of the trigger, the current pattern costs 0.1 ms.
+Zero exponential missed. The rule's own correction layers —
+`relaxBoundedRangesUnderUnboundedQuantifier` and `isProvablyCatastrophic` —
+already recover the cases scslre clears, including `/^([a-zA-Z0-9]{2,4})+$/`,
+which my first measurement listed as missed because that measurement ran raw
+scslre + recheck and never ran the rule. Measuring a reduction of the thing and
+reporting on the thing is the error this repo has a memory about; it recurred
+here.
 
-Real, low-actionability, and recorded — which is exactly the effective-FP
-category the seal record already lists as unmet for the ReDoS rule.
+So the recall gap is not structural and not exponential. It is 31 second-degree
+polynomials of the shape `/\s*,\s*/` and `/\s+\|/g`, plus one third-degree
+identifier matcher. Reporting those would be the `effectiveFp` failure the seal
+record already records as unmet.
+
+**And the veto-only wiring is not a defect to fix — it is load-bearing.**
+`recheck` is an OPTIONAL peer (`peerDependenciesMeta.recheck.optional`). If the
+oracle could add findings, installing an unrelated optional package would change
+whether a build passes. `confirmsRedos` fails open precisely so the oracle can
+only ever subtract. Making it contribute requires promoting `recheck` to a hard
+dependency first; that is a supply-chain decision, not a rule change.
+
+Disposition: **no change**. SQL_COMMENTS is deg-2, so it stays unreported, which
+agrees with the separate measurement that its textbook "linear" rewrite carries
+the identical deg-2 verdict on identical output.
 
 ## The rest
 
