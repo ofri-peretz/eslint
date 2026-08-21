@@ -163,6 +163,27 @@ ruleTester.run('export', exportRule, {
       `,
       errors: [{ messageId: 'duplicateExport' }],
     },
+
+    // An enum occupies both spaces, so enum-vs-enum conflicts in both — but it
+    // is ONE declaration and must produce exactly ONE report. Raised by
+    // CodeRabbit on #593; routing the enum through two checkAndAddExport calls
+    // reported the same node twice, and the enum-vs-value and enum-vs-type
+    // cases above could not catch it because only one space conflicts there.
+    {
+      code: `
+        export enum Foo { A }
+        export enum Foo { B }
+      `,
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      // Same one-report rule when the earlier declaration is an interface.
+      code: `
+        export interface Foo { a: string }
+        export enum Foo { A }
+      `,
+      errors: [{ messageId: 'duplicateExport' }],
+    },
   ],
 });
 

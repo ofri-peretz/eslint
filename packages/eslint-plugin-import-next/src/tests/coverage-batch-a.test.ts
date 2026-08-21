@@ -660,15 +660,14 @@ describe('export — Layer 2 (synthetic declarations)', () => {
     expect(reports).toEqual([]);
   });
 
-  it('skips TS enum declarations without an id', () => {
-    const { listeners, reports } = createWithMockContext(exportRule);
-    (listeners.ExportNamedDeclaration as (n: unknown) => void)({
-      type: 'ExportNamedDeclaration',
-      declaration: { type: 'TSEnumDeclaration', id: null },
-      specifiers: [],
-    });
-    expect(reports).toEqual([]);
-  });
+  // REMOVED: 'skips TS enum declarations without an id'.
+  //
+  // It fed a synthetic `{ type: 'TSEnumDeclaration', id: null }`, which no
+  // parser can produce — an unnamed enum is a parse error, and TSESTree types
+  // `id` as required. The guard it covered was the same dead branch this PR
+  // removed from TSInterfaceDeclaration and TSTypeAliasDeclaration, and
+  // keeping one of the three would have been the inconsistency rather than the
+  // safety. Raised by CodeRabbit on #593.
 
   it('ignores declaration types outside the tracked set', () => {
     const { listeners, reports } = createWithMockContext(exportRule);

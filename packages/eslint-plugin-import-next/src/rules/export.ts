@@ -150,10 +150,18 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
           } else if (node.declaration.type === AST_NODE_TYPES.TSTypeAliasDeclaration) {
             checkAndAddExport(node.declaration.id.name, node, 'type');
           } else if (node.declaration.type === AST_NODE_TYPES.TSEnumDeclaration) {
-            // An enum creates a type AND a value, so it collides with either.
-            if (node.declaration.id) {
-              checkAndAddExport(node.declaration.id.name, node, 'value');
-              checkAndAddExport(node.declaration.id.name, node, 'type');
+            // An enum creates a type AND a value, so it collides with either —
+            // but it is ONE declaration and must produce ONE report. Routing it
+            // through two `checkAndAddExport` calls made `export enum Foo {}`
+            // twice report the same node twice, because both buckets were
+            // already populated by the first enum. `id` is required here for
+            // the same reason it is on interfaces and type aliases.
+            const enumName = node.declaration.id.name;
+            if (valueNames.has(enumName) || typeNames.has(enumName)) {
+              context.report({ node, messageId: 'duplicateExport', data: { name: enumName } });
+            } else {
+              valueNames.set(enumName, node);
+              typeNames.set(enumName, node);
             }
           }
         }
