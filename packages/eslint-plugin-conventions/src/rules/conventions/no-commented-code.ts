@@ -33,12 +33,36 @@ type RuleOptions = [Options?];
  * Check if a comment block contains code-like patterns
  */
 function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
+  // A JSDoc block is DOCUMENTATION, and the code inside an `@example` is
+  // deliberate — the one place a comment is supposed to contain code.
+  //
+  // Found on the 20-repository ledger, where `/**` was the single largest new
+  // shape: mongoose alone documents most of its API with examples. Skipping
+  // the block is the honest answer, because there is no way to tell an
+  // `@example` body from commented-out code by looking at the body.
+  //
+  // Deliberately NOT extended to a plain `/* … */`, which IS how people comment
+  // code out. Only `/**` — the JSDoc marker — is exempt.
+  // Matched on a LEADING `*`, not on `/**`. ESLint's `comment.value` excludes
+  // the delimiters, so a JSDoc block arrives here as `* Does a thing…` and a
+  // `/^\/\*\*/` test can never fire. The `/*!` guard removed earlier had the
+  // same flaw — it was dead code for this reason, not because the paren fix
+  // covered it, though the paren fix does cover it.
+  // No leading-whitespace allowance, deliberately. `/**…` arrives as `*…` and
+  // matches; a plain `/*\n * …` arrives as `\n * …` and does not, because `\s`
+  // would otherwise swallow the newline and exempt the very shape people use to
+  // comment code out.
+  if (isBlockComment && comment.startsWith('*')) {
+    return false;
+  }
+
   // NOTE: no special case for the terser `/*!` "preserve" banner. One was
   // written here first, on the reasoning that a legal notice is never code —
   // true, but redundant: what made every banner report was `Copyright (c)`
   // matching the call pattern, and tightening that pattern to reject a gap
   // before the paren already covers it. The guard was unreachable, so it is
-  // gone rather than sitting here looking load-bearing.
+  // gone rather than sitting here looking load-bearing. `/**` is different:
+  // it is reachable, and it carries thousands of findings.
 
   // Remove comment markers for pattern matching
   let text = comment;

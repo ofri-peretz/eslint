@@ -21,7 +21,7 @@
     },
     "effectiveFp": {
       "state": "unmet",
-      "evidence": "not measured under the formal protocol. Corpus fell 2,441 -> 143 and survivors spot-checked as real commented-out bodies, but a spot check is not the n>=20 sampled measurement.",
+      "evidence": "not met, but no longer unmeasured: the 20-repo ledger files these findings by SHAPE and now reports only 2 new cases per run, so the population is nearly closed. The n>=20 sampled adjudication has not been done.",
       "command": "npm run cases -- --rule=conventions/no-commented-code --n=20"
     },
     "reachability": {
@@ -41,7 +41,7 @@
     },
     "realSource": {
       "state": "met",
-      "evidence": "measured on 8 pinned repositories we did not write. 2,441 -> 143, and the recall fix added ZERO findings on that corpus while catching all 14 adversarial shapes — the shapes it recovers use no trailing semicolon, which those repos do not do.",
+      "evidence": "measured on TWO corpora. The 8-repo pinned corpus fell 2,441 -> 143. The 20-repo ledger then read 3,557 — 25x more per repository — and the gap was the finding: JSDoc blocks were reported, because an `@example` body IS code and the rule had no reason to treat it as documentation. 3,557 -> 1,879, with the pinned corpus unchanged.",
       "command": "npx tsx scripts/corpus-scan.ts"
     },
     "partition": {
@@ -94,6 +94,14 @@
       "summary": "a sentence that happens to end in a bracket, such as `// NOTE: enableLegacyMode (via isStepMode)`, can still report.",
       "why": "the terminator proxy accepts it; measured as a small residual on the pinned corpus rather than eliminated.",
       "reopenWhen": "the parse-based classifier lands, or the residual grows."
+    },
+    {
+      "id": "jsdoc-example-is-code",
+      "kind": "scope",
+      "limit": null,
+      "summary": "a JSDoc block is skipped wholesale, so genuinely commented-out code inside one is missed.",
+      "why": "an `@example` body is the one place a comment is SUPPOSED to contain code, and nothing in the body distinguishes it from commented-out code. Deliberately narrow: only `/**` is exempt, and a plain `/* … */` — which is how people actually comment code out — is still checked.",
+      "reopenWhen": "the parse-based classifier lands and can read the JSDoc tag structure."
     }
   ],
   "notes": "Sealed alongside reliability/no-missing-null-checks on 2026-08-21. Same lesson: the adversarial axis found the recall cost that the FP work had understated in its own commit message."
