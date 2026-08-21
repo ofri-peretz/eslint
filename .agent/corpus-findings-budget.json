@@ -8,6 +8,13 @@
     "browser-security/no-unencrypted-transmission": 1,
     "browser-security/no-unsafe-inline-csp": 1,
     "browser-security/require-blob-url-revocation": 1,
+    "import-next/export": 3,
+    "import-next/first": 577,
+    "import-next/newline-after-import": 693,
+    "import-next/no-cycle": 1337,
+    "import-next/no-duplicates": 37,
+    "import-next/no-empty-named-blocks": 1,
+    "import-next/order": 1825,
     "node-security/detect-eval-with-expression": 1,
     "node-security/detect-non-literal-fs-filename": 2,
     "node-security/no-math-random-crypto": 1,
@@ -47,6 +54,13 @@
     "node-security/no-shell-injection": "1. Shopify/cli packages/plugin-cloudflare/src/install-cloudflared.ts:135 — `execSync(`t...`)` with an interpolated template. Correct shape for the rule; the interpolated value is an install path the CLI itself computes.",
     "node-security/no-unsafe-dynamic-require": "1. okta-signin-widget src/v3/src/mocks/browser.ts:34 — a require with a computed specifier in a MOCK harness. Correct shape, test-support file.",
     "secure-coding/no-graphql-injection": "1. Shopify/cli .../graphql/organization_beta_flags.ts:4 — TRUE POSITIVE and the strongest finding in this group. `flags.map(f => `flag_${f}: hasFeatureFlag(handle: \"${f}\")`)` interpolates straight into the query body AND inside a quoted GraphQL string, so a `\"` in a flag name breaks out. Budgeted only because the flag list is internal; it should be fixed upstream.",
-    "secure-coding/no-unlimited-resource-allocation": "1. Shopify/cli packages/app/src/cli/services/function/binaries.ts:315 — a gunzip stream with no size cap. Correct: a decompression bomb is bounded by nothing here. The archive is fetched from Shopify's own CDN, which is why it is budgeted."
+    "secure-coding/no-unlimited-resource-allocation": "1. Shopify/cli packages/app/src/cli/services/function/binaries.ts:315 — a gunzip stream with no size cap. Correct: a decompression bomb is bounded by nothing here. The archive is fetched from Shopify's own CDN, which is why it is budgeted.",
+    "import-next/export": "778 -> 3. Batch 2, and a clear-cut RULE BUG. TypeScript has two declaration spaces and a name may occupy both:\n\n  export type Twilio = ITwilio\n  export const Twilio = ITwilio     // legal, and the point of the pattern\n\nThe rule kept ONE map keyed by name, so every such pair was 'Multiple exports of name X'. twilio-node's src/index.ts alone produced 758 of them. Fixed by splitting value space from type space, with `interface X` twice treated as declaration MERGING (legal) while `type X` twice, `type X` beside `interface X`, and an enum against either are still reported — an enum occupies both spaces. Six valid cases verified to FAIL against the old rule.",
+    "import-next/order": "1825. Correct in contract — import groups genuinely out of order. LOW severity style, dominated by large generated SDK trees (okta-auth-js, twilio-node). Nobody reorders generated imports, so these are effective FPs under the Tricorder standard, but the rule is not wrong; the question is whether a style rule belongs in `recommended`, which is a preset decision rather than a rule defect.",
+    "import-next/newline-after-import": "693. Correct in contract. Same class as `order` — LOW-severity formatting over generated files, where imports are interleaved with `const x = require(...)` so the 'last import' is genuinely ambiguous.",
+    "import-next/first": "577. Correct in contract, and the finding is real: twilio-node's generated clients emit `import`, then `const deserialize = require(...)`, then more `import`s. An import after non-import statements is exactly what the rule is for. Generated code, so nobody acts.",
+    "import-next/no-cycle": "1337. Correct — real circular imports, concentrated in generated SDK class hierarchies (twilio Page/Version/AccountsBase, okta idx remediators). CVSS 5.3 / CRITICAL is severity inflation for a circular import and is worth revisiting separately; the DETECTION is right.",
+    "import-next/no-duplicates": "37. Correct — two import statements from the same module in one file.",
+    "import-next/no-empty-named-blocks": "1. Correct — an `import {} from 'x'` with an empty named block."
   }
 }

@@ -53,6 +53,7 @@ const PLUGINS = [
   'eslint-plugin-jwt-security',
   'eslint-plugin-express-security',
   'eslint-plugin-reliability',
+  'eslint-plugin-import-next',
 ] as const;
 
 /**
@@ -120,6 +121,33 @@ const RECHECK_RANGE: string = (() => {
   }
   return range;
 })();
+
+/**
+ * Rules this instrument CANNOT measure, and why.
+ *
+ * The targets are shallow git clones. They are never `npm install`ed and never
+ * built, so any rule whose verdict depends on the dependency tree or on
+ * generated output is answering a question about the clone rather than about
+ * the rule. Measured 2026-08-21 on `import-next`:
+ *
+ *   no-unresolved                3,671 — 1,108 bare specifiers with no
+ *                                        node_modules to resolve against, and
+ *                                        2,402 relative imports of files that
+ *                                        graphql-codegen writes at build time
+ *                                        (Shopify/cli `./types.js`)
+ *   no-extraneous-dependencies   1,067 — cannot compare against packages that
+ *                                        were never installed
+ *
+ * A budget would be worse than an exclusion here: the number would look like a
+ * quality signal, and it would drift whenever a pinned SHA moves for reasons
+ * that have nothing to do with the rule. Excluding it says the true thing —
+ * this gate has nothing to say about these rules. They need a rig that
+ * installs and builds each target, which is a separate piece of work.
+ */
+const UNMEASURABLE_RULES: ReadonlySet<string> = new Set([
+  'import-next/no-unresolved',
+  'import-next/no-extraneous-dependencies',
+]);
 
 const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
 
@@ -301,6 +329,17 @@ function main(): number {
       // decides findings, so an unpinned one lets a `recheck` release restate
       // published corpus numbers without a commit here.
       `recheck@${RECHECK_RANGE}`,
+      // The import RESOLVER. `oxc-resolver` is an OPTIONAL peer of
+      // @interlace/eslint-devkit, and `no-unresolved` / `named` / `default` /
+      // `namespace` cannot answer anything without it.
+      //
+      // Unlike the ReDoS oracle this one fails CLOSED — `loadResolverFactory`
+      // throws MissingResolverPeerError rather than quietly returning "not
+      // resolved" — so its absence surfaces as every target erroring instead
+      // of as a silently perfect score. Installed for the same reason all the
+      // same: an optional dependency that changes the answer is not optional
+      // to the measurement.
+      'oxc-resolver',
       ...PLUGINS.map((p) => `${p}@file:${path.join(ROOT, 'packages', p)}`),
     ],
     RIG,
@@ -393,7 +432,11 @@ function main(): number {
     const next: Budget = {
       $comment: budget.$comment,
       generated: new Date().toISOString().slice(0, 10),
-      budgets: Object.fromEntries([...totals.entries()].sort(([a], [b]) => a.localeCompare(b))),
+      budgets: Object.fromEntries(
+        [...totals.entries()]
+          .filter(([rule]) => !UNMEASURABLE_RULES.has(rule))
+          .sort(([a], [b]) => a.localeCompare(b)),
+      ),
       ...(budget.triage ? { triage: budget.triage } : {}),
     };
     writeFileSync(BUDGET_FILE, `${JSON.stringify(next, null, 2)}\n`);
@@ -405,6 +448,8 @@ function main(): number {
   const under: Array<{ rule: string; found: number; allowed: number }> = [];
 
   for (const [rule, found] of totals) {
+    // Skipped, not budgeted at zero — see UNMEASURABLE_RULES.
+    if (UNMEASURABLE_RULES.has(rule)) continue;
     // A rule with no budget entry is new to the corpus. Treat 0 as its budget
     // so a newly-noisy rule cannot arrive unnoticed.
     const allowed = budget.budgets[rule] ?? 0;
