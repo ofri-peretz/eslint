@@ -118,6 +118,49 @@ function provesSafeDestination(
 }
 
 /**
+ * `location.assign(location.href)` — a reload, not a redirect.
+ *
+ * CWE-601 is redirection to an UNTRUSTED SITE. Navigating to the URL the
+ * document is already on cannot move the user anywhere, so there is no site to
+ * be untrusted; an attacker gains nothing they do not already have.
+ *
+ * `location.href` is correctly an untrusted read everywhere else — a URL
+ * carries attacker-controlled query and hash — which is why this shape reached
+ * the report at all. Found on the pinned corpus 2026-08-20 in
+ * okta-signin-widget's `transformTerminalTransaction.ts`, where the surrounding
+ * comment says exactly what it is: "Load the current page URI again to get a
+ * new state token".
+ *
+ * Deliberately narrow: the destination must be the `href` of the SAME location
+ * expression being navigated. `otherWindow.location.href` still reports,
+ * because that genuinely moves the user somewhere else.
+ */
+function isSelfReload(
+  target: TSESTree.Node | undefined,
+  sinkLocation: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (!target || target.type !== 'MemberExpression') return false;
+  const property = target.property;
+  const readsHref =
+    (!target.computed &&
+      property.type === 'Identifier' &&
+      property.name === 'href') ||
+    (property.type === 'Literal' && property.value === 'href');
+  if (!readsHref) return false;
+
+  // `sinkLocation` is supplied by the caller, which already knows the shape it
+  // matched — deriving it here would need an arm for "neither", and that arm is
+  // a branch no input can take.
+
+  // Both receivers come from the same file, so comparing their printed form is
+  // exactly the "same Location object" question — and it will not match
+  // `otherWindow.location` against `window.location`.
+  const normalise = (n: TSESTree.Node) => sourceCode.getText(n).replace(/\s+/g, '');
+  return normalise(target.object) === normalise(sinkLocation);
+}
+
+/**
  * Check if the redirect target is validated.
  *
  * `node` is the whole redirect — a call or an assignment — and `target` is the
@@ -242,6 +285,15 @@ ignoreInTests = true
       if (!isNavigationSink(node)) {
         return;
       }
+      // A reload is not a redirect — see isSelfReload. `isNavigationSink` has
+      // already matched `<location>.assign` / `.replace`, so the callee is the
+      // member expression whose object is the Location.
+      if (
+        node.callee.type === 'MemberExpression' &&
+        isSelfReload(node.arguments[0], node.callee.object, sourceCode)
+      ) {
+        return;
+      }
       // Check if redirect URL is validated
       if (!isRedirectValidated(node, node.arguments[0], sourceCode)) {
         context.report({
@@ -267,6 +319,14 @@ ignoreInTests = true
       // assignment is the sink, and says nothing about what flows into it.
       // The guard search is the same one the call path runs — an allowlist
       // check is an allowlist check whether the sink is `assign(x)` or `= x`.
+      // `window.location.href = window.location.href` is the assignment
+      // spelling of the same reload — see isSelfReload.
+      if (
+        node.left.type === 'MemberExpression' &&
+        isSelfReload(node.right, node.left.object, sourceCode)
+      ) {
+        return;
+      }
       if (!isRedirectValidated(node, node.right, sourceCode)) {
         context.report({
           node,
