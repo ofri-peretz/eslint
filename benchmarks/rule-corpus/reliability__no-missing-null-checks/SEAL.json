@@ -21,7 +21,7 @@
     },
     "effectiveFp": {
       "state": "unmet",
-      "evidence": "never measured under the formal protocol (n>=20 sampled findings, each labelled would-a-developer-act). The corpus count fell 38,674 -> 127 and spot checks of the survivors were actionable, but a spot check is not the sampled measurement and the bar is 5%.",
+      "evidence": "not met, but no longer unmeasured. `scripts/case-ledger.mts` files every finding under a SHAPE rather than a file and line, and this rule now has 669 cases from the 20-repo corpus, all `unreviewed`. That is the backlog made visible, which is the precondition for the n>=20 sampled measurement rather than the measurement itself.\n\nWhat the sample already shows: the residue is dominated by flow-insensitivity. `const results = ordered ? null : new Array(n)` is genuinely null on one path, and the code guards on `ordered` somewhere the rule cannot see — correct findings nobody would act on, which is exactly what this axis counts against us.",
       "command": "npm run cases -- --rule=reliability/no-missing-null-checks --n=20"
     },
     "reachability": {
@@ -41,7 +41,7 @@
     },
     "realSource": {
       "state": "met",
-      "evidence": "measured on 8 pinned repositories we did not write (okta-auth-js, okta-signin-widget, Shopify/cli, twilio-node, ioredis, stripe-js, paypal-checkout-components, auth0/express-openid-connect). 38,674 -> 127 findings, every budget entry carrying a written reason in .agent/corpus-findings-budget.json.",
+      "evidence": "measured on TWO corpora. The 8-repo pinned corpus fell 38,674 -> 127. The 20-repo real-source ledger then read 4,954 — 15x more per repository — and that gap was the finding: the zero-writes rule was applied to the uninitialised case and NOT to `= null`, so `let childModel = null; childModel = result.childModel` reported every use that followed. Declare-then-assign is the most common shape in JavaScript. Fixed uniformly: 4,954 -> 1,743.",
       "command": "npx tsx scripts/corpus-scan.ts"
     },
     "partition": {
@@ -150,6 +150,14 @@
       "summary": "`var a = a; a.name` is a read of undefined; the alias walk answers 'no evidence'.",
       "why": "the cycle guard exists so the alias walk terminates; without points-to analysis, silence is the honest answer from a walk that cannot resolve.",
       "reopenWhen": "the walk can distinguish a self-reference from an unresolved alias."
+    },
+    {
+      "id": "ternary-null-is-flow-insensitive",
+      "kind": "false-positive",
+      "limit": "L3",
+      "summary": "`const x = c ? null : make()` is treated as nullable at every later use, however the code guards on `c`.",
+      "why": "detecting the null arm is right and finds real bugs; knowing that a later `if (c)` covers it needs path sensitivity. Dominant residue on the 20-repo ledger.",
+      "reopenWhen": "path-sensitive analysis is available, or the guard search learns to relate a conditional's test to its arms."
     }
   ],
   "notes": "Sealing started 2026-08-21 after the rule shipped as 4.0.0. The adversarial axis is the one that paid: it found 11 real misses in a rule that had already passed corpus, coverage and the CWE recall gate — the axis this repo has met on 1 of 94 records. Review on the seal PR then found two more in the fixes themselves, which is the same lesson twice: a gate you have just written is the one you have least evidence about."

@@ -362,6 +362,18 @@ describe('no-missing-null-checks', () => {
           code: 'export function f(flag) { const undefined = {}; const c = flag ? undefined : {}; return c.name; }',
           filename: 'src/u.ts',
         },
+        // Declare-then-assign. `let x = null` followed by a real assignment is
+        // the most common shape in JavaScript, and reading it as "this is null"
+        // reported every use that followed — 4,954 findings on the 20-repository
+        // ledger, from an inconsistency in this gate: the zero-writes rule was
+        // applied to the uninitialised case and not to this one. The FN guard
+        // is `const nothing = null` above: a const cannot be reassigned, so a
+        // genuine null binding still reports.
+        {
+          code:
+            'export function f(result) { let childModel = null; childModel = result.childModel; return childModel.hooks; }',
+          filename: 'src/u.ts',
+        },
         // A conditional whose arms carry no evidence carries none either.
         {
           code: 'export function f(a, b, c) { const chosen = c ? a : b; return chosen.name; }',

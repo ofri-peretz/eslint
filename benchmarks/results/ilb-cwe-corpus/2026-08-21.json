@@ -1,7 +1,7 @@
 {
   "bench": "ILB-CWE-Corpus",
   "benchVersion": "1.0",
-  "timestamp": "2026-08-21T20:42:41.829Z",
+  "timestamp": "2026-08-21T22:19:13.666Z",
   "methodologyHash": "sha256:ef8ea3b0b761f29a4b92403985a71a1e7cf7e55682aecc72f8c100c310c554b0",
   "methodologyPaths": [
     "benchmarks/suites/ilb-cwe-corpus/run.ts",

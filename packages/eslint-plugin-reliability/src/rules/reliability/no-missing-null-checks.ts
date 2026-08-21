@@ -177,12 +177,29 @@ function nullabilityEvidence(
       // without it the honest reading of "it is written somewhere" is "this is
       // ordinary deferred initialisation". Only a binding that is never
       // written at all is unambiguously a read of undefined.
-      const writes = variable.references.filter((reference) => reference.isWrite());
-      if (writes.length > 0) return null;
+      const written = variable.references.some(
+        (reference) => reference.isWrite() && !reference.init,
+      );
+      if (written) return null;
       return 'declared-without-initializer';
     }
 
     // `const x = null` / `= undefined`.
+    //
+    // Subject to the SAME zero-writes rule as the uninitialised case, and it
+    // was not — an inconsistency in this gate that the 20-repository ledger
+    // exposed at 4,954 findings. `let childModel = null` followed by
+    // `childModel = result.childModel` is declare-then-assign, the most common
+    // shape in JavaScript, and reading it as "this is null" reported every use
+    // that followed. A `const` cannot be written, so a genuine `const x = null`
+    // still reports.
+    // A LATER write, not counting the declaration's own initializer — ESLint
+    // models `const x = 1` as a write reference too, so an unfiltered count
+    // disqualifies every initialised binding.
+    const reassigned = variable.references.some(
+      (reference) => reference.isWrite() && !reference.init,
+    );
+    if (reassigned) return null;
     if (init.type === 'Literal' && init.value === null) return 'assigned-null';
     // `undefined` is a GLOBAL in ESLint's scope model, so a plain
     // `scopeHasBinding` lookup always finds it and would disable this arm
