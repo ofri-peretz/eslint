@@ -56,6 +56,9 @@ const PLUGINS = [
   'eslint-plugin-import-next',
   'eslint-plugin-conventions',
   'eslint-plugin-maintainability',
+  'eslint-plugin-modernization',
+  'eslint-plugin-operability',
+  'eslint-plugin-modularity',
 ] as const;
 
 /**
