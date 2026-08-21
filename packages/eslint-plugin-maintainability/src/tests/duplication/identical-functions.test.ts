@@ -281,3 +281,213 @@ describe('identical-functions', () => {
     });
   });
 });
+
+/**
+ * What `normalizeBody` is allowed to erase.
+ *
+ * On the pinned 8-repository corpus this rule reported 3,530 findings, and
+ * three bugs in the normaliser accounted for most of them. Each is pinned
+ * below by a pair of functions that are obviously NOT duplicates.
+ */
+describe('identical-functions — normalisation', () => {
+  ruleTester.run('valid - normalisation keeps what distinguishes', identicalFunctions, {
+    valid: [
+      {
+        // KEYWORDS. `[a-z_$][a-zA-Z0-9_$]*` matches `return`, `throw`, `if`
+        // and `this` too, so both of these normalised to the same string of
+        // `VAR`s and punctuation. Control flow is the only thing left to
+        // compare once bindings are generic; erasing it made every function
+        // with the same bracket shape a duplicate.
+        code: `
+          function alpha(a, b) {
+            const x = compute(a, b);
+            return x;
+          }
+          function beta(a, b) {
+            const x = compute(a, b);
+            throw x;
+          }
+        `,
+      },
+      {
+        // COMMENTS ran last, after \s+ had collapsed the body onto one line —
+        // at which point //.* deletes from the first line comment to the END
+        // of the function. Both bodies were compared as their opening lines.
+        code: `
+          function alpha(a) {
+            const x = 1; // explain alpha
+            return first(x);
+          }
+          function beta(a) {
+            const x = 1; // explain beta
+            return second(x, x, x);
+          }
+        `,
+      },
+      {
+        // STRING CONTENTS were renamed too — every lowercase run inside a
+        // literal became `VAR` — so two methods calling different endpoints
+        // normalised to the same text and compared 100% identical. This is the
+        // okta-auth-js authn mixin shape.
+        //
+        // The literals here are far apart on purpose. The near-miss pair
+        // `/api/v1/authn/recovery/password` vs `.../unlock` still reports: with
+        // contents preserved it drops from 100% to exactly 90%, which is the
+        // default threshold rather than a normalisation defect.
+        code: `
+          function alpha(opts) {
+            const url = "/api/v1/authn/recovery/password";
+            return post(url, opts);
+          }
+          function beta(opts) {
+            const url = "/oauth2/revoke";
+            return post(url, opts);
+          }
+        `,
+      },
+      {
+        // Property names are part of the call and must survive normalisation.
+        //
+        // The names here are deliberately far apart. `.create` vs `.destroy`
+        // also keeps its names, but those two bodies really ARE ~90% similar
+        // as text, so at the default threshold they report — which is the
+        // threshold doing its job, not the normaliser losing information.
+        code: `
+          function alpha(client, id) {
+            const res = client.create(id);
+            return res;
+          }
+          function beta(client, id) {
+            const res = client.reconcileEveryOutstandingLedgerEntry(id);
+            return res;
+          }
+        `,
+      },
+      {
+        // A URL inside a string literal. Comment removal matched the `//` and
+        // deleted the rest of the FUNCTION, so any two bodies containing a URL
+        // compared identical. Raised by CodeRabbit on #595.
+        code: `
+          function alpha(a) {
+            const u = "https://alpha.example.com/one";
+            return get(u, a);
+          }
+          function beta(a) {
+            const u = "https://beta.example.org/two/three/four";
+            return get(u, a);
+          }
+        `,
+      },
+      {
+        // Unquoted object KEYS were renamed, so `{ create: id }` and
+        // `{ destroy: id }` were one string. A key names the operation.
+        code: `
+          function alpha(id) {
+            const payload = { create: id };
+            return send(payload);
+          }
+          function beta(id) {
+            const payload = { destroy: id };
+            return send(payload);
+          }
+        `,
+      },
+      {
+        // Regex literal CONTENTS were renamed like any other identifier, so
+        // `/create/` and `/destroy/` compared identically. Raised by
+        // CodeRabbit on #595.
+        code: `
+          function alpha(s) {
+            const re = /create/;
+            return re.test(s);
+          }
+          function beta(s) {
+            const re = /destroy/;
+            return re.test(s);
+          }
+        `,
+      },
+      {
+        // A template literal is the one literal that spans lines, so a pattern
+        // stopping at \n never protected it — and a `//` in its contents then
+        // ate the rest of the body.
+        code: [
+          'function alpha(a) {',
+          '  const t = `line one',
+          '  https://alpha.example.com/one',
+          '  end`;',
+          '  return send(t, a);',
+          '}',
+          'function beta(a) {',
+          '  const t = `wholly different',
+          '  https://beta.example.org/x/y/z',
+          '  other`;',
+          '  return send(t, a);',
+          '}',
+        ].join('\n'),
+      },
+      {
+        // A generator is a different function too, and `*` is likewise on the
+        // node rather than in the body.
+        code: `
+          function* alpha(a) {
+            const x = load(a);
+            return x;
+          }
+          function beta(a) {
+            const x = load(a);
+            return x;
+          }
+        `,
+      },
+      {
+        // `async` is on the NODE, not in `node.body`, so an async function and
+        // its synchronous twin normalised to the same string.
+        code: `
+          async function alpha(a) {
+            const x = load(a);
+            return x;
+          }
+          function beta(a) {
+            const x = load(a);
+            return x;
+          }
+        `,
+      },
+    ],
+    invalid: [
+      {
+        // FN GUARD: `/` is genuinely ambiguous in JavaScript, so the regex
+        // guard is anchored to positions where a slash cannot be division.
+        // These two are ordinary arithmetic and ARE a renamed copy.
+        code: `
+          function alpha(a, b) {
+            const r = a / b / 2;
+            return r;
+          }
+          function beta(x, y) {
+            const r = x / y / 2;
+            return r;
+          }
+        `,
+        errors: [{ messageId: 'identicalFunctions' }],
+      },
+      {
+        // FN GUARD: renaming BINDINGS is still the point — a copy-paste with
+        // the variables renamed is exactly what this rule exists to catch.
+        code: `
+          function alpha(input) {
+            const parsed = parse(input);
+            return parsed;
+          }
+          function beta(other) {
+            const decoded = parse(other);
+            return decoded;
+          }
+        `,
+        // One report per GROUP, not per member.
+        errors: [{ messageId: 'identicalFunctions' }],
+      },
+    ],
+  });
+});

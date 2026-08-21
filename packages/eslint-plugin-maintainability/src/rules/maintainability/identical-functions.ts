@@ -43,6 +43,8 @@ interface FunctionInfo {
   name: string;
   body: string;
   normalizedBody: string;
+  isAsync: boolean;
+  isGenerator: boolean;
   lines: number;
   location: string;
   params: string[];
@@ -66,6 +68,21 @@ export function buildGenericName(firstFunctionName: string): string {
   );
   return `handle${baseName || 'Generic'}`;
 }
+
+/**
+ * Words the normaliser must never rename.
+ *
+ * They carry the CONTROL FLOW, which is the only thing left to compare once
+ * bindings are generic. Renaming them turned every function with the same
+ * bracket pattern into the same string.
+ */
+const RESERVED_WORDS: ReadonlySet<string> = new Set([
+  'await', 'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
+  'default', 'delete', 'do', 'else', 'export', 'extends', 'finally', 'for',
+  'function', 'if', 'import', 'in', 'instanceof', 'let', 'new', 'of', 'return',
+  'super', 'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while',
+  'with', 'yield', 'true', 'false', 'null', 'undefined',
+]);
 
 /**
  * Calculate similarity between two normalized strings
@@ -289,19 +306,73 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     function normalizeBody(body: string): string {
-      return (
-        body
-          // Remove whitespace
-          .replace(/\s+/g, ' ')
-          // Normalize string quotes
-          .replace(/["'`]/g, '"')
-          // Normalize variable names to generic identifiers
-          .replace(/\b[a-z_$][a-zA-Z0-9_$]*\b/g, 'VAR')
-          // Remove comments
-          .replace(/\/\*[\s\S]*?\*\//g, '')
-          .replace(/\/\/.*/g, '')
-          .trim()
-      );
+      // String literals come out FIRST, before anything else can reach inside
+      // them, and go back in at the end.
+      //
+      // Two things were reaching in. Comment removal matched the `//` in
+      // `"https://example.com/x"` and deleted the rest of the FUNCTION, so any
+      // two bodies containing a URL compared identical. Identifier renaming
+      // rewrote the contents, so `"/api/v1/authn/recovery/password"` and
+      // `"/api/v1/authn/recovery/unlock"` both became `"/VAR/VAR/VAR/VAR/VAR"`.
+      // Placeholders are digits between U+E000, a Private Use Area code
+      // point that cannot occur in source and is not a control character —
+      // which no identifier pattern
+      // matches, so the literal is inert for every later step.
+      const literals: string[] = [];
+      const stash = (match: string): string => {
+        literals.push(`"${match.slice(1, -1)}"`);
+        return `\uE000${literals.length - 1}\uE000`;
+      };
+      let text = body
+        // Template literals FIRST, and across newlines. A template is the one
+        // literal that spans lines, so a pattern that stops at `\n` never
+        // protected it — and a `//` in its contents then ate the rest of the
+        // body. Raised on #595.
+        .replace(/`(?:[^\\`]|\\[\s\S])*`/g, stash)
+        .replace(/(["'])(?:[^\\\n]|\\.)*?\1/g, stash)
+        // Regular expressions. `/create/` and `/destroy/` had their contents
+        // renamed like any other identifier and compared identically. Anchored
+        // to positions where a `/` can only open a pattern, never divide —
+        // after an operator, an opening bracket, a comma or a statement
+        // boundary — because the two are genuinely ambiguous in JavaScript.
+        .replace(
+          /(^|[=(,:[!&|?{};+\-*%<>~^]\s*)(\/(?:[^/\\\n[]|\\.|\[(?:[^\]\\]|\\.)*\])+\/[dgimsuvy]*)/g,
+          (_match, prefix: string, pattern: string) => {
+            literals.push(pattern);
+            return `${prefix}\uE000${literals.length - 1}\uE000`;
+          },
+        );
+
+      text = text
+        // Comments, while the newlines are still here. Running this after the
+        // whitespace collapse let `//.*` eat from the first line comment to
+        // the end of the body.
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/[^\n]*/g, '')
+        .replace(/\s+/g, ' ')
+        // Rename BINDINGS, and nothing else.
+        //
+        // The old pattern renamed every lowercase-initial word, keywords
+        // included: `return VAR.VAR(VAR)` and `throw VAR.VAR(VAR)` were one
+        // string, so any two functions sharing a bracket shape were duplicates.
+        //
+        // Property names and object KEYS are kept for the same reason —
+        // `.create(x)` is not `.destroy(x)`, and `{ create: id }` is not
+        // `{ destroy: id }`. Erasing either is erasing the operation.
+        .replace(
+          /(\.\s*)?\b[a-z_$][a-zA-Z0-9_$]*\b(\s*:)?/g,
+          (match, memberPrefix: string | undefined, keySuffix: string | undefined) => {
+            if (memberPrefix || keySuffix) return match;
+            return RESERVED_WORDS.has(match) ? match : 'VAR';
+          },
+        );
+
+      return text
+        // Every placeholder was written from this same array one step above,
+        // so the index always resolves — a `??` fallback here would be a branch
+        // no input can take.
+        .replace(/\uE000(\d+)\uE000/g, (_match, index: string) => literals[Number(index)] as string)
+        .trim();
     }
 
     /**
@@ -319,6 +390,15 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
 
         for (let j = i + 1; j < functions.length; j++) {
           if (processed.has(j)) continue;
+
+          // A generator is not a near-duplicate of a plain function, however
+          // similar the bodies read.
+          if (
+            functions[i].isAsync !== functions[j].isAsync ||
+            functions[i].isGenerator !== functions[j].isGenerator
+          ) {
+            continue;
+          }
 
           const similarity = calculateSimilarity(
             functions[i].normalizedBody,
@@ -424,6 +504,14 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
         name: name || 'anonymous',
         body,
         normalizedBody: normalizeBody(body),
+        // `async` and `*` change what the function IS, and neither appears in
+        // `node.body` — an async function and its synchronous twin normalised
+        // to the same string. Compared as a GATE rather than folded into the
+        // text: the difference is categorical, and expressing it as a short
+        // prefix just moves the problem, since a 2-character `* ` still leaves
+        // two bodies 95% similar and over the threshold.
+        isAsync: Boolean(node.async),
+        isGenerator: 'generator' in node && Boolean(node.generator),
         lines,
         location: `${filename}:${node.loc?.start.line}`,
         params,
