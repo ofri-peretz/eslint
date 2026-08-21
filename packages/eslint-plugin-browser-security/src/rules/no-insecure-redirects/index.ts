@@ -21,7 +21,7 @@
  *
  * | Sink | Owner |
  * |---|---|
- * | any write to a `Location` or its `.href`, any spelling of the holder | **no-insecure-redirects** |
+ * | any write to a `Location` or its `.href`, where the holder RESOLVES to one | **no-insecure-redirects** |
  * | `location.assign(x)` / `location.replace(x)` | **no-insecure-redirects** |
  * | `res.redirect(x)` and any other `.redirect(x)` | **no-insecure-redirects** |
  * | `window.open(x)` — a NEW browsing context, not this document | `require-url-validation` |
@@ -29,6 +29,17 @@
  * | `Linking.openURL(x)` — handed to the OS scheme handler | `no-unvalidated-deeplinks` |
  * | `navigation.navigate(x)` — an in-app screen target | `no-unvalidated-deeplinks` |
  * | a credential embedded in the URL string itself | `no-password-in-url` |
+ *
+ * "Resolves" is doing real work in that first row, and the table used to say
+ * "any spelling of the holder", which overstated it. `window.location`,
+ * `top.location` and `window['location']` resolve; a bare local does not, so
+ * `w.location.assign(req.query.next)` is SILENT even though the argument is
+ * plainly tainted.
+ *
+ * That is deliberate rather than an oversight — proving `w` is a Window needs
+ * types, and matching any `.location` by name is the name-inference defect this
+ * ecosystem gates against — but it is a real false negative and is recorded as
+ * one in the rule's SEAL record. Found by an adversarial wave, 2026-08-21.
  *
  * `no-password-in-url` is COMPLEMENTARY rather than partitioned: it reports the
  * secret inside the literal, not where the literal sends you, so
