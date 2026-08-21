@@ -107,6 +107,59 @@ export function confirmsRedos(source: string, flags: string, timeoutMs = 1000): 
   return survives;
 }
 
+/**
+ * The worst backtracking the oracle can demonstrate, or null when it cannot say.
+ *
+ * `confirmsRedos` answers "is this vulnerable at all", which is the wrong
+ * granularity for deciding whether anyone will act. Measured on the pinned
+ * corpus 2026-08-20, all seven surviving ReDoS findings were oracle-confirmed
+ * and NONE was exponential: three at degree 3, three at degree 2, and degree is
+ * what separates them.
+ *
+ *   (.*?)=(.*)$          degree 3, run over a cookie header — 4KB of input is
+ *                        ~6e10 steps, a real hang
+ *   ^###\s+(.+)$         degree 2, run over one markdown heading — quadratic on
+ *                        a short line is arithmetic, not a denial of service
+ *
+ * Returns `Infinity` for exponential so callers can compare numerically, and
+ * `null` when the oracle is absent, times out, errors, or reports safe. A null
+ * therefore never justifies retracting anything — the veto-only invariant in
+ * `confirmsRedos` applies here too.
+ */
+export function worstBacktrackingDegree(
+  source: string,
+  flags: string,
+  timeoutMs = 1000,
+): number | null {
+  const recheck = oracle();
+  if (recheck === null) return null;
+
+  const key = `${flags} ${source}`;
+  const memo = degrees.get(key);
+  if (memo !== undefined) return memo;
+
+  let degree: number | null = null;
+  try {
+    const result = recheck.checkSync(source, flags, { timeout: timeoutMs }) as {
+      status: string;
+      complexity?: { type?: string; degree?: number };
+    };
+    if (result.status === 'vulnerable') {
+      degree =
+        result.complexity?.type === 'exponential'
+          ? Number.POSITIVE_INFINITY
+          : (result.complexity?.degree ?? null);
+    }
+  } catch {
+    degree = null;
+  }
+  degrees.set(key, degree);
+  return degree;
+}
+
+/** Memo for the degree lookup, separate from the survives/retracts memo. */
+const degrees = new Map<string, number | null>();
+
 /** Whether the oracle is available — for tests, and for reporting what graded a run. */
 export function oracleAvailable(): boolean {
   return oracle() !== null;
@@ -125,11 +178,16 @@ export function resetOracleForTests(forceAbsent = false): void {
   loaded = forceAbsent ? null : undefined;
   moduleId = 'recheck';
   decided.clear();
+  degrees.clear();
 }
 
 /** Test seam: resolve a different module id, or install a stub outright. */
 export function __setOracleForTests(next: string | Recheck): void {
   decided.clear();
+  // The degree memo must go too. Without this a stub installed after a real
+  // lookup returns the REAL degree, and a test asserting the stub's behaviour
+  // passes against the thing it was meant to replace.
+  degrees.clear();
   if (typeof next === 'string') {
     moduleId = next;
     loaded = undefined;

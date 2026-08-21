@@ -19,6 +19,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  worstBacktrackingDegree,
   __setOracleForTests,
   confirmsRedos,
   oracleAvailable,
@@ -63,6 +64,76 @@ describe('redos-oracle', () => {
       const second = confirmsRedos('^[a-z]+$', '');
       expect(first).toBe(second);
       expect(confirmsRedos('^[a-z]+$', 'i')).toBeTypeOf('boolean');
+    });
+  });
+
+  describe('worstBacktrackingDegree — the degree, not just the verdict', () => {
+    it('reads the degree of a quadratic pattern', () => {
+      // `^###\s+(.+)$` over a markdown heading. Real ambiguity, and the
+      // degree is what says nobody will act on it.
+      expect(worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '')).toBe(2);
+    });
+
+    it('reads the degree of a cubic pattern', () => {
+      // `(.*?)=(.*)$` over a 4KB cookie header is ~6e10 steps.
+      expect(worstBacktrackingDegree(String.raw`(.*?)=(.*)$`, '')).toBe(3);
+    });
+
+    it('reports exponential as Infinity so callers can compare numerically', () => {
+      expect(worstBacktrackingDegree('(a+)+$', '')).toBe(Number.POSITIVE_INFINITY);
+    });
+
+    it('returns null for a pattern it proves safe', () => {
+      // Null never retracts anything, so a safe pattern cannot be turned into
+      // a silence by this path — the finding was never going to exist.
+      expect(worstBacktrackingDegree('^[a-z]+$', '')).toBeNull();
+    });
+
+    it('returns null for a pattern it cannot parse', () => {
+      // The catch arm. An unparseable pattern is not thereby low-degree.
+      expect(worstBacktrackingDegree('[', '')).toBeNull();
+    });
+
+    it('an oracle that throws yields no degree, and therefore no retraction', () => {
+      // The catch arm. A real `recheck` does not throw for an unparseable
+      // pattern — it answers with a non-vulnerable status — so the only honest
+      // way to reach this is a stub that genuinely throws.
+      __setOracleForTests({
+        checkSync: () => {
+          throw new Error('oracle exploded');
+        },
+      });
+      expect(worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '')).toBeNull();
+      resetOracleForTests();
+    });
+
+    it('vulnerable with no complexity attached yields no degree', () => {
+      // `complexity` is optional on recheck's result and `degree` is absent on
+      // an exponential verdict, so "vulnerable but unquantified" is reachable.
+      // Unquantified must read as null — the retraction is opt-in on a KNOWN
+      // low degree, never on a missing one. This used to be covered by
+      // accident, back when the gate ran over every pattern in the suite.
+      __setOracleForTests({ checkSync: () => ({ status: 'vulnerable' as const }) });
+      expect(worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '')).toBeNull();
+      resetOracleForTests();
+    });
+
+    it('memoises, so a repeated pattern costs one call', () => {
+      // Asserting only that the two answers MATCH would pass on a rule with no
+      // cache at all — two calls to a deterministic oracle agree either way.
+      // Counting the calls is the only version that fails when the memo breaks.
+      let calls = 0;
+      __setOracleForTests({
+        checkSync: () => {
+          calls += 1;
+          return { status: 'vulnerable' as const, complexity: { type: 'polynomial', degree: 2 } };
+        },
+      });
+      const first = worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '');
+      const second = worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '');
+      expect(second).toBe(first);
+      expect(calls).toBe(1);
+      resetOracleForTests();
     });
   });
 
@@ -111,6 +182,20 @@ describe('redos-oracle', () => {
       // the previous test was not passing for some unrelated reason.
       resetOracleForTests();
       expect(confirmsRedos('^[a-z]+$', '')).toBe(false);
+    });
+
+    it('reports no degree at all, so nothing is retracted', () => {
+      // Every `it` in this block arms the absence itself — there is no
+      // beforeEach here, and without this line the oracle is present and the
+      // assertion passes for the wrong reason (it returns 2).
+      resetOracleForTests(true);
+      expect(oracleAvailable()).toBe(false);
+
+      // The veto-only invariant applied to the degree gate: without the
+      // optional peer there is no degree, and a null retracts nothing. Removing
+      // recheck can only ever ADD findings.
+      expect(worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '')).toBeNull();
+      resetOracleForTests();
     });
   });
 });

@@ -957,3 +957,109 @@ ruleTester.run('descriptorSegments and its additional variant', noSensitiveDataE
     },
   ],
 });
+
+/**
+ * Prose names a credential, the interpolation names itself an outcome.
+ *
+ * Four of the six findings this rule produced on the pinned 8-repo corpus were
+ * this one shape — twilio's `TokenAuthStrategy` / `ApiTokenManager` /
+ * `OrgsTokenManager` and Shopify's `graphiql-token-provider` — and not one of
+ * them leaked anything. The label describes the operation that FAILED; the
+ * property says what is actually being printed.
+ *
+ * The other two corpus findings were real (`Using token from ${source}:
+ * ${tokenFromEnv}`, `Using password from dev: ${password}`) and are pinned
+ * below as FN guards, because they are caught by the VALUE path — which runs
+ * before the text fallback and is untouched by this gate.
+ */
+ruleTester.run('no-sensitive-data-exposure — prose label vs diagnostic value', noSensitiveDataExposure, {
+  valid: [
+    {
+      name: 'twilio: `access token` labels the failed operation, not `error.message`',
+      code: 'export function f(error) { throw new Error(`Failed to fetch access token: ${error.message}`); }',
+    },
+    {
+      name: 'twilio: a status code alongside the same label',
+      code:
+        'export function f(error) { throw new Error(`Error Status Code: ${error.status}\\nFailed to fetch access token: ${error.message}`); }',
+    },
+    {
+      name: 'Shopify: `Token request failed with status ${tokenResponse.status}`',
+      code: 'export function f(tokenResponse) { throw new Error(`Token request failed with status ${tokenResponse.status}`); }',
+    },
+    {
+      name: 'optional chaining reads the same accessor',
+      code: 'export function f(error) { console.log(`access token: ${error?.message}`); }',
+    },
+    {
+      // `${error.message as string}` reads what `${error.message}` reads. A
+      // bare `type ===` test matches neither cast nor non-null assertion, so
+      // without unwrapping first the gate misses the dialect TypeScript users
+      // are forced to write. Raised by CodeRabbit on #589.
+      name: 'a type assertion reads the same accessor',
+      code: 'export function f(error: Error) { console.log(`access token: ${error.message as string}`); }',
+    },
+    {
+      name: 'a non-null assertion reads the same accessor',
+      code: 'export function f(error?: Error) { console.log(`access token: ${error!.message}`); }',
+    },
+    {
+      // The receiver IS a local literal, but nothing was aliased into the key
+      // the template reads — so the accessor is diagnostic after all.
+      name: 'a local literal that does not set the key stays diagnostic',
+      code:
+        'export function f() { const error = { code: 404 }; console.log(`access token: ${error.message}`); }',
+    },
+  ],
+  invalid: [
+    {
+      name: 'FN GUARD: Shopify github-utils really does log the token',
+      code: 'export function f(source, tokenFromEnv) { console.log(`Using token from ${source}: ${tokenFromEnv}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      name: 'FN GUARD: Shopify github-utils really does log the password',
+      code: 'export function f(password) { console.log(`Using password from dev: ${password}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      name: 'FN GUARD: an opaque hole under the same label still reports',
+      code: 'export function f(t) { console.log(`access token: ${t}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      // The opaque hole sits against the separator because `literalCarriesSecret`
+      // independently requires "label, separator, ONE token" — a pre-existing
+      // guard, and the reason a clause-shaped template reports nothing at all.
+      name: 'FN GUARD: EVERY hole must be diagnostic — one opaque hole is enough',
+      code: 'export function f(error, t) { console.log(`status ${error.status} access token: ${t}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      // FN GUARD: a name is the DEFAULT answer, not the final one. When the
+      // receiver is an object literal in this file the property's value is
+      // visible, so it is read rather than trusted. Raised by CodeRabbit on
+      // #589 — without this the gate suppressed a real aliased credential.
+      name: 'FN GUARD: a secret aliased into `.message` by a local literal still reports',
+      code:
+        'export function f(accessToken) { const error = { message: accessToken }; console.log(`access token: ${error.message}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      name: 'FN GUARD: the same alias through a string key',
+      code:
+        'export function f(apiKey) { const e = { "message": apiKey }; console.log(`api key: ${e.message}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      name: 'FN GUARD: `code` is not diagnostic — an auth code is called that too',
+      code: 'export function f(err) { console.log(`access token: ${err.code}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+    {
+      name: 'FN GUARD: a computed read names nothing, so it is not assumed diagnostic',
+      code: 'export function f(error, k) { console.log(`access token: ${error[k]}`); }',
+      errors: [{ messageId: 'sensitiveDataExposure' }],
+    },
+  ],
+});

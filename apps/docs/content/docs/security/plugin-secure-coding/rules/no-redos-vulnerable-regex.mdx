@@ -232,3 +232,4 @@ obj[method](userInput);
 | ------ | ---- | ------- | ----------- |
 | `allowCommonPatterns` | `boolean` | `false` | Deprecated and ignored. Gated the removed heuristic layer; kept so existing configs still load. |
 | `maxPatternLength` | `number` | `500` | Maximum pattern length to analyze |
+| `reportSecondDegreePolynomial` | `boolean` | `true` | Report quadratic (degree-2) backtracking. On by default — the CWE-1333 corpus pins a degree-2 pattern as must-detect. Turn it off only for patterns that provably run over short, sized input; doing so costs recall. Requires the `recheck` oracle. |

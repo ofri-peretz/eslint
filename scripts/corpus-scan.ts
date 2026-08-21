@@ -94,6 +94,26 @@ const WORKSPACE_TYPESCRIPT_RANGE: string = (() => {
   }
   return range;
 })();
+/**
+ * The `recheck` range that `eslint-plugin-secure-coding` is tested against.
+ *
+ * Read from the plugin rather than written here, on the same reasoning as the
+ * TypeScript pin above: the oracle DECIDES findings, so a rig on `latest` lets
+ * an upstream release restate published corpus numbers with no commit in this
+ * repository. Derived rather than hardcoded so it cannot drift from the version
+ * the rule's own suite runs against.
+ */
+const RECHECK_RANGE: string = (() => {
+  const pkg = JSON.parse(
+    readFileSync(path.join(ROOT, 'packages', 'eslint-plugin-secure-coding', 'package.json'), 'utf-8'),
+  ) as { devDependencies?: Record<string, string>; peerDependencies?: Record<string, string> };
+  const range = pkg.devDependencies?.recheck ?? pkg.peerDependencies?.recheck;
+  if (!range) {
+    throw new Error('no `recheck` in eslint-plugin-secure-coding — cannot pin the scan rig oracle');
+  }
+  return range;
+})();
+
 const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
 
 /**
@@ -258,6 +278,20 @@ function main(): number {
       // therefore breaks the scan the day TS ships a major, and the failure
       // arrives as every target erroring at once.
       `typescript@${WORKSPACE_TYPESCRIPT_RANGE}`,
+      // The ReDoS ORACLE. `recheck` is an OPTIONAL peer of
+      // eslint-plugin-secure-coding, and `confirmsRedos` FAILS OPEN when it is
+      // absent — so a rig without it reports every scslre finding unvetoed and
+      // the numbers describe a rule running with half its machinery.
+      //
+      // Discovered 2026-08-20: this rig had never installed it, so the ReDoS
+      // budget of 6 (and the 7 that replaced it) were both measured with no
+      // oracle at all. An optional dependency that changes the answer is not
+      // optional to the measurement.
+      //
+      // Pinned, for the same reason every other rig dependency is: the oracle
+      // decides findings, so an unpinned one lets a `recheck` release restate
+      // published corpus numbers without a commit here.
+      `recheck@${RECHECK_RANGE}`,
       ...PLUGINS.map((p) => `${p}@file:${path.join(ROOT, 'packages', p)}`),
     ],
     RIG,

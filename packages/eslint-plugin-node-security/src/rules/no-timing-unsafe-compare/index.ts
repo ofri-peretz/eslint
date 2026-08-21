@@ -69,9 +69,13 @@ export interface Options {
 
   /**
    * Trailing words that make the value a measurement or a location rather than
-   * a credential. Default: `['count', 'counts', 'limit', 'limits', 'usage',
-   * 'total', 'size', 'length', 'price', 'cost', 'quota', 'address',
-   * 'addresses', 'index', 'rank', 'percent']`.
+   * a credential — `tokenCount` is a number, `authPath` is a route.
+   *
+   * The default list is `DEFAULT_NON_SECRET_TAILS`, and the schema's `default`
+   * and `description` are both generated from it. It is not repeated here on
+   * purpose: the previous copy went stale the day the location tails were
+   * added, and a hand-maintained second copy of a list is a drift waiting to
+   * happen. Consumers see the live list in the schema.
    *
    * Only the LAST word of the identifier is tested, so `tokenCount` is excluded
    * and `countToken` is not. REPLACES the default list.
@@ -322,6 +326,20 @@ const DEFAULT_NON_SECRET_WORDS: readonly string[] = [
 const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
   'count', 'counts', 'limit', 'limits', 'usage', 'total', 'size', 'length',
   'price', 'cost', 'quota', 'address', 'addresses', 'index', 'rank', 'percent',
+  // Locations. `address` was already here on this reasoning; these are the rest
+  // of the same idea, and their absence is what made
+  // `requestUrl.pathname !== STORE_AUTH_CALLBACK_PATH` a CWE-208 finding in
+  // Shopify/cli's OAuth callback server (pinned corpus, 2026-08-20). The name
+  // carries `auth` because it is part of an auth FLOW; the value is a route,
+  // and a route is not a credential.
+  //
+  // `url` and `uri` are deliberately NOT here: a presigned URL carries its
+  // signature in the query string and IS the credential, so `signatureUrl`
+  // must keep reporting. (`signedUrl` would not have shown this — `signed` is
+  // not among the secret patterns, only `signature` is.)
+  'path', 'paths', 'pathname', 'pathnames',
+  'endpoint', 'endpoints', 'route', 'routes',
+  'hostname', 'host', 'port', 'origin',
 ];
 
 /**
@@ -497,15 +515,16 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [...DEFAULT_NON_SECRET_WORDS],
-            description:
-              'Whole words that mean a secretPatterns match was a collision (default: author, authors, authored, authoring, authorship, hashtag, hashtags). Replaces the list.',
+            description: `Whole words that mean a secretPatterns match was a collision (default: ${DEFAULT_NON_SECRET_WORDS.join(', ')}). Replaces the list.`,
           },
           nonSecretTails: {
             type: 'array',
             items: { type: 'string' },
             default: [...DEFAULT_NON_SECRET_TAILS],
-            description:
-              'Trailing words that make the value a measurement or location rather than a credential (default: count, limit, usage, total, size, length, price, cost, quota, address, index, rank, percent). Replaces the list.',
+            // Generated from the constant rather than typed out. The literal
+            // that used to sit here listed neither the plurals nor the location
+            // tails, because it was written before them.
+            description: `Trailing words that make the value a measurement or location rather than a credential (default: ${DEFAULT_NON_SECRET_TAILS.join(', ')}). Replaces the list.`,
           },
         },
         additionalProperties: false,
