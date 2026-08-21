@@ -406,7 +406,24 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
             similarityThreshold,
           );
 
-          if (similarity >= similarityThreshold) {
+          // A ratio is weak evidence on a short body. `const t = 5000` against
+          // `const t = 250`, or `x + y` against `x - y`, is 95%+ similar as
+          // text and not remotely the same function — an adversarial wave
+          // reported 6 of 9 deliberately-distinct pairs as duplicates, every
+          // one of them differing by a single semantically load-bearing token.
+          //
+          // Below this length the answer has to be exact. "Extract to a
+          // reusable function" is bad advice for two three-line bodies that
+          // differ by an operator: you cannot extract them without
+          // parameterising the very thing that makes them different.
+          const SHORT_BODY_CHARS = 120;
+          const longer = Math.max(
+            functions[i].normalizedBody.length,
+            functions[j].normalizedBody.length,
+          );
+          const required = longer < SHORT_BODY_CHARS ? 1 : similarityThreshold;
+
+          if (similarity >= required) {
             group.push(functions[j]);
             processed.add(j);
           }
