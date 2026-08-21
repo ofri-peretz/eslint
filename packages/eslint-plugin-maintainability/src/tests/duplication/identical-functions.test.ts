@@ -363,6 +363,63 @@ describe('identical-functions — normalisation', () => {
           }
         `,
       },
+      {
+        // A URL inside a string literal. Comment removal matched the `//` and
+        // deleted the rest of the FUNCTION, so any two bodies containing a URL
+        // compared identical. Raised by CodeRabbit on #595.
+        code: `
+          function alpha(a) {
+            const u = "https://alpha.example.com/one";
+            return get(u, a);
+          }
+          function beta(a) {
+            const u = "https://beta.example.org/two/three/four";
+            return get(u, a);
+          }
+        `,
+      },
+      {
+        // Unquoted object KEYS were renamed, so `{ create: id }` and
+        // `{ destroy: id }` were one string. A key names the operation.
+        code: `
+          function alpha(id) {
+            const payload = { create: id };
+            return send(payload);
+          }
+          function beta(id) {
+            const payload = { destroy: id };
+            return send(payload);
+          }
+        `,
+      },
+      {
+        // A generator is a different function too, and `*` is likewise on the
+        // node rather than in the body.
+        code: `
+          function* alpha(a) {
+            const x = load(a);
+            return x;
+          }
+          function beta(a) {
+            const x = load(a);
+            return x;
+          }
+        `,
+      },
+      {
+        // `async` is on the NODE, not in `node.body`, so an async function and
+        // its synchronous twin normalised to the same string.
+        code: `
+          async function alpha(a) {
+            const x = load(a);
+            return x;
+          }
+          function beta(a) {
+            const x = load(a);
+            return x;
+          }
+        `,
+      },
     ],
     invalid: [
       {
