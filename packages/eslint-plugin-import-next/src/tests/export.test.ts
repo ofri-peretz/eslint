@@ -118,5 +118,108 @@ ruleTester.run('export', exportRule, {
       `,
       errors: [{ messageId: 'duplicateExport' }],
     },
+
+    // FN GUARD: two type aliases DO collide — only the type/value split is
+    // legal, not everything that touches type space.
+    {
+      code: `
+        export type Foo = A;
+        export type Foo = B;
+      `,
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+
+    // FN GUARD: `type X` beside `interface X` is an error, even though two
+    // interfaces would have merged. Both orders.
+    {
+      code: `
+        export interface Foo { a: string }
+        export type Foo = B;
+      `,
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+    {
+      code: `
+        export type Foo = B;
+        export interface Foo { a: string }
+      `,
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+
+    // FN GUARD: an enum occupies BOTH spaces, so it collides with a value…
+    {
+      code: `
+        export const Foo = 1;
+        export enum Foo { A }
+      `,
+      errors: [{ messageId: 'duplicateExport' }],
+    },
+
+    // …and with a type.
+    {
+      code: `
+        export type Foo = A;
+        export enum Foo { A }
+      `,
+      errors: [{ messageId: 'duplicateExport' }],
+    },
   ],
+});
+
+/**
+ * TypeScript's two declaration spaces.
+ *
+ * A name may occupy the type space and the value space at once, and the rule
+ * keyed a single map by name alone. On the pinned corpus that produced 758
+ * findings in twilio-node — every one this shape, in a generated SDK where the
+ * pattern is the point.
+ */
+ruleTester.run('export — declaration spaces', exportRule, {
+  valid: [
+    {
+      // The exact shape from twilio-node src/index.ts:30-31.
+      code: `
+        export type Twilio = ITwilio;
+        export const Twilio = ITwilio;
+      `,
+    },
+    {
+      // Order must not matter.
+      code: `
+        export const AccessToken = IAccessToken;
+        export type AccessToken = IAccessToken;
+      `,
+    },
+    {
+      // Interface + value is the same split.
+      code: `
+        export interface Options { a: string }
+        export const Options = {};
+      `,
+    },
+    {
+      // `interface X` twice is declaration MERGING, and legal.
+      code: `
+        export interface Foo { a: string }
+        export interface Foo { b: number }
+      `,
+    },
+    {
+      // `export type { X }` is type-space, so it does not collide with a value.
+      code: `
+        const Foo = 1;
+        export { Foo };
+        export type { Foo } from './types';
+      `,
+    },
+    {
+      // Inline `type` specifier, same reasoning.
+      code: `
+        const Foo = 1;
+        export { Foo };
+        export { type Foo } from './types';
+      `,
+    },
+  ],
+  invalid: [],
 });
