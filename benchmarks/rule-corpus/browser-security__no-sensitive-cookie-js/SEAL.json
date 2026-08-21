@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-browser-security@1.4.1",
+    "plugin": "eslint-plugin-browser-security@2.0.1",
     "node": "24"
   },
   "axes": {
@@ -61,13 +61,13 @@
       "command": "npx vitest run --coverage src/rules/no-sensitive-cookie-js"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — not-established then linear. First: 127L +0.94±0.62ms · 508L +5.28±2.90ms · 2032L +14.05±9.50ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "state": "met",
+      "evidence": "marginal over a no-op control: 127L +0.65±0.30ms · 508L +3.01±0.54ms · 2032L +10.12±0.18ms — 3.4x time for 4.0x lines (508→2032), linear",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-sensitive-cookie-js"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-sensitive-cookie-js' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

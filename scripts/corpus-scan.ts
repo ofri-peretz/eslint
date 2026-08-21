@@ -307,6 +307,9 @@ function main(): number {
     'npm',
     [
       'install',
+      // Copy `file:` dependencies instead of symlinking them, so the rig is a
+      // snapshot of the checkout and two scans of the same commit agree.
+      '--install-links',
       '--silent',
       '--no-audit',
       '--no-fund',
