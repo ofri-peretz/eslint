@@ -194,3 +194,69 @@ const b = 2;
     });
   });
 });
+
+/**
+ * Prose is not code, however it opens.
+ *
+ * Measured on the pinned 8-repository corpus: this rule reported 2,441
+ * findings, and the overwhelming majority were English. Three mechanics did
+ * it, all inside `looksLikeCode`:
+ *
+ *   `Copyright (c) 2018 …`  — the call pattern allowed whitespace before `(`
+ *   `https://example.com/x` — `https:` matched the `ident:` assign pattern
+ *   `for backward compat…`  — a sentence that opens with a keyword
+ *
+ * The discriminator that survived is punctuation. Commented-out code is COPIED
+ * out of a file and keeps its semicolons and braces; a sentence ends in a word.
+ * 2,441 -> 143.
+ */
+describe('no-commented-code — prose is not code', () => {
+  ruleTester.run('valid - English that opens like code', noCommentedCode, {
+    valid: [
+      // Sentences that begin with a JavaScript keyword.
+      { code: 'const a = 1;\n// for widget / idx-js backward compatibility' },
+      { code: 'const a = 1;\n// if no key is passed, all cookies are returned' },
+      { code: 'const a = 1;\n// let existing promise finish to prevent running into loops' },
+      { code: 'const a = 1;\n// return all cookies when no args is provided' },
+      { code: 'const a = 1;\n// class names are kebab-case here' },
+      // Prose with a parenthetical reads as a call only if the gap is allowed.
+      { code: 'const a = 1;\n// Authn (classic) api' },
+      { code: 'const a = 1;\n// fetch() can throw exceptions' },
+      // A documentation link.
+      { code: 'const a = 1;\n// https://developer.mozilla.org/en-US/docs/Web/API/fetch#exceptions' },
+      { code: 'const a = 1;\n// See http://example.com/a/b#c for details' },
+      // The terser "preserve" banner: a legal notice, never code.
+      {
+        code: '/*!\n * Copyright (c) 2018-Present, Okta, Inc. and/or its affiliates.\n * Licensed under the Apache License, Version 2.0\n */\nconst a = 1;',
+      },
+    ],
+    invalid: [
+      {
+        // FN GUARD: real commented-out code keeps its punctuation.
+        // okta-auth-js lib/idx/idxState/v1/generateIdxAction.ts:80.
+        code: 'const a = 1;\n//   const target = actionDefinition.href;',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        // okta-auth-js lib/http/request.ts:110.
+        code: 'const a = 1;\n//   err = wwwAuthErr ?? err;',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        // A call with no gap before the paren is still a call.
+        code: 'const a = 1;\n// const inputs = this.getInputs();',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        // A keyword line that DOES end like a statement.
+        code: 'const a = 1;\n// if (ready) {',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        // A plain block comment is not a `/*!` banner and is still checked.
+        code: '/*\n * const target = actionDefinition.href;\n */\nconst a = 1;',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: '\nconst a = 1;' }] }],
+      },
+    ],
+  });
+});
