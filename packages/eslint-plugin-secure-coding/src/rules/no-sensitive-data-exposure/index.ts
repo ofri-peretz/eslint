@@ -238,7 +238,13 @@ function memberCarriesSecret(
   //
   // These are language semantics, not vocabulary: `.length` on a string, an
   // array or a TypedArray is its size, in every codebase.
-  if (propName && VALUE_FREE_PROPERTIES.has(propName)) return null;
+  //
+  // A diagnostic accessor blocks it for the same reason: `tokenResponse.status`
+  // is an HTTP status code, and reporting it read the RECEIVER's name and
+  // ignored what was actually taken from it — the identical mistake, one
+  // property set over.
+  if (propName && (VALUE_FREE_PROPERTIES.has(propName) || DIAGNOSTIC_ACCESSORS.has(propName)))
+    return null;
   return node.object.type === AST_NODE_TYPES.Identifier
     ? identifierNamesSecret(node.object.name, patterns, descriptors)
     : null;
@@ -260,6 +266,39 @@ function memberCarriesSecret(
  * (`.value`, `.raw`) and silence every genuine finding reached through it.
  */
 const VALUE_FREE_PROPERTIES = new Set(['length', 'size', 'byteLength', 'byteOffset']);
+
+/**
+ * Properties that describe how an operation ENDED rather than what it carried.
+ *
+ * @protocol-constant Every entry is defined by a platform, not by a codebase:
+ * `message`, `stack` and `name` are `Error.prototype`'s own (ECMAScript), and
+ * `status` / `statusText` are the HTTP response code and reason phrase
+ * (WHATWG Fetch, and `XMLHttpRequest` before it). What they have in common is
+ * that the platform decides their contents, so none of them can be the
+ * credential the surrounding prose is talking about.
+ *
+ * Deliberately NOT here: `code`. Node stamps `err.code = 'ENOENT'`, but an
+ * authorization code, a 2FA code and a recovery code are all called `code` too,
+ * and the rule cannot tell them apart — so `code` keeps reporting.
+ */
+const DIAGNOSTIC_ACCESSORS = new Set(['message', 'stack', 'name', 'status', 'statusText']);
+
+/**
+ * `error.message`, `tokenResponse.status` — a value that names ITSELF as an
+ * outcome, whatever the prose around it says.
+ *
+ * Only non-computed property reads qualify. `error[k]` names nothing statically
+ * and must not be assumed diagnostic.
+ */
+function isDiagnosticAccessor(node: TSESTree.Node): boolean {
+  const value = node.type === AST_NODE_TYPES.ChainExpression ? node.expression : node;
+  return (
+    value.type === AST_NODE_TYPES.MemberExpression &&
+    !value.computed &&
+    value.property.type === AST_NODE_TYPES.Identifier &&
+    DIAGNOSTIC_ACCESSORS.has(value.property.name)
+  );
+}
 
 function containsSensitiveData(
   text: string,
@@ -470,11 +509,31 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         // separator, then a value" - the value is the hole between them.
         const INTERPOLATION = '\u0001'; // cannot occur in source text
         const joined = arg.quasis.map((q) => q.value.cooked).join(INTERPOLATION);
+        // The prose names a credential; the interpolations name themselves an
+        // outcome. When EVERY hole is a diagnostic accessor the label is
+        // describing the operation that failed, not the value being printed —
+        //
+        //   `Failed to fetch access token: ${error.message}`
+        //   `Token request failed with status ${tokenResponse.status}`
+        //
+        // — and the property is structure while the label is prose, so the
+        // property wins. Four of the six findings this rule reported on the
+        // pinned corpus were this exact shape, and none of them leaked
+        // anything. The other two, `Using token from ${source}: ${tokenFromEnv}`
+        // and `Using password from dev: ${password}`, are real and are caught
+        // above by the VALUE path, which runs first and is untouched by this.
+        //
+        // Subtracts from the text heuristic ONLY. A template with one opaque
+        // hole — `token: ${t}` — still reports, so the recall this fallback
+        // exists for is intact.
+        const allHolesAreDiagnostic = arg.expressions.every(isDiagnosticAccessor);
         // Only when something is actually interpolated: a template with no
         // expressions is a constant string, and reporting it would be the prose
         // false positive this guard exists to prevent.
         const fromText =
-          arg.expressions.length > 0 && literalCarriesSecret(joined, sensitivePatterns)
+          arg.expressions.length > 0 &&
+          !allHolesAreDiagnostic &&
+          literalCarriesSecret(joined, sensitivePatterns)
             ? containsSensitiveData(joined, sensitivePatterns)
             : null;
         return fromText ? { node: arg, pattern: fromText } : null;
