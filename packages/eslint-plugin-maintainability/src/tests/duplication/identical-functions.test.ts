@@ -281,3 +281,106 @@ describe('identical-functions', () => {
     });
   });
 });
+
+/**
+ * What `normalizeBody` is allowed to erase.
+ *
+ * On the pinned 8-repository corpus this rule reported 3,530 findings, and
+ * three bugs in the normaliser accounted for most of them. Each is pinned
+ * below by a pair of functions that are obviously NOT duplicates.
+ */
+describe('identical-functions — normalisation', () => {
+  ruleTester.run('valid - normalisation keeps what distinguishes', identicalFunctions, {
+    valid: [
+      {
+        // KEYWORDS. `[a-z_$][a-zA-Z0-9_$]*` matches `return`, `throw`, `if`
+        // and `this` too, so both of these normalised to the same string of
+        // `VAR`s and punctuation. Control flow is the only thing left to
+        // compare once bindings are generic; erasing it made every function
+        // with the same bracket shape a duplicate.
+        code: `
+          function alpha(a, b) {
+            const x = compute(a, b);
+            return x;
+          }
+          function beta(a, b) {
+            const x = compute(a, b);
+            throw x;
+          }
+        `,
+      },
+      {
+        // COMMENTS ran last, after \s+ had collapsed the body onto one line —
+        // at which point //.* deletes from the first line comment to the END
+        // of the function. Both bodies were compared as their opening lines.
+        code: `
+          function alpha(a) {
+            const x = 1; // explain alpha
+            return first(x);
+          }
+          function beta(a) {
+            const x = 1; // explain beta
+            return second(x, x, x);
+          }
+        `,
+      },
+      {
+        // STRING CONTENTS were renamed too — every lowercase run inside a
+        // literal became `VAR` — so two methods calling different endpoints
+        // normalised to the same text and compared 100% identical. This is the
+        // okta-auth-js authn mixin shape.
+        //
+        // The literals here are far apart on purpose. The near-miss pair
+        // `/api/v1/authn/recovery/password` vs `.../unlock` still reports: with
+        // contents preserved it drops from 100% to exactly 90%, which is the
+        // default threshold rather than a normalisation defect.
+        code: `
+          function alpha(opts) {
+            const url = "/api/v1/authn/recovery/password";
+            return post(url, opts);
+          }
+          function beta(opts) {
+            const url = "/oauth2/revoke";
+            return post(url, opts);
+          }
+        `,
+      },
+      {
+        // Property names are part of the call and must survive normalisation.
+        //
+        // The names here are deliberately far apart. `.create` vs `.destroy`
+        // also keeps its names, but those two bodies really ARE ~90% similar
+        // as text, so at the default threshold they report — which is the
+        // threshold doing its job, not the normaliser losing information.
+        code: `
+          function alpha(client, id) {
+            const res = client.create(id);
+            return res;
+          }
+          function beta(client, id) {
+            const res = client.reconcileEveryOutstandingLedgerEntry(id);
+            return res;
+          }
+        `,
+      },
+    ],
+    invalid: [
+      {
+        // FN GUARD: renaming BINDINGS is still the point — a copy-paste with
+        // the variables renamed is exactly what this rule exists to catch.
+        code: `
+          function alpha(input) {
+            const parsed = parse(input);
+            return parsed;
+          }
+          function beta(other) {
+            const decoded = parse(other);
+            return decoded;
+          }
+        `,
+        // One report per GROUP, not per member.
+        errors: [{ messageId: 'identicalFunctions' }],
+      },
+    ],
+  });
+});

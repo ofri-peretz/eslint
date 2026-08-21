@@ -68,6 +68,21 @@ export function buildGenericName(firstFunctionName: string): string {
 }
 
 /**
+ * Words the normaliser must never rename.
+ *
+ * They carry the CONTROL FLOW, which is the only thing left to compare once
+ * bindings are generic. Renaming them turned every function with the same
+ * bracket pattern into the same string.
+ */
+const RESERVED_WORDS: ReadonlySet<string> = new Set([
+  'await', 'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
+  'default', 'delete', 'do', 'else', 'export', 'extends', 'finally', 'for',
+  'function', 'if', 'import', 'in', 'instanceof', 'let', 'new', 'of', 'return',
+  'super', 'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while',
+  'with', 'yield', 'true', 'false', 'null', 'undefined',
+]);
+
+/**
  * Calculate similarity between two normalized strings
  * Using Levenshtein distance ratio.
  *
@@ -291,15 +306,46 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     function normalizeBody(body: string): string {
       return (
         body
+          // Comments go FIRST, while the newlines are still there.
+          //
+          // This used to run last, after `\s+` had collapsed the body onto one
+          // line — at which point `//.*` matches from the first line comment to
+          // the END OF THE FUNCTION and deletes the rest of it. Any two
+          // functions whose first comment appeared early enough were compared
+          // as their opening lines alone.
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/\/\/[^\n]*/g, '')
           // Remove whitespace
           .replace(/\s+/g, ' ')
           // Normalize string quotes
           .replace(/["'`]/g, '"')
-          // Normalize variable names to generic identifiers
-          .replace(/\b[a-z_$][a-zA-Z0-9_$]*\b/g, 'VAR')
-          // Remove comments
-          .replace(/\/\*[\s\S]*?\*\//g, '')
-          .replace(/\/\/.*/g, '')
+          // Rename BINDINGS, and nothing else.
+          //
+          // The old pattern renamed every lowercase-initial word, which
+          // includes every keyword: `return tx.create(res)` normalised to
+          // `VAR VAR.VAR(VAR)`, and so did `throw new Error(msg)`. Two
+          // functions that merely shared a punctuation shape compared
+          // identical, which is how this rule reached 3,530 findings on the
+          // pinned corpus.
+          //
+          // Property names are kept for the same reason: `.create(x)` and
+          // `.destroy(x)` are not the same call, and erasing the name is what
+          // made them one.
+          //
+          // String CONTENTS are left alone. The renamer used to run straight
+          // through them, so `"/api/v1/authn/recovery/password"` and
+          // `"/api/v1/authn/recovery/unlock"` both became `"/VAR/VAR/VAR/VAR/VAR"`
+          // and two methods that call different endpoints compared 100%
+          // identical. The literal is often the only thing distinguishing a
+          // family of generated methods.
+          .replace(
+            /("(?:[^"\\]|\\.)*")|(\.\s*)?\b[a-z_$][a-zA-Z0-9_$]*\b/g,
+            (match, stringLiteral: string | undefined, memberPrefix: string | undefined) => {
+              if (stringLiteral) return stringLiteral;
+              if (memberPrefix) return match;
+              return RESERVED_WORDS.has(match) ? match : 'VAR';
+            },
+          )
           .trim()
       );
     }
