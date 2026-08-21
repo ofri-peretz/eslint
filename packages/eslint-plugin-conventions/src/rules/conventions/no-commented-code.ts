@@ -68,6 +68,38 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
     return false;
   }
 
+  /**
+   * Shapes that are code whatever they end with.
+   *
+   * The terminator test below is a proxy for "is this a sentence", and it is a
+   * good one for a line that merely OPENS with a keyword. It is far too blunt
+   * for a line that is unmistakably a statement: an adversarial wave found
+   * `// const timeout = 5000`, `// import fs from "fs"` and
+   * `// throw new Error("x")` all going silent, which is much more than the
+   * `// x = 1` the trade was documented as costing.
+   *
+   * Each of these carries structure prose does not: a binding with an
+   * initializer, a module specifier, a constructed throw, a call on a member
+   * chain, an arrow, or a strict comparison.
+   */
+  const STRUCTURAL_CODE = [
+    /^(const|let|var)\s+[A-Za-z_$][\w$]*(\s*:[^=]+)?\s*=/,
+    /^import\s+[^;]*\bfrom\b/,
+    /^import\s+["']/,
+    /^export\s+(default|const|let|var|function|class|\{|\*)/,
+    // `throw` and `await` need a CALL shape after them. Bare `^await\s` matched
+    // "await for the retry window to elapse", which is a sentence — the same
+    // trap the keyword patterns fell into, one keyword further along.
+    /^throw\s+new\s+[A-Za-z_$]/,
+    /^(throw|await|yield)\s+[A-Za-z_$][\w$]*\s*[.(]/,
+    /^return\s+(new|await)\s/,
+    /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+\s*\(/,
+    /=>/,
+    /===|!==/,
+    /^@[A-Za-z_$][\w$]*\s*\(/,
+    /^<[A-Z][\w$]*[\s/>]/,
+  ];
+
   const codePatterns = [
     /^(const|let|var|function|class|if|for|while|return|import|export)\s+/,
     /^[a-zA-Z_$][a-zA-Z0-9_$]*\s*[=:]\s*/,
@@ -122,7 +154,14 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
     // semicolons; prose that ends in punctuation is rare. Measured on the
     // pinned corpus this removed ~1,400 findings and cost no true positive
     // that could be found by inspection.
-    if (!ENDS_LIKE_CODE.test(line)) {
+    // A structural shape is code regardless of how the line ends; only the
+    // weak patterns below need the sentence test.
+    if (!STRUCTURAL_CODE.some((pattern) => pattern.test(line)) && !ENDS_LIKE_CODE.test(line)) {
+      continue;
+    }
+
+    if (STRUCTURAL_CODE.some((pattern) => pattern.test(line))) {
+      codeLikeLines++;
       continue;
     }
 

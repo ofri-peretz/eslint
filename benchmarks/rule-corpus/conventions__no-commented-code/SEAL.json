@@ -1,0 +1,100 @@
+{
+  "rule": "conventions/no-commented-code",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "eslint": "9",
+    "plugin": "eslint-plugin-conventions@4.2.10",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "fixtures are drawn from real findings on the pinned 8-repo corpus (okta-auth-js generateIdxAction.ts, request.ts) plus an adversarial wave, but no vulnerable/safe corpus is authored beside this record from the defect itself.",
+      "command": "author benchmarks/rule-corpus/conventions__no-commented-code/{vulnerable,safe}"
+    },
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider. The natural one is a PARSER: text that parses as a statement list is code, text that does not is prose. That would replace the whole pattern heuristic and is the real fix this rule wants.",
+      "command": "score findings by attempting to parse the comment body"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "not measured under the formal protocol. Corpus fell 2,441 -> 143 and survivors spot-checked as real commented-out bodies, but a spot check is not the n>=20 sampled measurement.",
+      "command": "npm run cases -- --rule=conventions/no-commented-code --n=20"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "not applicable in the taint sense; this rule reports on comment text, not on a data path.",
+      "command": "n/a — record as scope"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "not scored against a competitor. The comparable is sonarjs S125 (commented-out code), which is the rule this one cites.",
+      "command": "benchmarks duel vs eslint-plugin-sonarjs S125"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "a wave found 11 of 14 genuinely commented-out lines going silent — far more than the `// x = 1` the prose fix was documented as costing. Two causes: the terminator proxy is too blunt for unmistakable statements, and the pattern list had no `throw`, no `await` and no member-call chain. All 14 now caught with 0 prose FPs across a 9-case prose set. UNMET until a second wave finds nothing new.",
+      "command": "re-run the wave"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "measured on 8 pinned repositories we did not write. 2,441 -> 143, and the recall fix added ZERO findings on that corpus while catching all 14 adversarial shapes — the shapes it recovers use no trailing semicolon, which those repos do not do.",
+      "command": "npx tsx scripts/corpus-scan.ts"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "not probed. Overlaps conceptually with expiring-todo-comments in the same plugin, which also reads comment text.",
+      "command": "author a partition matrix test"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "scripts/rule-seal-probe.mts has not been run against this rule.",
+      "command": "npx tsx scripts/rule-seal-probe.mts --rule=conventions/no-commented-code"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100% statements / branches / functions / lines across eslint-plugin-conventions, 445 tests.",
+      "command": "npx vitest run --coverage"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "not measured.",
+      "command": "see BENCHMARK-CRITERIA A4"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "BENCHMARK-RESULTS.md not updated for this rule.",
+      "command": "D5"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "heuristic-not-parser",
+      "kind": "false-negative",
+      "limit": "L10",
+      "summary": "the rule decides 'is this code' by pattern matching on text rather than by parsing it.",
+      "why": "a parser is the correct oracle and the correct implementation, but swapping it in changes every number this rule has ever produced; it is a rewrite, not a patch.",
+      "reopenWhen": "a parse-based classifier is prototyped and scored against the same corpus."
+    },
+    {
+      "id": "single-token-fragment",
+      "kind": "false-negative",
+      "limit": "L10",
+      "summary": "a bare fragment with no structure and no terminator, such as `// x = 1`, is still silent.",
+      "why": "indistinguishable from prose by any text heuristic; real commented-out code is lifted from a file and keeps its punctuation or its declaration shape.",
+      "reopenWhen": "the parse-based classifier lands."
+    },
+    {
+      "id": "prose-ending-in-punctuation",
+      "kind": "false-positive",
+      "limit": "L10",
+      "summary": "a sentence that happens to end in a bracket, such as `// NOTE: enableLegacyMode (via isStepMode)`, can still report.",
+      "why": "the terminator proxy accepts it; measured as a small residual on the pinned corpus rather than eliminated.",
+      "reopenWhen": "the parse-based classifier lands, or the residual grows."
+    }
+  ],
+  "notes": "Sealed alongside reliability/no-missing-null-checks on 2026-08-21. Same lesson: the adversarial axis found the recall cost that the FP work had understated in its own commit message."
+}

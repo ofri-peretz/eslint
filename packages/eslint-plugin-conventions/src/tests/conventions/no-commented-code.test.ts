@@ -260,3 +260,70 @@ describe('no-commented-code — prose is not code', () => {
     ],
   });
 });
+
+/**
+ * The adversarial wave.
+ *
+ * The prose fix traded away recall, and the trade was documented as costing
+ * `// x = 1`. A wave written to break the tuned rule showed it cost far more:
+ * 11 of 14 genuinely commented-out lines went silent, including
+ * `// const timeout = 5000`, `// import fs from "fs"` and
+ * `// throw new Error("x")`.
+ *
+ * Two causes, not one. The terminator test is a proxy for "is this a
+ * sentence", which is right for a line that merely OPENS with a keyword and
+ * far too blunt for a line that is unmistakably a statement. And the pattern
+ * list had no `throw`, no `await`, and no member-call chain at all.
+ *
+ * STRUCTURAL_CODE now carries the shapes prose does not have. `throw` and
+ * `await` require a call shape after them, because bare `^await\s` matched
+ * "await for the retry window to elapse" — the same trap as the keyword
+ * patterns, one keyword further along.
+ */
+describe('no-commented-code — adversarial', () => {
+  ruleTester.run('invalid - structure beats punctuation', noCommentedCode, {
+    valid: [
+      { code: 'const a = 1;\n// await for the retry window to elapse before polling' },
+      { code: 'const a = 1;\n// throw away the cache when the tab closes' },
+      { code: 'const a = 1;\n// for widget / idx-js backward compatibility' },
+      { code: 'const a = 1;\n// fetch() can throw exceptions' },
+    ],
+    invalid: [
+      {
+        name: 'a declaration with an initializer needs no terminator',
+        code: 'const a = 1;\n// const timeout = 5000',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        name: 'an import with a module specifier',
+        code: 'const a = 1;\n// import fs from "fs"',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        name: 'an export',
+        code: 'const a = 1;\n// export default config',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        name: 'a constructed throw',
+        code: 'const a = 1;\n// throw new Error("x")',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        name: 'an awaited call',
+        code: 'const a = 1;\n// await client.connect()',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        name: 'a call on a member chain',
+        code: 'const a = 1;\n// promise.then(x => x).catch(noop)',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+      {
+        name: 'a typed declaration',
+        code: 'const a = 1;\n// let count: number = 0',
+        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+      },
+    ],
+  });
+});
