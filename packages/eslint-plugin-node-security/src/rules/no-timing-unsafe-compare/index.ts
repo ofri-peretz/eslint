@@ -322,6 +322,20 @@ const DEFAULT_NON_SECRET_WORDS: readonly string[] = [
 const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
   'count', 'counts', 'limit', 'limits', 'usage', 'total', 'size', 'length',
   'price', 'cost', 'quota', 'address', 'addresses', 'index', 'rank', 'percent',
+  // Locations. `address` was already here on this reasoning; these are the rest
+  // of the same idea, and their absence is what made
+  // `requestUrl.pathname !== STORE_AUTH_CALLBACK_PATH` a CWE-208 finding in
+  // Shopify/cli's OAuth callback server (pinned corpus, 2026-08-20). The name
+  // carries `auth` because it is part of an auth FLOW; the value is a route,
+  // and a route is not a credential.
+  //
+  // `url` and `uri` are deliberately NOT here: a presigned URL carries its
+  // signature in the query string and IS the credential, so `signatureUrl`
+  // must keep reporting. (`signedUrl` would not have shown this — `signed` is
+  // not among the secret patterns, only `signature` is.)
+  'path', 'paths', 'pathname', 'pathnames',
+  'endpoint', 'endpoints', 'route', 'routes',
+  'hostname', 'host', 'port', 'origin',
 ];
 
 /**
@@ -505,7 +519,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: [...DEFAULT_NON_SECRET_TAILS],
             description:
-              'Trailing words that make the value a measurement or location rather than a credential (default: count, limit, usage, total, size, length, price, cost, quota, address, index, rank, percent). Replaces the list.',
+              'Trailing words that make the value a measurement or location rather than a credential (default: count, limit, usage, total, size, length, price, cost, quota, address, index, rank, percent, path, pathname, endpoint, route, hostname, host, port, origin). Replaces the list.',
           },
         },
         additionalProperties: false,
