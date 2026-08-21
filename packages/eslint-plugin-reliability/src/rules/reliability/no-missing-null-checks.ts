@@ -33,38 +33,6 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Globals and built-ins that are never null/undefined. Property access on
- * these doesn't need a null check.
- */
-// Built-in namespaces that are never null AND aren't typically mutated. We
-// deliberately exclude `globalThis`, `window`, `self`, `top`, `parent`, and
-// `document` — those are mutable and `globalThis.appState = ...` is a real
-// "global state mutation" antipattern that other rules want to catch.
-// Read-only namespaces (Math, JSON, …) and library singletons are safe to
-// exempt because their property access is idempotent.
-const NEVER_NULL_GLOBALS = new Set<string>([
-  // Read-only Node/V8 magics
-  'console', 'process', 'Buffer', '__dirname', '__filename', 'module', 'exports', 'require',
-  'navigator', 'location', 'history',
-  // Built-in objects (read-only namespaces)
-  'Math', 'JSON', 'Object', 'Array', 'Number', 'String', 'Boolean', 'Date',
-  'RegExp', 'Promise', 'Symbol', 'Map', 'Set', 'WeakMap', 'WeakSet',
-  'Proxy', 'Reflect', 'Intl', 'BigInt', 'WebAssembly', 'Atomics',
-  'URL', 'URLSearchParams', 'TextEncoder', 'TextDecoder',
-  'AbortController', 'AbortSignal', 'EventTarget', 'Event', 'CustomEvent',
-  'FormData', 'Blob', 'File', 'FileReader', 'Headers', 'Request', 'Response',
-  // Error classes
-  'Error', 'TypeError', 'RangeError', 'SyntaxError', 'URIError',
-  'EvalError', 'ReferenceError', 'AggregateError',
-  // Common library / framework names
-  'fetch', 'crypto', 'performance', 'queueMicrotask',
-  'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
-  'setImmediate', 'clearImmediate', 'requestAnimationFrame', 'cancelAnimationFrame',
-  // Common loggers (used as singletons)
-  'logger', 'log', 'winston', 'pino', 'bunyan',
-]);
-
-/**
  * Returns true if the identifier resolves to:
  *   - A NEVER_NULL_GLOBALS entry (built-in / known singleton)
  *   - A catch-clause parameter (`catch (e) { e.message }` — never null)
@@ -73,14 +41,6 @@ const NEVER_NULL_GLOBALS = new Set<string>([
  *
  * For these, the rule should not demand a null check.
  */
-/** Is `name` declared anywhere in this scope chain? Used to tell the global
- * `require` from a local one that happens to share the spelling. */
-function scopeHasBinding(scope: TSESLint.Scope.Scope | null, name: string): boolean {
-  for (let s = scope; s; s = s.upper) {
-    if (s.variables.some((v) => v.name === name)) return true;
-  }
-  return false;
-}
 
 /**
  * The value a declarator actually receives, through any chain of `=`.
@@ -108,97 +68,156 @@ function assignedValue(init: TSESTree.Expression | null): TSESTree.Expression | 
   return current;
 }
 
-function isProvablyNonNullableIdentifier(
+/**
+ * Expressions the PLATFORM documents as returning null or undefined on a
+ * perfectly normal path — not on error, not on a thrown exception.
+ *
+ * Matched on the method name plus the shape of the call, never on the
+ * receiver's name: `rows.find(p)` and `db.find(p)` are the same evidence, and
+ * `foo.getElementById` is not excluded for not being spelled `document`.
+ *
+ * `.get` is DELIBERATELY absent. `Map.prototype.get` really does return
+ * undefined, but `axios.get`, `router.get`, `cache.get` and `storage.get` are
+ * all far more common in real code and return something else entirely. One
+ * entry would have re-added most of the noise this gate removes.
+ */
+const NULLABLE_RETURNS: ReadonlySet<string> = new Set([
+  // Array — a miss is undefined
+  'find', 'findLast', 'pop', 'shift',
+  // String / RegExp — a non-match is null
+  'match', 'exec',
+  // DOM — a miss is null
+  'getElementById', 'querySelector', 'closest', 'getAttribute', 'getNamedItem',
+]);
+
+/**
+ * Does anything in this file say the value MIGHT be null?
+ *
+ * This inverts the question the rule used to ask. It used to report every
+ * property access whose object could not be PROVEN non-null, which on real
+ * source is very nearly every property access: 38,674 findings across the 8
+ * pinned repositories, where all five security plugins together produce 36.
+ * The rule's own notes had already measured the same thing from the other end
+ * — "this rule alone was 56% of everything `recommended` produces across all
+ * 30 plugins" — and answered it by growing the deny-list, which cannot
+ * converge: the set of things that are never null is unbounded and unknowable
+ * without types.
+ *
+ * So the burden moves. A finding now needs POSITIVE evidence, and returns the
+ * evidence it found so the message can name it. No evidence, no finding —
+ * `obj.property` on an unresolvable `obj` says nothing at all about `obj`, and
+ * saying it anyway is what a type checker is for.
+ *
+ * Deliberately NOT evidence: a bare parameter, an `await`, or any unrecognised
+ * call. Each was tried and each is indistinguishable from ordinary code.
+ */
+/**
+ * A user-declared binding for `name`, as opposed to the ambient global.
+ *
+ * `undefined` and friends live in ESLint's global scope as variables with NO
+ * definitions. Treating those as shadows makes every `= undefined` check
+ * silently vacuous.
+ */
+function isShadowedBinding(scope: TSESLint.Scope.Scope | null, name: string): boolean {
+  for (let s = scope; s; s = s.upper) {
+    const variable = s.variables.find((v) => v.name === name);
+    if (variable) return variable.defs.length > 0;
+  }
+  return false;
+}
+
+function nullabilityEvidence(
   ident: TSESTree.Identifier,
   scope: TSESLint.Scope.Scope,
-): boolean {
-  if (NEVER_NULL_GLOBALS.has(ident.name)) return true;
-
-  // Walk scope chain to find the resolved variable
+): 'declared-without-initializer' | 'assigned-null' | 'nullable-return' | null {
   let s: TSESLint.Scope.Scope | null = scope;
   while (s) {
     const variable = s.variables.find((v) => v.name === ident.name);
-    if (variable) {
-      for (const def of variable.defs) {
-        // catch (e) { ... }
-        if (def.type === 'CatchClause') return true;
-        // import x from 'y' / import { x } from 'y'
-        if (def.type === 'ImportBinding') return true;
-        // const x = new Foo(...) / array literal / object literal / primitive
-        // / class declaration / `await fetch(...)` / template literal — these
-        // initializers cannot produce null/undefined under normal control flow.
-        // Adding them closes the bulk of the ILB-Arena-Quality FPs without
-        // sacrificing real CWE-476 detection (genuine null-deref risks come
-        // from optional/maybe lookups, not from `const x = []`).
-        if (def.type === 'Variable' && def.node?.type === 'VariableDeclarator') {
-          const init = assignedValue((def.node as TSESTree.VariableDeclarator).init);
-          if (!init) continue;
-          if (init.type === 'NewExpression') return true;
-          if (init.type === 'ArrayExpression') return true;
-          if (init.type === 'ObjectExpression') return true;
-          if (init.type === 'TemplateLiteral') return true;
-          if (init.type === 'ClassExpression') return true;
-          // Primitive literals (string / number / boolean / regex) — never null.
-          // Skip the `null` literal itself — that IS a null and the rule
-          // should let other rules complain about it.
-          if (init.type === 'Literal' && init.value !== null) return true;
-          // `await fetch(url)` / `await fetch(url, opts)` — the WHATWG fetch
-          // contract guarantees a Response on resolution; null comes only
-          // through rejection, which throws past this assignment.
-          if (
-            init.type === 'AwaitExpression' &&
-            init.argument.type === 'CallExpression' &&
-            init.argument.callee.type === 'Identifier' &&
-            init.argument.callee.name === 'fetch'
-          ) return true;
-          // `const u = require('u')` — the CommonJS twin of the ImportBinding
-          // case above, which already returns true.
-          //
-          // A module's export object is at LEAST as non-null as an ESM import
-          // binding: a failed `require` throws, it does not evaluate to null.
-          // Handling only `import` meant every CommonJS consumer reported on
-          // every use of every dependency. Measured over 600 files of the
-          // 20-repository corpus, `<local>.prop` on a single dot was 84% of
-          // this rule's findings — and this rule alone was 56% of everything
-          // `recommended` produces across all 30 plugins.
-          //
-          // `require` must be the global. A local binding of that name is a
-          // different function with no such contract, so this resolves the
-          // reference rather than matching the spelling.
-          if (
-            init.type === 'CallExpression' &&
-            init.callee.type === 'Identifier' &&
-            init.callee.name === 'require' &&
-            init.arguments.length > 0 &&
-            !scopeHasBinding(s, 'require')
-          ) return true;
-          // `JSON.parse(...)` returns a value; typically non-null. Same for
-          // common Object/Array static methods.
-          if (
-            init.type === 'CallExpression' &&
-            init.callee.type === 'MemberExpression' &&
-            init.callee.object.type === 'Identifier' &&
-            (init.callee.object.name === 'Object' || init.callee.object.name === 'Array' ||
-             init.callee.object.name === 'JSON')
-          ) return true;
-        }
-        // function f(...) — function declaration name is never null
-        if (def.type === 'FunctionName') return true;
-        // class C {} — class declaration name is never null
-        if (def.type === 'ClassName') return true;
-        // Function/method parameters — without type information we cannot
-        // tell `(x: T)` from `(x: T | null)`, and firing on every param-deref
-        // is the dominant FP source on real codebases (53 → 44 → most-of-rest).
-        // The contract is the caller's responsibility; treat params as
-        // non-nullable by default. Type-aware analysis (TS) is the right
-        // tool for real param-nullability detection.
-        if (def.type === 'Parameter') return true;
-      }
-      return false;
+    if (!variable) {
+      s = s.upper;
+      continue;
     }
-    s = s.upper;
+    if (variable.defs.length !== 1) return null;
+    const [def] = variable.defs;
+    if (def.type !== 'Variable' || def.node?.type !== 'VariableDeclarator') return null;
+
+    const declarator = def.node as TSESTree.VariableDeclarator;
+    const init = assignedValue(declarator.init);
+
+    // `let x;` — nothing has been put in it yet, so reading through it is the
+    // textbook CWE-476 the rule is named for.
+    //
+    // A loop head is NOT that, even though it parses identically: `for (const
+    // x of list)` is a VariableDeclarator with a null `init`, and the value is
+    // bound by the loop rather than left empty. Missing this made the loop
+    // variable of every `for…of` in the corpus a finding — the single largest
+    // source of what survived the first cut of this gate.
+    if (init === null) {
+      const declParent = (declarator as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      const loopParent = (declParent as TSESTree.Node & { parent?: TSESTree.Node } | undefined)?.parent;
+      if (
+        loopParent?.type === 'ForOfStatement' ||
+        loopParent?.type === 'ForInStatement'
+      ) {
+        return null;
+      }
+      // A later assignment is the normal way to fill a deferred binding:
+      //
+      //   let activeConfig
+      //   if (linked) activeConfig = load() else activeConfig = defaults()
+      //   activeConfig.file            // not a null deref
+      //
+      // Proving WHICH branches assign needs definite-assignment analysis, and
+      // without it the honest reading of "it is written somewhere" is "this is
+      // ordinary deferred initialisation". Only a binding that is never
+      // written at all is unambiguously a read of undefined.
+      const writes = variable.references.filter((reference) => reference.isWrite());
+      if (writes.length > 0) return null;
+      return 'declared-without-initializer';
+    }
+
+    // `const x = null` / `= undefined`.
+    if (init.type === 'Literal' && init.value === null) return 'assigned-null';
+    // `undefined` is a GLOBAL in ESLint's scope model, so a plain
+    // `scopeHasBinding` lookup always finds it and would disable this arm
+    // entirely. Only a binding with DEFS is a real shadow — `const undefined =
+    // x` or a parameter — and only that should suppress.
+    if (init.type === 'Identifier' && init.name === 'undefined' && !isShadowedBinding(s, 'undefined')) {
+      return 'assigned-null';
+    }
+
+    // `const hit = rows.find(...)` — the platform says this is undefined on a
+    // miss, and the miss is the path nobody writes a test for.
+    if (
+      init.type === 'CallExpression' &&
+      init.callee.type === 'MemberExpression' &&
+      !init.callee.computed &&
+      init.callee.property.type === 'Identifier' &&
+      NULLABLE_RETURNS.has(init.callee.property.name)
+    ) {
+      return 'nullable-return';
+    }
+    return null;
   }
-  return false;
+  return null;
+}
+
+/**
+ * Resolve the base of a member expression and ask whether it carries evidence.
+ *
+ * `this` and `this.#field` return false without asking: `this` inside a method
+ * is the instance, and a private field is defined whenever it is reachable.
+ */
+function baseHasNullabilityEvidence(
+  objectNode: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  let base: TSESTree.Node = objectNode;
+  while (base.type === 'MemberExpression') {
+    base = (base as TSESTree.MemberExpression).object;
+  }
+  if (base.type !== 'Identifier') return false;
+  return nullabilityEvidence(base as TSESTree.Identifier, scope) !== null;
 }
 
 /**
@@ -247,8 +266,18 @@ export function hasNullCheck(
     andParent.operator === '&&' &&
     andParent.right === nodeOrCall
   ) {
+    // Exact identity only. `endsWith` had the relation backwards: in
+    // `wrapper.obj && obj.prop` the left text ends with `obj`, but it guards
+    // `wrapper.obj` — a DIFFERENT value — so the finding on `obj` was silently
+    // dropped. A guard covers the expression it tests and the chains that
+    // START with it, never one that merely shares a suffix.
+    //
+    // The test that was supposed to catch this passed for the wrong reason:
+    // under the old deny-list model the single expected error came from
+    // `wrapper.obj` (base `wrapper`, unprovable), not from the suffix trap it
+    // claimed to exercise.
     const leftText = sourceCode.getText(andParent.left);
-    if (leftText === objectText || leftText.endsWith(objectText)) return true;
+    if (leftText === objectText) return true;
   }
 
   // Ternary consequent: `obj ? obj.prop : fallback` — the test being truthy
@@ -540,33 +569,10 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
       const objectNode = node.object;
       let shouldCheck = false;
 
-      if (objectNode.type === 'Identifier') {
-        // Skip identifiers that resolve to globals, catch params, imports,
-        // function declarations, or `new X()` results — these are never null.
-        if (isProvablyNonNullableIdentifier(objectNode as TSESTree.Identifier, sourceCode.getScope(node))) {
-          return;
-        }
-        shouldCheck = true;
-      } else if (objectNode.type === 'MemberExpression') {
-        // Nested member expressions like value.nested.deep — only fire on
-        // the deepest, where the leaf identifier matters most. Skip if the
-        // base of the chain is a known-non-null global (`console.log`,
-        // `JSON.stringify`, etc.) or is a `this`/`this.#field` chain — `this`
-        // inside a method is the class instance (never null), and private
-        // fields are always defined when accessed from inside the class.
-        let base: TSESTree.Node = objectNode;
-        while (base.type === 'MemberExpression') {
-          base = (base as TSESTree.MemberExpression).object;
-        }
-        if (base.type === 'ThisExpression') return;
-        if (
-          base.type === 'Identifier' &&
-          isProvablyNonNullableIdentifier(base as TSESTree.Identifier, sourceCode.getScope(node))
-        ) {
-          return;
-        }
-        shouldCheck = true;
-      }
+      // Evidence-based: see nullabilityEvidence. A chain is judged by its BASE
+      // — `a.b.c` carries no information about `a.b`, so asking about the
+      // intermediate link would be guessing.
+      shouldCheck = baseHasNullabilityEvidence(objectNode, sourceCode.getScope(node));
 
       if (shouldCheck && !hasNullCheck(node, sourceCode)) {
         const nodeKey = getMemberExpressionKey(node);
@@ -637,25 +643,10 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
         const objectNode = memberExpr.object;
         let shouldCheck = false;
 
-        if (objectNode.type === 'Identifier') {
-          if (isProvablyNonNullableIdentifier(objectNode as TSESTree.Identifier, sourceCode.getScope(memberExpr))) {
-            return;
-          }
-          shouldCheck = true;
-        } else if (objectNode.type === 'MemberExpression') {
-          let base: TSESTree.Node = objectNode;
-          while (base.type === 'MemberExpression') {
-            base = (base as TSESTree.MemberExpression).object;
-          }
-          if (base.type === 'ThisExpression') return;
-          if (
-            base.type === 'Identifier' &&
-            isProvablyNonNullableIdentifier(base as TSESTree.Identifier, sourceCode.getScope(memberExpr))
-          ) {
-            return;
-          }
-          shouldCheck = true;
-        }
+        // Evidence-based: see nullabilityEvidence. Only the BASE of a chain is
+        // asked, because that is the only link this file can say anything about
+        // — `a.b.c` says nothing about `a.b`.
+        shouldCheck = baseHasNullabilityEvidence(objectNode, sourceCode.getScope(memberExpr));
 
         if (shouldCheck && !hasNullCheck(memberExpr, sourceCode)) {
           const nodeKey = getMemberExpressionKey(memberExpr);
