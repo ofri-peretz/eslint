@@ -49,33 +49,39 @@ the only thing that caught it.
 
 Batches 1–4 are **96%** of everything a user sees, in 23 rules.
 
-## Batch 0 — the eight over budget now
+## Batch 0 — DONE. Gate green, 42 findings → 40.
 
-Left red deliberately; blanket `--update` would bury whichever are real.
+Every one read in the target's own source before a verdict. **Two rule bugs, five
+correct findings, one deliberate detection increase.**
 
-| rule | found | budget |
-|---|---|---|
-| `secure-coding/no-redos-vulnerable-regex` | 7 | 6 |
-| `secure-coding/no-sensitive-data-exposure` | 6 | 2 |
-| `node-security/require-dependency-integrity` | 3 | 2 |
-| `node-security/no-toctou-vulnerability` | 1 | 0 |
-| `node-security/no-timing-unsafe-compare` | 1 | 0 |
-| `browser-security/no-eval` | 1 | 0 |
-| `browser-security/no-insecure-redirects` | 1 | 0 |
-| `browser-security/no-unencrypted-transmission` | 1 | 0 |
+| rule | verdict |
+|---|---|
+| `node-security/no-timing-unsafe-compare` | **FIXED** — a route is not a credential |
+| `browser-security/no-insecure-redirects` | **FIXED** — a reload is not a redirect |
+| `node-security/no-toctou-vulnerability` | budget 1 — correct; my exemption was backwards |
+| `browser-security/no-unencrypted-transmission` | budget 1 — a parse, but exempting loses recall |
+| `browser-security/no-eval` | budget 1 — `eval(data)` on a network fetch, the strongest TP here |
+| `node-security/require-dependency-integrity` | budget 3 — three CDN links with no SRI |
+| `secure-coding/no-sensitive-data-exposure` | budget 6 — status codes off token-named receivers |
+| `secure-coding/no-redos-vulnerable-regex` | budget 7 — the increase is #574's detection fix |
 
-`no-toctou-vulnerability` is **resolved: not a bug.** The finding is
-okta-auth-js's `rollup.config.js` doing
-`if (!existsSync(d)) mkdirSync(d, { recursive: true })`. An exemption was
-written and reverted — with `recursive: true` an attacker who plants a symlink
-in the window gets mkdir to succeed *silently* and later writes follow it.
-Without the flag it throws EEXIST and the program notices. Its budget should be
-raised to 1, not the rule changed.
+Every budget carries its reasoning in the `triage` key of the budget file.
 
-`browser-security/no-unencrypted-transmission` is the next to look at:
-ioredis's `lib/utils/index.ts:291` builds `new URL("redis://" + rawUrl)` — a
-Redis connection string being *parsed*, flagged by a **browser** rule. Verify
-before assuming; the TOCTOU case says the obvious read can be wrong.
+### What the batch taught
+
+**Two of the five "obvious false positives" were true positives**, and in both
+cases the obvious read was the wrong one:
+
+- recursive `mkdir` makes the TOCTOU **worse**, not safer — the exemption was
+  written and reverted, caught by the rule's own pinned corpus test
+- `error-page.ts` really does load a CDN stylesheet; my grep for external URLs
+  missed it because the href is an interpolated constant, and the rule did not
+
+**Two fixes were declined on the rule's own documented reasoning.**
+`no-unencrypted-transmission` would lose `new URL(...)` → `connect(u)` recall;
+`no-sensitive-data-exposure` already closes `VALUE_FREE_PROPERTIES` as a
+`@protocol-constant` and says opening it would let `.value` in. Budgeting is
+the right answer when the rule has already had the argument.
 
 ## Batch 1 is blocked on a product decision
 
