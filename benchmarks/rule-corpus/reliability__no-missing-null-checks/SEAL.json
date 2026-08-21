@@ -1,0 +1,156 @@
+{
+  "rule": "reliability/no-missing-null-checks",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "eslint": "9",
+    "plugin": "eslint-plugin-reliability@4.0.0",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "fixtures exist in the rule's own suite and are drawn from REAL findings on the pinned 8-repo corpus (okta-auth-js generateIdxAction.ts, Shopify/cli create-notification-pr.js), not from the rule's tests. But no vulnerable/ safe corpus has been authored beside this record from the DEFECT itself.",
+      "command": "author benchmarks/rule-corpus/reliability__no-missing-null-checks/{vulnerable,safe}"
+    },
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider. TypeScript's own strictNullChecks is the obvious candidate — okta-auth-js already writes `remediationChoiceObject.action!` and `remediation.value!` at two of our findings, which is tsc agreeing with us in the codebase's own hand. Until it is run as an oracle, our precision figure is our opinion of our own output.",
+      "command": "score findings against tsc --strictNullChecks on the same corpus"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured under the formal protocol (n>=20 sampled findings, each labelled would-a-developer-act). The corpus count fell 38,674 -> 127 and spot checks of the survivors were actionable, but a spot check is not the sampled measurement and the bar is 5%.",
+      "command": "npm run cases -- --rule=reliability/no-missing-null-checks --n=20"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule now requires positive evidence of nullability rather than reporting unless proven safe, which is the direction this axis asks for. It does NOT resolve a path from an untrusted source; evidence is local to the binding.",
+      "command": "see BENCHMARK-CRITERIA.md reachability"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "not scored against a comparable competitor. The nearest are typescript-eslint no-unnecessary-condition (type-aware, different premise) and sonarjs null-dereference.",
+      "command": "benchmarks duel vs eslint-plugin-sonarjs"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "a wave WAS written to break the tuned rule and it worked: 11 of 14 genuine null-dereferences walked past the first cut. Two were fixed and locked (alias laundering via `const alias = hit`, and a conditional with a null arm). The remaining nine are in knownGaps. UNMET rather than partial, because the axis asks for a second wave that finds NOTHING new, and this one found eleven.",
+      "command": "re-run the wave after closing the gaps"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "measured on 8 pinned repositories we did not write (okta-auth-js, okta-signin-widget, Shopify/cli, twilio-node, ioredis, stripe-js, paypal-checkout-components, auth0/express-openid-connect). 38,674 -> 127 findings, every budget entry carrying a written reason in .agent/corpus-findings-budget.json.",
+      "command": "npx tsx scripts/corpus-scan.ts"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "not probed. This rule overlaps conceptually with no-unsafe-type-narrowing in the same plugin; neither has been run with the whole family enabled against one sink shape.",
+      "command": "author a partition matrix test"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "scripts/rule-seal-probe.mts has not been run against this rule.",
+      "command": "npx tsx scripts/rule-seal-probe.mts --rule=reliability/no-missing-null-checks"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100% statements / branches / functions / lines across eslint-plugin-reliability, 366 tests. Every branch added by the evidence gate is covered by a test that fails on the unfixed rule.",
+      "command": "npx vitest run --coverage"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "not measured. Note BENCHMARK-CRITERIA A4: report as a range, not a point.",
+      "command": "see A4"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "BENCHMARK-RESULTS.md not updated for this rule.",
+      "command": "D5"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "evidence-crosses-return",
+      "kind": "false-negative",
+      "limit": "L1",
+      "summary": "`function g(){return rows.find(...)}; const h=g(); h.name` — the nullable origin is in another function.",
+      "why": "ESLint's unit is one file and this rule's is one binding; deriving a function's return nullability is interprocedural.",
+      "reopenWhen": "the devkit gains a same-file return-shape summary, or the rule becomes type-aware."
+    },
+    {
+      "id": "destructuring",
+      "kind": "false-negative",
+      "limit": null,
+      "summary": "`const {name} = hit` reads through a nullable value without a MemberExpression.",
+      "why": "open work, not a limit — the rule only visits MemberExpression and CallExpression, so a destructuring pattern is never offered to it.",
+      "reopenWhen": "immediately; this is tractable with an ObjectPattern visitor."
+    },
+    {
+      "id": "after-optional-link",
+      "kind": "false-negative",
+      "limit": null,
+      "summary": "`hit?.meta.deep` — the `.deep` read is unguarded even though the first link is optional.",
+      "why": "open work — the rule skips the whole ChainExpression rather than resuming after the optional link.",
+      "reopenWhen": "immediately; the chain can be walked past the first optional element."
+    },
+    {
+      "id": "array-index-oob",
+      "kind": "false-negative",
+      "limit": "L8",
+      "summary": "`const first = arr[0]; first.name` — an out-of-bounds index yields undefined.",
+      "why": "whether an index is in bounds is a semantic property of the array's length at that point, not a syntactic one.",
+      "reopenWhen": "a length-carrying abstract domain exists, or the rule becomes type-aware."
+    },
+    {
+      "id": "map-get-excluded",
+      "kind": "scope",
+      "limit": "L2",
+      "summary": "`Map.prototype.get` genuinely returns undefined but is not in NULLABLE_RETURNS.",
+      "why": "deliberate. Without types `.get` cannot be told from axios.get, router.get, cache.get or storage.get, which dominate real code; including it re-added most of the noise this gate removed.",
+      "reopenWhen": "the rule gains type information, so a real Map receiver can be distinguished."
+    },
+    {
+      "id": "json-parse",
+      "kind": "false-negative",
+      "limit": "L5",
+      "summary": "`JSON.parse(s)` returns null for the input \"null\".",
+      "why": "unmodeled library semantics; treating every JSON.parse as nullable would fire on the overwhelmingly common non-null case.",
+      "reopenWhen": "a library-semantics table lands in the devkit."
+    },
+    {
+      "id": "dead-code-write",
+      "kind": "false-negative",
+      "limit": "L3",
+      "summary": "`let cfg; if (false) { cfg = load(); } cfg.value` — the only write is unreachable.",
+      "why": "the any-write rule is a deliberate flow-insensitive approximation: proving WHICH writes reach a read needs definite-assignment analysis.",
+      "reopenWhen": "the rule gains a CFG, or definite-assignment lands in the devkit."
+    },
+    {
+      "id": "for-of-nullable-source",
+      "kind": "false-negative",
+      "limit": "L3",
+      "summary": "a `for…of` whose iterable is itself nullable.",
+      "why": "loop heads are excluded wholesale because the binding is supplied by the loop; distinguishing a nullable ITERABLE from the bound element needs the iterable's own evidence to flow in.",
+      "reopenWhen": "the loop-head exclusion is narrowed to the element rather than the head."
+    },
+    {
+      "id": "reassigned-from-nullable",
+      "kind": "false-negative",
+      "limit": "L3",
+      "summary": "`let hit = {}; hit = rows.find(...)` — the write disqualifies the binding.",
+      "why": "same flow-insensitive approximation as dead-code-write: a written binding is read as deferred initialisation because proving otherwise needs reaching-definitions.",
+      "reopenWhen": "reaching-definitions analysis is available, or single-write bindings are special-cased on the write's value."
+    },
+    {
+      "id": "self-referential-var",
+      "kind": "false-negative",
+      "limit": "L4",
+      "summary": "`var a = a; a.name` is a read of undefined; the alias walk answers 'no evidence'.",
+      "why": "the cycle guard exists so the alias walk terminates; without points-to analysis, silence is the honest answer from a walk that cannot resolve.",
+      "reopenWhen": "the walk can distinguish a self-reference from an unresolved alias."
+    }
+  ],
+  "notes": "Sealing started 2026-08-21 after the rule shipped as 4.0.0. The adversarial axis is the one that paid: it found 11 real misses in a rule that had already passed corpus, coverage and the CWE recall gate. That is the axis this repo has met on 1 of 94 records."
+}

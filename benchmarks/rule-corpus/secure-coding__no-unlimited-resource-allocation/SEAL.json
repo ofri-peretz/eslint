@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 2020L +0.81±0.51ms · 8080L +4.95±2.04ms · 31916L +15.98±10.13ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 404L +0.60±0.09ms · 1616L +1.36±4.03ms · 6464L +3.73±2.43ms — 2.3x time for 4.0x lines (404→1616), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
     },
     "recorded": {
-      "state": "met",
-      "evidence": "rule last changed 2026-08-18 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal secure-coding/no-unlimited-resource-allocation' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

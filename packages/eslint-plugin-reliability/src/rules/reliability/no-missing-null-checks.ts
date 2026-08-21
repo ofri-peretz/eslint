@@ -129,7 +129,13 @@ function isShadowedBinding(scope: TSESLint.Scope.Scope | null, name: string): bo
 function nullabilityEvidence(
   ident: TSESTree.Identifier,
   scope: TSESLint.Scope.Scope,
+  seen: Set<string> = new Set(),
 ): 'declared-without-initializer' | 'assigned-null' | 'nullable-return' | null {
+  // `const alias = hit` must not launder the evidence. One level of aliasing
+  // defeated this gate completely — found by the adversarial wave, where it was
+  // 1 of 11 genuine null-dereferences the first cut walked past.
+  if (seen.has(ident.name)) return null;
+  seen.add(ident.name);
   let s: TSESLint.Scope.Scope | null = scope;
   while (s) {
     const variable = s.variables.find((v) => v.name === ident.name);
@@ -184,6 +190,34 @@ function nullabilityEvidence(
     // x` or a parameter — and only that should suppress.
     if (init.type === 'Identifier' && init.name === 'undefined' && !isShadowedBinding(s, 'undefined')) {
       return 'assigned-null';
+    }
+
+    // `const alias = hit` — follow the binding rather than stopping here.
+    if (init.type === 'Identifier') {
+      return nullabilityEvidence(init, scope, seen);
+    }
+
+    // `const hit = c ? rows.find(...) : null` — a conditional is nullable when
+    // EITHER arm is. Stopping at the ConditionalExpression let the null arm
+    // through untouched.
+    if (init.type === 'ConditionalExpression') {
+      for (const arm of [init.consequent, init.alternate]) {
+        if (arm.type === 'Literal' && arm.value === null) return 'assigned-null';
+        if (arm.type === 'Identifier') {
+          const viaArm = nullabilityEvidence(arm, scope, seen);
+          if (viaArm) return viaArm;
+        }
+        if (
+          arm.type === 'CallExpression' &&
+          arm.callee.type === 'MemberExpression' &&
+          !arm.callee.computed &&
+          arm.callee.property.type === 'Identifier' &&
+          NULLABLE_RETURNS.has(arm.callee.property.name)
+        ) {
+          return 'nullable-return';
+        }
+      }
+      return null;
     }
 
     // `const hit = rows.find(...)` — the platform says this is undefined on a

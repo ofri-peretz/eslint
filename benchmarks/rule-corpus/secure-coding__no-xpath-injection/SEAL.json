@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.0",
     "node": "24"
   },
   "axes": {
@@ -61,13 +61,13 @@
       "command": "npx vitest run --coverage src/rules/no-xpath-injection"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 1840L +2.18±0.26ms · 8096L +6.10±5.64ms · 32016L +15.99±27.58ms — 2.8x time for 4.4x lines (1840→8096), linear",
+      "state": "unmet",
+      "evidence": "marginal over a no-op control: 368L +0.60±0.26ms · 1472L +5.00±2.34ms · 5888L +6.75±1.97ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-xpath-injection"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal secure-coding/no-xpath-injection' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

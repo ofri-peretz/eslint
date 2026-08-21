@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.0",
     "node": "24"
   },
   "axes": {
@@ -61,13 +61,13 @@
       "command": "npx vitest run --coverage src/rules/no-sensitive-data-exposure"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 2100L +2.65±0.67ms · 7980L +6.53±2.23ms · 31920L +30.01±4.53ms — 2.5x time for 3.8x lines (2100→7980), linear",
+      "state": "unmet",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — not-established then linear. First: 420L +0.55±0.17ms · 1680L +0.04±0.95ms · 6720L +11.88±2.22ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-sensitive-data-exposure"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal secure-coding/no-sensitive-data-exposure' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

@@ -328,6 +328,87 @@ describe('no-missing-null-checks', () => {
   });
 
   /**
+   * The adversarial wave.
+   *
+   * Written to BREAK the narrowed rule rather than to confirm it, and it did:
+   * 11 of 14 genuine null-dereferences walked past the first cut. The two
+   * fixed here were the ones a user would hit by accident.
+   *
+   * `const alias = hit` defeated the gate completely — one level of aliasing
+   * laundered the evidence — and a conditional with a `null` arm was read as
+   * carrying no evidence at all.
+   *
+   * The nine still missed are recorded in the rule's SEAL record rather than
+   * hidden: evidence crossing a function return, destructuring off a nullable
+   * value, a read after an optional link (`hit?.meta.deep`), an out-of-bounds
+   * array index, `Map.get`, `JSON.parse`, a binding written only in dead code,
+   * a `for…of` over a nullable source, and reassignment from a nullable call.
+   * Each needs analysis the rule does not have, and none is silently accepted.
+   */
+  describe('Adversarial — evidence must not launder', () => {
+    ruleTester.run('invalid - laundered evidence still reports', noMissingNullChecks, {
+      valid: [
+        // An alias of something with NO evidence is still no evidence.
+        { code: 'export function f(o) { const a = o; return a.name; }', filename: 'src/u.ts' },
+        // A real guard still silences it.
+        {
+          code: 'export function f(rows) { const hit = rows.find((r) => r.ok); return hit ? hit.name : null; }',
+          filename: 'src/u.ts',
+        },
+        // A conditional whose arms carry no evidence carries none either.
+        {
+          code: 'export function f(a, b, c) { const chosen = c ? a : b; return chosen.name; }',
+          filename: 'src/u.ts',
+        },
+        {
+          // `var a = a` is legal JavaScript and self-referential, so the alias
+          // walk would recurse on the same binding forever. The cycle guard
+          // answers "no evidence" instead of hanging.
+          //
+          // Reported as VALID deliberately: this really is a read of undefined,
+          // but the honest answer from a walk that cannot terminate is silence,
+          // not a guess. Recorded as a known gap in the SEAL record.
+          code: 'export function f() { var a = a; return a.name; }',
+          filename: 'src/u.ts',
+        },
+      ],
+      invalid: [
+        {
+          name: 'one alias does not launder a nullable return',
+          code: 'export function f(rows) { const hit = rows.find((r) => r.ok); const alias = hit; return alias.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'nor does a chain of them',
+          code: 'export function f(rows) { const a = rows.find((r) => r.ok); const b = a; const c = b; return c.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a conditional is nullable when either arm is',
+          code: 'export function f(rows, c) { const hit = c ? rows.find((r) => r.ok) : null; return hit.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a conditional arm that is itself an alias still carries evidence',
+          code:
+            'export function f(rows, c) { const hit = rows.find((r) => r.ok); const chosen = c ? hit : null; return chosen.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'either arm, in either position',
+          code: 'export function f(rows, c) { const hit = c ? null : rows.find((r) => r.ok); return hit.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+      ],
+    });
+  });
+
+  /**
    * The contract that REPLACES it: a finding needs positive evidence.
    *
    * Each case names the platform or the binding that says the value may be
