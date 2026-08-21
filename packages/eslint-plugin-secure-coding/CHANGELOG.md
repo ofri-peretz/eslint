@@ -1,3 +1,66 @@
+## 5.1.0
+
+### Minor Changes
+
+- [#589](https://github.com/ofri-peretz/eslint/pull/589) [`89f4b6d`](https://github.com/ofri-peretz/eslint/commit/89f4b6d5cfda758e49be299ceed1aa32c490e65c) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-redos-vulnerable-regex` can now ask the oracle for the **degree** of
+  backtracking, not just whether a pattern is vulnerable at all — exposed as
+  `reportSecondDegreePolynomial`.
+
+  It defaults to `true`, so **default behaviour is unchanged**: quadratic
+  patterns still report. Set it to `false` to suppress degree-2 findings in a
+  codebase whose patterns provably run over short, sized input.
+
+  ```
+  (.*?)=(.*)$     degree 3, over a 4KB cookie header — ~6e10 steps, a hang
+  ^###\s+(.+)$    degree 2, over one markdown heading — arithmetic
+  ```
+
+  That difference is real — on the pinned 8-repository corpus, every finding was
+  oracle-confirmed and none was exponential, three at degree 3 and three at
+  degree 2 — but degree only _proxies_ the question that decides whether anyone
+  acts: does the caller size the input? Nothing in the AST answers that. Shipping
+  the suppression as the default dropped a must-detect CWE-1333 pattern
+  (`/^(a*).*b/`, degree 2), so the quieter bar is opt-in and costs recall by
+  construction.
+
+  The veto-only invariant is unchanged: the oracle may only ever REMOVE a
+  finding. A null degree — `recheck` absent, timed out, or unparseable — retracts
+  nothing, so uninstalling the optional peer can still only add findings, never
+  hide one.
+
+### Patch Changes
+
+- [#589](https://github.com/ofri-peretz/eslint/pull/589) [`89f4b6d`](https://github.com/ofri-peretz/eslint/commit/89f4b6d5cfda758e49be299ceed1aa32c490e65c) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-sensitive-data-exposure` no longer reports when the surrounding prose names
+  a credential but the interpolated value names itself an outcome.
+
+  ```js
+  // no longer reported — the label describes the operation that FAILED
+  throw new Error(`Failed to fetch access token: ${error.message}`);
+  throw new Error(`Token request failed with status ${tokenResponse.status}`);
+
+  // still reported — these log the credential itself
+  console.log(`Using token from ${source}: ${tokenFromEnv}`);
+  console.log(`Using password from dev: ${password}`);
+  ```
+
+  On the pinned 8-repository corpus this rule produced six findings. Four were
+  the first shape and leaked nothing; two were the second and are real. The
+  property is structure and the label is prose, so the property wins.
+
+  Two report paths had to close, not one. The text heuristic matched
+  label-separator-hole, and the value path separately matched
+  `tokenResponse.status` by reading the **receiver's** name and ignoring what was
+  taken from it — the same defect `VALUE_FREE_PROPERTIES` already fixed for
+  `.length`, one property set over.
+
+  The new `DIAGNOSTIC_ACCESSORS` set is protocol-grounded rather than
+  vocabulary: `message` / `stack` / `name` are `Error.prototype`'s own, and
+  `status` / `statusText` are the HTTP response code and reason phrase. `code` is
+  deliberately excluded — an authorization code, a 2FA code and a recovery code
+  are all called `code`, and the rule cannot tell them apart.
+
+  Recall is unchanged: CWE corpus 69/69, zero false positives.
+
 ## 5.0.0
 
 ### Major Changes
