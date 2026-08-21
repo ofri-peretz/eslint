@@ -36,7 +36,7 @@
     },
     "adversarial": {
       "state": "unmet",
-      "evidence": "a wave WAS written to break the tuned rule and it worked: 11 of 14 genuine null-dereferences walked past the first cut. Two were fixed and locked (alias laundering via `const alias = hit`, and a conditional with a null arm). The remaining nine are in knownGaps. UNMET rather than partial, because the axis asks for a second wave that finds NOTHING new, and this one found eleven.",
+      "evidence": "a wave WAS written to break the tuned rule and it worked: 11 of 14 genuine null-dereferences walked past the first cut. Four are now fixed and locked — alias laundering (`const alias = hit`), a conditional with a null arm, a bare `undefined` arm, and an alias resolved from the READ's scope so a nested shadow could answer for it. The last two came from review on #599, on code written the same hour. NINE of the wave's misses remain, plus one gap found while covering the cycle guard, so knownGaps lists ten. UNMET rather than partial: the axis asks for a wave that finds NOTHING new, and this one found eleven, and review then found two more.",
       "command": "re-run the wave after closing the gaps"
     },
     "realSource": {
@@ -152,5 +152,5 @@
       "reopenWhen": "the walk can distinguish a self-reference from an unresolved alias."
     }
   ],
-  "notes": "Sealing started 2026-08-21 after the rule shipped as 4.0.0. The adversarial axis is the one that paid: it found 11 real misses in a rule that had already passed corpus, coverage and the CWE recall gate. That is the axis this repo has met on 1 of 94 records."
+  "notes": "Sealing started 2026-08-21 after the rule shipped as 4.0.0. The adversarial axis is the one that paid: it found 11 real misses in a rule that had already passed corpus, coverage and the CWE recall gate — the axis this repo has met on 1 of 94 records. Review on the seal PR then found two more in the fixes themselves, which is the same lesson twice: a gate you have just written is the one you have least evidence about."
 }

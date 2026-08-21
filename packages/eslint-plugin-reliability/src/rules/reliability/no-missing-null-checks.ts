@@ -193,8 +193,16 @@ function nullabilityEvidence(
     }
 
     // `const alias = hit` — follow the binding rather than stopping here.
+    //
+    // Resolved from the DECLARATOR's scope `s`, not the read's scope. The
+    // alias initializer was written where the declarator is, so a nested
+    // function that happens to rebind the same name must not answer for it:
+    //
+    //   const hit = rows.find(...)
+    //   const alias = hit
+    //   function g() { const hit = {}; return alias.name }   // still reports
     if (init.type === 'Identifier') {
-      return nullabilityEvidence(init, scope, seen);
+      return nullabilityEvidence(init, s, seen);
     }
 
     // `const hit = c ? rows.find(...) : null` — a conditional is nullable when
@@ -203,8 +211,14 @@ function nullabilityEvidence(
     if (init.type === 'ConditionalExpression') {
       for (const arm of [init.consequent, init.alternate]) {
         if (arm.type === 'Literal' && arm.value === null) return 'assigned-null';
+        // A bare `undefined` arm is the same evidence as a `null` one. Falling
+        // through to the alias walk lost it, because resolving the global
+        // `undefined` finds a variable with no definitions and answers null.
+        if (arm.type === 'Identifier' && arm.name === 'undefined' && !isShadowedBinding(s, 'undefined')) {
+          return 'assigned-null';
+        }
         if (arm.type === 'Identifier') {
-          const viaArm = nullabilityEvidence(arm, scope, seen);
+          const viaArm = nullabilityEvidence(arm, s, seen);
           if (viaArm) return viaArm;
         }
         if (

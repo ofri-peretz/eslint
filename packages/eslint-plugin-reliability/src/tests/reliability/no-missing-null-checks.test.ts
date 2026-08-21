@@ -338,8 +338,9 @@ describe('no-missing-null-checks', () => {
    * laundered the evidence — and a conditional with a `null` arm was read as
    * carrying no evidence at all.
    *
-   * The nine still missed are recorded in the rule's SEAL record rather than
-   * hidden: evidence crossing a function return, destructuring off a nullable
+   * Nine of the eleven are still missed and recorded in the rule's SEAL record
+   * rather than hidden (a tenth gap, the self-referential `var a = a`, came out
+   * of covering the cycle guard rather than out of the wave): evidence crossing a function return, destructuring off a nullable
    * value, a read after an optional link (`hit?.meta.deep`), an out-of-bounds
    * array index, `Map.get`, `JSON.parse`, a binding written only in dead code,
    * a `for…of` over a nullable source, and reassignment from a nullable call.
@@ -353,6 +354,12 @@ describe('no-missing-null-checks', () => {
         // A real guard still silences it.
         {
           code: 'export function f(rows) { const hit = rows.find((r) => r.ok); return hit ? hit.name : null; }',
+          filename: 'src/u.ts',
+        },
+        // A user shadow of `undefined` is a real binding, so the arm is not
+        // the language's undefined.
+        {
+          code: 'export function f(flag) { const undefined = {}; const c = flag ? undefined : {}; return c.name; }',
           filename: 'src/u.ts',
         },
         // A conditional whose arms carry no evidence carries none either.
@@ -395,6 +402,25 @@ describe('no-missing-null-checks', () => {
           name: 'a conditional arm that is itself an alias still carries evidence',
           code:
             'export function f(rows, c) { const hit = rows.find((r) => r.ok); const chosen = c ? hit : null; return chosen.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // A bare `undefined` arm is the same evidence as a `null` one.
+          // Raised by CodeRabbit on #599 — the alias walk swallowed it, because
+          // resolving the GLOBAL `undefined` finds a variable with no
+          // definitions and answers "no evidence".
+          name: 'an undefined arm is evidence too',
+          code: 'export function f(flag) { const c = flag ? undefined : {}; return c.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // The alias is resolved from the DECLARATOR's scope, not the read's,
+          // so a nested function rebinding the same name cannot answer for it.
+          name: 'a nested shadow does not launder the alias',
+          code:
+            'export function f(rows) { const hit = rows.find((r) => r.ok); const alias = hit; function g() { const hit = {}; return alias.name; } return g(); }',
           filename: 'src/u.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },

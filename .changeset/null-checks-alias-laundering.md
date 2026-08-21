@@ -15,7 +15,7 @@ chosen.name                   // now reported — a null arm is evidence
 ```
 
 Found by an adversarial wave written to break the rule shipped in `4.0.0`:
-**11 of 14 genuine null-dereferences walked past it.** These two were the ones
-a developer hits by accident. The other nine need analysis the rule does not
-have and are recorded, each with a cited limit and the condition that reopens
+**11 of 14 genuine null-dereferences walked past it.** Four are now fixed — these two plus a bare `undefined` arm and an alias
+resolved from the wrong scope. The remaining nine need analysis the rule does
+not have and are recorded, each with a cited limit and the condition that reopens
 it, in `benchmarks/rule-corpus/reliability__no-missing-null-checks/SEAL.json`.
