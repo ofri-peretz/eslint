@@ -49,21 +49,29 @@ the only thing that caught it.
 
 Batches 1–4 are **96%** of everything a user sees, in 23 rules.
 
-## Batch 0 — DONE. Gate green, 42 findings → 40.
+## Batch 0 — DONE. Gate green, 42 findings → 36.
 
-Every one read in the target's own source before a verdict. **Two rule bugs, five
-correct findings, one deliberate detection increase.**
+The gate is green in the sense that matters: `scripts/corpus-scan.ts` exits 0,
+every rule is at or under its budget, and no rule is unbudgeted. It is NOT a
+claim that every remaining finding is one a maintainer would act on — eight
+rules still carry a budget above zero, and each budget records why in the
+`triage` key of `.agent/corpus-findings-budget.json`.
+
+Every one read in the target's own source before a verdict. **Three rule bugs
+fixed, and one reversal.**
 
 | rule | verdict |
 |---|---|
 | `node-security/no-timing-unsafe-compare` | **FIXED** — a route is not a credential |
 | `browser-security/no-insecure-redirects` | **FIXED** — a reload is not a redirect |
+| `secure-coding/no-sensitive-data-exposure` | **FIXED** 6 → 2 — prose naming a credential is not a leak of one; the 2 left are real |
 | `node-security/no-toctou-vulnerability` | budget 1 — correct; my exemption was backwards |
 | `browser-security/no-unencrypted-transmission` | budget 1 — a parse, but exempting loses recall |
 | `browser-security/no-eval` | budget 1 — `eval(data)` on a network fetch, the strongest TP here |
 | `node-security/require-dependency-integrity` | budget 3 — three CDN links with no SRI |
-| `secure-coding/no-sensitive-data-exposure` | budget 6 — status codes off token-named receivers |
-| `secure-coding/no-redos-vulnerable-regex` | budget 7 — the increase is #574's detection fix |
+| `node-security/require-stream-error-handler` | budget 4 — all four TRUE, see triage; the handler is on the wrong stream |
+| `node-security/no-unsafe-buffer-alloc` | budget 3 — `new Array(wireLength)` in ioredis; measured, weak threat model |
+| `secure-coding/no-redos-vulnerable-regex` | budget 7 — oracle-confirmed; 2 are degree-2 effective FPs, kept because the CWE corpus pins that class |
 
 Every budget carries its reasoning in the `triage` key of the budget file.
 

@@ -217,7 +217,7 @@ export interface Options {
   
   /**
    * Report second-degree polynomial backtracking as well as degree 3 and
-   * exponential. Default: false.
+   * exponential. Default: true.
    *
    * Quadratic backtracking needs a long input to hurt. Over a markdown heading
    * or a cookie name it is arithmetic; over an unbounded request body it is a

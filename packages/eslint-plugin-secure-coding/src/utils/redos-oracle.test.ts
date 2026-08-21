@@ -119,9 +119,21 @@ describe('redos-oracle', () => {
     });
 
     it('memoises, so a repeated pattern costs one call', () => {
+      // Asserting only that the two answers MATCH would pass on a rule with no
+      // cache at all — two calls to a deterministic oracle agree either way.
+      // Counting the calls is the only version that fails when the memo breaks.
+      let calls = 0;
+      __setOracleForTests({
+        checkSync: () => {
+          calls += 1;
+          return { status: 'vulnerable' as const, complexity: { type: 'polynomial', degree: 2 } };
+        },
+      });
       const first = worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '');
       const second = worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '');
       expect(second).toBe(first);
+      expect(calls).toBe(1);
+      resetOracleForTests();
     });
   });
 

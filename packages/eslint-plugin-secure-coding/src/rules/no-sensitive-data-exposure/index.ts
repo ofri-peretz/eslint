@@ -291,7 +291,13 @@ const DIAGNOSTIC_ACCESSORS = new Set(['message', 'stack', 'name', 'status', 'sta
  * and must not be assumed diagnostic.
  */
 function isDiagnosticAccessor(node: TSESTree.Node): boolean {
-  const value = node.type === AST_NODE_TYPES.ChainExpression ? node.expression : node;
+  // `unwrapTypeSyntax` first: `${error.message as string}` and
+  // `${error.message!}` read exactly what `${error.message}` reads, and a bare
+  // `type ===` test matches neither. Without this the gate misses the dialect
+  // TypeScript users actually write, and the finding comes back.
+  const unwrapped = unwrapTypeSyntax(node) as TSESTree.Node;
+  const value =
+    unwrapped.type === AST_NODE_TYPES.ChainExpression ? unwrapped.expression : unwrapped;
   return (
     value.type === AST_NODE_TYPES.MemberExpression &&
     !value.computed &&
@@ -526,7 +532,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         // Subtracts from the text heuristic ONLY. A template with one opaque
         // hole — `token: ${t}` — still reports, so the recall this fallback
         // exists for is intact.
-        const allHolesAreDiagnostic = arg.expressions.every(isDiagnosticAccessor);
+        const allHolesAreDiagnostic = arg.expressions.every(isNonSecretHole);
         // Only when something is actually interpolated: a template with no
         // expressions is a constant string, and reporting it would be the prose
         // false positive this guard exists to prevent.
@@ -671,6 +677,47 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
           : null;
       }
       return null;
+    }
+
+    /**
+     * Is this hole one the label CANNOT be describing?
+     *
+     * `isDiagnosticAccessor` answers it by name — `.message` is a message — but
+     * a name is only the default answer, and a local object literal is stronger
+     * evidence than a name:
+     *
+     * ```js
+     * const error = { message: accessToken };
+     * logger.error(`access token: ${error.message}`);   // still reported
+     * ```
+     *
+     * When the receiver resolves to an object literal in this file, the
+     * property's VALUE is visible, so it is read instead of trusted. Anything
+     * unresolvable keeps the name-based answer: a `.message` off a real Error
+     * is a message, and demanding proof of origin there would put all four
+     * corpus false positives back.
+     */
+    function isNonSecretHole(expression: TSESTree.Node): boolean {
+      if (!isDiagnosticAccessor(expression)) return false;
+      const unwrapped = unwrapTypeSyntax(expression) as TSESTree.Node;
+      const member = (
+        unwrapped.type === AST_NODE_TYPES.ChainExpression ? unwrapped.expression : unwrapped
+      ) as TSESTree.MemberExpression;
+      if (member.object.type !== AST_NODE_TYPES.Identifier) return true;
+      const init = resolveBindingInit(member.object);
+      if (init === null || init.type !== AST_NODE_TYPES.ObjectExpression) return true;
+      const key = (member.property as TSESTree.Identifier).name;
+      const assigned = init.properties.find(
+        (property): property is TSESTree.Property =>
+          property.type === AST_NODE_TYPES.Property &&
+          !property.computed &&
+          ((property.key.type === AST_NODE_TYPES.Identifier && property.key.name === key) ||
+            (property.key.type === AST_NODE_TYPES.Literal && property.key.value === key)),
+      );
+      // The literal exists and does not set this key — nothing was aliased into
+      // it, so the accessor is diagnostic after all.
+      if (!assigned) return true;
+      return namedValueExposure(assigned.value) === null;
     }
 
     /** Report the first argument that carries a secret; at most one per call. */
