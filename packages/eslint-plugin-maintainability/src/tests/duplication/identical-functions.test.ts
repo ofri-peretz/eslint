@@ -393,6 +393,40 @@ describe('identical-functions — normalisation', () => {
         `,
       },
       {
+        // Regex literal CONTENTS were renamed like any other identifier, so
+        // `/create/` and `/destroy/` compared identically. Raised by
+        // CodeRabbit on #595.
+        code: `
+          function alpha(s) {
+            const re = /create/;
+            return re.test(s);
+          }
+          function beta(s) {
+            const re = /destroy/;
+            return re.test(s);
+          }
+        `,
+      },
+      {
+        // A template literal is the one literal that spans lines, so a pattern
+        // stopping at \n never protected it — and a `//` in its contents then
+        // ate the rest of the body.
+        code: [
+          'function alpha(a) {',
+          '  const t = `line one',
+          '  https://alpha.example.com/one',
+          '  end`;',
+          '  return send(t, a);',
+          '}',
+          'function beta(a) {',
+          '  const t = `wholly different',
+          '  https://beta.example.org/x/y/z',
+          '  other`;',
+          '  return send(t, a);',
+          '}',
+        ].join('\n'),
+      },
+      {
         // A generator is a different function too, and `*` is likewise on the
         // node rather than in the body.
         code: `
@@ -422,6 +456,22 @@ describe('identical-functions — normalisation', () => {
       },
     ],
     invalid: [
+      {
+        // FN GUARD: `/` is genuinely ambiguous in JavaScript, so the regex
+        // guard is anchored to positions where a slash cannot be division.
+        // These two are ordinary arithmetic and ARE a renamed copy.
+        code: `
+          function alpha(a, b) {
+            const r = a / b / 2;
+            return r;
+          }
+          function beta(x, y) {
+            const r = x / y / 2;
+            return r;
+          }
+        `,
+        errors: [{ messageId: 'identicalFunctions' }],
+      },
       {
         // FN GUARD: renaming BINDINGS is still the point — a copy-paste with
         // the variables renamed is exactly what this rule exists to catch.

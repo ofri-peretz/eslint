@@ -319,10 +319,29 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
       // which no identifier pattern
       // matches, so the literal is inert for every later step.
       const literals: string[] = [];
-      let text = body.replace(/(["'`])(?:[^\\\n]|\\.)*?\1/g, (match) => {
+      const stash = (match: string): string => {
         literals.push(`"${match.slice(1, -1)}"`);
         return `\uE000${literals.length - 1}\uE000`;
-      });
+      };
+      let text = body
+        // Template literals FIRST, and across newlines. A template is the one
+        // literal that spans lines, so a pattern that stops at `\n` never
+        // protected it — and a `//` in its contents then ate the rest of the
+        // body. Raised on #595.
+        .replace(/`(?:[^\\`]|\\[\s\S])*`/g, stash)
+        .replace(/(["'])(?:[^\\\n]|\\.)*?\1/g, stash)
+        // Regular expressions. `/create/` and `/destroy/` had their contents
+        // renamed like any other identifier and compared identically. Anchored
+        // to positions where a `/` can only open a pattern, never divide —
+        // after an operator, an opening bracket, a comma or a statement
+        // boundary — because the two are genuinely ambiguous in JavaScript.
+        .replace(
+          /(^|[=(,:[!&|?{};+\-*%<>~^]\s*)(\/(?:[^/\\\n[]|\\.|\[(?:[^\]\\]|\\.)*\])+\/[dgimsuvy]*)/g,
+          (_match, prefix: string, pattern: string) => {
+            literals.push(pattern);
+            return `${prefix}\uE000${literals.length - 1}\uE000`;
+          },
+        );
 
       text = text
         // Comments, while the newlines are still here. Running this after the
