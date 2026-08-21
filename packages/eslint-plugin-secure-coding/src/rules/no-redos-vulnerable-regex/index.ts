@@ -96,7 +96,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import { RegExpParser } from '@eslint-community/regexpp';
 import { analyse } from 'scslre';
 import { asDirectConstruction, isRegExpConstructor } from '../../utils/regexp-intrinsic';
-import { confirmsRedos } from '../../utils/redos-oracle';
+import { confirmsRedos, worstBacktrackingDegree } from '../../utils/redos-oracle';
 
 // Module-level parser; cheap to reuse.
 /**
@@ -215,6 +215,20 @@ export interface Options {
    */
   allowCommonPatterns?: boolean;
   
+  /**
+   * Report second-degree polynomial backtracking as well as degree 3 and
+   * exponential. Default: false.
+   *
+   * Quadratic backtracking needs a long input to hurt. Over a markdown heading
+   * or a cookie name it is arithmetic; over an unbounded request body it is a
+   * denial of service. Turn this on for code whose patterns run over input the
+   * caller does not size.
+   *
+   * Only consulted when the `recheck` oracle is installed — without it the
+   * degree is unknown and nothing is retracted.
+   */
+  reportSecondDegreePolynomial?: boolean;
+
   /** Maximum pattern length to analyze. Default: 500 */
   maxPatternLength?: number;
 }
@@ -268,6 +282,12 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
             minimum: 1,
             description: 'Maximum pattern length to analyze',
           },
+          reportSecondDegreePolynomial: {
+            type: 'boolean',
+            default: false,
+            description:
+              'Also report quadratic backtracking. Off by default because it needs long input to hurt; turn it on for patterns run over input the caller does not size. Requires the recheck oracle.',
+          },
         },
         additionalProperties: false,
       },
@@ -278,10 +298,11 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
     {
       allowCommonPatterns: false,
       maxPatternLength: 500,
+      reportSecondDegreePolynomial: false,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { maxPatternLength = 500 }: Options = options || {};
+    const { maxPatternLength = 500, reportSecondDegreePolynomial = false }: Options = options || {};
 
     /**
      * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
@@ -513,6 +534,30 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // patterns about to be reported, the same oracle costs under two seconds
         // across 21,394 files.
         if (worst && !confirmsRedos(pattern, flags)) return;
+        // A SECOND retraction, on the same veto-only terms: the oracle may
+        // remove a finding, never add one.
+        //
+        // Measured on the pinned 8-repo corpus 2026-08-20 — every surviving
+        // ReDoS finding was oracle-confirmed and NOT ONE was exponential.
+        // Three sat at degree 3 and three at degree 2, and the degree is what
+        // decides whether anyone acts:
+        //
+        //   (.*?)=(.*)$    degree 3, run over a cookie header. 4KB of input is
+        //                  ~6e10 steps — a hang.
+        //   ^###\s+(.+)$   degree 2, run over one markdown heading. Quadratic
+        //                  on a short line is arithmetic.
+        //
+        // Scored under Google's Tricorder definition, where a correct finding
+        // nobody acts on is still an effective false positive, the degree-2
+        // half was pure noise. `reportSecondDegreePolynomial` brings it back
+        // for a codebase that runs its patterns over unbounded input.
+        //
+        // A null degree — oracle absent, timed out, unparseable — retracts
+        // NOTHING, so removing the optional peer can only ever add findings.
+        if (worst && !reportSecondDegreePolynomial) {
+          const degree = worstBacktrackingDegree(pattern, flags);
+          if (degree !== null && degree <= 2) return;
+        }
         for (const report of worst ? [worst] : []) {
           const isExp = report.exponential;
           context.report({
