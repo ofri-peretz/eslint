@@ -8,6 +8,9 @@
     "browser-security/no-unencrypted-transmission": 1,
     "browser-security/no-unsafe-inline-csp": 1,
     "browser-security/require-blob-url-revocation": 1,
+    "conventions/analytics-event-naming": 1,
+    "conventions/no-commented-code": 143,
+    "conventions/no-magic-numbers": 1635,
     "import-next/export": 3,
     "import-next/first": 577,
     "import-next/newline-after-import": 693,
@@ -61,6 +64,9 @@
     "import-next/first": "577. Correct in contract, and the finding is real: twilio-node's generated clients emit `import`, then `const deserialize = require(...)`, then more `import`s. An import after non-import statements is exactly what the rule is for. Generated code, so nobody acts.",
     "import-next/no-cycle": "1337. Correct — real circular imports, concentrated in generated SDK class hierarchies (twilio Page/Version/AccountsBase, okta idx remediators). CVSS 5.3 / CRITICAL is severity inflation for a circular import and is worth revisiting separately; the DETECTION is right.",
     "import-next/no-duplicates": "37. Correct — two import statements from the same module in one file.",
-    "import-next/no-empty-named-blocks": "1. Correct — an `import {} from 'x'` with an empty named block."
+    "import-next/no-empty-named-blocks": "1. Correct — an `import {} from 'x'` with an empty named block.",
+    "conventions/no-commented-code": "2,441 -> 143. Batch 3, and the FPs were English rather than code. Three mechanics inside `looksLikeCode`, all measured on the pinned corpus:\n\n  `Copyright (c) 2018 …`   the call pattern allowed whitespace before `(`, so every legal banner in okta-auth-js reported\n  `https://example.com/x`  matched the `ident:` assignment pattern — `https:` reads as a label — so every documentation link reported\n  `for backward compat…`   a sentence that merely OPENS with a JavaScript keyword: 'for widget / idx-js backward compatibility', 'if no key is passed', 'let existing promise finish', 'return all cookies when…'\n\nThe discriminator that survived is punctuation. Commented-out code is COPIED out of a file and keeps its semicolons and braces; a sentence ends in a word. Known trade, recorded rather than hidden: a terminator-less fragment such as `// x = 1` is no longer reported.\n\nA fourth fix was written and then DELETED — a special case for the terser `/*!` preserve banner. It was unreachable: tightening the paren pattern already covered every banner, and the guard only looked load-bearing.\n\nThe 143 remaining are real: `const target = actionDefinition.href;`, `err = wwwAuthErr ?? err;`, `const inputs = this.getInputs();` — commented-out bodies in okta-auth-js's generateIdxAction.ts and GenericRemediator.ts.",
+    "conventions/no-magic-numbers": "1635. Correct in contract, and a taste rule by nature. Sampled okta-auth-js: HTTP status codes (`err.xhr.status === 429`), millisecond timeouts (`15 * 1000`, `options?.timeout || 15000`), backoff arithmetic (`Math.pow(2, retryCount) * 1000`) and ESLint config tuples in `.eslintrc.js` (`complexity: [2, 7]`). The config-file case is the one worth revisiting — a config is declarative data rather than logic — but that is a scope decision for the rule, not a defect, so it is budgeted rather than changed here.",
+    "conventions/analytics-event-naming": "1. Correct in contract — a single analytics event name off the configured taxonomy."
   }
 }

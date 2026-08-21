@@ -54,6 +54,7 @@ const PLUGINS = [
   'eslint-plugin-express-security',
   'eslint-plugin-reliability',
   'eslint-plugin-import-next',
+  'eslint-plugin-conventions',
 ] as const;
 
 /**

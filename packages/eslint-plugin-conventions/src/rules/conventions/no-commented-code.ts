@@ -33,6 +33,13 @@ type RuleOptions = [Options?];
  * Check if a comment block contains code-like patterns
  */
 function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
+  // NOTE: no special case for the terser `/*!` "preserve" banner. One was
+  // written here first, on the reasoning that a legal notice is never code —
+  // true, but redundant: what made every banner report was `Copyright (c)`
+  // matching the call pattern, and tightening that pattern to reject a gap
+  // before the paren already covers it. The guard was unreachable, so it is
+  // gone rather than sitting here looking load-bearing.
+
   // Remove comment markers for pattern matching
   let text = comment;
   if (isBlockComment) {
@@ -64,9 +71,23 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
   const codePatterns = [
     /^(const|let|var|function|class|if|for|while|return|import|export)\s+/,
     /^[a-zA-Z_$][a-zA-Z0-9_$]*\s*[=:]\s*/,
-    /^[a-zA-Z_$][a-zA-Z0-9_$]*\s*\(/,
+    // No whitespace before the paren. `foo(x)` is a call; `Copyright (c)` and
+    // `Authn (classic) api` are prose with a parenthetical, and allowing the
+    // gap made every legal banner on the corpus a finding.
+    /^[a-zA-Z_$][a-zA-Z0-9_$]*\(/,
     /^[{}[\]]/,
   ];
+
+  /**
+   * A bare URL is not code, whatever the scheme looks like.
+   *
+   * `https://example.com/x#y` matched the `ident:` assignment pattern — `https:`
+   * reads as a label — so every documentation link in a comment reported.
+   */
+  const URL_LINE = /^[a-z][a-z0-9+.-]*:\/\//i;
+
+  /** A statement ends in punctuation; a sentence ends in a word. */
+  const ENDS_LIKE_CODE = /[;{},()[\]]$|=>$/;
 
   // Count how many lines look like code
   let codeLikeLines = 0;
@@ -75,6 +96,33 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
   for (const line of lines) {
     // Skip TODO/FIXME comments
     if (/^(TODO|FIXME|HACK|XXX)/i.test(line)) {
+      continue;
+    }
+
+    // A link is a reference, not commented-out code.
+    if (URL_LINE.test(line)) {
+      continue;
+    }
+
+    // Commented-out code is COPIED from source, so it keeps its punctuation.
+    // English prose does not. Without this, every comment that happens to open
+    // with a JavaScript keyword reported:
+    //
+    //   // for widget / idx-js backward compatibility
+    //   // if no key is passed, all cookies are returned
+    //   // let existing promise finish to prevent running into loops
+    //   // return all cookies when no args is provided
+    //   // fetch() can throw exceptions
+    //
+    // Each matches a pattern below on its first word alone. None ends the way
+    // a statement does.
+    //
+    // Known trade: a terminator-less fragment such as `// x = 1` is no longer
+    // reported. Real commented-out code is lifted from a file that had
+    // semicolons; prose that ends in punctuation is rare. Measured on the
+    // pinned corpus this removed ~1,400 findings and cost no true positive
+    // that could be found by inspection.
+    if (!ENDS_LIKE_CODE.test(line)) {
       continue;
     }
 
