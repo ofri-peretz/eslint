@@ -59,10 +59,10 @@ describe('no-missing-null-checks', () => {
           code: 'const result = value ?? defaultValue;',
         },
         {
-          code: 'const x = obj.prop ?? fallback;',
+          code: 'let obj; const x = obj.prop ?? fallback;',
         },
         {
-          code: 'const nested = obj.a.b ?? "default";',
+          code: 'let obj; const nested = obj.a.b ?? "default";',
         },
       ],
       invalid: [],
@@ -74,31 +74,31 @@ describe('no-missing-null-checks', () => {
       valid: [
         // obj !== null pattern
         {
-          code: 'if (obj !== null) { obj.property; }',
+          code: 'let obj; if (obj !== null) { obj.property; }',
         },
         // obj != null pattern
         {
-          code: 'if (obj != null) { obj.property; }',
+          code: 'let obj; if (obj != null) { obj.property; }',
         },
         // obj !== undefined pattern
         {
-          code: 'if (obj !== undefined) { obj.property; }',
+          code: 'let obj; if (obj !== undefined) { obj.property; }',
         },
         // null !== obj pattern (reversed)
         {
-          code: 'if (null !== obj) { obj.property; }',
+          code: 'let obj; if (null !== obj) { obj.property; }',
         },
         // undefined !== obj pattern (reversed)
         {
-          code: 'if (undefined !== obj) { obj.property; }',
+          code: 'let obj; if (undefined !== obj) { obj.property; }',
         },
         // Logical expression with null checks
         {
-          code: 'if (obj !== null && obj !== undefined) { obj.property; }',
+          code: 'let obj; if (obj !== null && obj !== undefined) { obj.property; }',
         },
         // Logical expression checking right side
         {
-          code: 'if (someCondition && obj !== null) { obj.property; }',
+          code: 'let obj; if (someCondition && obj !== null) { obj.property; }',
         },
         // Note: Early return patterns like `if (obj === null) { return; } obj.property;`
         // are NOT detected by this rule - would require control flow analysis
@@ -112,15 +112,15 @@ describe('no-missing-null-checks', () => {
       valid: [
         // if (obj) { obj.prop } — direct truthy check proves non-null
         {
-          code: 'if (obj) { obj.property; }',
+          code: 'let obj; if (obj) { obj.property; }',
           filename: 'src/utils.ts',
         },
         {
-          code: 'if (user) { user.name; }',
+          code: 'let user; if (user) { user.name; }',
           filename: 'src/utils.ts',
         },
         {
-          code: 'if (response) { response.data.items; }',
+          code: 'let response; if (response) { response.data.items; }',
           filename: 'src/utils.ts',
         },
       ],
@@ -131,15 +131,15 @@ describe('no-missing-null-checks', () => {
       valid: [
         // obj && obj.prop — left-side guard proves right side is safe
         {
-          code: 'const x = obj && obj.property;',
+          code: 'let obj; const x = obj && obj.property;',
           filename: 'src/utils.ts',
         },
         {
-          code: 'const r = user && user.name;',
+          code: 'let user; const r = user && user.name;',
           filename: 'src/utils.ts',
         },
         {
-          code: 'const v = config && config.enabled;',
+          code: 'let config; const v = config && config.enabled;',
           filename: 'src/utils.ts',
         },
       ],
@@ -150,11 +150,11 @@ describe('no-missing-null-checks', () => {
       valid: [
         // obj ? obj.prop : fallback — truthy test guards consequent
         {
-          code: 'const x = obj ? obj.property : null;',
+          code: 'let obj; const x = obj ? obj.property : null;',
           filename: 'src/utils.ts',
         },
         {
-          code: 'const name = user ? user.name : "anonymous";',
+          code: 'let user; const name = user ? user.name : "anonymous";',
           filename: 'src/utils.ts',
         },
       ],
@@ -166,12 +166,12 @@ describe('no-missing-null-checks', () => {
     ruleTester.run('valid - test files ignored', noMissingNullChecks, {
       valid: [
         {
-          code: 'obj.property;',
+          code: 'let obj; obj.property;',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
         },
         {
-          code: 'obj.method();',
+          code: 'let obj; obj.method();',
           filename: 'component.test.tsx',
           options: [{ ignoreInTests: true }],
         },
@@ -196,25 +196,25 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Simple property access
         {
-          code: 'const x = obj.property;',
+          code: 'let obj; const x = obj.property;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Method call without null check
         {
-          code: 'obj.method();',
+          code: 'let obj; obj.method();',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Nested property access
         {
-          code: 'const x = value.nested.deep;',
+          code: 'let value; const x = value.nested.deep;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Property access in expression
         {
-          code: 'const result = data.items.length;',
+          code: 'let data; const result = data.items.length;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -228,19 +228,19 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Simple method call
         {
-          code: 'service.fetchData();',
+          code: 'let service; service.fetchData();',
           filename: 'src/api.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Method call with arguments
         {
-          code: 'handler.process(data);',
+          code: 'let handler; handler.process(data);',
           filename: 'src/processor.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Chained method call without optional chaining
         {
-          code: 'response.data.map(x => x);',
+          code: 'let response; response.data.map(x => x);',
           filename: 'src/transform.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -254,13 +254,13 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Deep nesting
         {
-          code: 'const value = api.response.data.items;',
+          code: 'let api; const value = api.response.data.items;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Method on nested property
         {
-          code: 'config.settings.getValue();',
+          code: 'let config; config.settings.getValue();',
           filename: 'src/config.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -274,16 +274,119 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Test file with ignoreInTests = false
         {
-          code: 'obj.property;',
+          code: 'let obj; obj.property;',
           filename: 'component.test.ts',
           options: [{ ignoreInTests: false }],
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Spec file with ignoreInTests = false
         {
-          code: 'service.method();',
+          code: 'let service; service.method();',
           filename: 'api.spec.ts',
           options: [{ ignoreInTests: false }],
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+      ],
+    });
+  });
+
+  /**
+   * The contract this rule USED to have, retired deliberately.
+   *
+   * Every case here was an `invalid` fixture asserting that an unrecognised
+   * initializer makes a value nullable. That premise is what produced 38,674
+   * findings across the 8 pinned repositories — where all five security
+   * plugins together produce 36 — because it is true of very nearly every
+   * value in every program.
+   *
+   * `const p = Promise.resolve(1); p.field;` is the clearest evidence the old
+   * contract was wrong rather than merely noisy: `Promise.resolve()` cannot
+   * return null, and the suite pinned it as a MUST-REPORT.
+   *
+   * A finding now needs positive evidence of nullability. These have none, so
+   * they are valid — and they are kept, rather than deleted, so the reversal
+   * is visible to whoever reads this next.
+   */
+  describe('Retired contract — an unrecognised initializer is not evidence', () => {
+    ruleTester.run('valid - no nullability evidence', noMissingNullChecks, {
+      valid: [
+        { code: 'async function f() { const r = await getData(); r.field; }', filename: 'src/utils.ts' },
+        { code: 'async function f() { const r = await pending; r.field; }', filename: 'src/utils.ts' },
+        { code: 'async function f() { const r = await client.get(url); r.field; }', filename: 'src/utils.ts' },
+        { code: 'const v = compute(); v.field;', filename: 'src/utils.ts' },
+        // Promise.resolve() never returns null. This was pinned as must-report.
+        { code: 'const p = Promise.resolve(1); p.field;', filename: 'src/utils.ts' },
+        { code: 'function outer() { const conn = connect(); function inner() { conn.close(); } }', filename: 'src/utils.ts' },
+        // The corpus shapes that dominated what survived the first cut.
+        { code: 'for (const item of items) { item.name; }', filename: 'src/utils.ts' },
+        { code: 'for (const key in obj) { obj[key].name; }', filename: 'src/utils.ts' },
+        // Deferred initialisation: written later, so not a read of undefined.
+        { code: 'let cfg; if (linked) { cfg = load(); } else { cfg = defaults(); } cfg.file;', filename: 'src/utils.ts' },
+      ],
+      invalid: [],
+    });
+  });
+
+  /**
+   * The contract that REPLACES it: a finding needs positive evidence.
+   *
+   * Each case names the platform or the binding that says the value may be
+   * null — not the shape of the surrounding code, and never the identifier's
+   * name.
+   */
+  describe('Evidence-based nullability', () => {
+    ruleTester.run('invalid - evidence of nullability', noMissingNullChecks, {
+      valid: [
+        // `.get` is deliberately not a nullable return — see NULLABLE_RETURNS.
+        { code: 'const v = cache.get(k); v.field;', filename: 'src/utils.ts' },
+        // A parameter says nothing without types.
+        { code: 'function f(user) { return user.name; }', filename: 'src/utils.ts' },
+      ],
+      invalid: [
+        {
+          // Array.prototype.find returns undefined on a miss — the path nobody
+          // writes a test for. Shopify/cli and okta-auth-js both do this.
+          code: 'const hit = rows.find(r => r.id === id); hit.name;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // String.prototype.match returns null on a non-match. This exact
+          // shape is `bin/create-notification-pr.js:136` on the pinned corpus.
+          code: 'const m = line.match(/^#\\s+(.*)$/); m[1].trim();',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          code: 'const m = re.exec(input); m.index;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          code: 'const el = document.getElementById("root"); el.style;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          code: 'const el = root.querySelector(".x"); el.textContent;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // Never written, so the read is unambiguously of undefined.
+          code: 'let pending; pending.field;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          code: 'const nothing = undefined; nothing.field;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // An irrelevant guard must not suppress a finding that HAS evidence.
+          code: 'const hit = rows.find(r => r.ok); if (ready) { hit.name; }',
+          filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
       ],
@@ -317,7 +420,7 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Property access on identifier
         {
-          code: 'myVar.field;',
+          code: 'let myVar; myVar.field;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -397,45 +500,6 @@ describe('no-missing-null-checks', () => {
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
-        // await of a non-fetch call
-        {
-          code: 'async function f() { const r = await getData(); r.field; }',
-          filename: 'src/utils.ts',
-          errors: [{ messageId: 'missingNullCheck' }],
-        },
-        // await of a non-call expression
-        {
-          code: 'async function f() { const r = await pending; r.field; }',
-          filename: 'src/utils.ts',
-          errors: [{ messageId: 'missingNullCheck' }],
-        },
-        // await of a method call (callee is not a plain identifier)
-        {
-          code: 'async function f() { const r = await client.get(url); r.field; }',
-          filename: 'src/utils.ts',
-          errors: [
-            { messageId: 'missingNullCheck' },
-            { messageId: 'missingNullCheck' },
-          ],
-        },
-        // call initializer with a plain identifier callee
-        {
-          code: 'const v = compute(); v.field;',
-          filename: 'src/utils.ts',
-          errors: [{ messageId: 'missingNullCheck' }],
-        },
-        // static call on a namespace that is NOT Object/Array/JSON
-        {
-          code: 'const p = Promise.resolve(1); p.field;',
-          filename: 'src/utils.ts',
-          errors: [{ messageId: 'missingNullCheck' }],
-        },
-        // outer-scope variable with a non-provable initializer
-        {
-          code: 'function outer() { const conn = connect(); function inner() { conn.close(); } }',
-          filename: 'src/utils.ts',
-          errors: [{ messageId: 'missingNullCheck' }],
-        },
       ],
     });
   });
@@ -453,13 +517,13 @@ describe('no-missing-null-checks', () => {
         // leftText.endsWith(objectText): `wrapper.obj && obj.prop` — the
         // guarded right side is safe; only the ungated left deref reports
         {
-          code: 'const x = wrapper.obj && obj.prop;',
+          code: 'let obj; const x = wrapper.obj && obj.prop;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Unrelated left side does not guard
         {
-          code: 'const x = flag && obj.prop;',
+          code: 'let obj; const x = flag && obj.prop;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -471,7 +535,7 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Ternary test unrelated to the dereferenced object
         {
-          code: 'const x = cond ? obj.prop : fallback;',
+          code: 'let obj; const x = cond ? obj.prop : fallback;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -488,19 +552,19 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Unrelated truthy test does not guard obj
         {
-          code: 'if (ready) { obj.prop; }',
+          code: 'let obj; if (ready) { obj.prop; }',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Binary comparison that is not a null check
         {
-          code: 'if (count > 5) { obj.prop; }',
+          code: 'let obj; if (count > 5) { obj.prop; }',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
         // Null comparison against a DIFFERENT object
         {
-          code: 'if (other !== null) { obj.prop; }',
+          code: 'let obj; if (other !== null) { obj.prop; }',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -543,7 +607,7 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Method call on nested member expression
         {
-          code: 'api.client.request();',
+          code: 'let api; api.client.request();',
           filename: 'src/api.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -582,6 +646,25 @@ describe('no-missing-null-checks', () => {
 
   describe('Layer 2: listeners with mock context', () => {
     /** Synthetic `<name>.prop` member expression with configurable range/loc. */
+    /**
+     * A scope in which `maybe` is `let maybe;` — declared, never written.
+     *
+     * These layer-2 tests exercise the dedupe-key and report-error paths, not
+     * nullability. Since the rule became evidence-based they need a scope that
+     * actually supplies the evidence, or every one of them asserts nothing:
+     * the listener returns before it can reach the code under test.
+     */
+    const scopeWithUninitialisedMaybe = {
+      upper: null,
+      variables: [
+        {
+          name: 'maybe',
+          references: [],
+          defs: [{ type: 'Variable', node: { type: 'VariableDeclarator', init: null, parent: undefined } }],
+        },
+      ],
+    } as unknown as TSESLint.Scope.Scope;
+
     function syntheticMember(overrides: Record<string, unknown> = {}): TSESTree.MemberExpression {
       return {
         type: 'MemberExpression',
@@ -596,6 +679,7 @@ describe('no-missing-null-checks', () => {
       const { listeners, reports } = createWithMockContext(noMissingNullChecks, {
         // null options also drive the `options || {}` fallback in create()
         options: [null],
+        scope: scopeWithUninitialisedMaybe,
       });
       const check = listeners['MemberExpression'] as (n: TSESTree.MemberExpression) => void;
 
@@ -623,7 +707,7 @@ describe('no-missing-null-checks', () => {
       let reportCalls = 0;
       // createWithMockContext's recorder never throws, so override report on
       // the returned context with a throwing stub to reach the catch branch.
-      const throwing = createWithMockContext(noMissingNullChecks, {});
+      const throwing = createWithMockContext(noMissingNullChecks, { scope: scopeWithUninitialisedMaybe });
       (throwing.context as { report: (d: unknown) => void }).report = () => {
         reportCalls++;
         throw new Error('boom');
@@ -640,14 +724,14 @@ describe('no-missing-null-checks', () => {
     });
 
     it('checkCallExpression ignores nodes that are not CallExpressions', () => {
-      const { listeners, reports } = createWithMockContext(noMissingNullChecks, {});
+      const { listeners, reports } = createWithMockContext(noMissingNullChecks, { scope: scopeWithUninitialisedMaybe });
       const check = listeners['CallExpression'] as (n: unknown) => void;
       check(syntheticMember({ range: [0, 10] }));
       expect(reports).toHaveLength(0);
     });
 
     it('checkCallExpression skips a callee member whose parent is a ChainExpression', () => {
-      const { listeners, reports } = createWithMockContext(noMissingNullChecks, {});
+      const { listeners, reports } = createWithMockContext(noMissingNullChecks, { scope: scopeWithUninitialisedMaybe });
       const check = listeners['CallExpression'] as (n: unknown) => void;
       const member = syntheticMember({ parent: { type: 'ChainExpression' }, range: [0, 10] });
       check({ type: 'CallExpression', callee: member, arguments: [] });
@@ -655,7 +739,7 @@ describe('no-missing-null-checks', () => {
     });
 
     it('checkCallExpression dedupes an already-reported member expression', () => {
-      const { listeners, reports } = createWithMockContext(noMissingNullChecks, {});
+      const { listeners, reports } = createWithMockContext(noMissingNullChecks, { scope: scopeWithUninitialisedMaybe });
       const check = listeners['CallExpression'] as (n: unknown) => void;
       const call = {
         type: 'CallExpression',
@@ -676,7 +760,7 @@ describe('no-missing-null-checks', () => {
 
     it('swallows report() errors in checkCallExpression', () => {
       let reportCalls = 0;
-      const throwing = createWithMockContext(noMissingNullChecks, {});
+      const throwing = createWithMockContext(noMissingNullChecks, { scope: scopeWithUninitialisedMaybe });
       (throwing.context as { report: (d: unknown) => void }).report = () => {
         reportCalls++;
         throw new Error('boom');

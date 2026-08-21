@@ -39,13 +39,20 @@ import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
 
-/** Plugins whose rules apply to server and library code. */
+/**
+ * Plugins whose rules apply to server and library code.
+ *
+ * Batch 1 of the rule re-review (.agent/RULE-REVIEW-BATCHES.md) adds
+ * `reliability`. The gate had covered five SECURITY plugins, which is 0.3% of
+ * what a user actually sees — `reliability` alone is 57%.
+ */
 const PLUGINS = [
   'eslint-plugin-secure-coding',
   'eslint-plugin-node-security',
   'eslint-plugin-browser-security',
   'eslint-plugin-jwt-security',
   'eslint-plugin-express-security',
+  'eslint-plugin-reliability',
 ] as const;
 
 /**
@@ -146,6 +153,8 @@ interface Budget {
   generated: string;
   /** rule id -> maximum findings tolerated across the whole corpus. */
   budgets: Record<string, number>;
+  /** Why each budget above is allowed. Preserved verbatim across `--update`. */
+  triage?: Record<string, string>;
 }
 
 function sh(cmd: string, args: string[], cwd?: string): string {
@@ -376,10 +385,16 @@ function main(): number {
   }
 
   if (update) {
+    // `triage` is carried forward explicitly. It is the recorded REASON for
+    // every budget entry — the only place a "why is this allowed" answer
+    // lives — and rebuilding the object from scratch silently dropped all of
+    // it. Found 2026-08-21 when a single `--update` erased eight entries that
+    // had taken a day to write.
     const next: Budget = {
       $comment: budget.$comment,
       generated: new Date().toISOString().slice(0, 10),
       budgets: Object.fromEntries([...totals.entries()].sort(([a], [b]) => a.localeCompare(b))),
+      ...(budget.triage ? { triage: budget.triage } : {}),
     };
     writeFileSync(BUDGET_FILE, `${JSON.stringify(next, null, 2)}\n`);
     log(`Wrote ${Object.keys(next.budgets).length} budgets to ${path.relative(ROOT, BUDGET_FILE)}`);

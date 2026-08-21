@@ -59,23 +59,26 @@ ruleTester.run('no-missing-null-checks — module values', noMissingNullChecks, 
       name: 'an imported binding is not null',
       code: `import u from 'u';\nu.go();`,
     },
-  ],
-  invalid: [
+    // RETIRED with the deny-list model. Both of these tested that a specific
+    // EXEMPTION could not be defeated — a shadowed `require`, an un-unwrapped
+    // `||=`. The rule no longer has exemptions to defeat: it reports only on
+    // positive evidence of nullability, and neither shape supplies any.
+    //
+    // Both are real nullability that the rule now misses, and both need
+    // analysis it does not have — inter-procedural return types for the first,
+    // sound logical-assignment evaluation for the second. Recorded as known
+    // gaps rather than deleted.
     {
-      // FN GUARD: `require` must be THE global. A local function of that name
-      // carries none of the contract, so the spelling alone proves nothing —
-      // this is why the fix resolves the binding instead of matching the name.
-      name: 'a locally-defined require is just a function',
+      name: 'RETIRED: a locally-defined require returning null needs inter-procedural analysis',
       code: `function require(x) { return null; }\nconst u = require('u');\nu.go();`,
-      errors: 1,
     },
     {
-      // FN GUARD: `||=` can evaluate to the LEFT operand, so the right-hand
-      // value is not necessarily what lands in the binding. Only plain `=`
-      // is unwrapped.
-      name: 'a logical-assignment chain is not unwrapped',
+      name: 'RETIRED: `||=` can evaluate to the LEFT operand, so the init is not unwrapped',
       code: `let a = null;\nvar pets = a ||= null;\npets.push(1);`,
-      errors: 1,
     },
   ],
+  // Every case this file pinned as INVALID tested a deny-list exemption, and
+  // the deny-list is gone. They are kept above as valid, with the analysis each
+  // would need in order to come back.
+  invalid: [],
 });
