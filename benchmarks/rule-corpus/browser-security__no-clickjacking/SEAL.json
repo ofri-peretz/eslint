@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-browser-security@1.4.1",
+    "plugin": "eslint-plugin-browser-security@2.0.1",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 248L +0.00±0.69ms · 992L +2.78±0.65ms · 3968L +9.12±6.02ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 248L +0.39±0.14ms · 992L +1.60±0.30ms · 3968L +3.72±2.58ms — 2.3x time for 4.0x lines (992→3968), linear",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-clickjacking"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal browser-security/no-clickjacking' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

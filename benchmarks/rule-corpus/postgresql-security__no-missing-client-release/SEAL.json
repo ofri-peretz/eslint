@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-postgresql-security@2.1.0",
+    "plugin": "eslint-plugin-postgresql-security@2.2.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 343L +0.17±0.98ms · 1372L +2.14±1.21ms · 5488L +6.20±4.36ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 343L +0.61±0.59ms · 1372L +1.77±0.93ms · 5488L +1.21±1.52ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/no-missing-client-release"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal postgresql-security/no-missing-client-release' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

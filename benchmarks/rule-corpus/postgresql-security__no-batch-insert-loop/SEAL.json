@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-postgresql-security@2.1.0",
+    "plugin": "eslint-plugin-postgresql-security@2.2.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 531L +0.81±0.41ms · 2124L +0.00±4.22ms · 8496L +7.84±9.07ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 531L +0.68±0.54ms · 2124L +0.40±0.22ms · 8496L +0.00±1.01ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/no-batch-insert-loop"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal postgresql-security/no-batch-insert-loop' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-postgresql-security@2.1.0",
+    "plugin": "eslint-plugin-postgresql-security@2.2.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 331L +0.00±0.49ms · 1324L +1.73±1.63ms · 5296L +1.23±15.69ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 331L +0.29±0.09ms · 1324L +1.17±0.84ms · 5296L +4.42±2.72ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/no-transaction-on-pool"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal postgresql-security/no-transaction-on-pool' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

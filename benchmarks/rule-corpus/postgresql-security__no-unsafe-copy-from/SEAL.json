@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-postgresql-security@2.1.0",
+    "plugin": "eslint-plugin-postgresql-security@2.2.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 383L +0.25±1.11ms · 1532L +0.00±3.48ms · 6128L +3.03±2.29ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 383L +0.35±0.05ms · 1532L +0.00±0.45ms · 6128L +4.34±1.39ms — 0.0x time for 4.0x lines (383→1532), linear",
       "command": "npx tsx scripts/seal-audit.mts postgresql-security/no-unsafe-copy-from"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal postgresql-security/no-unsafe-copy-from' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

@@ -173,7 +173,7 @@
       "rules": 55,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.3.18",
+      "version": "2.3.19",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 15,
       "description": "ESLint plugin for team code conventions — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage",
       "category": "quality",
-      "version": "4.2.9",
+      "version": "4.2.10",
       "published": true
     },
     {
@@ -189,7 +189,7 @@
       "rules": 12,
       "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "3.0.16",
+      "version": "3.0.17",
       "published": true
     },
     {
@@ -197,7 +197,7 @@
       "rules": 9,
       "description": "ESLint plugin for runtime reliability — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "3.1.13",
+      "version": "4.0.0",
       "published": true
     },
     {

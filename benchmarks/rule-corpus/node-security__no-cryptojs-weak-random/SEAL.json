@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-node-security@4.13.1",
+    "plugin": "eslint-plugin-node-security@5.1.1",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 331L +0.92±1.26ms · 1324L +1.81±4.57ms · 5296L +0.00±16.87ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 331L +0.36±0.09ms · 1324L +1.57±3.74ms · 5296L +4.54±0.08ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-cryptojs-weak-random"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/no-cryptojs-weak-random' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

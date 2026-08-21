@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-browser-security@1.4.1",
+    "plugin": "eslint-plugin-browser-security@2.0.1",
     "node": "24"
   },
   "axes": {
@@ -62,7 +62,7 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 123L +0.03±0.07ms · 492L +0.61±0.50ms · 1968L +2.19±4.67ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 123L +0.03±0.05ms · 492L +0.31±0.21ms · 1968L +0.53±0.80ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-incomplete-url-sanitization"
     },
     "recorded": {

@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-node-security@4.13.1",
+    "plugin": "eslint-plugin-node-security@5.1.1",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 350L +0.40±0.10ms · 1400L +0.57±2.13ms · 5600L +5.94±5.16ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 350L +0.19±0.46ms · 1400L +1.38±0.26ms · 5600L +4.06±3.94ms — 2.9x time for 4.0x lines (1400→5600), linear",
       "command": "npx tsx scripts/seal-audit.mts node-security/require-secure-credential-storage"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/require-secure-credential-storage' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

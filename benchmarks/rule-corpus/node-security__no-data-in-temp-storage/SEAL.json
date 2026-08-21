@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-node-security@4.13.1",
+    "plugin": "eslint-plugin-node-security@5.1.1",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 443L +0.33±0.32ms · 1772L +1.79±0.41ms · 7088L +11.57±6.24ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 443L +0.36±0.06ms · 1772L +1.00±0.85ms · 7088L +5.44±9.63ms — 2.8x time for 4.0x lines (443→1772), linear",
       "command": "npx tsx scripts/seal-audit.mts node-security/no-data-in-temp-storage"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal node-security/no-data-in-temp-storage' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },
