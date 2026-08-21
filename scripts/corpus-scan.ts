@@ -59,6 +59,8 @@ const PLUGINS = [
   'eslint-plugin-modernization',
   'eslint-plugin-operability',
   'eslint-plugin-modularity',
+  'eslint-plugin-react-a11y',
+  'eslint-plugin-react-features',
 ] as const;
 
 /**
