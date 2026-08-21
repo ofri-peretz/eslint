@@ -24,8 +24,16 @@
  *                     short line is arithmetic.
  *
  * Scored under Google's Tricorder definition — a correct finding nobody acts on
- * is still an effective false positive — the degree-2 half was noise. Gating it
- * took the corpus from 7 findings to 5 and the budget ratcheted down with it.
+ * is still an effective false positive — the degree-2 half of that corpus was
+ * noise, so the first version of this gate suppressed degree 2 by default.
+ *
+ * The CWE-1333 recall gate rejected it. `trade-off.js` pins `/^(a*).*b/` as a
+ * must-detect and `recheck` scores it degree 2, so the default cost a detection.
+ * Degree only PROXIES the question that matters — does the caller size the
+ * input — and the AST never answers it. The corpus is the calibrated
+ * instrument; the proxy is not. So degree 2 reports by default and the quieter
+ * bar is opt-in, which is why the fixture below is an FN guard rather than a
+ * valid case.
  *
  * The invariant is unchanged and is what the last case here pins: the oracle
  * may only ever REMOVE a finding. A null degree — absent, timed out,
@@ -57,9 +65,11 @@ describe('the oracle is present for these tests', () => {
 ruleTester.run('no-redos-vulnerable-regex — oracle degree gate', noRedosVulnerableRegex, {
   valid: [
     {
-      // Quadratic over a markdown heading: real ambiguity, nobody acts.
-      name: 'degree 2 is silent by default',
+      // Opting out is the only way to lose a degree-2 finding, and it is a
+      // deliberate recall trade — see the header.
+      name: 'degree 2 goes silent only when explicitly turned off',
       code: 'export const re = /^###\\s+(.+)$/;',
+      options: [{ reportSecondDegreePolynomial: false }],
     },
   ],
   invalid: [
@@ -70,11 +80,27 @@ ruleTester.run('no-redos-vulnerable-regex — oracle degree gate', noRedosVulner
       errors: 1,
     },
     {
-      // FN GUARD: the option brings quadratic back for codebases whose patterns
-      // run over input the caller does not size.
-      name: 'degree 2 reports when asked for',
+      // FN GUARD: quadratic reports by default.
+      name: 'degree 2 reports by default',
       code: 'export const re = /^###\\s+(.+)$/;',
-      options: [{ reportSecondDegreePolynomial: true }],
+      errors: 1,
+    },
+    {
+      // FN GUARD: opting out drops QUADRATIC, not the oracle. A degree-3
+      // pattern still reports with the option off — otherwise the escape hatch
+      // would be a blanket off-switch wearing a specific name.
+      name: 'opting out of degree 2 still reports degree 3',
+      code: 'export const re = /(.*?)=(.*)$/;',
+      options: [{ reportSecondDegreePolynomial: false }],
+      errors: 1,
+    },
+    {
+      // REGRESSION GUARD: this exact pattern is
+      // `benchmarks/corpus/CWE-1333/vulnerable/trade-off.js`, the must-detect
+      // fixture the first version of the degree gate silenced. Pinned here so
+      // the rule's own suite fails before the benchmark job has to.
+      name: 'the CWE-1333 corpus fixture stays detected',
+      code: 'export const re = /^(a*).*b/;',
       errors: 1,
     },
   ],

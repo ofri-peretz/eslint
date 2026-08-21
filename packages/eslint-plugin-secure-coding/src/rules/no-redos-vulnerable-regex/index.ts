@@ -221,8 +221,17 @@ export interface Options {
    *
    * Quadratic backtracking needs a long input to hurt. Over a markdown heading
    * or a cookie name it is arithmetic; over an unbounded request body it is a
-   * denial of service. Turn this on for code whose patterns run over input the
-   * caller does not size.
+   * denial of service.
+   *
+   * Defaults to ON, and the default is not a judgement call — it is what the
+   * CWE-1333 corpus pins. `benchmarks/corpus/CWE-1333/vulnerable/trade-off.js`
+   * (`/^(a*).*b/`) is a must-detect fixture that `recheck` scores at degree 2,
+   * so defaulting this off dropped a detection the recall gate holds. Degree is
+   * a proxy for "is the input bounded", and nothing in the AST answers that;
+   * when the proxy and the corpus disagree, a security rule keeps the finding.
+   *
+   * Turn it OFF for a codebase whose patterns provably run over short, sized
+   * input — that is the opt-in, and it costs recall by construction.
    *
    * Only consulted when the `recheck` oracle is installed — without it the
    * degree is unknown and nothing is retracted.
@@ -284,9 +293,9 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           },
           reportSecondDegreePolynomial: {
             type: 'boolean',
-            default: false,
+            default: true,
             description:
-              'Also report quadratic backtracking. Off by default because it needs long input to hurt; turn it on for patterns run over input the caller does not size. Requires the recheck oracle.',
+              'Report quadratic backtracking. On by default — the CWE-1333 corpus pins a degree-2 fixture as must-detect. Turn it off only for patterns that provably run over short, sized input; doing so costs recall. Requires the recheck oracle.',
           },
         },
         additionalProperties: false,
@@ -298,11 +307,11 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
     {
       allowCommonPatterns: false,
       maxPatternLength: 500,
-      reportSecondDegreePolynomial: false,
+      reportSecondDegreePolynomial: true,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { maxPatternLength = 500, reportSecondDegreePolynomial = false }: Options = options || {};
+    const { maxPatternLength = 500, reportSecondDegreePolynomial = true }: Options = options || {};
 
     /**
      * NFA-based ReDoS detection via scslre — the same library eslint-plugin-regexp
@@ -539,18 +548,22 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         //
         // Measured on the pinned 8-repo corpus 2026-08-20 — every surviving
         // ReDoS finding was oracle-confirmed and NOT ONE was exponential.
-        // Three sat at degree 3 and three at degree 2, and the degree is what
-        // decides whether anyone acts:
+        // Three sat at degree 3 and three at degree 2:
         //
         //   (.*?)=(.*)$    degree 3, run over a cookie header. 4KB of input is
         //                  ~6e10 steps — a hang.
         //   ^###\s+(.+)$   degree 2, run over one markdown heading. Quadratic
         //                  on a short line is arithmetic.
         //
-        // Scored under Google's Tricorder definition, where a correct finding
-        // nobody acts on is still an effective false positive, the degree-2
-        // half was pure noise. `reportSecondDegreePolynomial` brings it back
-        // for a codebase that runs its patterns over unbounded input.
+        // Under Google's Tricorder definition — a correct finding nobody acts
+        // on is still an effective false positive — the degree-2 half of THAT
+        // corpus was noise, and defaulting this off was the obvious trade.
+        //
+        // It was the wrong trade, and the CWE-1333 recall gate said so: the
+        // must-detect fixture `/^(a*).*b/` is degree 2, and suppressing it lost
+        // a detection. What separates the two is whether the caller sizes the
+        // input, which the degree only proxies and the AST never states. So the
+        // default reports, and the quieter bar is opt-in and costs recall.
         //
         // A null degree — oracle absent, timed out, unparseable — retracts
         // NOTHING, so removing the optional peer can only ever add findings.

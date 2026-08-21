@@ -107,6 +107,17 @@ describe('redos-oracle', () => {
       resetOracleForTests();
     });
 
+    it('vulnerable with no complexity attached yields no degree', () => {
+      // `complexity` is optional on recheck's result and `degree` is absent on
+      // an exponential verdict, so "vulnerable but unquantified" is reachable.
+      // Unquantified must read as null — the retraction is opt-in on a KNOWN
+      // low degree, never on a missing one. This used to be covered by
+      // accident, back when the gate ran over every pattern in the suite.
+      __setOracleForTests({ checkSync: () => ({ status: 'vulnerable' as const }) });
+      expect(worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '')).toBeNull();
+      resetOracleForTests();
+    });
+
     it('memoises, so a repeated pattern costs one call', () => {
       const first = worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '');
       const second = worstBacktrackingDegree(String.raw`^###\s+(.+)$`, '');
