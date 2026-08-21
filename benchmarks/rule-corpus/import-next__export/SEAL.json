@@ -88,5 +88,5 @@
       "reopenWhen": "the rule becomes project-aware, or the resolver can enumerate a module's exports."
     }
   ],
-  "notes": "Sealed 2026-08-21. The healthiest of the four rules attacked today: 13/14 with 0 FPs, against 3/14 and 3/14 for the other two."
+  "notes": "Seal record OPENED 2026-08-21. The healthiest of the four rules attacked today: 13/14 with 0 FPs, against 3/14 and 3/14 for the other two."
 }

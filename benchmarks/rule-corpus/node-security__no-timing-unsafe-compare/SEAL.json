@@ -88,5 +88,5 @@
       "reopenWhen": "a corpus finding shows a real secret suppressed by a tail."
     }
   ],
-  "notes": "Sealed 2026-08-21. `reachability` MET, which is 1 of 1 across all 97 records — the untrusted-source requirement is exactly what that axis asks for, and it is why the adversarial wave's first five cases were silent until the harness was corrected to include a taint source."
+  "notes": "Seal record OPENED 2026-08-21. `reachability` MET, which is the only record in this corpus with it met — the untrusted-source requirement is exactly what that axis asks for, and it is why the adversarial wave's first five cases were silent until the harness was corrected to include a taint source."
 }

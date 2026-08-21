@@ -418,6 +418,17 @@ describe('no-missing-null-checks', () => {
           errors: [{ messageId: 'missingNullCheck' }],
         },
         {
+          // A later write cannot un-read an earlier dereference. The write
+          // check inspected EVERY non-initializer write regardless of position,
+          // so a reassignment further down excused a read of null above it.
+          // Raised by CodeRabbit on #599.
+          name: 'a read before the reassignment still reports',
+          code:
+            'export function f(result) { let m = null; const hooks = m.hooks; m = result.m; return hooks; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
           // A bare `undefined` arm is the same evidence as a `null` one.
           // Raised by CodeRabbit on #599 — the alias walk swallowed it, because
           // resolving the GLOBAL `undefined` finds a variable with no

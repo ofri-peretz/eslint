@@ -131,6 +131,22 @@ function nullabilityEvidence(
   scope: TSESLint.Scope.Scope,
   seen: Set<string> = new Set(),
 ): 'declared-without-initializer' | 'assigned-null' | 'nullable-return' | null {
+  // Only a write BEFORE the read can have filled the binding. An unpositioned
+  // write count let a later assignment excuse an earlier dereference:
+  //
+  //   let m = null
+  //   const hooks = m.hooks     // reads null — must report
+  //   m = result.m              // and this cannot un-read it
+  //
+  // `readAt` is the position of the access being judged.
+  // `ident` may be a synthetic node without a range — the layer-2 tests feed
+  // exactly that to exercise the dedupe-key fallbacks, and this rule is built
+  // to tolerate it. Treating a range-less read as positioned at infinity means
+  // every write counts as "before" it, which is the conservative answer.
+  //
+  // A scope REFERENCE is different: it was resolved from real source, so its
+  // identifier always has a range and no fallback is needed there.
+  const readAt = ident.range?.[0] ?? Number.POSITIVE_INFINITY;
   // `const alias = hit` must not launder the evidence. One level of aliasing
   // defeated this gate completely — found by the adversarial wave, where it was
   // 1 of 11 genuine null-dereferences the first cut walked past.
@@ -178,7 +194,10 @@ function nullabilityEvidence(
       // ordinary deferred initialisation". Only a binding that is never
       // written at all is unambiguously a read of undefined.
       const written = variable.references.some(
-        (reference) => reference.isWrite() && !reference.init,
+        (reference) =>
+          reference.isWrite() &&
+          !reference.init &&
+          reference.identifier.range[0] < readAt,
       );
       if (written) return null;
       return 'declared-without-initializer';
@@ -197,7 +216,10 @@ function nullabilityEvidence(
     // models `const x = 1` as a write reference too, so an unfiltered count
     // disqualifies every initialised binding.
     const reassigned = variable.references.some(
-      (reference) => reference.isWrite() && !reference.init,
+      (reference) =>
+        reference.isWrite() &&
+        !reference.init &&
+        reference.identifier.range[0] < readAt,
     );
     if (reassigned) return null;
     if (init.type === 'Literal' && init.value === null) return 'assigned-null';

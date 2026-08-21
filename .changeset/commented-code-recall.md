@@ -2,8 +2,7 @@
 'eslint-plugin-conventions': patch
 ---
 
-`no-commented-code` reports commented-out statements again, whatever they end
-with.
+`no-commented-code` reports commented-out STATEMENTS again, whatever they end with.
 
 The prose fix traded away recall, and the trade was documented as costing
 `// x = 1`. It cost far more — an adversarial wave found **11 of 14** genuinely
@@ -25,6 +24,9 @@ comparison, a decorator or JSX now count as code regardless of punctuation.
 `throw` and `await` require a call shape after them, because a bare `await`
 matched *"await for the retry window to elapse"* — the same trap as the keyword
 patterns, one keyword further along.
+
+A bare fragment with no structure and no terminator —  — is still
+silent; the change covers structural shapes, not everything.
 
 All 14 adversarial shapes now report, with **zero** prose false positives
 across a 9-case prose set, and **zero** new findings on the pinned corpus.

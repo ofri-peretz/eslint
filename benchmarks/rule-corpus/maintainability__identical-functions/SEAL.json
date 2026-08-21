@@ -96,5 +96,5 @@
       "reopenWhen": "structural clone detection replaces the ratio, making length irrelevant."
     }
   ],
-  "notes": "Sealed 2026-08-21. The adversarial wave found the FP direction here, where the other rules leaked recall — 6 of 9 distinct pairs called duplicates."
+  "notes": "Seal record OPENED 2026-08-21. The adversarial wave found the FP direction here, where the other rules leaked recall — 6 of 9 distinct pairs called duplicates."
 }

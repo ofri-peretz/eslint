@@ -104,5 +104,5 @@
       "reopenWhen": "the parse-based classifier lands and can read the JSDoc tag structure."
     }
   ],
-  "notes": "Sealed alongside reliability/no-missing-null-checks on 2026-08-21. Same lesson: the adversarial axis found the recall cost that the FP work had understated in its own commit message."
+  "notes": "Seal record OPENED alongside reliability/no-missing-null-checks on 2026-08-21. Same lesson: the adversarial axis found the recall cost that the FP work had understated in its own commit message."
 }

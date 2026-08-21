@@ -88,5 +88,5 @@
       "reopenWhen": "points-to analysis is available, or an alias case is found on real source."
     }
   ],
-  "notes": "Sealed 2026-08-21. `partition` MET here, one of very few — the four-rule URL matrix test predates this work. The adversarial wave surfaced a documentation defect rather than a code one: the partition table promises more than the rule delivers."
+  "notes": "Seal record OPENED 2026-08-21. `partition` MET here, one of very few — the four-rule URL matrix test predates this work. The adversarial wave surfaced a documentation defect rather than a code one: the partition table promises more than the rule delivers."
 }
