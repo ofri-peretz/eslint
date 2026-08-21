@@ -258,6 +258,16 @@ function main(): number {
       // therefore breaks the scan the day TS ships a major, and the failure
       // arrives as every target erroring at once.
       `typescript@${WORKSPACE_TYPESCRIPT_RANGE}`,
+      // The ReDoS ORACLE. `recheck` is an OPTIONAL peer of
+      // eslint-plugin-secure-coding, and `confirmsRedos` FAILS OPEN when it is
+      // absent — so a rig without it reports every scslre finding unvetoed and
+      // the numbers describe a rule running with half its machinery.
+      //
+      // Discovered 2026-08-20: this rig had never installed it, so the ReDoS
+      // budget of 6 (and the 7 that replaced it) were both measured with no
+      // oracle at all. An optional dependency that changes the answer is not
+      // optional to the measurement.
+      'recheck',
       ...PLUGINS.map((p) => `${p}@file:${path.join(ROOT, 'packages', p)}`),
     ],
     RIG,
