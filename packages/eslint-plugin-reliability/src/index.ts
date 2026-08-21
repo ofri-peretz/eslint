@@ -45,7 +45,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-reliability',
-    version: '3.1.13',
+    version: '4.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
