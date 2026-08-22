@@ -42,6 +42,7 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/autocomplete-valid.md',
       description: 'Enforce that autocomplete attribute has valid value',
+      wcag: 'WCAG 1.3.5',
     },
     messages: {
       invalidAutocomplete: formatLLMMessage({

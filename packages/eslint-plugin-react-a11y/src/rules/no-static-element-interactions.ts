@@ -37,6 +37,7 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-static-element-interactions.md',
       description: 'Enforce that static elements don\'t have interactive handlers',
+      wcag: 'WCAG 2.1.1',
     },
     messages: {
       noStaticInteraction: formatLLMMessage({

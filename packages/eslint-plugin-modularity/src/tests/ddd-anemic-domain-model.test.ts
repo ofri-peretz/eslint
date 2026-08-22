@@ -18,6 +18,10 @@ const ruleTester = new RuleTester({
     ecmaVersion: 2022,
     sourceType: 'module',
   },
+  // The rule is scoped to a DOMAIN layer, so every fixture below has to live in
+  // one or it is testing the path guard rather than the logic. The scoping
+  // itself is exercised deliberately in the block at the end of this file.
+  defaultFilenames: { ts: 'src/domain/order.ts', tsx: 'src/domain/order.tsx' },
 });
 
 describe('ddd-anemic-domain-model', () => {
@@ -528,5 +532,55 @@ describe('ddd-anemic-domain-model', () => {
       ],
       invalid: [],
     });
+  });
+});
+
+/**
+ * An anemic domain model is a defect of a DOMAIN LAYER.
+ *
+ * Outside one, a class with fields and no methods is a transport object, an
+ * options bag or an error shape — which is exactly what a client library
+ * ships. Measured on okta-auth-js: 38 findings, every one under `idx/`,
+ * `myaccount/`, `errors/`, `exports/`, `base/`, `authn/`, `core/` or `http/`,
+ * and not a domain layer among them. 526 across the pinned corpus.
+ */
+describe('ddd-anemic-domain-model — domain scope', () => {
+  const anemic = `
+    export class Order {
+      id: string;
+      total: number;
+      constructor(id: string, total: number) { this.id = id; this.total = total; }
+    }
+  `;
+
+  ruleTester.run('valid - outside a domain layer', dddAnemicDomainModel, {
+    valid: [
+      { code: anemic, filename: 'src/http/response.ts' },
+      { code: anemic, filename: 'src/errors/AuthError.ts' },
+      { code: anemic, filename: 'lib/idx/remediation.ts' },
+      // `domain` as a FILENAME is not a domain directory.
+      { code: anemic, filename: 'src/api/domain.ts' },
+    ],
+    invalid: [
+      {
+        // FN GUARD: inside a domain layer it still reports.
+        code: anemic,
+        filename: 'src/domain/order.ts',
+        errors: 1,
+      },
+      {
+        // FN GUARD: nested anywhere under the segment.
+        code: anemic,
+        filename: 'packages/billing/src/entities/invoice.ts',
+        errors: 1,
+      },
+      {
+        // FN GUARD: an empty list restores the pre-scoping behaviour.
+        code: anemic,
+        filename: 'src/http/response.ts',
+        options: [{ domainPaths: [] }],
+        errors: 1,
+      },
+    ],
   });
 });

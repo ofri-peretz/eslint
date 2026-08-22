@@ -32,6 +32,19 @@ declare module '@typescript-eslint/utils/ts-eslint' {
     /** Free-text rationale for the CWE mapping; surfaces in audit reports. */
     cweJustification?: string;
     /**
+     * WCAG success criterion (e.g. "WCAG 1.1.1"). The accessibility
+     * counterpart to `cwe`, and a rule should carry one or the other.
+     *
+     * CWE is a taxonomy of SECURITY weaknesses and has no accessibility
+     * entries, so an a11y rule that wants a standards reference has nowhere
+     * honest to put it. Before this field existed every rule in
+     * `eslint-plugin-react-a11y` claimed CWE-252, "Unchecked Return Value" —
+     * which is about ignoring a function's return value and has nothing to do
+     * with a missing `alt` attribute. That claim reached users, the docs site
+     * and any SARIF consumer downstream.
+     */
+    wcag?: string;
+    /**
      * Per-rule confidence band — read by the ILB-Confidence bench (`npm run
      * ilb:confidence`) and used as the agent-axis routing signal:
      *   `high`   → SLO precision ≥ 90%; agents may auto-apply fixes.

@@ -143,6 +143,7 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-ambiguous-text.md',
       description: 'Enforce that anchor text is not ambiguous',
+      wcag: 'WCAG 2.4.4',
     },
     messages: {
       ambiguousText: formatLLMMessage({

@@ -44,8 +44,7 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/heading-has-content.md',
       description: 'Enforce that headings have content',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 1.3.1',
     },
     messages: {
       missingContent: formatLLMMessage({
@@ -55,7 +54,7 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Provide text content for the heading',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/heading-has-content.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 1.3.1'
       }),
     },
     schema: [

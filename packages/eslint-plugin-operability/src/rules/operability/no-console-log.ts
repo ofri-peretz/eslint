@@ -12,6 +12,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
+import { isNonProductionPath } from '../../lib/non-production-paths';
 
 /**
  * Strategy for handling console.log
@@ -55,6 +56,18 @@ export interface Options {
 
   /** File path patterns to ignore */
   ignorePaths?: string[];
+
+  /**
+   * Also skip directories that never ship — `scripts/`, `bin/`, `tools/`,
+   * `env/`, `benchmarks/`, examples and demos — plus top-level build config
+   * (`*.config.js`, `Gruntfile`). Default: true.
+   *
+   * A `console.log` in a build script is a deliberate build-time message, not
+   * debug output left in an application. Off by default this rule reported 107
+   * findings on the pinned corpus, largely the same lines
+   * `no-debug-code-in-production` was reporting under a different name.
+   */
+  ignoreNonProductionPaths?: boolean;
 
   /** Name of the logger to use (e.g., 'logger', 'winston'). Default: 'logger' */
   loggerName?: string;
@@ -142,6 +155,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
             default: 'remove',
             description: 'Strategy for handling console.log',
           },
+          ignoreNonProductionPaths: { type: 'boolean', default: true },
           ignorePaths: {
             type: 'array',
             items: { type: 'string' },
@@ -200,6 +214,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     {
       strategy: 'remove',
       ignorePaths: [],
+      ignoreNonProductionPaths: true,
       loggerName: 'logger',
       severityMap: { log: 'log' }, // Only flag console.log by default
       autoDetectLogger: true,
@@ -211,6 +226,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     const {
       strategy = 'remove',
       ignorePaths = [],
+      ignoreNonProductionPaths = true,
       loggerName,
       maxOccurrences,
       severityMap = {},
@@ -283,6 +299,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
      * Supports exact matches, directory prefixes, and glob-like patterns.
      */
     const shouldIgnoreFile = (): boolean => {
+      if (ignoreNonProductionPaths && isNonProductionPath(filename)) return true;
       if (ignorePaths.length === 0) return false;
 
       const normalizedPath = normalizePath(filename);

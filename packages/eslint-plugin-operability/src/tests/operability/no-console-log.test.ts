@@ -474,3 +474,71 @@ console.log("fourth");`,
     );
   });
 });
+
+/**
+ * A build script is not production.
+ *
+ * This rule and `no-debug-code-in-production` both reported the SAME lines on
+ * the pinned corpus under two different framings — okta-auth-js
+ * `env/index.js:22` and `scripts/verify-package.js:3` — because neither had any
+ * notion that a repository contains code which never ships. 107 and 120
+ * findings respectively.
+ *
+ * Matched by path SEGMENT, not prefix: a repository is linted from an absolute
+ * path, so `/Users/x/repo/scripts/build.js` does not start with `scripts/` and
+ * a prefix test would silently never fire.
+ */
+describe('no-console-log — non-production paths', () => {
+  ruleTester.run('valid - code that never ships', noConsoleLog, {
+    valid: [
+      { code: 'console.log("building");', filename: '/repo/scripts/build.js' },
+      { code: 'console.log("env");', filename: '/repo/env/index.js' },
+      { code: 'console.log("bench");', filename: '/repo/benchmarks/suite.ts' },
+      { code: 'console.log("demo");', filename: '/repo/examples/basic.ts' },
+      { code: 'console.log("cfg");', filename: '/repo/jest.config.js' },
+      { code: 'console.log("cfg");', filename: '/repo/Gruntfile.js' },
+    ],
+    invalid: [
+      {
+        // FN GUARD: `bin/` SHIPS — it is where a published package puts the
+        // CLI entry point that runs on an end user's machine.
+        code: 'console.log("cli");',
+        filename: '/repo/bin/run.js',
+        output: '',
+        errors: 1,
+      },
+      {
+        // FN GUARD: a `*.config.*` basename at any depth is NOT build config.
+        // `src/server.config.ts` is a runtime module in the Express and
+        // NestJS conventions, and suppressing it would hide CWE-489 in code
+        // that ships.
+        code: 'console.log("cfg");',
+        filename: '/repo/packages/api/src/server.config.ts',
+        output: '',
+        errors: 1,
+      },
+      {
+        // FN GUARD: application code still reports, and `scripts` as a
+        // FILENAME rather than a directory is not a directory.
+        code: 'console.log("hi");',
+        filename: '/repo/src/app.ts',
+        output: '',
+        errors: 1,
+      },
+      {
+        code: 'console.log("hi");',
+        filename: '/repo/src/scripts.ts',
+        output: '',
+        errors: 1,
+      },
+      {
+        // FN GUARD: turning the option off restores the finding.
+        code: 'console.log("building");',
+        filename: '/repo/scripts/build.js',
+        options: [{ ignoreNonProductionPaths: false }],
+        output: '',
+        errors: 1,
+      },
+    ],
+  });
+});

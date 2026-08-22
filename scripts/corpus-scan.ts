@@ -261,6 +261,15 @@ const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
 const CACHE_HOME = resolveCacheHome();
 const WORK = path.join(CACHE_HOME, 'interlace-corpus-scan');
 const RIG = path.join(WORK, '_rig');
+/**
+ * npm's cache, private to the rig.
+ *
+ * In local mode `--install-links` packs each `file:` dependency into a tarball
+ * keyed `name@version`, and a rebuild does not bump the version — so the shared
+ * cache happily serves the previous build. Keeping the cache beside the rig
+ * means the rebuild path can drop it without touching the developer's own.
+ */
+const NPM_CACHE = path.join(WORK, '_npm-cache');
 
 interface Budget {
   /** Human note; ignored by the checker. */
@@ -409,9 +418,21 @@ function main(): number {
   // mode it is not — the version does not change when you rebuild — so the
   // fingerprint has to read the built artifact, or npm serves the previous
   // build out of its cache and the run silently measures stale code.
-  const fingerprint = PLUGINS.map((plugin) =>
-    local ? `${plugin}:local:${distHash(plugin)}` : `${plugin}@${publishedVersion(plugin)}`,
-  ).join('\n');
+  //
+  // `@interlace/eslint-devkit` is in the local fingerprint, and leaving it out
+  // was a live defect. Every plugin's dist requires the devkit at runtime, and
+  // `--install-links` COPIES rather than symlinks, so the rig holds a snapshot
+  // of it. Hashing only the plugins meant a devkit-only change left the rig
+  // stamped unchanged and the copy stale. Adding an export surfaced it loudly
+  // — `isGeneratedFile is not a function`, on 8 of 8 repositories — but the
+  // ordinary case is silent: change a shared predicate, and the scan measures
+  // the previous one while reporting a number against the new code.
+  const fingerprint = [
+    ...PLUGINS.map((plugin) =>
+      local ? `${plugin}:local:${distHash(plugin)}` : `${plugin}@${publishedVersion(plugin)}`,
+    ),
+    ...(local ? [`eslint-devkit:local:${distHash('eslint-devkit')}`] : []),
+  ].join('\n');
   const stampFile = path.join(RIG, '.plugin-fingerprint');
   if (
     existsSync(path.join(RIG, 'node_modules')) &&
@@ -420,6 +441,16 @@ function main(): number {
     log('Plugin versions changed — rebuilding the scan rig…');
     rmSync(path.join(RIG, 'node_modules'), { recursive: true, force: true });
     rmSync(path.join(RIG, 'package-lock.json'), { force: true });
+    // And npm's own cache for this rig. Deleting node_modules is not enough in
+    // LOCAL mode: `--install-links` packs each `file:` dependency into a
+    // tarball that npm caches under `name@version`, and a rebuild does not
+    // change the version. So the reinstall unpacked the PREVIOUS build of the
+    // devkit while the stamp said the rig was fresh — the exact staleness the
+    // fingerprint above exists to prevent, one layer further down.
+    //
+    // A private cache directory rather than `npm cache clean --force`, which
+    // would throw away the developer's whole cache to fix the rig's.
+    rmSync(NPM_CACHE, { recursive: true, force: true });
   }
 
 
@@ -436,6 +467,9 @@ function main(): number {
       // them instead of symlinking, so the rig is a snapshot of the tree as it
       // stood. Harmless otherwise.
       ...(local ? ['--install-links'] : []),
+      // Scoped to the rig, so wiping it above cannot touch anything else.
+      '--cache',
+      NPM_CACHE,
       '--silent',
       '--no-audit',
       '--no-fund',
@@ -479,6 +513,35 @@ function main(): number {
       ...PLUGINS.map((p) =>
         local ? `${p}@file:${path.join(ROOT, 'packages', p)}` : `${p}@${publishedVersion(p)}`,
       ),
+      // The devkit, from the working tree, in LOCAL mode only.
+      //
+      // Without this line `--local` did not measure the local tree. Every
+      // plugin declares `@interlace/eslint-devkit` as a SEMVER RANGE
+      // (`^1.11.0`), so npm resolved it from the registry and the rig ran
+      // local plugins against the PUBLISHED devkit. Everything that lives
+      // there — `isTestFilePath`, `createRule`'s skip flags, every shared
+      // detector — was therefore measured at whatever was last released,
+      // while the report said "local working tree".
+      //
+      // It surfaced as `isGeneratedFile is not a function` on 8 of 8 targets
+      // only because the change added a NEW export. A change to an EXISTING
+      // one is silent: the scan runs, produces a number, and the number
+      // describes code that is not in the tree.
+      //
+      // In published mode this is correctly absent — there the plugins' own
+      // dependency ranges are part of what is being measured.
+      // `packages/eslint-devkit/dist`, not the package root. The two publish
+      // differently: a plugin's `files` lists both `src/` and `dist/`, so
+      // packing its root yields a working tarball, while the devkit's lists
+      // only `src/` even though its `main` is `./dist/src/index.js`. The devkit
+      // is published FROM `dist/`, which carries its own package.json pointing
+      // at `./src/index.js`. Packing the root instead gives a tarball whose
+      // entry point is not in it.
+      ...(local
+        ? [
+            `@interlace/eslint-devkit@file:${path.join(ROOT, 'packages', 'eslint-devkit', 'dist')}`,
+          ]
+        : []),
     ],
     RIG,
   );

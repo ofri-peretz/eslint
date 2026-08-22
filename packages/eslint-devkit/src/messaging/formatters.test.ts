@@ -813,3 +813,60 @@ describe('CWE→CVSS enrichment contract (lock)', () => {
     expect(result).not.toContain('CVSS:9.8');
   });
 });
+
+/**
+ * WCAG stands where CWE would, for rules whose subject is accessibility.
+ *
+ * CWE is a taxonomy of security weaknesses with no accessibility entries, so
+ * before this field existed every rule in `eslint-plugin-react-a11y` claimed
+ * CWE-252 ("Unchecked Return Value") and inherited its OWASP category and CVSS
+ * score by enrichment. A missing `alt` attribute rendered as
+ * `CWE-252 OWASP:A10-Mishandling CVSS:5.3 | … | CRITICAL` — four false claims,
+ * two of them contradicting each other.
+ */
+const W3C_IMAGES = 'https://www.w3.org/WAI/tutorials/images/';
+
+describe('WCAG standards reference', () => {
+  it('renders the criterion in the standards prefix', () => {
+    const result = formatLLMMessage({
+      icon: '♿',
+      issueName: 'Image missing alt text',
+      wcag: 'WCAG 1.1.1',
+      description: 'Image missing alt text',
+      severity: 'HIGH',
+      fix: 'Add alt="Descriptive text"',
+      documentationLink: W3C_IMAGES,
+    });
+    expect(result).toContain('WCAG 1.1.1');
+    expect(result.split('\n')[0]).toBe('♿ WCAG 1.1.1 | Image missing alt text | HIGH');
+  });
+
+  it('brings no OWASP category or CVSS score with it', () => {
+    // The enrichment that attached those is keyed on CWE, and an accessibility
+    // defect has no attacker for either scale to describe.
+    const result = formatLLMMessage({
+      icon: '♿',
+      issueName: 'Missing lang',
+      wcag: 'WCAG 3.1.1',
+      description: 'Missing lang',
+      severity: 'HIGH',
+      fix: 'Add lang',
+      documentationLink: W3C_IMAGES,
+    });
+    expect(result).not.toContain('OWASP');
+    expect(result).not.toContain('CVSS');
+    expect(result).not.toContain('CWE');
+  });
+
+  it('omits the standards prefix entirely when neither is given', () => {
+    const result = formatLLMMessage({
+      icon: '♿',
+      issueName: 'Empty alt',
+      description: 'Empty alt text detected',
+      severity: 'LOW',
+      fix: 'Consider a description',
+      documentationLink: W3C_IMAGES,
+    });
+    expect(result.split('\n')[0]).toBe('♿ Empty alt text detected | LOW');
+  });
+});

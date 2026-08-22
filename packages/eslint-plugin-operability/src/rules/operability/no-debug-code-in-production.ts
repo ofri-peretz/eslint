@@ -17,11 +17,24 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { isNonProductionPath } from '../../lib/non-production-paths';
 
 type MessageIds = 'violationDetected';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+export interface Options {
+  /**
+   * Skip directories that never ship — `scripts/`, `bin/`, `tools/`, `env/`,
+   * `benchmarks/`, examples and demos — plus top-level build config
+   * (`*.config.js`, `Gruntfile`). Default: true.
+   *
+   * The name of this rule is the argument for the option: a build script is
+   * not production, so debug output in one is not debug code left in
+   * production. Shares `NON_PRODUCTION_SEGMENTS` with `no-console-log`, which
+   * reports many of the SAME lines under a different framing — okta-auth-js
+   * `env/index.js:22` and `scripts/verify-package.js` were counted by both.
+   */
+  ignoreNonProductionPaths?: boolean;
+}
 
 type RuleOptions = [Options?];
 
@@ -47,10 +60,24 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/489.html',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          ignoreNonProductionPaths: { type: 'boolean', default: true },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [{ ignoreNonProductionPaths: true }],
+  create(context, [options = {}]) {
+    // No `?? {}` here: the parameter default already covers undefined, and the
+    // fallback would be a branch no input can take.
+    const { ignoreNonProductionPaths = true }: Options = options;
+    if (ignoreNonProductionPaths && isNonProductionPath(context.filename)) {
+      return {};
+    }
     return {
       Identifier(node: TSESTree.Identifier) {
         if (['DEBUG', '__DEV__'].includes(node.name)) {
