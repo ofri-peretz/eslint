@@ -1,3 +1,80 @@
+## 4.3.0
+
+### Minor Changes
+
+- [#604](https://github.com/ofri-peretz/eslint/pull/604) [`3393c4f`](https://github.com/ofri-peretz/eslint/commit/3393c4f9aa87c238348102a7eafaaa73bca6cd26) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-magic-numbers` gains three exemptions, and stops being the highest-volume
+  rule in the ecosystem.
+
+  **`detectObjects`** (default `false`) — object property values are no longer
+  reported, matching ESLint core's own `no-magic-numbers`, which has shipped that
+  default for years. A config object is a place to write literals.
+
+  ```js
+  const cfg = { timeout: 5000, retries: 7 }; // no longer reported
+  ```
+
+  **`ignoreLoopBounds`** (default `true`) — a numeric bound in a `for` header is
+  the loop's shape, not a magic number. The loop **body** still reports.
+
+  **`ignoreLengthComparisons`** (default `true`) — **equality only**.
+  `arguments.length === 3` is an arity check; `users.length > 100` is a business
+  threshold and still reports.
+
+  **22,942 → 15,924** on a 20-repository corpus; **1,635 → 1,421** on the pinned
+  eight.
+
+### Patch Changes
+
+- [#599](https://github.com/ofri-peretz/eslint/pull/599) [`43db150`](https://github.com/ofri-peretz/eslint/commit/43db150127c7729f8b4099655fd66d0ea6d4a480) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-commented-code` no longer reports JSDoc blocks.
+
+  An `@example` body is the one place a comment is _supposed_ to contain code:
+
+  ```js
+  /**
+   * @example
+   *     const x = doThing()
+   *     return x
+   */
+  ```
+
+  Found by the 20-repository case ledger, where `/**` was the single largest
+  shape — **3,557 → 1,879**, with the pinned corpus unchanged.
+
+  Deliberately narrow: only `/**` is exempt. A plain `/* … */`, which is how
+  people actually comment code out, is still checked.
+
+- [#599](https://github.com/ofri-peretz/eslint/pull/599) [`43db150`](https://github.com/ofri-peretz/eslint/commit/43db150127c7729f8b4099655fd66d0ea6d4a480) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-commented-code` reports commented-out STATEMENTS again, whatever they end with.
+
+  The prose fix traded away recall, and the trade was documented as costing
+  `// x = 1`. It cost far more — an adversarial wave found **11 of 14** genuinely
+  commented-out lines going silent:
+
+  ```js
+  // const timeout = 5000
+  // import fs from "fs"
+  // throw new Error("x")
+  // promise.then(x => x).catch(noop)
+  ```
+
+  The terminator test is a proxy for "is this a sentence". That is right for a
+  line that merely _opens_ with a keyword, and far too blunt for a line that is
+  unmistakably a statement. A declaration with an initializer, a module
+  specifier, a constructed throw, a call on a member chain, an arrow, a strict
+  comparison, a decorator or JSX now count as code regardless of punctuation.
+
+  `throw` and `await` require a call shape after them, because a bare `await`
+  matched _"await for the retry window to elapse"_ — the same trap as the keyword
+  patterns, one keyword further along.
+
+  A bare fragment with no structure and no terminator — — is still
+  silent; the change covers structural shapes, not everything.
+
+  All 14 adversarial shapes now report, with **zero** prose false positives
+  across a 9-case prose set, and **zero** new findings on the pinned corpus.
+
+- Updated dependencies [[`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 4.2.10
 
 ### Patch Changes
