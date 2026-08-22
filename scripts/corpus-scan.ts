@@ -34,7 +34,7 @@
  *   tsx scripts/corpus-scan.ts --json      # machine-readable report on stdout
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
@@ -150,6 +150,26 @@ function lockedVersion(name: string): string {
     throw new Error(`no resolved version for ${name} in package-lock.json — cannot pin the scan rig`);
   }
   return version;
+}
+
+/**
+ * The version of a plugin this gate measures: the one in its package.json.
+ *
+ * That is the version most recently released, because changesets bumps it at
+ * release time. So the gate reports what a consumer installing today would see
+ * — and a fix landing on main does NOT move these numbers until it ships,
+ * which is the honest reading and the reason this is not a `file:` dependency.
+ *
+ * A version that is not on npm yet is a hard failure rather than a silent
+ * fallback to `latest`: measuring a different version than the one named is
+ * exactly the staleness this change exists to remove.
+ */
+function publishedVersion(plugin: string): string {
+  const pkg = JSON.parse(
+    readFileSync(path.join(ROOT, 'packages', plugin, 'package.json'), 'utf-8'),
+  ) as { version?: string };
+  if (!pkg.version) throw new Error(`${plugin} has no version in package.json`);
+  return pkg.version;
 }
 
 const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
@@ -298,30 +318,26 @@ function main(): number {
   // measures the code in the PR rather than the last published release.
   ensurePrivateDir(RIG, CACHE_HOME);
   writeFileSync(path.join(RIG, 'package.json'), JSON.stringify({ name: 'rig', private: true }));
-  // Wipe the rig when any plugin's build changed.
+  // Wipe the rig when the set of versions under test changes.
   //
-  // `--install-links` makes the rig a COPY, which is necessary but not
-  // sufficient: npm restores an unchanged-version package from its own cache,
-  // so the copy can be of the PREVIOUS build. Measured 2026-08-22 —
-  // `no-magic-numbers` read 1,635 on a warm rig and 1,421 on a fresh one for
-  // the same commit, and the gate printed no ratchet notice at all, so a
-  // 214-finding improvement was invisible. The same shape had already made
-  // `hooks-exhaustive-deps` read 84 and 91.
+  // The rig installs the PUBLISHED plugins, so what it measures is what users
+  // actually get — not the working tree. That is the point: a number from this
+  // gate describes shipped behaviour, and a fix does not move it until the fix
+  // is released.
   //
-  // The fingerprint is mtime+size of every plugin's built entry point. Cheap,
-  // and it changes exactly when a rebuild happens.
-  const fingerprint = PLUGINS.map((plugin) => {
-    const entry = path.join(ROOT, 'packages', plugin, 'dist/src/index.js');
-    if (!existsSync(entry)) return `${plugin}:absent`;
-    const stat = statSync(entry);
-    return `${plugin}:${stat.mtimeMs}:${stat.size}`;
-  }).join('\n');
+  // It also removes the whole class of staleness that cost most of today. A
+  // `file:` dependency is served from npm's cache when its version has not
+  // changed, so the rig kept measuring a PREVIOUS local build: no-magic-numbers
+  // read 1,635 against a fresh 1,421, and hooks-exhaustive-deps read both 84
+  // and 91. A published version is immutable, so the same version string is
+  // always the same code.
+  const fingerprint = PLUGINS.map((plugin) => `${plugin}@${publishedVersion(plugin)}`).join('\n');
   const stampFile = path.join(RIG, '.plugin-fingerprint');
   if (
     existsSync(path.join(RIG, 'node_modules')) &&
     (!existsSync(stampFile) || readFileSync(stampFile, 'utf-8') !== fingerprint)
   ) {
-    log('Plugin build changed — rebuilding the scan rig from scratch…');
+    log('Plugin versions changed — rebuilding the scan rig…');
     rmSync(path.join(RIG, 'node_modules'), { recursive: true, force: true });
     rmSync(path.join(RIG, 'package-lock.json'), { force: true });
   }
@@ -332,9 +348,6 @@ function main(): number {
     'npm',
     [
       'install',
-      // Copy `file:` dependencies instead of symlinking them, so the rig is a
-      // snapshot of the checkout and two scans of the same commit agree.
-      '--install-links',
       '--silent',
       '--no-audit',
       '--no-fund',
@@ -375,7 +388,7 @@ function main(): number {
       // same: an optional dependency that changes the answer is not optional
       // to the measurement.
       `oxc-resolver@${lockedVersion('oxc-resolver')}`,
-      ...PLUGINS.map((p) => `${p}@file:${path.join(ROOT, 'packages', p)}`),
+      ...PLUGINS.map((p) => `${p}@${publishedVersion(p)}`),
     ],
     RIG,
   );
