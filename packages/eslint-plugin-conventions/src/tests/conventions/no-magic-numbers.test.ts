@@ -201,3 +201,103 @@ describe('no-magic-numbers — loop bounds and arity', () => {
     ],
   });
 });
+
+/**
+ * `ignoreArrayIndexes` exempts an INDEX, not a position.
+ *
+ * Found by an adversarial wave. The exemption tested only that the literal sat
+ * in the index slot of a computed member access, so `arr[3.5]`, `arr[1e21]` and
+ * `arr[4294967296]` were all silently exempt — and none of them indexes
+ * anything. A non-integer or out-of-range key is a plain property lookup, and
+ * the number in it is exactly as magic as one anywhere else.
+ *
+ * The wave reported 10 of its 20 cases, so the quiet ones carried information.
+ * Matches ESLint core, which has always required a non-negative integer below
+ * the array-length limit.
+ */
+describe('no-magic-numbers — ignoreArrayIndexes checks the VALUE', () => {
+  ruleTester.run('array index exemption', noMagicNumbers, {
+    valid: [
+      // POSITIVE CONTROL for the exemption itself: a real index stays exempt,
+      // so the invalid cases below cannot be passing on a rule that simply
+      // stopped exempting anything.
+      { code: 'declare const arr: number[];\nconst a = arr[42];' },
+      { code: 'declare const arr: number[];\nconst a = arr[0];' },
+      // The largest value that can still address an element.
+      { code: 'declare const arr: number[];\nconst a = arr[4294967294];' },
+    ],
+    invalid: [
+      {
+        // Not an integer — not an index.
+        code: 'declare const arr: number[];\nconst a = arr[3.5];',
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'declare const arr: number[];\nconst MAGIC_3_5 = 3.5;\nconst a = arr[MAGIC_3_5];',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        // One past the largest addressable index — an ordinary string-keyed
+        // property on the array object, not an index into it.
+        code: 'declare const arr: number[];\nconst a = arr[4294967296];',
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'declare const arr: number[];\nconst MAGIC_4294967296 = 4294967296;\nconst a = arr[MAGIC_4294967296];',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        // Also the regression test for the const NAME: `String(1e21)` is
+        // "1e+21", and replacing only `.` produced `const MAGIC_1e+21`, which
+        // is not an identifier. Applying that suggestion left the file unable
+        // to parse.
+        code: 'declare const arr: number[];\nconst a = arr[1e21];',
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'declare const arr: number[];\nconst MAGIC_1E_21 = 1e+21;\nconst a = arr[MAGIC_1E_21];',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        // A negative index arrives as a UnaryExpression wrapping the literal,
+        // so the parent is not the member expression and the exemption never
+        // applied. It reported before this change too — by accident rather
+        // than by rule. Pinned so it keeps reporting for a stated reason.
+        code: 'declare const arr: number[];\nconst a = arr[-7];',
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'declare const arr: number[];\nconst MAGIC_7 = 7;\nconst a = arr[-MAGIC_7];',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+});
