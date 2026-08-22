@@ -47,10 +47,23 @@ ruleTester.run('no-debug-code-in-production — non-production paths', noDebugCo
   valid: [
     { code: 'console.log("building");', filename: '/repo/scripts/build.js' },
     { code: 'const x = DEBUG;', filename: '/repo/env/index.js' },
-    { code: 'if (__DEV__) { run(); }', filename: '/repo/bin/cli.js' },
     { code: 'console.log("cfg");', filename: '/repo/vite.config.ts' },
   ],
   invalid: [
+    {
+      // FN GUARD: `bin/` SHIPS. A published package delivers its CLI entry
+      // point from there, and it runs on an end user's machine.
+      code: 'if (__DEV__) { run(); }',
+      filename: '/repo/bin/cli.js',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      // FN GUARD: `*.config.*` at any depth is not build configuration.
+      // `src/database.config.ts` is a runtime module in the NestJS convention.
+      code: 'const x = DEBUG;',
+      filename: '/repo/src/database.config.ts',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       // FN GUARD: application code still reports.
       code: 'const x = DEBUG;',

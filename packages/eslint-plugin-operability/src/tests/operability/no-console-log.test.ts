@@ -493,13 +493,30 @@ describe('no-console-log — non-production paths', () => {
     valid: [
       { code: 'console.log("building");', filename: '/repo/scripts/build.js' },
       { code: 'console.log("env");', filename: '/repo/env/index.js' },
-      { code: 'console.log("cli");', filename: '/repo/bin/run.js' },
       { code: 'console.log("bench");', filename: '/repo/benchmarks/suite.ts' },
       { code: 'console.log("demo");', filename: '/repo/examples/basic.ts' },
       { code: 'console.log("cfg");', filename: '/repo/jest.config.js' },
       { code: 'console.log("cfg");', filename: '/repo/Gruntfile.js' },
     ],
     invalid: [
+      {
+        // FN GUARD: `bin/` SHIPS — it is where a published package puts the
+        // CLI entry point that runs on an end user's machine.
+        code: 'console.log("cli");',
+        filename: '/repo/bin/run.js',
+        output: '',
+        errors: 1,
+      },
+      {
+        // FN GUARD: a `*.config.*` basename at any depth is NOT build config.
+        // `src/server.config.ts` is a runtime module in the Express and
+        // NestJS conventions, and suppressing it would hide CWE-489 in code
+        // that ships.
+        code: 'console.log("cfg");',
+        filename: '/repo/packages/api/src/server.config.ts',
+        output: '',
+        errors: 1,
+      },
       {
         // FN GUARD: application code still reports, and `scripts` as a
         // FILENAME rather than a directory is not a directory.
