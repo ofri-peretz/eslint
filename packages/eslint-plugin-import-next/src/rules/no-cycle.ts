@@ -188,8 +188,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-cycle.md',
       description:
         'Detect circular dependencies that cause bundle memory bloat and initialization issues',
-      cwe: 'CWE-407',
-      cvss: 9.5,
+      cwe: 'CWE-1047',
       confidence: 'high',
     },
     messages: {
@@ -197,9 +196,9 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       moduleSplit: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Circular dependency',
-        cwe: 'CWE-407',
+        cwe: 'CWE-1047',
         description: 'Circular dependency detected',
-        severity: 'CRITICAL',
+        severity: 'MEDIUM',
         fix: 'Split {{moduleToSplit}} into .{{coreFile}} and .{{extendedFile}}',
         documentationLink: 'https://en.wikipedia.org/wiki/Circular_dependency',
       }),
@@ -207,7 +206,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       directImport: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Circular dependency',
-        cwe: 'CWE-407',
+        cwe: 'CWE-1047',
         description: 'Circular dependency detected',
         severity: 'MEDIUM',
         fix: '{{newImport}} (direct imports preferred over barrel exports)',
@@ -217,7 +216,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       extractShared: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Circular dependency',
-        cwe: 'CWE-407',
+        cwe: 'CWE-1047',
         description: 'Circular dependency detected',
         severity: 'MEDIUM',
         fix: 'Extract shared types to {{exports}} file',
@@ -228,7 +227,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       dependencyInjection: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Circular dependency',
-        cwe: 'CWE-407',
+        cwe: 'CWE-1047',
         description: 'Circular dependency detected',
         severity: 'MEDIUM',
         fix: 'Use dependency injection pattern to break cycle',
