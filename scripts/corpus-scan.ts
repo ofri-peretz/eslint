@@ -95,41 +95,6 @@ const TARGETS: ReadonlyArray<{ repo: string; ref: string }> = [
 const ROOT = path.resolve(import.meta.dirname, '..');
 
 /**
- * The `typescript` range from the workspace root, so the rig's parser sees the
- * same major the repo builds against rather than whatever `latest` resolves to.
- */
-const WORKSPACE_TYPESCRIPT_RANGE: string = (() => {
-  const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf-8')) as {
-    dependencies?: Record<string, string>;
-    devDependencies?: Record<string, string>;
-  };
-  const range = pkg.devDependencies?.typescript ?? pkg.dependencies?.typescript;
-  if (!range) {
-    throw new Error('no `typescript` in the workspace root package.json — cannot pin the scan rig');
-  }
-  return range;
-})();
-/**
- * The `recheck` range that `eslint-plugin-secure-coding` is tested against.
- *
- * Read from the plugin rather than written here, on the same reasoning as the
- * TypeScript pin above: the oracle DECIDES findings, so a rig on `latest` lets
- * an upstream release restate published corpus numbers with no commit in this
- * repository. Derived rather than hardcoded so it cannot drift from the version
- * the rule's own suite runs against.
- */
-const RECHECK_RANGE: string = (() => {
-  const pkg = JSON.parse(
-    readFileSync(path.join(ROOT, 'packages', 'eslint-plugin-secure-coding', 'package.json'), 'utf-8'),
-  ) as { devDependencies?: Record<string, string>; peerDependencies?: Record<string, string> };
-  const range = pkg.devDependencies?.recheck ?? pkg.peerDependencies?.recheck;
-  if (!range) {
-    throw new Error('no `recheck` in eslint-plugin-secure-coding — cannot pin the scan rig oracle');
-  }
-  return range;
-})();
-
-/**
  * Rules this instrument CANNOT measure, and why.
  *
  * The targets are shallow git clones. They are never `npm install`ed and never
@@ -171,6 +136,11 @@ const UNMEASURABLE_RULES: ReadonlySet<string> = new Set([
  * tests them under 10. The gate now measures what the repo actually ships
  * against.
  */
+// NOTE: `WORKSPACE_TYPESCRIPT_RANGE` and `RECHECK_RANGE` lived here and derived
+// a RANGE from package.json. `lockedVersion` supersedes both — a range still
+// lets npm resolve differently between installs, which is the whole defect this
+// change fixes — so they are gone rather than left as a second way to pin.
+
 function lockedVersion(name: string): string {
   const lock = JSON.parse(readFileSync(path.join(ROOT, 'package-lock.json'), 'utf-8')) as {
     packages: Record<string, { version?: string } | undefined>;
