@@ -11,7 +11,7 @@
 | `meta.docs.description` | Fallback in the formatter when no per-message text is present. |
 | `meta.docs.url` | Rendered as a clickable docs link in human + JSON modes. |
 | `meta.docs.cwe` *(Interlace ext.)* | Surfaced inline in human + compact + JSON + XML + NDJSON. Most actionable single TP-classification field for a security finding. |
-| `meta.docs.cvss` *(Interlace ext.)* | Surfaced as severity context in human + JSON + XML + NDJSON. |
+| ~~`meta.docs.cvss`~~ *(Interlace ext.)* | **Deprecated — see [SEVERITY_AND_STANDARDS.md](./SEVERITY_AND_STANDARDS.md).** A rule cannot compute a CVSS score: the metrics that dominate it are properties of the deployment, not of the syntax. Still rendered while the migration runs; do not add it to new rules. |
 | `meta.fixable` | Drives the `(fixable)` / `[fixable]` markers in every mode. |
 | `meta.hasSuggestions` | Drives the `(has suggestions)` marker + lifts ESLint suggestions into the formatter render. |
 
