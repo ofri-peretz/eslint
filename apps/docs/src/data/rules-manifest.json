@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T16:43:24.711Z",
+  "generatedAt": "2026-08-22T16:56:05.325Z",
   "totals": {
     "plugins": 30,
     "rules": 478,
@@ -8407,8 +8407,8 @@
       "deprecated": false,
       "recommended": "warn",
       "docsUrl": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin/docs/rules/hooks-exhaustive-deps.md",
-      "corpusFindings": 84,
-      "budgetReason": "91. Correct in contract — a hook dependency array missing a value the effect reads. The canonical React correctness rule; a missing dep is a stale-closure bug, not a style opinion.\n\nMeasurement note — RESOLVED. Budgeted at 84, and the number is now stable.\n\nThe swing was never in the rule. The scan rig had no lockfile and installed `eslint@9`, `@typescript-eslint/parser` and `oxc-resolver` UNPINNED, so every install was free to resolve differently — and did: CI read this corpus at 14,996, 15,003 and 15,361 findings on the same commit, and this rule at both 84 and 91 on clean builds. Pinning every rig dependency to the workspace lockfile gives 14,876 on three consecutive fresh-rig runs, with this rule at 84 every time.\n\nPinning fixed a second thing nobody had noticed: the gate was measuring the plugins under ESLint 9 while the repository builds and tests them under 10. It now measures what the repo actually ships against.\n\nRecorded because the reasoning was the failure, not the number: I called 84 the truth, 'corrected' it to 91 arguing CI is the clean-environment authority, then corrected back when CI read 84. Three independent methods agreed on 84 throughout and I twice talked myself out of them. When measurements of the same thing disagree, the instrument is the finding.",
+      "corpusFindings": 91,
+      "budgetReason": "91. Correct in contract — a hook dependency array missing a value the effect reads. The canonical React correctness rule; a missing dep is a stale-closure bug, not a style opinion.\n\nMeasurement note — budgeted at 91, the MAXIMUM observed, and the mechanism is still unknown.\n\nWhat is established: CI itself has read BOTH 84 and 91, on different runs of the same corpus. This machine reads 84 every time — three consecutive scans, a direct per-repo count (okta-signin-widget 46 + Shopify/cli 38, identical finding sets by sha1 across three runs each), and every other target zero.\n\nWhat has been ruled OUT, each by measurement rather than argument:\n  - plugin staleness. It persists with the rig installing PUBLISHED, immutable versions, so there is no local build to go stale.\n  - the `file:` npm cache. Same reason.\n  - filesystem case-sensitivity between macOS and Linux. `git ls-files` case-folded shows no colliding paths in either react-heavy target.\n\nSo the budget is the maximum, because a gate that fails on a coin flip is worse than one budgeted 7 findings loose. This is the ONE number here that is not a measurement of the rules, and it is labelled as such rather than quietly rounded.\n\nMy own handling of it is recorded because the reasoning was the failure: I called 84 the truth, corrected to 91 arguing CI is authoritative, corrected back when CI read 84, and am now back at 91 with better evidence and less confidence. The lesson is not which number — it is that I kept asserting one while the instrument was visibly disagreeing with itself.",
       "seal": null,
       "detection": null
     },
