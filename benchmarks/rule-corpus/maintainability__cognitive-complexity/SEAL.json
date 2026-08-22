@@ -21,7 +21,7 @@
     },
     "effectiveFp": {
       "state": "unmet",
-      "evidence": "not measured under the formal protocol. One class is now out of scope by construction: 32% of corpus findings were in machine-generated files, where nobody reads the advice. 671 -> 227. What remains has not been sampled.",
+      "evidence": "not measured under the formal protocol. One class is now out of scope by construction. In a single-rule sweep at `error` over the 8 pinned repositories, 444 of 1409 findings (32%) were in machine-generated files, and applying the skip removed exactly 32% \u2014 1409 -> 965. Under corpus-scan's recommended presets the rule reads 227 against a published budget of 671; that larger gap is not all this change, since the budget also predates other work on the plugin. What remains has not been sampled.",
       "command": "npm run cases -- --rule=maintainability/cognitive-complexity --n=20"
     },
     "reachability": {
@@ -41,7 +41,7 @@
     },
     "realSource": {
       "state": "met",
-      "evidence": "8 pinned repositories, measured against the LOCAL tree (before #612 the rig ran local plugins against the published devkit). 671 -> 227.",
+      "evidence": "8 pinned repositories under scripts/corpus-scan.ts (recommended presets). Published budget 671 -> 227 against the local tree, which is the first measurement here taken against the actual tree \u2014 before #612 the rig ran local plugins against the PUBLISHED devkit. scripts/corpus-scan.ts measures under the RECOMMENDED presets; the composition figures come from a single-rule sweep at `error` with default options over the same 8 repositories. Two instruments, two denominators \u2014 they are not interchangeable and an earlier draft of this record mixed them.",
       "command": "npx tsx scripts/corpus-scan.ts --local"
     },
     "partition": {
@@ -88,5 +88,5 @@
       "reopenWhen": "an effectiveFp sample shows test-file findings of this rule going unactioned at the same rate as the generated ones did."
     }
   ],
-  "notes": "Seal record OPENED 2026-08-22, alongside the change that added skipGeneratedFiles. The generated share was PREDICTED from the corpus at 32% before the change and the change removed exactly 32%, which is the evidence that the predicate silenced the generated set and nothing else."
+  "notes": "Seal record OPENED 2026-08-22, alongside the change that added skipGeneratedFiles. The generated share was PREDICTED from a single-rule sweep at 32% before the change, and the change removed exactly 32% of that sweep's findings (1409 -> 965) \u2014 which is the evidence that the predicate silenced the generated set and nothing else, rather than a broader class landing near the same number. scripts/corpus-scan.ts measures under the RECOMMENDED presets; the composition figures come from a single-rule sweep at `error` with default options over the same 8 repositories. Two instruments, two denominators \u2014 they are not interchangeable and an earlier draft of this record mixed them."
 }

@@ -21,13 +21,13 @@
     },
     "effectiveFp": {
       "state": "unmet",
-      "evidence": "not measured under the formal protocol, but the two classes the previous record NAMED as effective FPs are now out of scope by construction. Of the corpus findings, 1,961 were test code \u2014 a repeated it() block is not a maintenance defect, the repetition IS the test \u2014 and 507 files were machine-generated, every one carrying a banner. 2,076 -> 258. What remains has not been sampled.",
+      "evidence": "not measured under the formal protocol. The two classes the previous draft of this record NAMED as effective FPs are now out of scope by construction, measured by a single-rule sweep at `error` over the same 8 repositories: of 3,707 findings, 1,961 (52.9%) were in test code and a further 1,305 in machine-generated files, leaving 371. 507 FILES were silenced by the generated skip \u2014 a file count, not a finding count. Under corpus-scan's recommended presets the same change reads 2,076 -> 258. What remains has not been sampled.",
       "command": "npm run cases -- --rule=maintainability/identical-functions --n=20"
     },
     "reachability": {
-      "state": "unmet",
-      "evidence": "not applicable in the taint sense.",
-      "command": "n/a \u2014 record as scope"
+      "state": "n/a",
+      "evidence": "not applicable. This is a structural duplication metric, not a source-to-sink question, so there is no path to prove reachable.",
+      "command": "n/a"
     },
     "duel": {
       "state": "unmet",
@@ -41,7 +41,7 @@
     },
     "realSource": {
       "state": "met",
-      "evidence": "8 pinned repositories. 3,530 -> 2,076 across five normalisation defects, then 2,076 -> 258 once the rule stopped reporting on code nobody edits (test files 52.9%, generated files the bulk of the rest). Measured against the local tree for the first time \u2014 before #612 the rig ran local plugins against the PUBLISHED devkit, so any number that depended on a devkit predicate described the last release.",
+      "evidence": "8 pinned repositories under scripts/corpus-scan.ts (recommended presets). Published budget 2,076 -> 258 against the local tree. Measured against the local tree for the first time: before #612 the rig ran local plugins against the PUBLISHED devkit, so any number depending on a devkit predicate described the last release. scripts/corpus-scan.ts measures under the RECOMMENDED presets; the composition figures come from a single-rule sweep at `error` with default options over the same 8 repositories. Two instruments, two denominators \u2014 they are not interchangeable and an earlier draft of this record mixed them.",
       "command": "npx tsx scripts/corpus-scan.ts --local"
     },
     "partition": {
@@ -99,10 +99,10 @@
       "id": "test-file-scope",
       "kind": "scope",
       "limit": null,
-      "summary": "the rule does not look at test files, which were 52.9% of its corpus findings.",
+      "summary": "the rule does not look at test files, which were 52.9% of findings in the single-rule sweep.",
       "why": "ignoreTestFiles already defaulted true but matched a BASENAME regex, so a suite laid out as test/spec/**  with plain filenames \u2014 okta-auth-js, the largest single group \u2014 was never covered. Now uses the devkit isTestFilePath, which decides directories by exact path SEGMENT. A repeated it() block restates its setup so it reads independently when it fails; \"extract to a reusable function\" is advice nobody takes.",
       "reopenWhen": "a user reports duplication in tests they would actually have refactored, or the effectiveFp sample finds actionable test-file findings."
     }
   ],
-  "notes": "Seal record OPENED 2026-08-21. The adversarial wave found the FP direction here, where the other rules leaked recall \u2014 6 of 9 distinct pairs called duplicates. UPDATED 2026-08-22: the generated-code gap this record opened with is closed, realSource re-measured at 258, partition met. Still OPEN \u2014 oracle, effectiveFp, duel, adversarial, behaviour, throughput and recorded are untouched, and the text-similarity premise stands."
+  "notes": "Seal record OPENED 2026-08-21. The adversarial wave found the FP direction here, where the other rules leaked recall \u2014 6 of 9 distinct pairs called duplicates. UPDATED 2026-08-22: the generated-code gap this record opened with is closed, realSource re-measured at 258 under corpus-scan, partition met, reachability set to n/a. Still OPEN \u2014 oracle, effectiveFp, duel, adversarial, behaviour, throughput and recorded are untouched, and the text-similarity premise stands. scripts/corpus-scan.ts measures under the RECOMMENDED presets; the composition figures come from a single-rule sweep at `error` with default options over the same 8 repositories. Two instruments, two denominators \u2014 they are not interchangeable and an earlier draft of this record mixed them."
 }
