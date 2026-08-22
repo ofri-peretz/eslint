@@ -54,6 +54,11 @@ interface ExtractionSuggestion {
 
 export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
   name: 'cognitive-complexity',
+  // 32% of this rule's findings on the pinned 8-repository corpus were in
+  // generated files — twilio-node's OpenAPI-generated `src/rest/**`, whose
+  // header says "Do not edit the class manually". "This function is hard to
+  // follow" is advice to a maintainer, and generated code has none.
+  skipGeneratedFiles: true,
   meta: {
     type: 'suggestion',
     docs: {

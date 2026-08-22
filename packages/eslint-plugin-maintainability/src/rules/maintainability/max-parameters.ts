@@ -51,6 +51,10 @@ function countParameters(
 
 export const maxParameters = createRule<RuleOptions, MessageIds>({
   name: 'max-parameters',
+  // 27% of this rule's findings on the pinned 8-repository corpus were in
+  // generated files. A generated signature's arity is the API spec's
+  // decision, not something anyone can refactor.
+  skipGeneratedFiles: true,
   meta: {
     type: 'suggestion',
     docs: {

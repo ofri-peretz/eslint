@@ -43,3 +43,22 @@ test pins that in each direction.
 `@interlace/eslint-devkit` exports `isGeneratedFile` for rules that give
 maintainability advice. Security rules must not use it: generated code ships
 and runs, so an injection in it is live whoever typed it.
+
+---
+
+`cognitive-complexity` and `max-parameters` skip generated files too.
+
+`createRule` gains an opt-in `skipGeneratedFiles`, the counterpart to the
+existing `skipTestFiles`. The two are not symmetric: `skipTestFiles` stays off
+for these rules on purpose, because a convoluted test is still a readability
+cost to whoever debugs it. Generated code has no such reader.
+
+Measured on the pinned corpus, then applied:
+
+| rule | before | after |
+|---|---:|---:|
+| `cognitive-complexity` | 1,409 | 965 (−32%) |
+| `max-parameters` | 407 | 296 (−27%) |
+
+The predicted shares were 32% and 27%, so the predicate silenced the generated
+set and nothing else.
