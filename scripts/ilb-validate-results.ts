@@ -29,7 +29,12 @@ import { validateToolchain } from '../benchmarks/lib/toolchain.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
-const RESULTS_ROOT = path.join(REPO_ROOT, 'benchmarks', 'results');
+// Overridable via ILB_RESULTS_ROOT so tests can point the script at a
+// non-existent path without renaming the real benchmarks/results/ (which
+// would mutate shared state visible to parallel vitest workers).
+const RESULTS_ROOT = process.env.ILB_RESULTS_ROOT
+  ? path.resolve(process.env.ILB_RESULTS_ROOT)
+  : path.join(REPO_ROOT, 'benchmarks', 'results');
 const SCHEMA_PATH = path.join(REPO_ROOT, 'benchmarks', 'lib', 'result-schema.json');
 
 const SCHEMA = JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf8'));
@@ -245,8 +250,16 @@ function main() {
     : findJsonFiles(RESULTS_ROOT);
 
   if (files.length === 0) {
-    if (!QUIET) console.log('ilb-validate-results: no result files found.');
-    process.exit(0);
+    // Distinguish "directory not present" (expected in shallow clones for
+    // docs-only deploys — see scorecard-source-integrity.test.ts line 27)
+    // from "directory present but contains no result files" (the vacuous
+    // pass this gate exists to prevent).
+    if (!targets.length && !fs.existsSync(RESULTS_ROOT)) {
+      if (!QUIET) console.warn('ilb-validate-results: results directory not present — skipping (shallow clone?)');
+      process.exit(0);
+    }
+    console.error('ilb-validate-results: no result files found — refusing to pass vacuously on zero files');
+    process.exit(1);
   }
 
   let totalIssues = 0;
