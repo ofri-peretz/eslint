@@ -78,3 +78,34 @@ npm install && npx turbo build --filter="./packages/eslint-plugin-*"
    be upgraded to SHA-256".
 4. Run the gate. If it fires, that is a new confirmed FP: fix the rule, or add it to the
    baseline with a linked issue.
+
+## Measured noise, by preset (2026-08-22)
+
+78.3 KLOC / 534 files of well-maintained real code — `ahaenggli/AzureAD-LDAP-wrapper`,
+`shardeum/json-rpc-server`, `add2cal/add-to-calendar-button`, `LavaMoat/LavaMoat` — linted
+at `origin/main`, counting only rules the preset actually enables.
+
+| preset | plugins | rules | findings | per KLOC |
+|---|---|---|---|---|
+| `recommended` | 21 | 201 | 82 | **1.05** |
+| `strict` | 21 | 272 | 572 | **7.30** |
+
+**The default is quiet; `strict` is where the noise lives.** Three rules produce 429 of
+`strict`'s 572 findings (75%):
+
+| rule | findings | what it actually flags |
+|---|---:|---|
+| `secure-coding/detect-object-injection` | 182 | `delete all[key]`, `db[newEntryDN] = x` — local object writes. The single most-disabled rule in the ecosystem. |
+| `secure-coding/no-improper-type-validation` | 126 | `config.LDAP_PORT != 636`, `value.length == 0` — this is `eqeqeq` with a CWE tag. |
+| `secure-coding/no-insecure-comparison` | 121 | Overlaps the row above so heavily that both fire on the same line. |
+
+The worst single case: `if ((typeof arr[i]) == 'object' && arr[i] !== null)` — the textbook
+null-safe object check — is reported by **two** rules at once.
+
+`no-improper-type-validation` is also `error` in the `owasp-top-10` preset. That is the
+highest-priority correction: `owasp-top-10` is a preset people enable deliberately for
+compliance, and it currently reports the correct defensive idiom as an OWASP finding.
+
+Top of `recommended`, for triage (not yet verified as FPs beyond the baseline):
+`no-toctou-vulnerability` 17, `browser-security/no-innerhtml` 14,
+`detect-eval-with-expression` 10, `no-math-random-crypto` 7.
