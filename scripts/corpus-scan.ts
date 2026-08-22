@@ -34,7 +34,7 @@
  *   tsx scripts/corpus-scan.ts --json      # machine-readable report on stdout
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
@@ -298,6 +298,35 @@ function main(): number {
   // measures the code in the PR rather than the last published release.
   ensurePrivateDir(RIG, CACHE_HOME);
   writeFileSync(path.join(RIG, 'package.json'), JSON.stringify({ name: 'rig', private: true }));
+  // Wipe the rig when any plugin's build changed.
+  //
+  // `--install-links` makes the rig a COPY, which is necessary but not
+  // sufficient: npm restores an unchanged-version package from its own cache,
+  // so the copy can be of the PREVIOUS build. Measured 2026-08-22 —
+  // `no-magic-numbers` read 1,635 on a warm rig and 1,421 on a fresh one for
+  // the same commit, and the gate printed no ratchet notice at all, so a
+  // 214-finding improvement was invisible. The same shape had already made
+  // `hooks-exhaustive-deps` read 84 and 91.
+  //
+  // The fingerprint is mtime+size of every plugin's built entry point. Cheap,
+  // and it changes exactly when a rebuild happens.
+  const fingerprint = PLUGINS.map((plugin) => {
+    const entry = path.join(ROOT, 'packages', plugin, 'dist/src/index.js');
+    if (!existsSync(entry)) return `${plugin}:absent`;
+    const stat = statSync(entry);
+    return `${plugin}:${stat.mtimeMs}:${stat.size}`;
+  }).join('\n');
+  const stampFile = path.join(RIG, '.plugin-fingerprint');
+  if (
+    existsSync(path.join(RIG, 'node_modules')) &&
+    (!existsSync(stampFile) || readFileSync(stampFile, 'utf-8') !== fingerprint)
+  ) {
+    log('Plugin build changed — rebuilding the scan rig from scratch…');
+    rmSync(path.join(RIG, 'node_modules'), { recursive: true, force: true });
+    rmSync(path.join(RIG, 'package-lock.json'), { force: true });
+  }
+
+
   log('Installing scan rig…');
   sh(
     'npm',
@@ -350,6 +379,9 @@ function main(): number {
     ],
     RIG,
   );
+
+  // Record what this rig was built from, so the next run can tell.
+  writeFileSync(stampFile, fingerprint);
 
   const configPath = path.join(RIG, 'corpus-scan.config.mjs');
   writeFileSync(configPath, buildConfig());
