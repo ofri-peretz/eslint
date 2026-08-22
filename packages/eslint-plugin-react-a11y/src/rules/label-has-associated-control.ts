@@ -33,8 +33,7 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/label-has-associated-control.md',
       description: 'Enforce that labels have accessible controls',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 1.3.1',
     },
     messages: {
       missingControl: formatLLMMessage({
@@ -44,7 +43,7 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Nest the input or use htmlFor attribute',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/label-has-associated-control.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 1.3.1'
       }),
     },
     schema: [

@@ -39,8 +39,7 @@ export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, 
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-interactive-element-to-noninteractive-role.md',
       description: 'Enforce that interactive elements don\'t have non-interactive ARIA roles',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 4.1.2',
     },
     messages: {
       interactiveToNoninteractive: formatLLMMessage({
@@ -50,7 +49,7 @@ export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, 
         severity: 'HIGH',
         fix: 'Use a wrapper element with the role, or remove the role',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-interactive-element-to-noninteractive-role.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 4.1.2'
       }),
     },
     schema: [
