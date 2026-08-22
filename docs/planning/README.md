@@ -17,6 +17,7 @@ roadmaps (those live in [`../roadmaps/`](../roadmaps/)).
 - [`PARITY-SUPREMACY-PLAN.md`](./PARITY-SUPREMACY-PLAN.md) — diagnostic-parity + supremacy strategy.
 - [`ADOPTION-TARGET-NETWORK.md`](./ADOPTION-TARGET-NETWORK.md) — the adoption-PR campaign and qualified-repo list.
 - [`BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md`](./BENCHMARK-VS-ESLINT-PLUGIN-SECURITY.md) — head-to-head benchmark methodology vs `eslint-plugin-security`.
+- [`BENCHMARK-RESULTS-EXTRACTION-PLAN.md`](./BENCHMARK-RESULTS-EXTRACTION-PLAN.md) — plan for extracting `benchmarks/results/` (66 MB raw data) into a dedicated research repo without disabling rigor guardrails.
 
 ## Cross-references
 
