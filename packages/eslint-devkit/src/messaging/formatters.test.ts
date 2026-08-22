@@ -824,6 +824,8 @@ describe('CWE→CVSS enrichment contract (lock)', () => {
  * `CWE-252 OWASP:A10-Mishandling CVSS:5.3 | … | CRITICAL` — four false claims,
  * two of them contradicting each other.
  */
+const W3C_IMAGES = 'https://www.w3.org/WAI/tutorials/images/';
+
 describe('WCAG standards reference', () => {
   it('renders the criterion in the standards prefix', () => {
     const result = formatLLMMessage({
@@ -833,6 +835,7 @@ describe('WCAG standards reference', () => {
       description: 'Image missing alt text',
       severity: 'HIGH',
       fix: 'Add alt="Descriptive text"',
+      documentationLink: W3C_IMAGES,
     });
     expect(result).toContain('WCAG 1.1.1');
     expect(result.split('\n')[0]).toBe('♿ WCAG 1.1.1 | Image missing alt text | HIGH');
@@ -848,6 +851,7 @@ describe('WCAG standards reference', () => {
       description: 'Missing lang',
       severity: 'HIGH',
       fix: 'Add lang',
+      documentationLink: W3C_IMAGES,
     });
     expect(result).not.toContain('OWASP');
     expect(result).not.toContain('CVSS');
@@ -861,6 +865,7 @@ describe('WCAG standards reference', () => {
       description: 'Empty alt text detected',
       severity: 'LOW',
       fix: 'Consider a description',
+      documentationLink: W3C_IMAGES,
     });
     expect(result.split('\n')[0]).toBe('♿ Empty alt text detected | LOW');
   });

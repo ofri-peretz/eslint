@@ -69,6 +69,7 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-missing-aria-labels.md',
       description: 'Detects elements missing ARIA labels',
+      wcag: 'WCAG 4.1.2',
     },
     messages: {
       missingAriaLabel: formatLLMMessage({

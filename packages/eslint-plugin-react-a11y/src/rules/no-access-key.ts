@@ -25,6 +25,7 @@ export const noAccessKey = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-access-key.md',
       description: 'Enforce that accessKey attribute is not used',
+      wcag: 'WCAG 2.1.1',
     },
     messages: {
       noAccessKey: formatLLMMessage({

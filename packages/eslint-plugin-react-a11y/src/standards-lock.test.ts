@@ -35,7 +35,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import plugin from './index';
 
-const RULES_DIR = path.resolve(__dirname, 'rules');
 const DOCS_DIR = path.resolve(__dirname, '..', 'docs', 'rules');
 
 const rules = Object.entries(plugin.rules ?? {});
@@ -51,36 +50,65 @@ describe('react-a11y standards metadata', () => {
         const docs = rule.meta?.docs as
           | { cwe?: string; cvss?: number; owasp?: string }
           | undefined;
-        return Boolean(docs?.cwe ?? docs?.cvss ?? docs?.owasp);
+        // Each field tested for presence, not truthiness. `cvss` is a number
+        // and the schema allows 0, so `docs?.cwe ?? docs?.cvss` would read a
+        // declared `cvss: 0` as absent and let it through.
+        return (
+          docs?.cwe !== undefined || docs?.cvss !== undefined || docs?.owasp !== undefined
+        );
       })
       .map(([name]) => name);
     expect(claiming).toEqual([]);
   });
 
-  it('no rule SOURCE mentions CWE-252', () => {
-    // meta is one route; a message option is another, and it is the one that
-    // reached users through the CWE enrichment.
-    const offenders = fs
-      .readdirSync(RULES_DIR)
-      .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
-      .filter((f) => fs.readFileSync(path.join(RULES_DIR, f), 'utf8').includes('CWE-252'));
+  it('no security standard reaches the RENDERED message', () => {
+    // `meta.docs` is one route. The message options are another, and they are
+    // the one that reached users: `formatLLMMessage` enriches OWASP and CVSS
+    // from whatever `cwe` it is handed, and the result is baked into the
+    // message string at module load.
+    //
+    // Asserting on the rendered string rather than on the source covers every
+    // way a claim can arrive — any CWE and not just 252, a hand-set `cvss`, an
+    // explicit `owasp` — and it is the exact text a user sees.
+    const offenders: string[] = [];
+    for (const [name, rule] of rules) {
+      for (const [messageId, template] of Object.entries(rule.meta?.messages ?? {})) {
+        const found = [/CWE-\d+/, /CVSS:/, /OWASP:/].filter((re) => re.test(String(template)));
+        if (found.length > 0) offenders.push(`${name}#${messageId}`);
+      }
+    }
     expect(offenders).toEqual([]);
   });
 
-  it('every WCAG criterion a rule declares also appears in that rule doc', () => {
-    // The criterion has to come from somewhere checkable. The docs stated it
-    // first; this keeps the two from drifting apart again in either direction.
+  it('meta and docs agree on the WCAG criterion, in BOTH directions', () => {
+    // The criterion has to come from somewhere checkable, and the docs stated
+    // it first. One direction alone is not a lock: checking only that
+    // `meta.wcag` appears in the doc lets a doc-only edit pass while the
+    // metadata goes stale or missing, which is the drift this exists to stop.
     const mismatched: string[] = [];
     for (const [name, rule] of rules) {
       const wcag = (rule.meta?.docs as { wcag?: string } | undefined)?.wcag;
-      if (!wcag) continue;
       const doc = path.join(DOCS_DIR, `${name}.md`);
-      if (!fs.existsSync(doc)) {
-        mismatched.push(`${name} (no doc)`);
-        continue;
+      const text = fs.existsSync(doc) ? fs.readFileSync(doc, 'utf8') : null;
+      const inDoc = new Set(
+        (text?.match(/WCAG \d+\.\d+\.\d+/g) ?? []).map((m) => m.trim()),
+      );
+
+      // meta -> docs
+      if (wcag !== undefined) {
+        if (text === null) {
+          mismatched.push(`${name}: declares ${wcag} and has no doc`);
+        } else if (!inDoc.has(wcag)) {
+          mismatched.push(
+            `${name}: declares ${wcag}, doc names ${[...inDoc].join(', ') || 'none'}`,
+          );
+        }
       }
-      if (!fs.readFileSync(doc, 'utf8').includes(wcag)) {
-        mismatched.push(`${name} (doc does not mention ${wcag})`);
+
+      // docs -> meta. A doc naming a criterion while the rule declares none is
+      // the stale-metadata case, and it is how all 21 rules got here.
+      if (wcag === undefined && inDoc.size > 0) {
+        mismatched.push(`${name}: doc names ${[...inDoc].join(', ')}, meta declares none`);
       }
     }
     expect(mismatched).toEqual([]);

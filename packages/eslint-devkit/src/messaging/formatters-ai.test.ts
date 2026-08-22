@@ -382,6 +382,7 @@ describe('WCAG in the next-gen formatter', () => {
       description: 'Image missing alt text',
       severity: 'HIGH',
       fix: 'Add alt="Descriptive text"',
+      documentationLink: 'https://www.w3.org/WAI/tutorials/images/',
     });
     expect(result).toContain('WCAG 1.1.1');
     expect(result).not.toContain('CWE');

@@ -25,6 +25,7 @@ export const lang = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/lang.md',
       description: 'Enforce that lang attribute has a valid value',
+      wcag: 'WCAG 3.1.1',
     },
     messages: {
       invalidLang: formatLLMMessage({

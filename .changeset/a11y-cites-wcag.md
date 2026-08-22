@@ -29,7 +29,10 @@ Now:
 ♿ WCAG 1.1.1 | Image missing alt text | HIGH
 ```
 
-Each rule's criterion comes from that rule's own `docs/rules/*.md`, which
+All **37** rules now declare a criterion, up from the 21 that carried the bad
+CWE. The extra 16 had no standards metadata at all while their docs named one —
+found by the reverse half of the lock, which is the half that catches stale
+metadata. Each criterion comes from that rule's own `docs/rules/*.md`, which
 named the right standard the whole time — the machine-readable metadata simply
 disagreed with the prose beside it. A lock now keeps the two in step, in both
 directions.
