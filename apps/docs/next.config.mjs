@@ -1,4 +1,5 @@
 import { createMDX } from 'fumadocs-mdx/next';
+import { withPostHogConfig } from '@posthog/nextjs-config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
@@ -9,6 +10,71 @@ const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'ut
 const monorepoRoot = path.resolve(__dirname, '../..');
 
 const withMDX = createMDX();
+
+/**
+ * Content-Security-Policy in *report-only* mode, with violations reported to
+ * PostHog's CSP endpoint (`$csp_violation` events) through the same `/ingest`
+ * reverse proxy as the rest of analytics.
+ *
+ * Report-only by design: this policy is a hypothesis, not a contract. The
+ * browser evaluates it, reports what would have been blocked, and blocks
+ * nothing — so a wrong rule costs a PostHog event, never a broken page. Once
+ * the violation stream is quiet the header can be promoted to the enforcing
+ * `Content-Security-Policy` name.
+ *
+ * Omitted entirely when the PostHog key is absent at build time (local `next
+ * build`, forks) — a report-only policy with nowhere to report is dead weight.
+ */
+function cspReportOnlyHeaders() {
+  const token = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
+  if (!token) return [];
+  const policy = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    // Next.js ships inline bootstrap scripts and styles; `unsafe-eval` is
+    // required by some fumadocs code-block features in production builds.
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    // next/image proxies remote hosts through /_next/image (same-origin), but
+    // MDX can inline a remote badge directly.
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    // Same-origin covers /ingest (PostHog) and /_vercel (Vercel Analytics).
+    "connect-src 'self' https://api.github.com https://api.npmjs.org",
+    `report-uri /ingest/report/?token=${token}`,
+  ].join('; ');
+  return [{ key: 'Content-Security-Policy-Report-Only', value: policy }];
+}
+
+/**
+ * Source maps for PostHog Error Tracking — generated, uploaded, then deleted.
+ *
+ * Without them the error inbox reports things like "Minified React error #418"
+ * at `/_next/static/chunks/10z666t7-w_5v.js`, which names no file and no line.
+ *
+ * `deleteAfterUpload` is the load-bearing option, not a default we inherit:
+ * the .map files are produced inside the Vercel build, handed to PostHog, and
+ * removed from the output before anything is served. Nothing maps our source
+ * back together for a visitor — the symbolication lives in PostHog, behind
+ * auth, and the deployment ships the same minified bundle it always did.
+ * A lock test pins it; flipping it to false would publish our sources.
+ *
+ * Inert unless both env vars are set, so local builds, forks, and CI stay
+ * byte-identical to today and no build can fail for want of a token.
+ */
+function withSourcemapUpload(nextConfig) {
+  const personalApiKey = process.env.POSTHOG_PERSONAL_API_KEY?.trim();
+  const projectId = process.env.POSTHOG_PROJECT_ID?.trim();
+  if (!personalApiKey || !projectId) return nextConfig;
+  return withPostHogConfig(nextConfig, {
+    personalApiKey,
+    projectId,
+    sourcemaps: { enabled: true, deleteAfterUpload: true },
+  });
+}
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -108,6 +174,7 @@ const config = {
           key: 'Permissions-Policy', 
           value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' 
         },
+        ...cspReportOnlyHeaders(),
       ],
     },
     {
@@ -202,4 +269,4 @@ const config = {
   ],
 };
 
-export default withMDX(config);
+export default withSourcemapUpload(withMDX(config));

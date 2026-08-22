@@ -115,6 +115,12 @@ describe('PostHog: Init contract (ANALYTICS_PHILOSOPHY.md)', () => {
   it('exception capture enabled (capture_exceptions: true)', () => {
     expect(initSrc).toMatch(/capture_exceptions:\s*true/);
   });
+  it('heatmap capture enabled (capture_heatmaps: true)', () => {
+    expect(initSrc).toMatch(/capture_heatmaps:\s*true/);
+  });
+  it('dead-click capture enabled (capture_dead_clicks: true)', () => {
+    expect(initSrc).toMatch(/capture_dead_clicks:\s*true/);
+  });
   it('cross-subdomain cookie on .interlace.tools', () => {
     expect(initSrc).toMatch(/cross_subdomain_cookie:\s*true/);
     expect(initSrc).toMatch(/['"]\.interlace\.tools['"]/);
@@ -214,6 +220,22 @@ describe('PostHog: Analytics primitives (vendor-neutral surface)', () => {
 });
 
 describe('PostHog: Next.js reverse proxy', () => {
+  it('source maps are uploaded to PostHog and deleted, never served', () => {
+    // The whole point of the wrapper: symbolicated stacks in PostHog without
+    // publishing our sources. Flipping deleteAfterUpload to false, or turning
+    // on productionBrowserSourceMaps, would ship the maps to every visitor.
+    expect(nextConfigSrc).toMatch(/withPostHogConfig/);
+    expect(nextConfigSrc).toMatch(/deleteAfterUpload:\s*true/);
+    expect(nextConfigSrc).not.toMatch(/productionBrowserSourceMaps:\s*true/);
+  });
+  it('source-map upload is env-gated so keyless builds are unchanged', () => {
+    expect(nextConfigSrc).toMatch(/POSTHOG_PERSONAL_API_KEY/);
+    expect(nextConfigSrc).toMatch(/POSTHOG_PROJECT_ID/);
+  });
+  it('CSP violations report to PostHog through the /ingest proxy', () => {
+    expect(nextConfigSrc).toMatch(/Content-Security-Policy-Report-Only/);
+    expect(nextConfigSrc).toMatch(/report-uri \/ingest\/report\//);
+  });
   it('next.config.mjs rewrites /ingest/* to PostHog ingestion', () => {
     expect(nextConfigSrc).toMatch(/\/ingest\//);
     expect(nextConfigSrc).toMatch(/us\.i\.posthog\.com/);

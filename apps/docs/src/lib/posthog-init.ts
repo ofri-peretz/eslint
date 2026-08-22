@@ -176,6 +176,15 @@ export function initPostHog(): void {
     capture_pageleave: true,
     capture_performance: true,
     capture_exceptions: true,
+    // Heatmaps + scrollmaps: `$heatmap` events power the toolbar overlay on
+    // docs pages, where "did anyone scroll far enough to see the CTA?" is the
+    // question autocapture cannot answer. Requires Heatmaps enabled in the
+    // PostHog project settings for the overlay UI to render.
+    capture_heatmaps: true,
+    // Dead clicks: a click on something that looks interactive and does
+    // nothing. On a docs site that is the highest-signal UX defect there is
+    // (a non-copyable code block, a badge that reads like a link).
+    capture_dead_clicks: true,
     autocapture: true,
     cross_subdomain_cookie: true,
     disable_session_recording: disableReplay,
