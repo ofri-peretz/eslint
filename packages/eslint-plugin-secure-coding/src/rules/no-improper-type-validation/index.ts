@@ -69,6 +69,26 @@ type MessageIds =
 export interface Options extends SecurityRuleOptions {
   /** Whether to allow instanceof in same-realm contexts */
   allowInstanceofSameRealm?: boolean;
+  /**
+   * Report `==`/`!=` whose operands are not provably the same primitive type.
+   *
+   * On by default; set false to keep the three structural arms
+   * (`unsafeTypeofCheck`, `unsafeInstanceofUsage`, `unreliableConstructorCheck`)
+   * without this one.
+   *
+   * The type juggling this targets is real — `'0e0' == 0` is true, so
+   * `req.body.otp == storedOtp` is an authentication bypass. But telling it apart
+   * from `config.port != 636` requires knowing where the value came from, and this
+   * plugin does not do data-flow: statically only literals have a provable type. So
+   * the arm fires on loose equality broadly — 126 findings across 78 KLOC of
+   * well-maintained repositories, the single largest source of findings in the
+   * `strict` preset.
+   *
+   * That volume is why the rule does not belong in `owasp-top-10`, for the same
+   * reason its sibling `no-insecure-comparison` was removed from it. In `strict`,
+   * where breadth is the contract, it stays.
+   */
+  checkLooseEquality?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -87,10 +107,11 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Unsafe typeof Check',
         cwe: 'CWE-1287',
-        description: 'typeof x === \'object\' also matches null and arrays',
+        description: "typeof x === 'object' also matches null and arrays",
         severity: 'MEDIUM',
         fix: 'Use value != null && typeof value === "object" && !Array.isArray(value) — Not a finding if the value is already known non-null on this path',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof',
       }),
       unsafeInstanceofUsage: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -99,7 +120,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         description: 'instanceof may fail across contexts',
         severity: 'LOW',
         fix: 'Use Array.isArray() or typeof checks — Not a finding if the value never crosses a realm boundary (no vm, iframe, or worker)',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof',
       }),
       looseEqualityTypeCheck: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -108,7 +130,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         description: 'Loose equality may cause type confusion',
         severity: 'LOW',
         fix: 'Use strict equality (===) for type checking — Not a finding if both operands are already the same primitive type',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Equality',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Equality',
       }),
       unreliableConstructorCheck: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -117,7 +140,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         description: 'constructor.name can be spoofed',
         severity: 'MEDIUM',
         fix: 'Use Object.prototype.toString.call() or duck typing — Not a finding if the value never came from parsed input',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/constructor',
       }),
     },
     schema: [
@@ -127,19 +151,27 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           allowInstanceofSameRealm: {
             type: 'boolean',
             default: true,
-            description: 'Allow instanceof for same-realm objects'
+            description: 'Allow instanceof for same-realm objects',
+          },
+          checkLooseEquality: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Report loose == / != between operands of unprovable type. Set false to keep only the structural typeof/instanceof/constructor arms.',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as type validators',
+            description:
+              'Additional function names to consider as type validators',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -156,6 +188,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInstanceofSameRealm: true,
+      checkLooseEquality: true,
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -165,6 +198,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       allowInstanceofSameRealm = true,
+      checkLooseEquality = true,
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
@@ -198,11 +232,15 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
      */
     const sameExpression = (a: TSESTree.Node, b: TSESTree.Node): boolean => {
       if (a.type !== b.type) return false;
-      if (a.type === 'Identifier' && b.type === 'Identifier') return a.name === b.name;
+      if (a.type === 'Identifier' && b.type === 'Identifier')
+        return a.name === b.name;
       if (a.type === 'ThisExpression') return true;
       if (a.type === 'MemberExpression' && b.type === 'MemberExpression') {
         if (a.computed !== b.computed) return false;
-        return sameExpression(a.object, b.object) && sameExpression(a.property, b.property);
+        return (
+          sameExpression(a.object, b.object) &&
+          sameExpression(a.property, b.property)
+        );
       }
       if (a.type === 'Literal' && b.type === 'Literal') return a.raw === b.raw;
       return false;
@@ -235,18 +273,29 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
      * `0`, `''` and `false` besides — it is strictly stronger than `x !== null`,
      * and it is how the guard is actually written.
      */
-    const hasNullGuard = (node: TSESTree.BinaryExpression, operand: TSESTree.Node): boolean => {
+    const hasNullGuard = (
+      node: TSESTree.BinaryExpression,
+      operand: TSESTree.Node,
+    ): boolean => {
       /** `x !== null`, `x != undefined`, or a bare truthy `x`. */
-      const excludesNullish = (expression: TSESTree.Node, negated: boolean): boolean => {
+      const excludesNullish = (
+        expression: TSESTree.Node,
+        negated: boolean,
+      ): boolean => {
         if (sameExpression(expression, operand)) return !negated;
-        if (expression.type === 'UnaryExpression' && expression.operator === '!') {
+        if (
+          expression.type === 'UnaryExpression' &&
+          expression.operator === '!'
+        ) {
           return sameExpression(expression.argument, operand) && negated;
         }
         if (expression.type !== 'BinaryExpression') return false;
         const wanted = negated ? ['===', '=='] : ['!==', '!='];
         if (!wanted.includes(expression.operator)) return false;
-        if (isNullish(expression.right)) return sameExpression(expression.left, operand);
-        if (isNullish(expression.left)) return sameExpression(expression.right, operand);
+        if (isNullish(expression.right))
+          return sameExpression(expression.left, operand);
+        if (isNullish(expression.left))
+          return sameExpression(expression.right, operand);
         return false;
       };
 
@@ -258,7 +307,10 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       const combinator = negated ? '||' : '&&';
 
       const guards = (expression: TSESTree.Node): boolean => {
-        if (expression.type === 'LogicalExpression' && expression.operator === combinator) {
+        if (
+          expression.type === 'LogicalExpression' &&
+          expression.operator === combinator
+        ) {
           return guards(expression.left) || guards(expression.right);
         }
         return excludesNullish(expression, negated);
@@ -302,7 +354,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       }
       if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
         if (node.callee.name === 'String') return 'string';
-        if (node.callee.name === 'Number' || node.callee.name === 'parseInt') return 'number';
+        if (node.callee.name === 'Number' || node.callee.name === 'parseInt')
+          return 'number';
       }
       if (node.type !== 'Identifier') return undefined;
       if (seen.has(node.name)) return undefined;
@@ -314,20 +367,31 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       ) {
         const variable = scope.variables.find((v) => v.name === node.name);
         if (!variable) continue;
-        const writes = variable.references.filter((ref) => ref.isWrite() && ref.writeExpr);
+        const writes = variable.references.filter(
+          (ref) => ref.isWrite() && ref.writeExpr,
+        );
         if (writes.length === 0) return undefined;
         const types = writes.map((ref) =>
           primitiveTypeOf(ref.writeExpr as TSESTree.Expression, seen),
         );
-        return types.every((type) => type !== undefined && type === types[0]) ? types[0] : undefined;
+        return types.every((type) => type !== undefined && type === types[0])
+          ? types[0]
+          : undefined;
       }
       return undefined;
     };
 
     /** `typeof X === 'object'`, which is true for `null` and for every array. */
     // oxlint-disable-next-line consistent-function-scoping
-    const typeofObjectOperand = (node: TSESTree.BinaryExpression): TSESTree.Node | undefined => {
-      if (node.operator !== '===' && node.operator !== '!==') return undefined;
+    const typeofObjectOperand = (
+      node: TSESTree.BinaryExpression,
+    ): TSESTree.Node | undefined => {
+      // `==`/`!=` included deliberately. `typeof x == 'object'` has the identical
+      // null-and-array hole as `===`, and excluding it did not make the rule quieter:
+      // the comparison fell through to the loose-equality arm below, so the CORRECT
+      // `typeof x == 'object' && x !== null` was reported as type juggling while its
+      // `===` spelling passed. Same hole, same guard, same answer.
+      if (!['===', '!==', '==', '!='].includes(node.operator)) return undefined;
       const { left, right } = node;
       if (
         left.type === 'UnaryExpression' &&
@@ -358,8 +422,11 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         // (`typeof req.body.profile`), behind optional chaining, or on a renamed local
         // went unreported, while `metadata` matched because it contains "data".
         const operand = typeofObjectOperand(node);
-        if (operand && !hasNullGuard(node, operand)) {
-          report(node.left, 'unsafeTypeofCheck');
+        if (operand) {
+          // Return either way: a guarded `typeof x == 'object' && x !== null` is
+          // correct code, and falling through would re-report it as type juggling.
+          if (!hasNullGuard(node, operand))
+            report(node.left, 'unsafeTypeofCheck');
           return;
         }
 
@@ -368,7 +435,10 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (node.operator === '==' || node.operator === '!=') {
+        if (
+          checkLooseEquality &&
+          (node.operator === '==' || node.operator === '!=')
+        ) {
           // `x == null` is the idiomatic nullish test — null AND undefined in one
           // comparison. Core `eqeqeq` exempts it under `smart`/`allow-null` and this
           // plugin's own `no-insecure-comparison` exempts it in as many words. The
@@ -381,7 +451,11 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
 
           // Two values of the same primitive type cannot coerce.
           const leftType = primitiveTypeOf(node.left);
-          if (leftType !== undefined && leftType === primitiveTypeOf(node.right)) return;
+          if (
+            leftType !== undefined &&
+            leftType === primitiveTypeOf(node.right)
+          )
+            return;
 
           report(node, 'looseEqualityTypeCheck');
         }

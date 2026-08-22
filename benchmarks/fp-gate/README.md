@@ -12,8 +12,12 @@ domain. Every fixture in `eslint-plugin-jwt-security/…/require-algorithm-white
 names the receiver `jwt`:
 
 ```js
-valid:   { code: `jwt.verify(token, secret, { algorithms: ['RS256'] });` }
-invalid: { code: `jwt.verify(token, secret);` }
+valid: {
+  code: `jwt.verify(token, secret, { algorithms: ['RS256'] });`;
+}
+invalid: {
+  code: `jwt.verify(token, secret);`;
+}
 ```
 
 The rule actually keys on `.verify(`, not on anything JWT-related. No fixture in the suite
@@ -30,7 +34,7 @@ This corpus is the opposite population: **plausible code the rules should ignore
 - Scope is **security plugins only**. A style rule reporting here (`prefer-node-protocol`,
   `no-commonjs`) is correct behaviour and out of scope; the contract covers the claims
   that cost credibility when they are wrong.
-- Fixtures must be *narrow*. If a fixture triggers a rule for a legitimate reason
+- Fixtures must be _narrow_. If a fixture triggers a rule for a legitimate reason
   unrelated to the FP it is pinning, fix the fixture. `intentionally-public-endpoints.js`
   installs helmet and rate limiting precisely so that `require-helmet` — a correct
   finding — does not pollute the signal.
@@ -55,7 +59,7 @@ same reason an empty directory does. Override deliberately with `--allow-partial
 
 Plugins are resolved by **explicit path into this tree's `packages/`**, never by bare
 package name: in a git worktree `node_modules` is usually symlinked to the primary
-checkout, so a bare import silently measures the *other* tree's code.
+checkout, so a bare import silently measures the _other_ tree's code.
 
 ### Setup
 
@@ -73,7 +77,7 @@ npm install && npx turbo build --filter="./packages/eslint-plugin-*"
 1. Confirm by hand that the code is genuinely benign. **Do not add a case you have not
    read.** A wrong entry here permanently blinds the gate to a real vulnerability class.
 2. Record provenance: repo, path, line, and the commit/date it was read at.
-3. State *why* it is benign in the header, in terms of the security property — not
+3. State _why_ it is benign in the header, in terms of the security property — not
    "this is fine", but "an X.509 thumbprint is a protocol-mandated identifier and cannot
    be upgraded to SHA-256".
 4. Run the gate. If it fires, that is a new confirmed FP: fix the rule, or add it to the
@@ -85,19 +89,19 @@ npm install && npx turbo build --filter="./packages/eslint-plugin-*"
 `shardeum/json-rpc-server`, `add2cal/add-to-calendar-button`, `LavaMoat/LavaMoat` — linted
 at `origin/main`, counting only rules the preset actually enables.
 
-| preset | plugins | rules | findings | per KLOC |
-|---|---|---|---|---|
-| `recommended` | 21 | 201 | 82 | **1.05** |
-| `strict` | 21 | 272 | 572 | **7.30** |
+| preset        | plugins | rules | findings | per KLOC |
+| ------------- | ------- | ----- | -------- | -------- |
+| `recommended` | 21      | 201   | 82       | **1.05** |
+| `strict`      | 21      | 272   | 572      | **7.30** |
 
 **The default is quiet; `strict` is where the noise lives.** Three rules produce 429 of
 `strict`'s 572 findings (75%):
 
-| rule | findings | what it actually flags |
-|---|---:|---|
-| `secure-coding/detect-object-injection` | 182 | `delete all[key]`, `db[newEntryDN] = x` — local object writes. The single most-disabled rule in the ecosystem. |
-| `secure-coding/no-improper-type-validation` | 126 | `config.LDAP_PORT != 636`, `value.length == 0` — this is `eqeqeq` with a CWE tag. |
-| `secure-coding/no-insecure-comparison` | 121 | Overlaps the row above so heavily that both fire on the same line. |
+| rule                                        | findings | what it actually flags                                                                                         |
+| ------------------------------------------- | -------: | -------------------------------------------------------------------------------------------------------------- |
+| `secure-coding/detect-object-injection`     |      182 | `delete all[key]`, `db[newEntryDN] = x` — local object writes. The single most-disabled rule in the ecosystem. |
+| `secure-coding/no-improper-type-validation` |      126 | `config.LDAP_PORT != 636`, `value.length == 0` — this is `eqeqeq` with a CWE tag.                              |
+| `secure-coding/no-insecure-comparison`      |      121 | Overlaps the row above so heavily that both fire on the same line.                                             |
 
 The worst single case: `if ((typeof arr[i]) == 'object' && arr[i] !== null)` — the textbook
 null-safe object check — is reported by **two** rules at once.

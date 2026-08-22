@@ -47,7 +47,9 @@ async function loadPlugins() {
   const dirs = fs
     .readdirSync(path.join(ROOT, 'packages'))
     .filter((d) => d.startsWith('eslint-plugin-'))
-    .filter((d) => d.endsWith('-security') || d === 'eslint-plugin-secure-coding');
+    .filter(
+      (d) => d.endsWith('-security') || d === 'eslint-plugin-secure-coding',
+    );
 
   const plugins: Record<string, { rules?: Record<string, unknown> }> = {};
   const failed: string[] = [];
@@ -56,7 +58,6 @@ async function loadPlugins() {
     if (!fs.existsSync(pkgPath)) continue;
     const pkgName = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name as string;
 
-
     // Resolve by explicit path into THIS tree's packages, never by bare package
     // name: in a git worktree `node_modules` is typically symlinked to the primary
     // checkout, so a bare import resolves to the OTHER tree's packages and the gate
@@ -64,16 +65,28 @@ async function loadPlugins() {
     //
     // Load the built entry (`main`), not `src/index.ts`, so the plugin and the devkit
     // it was compiled against always agree.
-    const pkgJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { name: string; main?: string };
-    const entry = path.join(ROOT, 'packages', dir, pkgJson.main ?? 'dist/src/index.js');
+    const pkgJson = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+      name: string;
+      main?: string;
+    };
+    const entry = path.join(
+      ROOT,
+      'packages',
+      dir,
+      pkgJson.main ?? 'dist/src/index.js',
+    );
     try {
-      if (!fs.existsSync(entry)) throw new Error(`not built: ${path.relative(ROOT, entry)}`);
+      if (!fs.existsSync(entry))
+        throw new Error(`not built: ${path.relative(ROOT, entry)}`);
       const mod = await import(entry);
       const plugin = mod.default ?? mod;
-      if (plugin?.rules) plugins[pkgName.replace(/^eslint-plugin-/, '')] = plugin;
+      if (plugin?.rules)
+        plugins[pkgName.replace(/^eslint-plugin-/, '')] = plugin;
     } catch (err) {
       failed.push(pkgName);
-      console.warn(`  ! skipped ${pkgName}: ${(err as Error).message.split('\n')[0]}`);
+      console.warn(
+        `  ! skipped ${pkgName}: ${(err as Error).message.split('\n')[0]}`,
+      );
     }
   }
   return { plugins, failed, inScope: dirs.length };
@@ -106,7 +119,8 @@ async function main() {
 
   const rules: Record<string, 'error'> = {};
   for (const [name, plugin] of Object.entries(plugins)) {
-    for (const rule of Object.keys(plugin.rules ?? {})) rules[`${name}/${rule}`] = 'error';
+    for (const rule of Object.keys(plugin.rules ?? {}))
+      rules[`${name}/${rule}`] = 'error';
   }
 
   const linter = new Linter();
@@ -134,8 +148,11 @@ async function main() {
     }
   }
 
-  findings.sort((a, b) =>
-    a.file.localeCompare(b.file) || a.line - b.line || a.ruleId.localeCompare(b.ruleId),
+  findings.sort(
+    (a, b) =>
+      a.file.localeCompare(b.file) ||
+      a.line - b.line ||
+      a.ruleId.localeCompare(b.ruleId),
   );
 
   console.log(
@@ -155,8 +172,13 @@ async function main() {
   const current = [...new Set(findings.map(key))].sort();
 
   if (UPDATE) {
-    fs.writeFileSync(BASELINE, JSON.stringify({ knownFalsePositives: current }, null, 2) + '\n');
-    console.log(`  Baseline updated: ${current.length} known false positives.\n`);
+    fs.writeFileSync(
+      BASELINE,
+      JSON.stringify({ knownFalsePositives: current }, null, 2) + '\n',
+    );
+    console.log(
+      `  Baseline updated: ${current.length} known false positives.\n`,
+    );
     return;
   }
 
@@ -181,7 +203,9 @@ async function main() {
   if (added.length) {
     console.error(`  REGRESSION — ${added.length} new false positive(s):`);
     for (const a of added) console.error(`    + ${a}`);
-    console.error('\n  A rule started reporting on code we confirmed is benign.\n');
+    console.error(
+      '\n  A rule started reporting on code we confirmed is benign.\n',
+    );
     process.exitCode = 1;
     return;
   }
