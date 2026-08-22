@@ -30,6 +30,24 @@ export interface Options {
   
   /** Patterns for DTO identification. Default: ['DTO', 'Dto', 'Data', 'Request', 'Response'] */
   dtoPatterns?: string[];
+
+  /**
+   * Directory segments that hold DOMAIN code. Default: `['domain', 'domains',
+   * 'entities', 'entity', 'aggregate', 'aggregates', 'model', 'models']`.
+   *
+   * An anemic domain model is a defect of a DOMAIN LAYER: an entity that holds
+   * state while its behaviour lives in a service. Outside one, a class with
+   * fields and no methods is a transport object, an options bag or an error
+   * shape — which is what a client library is supposed to ship.
+   *
+   * Measured on okta-auth-js: 38 findings, every one under `idx/`,
+   * `myaccount/`, `errors/`, `exports/`, `base/`, `authn/`, `core/` or `http/`.
+   * Not a domain layer among them. Across the pinned corpus the rule reported
+   * 526.
+   *
+   * Set to `[]` to check every class, which is the pre-scoping behaviour.
+   */
+  domainPaths?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -217,6 +235,33 @@ function countBusinessMethods(
   return count;
 }
 
+/**
+ * Where a domain layer conventionally lives.
+ *
+ * Matched by path SEGMENT rather than prefix — a repository is linted from an
+ * absolute path, so `/Users/x/repo/src/domain/order.ts` does not start with
+ * `domain/`, and a prefix test would compile, run, and never fire.
+ */
+const DEFAULT_DOMAIN_PATHS: string[] = [
+  'domain',
+  'domains',
+  'entities',
+  'entity',
+  'aggregate',
+  'aggregates',
+  'model',
+  'models',
+];
+
+/** Does this file sit inside a domain directory? */
+function isDomainFile(filename: string, segments: string[]): boolean {
+  if (segments.length === 0) return true;
+  return filename
+    .replace(/\\/g, '/')
+    .split('/')
+    .some((part) => segments.includes(part));
+}
+
 export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
   name: 'ddd-anemic-domain-model',
   meta: {
@@ -275,6 +320,12 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Ignore DTOs and data transfer objects',
           },
+          domainPaths: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Directory segments holding domain code. Empty checks everywhere.',
+          },
           dtoPatterns: {
             type: 'array',
             items: { type: 'string' },
@@ -291,6 +342,7 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
       minBusinessMethods: 1,
       ignoreDtos: true,
       dtoPatterns: ['DTO', 'Dto', 'Data', 'Request', 'Response', 'Payload'],
+      domainPaths: DEFAULT_DOMAIN_PATHS,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
@@ -298,13 +350,22 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
 minBusinessMethods = 1,
       ignoreDtos = true,
       dtoPatterns = ['DTO', 'Dto', 'Data', 'Request', 'Response', 'Payload'],
-    
-}: Options = options || {};
+      domainPaths = DEFAULT_DOMAIN_PATHS,
+    }: Options = options || {};
+
+    // An anemic domain model is a defect of a DOMAIN LAYER. Outside one, a
+    // class with fields and no methods is a transport object, an options bag
+    // or an error shape — which is what a client library ships. Measured on
+    // okta-auth-js: 38 findings, not one of them under a domain directory.
+    const inDomain = isDomainFile(context.filename, domainPaths);
 
     /**
      * Check class declarations
      */
     function checkClass(node: TSESTree.ClassDeclaration | TSESTree.ClassExpression) {
+      if (!inDomain) {
+        return;
+      }
       if (!node.id) {
         return; // Anonymous class
       }
