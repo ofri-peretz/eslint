@@ -25,6 +25,7 @@ export const scope = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/scope.md',
       description: 'Enforce that scope prop is only used on th elements',
+      wcag: 'WCAG 1.3.1',
     },
     messages: {
       invalidScope: formatLLMMessage({

@@ -30,8 +30,7 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-role.md',
       description: 'Enforce that elements with ARIA roles have valid values',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 4.1.1',
     },
     messages: {
       invalidRole: formatLLMMessage({
@@ -41,7 +40,7 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Use a valid ARIA role (e.g., button, alert)',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-role.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 4.1.1'
       }),
     },
     schema: [

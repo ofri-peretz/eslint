@@ -55,18 +55,17 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-has-content.md',
       description: 'Enforce that anchors have content',
-      cwe: 'CWE-252',
-      cvss: 9.5,
+      wcag: 'WCAG 2.4.4',
     },
     messages: {
       missingContent: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Anchor Missing Content',
         description: 'Anchor must have content',
-        severity: 'CRITICAL',
+        severity: 'HIGH',
         fix: 'Provide text content or aria-label',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-has-content.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 2.4.4'
       }),
     },
     schema: [

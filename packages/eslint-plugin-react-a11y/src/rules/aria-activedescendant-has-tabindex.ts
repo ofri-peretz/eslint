@@ -29,8 +29,7 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-activedescendant-has-tabindex.md',
       description: 'Enforce that elements with aria-activedescendant have proper tabindex',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 4.1.2',
     },
     messages: {
       missingTabIndex: formatLLMMessage({
@@ -40,7 +39,7 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
         severity: 'HIGH',
         fix: 'Add tabIndex={0} or tabIndex={-1}',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-activedescendant-has-tabindex.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 4.1.2'
       }),
     },
     schema: [],

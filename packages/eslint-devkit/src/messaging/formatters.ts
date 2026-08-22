@@ -85,10 +85,15 @@ export function formatLLMMessage(
   const owasp = (enriched as EnterpriseMessageOptions).owasp;
   const cvss = (enriched as EnterpriseMessageOptions).cvss;
   const compliance = (enriched as EnterpriseMessageOptions).compliance;
+  const wcag = (enriched as EnterpriseMessageOptions).wcag;
 
   // Build standards reference string (labeled for LLM + human clarity)
   const standards: string[] = [];
   if (cwe) standards.push(cwe);
+  // WCAG stands where CWE would. An accessibility defect has no attacker, so
+  // there is nothing for OWASP or CVSS to say about it — those come from the
+  // CWE enrichment above and are absent when no CWE was given.
+  if (wcag) standards.push(wcag);
   if (owasp) {
     // Format: "OWASP:A05-Injection" - includes category name for clarity across years
     const owaspCode = owasp.split(':')[0]; // "A05" from "A05:2025"
