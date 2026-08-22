@@ -33,3 +33,49 @@ ruleTester.run('no-debug-code-in-production', noDebugCodeInProduction, {
     },
   ],
 });
+
+/**
+ * The rule's own name is the argument for this option.
+ *
+ * A build script is not production, so debug output in one is not debug code
+ * left in production. Shares `NON_PRODUCTION_SEGMENTS` with `no-console-log`,
+ * which reported many of the SAME lines under a different framing — on the
+ * pinned corpus, okta-auth-js `env/index.js:22` and `scripts/verify-package.js`
+ * were counted by both rules, 120 findings here and 107 there.
+ */
+ruleTester.run('no-debug-code-in-production — non-production paths', noDebugCodeInProduction, {
+  valid: [
+    { code: 'console.log("building");', filename: '/repo/scripts/build.js' },
+    { code: 'const x = DEBUG;', filename: '/repo/env/index.js' },
+    { code: 'console.log("cfg");', filename: '/repo/vite.config.ts' },
+  ],
+  invalid: [
+    {
+      // FN GUARD: `bin/` SHIPS. A published package delivers its CLI entry
+      // point from there, and it runs on an end user's machine.
+      code: 'if (__DEV__) { run(); }',
+      filename: '/repo/bin/cli.js',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      // FN GUARD: `*.config.*` at any depth is not build configuration.
+      // `src/database.config.ts` is a runtime module in the NestJS convention.
+      code: 'const x = DEBUG;',
+      filename: '/repo/src/database.config.ts',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      // FN GUARD: application code still reports.
+      code: 'const x = DEBUG;',
+      filename: '/repo/src/app.ts',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      // FN GUARD: turning the option off restores the finding.
+      code: 'const x = DEBUG;',
+      filename: '/repo/scripts/build.js',
+      options: [{ ignoreNonProductionPaths: false }],
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});

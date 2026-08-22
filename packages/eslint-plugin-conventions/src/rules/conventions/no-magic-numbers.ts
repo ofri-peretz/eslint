@@ -34,6 +34,41 @@ export interface Options {
   /** Allow numbers used as array indices (e.g., `items[2]`). Default: true */
   ignoreArrayIndexes?: boolean;
 
+  /**
+   * Report numbers used as object property VALUES — `{ timeout: 5000 }`.
+   * Default: false.
+   *
+   * Off by default, matching ESLint core's own `no-magic-numbers`, which has
+   * shipped `detectObjects: false` for years. A config object IS a place to
+   * write literals; that is what it is for.
+   *
+   * Measured rather than assumed: across 5,938 sampled findings on the
+   * 20-repository corpus, object properties were 1,827 of them — 31%, and the
+   * single largest context by a factor of two. The classes named below (loop
+   * bounds, arity checks) were 231 and 79.
+   */
+  detectObjects?: boolean;
+
+  /**
+   * Allow a numeric bound in a loop header — `for (let i = 0; i < 4; i++)`.
+   * Default: true.
+   *
+   * A loop bound is idiomatic rather than magic: the number IS the loop's
+   * shape, and extracting it to `const FOUR = 4` makes the code worse. Measured
+   * across a 20-repository ledger, this was one of the four classes that made
+   * this rule the highest-volume in the ecosystem at 22,942 findings.
+   */
+  ignoreLoopBounds?: boolean;
+
+  /**
+   * Allow a comparison against `.length` — `arguments.length === 3`.
+   * Default: true.
+   *
+   * An arity or size check names its own meaning. The same family as the array
+   * index this rule already exempts.
+   */
+  ignoreLengthComparisons?: boolean;
+
   /** Allow numbers in default parameter values (e.g., `function f(n = 10)`). Default: true */
   ignoreDefaultValues?: boolean;
 
@@ -107,6 +142,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
             description: 'Additional numbers to allow',
           },
           ignoreArrayIndexes: { type: 'boolean', default: true },
+          detectObjects: { type: 'boolean', default: false },
+          ignoreLoopBounds: { type: 'boolean', default: true },
+          ignoreLengthComparisons: { type: 'boolean', default: true },
           ignoreDefaultValues: { type: 'boolean', default: true },
           ignoreEnums: { type: 'boolean', default: true },
           ignoreBitwiseExpressions: { type: 'boolean', default: false },
@@ -119,6 +157,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
     {
       ignore: [],
       ignoreArrayIndexes: true,
+      detectObjects: false,
+      ignoreLoopBounds: true,
+      ignoreLengthComparisons: true,
       ignoreDefaultValues: true,
       ignoreEnums: true,
       ignoreBitwiseExpressions: false,
@@ -129,6 +170,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
     const {
       ignore = [],
       ignoreArrayIndexes = true,
+      detectObjects = false,
+      ignoreLoopBounds = true,
+      ignoreLengthComparisons = true,
       ignoreDefaultValues = true,
       ignoreEnums = true,
       ignoreBitwiseExpressions = false,
@@ -147,6 +191,77 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         parent?.type === 'MemberExpression' &&
         (parent as TSESTree.MemberExpression).computed &&
         (parent as TSESTree.MemberExpression).property === node
+      );
+    }
+
+    /**
+     * A numeric bound inside a `for` header.
+     *
+     * Scoped to the header's own test and update clauses, walked up through
+     * whatever expression holds the literal, and stopping at the loop BODY —
+     * a magic number inside the body is ordinary code and must keep reporting.
+     */
+    /**
+     * The VALUE of an object property — `{ timeout: 5000 }`.
+     *
+     * Not the key: a computed key `{ [4]: x }` is an index, which the array
+     * exemption already covers.
+     */
+    function isObjectPropertyValue(node: TSESTree.Literal): boolean {
+      if (detectObjects) return false;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      return (
+        parent?.type === 'Property' && (parent as TSESTree.Property).value === node
+      );
+    }
+
+    function isLoopBound(node: TSESTree.Literal): boolean {
+      if (!ignoreLoopBounds) return false;
+      // Walks to the enclosing ForStatement or to a statement boundary, with no
+      // depth cap. A fixed limit silently stopped exempting a literal nested
+      // deeply enough in the header — `for (let i = 0; i < f(g(h(9))); i++)` —
+      // and the depth at which it gave up was arbitrary.
+      let current: TSESTree.Node = node;
+      let parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      while (parent) {
+        if (parent.type === 'ForStatement') {
+          const loop = parent as TSESTree.ForStatement;
+          return loop.test === current || loop.update === current || loop.init === current;
+        }
+        // A statement boundary means we left the header without finding it.
+        if (parent.type === 'BlockStatement' || parent.type === 'Program') return false;
+        current = parent;
+        parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      }
+      return false;
+    }
+
+    /**
+     * A comparison against `.length` — `args.length === 3`, `xs.length > 2`.
+     *
+     * EQUALITY only. `arguments.length === 3` is an arity check and the number
+     * is the arity; `users.length > 100` is a business threshold and stays a
+     * finding — an existing test pinned exactly that, and it was right. The
+     * corpus evidence for this exemption was `arguments.length === 3`, so the
+     * exemption is scoped to that shape rather than to every comparison that
+     * happens to touch `.length`.
+     *
+     * Only the SIBLING of the comparison counts, so `foo(bar.length, 3)` is
+     * untouched.
+     */
+    function isLengthComparison(node: TSESTree.Literal): boolean {
+      if (!ignoreLengthComparisons) return false;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      if (parent?.type !== 'BinaryExpression') return false;
+      const comparison = parent as TSESTree.BinaryExpression;
+      const EQUALITY = new Set(['===', '!==', '==', '!=']);
+      if (!EQUALITY.has(comparison.operator)) return false;
+      const other = comparison.left === node ? comparison.right : comparison.left;
+      return (
+        other.type === 'MemberExpression' &&
+        !other.computed &&
+        other.property.type === 'Identifier' &&
+        other.property.name === 'length'
       );
     }
 
@@ -222,6 +337,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         if (isVariableDeclarator(node)) return; // const X = 42
         if (isExportedConst(node)) return;
         if (isArrayIndex(node)) return;
+        if (isObjectPropertyValue(node)) return;
+        if (isLoopBound(node)) return;
+        if (isLengthComparison(node)) return;
         if (isDefaultValue(node)) return;
         if (isEnumMember(node)) return;
         if (isBitwiseContext(node)) return;
