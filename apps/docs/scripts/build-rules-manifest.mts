@@ -10,7 +10,7 @@
  * ## Why this exists
  *
  * `apps/docs/src/data/plugin-rules/` covers NINE plugins. There are thirty, and
- * 409 rules. Anything asking "what do we ship, and how good is it" had to read
+ * 478 rules. Anything asking "what do we ship, and how good is it" had to read
  * the plugins themselves, and so nothing did.
  *
  * ## Where each field comes from, and why that matters
@@ -84,12 +84,22 @@ type Entry = {
   seal: { axesMet: number; axesTotal: number; status: string; knownGaps: number } | null;
 };
 
+/**
+ * Absent is fine. Unreadable is not.
+ *
+ * These inputs are optional — a rule with no budget entry and no seal record is
+ * the normal case — so a MISSING file returns null. A file that exists and
+ * cannot be read or parsed throws, because the alternative is a manifest that
+ * looks complete while every quality field silently reads null. That is the
+ * exact shape of failure this manifest is meant to expose, and it would be
+ * indistinguishable from "nobody has measured this yet".
+ */
 function readJson<T>(file: string): T | null {
   if (!existsSync(file)) return null;
   try {
     return JSON.parse(readFileSync(file, 'utf-8')) as T;
-  } catch {
-    return null;
+  } catch (cause) {
+    throw new Error(`${path.relative(ROOT, file)} exists but could not be read as JSON`, { cause });
   }
 }
 
@@ -139,8 +149,13 @@ for (const dirName of readdirSync(path.join(ROOT, 'packages'))) {
   // and the prefix is DERIVED from it rather than guessed from the package
   // name — the same reasoning as scripts/corpus-scan.ts, where guessing broke
   // when a plugin renamed its prefix.
+  // Every fragment, not just the first. Flat config presets are allowed to be
+  // an ARRAY, and `rec[0]` silently drops whatever a later fragment enables —
+  // a rule would show as not-recommended because of where it sits in the list.
   const rec = mod.configs?.recommended;
-  const recRules = (Array.isArray(rec) ? rec[0]?.rules : rec?.rules) ?? {};
+  const recRules: Record<string, string> = Array.isArray(rec)
+    ? Object.assign({}, ...rec.map((fragment) => fragment?.rules ?? {}))
+    : (rec?.rules ?? {});
   const firstKey = Object.keys(recRules)[0];
   const prefix = firstKey?.includes('/')
     ? firstKey.slice(0, firstKey.indexOf('/'))
