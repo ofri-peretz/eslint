@@ -52,9 +52,20 @@ const RE_IMPL_SUGGEST = /\bsuggest\s*:/;
  *
  * Line comments are stripped only when they own the whole line — a trailing `//`
  * would eat the `https://` in a `docs.url` on the same line.
+ *
+ * LINE comments go first, and the order is load-bearing. With blocks stripped
+ * first, a slash-star sequence INSIDE a line comment opened one: a rule whose
+ * comment named a glob path matched the block opener, the scan ran on to the
+ * next close-comment far below, and everything between it — including that
+ * rule's own `hasSuggestions: true` — vanished. The lock then reported the rule
+ * as emitting `suggest:` without declaring it.
+ *
+ * That is the same fault as the `no-innerhtml` case above: a rule flagged for
+ * what its prose SAYS. Removing whole-line comments first means their contents
+ * never tokenise at all.
  */
 const stripComments = (content: string) =>
-  content.replaceAll(/\/\*[\s\S]*?\*\//g, '').replaceAll(/^[ \t]*\/\/.*$/gm, '');
+  content.replaceAll(/^[ \t]*\/\/.*$/gm, '').replaceAll(/\/\*[\s\S]*?\*\//g, '');
 
 interface RuleSource {
   plugin: string;
@@ -131,5 +142,38 @@ describe('meta.hasSuggestions matches suggest: usage', () => {
       .filter((r) => !r.declared && r.implemented)
       .map((r) => `${r.plugin}/${r.rule}`);
     expect(undeclared).toEqual([]);
+  });
+});
+
+describe('stripComments', () => {
+  it('does not let a comment-opener inside a line comment start a block', () => {
+    // The live failure this reproduces: a rule's line comment named a glob
+    // path, the slash-star in it matched the block opener, and the scan ate
+    // everything down to the next close-comment — taking the rule's own
+    // `hasSuggestions: true` with it.
+    const glob = ['src/rest/', '*', '*'].join('');
+    const src = [
+      `// generated files under \`${glob}\`, whose header says so`,
+      'hasSuggestions: true,',
+      '*/',
+      'suggest: [],',
+    ].join('\n');
+
+    const out = stripComments(src);
+    expect(out).toContain('hasSuggestions: true');
+    expect(RE_DECL_SUGGEST.test(out)).toBe(true);
+    expect(RE_IMPL_SUGGEST.test(out)).toBe(true);
+  });
+
+  it('still strips block comments, which is what the no-innerhtml case needs', () => {
+    expect(stripComments('/* hasSuggestions: true */\nconst x = 1;')).not.toContain(
+      'hasSuggestions',
+    );
+  });
+
+  it('leaves a trailing // alone so a docs.url on the same line survives', () => {
+    expect(stripComments("url: 'https://example.com', // see docs")).toContain(
+      'https://example.com',
+    );
   });
 });
