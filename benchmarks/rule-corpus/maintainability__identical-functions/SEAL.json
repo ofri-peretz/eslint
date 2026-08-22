@@ -1,0 +1,100 @@
+{
+  "rule": "maintainability/identical-functions",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "eslint": "9",
+    "plugin": "eslint-plugin-maintainability@3.0.17",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "fixtures come from real corpus shapes plus an adversarial wave; no vulnerable/safe corpus authored beside this record.",
+      "command": "author benchmarks/rule-corpus/maintainability__identical-functions/{vulnerable,safe}"
+    },
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider. A structural clone detector (Type-2 clone detection on the AST, as jscpd or PMD-CPD do) is the right one, and would replace the text-similarity premise entirely.",
+      "command": "score findings against jscpd on the same corpus"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "not measured under the formal protocol, and this rule most needs it: 1,643 of 2,076 corpus findings are in twilio-node's GENERATED SDK, where nobody refactors. Correct detections that are effective false positives by definition.",
+      "command": "npm run cases -- --rule=maintainability/identical-functions --n=20"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "not applicable in the taint sense.",
+      "command": "n/a — record as scope"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "not scored against sonarjs no-identical-functions, the direct competitor.",
+      "command": "benchmarks duel vs eslint-plugin-sonarjs"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "a wave of 9 deliberately-distinct pairs reported 6 as duplicates — every one differing by a single semantically load-bearing token (5000 vs 250, x+y vs x-y, === vs !==). Fixed by requiring an EXACT match below 120 normalised characters, since a ratio is weak evidence on a short body. Now 6/6 kept apart with both real duplicates still caught. UNMET until a second wave finds nothing new.",
+      "command": "re-run the wave"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "measured on 8 pinned repositories. 3,530 -> 2,076 across three normalisation defects and two more found in review.",
+      "command": "npx tsx scripts/corpus-scan.ts"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "not probed against cognitive-complexity and max-parameters, which visit the same function nodes.",
+      "command": "author a partition matrix test"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "scripts/rule-seal-probe.mts not run.",
+      "command": "npx tsx scripts/rule-seal-probe.mts --rule=maintainability/identical-functions"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100% statements / branches / functions / lines across eslint-plugin-maintainability, 389 tests.",
+      "command": "npx vitest run --coverage"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "not measured, and this rule is the one most likely to pay: the comparison is pairwise over every function in a file.",
+      "command": "see BENCHMARK-CRITERIA A4"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "BENCHMARK-RESULTS.md not updated.",
+      "command": "D5"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "text-similarity-premise",
+      "kind": "false-positive",
+      "limit": "L10",
+      "summary": "the rule decides duplication by edit distance over normalised TEXT, not by structural clone detection.",
+      "why": "text similarity conflates 'looks alike' with 'is the same logic'. The short-body exact-match rule patches the worst of it; the premise is unchanged.",
+      "reopenWhen": "an AST-based Type-2 clone detector is prototyped and scored against the same corpus."
+    },
+    {
+      "id": "generated-code",
+      "kind": "false-positive",
+      "limit": null,
+      "summary": "1,643 of 2,076 corpus findings are in a generated SDK, where the duplication is the codegen's and nobody will refactor it.",
+      "why": "open work — the rule has no notion of generated code, and a `@generated` header or a path convention is the usual signal.",
+      "reopenWhen": "a generated-file heuristic exists in the devkit."
+    },
+    {
+      "id": "short-body-threshold",
+      "kind": "false-negative",
+      "limit": "L10",
+      "summary": "below 120 normalised characters a near-duplicate that is NOT exact is no longer reported.",
+      "why": "deliberate: on a short body a one-character difference is still 95%+ similar, so the ratio carries almost no information and reported 6 of 9 distinct pairs.",
+      "reopenWhen": "structural clone detection replaces the ratio, making length irrelevant."
+    }
+  ],
+  "notes": "Seal record OPENED 2026-08-21. The adversarial wave found the FP direction here, where the other rules leaked recall — 6 of 9 distinct pairs called duplicates."
+}

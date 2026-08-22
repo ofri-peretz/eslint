@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.0",
     "node": "24"
   },
   "axes": {
@@ -61,13 +61,13 @@
       "command": "npx vitest run --coverage src/rules/no-unchecked-loop-condition"
     },
     "throughput": {
-      "state": "met",
-      "evidence": "marginal over a no-op control: 2060L +3.99±1.34ms · 8240L +17.43±1.76ms · 31930L +54.87±17.96ms — 3.1x time for 3.9x lines (8240→31930), linear",
+      "state": "unmet",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 515L +0.51±0.20ms · 2060L +2.58±0.44ms · 8240L +7.45±1.97ms — 2.9x time for 4.0x lines (2060→8240), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unchecked-loop-condition"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal secure-coding/no-unchecked-loop-condition' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

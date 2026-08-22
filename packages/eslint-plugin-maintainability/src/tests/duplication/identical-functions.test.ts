@@ -491,3 +491,57 @@ describe('identical-functions — normalisation', () => {
     ],
   });
 });
+
+/**
+ * A ratio is weak evidence on a short body.
+ *
+ * An adversarial wave reported 6 of 9 deliberately-distinct pairs as
+ * duplicates, and every one differed by a single semantically load-bearing
+ * token: `5000` vs `250`, `x + y` vs `x - y`, `===` vs `!==`. On a three-line
+ * body a one-character difference is still 95%+ similar, so the threshold was
+ * doing this, not the normaliser.
+ *
+ * "Extract to a reusable function" is bad advice for two bodies that differ by
+ * an operator — you cannot extract them without parameterising the very thing
+ * that makes them different. Below SHORT_BODY_CHARS the answer has to be exact.
+ */
+describe('identical-functions — short bodies need an exact match', () => {
+  ruleTester.run('valid - one load-bearing token is not a duplicate', identicalFunctions, {
+    valid: [
+      {
+        code: 'function a(x) {\n  const t = 5000;\n  return wait(t, x);\n}\nfunction b(x) {\n  const t = 250;\n  return wait(t, x);\n}',
+      },
+      {
+        code: 'function a(x, y) {\n  const r = x + y;\n  return r;\n}\nfunction b(x, y) {\n  const r = x - y;\n  return r;\n}',
+      },
+      {
+        code: 'function a(x) {\n  if (x === 1) { return 1; }\n  return 0;\n}\nfunction b(x) {\n  if (x !== 1) { return 1; }\n  return 0;\n}',
+      },
+      {
+        code: 'function a(s) {\n  const re = /abc/gi;\n  return re.test(s);\n}\nfunction b(s) {\n  const re = /abc/;\n  return re.test(s);\n}',
+      },
+      {
+        code: 'function a(o) {\n  const v = o.a.b;\n  return v;\n}\nfunction b(o) {\n  const v = o.a;\n  return v;\n}',
+      },
+      {
+        code: 'function a(o) {\n  const v = o?.x;\n  return v;\n}\nfunction b(o) {\n  const v = o.x;\n  return v;\n}',
+      },
+    ],
+    invalid: [
+      {
+        // FN GUARD: an exact renamed copy is still a duplicate at any length.
+        name: 'a short body that matches exactly still reports',
+        code: 'function a(input) {\n  const parsed = parse(input);\n  return parsed;\n}\nfunction b(other) {\n  const decoded = parse(other);\n  return decoded;\n}',
+        errors: [{ messageId: 'identicalFunctions' }],
+      },
+      {
+        // FN GUARD: the ratio still applies where it means something.
+        name: 'a long near-duplicate still reports',
+        code:
+          'function a(o) {\n  const one = o.alpha;\n  const two = o.beta;\n  const three = o.gamma;\n  const four = o.delta;\n  const five = o.epsilon;\n  return combine(one, two, three, four, five);\n}\n' +
+          'function b(p) {\n  const one = p.alpha;\n  const two = p.beta;\n  const three = p.gamma;\n  const four = p.delta;\n  const five = p.epsilonX;\n  return combine(one, two, three, four, five);\n}',
+        errors: [{ messageId: 'identicalFunctions' }],
+      },
+    ],
+  });
+});

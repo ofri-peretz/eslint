@@ -1,0 +1,108 @@
+{
+  "rule": "conventions/no-magic-numbers",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "eslint": "9",
+    "plugin": "eslint-plugin-conventions@4.2.10",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "no corpus authored beside this record.",
+      "command": "author benchmarks/rule-corpus/conventions__no-magic-numbers/{vulnerable,safe}"
+    },
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider, and for a taste rule there may not be one — 'is this number magic' is a judgement, not a property. The nearest comparable is ESLint core's no-magic-numbers.",
+      "command": "score against eslint core no-magic-numbers"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "MEASURED and very high. 22,942 findings across the 20-repository ledger — 1,147 per repository, against 204 per repository on the pinned 8, and the largest single count of any rule in the ecosystem. Sampling names the dominant classes, none of which a maintainer would act on: loop bounds (`for (i = 0; i < 4; i += 1)`), arity checks (`arguments.length === 3`), HTTP status comparisons (`response.status >= 400`), port numbers (`server.port !== 27017`), character codes (`c === 32 || c === 9`), and slice offsets (`path.slice(0, -3)`).",
+      "command": "npx tsx scripts/case-ledger.mts conventions/no-magic-numbers"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "not applicable in the taint sense.",
+      "command": "n/a — record as scope"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "not scored against ESLint core's no-magic-numbers, which is the direct competitor and ships the same option surface.",
+      "command": "benchmarks duel vs eslint core"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "no wave written. The FP classes above came from the ledger rather than from an adversarial set.",
+      "command": "write a wave"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "measured on both corpora: 1,635 on the pinned 8, 22,942 on the 20-repo ledger.",
+      "command": "npx tsx scripts/case-ledger.mts conventions/no-magic-numbers"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "not probed.",
+      "command": "author a partition matrix test"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "rule-seal-probe not run.",
+      "command": "npx tsx scripts/rule-seal-probe.mts --rule=conventions/no-magic-numbers"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100% across eslint-plugin-conventions, 458 tests.",
+      "command": "npx vitest run --coverage"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "not measured.",
+      "command": "see A4"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "BENCHMARK-RESULTS.md not updated.",
+      "command": "D5"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "no-loop-bound-exemption",
+      "kind": "false-positive",
+      "limit": null,
+      "summary": "a numeric bound in a `for` header — `for (let j = 0; j < 4; j++)` — reports, and is idiomatic rather than magic.",
+      "why": "open work. The rule already exempts array indexes, default values, enums and bitwise expressions; a loop bound belongs in the same family and is not yet there. Not implemented in the same pass that measured it, deliberately — this rule was not otherwise touched, and an exemption added at speed is how a rule stops reporting things it should.",
+      "reopenWhen": "immediately; add `ignoreLoopBounds` alongside the existing ignore options, with a corpus measurement before and after."
+    },
+    {
+      "id": "no-arity-exemption",
+      "kind": "false-positive",
+      "limit": null,
+      "summary": "`arguments.length === 3` and `args.length > 2` report on an arity check.",
+      "why": "open work, same family as the loop bound.",
+      "reopenWhen": "immediately; the shape is a comparison against `.length`."
+    },
+    {
+      "id": "protocol-constants",
+      "kind": "false-positive",
+      "limit": "L5",
+      "summary": "HTTP status codes, well-known ports and character codes report as magic numbers.",
+      "why": "`400`, `27017` and `32` are protocol facts rather than arbitrary values, but the rule cannot tell a protocol constant from an arbitrary one without knowing what is being compared.",
+      "reopenWhen": "a protocol-constant table exists, or the comparison receiver can be resolved (`.status`, `.port`, `charCodeAt`)."
+    },
+    {
+      "id": "config-files-are-data",
+      "kind": "false-positive",
+      "limit": null,
+      "summary": "`.eslintrc.js` and similar config files are declarative data, and every tuning number in them reports.",
+      "why": "open work — the rule has no path scoping. Raised in the batch-5 triage from the pinned corpus and confirmed at scale here.",
+      "reopenWhen": "path scoping lands, shared with the two logging rules that need the same thing."
+    }
+  ],
+  "notes": "Recorded 2026-08-21 from the ledger screen rather than from a rule change. This is the highest-volume rule in the ecosystem and its effectiveFp is measured for the first time here: 22,942 findings, dominated by four classes a maintainer would not act on. The exemptions are named and left as open work with reopen conditions, because adding them at the end of a long session is exactly how a rule stops reporting what it should."
+}

@@ -328,6 +328,136 @@ describe('no-missing-null-checks', () => {
   });
 
   /**
+   * The adversarial wave.
+   *
+   * Written to BREAK the narrowed rule rather than to confirm it, and it did:
+   * 11 of 14 genuine null-dereferences walked past the first cut. The two
+   * fixed here were the ones a user would hit by accident.
+   *
+   * `const alias = hit` defeated the gate completely — one level of aliasing
+   * laundered the evidence — and a conditional with a `null` arm was read as
+   * carrying no evidence at all.
+   *
+   * Nine of the eleven are still missed and recorded in the rule's SEAL record
+   * rather than hidden (a tenth gap, the self-referential `var a = a`, came out
+   * of covering the cycle guard rather than out of the wave): evidence crossing a function return, destructuring off a nullable
+   * value, a read after an optional link (`hit?.meta.deep`), an out-of-bounds
+   * array index, `Map.get`, `JSON.parse`, a binding written only in dead code,
+   * a `for…of` over a nullable source, and reassignment from a nullable call.
+   * Each needs analysis the rule does not have, and none is silently accepted.
+   */
+  describe('Adversarial — evidence must not launder', () => {
+    ruleTester.run('invalid - laundered evidence still reports', noMissingNullChecks, {
+      valid: [
+        // An alias of something with NO evidence is still no evidence.
+        { code: 'export function f(o) { const a = o; return a.name; }', filename: 'src/u.ts' },
+        // A real guard still silences it.
+        {
+          code: 'export function f(rows) { const hit = rows.find((r) => r.ok); return hit ? hit.name : null; }',
+          filename: 'src/u.ts',
+        },
+        // A user shadow of `undefined` is a real binding, so the arm is not
+        // the language's undefined.
+        {
+          code: 'export function f(flag) { const undefined = {}; const c = flag ? undefined : {}; return c.name; }',
+          filename: 'src/u.ts',
+        },
+        // Declare-then-assign. `let x = null` followed by a real assignment is
+        // the most common shape in JavaScript, and reading it as "this is null"
+        // reported every use that followed — 4,954 findings on the 20-repository
+        // ledger, from an inconsistency in this gate: the zero-writes rule was
+        // applied to the uninitialised case and not to this one. The FN guard
+        // is `const nothing = null` above: a const cannot be reassigned, so a
+        // genuine null binding still reports.
+        {
+          code:
+            'export function f(result) { let childModel = null; childModel = result.childModel; return childModel.hooks; }',
+          filename: 'src/u.ts',
+        },
+        // A conditional whose arms carry no evidence carries none either.
+        {
+          code: 'export function f(a, b, c) { const chosen = c ? a : b; return chosen.name; }',
+          filename: 'src/u.ts',
+        },
+        {
+          // `var a = a` is legal JavaScript and self-referential, so the alias
+          // walk would recurse on the same binding forever. The cycle guard
+          // answers "no evidence" instead of hanging.
+          //
+          // Reported as VALID deliberately: this really is a read of undefined,
+          // but the honest answer from a walk that cannot terminate is silence,
+          // not a guess. Recorded as a known gap in the SEAL record.
+          code: 'export function f() { var a = a; return a.name; }',
+          filename: 'src/u.ts',
+        },
+      ],
+      invalid: [
+        {
+          name: 'one alias does not launder a nullable return',
+          code: 'export function f(rows) { const hit = rows.find((r) => r.ok); const alias = hit; return alias.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'nor does a chain of them',
+          code: 'export function f(rows) { const a = rows.find((r) => r.ok); const b = a; const c = b; return c.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a conditional is nullable when either arm is',
+          code: 'export function f(rows, c) { const hit = c ? rows.find((r) => r.ok) : null; return hit.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a conditional arm that is itself an alias still carries evidence',
+          code:
+            'export function f(rows, c) { const hit = rows.find((r) => r.ok); const chosen = c ? hit : null; return chosen.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // A later write cannot un-read an earlier dereference. The write
+          // check inspected EVERY non-initializer write regardless of position,
+          // so a reassignment further down excused a read of null above it.
+          // Raised by CodeRabbit on #599.
+          name: 'a read before the reassignment still reports',
+          code:
+            'export function f(result) { let m = null; const hooks = m.hooks; m = result.m; return hooks; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // A bare `undefined` arm is the same evidence as a `null` one.
+          // Raised by CodeRabbit on #599 — the alias walk swallowed it, because
+          // resolving the GLOBAL `undefined` finds a variable with no
+          // definitions and answers "no evidence".
+          name: 'an undefined arm is evidence too',
+          code: 'export function f(flag) { const c = flag ? undefined : {}; return c.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          // The alias is resolved from the DECLARATOR's scope, not the read's,
+          // so a nested function rebinding the same name cannot answer for it.
+          name: 'a nested shadow does not launder the alias',
+          code:
+            'export function f(rows) { const hit = rows.find((r) => r.ok); const alias = hit; function g() { const hit = {}; return alias.name; } return g(); }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'either arm, in either position',
+          code: 'export function f(rows, c) { const hit = c ? null : rows.find((r) => r.ok); return hit.name; }',
+          filename: 'src/u.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+      ],
+    });
+  });
+
+  /**
    * The contract that REPLACES it: a finding needs positive evidence.
    *
    * Each case names the platform or the binding that says the value may be

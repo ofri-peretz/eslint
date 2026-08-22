@@ -129,7 +129,29 @@ function isShadowedBinding(scope: TSESLint.Scope.Scope | null, name: string): bo
 function nullabilityEvidence(
   ident: TSESTree.Identifier,
   scope: TSESLint.Scope.Scope,
+  seen: Set<string> = new Set(),
 ): 'declared-without-initializer' | 'assigned-null' | 'nullable-return' | null {
+  // Only a write BEFORE the read can have filled the binding. An unpositioned
+  // write count let a later assignment excuse an earlier dereference:
+  //
+  //   let m = null
+  //   const hooks = m.hooks     // reads null — must report
+  //   m = result.m              // and this cannot un-read it
+  //
+  // `readAt` is the position of the access being judged.
+  // `ident` may be a synthetic node without a range — the layer-2 tests feed
+  // exactly that to exercise the dedupe-key fallbacks, and this rule is built
+  // to tolerate it. Treating a range-less read as positioned at infinity means
+  // every write counts as "before" it, which is the conservative answer.
+  //
+  // A scope REFERENCE is different: it was resolved from real source, so its
+  // identifier always has a range and no fallback is needed there.
+  const readAt = ident.range?.[0] ?? Number.POSITIVE_INFINITY;
+  // `const alias = hit` must not launder the evidence. One level of aliasing
+  // defeated this gate completely — found by the adversarial wave, where it was
+  // 1 of 11 genuine null-dereferences the first cut walked past.
+  if (seen.has(ident.name)) return null;
+  seen.add(ident.name);
   let s: TSESLint.Scope.Scope | null = scope;
   while (s) {
     const variable = s.variables.find((v) => v.name === ident.name);
@@ -171,12 +193,35 @@ function nullabilityEvidence(
       // without it the honest reading of "it is written somewhere" is "this is
       // ordinary deferred initialisation". Only a binding that is never
       // written at all is unambiguously a read of undefined.
-      const writes = variable.references.filter((reference) => reference.isWrite());
-      if (writes.length > 0) return null;
+      const written = variable.references.some(
+        (reference) =>
+          reference.isWrite() &&
+          !reference.init &&
+          reference.identifier.range[0] < readAt,
+      );
+      if (written) return null;
       return 'declared-without-initializer';
     }
 
     // `const x = null` / `= undefined`.
+    //
+    // Subject to the SAME zero-writes rule as the uninitialised case, and it
+    // was not — an inconsistency in this gate that the 20-repository ledger
+    // exposed at 4,954 findings. `let childModel = null` followed by
+    // `childModel = result.childModel` is declare-then-assign, the most common
+    // shape in JavaScript, and reading it as "this is null" reported every use
+    // that followed. A `const` cannot be written, so a genuine `const x = null`
+    // still reports.
+    // A LATER write, not counting the declaration's own initializer — ESLint
+    // models `const x = 1` as a write reference too, so an unfiltered count
+    // disqualifies every initialised binding.
+    const reassigned = variable.references.some(
+      (reference) =>
+        reference.isWrite() &&
+        !reference.init &&
+        reference.identifier.range[0] < readAt,
+    );
+    if (reassigned) return null;
     if (init.type === 'Literal' && init.value === null) return 'assigned-null';
     // `undefined` is a GLOBAL in ESLint's scope model, so a plain
     // `scopeHasBinding` lookup always finds it and would disable this arm
@@ -184,6 +229,48 @@ function nullabilityEvidence(
     // x` or a parameter — and only that should suppress.
     if (init.type === 'Identifier' && init.name === 'undefined' && !isShadowedBinding(s, 'undefined')) {
       return 'assigned-null';
+    }
+
+    // `const alias = hit` — follow the binding rather than stopping here.
+    //
+    // Resolved from the DECLARATOR's scope `s`, not the read's scope. The
+    // alias initializer was written where the declarator is, so a nested
+    // function that happens to rebind the same name must not answer for it:
+    //
+    //   const hit = rows.find(...)
+    //   const alias = hit
+    //   function g() { const hit = {}; return alias.name }   // still reports
+    if (init.type === 'Identifier') {
+      return nullabilityEvidence(init, s, seen);
+    }
+
+    // `const hit = c ? rows.find(...) : null` — a conditional is nullable when
+    // EITHER arm is. Stopping at the ConditionalExpression let the null arm
+    // through untouched.
+    if (init.type === 'ConditionalExpression') {
+      for (const arm of [init.consequent, init.alternate]) {
+        if (arm.type === 'Literal' && arm.value === null) return 'assigned-null';
+        // A bare `undefined` arm is the same evidence as a `null` one. Falling
+        // through to the alias walk lost it, because resolving the global
+        // `undefined` finds a variable with no definitions and answers null.
+        if (arm.type === 'Identifier' && arm.name === 'undefined' && !isShadowedBinding(s, 'undefined')) {
+          return 'assigned-null';
+        }
+        if (arm.type === 'Identifier') {
+          const viaArm = nullabilityEvidence(arm, s, seen);
+          if (viaArm) return viaArm;
+        }
+        if (
+          arm.type === 'CallExpression' &&
+          arm.callee.type === 'MemberExpression' &&
+          !arm.callee.computed &&
+          arm.callee.property.type === 'Identifier' &&
+          NULLABLE_RETURNS.has(arm.callee.property.name)
+        ) {
+          return 'nullable-return';
+        }
+      }
+      return null;
     }
 
     // `const hit = rows.find(...)` — the platform says this is undefined on a

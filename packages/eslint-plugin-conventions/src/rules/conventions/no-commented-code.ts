@@ -33,12 +33,36 @@ type RuleOptions = [Options?];
  * Check if a comment block contains code-like patterns
  */
 function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
+  // A JSDoc block is DOCUMENTATION, and the code inside an `@example` is
+  // deliberate — the one place a comment is supposed to contain code.
+  //
+  // Found on the 20-repository ledger, where `/**` was the single largest new
+  // shape: mongoose alone documents most of its API with examples. Skipping
+  // the block is the honest answer, because there is no way to tell an
+  // `@example` body from commented-out code by looking at the body.
+  //
+  // Deliberately NOT extended to a plain `/* … */`, which IS how people comment
+  // code out. Only `/**` — the JSDoc marker — is exempt.
+  // Matched on a LEADING `*`, not on `/**`. ESLint's `comment.value` excludes
+  // the delimiters, so a JSDoc block arrives here as `* Does a thing…` and a
+  // `/^\/\*\*/` test can never fire. The `/*!` guard removed earlier had the
+  // same flaw — it was dead code for this reason, not because the paren fix
+  // covered it, though the paren fix does cover it.
+  // No leading-whitespace allowance, deliberately. `/**…` arrives as `*…` and
+  // matches; a plain `/*\n * …` arrives as `\n * …` and does not, because `\s`
+  // would otherwise swallow the newline and exempt the very shape people use to
+  // comment code out.
+  if (isBlockComment && comment.startsWith('*')) {
+    return false;
+  }
+
   // NOTE: no special case for the terser `/*!` "preserve" banner. One was
   // written here first, on the reasoning that a legal notice is never code —
   // true, but redundant: what made every banner report was `Copyright (c)`
   // matching the call pattern, and tightening that pattern to reject a gap
   // before the paren already covers it. The guard was unreachable, so it is
-  // gone rather than sitting here looking load-bearing.
+  // gone rather than sitting here looking load-bearing. `/**` is different:
+  // it is reachable, and it carries thousands of findings.
 
   // Remove comment markers for pattern matching
   let text = comment;
@@ -67,6 +91,38 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
   if (lines.length === 0) {
     return false;
   }
+
+  /**
+   * Shapes that are code whatever they end with.
+   *
+   * The terminator test below is a proxy for "is this a sentence", and it is a
+   * good one for a line that merely OPENS with a keyword. It is far too blunt
+   * for a line that is unmistakably a statement: an adversarial wave found
+   * `// const timeout = 5000`, `// import fs from "fs"` and
+   * `// throw new Error("x")` all going silent, which is much more than the
+   * `// x = 1` the trade was documented as costing.
+   *
+   * Each of these carries structure prose does not: a binding with an
+   * initializer, a module specifier, a constructed throw, a call on a member
+   * chain, an arrow, or a strict comparison.
+   */
+  const STRUCTURAL_CODE = [
+    /^(const|let|var)\s+[A-Za-z_$][\w$]*(\s*:[^=]+)?\s*=/,
+    /^import\s+[^;]*\bfrom\b/,
+    /^import\s+["']/,
+    /^export\s+(default|const|let|var|function|class|\{|\*)/,
+    // `throw` and `await` need a CALL shape after them. Bare `^await\s` matched
+    // "await for the retry window to elapse", which is a sentence — the same
+    // trap the keyword patterns fell into, one keyword further along.
+    /^throw\s+new\s+[A-Za-z_$]/,
+    /^(throw|await|yield)\s+[A-Za-z_$][\w$]*\s*[.(]/,
+    /^return\s+(new|await)\s/,
+    /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+\s*\(/,
+    /=>/,
+    /===|!==/,
+    /^@[A-Za-z_$][\w$]*\s*\(/,
+    /^<[A-Z][\w$]*[\s/>]/,
+  ];
 
   const codePatterns = [
     /^(const|let|var|function|class|if|for|while|return|import|export)\s+/,
@@ -122,7 +178,14 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
     // semicolons; prose that ends in punctuation is rare. Measured on the
     // pinned corpus this removed ~1,400 findings and cost no true positive
     // that could be found by inspection.
-    if (!ENDS_LIKE_CODE.test(line)) {
+    // A structural shape is code regardless of how the line ends; only the
+    // weak patterns below need the sentence test.
+    if (!STRUCTURAL_CODE.some((pattern) => pattern.test(line)) && !ENDS_LIKE_CODE.test(line)) {
+      continue;
+    }
+
+    if (STRUCTURAL_CODE.some((pattern) => pattern.test(line))) {
+      codeLikeLines++;
       continue;
     }
 

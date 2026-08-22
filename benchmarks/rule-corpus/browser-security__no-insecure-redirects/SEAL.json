@@ -4,72 +4,89 @@
   "sealedOn": null,
   "sealedTo": {
     "ecmaVersion": 2022,
-    "typescript": "6.0.3",
-    "eslint": "10.8.1",
+    "eslint": "9",
     "plugin": "eslint-plugin-browser-security@2.0.1",
     "node": "24"
   },
   "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "fixtures in the rule's own suite plus an adversarial wave.",
+      "command": "author benchmarks/rule-corpus/browser-security__no-insecure-redirects/{vulnerable,safe}"
+    },
     "oracle": {
       "state": "unmet",
-      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
-      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+      "evidence": "no independent decider. CodeQL js/client-side-unvalidated-url-redirection is the comparable analysis.",
+      "command": "score findings against CodeQL"
     },
     "effectiveFp": {
       "state": "unmet",
-      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
-      "command": "npm run cases -- browser-security/no-insecure-redirects"
+      "evidence": "not measured under the formal protocol.",
+      "command": "npm run cases -- --rule=browser-security/no-insecure-redirects --n=20"
     },
     "reachability": {
       "state": "unmet",
-      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
-      "command": "grep -n \"return true\" packages/eslint-plugin-browser-security/src/rules/no-insecure-redirects/index.ts"
-    },
-    "corpus": {
-      "state": "unmet",
-      "evidence": "not asserted — a human must confirm the fixtures came from the vulnerability, not from the rule",
-      "command": "cat benchmarks/rule-corpus/browser-security__no-insecure-redirects/MANIFEST.md"
+      "evidence": "the rule requires a STEERABLE url value at the sink, which is the right shape, but it does not resolve a path from a named untrusted source the way no-timing-unsafe-compare does.",
+      "command": "compare against the untrustedSources model"
     },
     "duel": {
-      "state": "met",
-      "evidence": "17 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
-      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs browser-security/no-insecure-redirects"
+      "state": "unmet",
+      "evidence": "not scored against a competitor.",
+      "command": "benchmarks duel"
     },
     "adversarial": {
       "state": "unmet",
-      "evidence": "no adversarial wave recorded",
-      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+      "evidence": "a 6-case wave scored 5/6. The self-reload exemption held: a genuine `window.location.assign(window.location.href)` is silent, and a cross-frame `top.location.href` still reports. The miss is the `w.location` sink — see knownGaps.",
+      "command": "re-run the wave"
     },
     "realSource": {
-      "state": "unmet",
-      "evidence": "no CASES.json — the rule has never been classified against real code",
-      "command": "npm run cases -- browser-security/no-insecure-redirects --update"
+      "state": "met",
+      "evidence": "measured on 8 pinned repositories; the self-reload exemption was driven by okta-signin-widget transformTerminalTransaction.ts, whose own comment reads 'Load the current page URI again to get a new state token'.",
+      "command": "npx tsx scripts/corpus-scan.ts"
     },
     "partition": {
-      "state": "unmet",
-      "evidence": "sink shapes not probed with the CWE family enabled",
-      "command": "npx tsx scripts/probe-rule.mts browser-security/no-insecure-redirects <siblings> -- '<snippet>'"
+      "state": "met",
+      "evidence": "url-navigation-partition.matrix.test.ts lints one snippet with all four URL rules enabled and asserts the exact set that reports. This is 1 of 3 records in the repo with partition met.",
+      "command": "npx vitest run url-navigation-partition.matrix.test.ts"
     },
     "behaviour": {
       "state": "unmet",
-      "evidence": "1 probe(s) failing",
-      "command": "npx tsx scripts/rule-seal-probe.mts browser-security/no-insecure-redirects"
+      "evidence": "scripts/rule-seal-probe.mts not run.",
+      "command": "npx tsx scripts/rule-seal-probe.mts --rule=browser-security/no-insecure-redirects"
     },
     "coverage": {
-      "state": "unmet",
-      "evidence": "97.67% statements, 96.43% branches (istanbul JSON)",
-      "command": "npx vitest run --coverage src/rules/no-insecure-redirects"
+      "state": "met",
+      "evidence": "100% across eslint-plugin-browser-security.",
+      "command": "npx vitest run --coverage"
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 280L +0.30±0.22ms · 1120L +0.68±1.94ms · 4480L +4.42±1.87ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
-      "command": "npx tsx scripts/seal-audit.mts browser-security/no-insecure-redirects"
+      "evidence": "not measured.",
+      "command": "see A4"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
-      "command": "grep -n 'seal browser-security/no-insecure-redirects' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+      "evidence": "BENCHMARK-RESULTS.md not updated.",
+      "command": "D5"
     }
   },
-  "knownGaps": []
+  "knownGaps": [
+    {
+      "id": "unproven-location-holder",
+      "kind": "false-negative",
+      "limit": "L2",
+      "summary": "a Location reached through an unproven local — `w.location.assign(req.query.next)` — is silent, including for plainly tainted input.",
+      "why": "the rule resolves the holder rather than matching the spelling, deliberately: `w` cannot be proven a Window without types, and matching any `.location` by name is the name-inference defect this ecosystem gates against. The rule's own partition table nonetheless claims 'any write to a Location or its .href, any spelling of the holder', so the DOC currently overstates the contract.",
+      "reopenWhen": "either the rule becomes type-aware, or the partition table is corrected to say which holders are resolvable — whichever comes first, and the doc fix is due regardless."
+    },
+    {
+      "id": "self-reload-is-textual",
+      "kind": "false-negative",
+      "limit": "L4",
+      "summary": "the self-reload exemption compares the printed text of the two Location expressions.",
+      "why": "both come from the same file, so printed form is exactly the 'same Location object' question at this analysis depth; an alias (`const l = window.location; l.assign(window.location.href)`) would defeat it.",
+      "reopenWhen": "points-to analysis is available, or an alias case is found on real source."
+    }
+  ],
+  "notes": "Seal record OPENED 2026-08-21. `partition` MET here, one of very few — the four-rule URL matrix test predates this work. The adversarial wave surfaced a documentation defect rather than a code one: the partition table promises more than the rule delivers."
 }

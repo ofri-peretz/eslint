@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 2000L VOID (fixture does not parse) · 8000L VOID (fixture does not parse) · 32000L VOID (fixture does not parse) — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "marginal over a no-op control: 328L +0.10±0.13ms · 1312L +1.53±0.37ms · 5248L +2.99±0.58ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/require-backend-authorization"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal secure-coding/require-backend-authorization' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "marginal over a no-op control: 1830L +0.57±2.01ms · 8052L +2.10±3.61ms · 31842L +0.00±9.97ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — not-established then superlinear. First: 366L +0.48±0.37ms · 1464L +3.16±2.13ms · 5856L +5.14±2.04ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unsafe-regex-construction"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-16 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp MISSING · BENCHMARK-RESULTS.md stamp MISSING",
       "command": "grep -n 'seal secure-coding/no-unsafe-regex-construction' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

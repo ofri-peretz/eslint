@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@4.3.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.0",
     "node": "24"
   },
   "axes": {
@@ -62,12 +62,12 @@
     },
     "throughput": {
       "state": "unmet",
-      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — not-established then linear. First: 440L +2.54±1.38ms · 1760L +15.29±3.20ms · 7040L +35.96±19.92ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 440L +2.24±0.48ms · 1760L +10.98±1.96ms · 7040L +24.23±1.27ms — 2.2x time for 4.0x lines (1760→7040), linear",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-redos-vulnerable-regex"
     },
     "recorded": {
       "state": "unmet",
-      "evidence": "rule last changed 2026-08-19 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
       "command": "grep -n 'seal secure-coding/no-redos-vulnerable-regex' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
     }
   },

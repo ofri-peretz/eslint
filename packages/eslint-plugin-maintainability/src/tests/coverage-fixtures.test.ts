@@ -290,16 +290,28 @@ describe('coverage fixtures', () => {
       invalid: [
         {
           // Same length, one digit differs: similarity just below 1.0.
+          //
+          // Bodies lengthened past SHORT_BODY_CHARS on purpose. A ratio is weak
+          // evidence on a short body — the original four-line version differed
+          // only by `3000` vs `3001` and is now correctly NOT a duplicate — so
+          // exercising the Levenshtein path at all requires a body long enough
+          // for the ratio to mean something.
           code: [
             'function calcA(x) {',
             '  const y = x + 1000;',
             '  const z = y * 2000;',
-            '  return z + 3000;',
+            '  const w = z / 3000;',
+            '  const v = w - 4000;',
+            '  const u = v % 5000;',
+            '  return u + 3000;',
             '}',
             'function calcB(x) {',
             '  const y = x + 1000;',
             '  const z = y * 2000;',
-            '  return z + 3001;',
+            '  const w = z / 3000;',
+            '  const v = w - 4000;',
+            '  const u = v % 5000;',
+            '  return u + 3001;',
             '}',
           ].join('\n'),
           errors: [{ messageId: 'identicalFunctions' }],
@@ -310,12 +322,18 @@ describe('coverage fixtures', () => {
             'function calcLong(x) {',
             '  const y = x + 1000;',
             '  const z = y * 2000;',
-            '  return z + 300000;',
+            '  const w = z / 3000;',
+            '  const v = w - 4000;',
+            '  const u = v % 5000;',
+            '  return u + 300000;',
             '}',
             'function calcShort(x) {',
             '  const y = x + 1000;',
             '  const z = y * 2000;',
-            '  return z + 3000;',
+            '  const w = z / 3000;',
+            '  const v = w - 4000;',
+            '  const u = v % 5000;',
+            '  return u + 3000;',
             '}',
           ].join('\n'),
           errors: [{ messageId: 'identicalFunctions' }],
