@@ -1,6 +1,47 @@
 {
   "articles": [
     {
+      "id": 4443062,
+      "title": "I Linted My Own Design System. All 8 Breaks Were Pasted In.",
+      "description": "I ran four design-system rules over 401 of my own components. 144 violations — and every color break was in code I pasted in.",
+      "url": "https://dev.to/ofri-peretz/i-linted-my-own-design-system-all-8-breaks-were-pasted-in-3hm4",
+      "canonical_url": "https://ofriperetz.dev/articles/design-system-token-drift-eslint",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fdesign-system-token-drift-eslint.jpg",
+      "published_at": "2026-08-20T09:23:07Z",
+      "readable_publish_date": "Aug 20",
+      "reading_time_minutes": 3,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "react",
+        "webdev",
+        "css"
+      ]
+    },
+    {
+      "id": 4395479,
+      "title": "Your Token Is Not Safer in a Cookie. It Is Safer From JavaScript.",
+      "description": "The localStorage-versus-cookies argument is about the wrong axis. One property decides whether an XSS bug reads your session — and it is not the container.",
+      "url": "https://dev.to/ofri-peretz/your-token-is-not-safer-in-a-cookie-it-is-safer-from-javascript-5e45",
+      "canonical_url": "https://ofriperetz.dev/articles/client-storage-trust-boundary",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fclient-storage-trust-boundary.jpg",
+      "published_at": "2026-08-14T09:43:04Z",
+      "readable_publish_date": "Aug 14",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 4,
+      "positive_reactions_count": 4,
+      "comments_count": 1,
+      "tag_list": [
+        "webdev",
+        "security",
+        "javascript",
+        "node"
+      ]
+    },
+    {
       "id": 4347164,
       "title": "innerHTML Has Five Doors. Most Reviews Only Watch One.",
       "description": "A DOM sink is easy to grep for. The hard part is that one sink has many sources, and the source is where the trust decision actually lives — not the assignment.",
@@ -1265,8 +1306,8 @@
       "readable_publish_date": "Jan 2",
       "reading_time_minutes": 18,
       "page_views_count": 0,
-      "public_reactions_count": 0,
-      "positive_reactions_count": 0,
+      "public_reactions_count": 5,
+      "positive_reactions_count": 5,
       "comments_count": 1,
       "tag_list": [
         "node",
@@ -1643,7 +1684,7 @@
       ]
     }
   ],
-  "total": 80,
-  "lastUpdated": "2026-08-12T05:20:19.798Z",
+  "total": 82,
+  "lastUpdated": "2026-08-22T19:15:01.614Z",
   "source": "public"
 }
