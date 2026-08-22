@@ -142,7 +142,10 @@ const config = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
-    minimumCacheTTL: 31536000,
+    // One hour, not one year. The optimizer keys on the *source* URL, and
+    // those are stable paths under /images — so a year-long floor pinned the
+    // optimized derivative long after its source had changed.
+    minimumCacheTTL: 3600,
     // External hosts we render via next/image: badges in plugin READMEs,
     // dev.to article covers + author avatars, GitHub raw README assets.
     remotePatterns: [
@@ -223,21 +226,19 @@ const config = {
       ],
     },
     {
+      // NOT immutable, deliberately. `/_next/static/*` may be pinned for a
+      // year because its filenames carry a content hash — a new build means a
+      // new URL. These paths do not: `/images/og-jwt-security.png` is the same
+      // URL forever. `immutable` told every client never to revalidate it, so
+      // regenerating an OG image left the stale one live for up to a year with
+      // no way to evict it — and these images are fetched by Twitter,
+      // LinkedIn, Slack and GitHub's camo proxy from absolute URLs in package
+      // READMEs, which is exactly where a year-old social card is most visible
+      // and least noticed. `must-revalidate` costs one conditional request and
+      // returns 304 with no body, so a release propagates immediately.
       source: '/images/:path*',
       headers: [
-        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-      ],
-    },
-    {
-      source: '/public/:path*',
-      headers: [
-        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-      ],
-    },
-    {
-      source: '/_next/image/:path*',
-      headers: [
-        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
       ],
     },
   ],

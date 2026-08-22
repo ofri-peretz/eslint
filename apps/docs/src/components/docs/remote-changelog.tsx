@@ -17,9 +17,7 @@ interface RemoteChangelogProps {
 }
 
 function cleanChangelog(markdown: string, limit = 0): string {
-  let cleaned = markdown
-    .replace(/^\s*\n+/, '')
-    .replace(/^#\s+[^\n]+\n+/, '');
+  let cleaned = markdown.replace(/^\s*\n+/, '').replace(/^#\s+[^\n]+\n+/, '');
 
   if (limit > 0) {
     const lines = cleaned.split('\n');
@@ -66,6 +64,7 @@ export async function RemoteChangelog({
     <RemoteMarkdown
       url={url}
       revalidate={7200}
+      tags={['github-markdown', 'remote-changelog']}
       fallback={fallback}
       className="remote-changelog"
       source={{

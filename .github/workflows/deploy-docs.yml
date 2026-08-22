@@ -192,6 +192,40 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed to: $url"
 
+      # Vercel's runtime (data) cache is NOT scoped to a deployment — it
+      # outlives one. Everything else in the chain self-invalidates on
+      # release: HTML is `max-age=0, must-revalidate`, `/_next/static/*` is
+      # content-hashed so a build produces new URLs, `/images/*` revalidates
+      # (see next.config.mjs), and the CDN's static + prerender entries belong
+      # to the deployment. The runtime cache is the one layer that would
+      # otherwise keep serving pre-release remote markdown until its
+      # `revalidate` window happened to elapse. The `github-markdown` tag is
+      # applied at every RemoteMarkdown call site precisely so this command
+      # can reach it.
+      #
+      # Advisory, like the tweet-cache HEAD probe: the deploy has already
+      # succeeded by this point, and the failure mode is bounded (content is
+      # stale until `revalidate` elapses, an hour or two) — which does not
+      # justify wedging a shipped release. It warns loudly instead.
+      - name: Invalidate runtime cache for remote markdown
+        if: inputs.environment == 'production'
+        continue-on-error: true
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -uo pipefail
+          # Pinned separately from VERCEL_CLI_VERSION above: `cache invalidate`
+          # postdates that pin, and this step must not force a bump of the CLI
+          # that performs the actual build+deploy.
+          if npx --yes "vercel@59.4.0" cache invalidate \
+               --tag github-markdown --token="$VERCEL_TOKEN"; then
+            echo "Invalidated runtime cache tag: github-markdown"
+            echo "- Runtime cache: \`github-markdown\` invalidated" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Could not invalidate the 'github-markdown' runtime cache tag. Remote READMEs/CHANGELOGs may serve pre-release content until their revalidate window elapses. Check the Vercel CLI version and that VERCEL_TOKEN has cache scope."
+            echo "- Runtime cache: ⚠️ invalidation failed (see warning)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Job summary
         if: always()
         env:
