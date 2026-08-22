@@ -26,6 +26,9 @@ describe('null first option falls back to defaults (options || {})', () => {
   it('ddd-anemic-domain-model reports an anemic class with default options', () => {
     const { listeners, reports } = createWithMockContext(dddAnemicDomainModel, {
       options: [null],
+      // The rule is scoped to a domain layer, so the mock has to sit in one or
+      // this exercises the path guard instead of the null-options fallback.
+      filename: 'src/domain/customer.ts',
     });
 
     (listeners.ClassDeclaration as Listener)({
