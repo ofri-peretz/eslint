@@ -8,7 +8,7 @@ import {
 } from 'fumadocs-ui/layouts/docs/page';
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
-import { RuleValueCTA } from '@/components/docs/rule-value-cta';
+import { RuleCTAExperiment } from '@/components/docs/rule-cta-experiment';
 import { DocsFooterCTA } from '@/components/docs/docs-footer-cta';
 import type { TableOfContents } from 'fumadocs-core/toc';
 import type { MDXComponents } from 'mdx/types';
@@ -53,9 +53,18 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
+        {/* Both slots render; the experiment component decides which one is
+            visible, so the server stays static and the choice is client-side. */}
+        {isRulePage && ruleName ? (
+          <RuleCTAExperiment plugin={rulePlugin} rule={ruleName} placement="top" />
+        ) : null}
         <MDX components={getMDXComponents()} />
         {isRulePage && ruleName ? (
-          <RuleValueCTA plugin={rulePlugin} rule={ruleName} />
+          <RuleCTAExperiment
+            plugin={rulePlugin}
+            rule={ruleName}
+            placement="bottom"
+          />
         ) : (
           <DocsFooterCTA slug={slug.join('/')} />
         )}
