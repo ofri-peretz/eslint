@@ -82,6 +82,37 @@ type Entry = {
   corpusFindings: number | null;
   budgetReason: string | null;
   seal: { axesMet: number; axesTotal: number; status: string; knownGaps: number } | null;
+  detection: Detection | null;
+};
+
+/**
+ * What the rule's own fixture corpus measured.
+ *
+ * `tp` is what it CAUGHT, `fn` what it MISSED, `fp` what it wrongly reported,
+ * and `tn` the safe fixtures it correctly stayed quiet on. All four are needed:
+ * precision alone hides misses, recall alone hides noise, and a rule with no
+ * safe fixtures at all can score a perfect 1.0 on both while being useless.
+ * `fixtures` and `vulnerable` are carried so a score can be read against the
+ * size of the sample that produced it — 1.0 over 19 fixtures is a different
+ * claim from 1.0 over 3.
+ *
+ * `competitors` is the duel: the same fixtures scored against every other
+ * plugin that ships a comparable rule. It is the only number here that is not
+ * our opinion of our own output.
+ */
+type Detection = {
+  tp: number;
+  fp: number;
+  fn: number;
+  tn: number;
+  precision: number | null;
+  recall: number | null;
+  f1: number | null;
+  fixtures: number | null;
+  vulnerable: number | null;
+  missed: string[];
+  falsePositives: string[];
+  competitors: { name: string; tp: number; fp: number; fn: number; f1: number | null }[];
 };
 
 /**
@@ -125,6 +156,58 @@ if (existsSync(sealDir)) {
       axesTotal: axes.length,
       status: record.status ?? 'open',
       knownGaps: (record.knownGaps ?? []).length,
+    });
+  }
+}
+
+/** Detection scores, keyed by rule id, from each rule corpus RESULTS.json. */
+const detections = new Map<string, Detection>();
+if (existsSync(sealDir)) {
+  for (const dir of readdirSync(sealDir)) {
+    const results = readJson<{
+      rule?: string;
+      fixtures?: number;
+      vulnerable?: number;
+      results?: {
+        name?: string;
+        tp?: number;
+        fp?: number;
+        fn?: number;
+        tn?: number;
+        precision?: number;
+        recall?: number;
+        f1?: number;
+        missed?: unknown[];
+        falsePositives?: unknown[];
+      }[];
+    }>(path.join(sealDir, dir, 'RESULTS.json'));
+    if (!results?.rule || !Array.isArray(results.results) || results.results.length === 0) continue;
+
+    // Ours is the entry naming this ecosystem; everything else in the array is
+    // a competitor scored on the SAME fixtures. Matching on the `Interlace`
+    // prefix rather than on position, because position is not a contract.
+    const mine = results.results.find((r) => r.name?.startsWith('Interlace')) ?? results.results[0];
+    const others = results.results.filter((r) => r !== mine);
+    const asName = (x: unknown) => (typeof x === 'string' ? x : JSON.stringify(x));
+    detections.set(results.rule, {
+      tp: mine.tp ?? 0,
+      fp: mine.fp ?? 0,
+      fn: mine.fn ?? 0,
+      tn: mine.tn ?? 0,
+      precision: typeof mine.precision === 'number' ? mine.precision : null,
+      recall: typeof mine.recall === 'number' ? mine.recall : null,
+      f1: typeof mine.f1 === 'number' ? mine.f1 : null,
+      fixtures: results.fixtures ?? null,
+      vulnerable: results.vulnerable ?? null,
+      missed: (mine.missed ?? []).map(asName),
+      falsePositives: (mine.falsePositives ?? []).map(asName),
+      competitors: others.map((c) => ({
+        name: c.name ?? 'unknown',
+        tp: c.tp ?? 0,
+        fp: c.fp ?? 0,
+        fn: c.fn ?? 0,
+        f1: typeof c.f1 === 'number' ? c.f1 : null,
+      })),
     });
   }
 }
@@ -186,6 +269,7 @@ for (const dirName of readdirSync(path.join(ROOT, 'packages'))) {
       corpusFindings: budget.budgets[id] ?? null,
       budgetReason: budget.triage?.[id] ?? null,
       seal: seals.get(id) ?? null,
+      detection: detections.get(id) ?? null,
     });
   }
 }
@@ -203,6 +287,11 @@ const manifest = {
     withSealRecord: entries.filter((e) => e.seal).length,
     sealed: entries.filter((e) => e.seal?.status === 'sealed').length,
     firingOnCorpus: entries.filter((e) => (e.corpusFindings ?? 0) > 0).length,
+    withDetection: entries.filter((e) => e.detection).length,
+    perfectDetection: entries.filter(
+      (e) => e.detection && e.detection.fp === 0 && e.detection.fn === 0 && e.detection.tp > 0,
+    ).length,
+    duelled: entries.filter((e) => (e.detection?.competitors.length ?? 0) > 0).length,
   },
   rules: entries,
 };
