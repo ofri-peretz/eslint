@@ -81,13 +81,49 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
 
     type Space = 'value' | 'type' | 'interface';
 
-    function checkAndAddExport(name: string, node: TSESTree.Node, space: Space = 'value') {
+    /**
+     * The namespace path a declaration sits inside, as a key prefix.
+     *
+     * `export type T` inside `export namespace A` exports `A.T`, not `T`. The
+     * maps were keyed on the bare name, so Stripe's `.d.ts` files reported
+     * `PaymentIntent.SetupFutureUsage` and
+     * `PaymentIntentConfirmParams.SetupFutureUsage` as the same export. They
+     * are two distinct types that happen to share a member name — which is the
+     * whole point of a namespace.
+     *
+     * A prefix rather than a skip, so a genuine duplicate INSIDE one namespace
+     * still reports. Anonymous or computed module names (`declare module 'x'`)
+     * contribute their raw text, which is stable within a file and is all this
+     * key needs to be.
+     */
+    function scopeKey(node: TSESTree.Node): string {
+      const parts: string[] = [];
+      let current = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      while (current) {
+        if (current.type === 'TSModuleDeclaration') {
+          const id = (current as TSESTree.TSModuleDeclaration).id;
+          // `declare module 'x'` gives a StringLiteral and `namespace A.B` a
+          // TSQualifiedName, so the printed text is the one form that covers
+          // all three. It only has to be stable within a file.
+          parts.push(id.type === 'Identifier' ? id.name : context.sourceCode.getText(id));
+        }
+        current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      }
+      return parts.length > 0 ? `${parts.reverse().join('.')}.` : '';
+    }
+
+    function checkAndAddExport(
+      rawName: string,
+      node: TSESTree.Node,
+      space: Space = 'value',
+    ) {
+      const name = `${scopeKey(node)}${rawName}`;
       // `interface X` merges with an earlier `interface X`, so a repeat is only
       // a conflict when the earlier declaration was NOT an interface.
       if (space === 'interface') {
         const clash = typeNames.get(name);
         if (clash && !mergeableInterfaces.has(name)) {
-          context.report({ node, messageId: 'duplicateExport', data: { name } });
+          context.report({ node, messageId: 'duplicateExport', data: { name: rawName } });
           return;
         }
         mergeableInterfaces.add(name);
@@ -100,7 +136,7 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'duplicateExport',
-          data: { name },
+          data: { name: rawName },
         });
         return;
       }
