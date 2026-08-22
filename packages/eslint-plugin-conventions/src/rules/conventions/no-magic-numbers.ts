@@ -84,11 +84,27 @@ type RuleOptions = [Options?];
 /** Numbers that are universally idiomatic in JS/TS and need no naming. */
 const DEFAULT_IGNORE = new Set<number>([-1, 0, 1, 2]);
 
-/** Build a SCREAMING_SNAKE_CASE const name from a numeric value. */
+/**
+ * Build a SCREAMING_SNAKE_CASE const name from a numeric value.
+ *
+ * e.g. 5000 → MAGIC_5000 · -3 → MAGIC_NEG_3 · 1.5 → MAGIC_1_5 · 1e21 → MAGIC_1E21
+ *
+ * Every non-alphanumeric character has to go, not just the decimal point.
+ * `String(1e21)` is `"1e+21"`, and replacing only `.` produced
+ * `const MAGIC_1e+21 = 1e+21` — not an identifier, so applying the suggestion
+ * left the user with a file that does not parse. Found by an adversarial wave,
+ * on a value that also turned out to be exempt from the rule for a second
+ * reason (it sat in an index position), which is how it stayed hidden.
+ *
+ * Uppercased so the exponent marker matches the SCREAMING_SNAKE_CASE the name
+ * claims to be, and trailing separators trimmed so `1e+21` cannot end in `_`.
+ */
 function constNameFor(value: number): string {
-  // e.g. 5000 → MAGIC_5000 · -3 → MAGIC_NEG_3 · 1.5 → MAGIC_1_5
   const prefix = value < 0 ? 'MAGIC_NEG_' : 'MAGIC_';
-  const digits = String(Math.abs(value)).replace('.', '_');
+  const digits = String(Math.abs(value))
+    .toUpperCase()
+    .replaceAll(/[^0-9A-Z]+/g, '_')
+    .replace(/_+$/, '');
   return `${prefix}${digits}`;
 }
 
@@ -184,13 +200,48 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       return ignoredValues.has(value);
     }
 
+    /**
+     * The largest value that can be an array index.
+     *
+     * An array's length is at most `2 ** 32 - 1`, so the last addressable index
+     * is one below that. `arr[4294967296]` is an ordinary string-keyed property
+     * on the array object, not an index into it.
+     */
+    const MAX_ARRAY_INDEX = 2 ** 32 - 2;
+
+    /**
+     * A literal in the index position of a computed member access — AND a value
+     * that could actually BE an index.
+     *
+     * The value test is the half that was missing. Position alone exempted
+     * `arr[3.5]`, `arr[1e21]` and `arr[4294967296]`, none of which index
+     * anything: a non-integer or out-of-range key is a plain property lookup,
+     * and the number in it is exactly as magic as one anywhere else. Found by an
+     * adversarial wave; the rule reported 10 of that wave's 20 cases, so the
+     * quiet ones meant something.
+     *
+     * This matches ESLint core's `no-magic-numbers`, which has always required
+     * a non-negative integer below the array-length limit.
+     *
+     * A negative index reaches here as a `UnaryExpression` wrapping the literal,
+     * so the parent is not the member expression and the exemption does not
+     * apply — `arr[-7]` reports, which is correct and now for a stated reason
+     * rather than by accident.
+     */
     function isArrayIndex(node: TSESTree.Literal): boolean {
       if (!ignoreArrayIndexes) return false;
       const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-      return (
+      const inIndexPosition =
         parent?.type === 'MemberExpression' &&
         (parent as TSESTree.MemberExpression).computed &&
-        (parent as TSESTree.MemberExpression).property === node
+        (parent as TSESTree.MemberExpression).property === node;
+      if (!inIndexPosition) return false;
+      const value = node.value;
+      return (
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= MAX_ARRAY_INDEX
       );
     }
 

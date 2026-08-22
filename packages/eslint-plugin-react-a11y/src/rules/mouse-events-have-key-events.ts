@@ -25,6 +25,7 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/mouse-events-have-key-events.md',
       description: 'Enforce that onMouseOver/onMouseOut are accompanied by onFocus/onBlur',
+      wcag: 'WCAG 2.1.1',
     },
     messages: {
       missingOnFocus: formatLLMMessage({

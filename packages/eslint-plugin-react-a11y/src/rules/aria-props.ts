@@ -25,8 +25,7 @@ export const ariaProps = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-props.md',
       description: 'Enforce that ARIA attributes are valid',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 4.1.1',
     },
     messages: {
       invalidAriaProp: formatLLMMessage({
@@ -36,7 +35,7 @@ export const ariaProps = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Use a valid ARIA attribute (e.g., aria-label)',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-props.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 4.1.1'
       }),
     },
     schema: [],

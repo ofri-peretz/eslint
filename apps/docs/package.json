@@ -54,6 +54,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.62.1",
+    "@posthog/nextjs-config": "^1.9.70",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.2.0",
     "ajv": "^8.20.0",
