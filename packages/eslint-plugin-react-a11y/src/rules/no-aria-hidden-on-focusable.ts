@@ -31,8 +31,7 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-aria-hidden-on-focusable.md',
       description: 'Enforce that aria-hidden="true" is not used on focusable elements',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 4.1.2',
     },
     messages: {
       ariaHiddenFocusable: formatLLMMessage({
@@ -42,7 +41,7 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Remove aria-hidden="true" or make element non-focusable',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-aria-hidden-on-focusable.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 4.1.2'
       }),
     },
     schema: [],

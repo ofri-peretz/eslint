@@ -34,6 +34,41 @@ export interface Options {
   /** Allow numbers used as array indices (e.g., `items[2]`). Default: true */
   ignoreArrayIndexes?: boolean;
 
+  /**
+   * Report numbers used as object property VALUES — `{ timeout: 5000 }`.
+   * Default: false.
+   *
+   * Off by default, matching ESLint core's own `no-magic-numbers`, which has
+   * shipped `detectObjects: false` for years. A config object IS a place to
+   * write literals; that is what it is for.
+   *
+   * Measured rather than assumed: across 5,938 sampled findings on the
+   * 20-repository corpus, object properties were 1,827 of them — 31%, and the
+   * single largest context by a factor of two. The classes named below (loop
+   * bounds, arity checks) were 231 and 79.
+   */
+  detectObjects?: boolean;
+
+  /**
+   * Allow a numeric bound in a loop header — `for (let i = 0; i < 4; i++)`.
+   * Default: true.
+   *
+   * A loop bound is idiomatic rather than magic: the number IS the loop's
+   * shape, and extracting it to `const FOUR = 4` makes the code worse. Measured
+   * across a 20-repository ledger, this was one of the four classes that made
+   * this rule the highest-volume in the ecosystem at 22,942 findings.
+   */
+  ignoreLoopBounds?: boolean;
+
+  /**
+   * Allow a comparison against `.length` — `arguments.length === 3`.
+   * Default: true.
+   *
+   * An arity or size check names its own meaning. The same family as the array
+   * index this rule already exempts.
+   */
+  ignoreLengthComparisons?: boolean;
+
   /** Allow numbers in default parameter values (e.g., `function f(n = 10)`). Default: true */
   ignoreDefaultValues?: boolean;
 
@@ -49,11 +84,27 @@ type RuleOptions = [Options?];
 /** Numbers that are universally idiomatic in JS/TS and need no naming. */
 const DEFAULT_IGNORE = new Set<number>([-1, 0, 1, 2]);
 
-/** Build a SCREAMING_SNAKE_CASE const name from a numeric value. */
+/**
+ * Build a SCREAMING_SNAKE_CASE const name from a numeric value.
+ *
+ * e.g. 5000 → MAGIC_5000 · -3 → MAGIC_NEG_3 · 1.5 → MAGIC_1_5 · 1e21 → MAGIC_1E21
+ *
+ * Every non-alphanumeric character has to go, not just the decimal point.
+ * `String(1e21)` is `"1e+21"`, and replacing only `.` produced
+ * `const MAGIC_1e+21 = 1e+21` — not an identifier, so applying the suggestion
+ * left the user with a file that does not parse. Found by an adversarial wave,
+ * on a value that also turned out to be exempt from the rule for a second
+ * reason (it sat in an index position), which is how it stayed hidden.
+ *
+ * Uppercased so the exponent marker matches the SCREAMING_SNAKE_CASE the name
+ * claims to be, and trailing separators trimmed so `1e+21` cannot end in `_`.
+ */
 function constNameFor(value: number): string {
-  // e.g. 5000 → MAGIC_5000 · -3 → MAGIC_NEG_3 · 1.5 → MAGIC_1_5
   const prefix = value < 0 ? 'MAGIC_NEG_' : 'MAGIC_';
-  const digits = String(Math.abs(value)).replace('.', '_');
+  const digits = String(Math.abs(value))
+    .toUpperCase()
+    .replaceAll(/[^0-9A-Z]+/g, '_')
+    .replace(/_+$/, '');
   return `${prefix}${digits}`;
 }
 
@@ -107,6 +158,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
             description: 'Additional numbers to allow',
           },
           ignoreArrayIndexes: { type: 'boolean', default: true },
+          detectObjects: { type: 'boolean', default: false },
+          ignoreLoopBounds: { type: 'boolean', default: true },
+          ignoreLengthComparisons: { type: 'boolean', default: true },
           ignoreDefaultValues: { type: 'boolean', default: true },
           ignoreEnums: { type: 'boolean', default: true },
           ignoreBitwiseExpressions: { type: 'boolean', default: false },
@@ -119,6 +173,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
     {
       ignore: [],
       ignoreArrayIndexes: true,
+      detectObjects: false,
+      ignoreLoopBounds: true,
+      ignoreLengthComparisons: true,
       ignoreDefaultValues: true,
       ignoreEnums: true,
       ignoreBitwiseExpressions: false,
@@ -129,6 +186,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
     const {
       ignore = [],
       ignoreArrayIndexes = true,
+      detectObjects = false,
+      ignoreLoopBounds = true,
+      ignoreLengthComparisons = true,
       ignoreDefaultValues = true,
       ignoreEnums = true,
       ignoreBitwiseExpressions = false,
@@ -140,13 +200,119 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       return ignoredValues.has(value);
     }
 
+    /**
+     * The largest value that can be an array index.
+     *
+     * An array's length is at most `2 ** 32 - 1`, so the last addressable index
+     * is one below that. `arr[4294967296]` is an ordinary string-keyed property
+     * on the array object, not an index into it.
+     */
+    const MAX_ARRAY_INDEX = 2 ** 32 - 2;
+
+    /**
+     * A literal in the index position of a computed member access — AND a value
+     * that could actually BE an index.
+     *
+     * The value test is the half that was missing. Position alone exempted
+     * `arr[3.5]`, `arr[1e21]` and `arr[4294967296]`, none of which index
+     * anything: a non-integer or out-of-range key is a plain property lookup,
+     * and the number in it is exactly as magic as one anywhere else. Found by an
+     * adversarial wave; the rule reported 10 of that wave's 20 cases, so the
+     * quiet ones meant something.
+     *
+     * This matches ESLint core's `no-magic-numbers`, which has always required
+     * a non-negative integer below the array-length limit.
+     *
+     * A negative index reaches here as a `UnaryExpression` wrapping the literal,
+     * so the parent is not the member expression and the exemption does not
+     * apply — `arr[-7]` reports, which is correct and now for a stated reason
+     * rather than by accident.
+     */
     function isArrayIndex(node: TSESTree.Literal): boolean {
       if (!ignoreArrayIndexes) return false;
       const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-      return (
+      const inIndexPosition =
         parent?.type === 'MemberExpression' &&
         (parent as TSESTree.MemberExpression).computed &&
-        (parent as TSESTree.MemberExpression).property === node
+        (parent as TSESTree.MemberExpression).property === node;
+      if (!inIndexPosition) return false;
+      const value = node.value;
+      return (
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= MAX_ARRAY_INDEX
+      );
+    }
+
+    /**
+     * A numeric bound inside a `for` header.
+     *
+     * Scoped to the header's own test and update clauses, walked up through
+     * whatever expression holds the literal, and stopping at the loop BODY —
+     * a magic number inside the body is ordinary code and must keep reporting.
+     */
+    /**
+     * The VALUE of an object property — `{ timeout: 5000 }`.
+     *
+     * Not the key: a computed key `{ [4]: x }` is an index, which the array
+     * exemption already covers.
+     */
+    function isObjectPropertyValue(node: TSESTree.Literal): boolean {
+      if (detectObjects) return false;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      return (
+        parent?.type === 'Property' && (parent as TSESTree.Property).value === node
+      );
+    }
+
+    function isLoopBound(node: TSESTree.Literal): boolean {
+      if (!ignoreLoopBounds) return false;
+      // Walks to the enclosing ForStatement or to a statement boundary, with no
+      // depth cap. A fixed limit silently stopped exempting a literal nested
+      // deeply enough in the header — `for (let i = 0; i < f(g(h(9))); i++)` —
+      // and the depth at which it gave up was arbitrary.
+      let current: TSESTree.Node = node;
+      let parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      while (parent) {
+        if (parent.type === 'ForStatement') {
+          const loop = parent as TSESTree.ForStatement;
+          return loop.test === current || loop.update === current || loop.init === current;
+        }
+        // A statement boundary means we left the header without finding it.
+        if (parent.type === 'BlockStatement' || parent.type === 'Program') return false;
+        current = parent;
+        parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      }
+      return false;
+    }
+
+    /**
+     * A comparison against `.length` — `args.length === 3`, `xs.length > 2`.
+     *
+     * EQUALITY only. `arguments.length === 3` is an arity check and the number
+     * is the arity; `users.length > 100` is a business threshold and stays a
+     * finding — an existing test pinned exactly that, and it was right. The
+     * corpus evidence for this exemption was `arguments.length === 3`, so the
+     * exemption is scoped to that shape rather than to every comparison that
+     * happens to touch `.length`.
+     *
+     * Only the SIBLING of the comparison counts, so `foo(bar.length, 3)` is
+     * untouched.
+     */
+    function isLengthComparison(node: TSESTree.Literal): boolean {
+      if (!ignoreLengthComparisons) return false;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      if (parent?.type !== 'BinaryExpression') return false;
+      const comparison = parent as TSESTree.BinaryExpression;
+      const EQUALITY = new Set(['===', '!==', '==', '!=']);
+      if (!EQUALITY.has(comparison.operator)) return false;
+      const other = comparison.left === node ? comparison.right : comparison.left;
+      return (
+        other.type === 'MemberExpression' &&
+        !other.computed &&
+        other.property.type === 'Identifier' &&
+        other.property.name === 'length'
       );
     }
 
@@ -222,6 +388,9 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         if (isVariableDeclarator(node)) return; // const X = 42
         if (isExportedConst(node)) return;
         if (isArrayIndex(node)) return;
+        if (isObjectPropertyValue(node)) return;
+        if (isLoopBound(node)) return;
+        if (isLengthComparison(node)) return;
         if (isDefaultValue(node)) return;
         if (isEnumMember(node)) return;
         if (isBitwiseContext(node)) return;

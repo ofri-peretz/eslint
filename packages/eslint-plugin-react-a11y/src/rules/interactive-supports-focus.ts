@@ -37,8 +37,7 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/interactive-supports-focus.md',
       description: 'Enforce that elements with interactive handlers are focusable',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 2.1.1',
     },
     messages: {
       missingTabIndex: formatLLMMessage({
@@ -48,7 +47,7 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Add tabIndex="0"',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/interactive-supports-focus.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 2.1.1'
       }),
     },
     schema: [

@@ -115,6 +115,24 @@ describe('PostHog: Init contract (ANALYTICS_PHILOSOPHY.md)', () => {
   it('exception capture enabled (capture_exceptions: true)', () => {
     expect(initSrc).toMatch(/capture_exceptions:\s*true/);
   });
+  it('heatmap capture enabled (capture_heatmaps: true)', () => {
+    expect(initSrc).toMatch(/capture_heatmaps:\s*true/);
+  });
+  it('dead-click capture enabled (capture_dead_clicks: true)', () => {
+    expect(initSrc).toMatch(/capture_dead_clicks:\s*true/);
+  });
+  it('cookieless mode, not memory persistence', () => {
+    // `persistence: 'memory'` gave every page load a fresh anonymous person
+    // (1.2 pageviews per "person"), which silently zeroed funnels, paths,
+    // retention and replay. Cookieless mode keeps the no-cookie property
+    // without discarding identity. It only works while the project has
+    // cookieless_server_hash_mode enabled — if someone reverts one, this
+    // fails and points at the other.
+    expect(initSrc).toMatch(/^\s*cookieless_mode:\s*'always',/m);
+    // Anchored to a config line, not a mention: the comment above the option
+    // names `persistence: 'memory'` to explain what it replaced.
+    expect(initSrc).not.toMatch(/^\s*persistence:\s*'memory',/m);
+  });
   it('cross-subdomain cookie on .interlace.tools', () => {
     expect(initSrc).toMatch(/cross_subdomain_cookie:\s*true/);
     expect(initSrc).toMatch(/['"]\.interlace\.tools['"]/);
@@ -214,6 +232,22 @@ describe('PostHog: Analytics primitives (vendor-neutral surface)', () => {
 });
 
 describe('PostHog: Next.js reverse proxy', () => {
+  it('source maps are uploaded to PostHog and deleted, never served', () => {
+    // The whole point of the wrapper: symbolicated stacks in PostHog without
+    // publishing our sources. Flipping deleteAfterUpload to false, or turning
+    // on productionBrowserSourceMaps, would ship the maps to every visitor.
+    expect(nextConfigSrc).toMatch(/withPostHogConfig/);
+    expect(nextConfigSrc).toMatch(/deleteAfterUpload:\s*true/);
+    expect(nextConfigSrc).not.toMatch(/productionBrowserSourceMaps:\s*true/);
+  });
+  it('source-map upload is env-gated so keyless builds are unchanged', () => {
+    expect(nextConfigSrc).toMatch(/POSTHOG_PERSONAL_API_KEY/);
+    expect(nextConfigSrc).toMatch(/POSTHOG_PROJECT_ID/);
+  });
+  it('CSP violations report to PostHog through the /ingest proxy', () => {
+    expect(nextConfigSrc).toMatch(/Content-Security-Policy-Report-Only/);
+    expect(nextConfigSrc).toMatch(/report-uri \/ingest\/report\//);
+  });
   it('next.config.mjs rewrites /ingest/* to PostHog ingestion', () => {
     expect(nextConfigSrc).toMatch(/\/ingest\//);
     expect(nextConfigSrc).toMatch(/us\.i\.posthog\.com/);

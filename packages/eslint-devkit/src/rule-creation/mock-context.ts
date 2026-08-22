@@ -82,6 +82,15 @@ export function createWithMockContext(
     getAncestors: () => [],
     getCommentsBefore: () => [],
     getDeclaredVariables: () => [],
+    // A real SourceCode has these, so the mock must too. Without them a rule
+    // that reads the leading comment block — `isGeneratedFile` is the first —
+    // throws inside a synthetic-AST test, and the tempting fix is to make the
+    // rule defensive about a shape ESLint always provides. That would add a
+    // branch no real input can take, which in a repo held at 100% coverage is
+    // a permanent hole. Fix the mock instead.
+    getAllComments: () => (opts.ast as { comments?: unknown[] } | undefined)?.comments ?? [],
+    getFirstToken: () =>
+      (opts.ast as { tokens?: unknown[] } | undefined)?.tokens?.[0] ?? null,
   };
   const context = {
     id: 'mock-rule',

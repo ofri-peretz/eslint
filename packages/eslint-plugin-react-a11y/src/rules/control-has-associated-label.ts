@@ -161,8 +161,7 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/control-has-associated-label.md',
       description: 'Enforce that controls (interactive elements) have associated labels',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 1.3.1',
     },
     messages: {
       missingLabel: formatLLMMessage({
@@ -172,7 +171,7 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Add text content, aria-label, or aria-labelledby',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/control-has-associated-label.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 1.3.1'
       }),
     },
     schema: [

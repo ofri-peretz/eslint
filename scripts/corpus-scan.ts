@@ -32,9 +32,26 @@
  *   tsx scripts/corpus-scan.ts             # scan and check against the budget
  *   tsx scripts/corpus-scan.ts --update    # rewrite the budget from this run
  *   tsx scripts/corpus-scan.ts --json      # machine-readable report on stdout
+ *   tsx scripts/corpus-scan.ts --local     # scan the WORKING TREE, pre-release
+ *
+ * ## Two modes, and why the default is the published one
+ *
+ * By default this installs the PUBLISHED plugins, so a number here describes
+ * what a consumer installing today gets. A fix on main does not move it until
+ * it is released.
+ *
+ * `--local` installs the working tree instead, to answer the other question:
+ * does what I am about to ship make things better or worse? It compares against
+ * the SAME budgets, because the budget is the published baseline and the delta
+ * against it is the whole point.
+ *
+ * `--local --update` is refused. The budget describes shipped behaviour, and
+ * letting a local run rewrite it would let an unreleased fix claim credit — the
+ * exact confusion the two modes exist to keep apart.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
@@ -152,6 +169,74 @@ function lockedVersion(name: string): string {
   return version;
 }
 
+/**
+ * The version of a plugin this gate measures: the one in its package.json.
+ *
+ * That is the version most recently released, because changesets bumps it at
+ * release time. So the gate reports what a consumer installing today would see
+ * — and a fix landing on main does NOT move these numbers until it ships,
+ * which is the honest reading and the reason this is not a `file:` dependency.
+ *
+ * A version that is not on npm yet is a hard failure rather than a silent
+ * fallback to `latest`: measuring a different version than the one named is
+ * exactly the staleness this change exists to remove.
+ */
+/**
+ * A content hash of everything a plugin's `dist` would ship.
+ *
+ * Not mtime, and not one entry point. `dist/src/index.js` is a BARREL — it
+ * contains no rule code at all, so editing a rule and rebuilding leaves it
+ * byte-identical, and a fingerprint reading it would call the rig fresh while
+ * npm served the previous build from cache. That is the same staleness that
+ * made no-magic-numbers read 1,635 against a fresh 1,421, arriving for the
+ * third time by a different route.
+ *
+ * mtime is no better on its own: it is metadata, it does not identify bytes,
+ * and plenty of tooling preserves it. Hashing the contents is the only version
+ * of this that answers the question actually being asked — is the code in this
+ * directory the code the rig was built from.
+ */
+function distHash(plugin: string): string {
+  const dist = path.join(ROOT, 'packages', plugin, 'dist');
+  if (!existsSync(dist)) return 'absent';
+  const hash = createHash('sha1');
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      // LENGTH-DELIMITED, so the concatenation is unambiguous. Feeding path
+      // and contents in raw lets a file named `a` holding `a` hash identically
+      // to a file named `aa` holding nothing — verified, both e0c9035898dd52fc.
+      // Every record is therefore prefixed with its own byte length.
+      //
+      // Path as well as contents: a file moving is a change too.
+      const relative = Buffer.from(path.relative(dist, full));
+      const contents = readFileSync(full);
+      const lengths = Buffer.alloc(8);
+      lengths.writeUInt32BE(relative.byteLength, 0);
+      lengths.writeUInt32BE(contents.byteLength, 4);
+      hash.update(lengths);
+      hash.update(relative);
+      hash.update(contents);
+    }
+  };
+  walk(dist);
+  return hash.digest('hex').slice(0, 16);
+}
+
+function publishedVersion(plugin: string): string {
+  const pkg = JSON.parse(
+    readFileSync(path.join(ROOT, 'packages', plugin, 'package.json'), 'utf-8'),
+  ) as { version?: string };
+  if (!pkg.version) throw new Error(`${plugin} has no version in package.json`);
+  return pkg.version;
+}
+
 const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
 
 /**
@@ -176,6 +261,15 @@ const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
 const CACHE_HOME = resolveCacheHome();
 const WORK = path.join(CACHE_HOME, 'interlace-corpus-scan');
 const RIG = path.join(WORK, '_rig');
+/**
+ * npm's cache, private to the rig.
+ *
+ * In local mode `--install-links` packs each `file:` dependency into a tarball
+ * keyed `name@version`, and a rebuild does not bump the version — so the shared
+ * cache happily serves the previous build. Keeping the cache beside the rig
+ * means the rebuild path can drop it without touching the developer's own.
+ */
+const NPM_CACHE = path.join(WORK, '_npm-cache');
 
 interface Budget {
   /** Human note; ignored by the checker. */
@@ -286,6 +380,15 @@ function scanTarget(dir: string, configPath: string): Map<string, number> {
 
 function main(): number {
   const update = process.argv.includes('--update');
+  const local = process.argv.includes('--local');
+  if (local && update) {
+    console.error(
+      '::error::--local --update is refused. The budget records PUBLISHED behaviour; a\n' +
+        'working-tree run must not rewrite it, or an unreleased fix takes credit for a\n' +
+        'number no consumer can see. Release the fix, then --update.',
+    );
+    return 2;
+  }
   const asJson = process.argv.includes('--json');
   const log = (line: string) => {
     if (!asJson) console.log(line);
@@ -298,14 +401,75 @@ function main(): number {
   // measures the code in the PR rather than the last published release.
   ensurePrivateDir(RIG, CACHE_HOME);
   writeFileSync(path.join(RIG, 'package.json'), JSON.stringify({ name: 'rig', private: true }));
-  log('Installing scan rig…');
+  // Wipe the rig when the set of versions under test changes.
+  //
+  // The rig installs the PUBLISHED plugins, so what it measures is what users
+  // actually get — not the working tree. That is the point: a number from this
+  // gate describes shipped behaviour, and a fix does not move it until the fix
+  // is released.
+  //
+  // It also removes the whole class of staleness that cost most of today. A
+  // `file:` dependency is served from npm's cache when its version has not
+  // changed, so the rig kept measuring a PREVIOUS local build: no-magic-numbers
+  // read 1,635 against a fresh 1,421, and hooks-exhaustive-deps read both 84
+  // and 91. A published version is immutable, so the same version string is
+  // always the same code.
+  // In published mode the version string IS the identity of the code. In local
+  // mode it is not — the version does not change when you rebuild — so the
+  // fingerprint has to read the built artifact, or npm serves the previous
+  // build out of its cache and the run silently measures stale code.
+  //
+  // `@interlace/eslint-devkit` is in the local fingerprint, and leaving it out
+  // was a live defect. Every plugin's dist requires the devkit at runtime, and
+  // `--install-links` COPIES rather than symlinks, so the rig holds a snapshot
+  // of it. Hashing only the plugins meant a devkit-only change left the rig
+  // stamped unchanged and the copy stale. Adding an export surfaced it loudly
+  // — `isGeneratedFile is not a function`, on 8 of 8 repositories — but the
+  // ordinary case is silent: change a shared predicate, and the scan measures
+  // the previous one while reporting a number against the new code.
+  const fingerprint = [
+    ...PLUGINS.map((plugin) =>
+      local ? `${plugin}:local:${distHash(plugin)}` : `${plugin}@${publishedVersion(plugin)}`,
+    ),
+    ...(local ? [`eslint-devkit:local:${distHash('eslint-devkit')}`] : []),
+  ].join('\n');
+  const stampFile = path.join(RIG, '.plugin-fingerprint');
+  if (
+    existsSync(path.join(RIG, 'node_modules')) &&
+    (!existsSync(stampFile) || readFileSync(stampFile, 'utf-8') !== fingerprint)
+  ) {
+    log('Plugin versions changed — rebuilding the scan rig…');
+    rmSync(path.join(RIG, 'node_modules'), { recursive: true, force: true });
+    rmSync(path.join(RIG, 'package-lock.json'), { force: true });
+    // And npm's own cache for this rig. Deleting node_modules is not enough in
+    // LOCAL mode: `--install-links` packs each `file:` dependency into a
+    // tarball that npm caches under `name@version`, and a rebuild does not
+    // change the version. So the reinstall unpacked the PREVIOUS build of the
+    // devkit while the stamp said the rig was fresh — the exact staleness the
+    // fingerprint above exists to prevent, one layer further down.
+    //
+    // A private cache directory rather than `npm cache clean --force`, which
+    // would throw away the developer's whole cache to fix the rig's.
+    rmSync(NPM_CACHE, { recursive: true, force: true });
+  }
+
+
+  log(
+    local
+      ? 'Installing scan rig — LOCAL WORKING TREE (not shipped behaviour)…'
+      : 'Installing scan rig — published plugin versions…',
+  );
   sh(
     'npm',
     [
       'install',
-      // Copy `file:` dependencies instead of symlinking them, so the rig is a
-      // snapshot of the checkout and two scans of the same commit agree.
-      '--install-links',
+      // Only meaningful for `--local`, where the plugins are `file:` deps: copy
+      // them instead of symlinking, so the rig is a snapshot of the tree as it
+      // stood. Harmless otherwise.
+      ...(local ? ['--install-links'] : []),
+      // Scoped to the rig, so wiping it above cannot touch anything else.
+      '--cache',
+      NPM_CACHE,
       '--silent',
       '--no-audit',
       '--no-fund',
@@ -346,10 +510,44 @@ function main(): number {
       // same: an optional dependency that changes the answer is not optional
       // to the measurement.
       `oxc-resolver@${lockedVersion('oxc-resolver')}`,
-      ...PLUGINS.map((p) => `${p}@file:${path.join(ROOT, 'packages', p)}`),
+      ...PLUGINS.map((p) =>
+        local ? `${p}@file:${path.join(ROOT, 'packages', p)}` : `${p}@${publishedVersion(p)}`,
+      ),
+      // The devkit, from the working tree, in LOCAL mode only.
+      //
+      // Without this line `--local` did not measure the local tree. Every
+      // plugin declares `@interlace/eslint-devkit` as a SEMVER RANGE
+      // (`^1.11.0`), so npm resolved it from the registry and the rig ran
+      // local plugins against the PUBLISHED devkit. Everything that lives
+      // there — `isTestFilePath`, `createRule`'s skip flags, every shared
+      // detector — was therefore measured at whatever was last released,
+      // while the report said "local working tree".
+      //
+      // It surfaced as `isGeneratedFile is not a function` on 8 of 8 targets
+      // only because the change added a NEW export. A change to an EXISTING
+      // one is silent: the scan runs, produces a number, and the number
+      // describes code that is not in the tree.
+      //
+      // In published mode this is correctly absent — there the plugins' own
+      // dependency ranges are part of what is being measured.
+      // `packages/eslint-devkit/dist`, not the package root. The two publish
+      // differently: a plugin's `files` lists both `src/` and `dist/`, so
+      // packing its root yields a working tarball, while the devkit's lists
+      // only `src/` even though its `main` is `./dist/src/index.js`. The devkit
+      // is published FROM `dist/`, which carries its own package.json pointing
+      // at `./src/index.js`. Packing the root instead gives a tarball whose
+      // entry point is not in it.
+      ...(local
+        ? [
+            `@interlace/eslint-devkit@file:${path.join(ROOT, 'packages', 'eslint-devkit', 'dist')}`,
+          ]
+        : []),
     ],
     RIG,
   );
+
+  // Record what this rig was built from, so the next run can tell.
+  writeFileSync(stampFile, fingerprint);
 
   const configPath = path.join(RIG, 'corpus-scan.config.mjs');
   writeFileSync(configPath, buildConfig());
@@ -488,14 +686,24 @@ function main(): number {
     }
     // Ratcheting down is the point of the exercise, so say so loudly enough
     // that the budget actually gets lowered rather than drifting upward.
+    //
+    // In local mode the same fact means something different: the budget is the
+    // PUBLISHED baseline, so under-budget is an unreleased improvement and
+    // lowering the budget now would credit a number no consumer can see.
     for (const { rule, found, allowed } of under) {
-      log(`  ⬇ ${rule}: ${found} < budget ${allowed} — lower the budget`);
+      log(
+        local
+          ? `  ⬇ ${rule}: ${found} vs ${allowed} published — an improvement, ratchet it after release`
+          : `  ⬇ ${rule}: ${found} < budget ${allowed} — lower the budget`,
+      );
     }
   }
 
   if (over.length > 0) {
     console.error(
-      `\n${over.length} rule(s) over budget. Fix the rule, or run with --update if the increase is a deliberate detection improvement.`,
+      local
+        ? `\n${over.length} rule(s) report MORE than the published version does. Either the\nchange regresses them, or the increase is a deliberate detection improvement —\nsay which in the commit, because --local cannot rewrite the budget.`
+        : `\n${over.length} rule(s) over budget. Fix the rule, or run with --update if the increase is a deliberate detection improvement.`,
     );
     return 1;
   }

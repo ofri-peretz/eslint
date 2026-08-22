@@ -10,10 +10,18 @@
  */
 import * as path from 'node:path';
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'selfImport';
+
+/**
+ * The extensions a JS/TS module resolver will add on its own.
+ *
+ * A closed list, so `.css`, `.json`, `.graphql` and a dotted name segment like
+ * `.constants` are all treated as naming a different file — which they do.
+ */
+const MODULE_EXTENSION = /\.[cm]?[jt]sx?$/;
 
 export interface Options {
   /** Allow self-import in test files */
@@ -34,16 +42,17 @@ function isImportingSelf(
     return false;
   }
 
-  // Skip test files if allowed
+  // Skip test files if allowed.
+  //
+  // `filename.includes('__tests__')` matched any path containing those
+  // characters anywhere — `~/my__tests__project/src/a.ts` included — which is
+  // the substring-on-a-name defect CLAUDE.md puts first. It suppresses rather
+  // than reports, so it cost recall rather than trust, but the devkit already
+  // has the predicate: basename for `*.test.*`, exact path SEGMENT equality for
+  // the directory case.
   const [options] = context.options;
   const { allowInTests = false } = options || {};
-  if (
-    allowInTests &&
-    (filename.includes('.test.') ||
-      filename.includes('.spec.') ||
-      filename.includes('/__tests__/') ||
-      filename.includes('__tests__'))
-  ) {
+  if (allowInTests && isTestFilePath(filename)) {
     return false;
   }
 
@@ -62,9 +71,29 @@ function isImportingSelf(
     return false;
   }
 
-  // Compare resolved paths (normalize by removing extensions)
-  const normalizedCurrent = filename.replace(/\.[^/.]+$/, '');
-  const normalizedImport = resolvedPath.replace(/\.[^/.]+$/, '');
+  // A self-import means the specifier resolves to THIS file. Stripping "the
+  // last extension" from both sides was a crude stand-in for that and got two
+  // classes wrong on the pinned corpus, both of them the only two findings this
+  // rule produced there:
+  //
+  //   main.jsx        importing './main.css'                 -> both became `main`
+  //   styleUtils.test.js importing './styleUtils.test.constants'
+  //                                                          -> both became `styleUtils.test`
+  //
+  // A stylesheet is not this module, and `.constants` is not an extension at
+  // all — it is part of the module's NAME, and `\.[^/.]+$` cannot tell the
+  // difference.
+  //
+  // So: a specifier whose last segment carries a dotted suffix that is not a
+  // module extension names a different file, full stop. Otherwise strip only
+  // real module extensions from each side before comparing.
+  const trailingSuffix = /\.[^/.]+$/.exec(importPath);
+  if (trailingSuffix && !MODULE_EXTENSION.test(importPath)) {
+    return false;
+  }
+
+  const normalizedCurrent = filename.replace(MODULE_EXTENSION, '');
+  const normalizedImport = resolvedPath.replace(MODULE_EXTENSION, '');
 
   return normalizedCurrent === normalizedImport;
 }

@@ -101,8 +101,7 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-noninteractive-tabindex.md',
       description: 'Enforce that non-interactive elements do not have tabindex',
-      cwe: 'CWE-252',
-      cvss: 5,
+      wcag: 'WCAG 2.4.3',
     },
     messages: {
       noNoninteractiveTabindex: formatLLMMessage({
@@ -112,7 +111,7 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
         severity: 'MEDIUM',
         fix: 'Remove tabindex or make element interactive',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-tabindex.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 2.4.3'
       }),
     },
     schema: [
