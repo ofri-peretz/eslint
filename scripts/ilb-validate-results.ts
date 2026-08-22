@@ -245,9 +245,14 @@ function main() {
     : findJsonFiles(RESULTS_ROOT);
 
   if (files.length === 0) {
-    // Fail loudly — a vacuous pass on zero files is the exact failure mode
-    // this gate exists to prevent.  The old behaviour (console.log + exit 0)
-    // let the quality composite go green while validating nothing.
+    // Distinguish "directory not present" (expected in shallow clones for
+    // docs-only deploys — see scorecard-source-integrity.test.ts line 27)
+    // from "directory present but contains no result files" (the vacuous
+    // pass this gate exists to prevent).
+    if (!targets.length && !fs.existsSync(RESULTS_ROOT)) {
+      if (!QUIET) console.warn('ilb-validate-results: results directory not present — skipping (shallow clone?)');
+      process.exit(0);
+    }
     console.error('ilb-validate-results: no result files found — refusing to pass vacuously on zero files');
     process.exit(1);
   }
