@@ -243,6 +243,13 @@ jobs:
         run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
       - name: Load every benchmark config
         run: npm run --silent -w @interlace/benchmarks test:configs-load
+      # Same job because it needs the same thing this one already paid for: the
+      # built dist/. The contradiction only exists in the RENDERED message, and
+      # the score in it is enriched from the rule's CWE — a source-only checker
+      # would have to re-implement that enrichment and would then agree with
+      # itself by construction.
+      - name: Severity labels must agree with the CVSS band they render
+        run: npm run --silent lint:severity-consistency
 
   # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
   # so splitting inside a package would make each shard an uncacheable slice of
