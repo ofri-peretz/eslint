@@ -31,8 +31,7 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/media-has-caption.md',
       description: 'Enforce that media elements have captions',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 1.2.2',
     },
     messages: {
       missingCaption: formatLLMMessage({
@@ -42,7 +41,7 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Add <track kind="captions" />',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/media-has-caption.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 1.2.2'
       }),
     },
     schema: [

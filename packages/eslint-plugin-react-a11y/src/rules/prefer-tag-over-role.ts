@@ -47,6 +47,7 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/prefer-tag-over-role.md',
       description: 'Enforce semantic DOM elements over ARIA role properties',
+      wcag: 'WCAG 1.3.1',
     },
     messages: {
       preferTagOverRole: formatLLMMessage({

@@ -25,8 +25,7 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/tabindex-no-positive.md',
       description: 'Enforce that tabIndex is not positive',
-      cwe: 'CWE-252',
-      cvss: 5,
+      wcag: 'WCAG 2.4.3',
     },
     messages: {
       avoidPositiveTabIndex: formatLLMMessage({
@@ -36,7 +35,7 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
         severity: 'MEDIUM',
         fix: 'Use tabIndex="0" or tabIndex="-1"',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/tabindex-no-positive.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 2.4.3'
       }),
     },
     schema: [],

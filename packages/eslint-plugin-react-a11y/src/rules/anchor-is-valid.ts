@@ -31,6 +31,7 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-is-valid.md',
       description: 'Enforce that anchors are valid, navigable elements',
+      wcag: 'WCAG 2.4.4',
     },
     messages: {
       noHref: formatLLMMessage({

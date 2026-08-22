@@ -365,3 +365,27 @@ describe('resolveCompression', () => {
     expect(resolveCompression(context)).toBe(true);
   });
 });
+
+/**
+ * The next-gen human formatter carries the same WCAG substitution as
+ * `formatLLMMessage`. See the note on that suite in `formatters.test.ts`:
+ * CWE has no accessibility entries, so an a11y rule reaching for a standards
+ * reference had nowhere honest to put one and every rule in
+ * `eslint-plugin-react-a11y` claimed CWE-252 instead.
+ */
+describe('WCAG in the next-gen formatter', () => {
+  it('renders the criterion in the standards prefix', () => {
+    const result = formatLLMMessageNextGen({
+      icon: '♿',
+      issueName: 'Image missing alt text',
+      wcag: 'WCAG 1.1.1',
+      description: 'Image missing alt text',
+      severity: 'HIGH',
+      fix: 'Add alt="Descriptive text"',
+      documentationLink: 'https://www.w3.org/WAI/tutorials/images/',
+    });
+    expect(result).toContain('WCAG 1.1.1');
+    expect(result).not.toContain('CWE');
+    expect(result).not.toContain('CVSS');
+  });
+});

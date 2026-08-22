@@ -255,10 +255,15 @@ function formatHumanMessage(
   const owasp = enriched.owasp;
   const cvss = enriched.cvss;
   const compliance = enriched.compliance;
+  const wcag = enriched.wcag;
 
   // Build standards reference string
   const standards: string[] = [];
   if (cwe) standards.push(cwe);
+  // WCAG stands where CWE would. An accessibility defect has no attacker, so
+  // there is nothing for OWASP or CVSS to say about it — those come from the
+  // CWE enrichment above and are absent when no CWE was given.
+  if (wcag) standards.push(wcag);
   if (owasp) {
     const owaspCode = owasp.split(':')[0];
     const owaspDetails = OWASP_DETAILS[owasp];

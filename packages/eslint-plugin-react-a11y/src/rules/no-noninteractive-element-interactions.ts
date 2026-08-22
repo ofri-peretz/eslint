@@ -40,6 +40,7 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-noninteractive-element-interactions.md',
       description: 'Enforce that non-interactive elements don\'t have interactive handlers',
+      wcag: 'WCAG 2.1.1',
     },
     messages: {
       noInteraction: formatLLMMessage({
