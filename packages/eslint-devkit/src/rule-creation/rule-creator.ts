@@ -19,6 +19,7 @@
  * runtime); `rule-creator.parity.test.ts` diffs this implementation against
  * the upstream one on every run so the port can't silently drift.
  */
+import { isGeneratedFile } from './generated-file';
 import type { TSESLint } from '@typescript-eslint/utils';
 
 // The `TSESLint` import above is type-only — it is erased at compile time and
@@ -134,6 +135,25 @@ export interface RuleCreateAndOptions<
    * pins it.
    */
   skipTestFiles?: boolean;
+
+  /**
+   * Skip files whose header declares them machine-generated.
+   *
+   * The counterpart to `skipTestFiles`, and opt-in for the same reason. The
+   * cases are not symmetric, though: the note above says a complexity rule
+   * *should* apply to a test file, because a convoluted test is still a
+   * readability cost to whoever debugs it. Generated code has no such reader.
+   * It is rewritten wholesale by the next generator run, and its header
+   * usually says so outright.
+   *
+   * Measured on the pinned 8-repository corpus: 32% of `cognitive-complexity`
+   * findings and 27% of `max-parameters` findings were in generated files.
+   *
+   * Only for rules that give **maintainability advice**. A security rule must
+   * not set this — generated code ships and runs, so an injection in it is a
+   * live vulnerability regardless of what typed it.
+   */
+  skipGeneratedFiles?: boolean;
 }
 
 export interface RuleWithMeta<
@@ -220,6 +240,7 @@ function createRuleInternal<
   meta,
   name,
   skipTestFiles,
+  skipGeneratedFiles,
 }: Readonly<RuleWithMeta<Options, MessageIds, Docs>>): RuleModuleWithName<
   MessageIds,
   Options,
@@ -232,6 +253,9 @@ function createRuleInternal<
       // rule that visits nothing as a rule with no findings, which is exactly
       // the intent, and it costs no traversal.
       if (skipTestFiles && isTestFilePath(context.filename)) return {};
+      // After the filename test, which is string work, and before anything
+      // that walks the AST.
+      if (skipGeneratedFiles && isGeneratedFile(context.sourceCode)) return {};
       return create(
         context,
         applyDefault(resolvedDefaultOptions, context.options),
