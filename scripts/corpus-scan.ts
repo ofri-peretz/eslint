@@ -32,9 +32,25 @@
  *   tsx scripts/corpus-scan.ts             # scan and check against the budget
  *   tsx scripts/corpus-scan.ts --update    # rewrite the budget from this run
  *   tsx scripts/corpus-scan.ts --json      # machine-readable report on stdout
+ *   tsx scripts/corpus-scan.ts --local     # scan the WORKING TREE, pre-release
+ *
+ * ## Two modes, and why the default is the published one
+ *
+ * By default this installs the PUBLISHED plugins, so a number here describes
+ * what a consumer installing today gets. A fix on main does not move it until
+ * it is released.
+ *
+ * `--local` installs the working tree instead, to answer the other question:
+ * does what I am about to ship make things better or worse? It compares against
+ * the SAME budgets, because the budget is the published baseline and the delta
+ * against it is the whole point.
+ *
+ * `--local --update` is refused. The budget describes shipped behaviour, and
+ * letting a local run rewrite it would let an unreleased fix claim credit — the
+ * exact confusion the two modes exist to keep apart.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
@@ -306,6 +322,15 @@ function scanTarget(dir: string, configPath: string): Map<string, number> {
 
 function main(): number {
   const update = process.argv.includes('--update');
+  const local = process.argv.includes('--local');
+  if (local && update) {
+    console.error(
+      '::error::--local --update is refused. The budget records PUBLISHED behaviour; a\n' +
+        'working-tree run must not rewrite it, or an unreleased fix takes credit for a\n' +
+        'number no consumer can see. Release the fix, then --update.',
+    );
+    return 2;
+  }
   const asJson = process.argv.includes('--json');
   const log = (line: string) => {
     if (!asJson) console.log(line);
@@ -331,7 +356,17 @@ function main(): number {
   // read 1,635 against a fresh 1,421, and hooks-exhaustive-deps read both 84
   // and 91. A published version is immutable, so the same version string is
   // always the same code.
-  const fingerprint = PLUGINS.map((plugin) => `${plugin}@${publishedVersion(plugin)}`).join('\n');
+  // In published mode the version string IS the identity of the code. In local
+  // mode it is not — the version does not change when you rebuild — so the
+  // fingerprint has to read the built artifact, or npm serves the previous
+  // build out of its cache and the run silently measures stale code.
+  const fingerprint = PLUGINS.map((plugin) => {
+    if (!local) return `${plugin}@${publishedVersion(plugin)}`;
+    const entry = path.join(ROOT, 'packages', plugin, 'dist/src/index.js');
+    if (!existsSync(entry)) return `${plugin}:local:absent`;
+    const stat = statSync(entry);
+    return `${plugin}:local:${stat.mtimeMs}:${stat.size}`;
+  }).join('\n');
   const stampFile = path.join(RIG, '.plugin-fingerprint');
   if (
     existsSync(path.join(RIG, 'node_modules')) &&
@@ -343,11 +378,19 @@ function main(): number {
   }
 
 
-  log('Installing scan rig…');
+  log(
+    local
+      ? 'Installing scan rig — LOCAL WORKING TREE (not shipped behaviour)…'
+      : 'Installing scan rig — published plugin versions…',
+  );
   sh(
     'npm',
     [
       'install',
+      // Only meaningful for `--local`, where the plugins are `file:` deps: copy
+      // them instead of symlinking, so the rig is a snapshot of the tree as it
+      // stood. Harmless otherwise.
+      ...(local ? ['--install-links'] : []),
       '--silent',
       '--no-audit',
       '--no-fund',
@@ -388,7 +431,9 @@ function main(): number {
       // same: an optional dependency that changes the answer is not optional
       // to the measurement.
       `oxc-resolver@${lockedVersion('oxc-resolver')}`,
-      ...PLUGINS.map((p) => `${p}@${publishedVersion(p)}`),
+      ...PLUGINS.map((p) =>
+        local ? `${p}@file:${path.join(ROOT, 'packages', p)}` : `${p}@${publishedVersion(p)}`,
+      ),
     ],
     RIG,
   );
@@ -533,14 +578,24 @@ function main(): number {
     }
     // Ratcheting down is the point of the exercise, so say so loudly enough
     // that the budget actually gets lowered rather than drifting upward.
+    //
+    // In local mode the same fact means something different: the budget is the
+    // PUBLISHED baseline, so under-budget is an unreleased improvement and
+    // lowering the budget now would credit a number no consumer can see.
     for (const { rule, found, allowed } of under) {
-      log(`  ⬇ ${rule}: ${found} < budget ${allowed} — lower the budget`);
+      log(
+        local
+          ? `  ⬇ ${rule}: ${found} vs ${allowed} published — an improvement, ratchet it after release`
+          : `  ⬇ ${rule}: ${found} < budget ${allowed} — lower the budget`,
+      );
     }
   }
 
   if (over.length > 0) {
     console.error(
-      `\n${over.length} rule(s) over budget. Fix the rule, or run with --update if the increase is a deliberate detection improvement.`,
+      local
+        ? `\n${over.length} rule(s) report MORE than the published version does. Either the\nchange regresses them, or the increase is a deliberate detection improvement —\nsay which in the commit, because --local cannot rewrite the budget.`
+        : `\n${over.length} rule(s) over budget. Fix the rule, or run with --update if the increase is a deliberate detection improvement.`,
     );
     return 1;
   }
