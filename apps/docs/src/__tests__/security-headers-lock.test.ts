@@ -23,7 +23,10 @@ describe('security header contract', () => {
     ['X-Content-Type-Options', 'nosniff'],
     ['X-Frame-Options', 'DENY'],
     ['Referrer-Policy', 'strict-origin-when-cross-origin'],
-    ['Strict-Transport-Security', 'includeSubDomains'],
+    // Pin the full value, not just the directive: `includeSubDomains` with a
+    // short max-age is meaningfully weaker than what ships today, and an
+    // assertion on the directive alone would stay green through that edit.
+    ['Strict-Transport-Security', 'max-age=63072000; includeSubDomains'],
   ])('sends %s', (header, value) => {
     expect(CONFIG).toContain(header);
     expect(CONFIG).toContain(value);
@@ -52,10 +55,13 @@ describe('CSP directives that must never loosen', () => {
   });
 
   it("does not allow 'unsafe-eval' in the enforcing header", () => {
-    // The report-only header carries it deliberately (see the TODO in the
-    // config). Promoting the policy must not carry it across — this fails the
-    // moment an enforcing `Content-Security-Policy` is added while the
-    // eval escape hatch is still in the policy string.
+    // VACUOUS BY DESIGN, TODAY. The policy is report-only, so `enforcing` is
+    // false and the expectation below never runs. That is the intent, not an
+    // oversight: the report-only header carries 'unsafe-eval' deliberately
+    // (see the TODO in the config) so the violation stream isn't drowned by
+    // it. This lock is armed for the promotion — it fails the moment an
+    // enforcing `Content-Security-Policy` is added while the eval escape
+    // hatch is still in the policy string.
     const enforcing = /key:\s*'Content-Security-Policy'/.test(CONFIG);
     if (enforcing) expect(CONFIG).not.toContain('unsafe-eval');
   });
