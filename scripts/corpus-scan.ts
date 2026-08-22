@@ -156,6 +156,32 @@ const UNMEASURABLE_RULES: ReadonlySet<string> = new Set([
   'import-next/no-extraneous-dependencies',
 ]);
 
+/**
+ * The EXACT version of a rig dependency, read from the workspace lockfile.
+ *
+ * The rig had no lockfile of its own and installed `eslint@9`,
+ * `@typescript-eslint/parser` and `oxc-resolver` unpinned, so every install was
+ * free to resolve differently — and did. CI read this corpus at 14,996, 15,003
+ * and 15,361 findings on the same commit, and `hooks-exhaustive-deps` at both
+ * 84 and 91 on clean builds. A budget cannot mean anything against a moving
+ * environment.
+ *
+ * Pinning to the LOCKFILE rather than to a range also fixes a second thing: the
+ * scan was measuring the plugins under ESLint 9 while the repository builds and
+ * tests them under 10. The gate now measures what the repo actually ships
+ * against.
+ */
+function lockedVersion(name: string): string {
+  const lock = JSON.parse(readFileSync(path.join(ROOT, 'package-lock.json'), 'utf-8')) as {
+    packages: Record<string, { version?: string } | undefined>;
+  };
+  const version = lock.packages[`node_modules/${name}`]?.version;
+  if (!version) {
+    throw new Error(`no resolved version for ${name} in package-lock.json — cannot pin the scan rig`);
+  }
+  return version;
+}
+
 const BUDGET_FILE = path.join(ROOT, '.agent', 'corpus-findings-budget.json');
 
 /**
@@ -313,8 +339,8 @@ function main(): number {
       '--silent',
       '--no-audit',
       '--no-fund',
-      'eslint@9',
-      '@typescript-eslint/parser',
+      `eslint@${lockedVersion('eslint')}`,
+      `@typescript-eslint/parser@${lockedVersion('@typescript-eslint/parser')}`,
       // `typescript` is a PEER dependency of the parser, not a dependency of
       // it, so it has to be asked for explicitly — without it every target
       // fails with `Cannot find module 'typescript'`.
@@ -324,7 +350,7 @@ function main(): number {
       // "typescript-eslint does not support TS 7.0". An unpinned install
       // therefore breaks the scan the day TS ships a major, and the failure
       // arrives as every target erroring at once.
-      `typescript@${WORKSPACE_TYPESCRIPT_RANGE}`,
+      `typescript@${lockedVersion('typescript')}`,
       // The ReDoS ORACLE. `recheck` is an OPTIONAL peer of
       // eslint-plugin-secure-coding, and `confirmsRedos` FAILS OPEN when it is
       // absent — so a rig without it reports every scslre finding unvetoed and
@@ -338,7 +364,7 @@ function main(): number {
       // Pinned, for the same reason every other rig dependency is: the oracle
       // decides findings, so an unpinned one lets a `recheck` release restate
       // published corpus numbers without a commit here.
-      `recheck@${RECHECK_RANGE}`,
+      `recheck@${lockedVersion('recheck')}`,
       // The import RESOLVER. `oxc-resolver` is an OPTIONAL peer of
       // @interlace/eslint-devkit, and `no-unresolved` / `named` / `default` /
       // `namespace` cannot answer anything without it.
@@ -349,7 +375,7 @@ function main(): number {
       // of as a silently perfect score. Installed for the same reason all the
       // same: an optional dependency that changes the answer is not optional
       // to the measurement.
-      'oxc-resolver',
+      `oxc-resolver@${lockedVersion('oxc-resolver')}`,
       ...PLUGINS.map((p) => `${p}@file:${path.join(ROOT, 'packages', p)}`),
     ],
     RIG,
