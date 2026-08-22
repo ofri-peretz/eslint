@@ -45,7 +45,12 @@ describe('corpus-scan modes', () => {
     expect(SOURCE).toContain("createHash('sha1')");
     expect(SOURCE).not.toMatch(/mtimeMs/);
     // Path as well as contents, so a moved file counts as a change.
-    expect(SOURCE).toContain('hash.update(path.relative(dist, full))');
+    expect(SOURCE).toContain('path.relative(dist, full)');
+    // LENGTH-DELIMITED. Concatenating path and contents without boundaries
+    // lets a file named `a` holding `a` hash identically to a file named `aa`
+    // holding nothing — both e0c9035898dd52fc before this was fixed.
+    expect(SOURCE).toContain('writeUInt32BE(relative.byteLength, 0)');
+    expect(SOURCE).toContain('writeUInt32BE(contents.byteLength, 4)');
   });
 
   it('fingerprints the BUILT artifact in local mode, not the version', () => {

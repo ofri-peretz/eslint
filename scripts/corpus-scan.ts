@@ -209,9 +209,20 @@ function distHash(plugin: string): string {
         walk(full);
         continue;
       }
+      // LENGTH-DELIMITED, so the concatenation is unambiguous. Feeding path
+      // and contents in raw lets a file named `a` holding `a` hash identically
+      // to a file named `aa` holding nothing — verified, both e0c9035898dd52fc.
+      // Every record is therefore prefixed with its own byte length.
+      //
       // Path as well as contents: a file moving is a change too.
-      hash.update(path.relative(dist, full));
-      hash.update(readFileSync(full));
+      const relative = Buffer.from(path.relative(dist, full));
+      const contents = readFileSync(full);
+      const lengths = Buffer.alloc(8);
+      lengths.writeUInt32BE(relative.byteLength, 0);
+      lengths.writeUInt32BE(contents.byteLength, 4);
+      hash.update(lengths);
+      hash.update(relative);
+      hash.update(contents);
     }
   };
   walk(dist);
