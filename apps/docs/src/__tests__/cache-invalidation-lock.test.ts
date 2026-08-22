@@ -28,15 +28,32 @@ const CONFIG = readFileSync(join(DOCS, 'next.config.mjs'), 'utf-8');
 /** Paths whose URLs change when their bytes change, so `immutable` is honest. */
 const CONTENT_ADDRESSED = ['/_next/static/:path*'];
 
-/** Every `{ source: '...', headers: [...] }` block, paired with its body. */
+/**
+ * Every `{ source: '...', headers: [...] }` block, paired with its body.
+ *
+ * Scoped to the `headers:` region of the config on purpose. `rewrites()` and
+ * `redirects()` also use a `source:` key, and a naive whole-file scan turns
+ * each of those into a phantom "header block" — harmless today, since none
+ * carries a Cache-Control, but it inflates the positive-control count below
+ * and would keep this test green for the wrong reason.
+ */
 function headerBlocks(): { source: string; body: string }[] {
+  const start = CONFIG.indexOf('headers: async');
+  expect(start, 'no headers() in next.config.mjs').toBeGreaterThan(-1);
+  const after = ['rewrites: async', 'redirects: async']
+    .map((k) => CONFIG.indexOf(k, start))
+    .filter((i) => i > -1);
+  const region = CONFIG.slice(
+    start,
+    after.length ? Math.min(...after) : CONFIG.length,
+  );
+
   const blocks: { source: string; body: string }[] = [];
-  const re = /source:\s*'([^']+)'/g;
-  const matches = [...CONFIG.matchAll(re)];
+  const matches = [...region.matchAll(/source:\s*'([^']+)'/g)];
   matches.forEach((m, i) => {
-    const start = m.index ?? 0;
-    const end = matches[i + 1]?.index ?? CONFIG.length;
-    blocks.push({ source: m[1], body: CONFIG.slice(start, end) });
+    const from = m.index ?? 0;
+    const to = matches[i + 1]?.index ?? region.length;
+    blocks.push({ source: m[1], body: region.slice(from, to) });
   });
   return blocks;
 }
@@ -82,9 +99,11 @@ describe('remote markdown stays reachable by cache tag', () => {
     ),
   )('%s tags its fetch with github-markdown', (file) => {
     const src = readFileSync(join(dir, file), 'utf-8');
+    // Quote-agnostic: the formatter enforces single quotes, but the lock
+    // should not be the thing that depends on that.
     expect(
       src,
       `${file} renders <RemoteMarkdown> without a 'github-markdown' tag — deploy-docs.yml invalidates that tag on release, and an untagged entry survives the deploy`,
-    ).toContain("'github-markdown'");
+    ).toMatch(/['"`]github-markdown['"`]/);
   });
 });
