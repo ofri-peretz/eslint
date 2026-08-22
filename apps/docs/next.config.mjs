@@ -1,5 +1,4 @@
 import { createMDX } from 'fumadocs-mdx/next';
-import { withPostHogConfig } from '@posthog/nextjs-config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
@@ -22,8 +21,10 @@ const withMDX = createMDX();
  * the violation stream is quiet the header can be promoted to the enforcing
  * `Content-Security-Policy` name.
  *
- * Omitted entirely when the PostHog key is absent at build time (local `next
- * build`, forks) — a report-only policy with nowhere to report is dead weight.
+ * Omitted entirely when the PostHog key is absent. `headers()` is evaluated
+ * once at server startup rather than per request, so that decision is made
+ * from the runtime environment at boot — on Vercel both build and runtime
+ * carry the var, so in practice it is present or absent for both.
  */
 function cspReportOnlyHeaders() {
   const token = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
@@ -36,6 +37,12 @@ function cspReportOnlyHeaders() {
     "form-action 'self'",
     // Next.js ships inline bootstrap scripts and styles; `unsafe-eval` is
     // required by some fumadocs code-block features in production builds.
+    // TODO(csp-promotion): do NOT carry 'unsafe-eval' into the enforcing
+    // header. It re-enables eval()/new Function() and undermines the XSS
+    // mitigation this policy exists for (CWE-749). It is here only so the
+    // report-only stream isn't drowned by it; the violation data will say
+    // whether anything actually needs it, and Next's nonce support
+    // (experimental.cspHeader) is the replacement if something does.
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     // next/image proxies remote hosts through /_next/image (same-origin), but
@@ -65,10 +72,14 @@ function cspReportOnlyHeaders() {
  * Inert unless both env vars are set, so local builds, forks, and CI stay
  * byte-identical to today and no build can fail for want of a token.
  */
-function withSourcemapUpload(nextConfig) {
+async function withSourcemapUpload(nextConfig) {
   const personalApiKey = process.env.POSTHOG_PERSONAL_API_KEY?.trim();
   const projectId = process.env.POSTHOG_PROJECT_ID?.trim();
   if (!personalApiKey || !projectId) return nextConfig;
+  // Imported here rather than at module scope: the package is a
+  // devDependency, and a top-level import would make this config
+  // unloadable in an --omit=dev install even with the gate off.
+  const { withPostHogConfig } = await import('@posthog/nextjs-config');
   return withPostHogConfig(nextConfig, {
     personalApiKey,
     projectId,
@@ -269,4 +280,4 @@ const config = {
   ],
 };
 
-export default withSourcemapUpload(withMDX(config));
+export default await withSourcemapUpload(withMDX(config));
