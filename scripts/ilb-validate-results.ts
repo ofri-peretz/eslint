@@ -245,8 +245,11 @@ function main() {
     : findJsonFiles(RESULTS_ROOT);
 
   if (files.length === 0) {
-    if (!QUIET) console.log('ilb-validate-results: no result files found.');
-    process.exit(0);
+    // Fail loudly — a vacuous pass on zero files is the exact failure mode
+    // this gate exists to prevent.  The old behaviour (console.log + exit 0)
+    // let the quality composite go green while validating nothing.
+    console.error('ilb-validate-results: no result files found — refusing to pass vacuously on zero files');
+    process.exit(1);
   }
 
   let totalIssues = 0;
