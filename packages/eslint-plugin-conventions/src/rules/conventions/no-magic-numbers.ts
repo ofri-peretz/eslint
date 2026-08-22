@@ -217,15 +217,19 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
 
     function isLoopBound(node: TSESTree.Literal): boolean {
       if (!ignoreLoopBounds) return false;
+      // Walks to the enclosing ForStatement or to a statement boundary, with no
+      // depth cap. A fixed limit silently stopped exempting a literal nested
+      // deeply enough in the header — `for (let i = 0; i < f(g(h(9))); i++)` —
+      // and the depth at which it gave up was arbitrary.
       let current: TSESTree.Node = node;
       let parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-      for (let depth = 0; parent && depth < 6; depth += 1) {
+      while (parent) {
         if (parent.type === 'ForStatement') {
           const loop = parent as TSESTree.ForStatement;
           return loop.test === current || loop.update === current || loop.init === current;
         }
         // A statement boundary means we left the header without finding it.
-        if (parent.type === 'BlockStatement') return false;
+        if (parent.type === 'BlockStatement' || parent.type === 'Program') return false;
         current = parent;
         parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
       }

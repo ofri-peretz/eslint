@@ -50,7 +50,8 @@
  * exact confusion the two modes exist to keep apart.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
@@ -180,6 +181,43 @@ function lockedVersion(name: string): string {
  * fallback to `latest`: measuring a different version than the one named is
  * exactly the staleness this change exists to remove.
  */
+/**
+ * A content hash of everything a plugin's `dist` would ship.
+ *
+ * Not mtime, and not one entry point. `dist/src/index.js` is a BARREL — it
+ * contains no rule code at all, so editing a rule and rebuilding leaves it
+ * byte-identical, and a fingerprint reading it would call the rig fresh while
+ * npm served the previous build from cache. That is the same staleness that
+ * made no-magic-numbers read 1,635 against a fresh 1,421, arriving for the
+ * third time by a different route.
+ *
+ * mtime is no better on its own: it is metadata, it does not identify bytes,
+ * and plenty of tooling preserves it. Hashing the contents is the only version
+ * of this that answers the question actually being asked — is the code in this
+ * directory the code the rig was built from.
+ */
+function distHash(plugin: string): string {
+  const dist = path.join(ROOT, 'packages', plugin, 'dist');
+  if (!existsSync(dist)) return 'absent';
+  const hash = createHash('sha1');
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      // Path as well as contents: a file moving is a change too.
+      hash.update(path.relative(dist, full));
+      hash.update(readFileSync(full));
+    }
+  };
+  walk(dist);
+  return hash.digest('hex').slice(0, 16);
+}
+
 function publishedVersion(plugin: string): string {
   const pkg = JSON.parse(
     readFileSync(path.join(ROOT, 'packages', plugin, 'package.json'), 'utf-8'),
@@ -360,13 +398,9 @@ function main(): number {
   // mode it is not — the version does not change when you rebuild — so the
   // fingerprint has to read the built artifact, or npm serves the previous
   // build out of its cache and the run silently measures stale code.
-  const fingerprint = PLUGINS.map((plugin) => {
-    if (!local) return `${plugin}@${publishedVersion(plugin)}`;
-    const entry = path.join(ROOT, 'packages', plugin, 'dist/src/index.js');
-    if (!existsSync(entry)) return `${plugin}:local:absent`;
-    const stat = statSync(entry);
-    return `${plugin}:local:${stat.mtimeMs}:${stat.size}`;
-  }).join('\n');
+  const fingerprint = PLUGINS.map((plugin) =>
+    local ? `${plugin}:local:${distHash(plugin)}` : `${plugin}@${publishedVersion(plugin)}`,
+  ).join('\n');
   const stampFile = path.join(RIG, '.plugin-fingerprint');
   if (
     existsSync(path.join(RIG, 'node_modules')) &&

@@ -104,6 +104,10 @@ describe('no-magic-numbers — loop bounds and arity', () => {
       { code: 'send({ port: 8080 });' },
       { code: 'for (let i = 0; i > n; i -= 7) { run(i); }' },
       { code: 'for (i = 7; i > n; i--) { run(i); }' },
+      // Nested arbitrarily deep in the header. A fixed ancestry limit stopped
+      // exempting these at whatever depth it happened to choose.
+      { code: 'for (let i = 0; i < f(g(h(9))); i++) { run(i); }' },
+      { code: 'for (let i = 0; i < a[b[c[7]]]; i++) { run(i); }' },
       // The literal on either side of the comparison.
       { code: 'function f() { if (3 === arguments.length) { return 1; } return 0; }' },
       { code: 'function f() { if (arguments.length === 3) { return 1; } return 0; }' },
