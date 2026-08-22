@@ -19,7 +19,7 @@ This repo has two benchmark-output directories with confusingly similar names. T
 | **Who reads it** | Suite runners (for baselines/regression), the docs app (scorecard page), CI gates (validate-results, per-rule-budget), the scorecard emitter. | Lock tests, CI workflows (for committing derived state), the docs app (indirectly via scorecard page links). |
 | **Regenerable?** | **No** — raw results are evidence of a specific run at a specific toolchain. Historical files cannot be reproduced (toolchain unknown, corpus may have drifted). | **Yes** — every file is regenerable from a single npm script (`benchmark-results/README.md` says so explicitly). |
 | **Grows every run?** | **Yes** — every benchmark run adds new dated files. This is the bloat source. | **No** — derived files are overwritten, not appended (except `history.ndjson`). |
-| **In `.gitignore`?** | No (tracked). Two sub-paths are gitignored: `ilb-oxlint-parity/.parity.oxlintrc.json` and `harvested-fixtures/`. | No (tracked). |
+| **In `.gitignore`?** | No (tracked). One sub-path is gitignored: `benchmarks/results/ilb-oxlint-parity/.parity.oxlintrc.json` (`.gitignore:147`). (`harvested-fixtures/` is gitignored at `.gitignore:146` but lives under `benchmarks/suites/`, not `benchmarks/results/`.) | No (tracked). |
 
 **The extraction target is `benchmarks/results/` only.** `benchmark-results/` stays — it's small, derived, and every file in it is regenerable from a script. Moving it would break lock tests and CI workflows that read derived state, with no size benefit.
 
@@ -33,17 +33,17 @@ Every place in the repo that reads from, writes to, validates, links to, or igno
 
 | # | File | Line(s) | What it reads | Failure mode if dir disappears |
 | :--- | :--- | :--- | :--- | :--- |
-| R1 | `scripts/ilb-validate-results.ts` | `:38` | `RESULTS_ROOT = benchmarks/results` — walks the entire tree, validates every JSON against the vocabulary schema. | **Silent.** `findJsonFiles()` returns `[]` on missing dir → `files.length === 0` → `console.log('no result files found')` → `process.exit(0)`. The gate passes vacuously. |
-| R2 | `apps/docs/src/lib/scorecard.ts` | `:30-32` | `FLAGSHIP_RESULTS_DIR = ../../benchmarks/results/ilb-flagship` — loads the latest flagship snapshot for the `/scorecard` page. | **Silent.** `loadLatestFlagshipSnapshot()` returns `null` → page renders its "no data" fallback. The page degrades gracefully but the user sees stale or empty data with no error. |
-| R3 | `benchmarks/lib/flagship-snapshot.ts` | `:80-90` | `loadLatestFlagshipSnapshot(dir)` — shared loader used by R2 and R4. `readdirSync(dir)` in a try/catch → returns `null` on missing. | **Silent.** Returns `null`. |
+| R1 | `scripts/ilb-validate-results.ts` | `:32` | `RESULTS_ROOT = benchmarks/results` — walks the entire tree, validates every JSON against the vocabulary schema. | **Silent.** `findJsonFiles()` returns `[]` on missing dir → `files.length === 0` → `console.log('no result files found')` → `process.exit(0)`. The gate passes vacuously. |
+| R2 | `apps/docs/src/lib/scorecard.ts` | `:34` | `FLAGSHIP_RESULTS_DIR = ../../benchmarks/results/ilb-flagship` — loads the latest flagship snapshot for the `/scorecard` page. | **Silent.** `loadLatestFlagshipSnapshot()` returns `null` → page renders its "no data" fallback. The page degrades gracefully but the user sees stale or empty data with no error. |
+| R3 | `benchmarks/lib/flagship-snapshot.ts` | `:111` | `loadLatestFlagshipSnapshot(dir)` — shared loader used by R2 and R4. `readdirSync(dir)` in a try/catch → returns `null` on missing. | **Silent.** Returns `null`. |
 | R4 | `benchmarks/suites/ilb-flagship/scorecard.ts` | `:26-28` | `RESULTS_DIR = benchmarks/results/ilb-flagship` — reads latest flagship JSON, emits `benchmark-results/ilb-flagship-scorecard.md`. | **Loud.** `loadLatestFlagshipSnapshot()` returns `null` → `console.error('No flagship snapshot…')` → `process.exit(1)`. |
-| R5 | `scripts/check-per-rule-budget.ts` | `:14` | `FLAGSHIP_DIR = benchmarks/results/ilb-flagship` — reads latest flagship JSON for per-rule p50/p95 budget enforcement. CI gate (`per-rule-budget.yml`). | **Silent.** `findLatestFlagshipResult()` returns `null` on missing dir → `measurements = []` → every rule shows `no_measurement` → `overs.length === 0` → gate passes. The budget gate passes vacuously. |
+| R5 | `scripts/check-per-rule-budget.ts` | `:31` | `FLAGSHIP_DIR = benchmarks/results/ilb-flagship` — reads latest flagship JSON for per-rule p50/p95 budget enforcement. CI gate (`per-rule-budget.yml`). | **Silent.** `findLatestFlagshipResult()` returns `null` on missing dir → `measurements = []` → every rule shows `no_measurement` → `overs.length === 0` → gate passes. The budget gate passes vacuously. |
 | R6 | `scripts/ilb-scorecard.ts` | `:35` | `BENCH_RESULTS = benchmarks/results` — reads from `ilb-arena/`, `ilb-cwe-corpus/`, `ilb-ai/`, `ilb-perf-import/`, `ilb-llm-tokens/latest.json`, `ilb-llm-fix/latest.json` for the composite scorecard. | **Silent.** Each bench's `missing()` path returns a "not found" entry in the scorecard. The scorecard renders with gaps; no exit code. |
 | R7 | `scripts/ilb-regression-check.ts` | `:41` | `BENCH_RESULTS = benchmarks/results` — reads LLM bench results for regression comparison against baselines. | **Silent** for missing dirs (returns "not found"). **Loud** (`exit 1`) if a baseline exists but the current run regresses. |
 | R8 | `scripts/verify-weekly-benchmark.ts` | `:30-31` | `HEADLINE_DIR = benchmarks/results/ilb-headline`, `FLAGSHIP_DIR = benchmarks/results/ilb-flagship` — asserts freshness, completeness, and honesty of weekly benchmark artifacts. | **Loud.** `latest()` returns `null` on missing dir → freshness check fails → `exit 1`. This gate was written specifically to catch the silent-stale-snapshot failure mode (see its header comment). |
 | R9 | `scripts/publish-benchmark-supabase.ts` | `:28-29` | `HEADLINE_DIR`, `FLAGSHIP_DIR` — reads from raw dir subdirs to publish to Supabase. | **Loud** (would error on missing files). |
-| R10 | `scripts/ilb-result-schema-backfill.ts` | `:10` | Walks `benchmarks/results/<bench-name>/*.json` — one-time backfill tool that adds missing `bench`/`toolchain` fields to historical files. | **Silent.** `findResultFiles()` returns `[]` → "no result files found" → `exit 0`. |
-| R11 | `scripts/ilb-history-backfill.ts` | `:24,127` | `RESULTS_ROOT = benchmarks/results` — reads all raw JSON to seed `benchmark-results/history.ndjson`. | **Silent.** Returns `[]` → "no result files found" → `exit 0`. |
+| R10 | `scripts/ilb-result-schema-backfill.ts` | `:32` | `RESULTS_DIR = benchmarks/results` — backfill tool that adds missing `bench`/`toolchain` fields to historical files. Walks subdirs via `listJsonFiles()`. | **Loud.** `fs.readdirSync(RESULTS_DIR)` at `:129` throws `ENOENT` if the dir is missing — the script crashes, not silently exits 0. (Not a gate; not in `quality`.) |
+| R11 | `scripts/ilb-history-backfill.ts` | `:22,127` | `RESULTS_ROOT = benchmarks/results` — reads all raw JSON to seed `benchmark-results/history.ndjson`. | **Silent.** `findResultFiles()` returns `[]` → "no result files found" → `exit 0`. |
 | R12 | `benchmarks/suites/ilb-formatter/runner.ts` | `:1224` | Reads `benchmarks/results/ilb-formatter/baseline.json` for regression check. | **Silent.** Logs "SKIPPED — no baseline.json found" and continues. |
 | R13 | `benchmarks/suites/ilb-headline/scorecard.ts` | `:15` | `RESULTS_DIR = benchmarks/results/ilb-headline` — reads latest headline JSON, emits `benchmark-results/ilb-headline.md`. | **Loud.** `existsSync` check → `console.error` → `exit 1`. |
 | R14 | `benchmarks/suites/ilb-headline/badges.ts` | `:27` | `RESULTS_DIR = benchmarks/results/ilb-headline` — reads latest headline JSON, emits badges to `benchmark-results/badges/`. | **Loud.** `existsSync` check → `console.error` → `exit 1`. |
@@ -64,7 +64,7 @@ Every place in the repo that reads from, writes to, validates, links to, or igno
 
 | # | File | Line(s) | What it asserts | Failure mode if dir disappears |
 | :--- | :--- | :--- | :--- | :--- |
-| L1 | `apps/docs/src/__tests__/scorecard-source-integrity.test.ts` | `:22-28` | Calls `loadLatestFlagshipSnapshot()` (which reads `benchmarks/results/ilb-flagship/`). Asserts 10 rules, provenance fields, ordering, medians. | **Silent.** `beforeAll` sets `snapshot = null` on missing dir → every test has `if (!snapshot) return` → all tests pass vacuously. The lock test becomes a no-op. |
+| L1 | `apps/docs/src/__tests__/scorecard-source-integrity.test.ts` | `:19` (import), `:32` (call) | Calls `loadLatestFlagshipSnapshot()` (which reads `benchmarks/results/ilb-flagship/`). Asserts 10 rules, provenance fields, ordering, medians. | **Silent.** `beforeAll` sets `snapshot = null` on missing dir → 7 of 9 tests have `if (!snapshot) return` and pass vacuously. The 2 `FLAGSHIP_RULES` tests (`:36`, `:40`) test the `FLAGSHIP_RULES` constant directly and pass normally — they don't depend on the snapshot. The lock test is not a complete no-op, but the 7 snapshot-dependent assertions become vacuous. |
 
 ### 1d. Docs, claims, and agent files that LINK to the raw dir
 
@@ -124,13 +124,13 @@ The curated dir is NOT being moved. Listed here to establish the boundary and co
 
 | # | File | Line(s) | What it reads/writes |
 | :--- | :--- | :--- | :--- |
-| E1 | `apps/docs/src/__tests__/eslint-version-share-lock.test.ts` | `:40` | Reads `benchmark-results/eslint-version-stats.json` as SSOT. |
-| E2 | `apps/docs/src/__tests__/audit-reports-format-lock.test.ts` | `:35-39` | Reads `benchmark-results/api-surface-coverage.md`, `cve-rule-latency.md`, `per-rule-budget-check.md`. |
-| E3 | `apps/docs/src/__tests__/plugin-scope-audit-lock.test.ts` | `:17` | Reads `benchmark-results/plugin-scope-audit.json`. |
+| E1 | `apps/docs/src/__tests__/eslint-version-share-lock.test.ts` | `:35` | Reads `benchmark-results/eslint-version-stats.json` as SSOT. |
+| E2 | `apps/docs/src/__tests__/audit-reports-format-lock.test.ts` | `:30-34` | Reads `benchmark-results/api-surface-coverage.md`, `cve-rule-latency.md`, `per-rule-budget-check.md` (the `PILOT_REPORTS` array). |
+| E3 | `apps/docs/src/__tests__/plugin-scope-audit-lock.test.ts` | `:39` | Reads `benchmark-results/plugin-scope-audit.json`. |
 | E4 | `scripts/ilb-scorecard.ts` | `:36` | `WILD_RESULTS = benchmark-results` — reads Wild results. |
 | E5 | `scripts/ilb-regression-check.ts` | `:40` | `RESULTS_DIR = benchmark-results` — reads baselines. |
 | E6 | `scripts/ilb-wild.ts` | `:56` | Writes `benchmark-results/<date>/`. |
-| E7 | `scripts/check-per-rule-budget.ts` | `:16` | Writes `benchmark-results/per-rule-budget-check.md`. |
+| E7 | `scripts/check-per-rule-budget.ts` | `:32` | Writes `benchmark-results/per-rule-budget-check.md`. |
 | E8 | 20+ scripts | (various) | Write reports to `benchmark-results/`. See `scripts/README.md:120`. |
 | E9 | 8 workflows | (various) | Commit/upload derived state from `benchmark-results/`. |
 
@@ -138,14 +138,7 @@ The curated dir is NOT being moved. Listed here to establish the boundary and co
 
 ---
 
-## 2. Naive-migration failure analysis
-
-What breaks if `benchmarks/results/` simply disappears (e.g. `git rm -r` + `.gitignore`)?
-
-### Loud failures (build/test goes red)
-
-| Consumer | What breaks | How it surfaces |
-| :--- | :--- | :--- |
+## 2. Na | :--- |
 | R4 — `benchmarks/suites/ilb-flagship/scorecard.ts` | `loadLatestFlagshipSnapshot()` returns `null` → `exit 1`. | `npm run ilb:flagship:scorecard` fails. Not in the `quality` gate, so CI wouldn't catch it — only manual/scheduled runs. |
 | R8 — `scripts/verify-weekly-benchmark.ts` | Freshness check fails → `exit 1`. | `weekly-benchmark.yml` goes red. But this is a scheduled workflow, not a PR gate. |
 | R13 — `benchmarks/suites/ilb-headline/scorecard.ts` | `existsSync` fails → `exit 1`. | `npm run ilb:headline:scorecard` fails. Not in the `quality` gate. |
@@ -164,20 +157,21 @@ What breaks if `benchmarks/results/` simply disappears (e.g. `git rm -r` + `.git
 | R2 — docs scorecard page | `loadLatestFlagshipSnapshot()` returns `null` → page renders "no data". | No CI catch. The page degrades silently in production. |
 | R6 — `ilb-scorecard.ts` | Each bench's `missing()` path returns a "not found" entry. | The scorecard renders with gaps. No exit code. |
 | R7 — `ilb-regression-check.ts` | Missing dirs return "not found". | Regression check passes (nothing to compare against). |
-| R10 — `ilb-result-schema-backfill.ts` | Returns `[]` → `exit 0`. | No failure. (One-time tool, not a gate.) |
-| R11 — `ilb-history-backfill.ts` | Returns `[]` → `exit 0`. | History isn't seeded. (One-time tool.) |
+| R10 — `ilb-result-schema-backfill.ts` | `fs.readdirSync(RESULTS_DIR)` throws `ENOENT`. | Script crashes. (Not a gate; not in `quality`. Loud, but only surfaces if someone runs the backfill.) |
+| R11 — `ilb-history-backfill.ts` | `findResultFiles()` returns `[]` → `exit 0`. | History isn't seeded. (Not a gate.) |
 | R12 — formatter runner | Logs "SKIPPED — no baseline.json" and continues. | Regression check silently skipped. |
 | F6 — `per-rule-budget.yml` trigger | Path trigger `benchmarks/results/ilb-flagship/**` stops matching. | The workflow never fires. Not a failure — just silence. |
 
 ### Summary: the silent-failure surface
 
-**Three gates in the `quality` composite would pass vacuously:**
+**Two gates pass vacuously on a missing raw dir:**
 
-1. `ilb:validate-results` (R1) — validates zero files.
-2. `ilb:flagship:smoke` — does NOT read the raw dir (reads `benchmarks/corpus/` and runs ESLint live), so this one is safe.
-3. `check:per-rule-budget` (R5) — not in `quality` but in `per-rule-budget.yml` — passes with all rules "unmeasured."
+1. `ilb:validate-results` (R1) — in `quality`; validates zero files.
+2. `check:per-rule-budget` (R5) — in `per-rule-budget.yml`; passes with all rules "unmeasured."
 
-Plus one lock test (L1) that becomes a no-op, and the docs scorecard page (R2) that degrades silently.
+(`ilb:flagship:smoke` does NOT read the raw dir — it reads `benchmarks/corpus/` and runs ESLint live — so it is safe.)
+
+Plus one lock test (L1) whose 7 snapshot-dependent assertions become vacuous (the 2 `FLAGSHIP_RULES` tests still exercise real invariants), and the docs scorecard page (R2) that degrades silently.
 
 **This is why the plan exists.** A naive `git rm` + `.gitignore` would make CI green while every benchmark-related guardrail checks nothing.
 
@@ -293,7 +287,7 @@ For every gate that currently depends on the raw dir: how does it keep doing its
 | :--- | :--- | :--- |
 | **`ilb:validate-results`** (R1, in `quality`) | Walks `benchmarks/results/`, validates every JSON. **Currently passes vacuously on empty/missing dir.** | Step 0 fixes the vacuous pass. Step 2 changes the read path to the cache dir. After the move: `fetch:benchmark-results` populates the cache → `ilb:validate-results` validates all files. If the fetch fails, the cache is empty → the gate fails loudly (thanks to Step 0). **Guardrail preserved.** |
 | **`check:per-rule-budget`** (R5, in `per-rule-budget.yml`) | Reads `benchmarks/results/ilb-flagship/<latest>.json`. **Currently passes vacuously on missing dir** (all rules "unmeasured"). | Step 2 changes the read path. After the move: fetch populates the cache → the gate reads the latest flagship JSON → measures all rules. If the fetch fails, `findLatestFlagshipResult()` returns `null` → all rules "unmeasured" → gate passes vacuously. **This gate needs the same vacuous-pass fix as Step 0, applied to `findLatestFlagshipResult()`.** **Open question O2: should the per-rule-budget gate also fail on missing data?** |
-| **`scorecard-source-integrity` lock test** (L1) | Calls `loadLatestFlagshipSnapshot()` → reads `benchmarks/results/ilb-flagship/`. **Currently passes vacuously on missing dir** (`if (!snapshot) return`). | Step 2 changes the read path. After the move: fetch populates the cache → lock test reads the snapshot → asserts pass. If the fetch fails, `snapshot = null` → tests skip vacuously. **This lock test needs the same treatment: fail on missing data, or at minimum warn.** **Open question O3.** |
+| **`scorecard-source-integrity` lock test** (L1) | Calls `loadLatestFlagshipSnapshot()` → reads `benchmarks/results/ilb-flagship/`. **Currently passes vacuously on missing dir** — 7 of 9 tests have `if (!snapshot) return`; the 2 `FLAGSHIP_RULES` tests pass normally. | Step 2 changes the read path. After the move: fetch populates the cache → lock test reads the snapshot → asserts pass. If the fetch fails, `snapshot = null` → 7 tests skip vacuously. **This lock test needs the same treatment: fail on missing data, or at minimum warn.** **Open question O3.** |
 | **`verify-weekly-benchmark`** (R8) | Reads `benchmarks/results/ilb-headline` and `ilb-flagship`. Already fails loudly on missing. | Step 2 changes the read path. After the move: fetch populates the cache → gate reads and validates. If the fetch fails, gate fails loudly (already does). **Guardrail preserved.** |
 | **`ilb:flagship:smoke`** (in `quality`) | Does NOT read the raw dir. Reads `benchmarks/corpus/` and runs ESLint live. | **Not affected.** No changes needed. |
 | **`benchmark.yml` validate-results steps** (F2) | Runs `ilb:validate-results` and uploads artifacts from the raw dir. | Step 4 updates the workflow. After the move: workflow runs `fetch:benchmark-results` first, then `ilb:validate-results`. Artifact uploads either point to the cache or are removed (the research repo is the durable artifact). |
@@ -395,3 +389,4 @@ The brief says "at least one consumer is not where you'd expect." The one I'd fl
 **`packages/eslint-formatter/AGENTS.md:76,90`** — a package-level AGENTS.md references `benchmarks/results/ilb-formatter/baseline.json` and `latest.json` as the regression baseline for the formatter package. This is not a script or a test — it's documentation in a *published package's* agent context file. If the raw dir moves, this reference becomes stale in a package that ships to npm. It's not a runtime failure, but it's a documentation drift in a published artifact, which is worse than a broken link in an internal doc because npm consumers can see it.
 
 A close second: **`benchmarks/budgets/per-rule-p95.json:3`** — a JSON data file (not a script, not a doc) contains a `description` field that references `benchmarks/results/ilb-flagship/<date>.json` as the source of latency data. This is a data-file reference, not a code reference, so no grep for `readFileSync` would find it. It would only surface as a stale description in the budget file's documentation.
+date>.json` as the source of latency data. This is a data-file reference, not a code reference, so no grep for `readFileSync` would find it. It would only surface as a stale description in the budget file's documentation.
