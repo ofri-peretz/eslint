@@ -31,6 +31,12 @@
  * The second direction is the half that usually rots. It is the same shape as
  * `lint-name-inference.ts`, which absorbs its 26 known sites the same way.
  *
+ * The DECISION this gate is a holding action for is written up in
+ * `docs/SEVERITY_AND_STANDARDS.md`: a rule states the weakness class it detects
+ * and how much a developer should care, and does not state a CVSS score. Once
+ * phase 1 of that migration lands — messages stop rendering `CVSS:` — this gate
+ * has nothing left to find and should be deleted along with its registry.
+ *
  * Run: `npm run lint:severity-consistency`
  *      `npm run lint:severity-consistency -- --update` to rewrite the registry.
  */
