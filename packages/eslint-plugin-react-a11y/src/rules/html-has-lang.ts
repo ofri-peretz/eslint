@@ -25,18 +25,17 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/html-has-lang.md',
       description: 'Enforce that html element has lang attribute',
-      cwe: 'CWE-252',
-      cvss: 9.5,
+      wcag: 'WCAG 3.1.1',
     },
     messages: {
       missingLang: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Missing Lang Attribute',
         description: '<html> element must have a lang attribute',
-        severity: 'CRITICAL',
+        severity: 'HIGH',
         fix: 'Add lang="en" (or appropriate language code)',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/html-has-lang.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 3.1.1'
       }),
     },
     schema: [],

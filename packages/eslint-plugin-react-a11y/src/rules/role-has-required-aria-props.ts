@@ -25,8 +25,7 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/role-has-required-aria-props.md',
       description: 'Enforce that elements with ARIA roles have all required ARIA attributes',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 4.1.2',
     },
     messages: {
       missingRequiredProp: formatLLMMessage({
@@ -36,7 +35,7 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Add the missing attribute: {{prop}}',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-has-required-aria-props.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 4.1.2'
       }),
     },
     schema: [],

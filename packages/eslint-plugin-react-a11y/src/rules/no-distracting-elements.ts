@@ -29,8 +29,7 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-distracting-elements.md',
       description: 'Enforce that distracting elements are not used',
-      cwe: 'CWE-252',
-      cvss: 7.5,
+      wcag: 'WCAG 2.3.1',
     },
     messages: {
       noDistractingElements: formatLLMMessage({
@@ -40,7 +39,7 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Remove the <{{element}}> element',
         documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-distracting-elements.md',
-        cwe: 'CWE-252'
+        wcag: 'WCAG 2.3.1'
       }),
     },
     schema: [

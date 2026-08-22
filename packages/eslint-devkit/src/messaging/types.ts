@@ -97,6 +97,15 @@ export interface EnterpriseMessageOptions extends LLMMessageOptions {
   /** CVSS 3.1 score 0.0-10.0 (auto-calculated from severity if not provided) */
   cvss?: number;
 
+  // --- Accessibility Standards ---
+  /**
+   * WCAG success criterion, e.g. "WCAG 1.1.1". Rendered in the standards
+   * prefix in place of CWE/OWASP/CVSS, which are security scales and mean
+   * nothing for an accessibility defect — there is no attacker and no
+   * confidentiality, integrity or availability impact to score.
+   */
+  wcag?: string;
+
   // --- Compliance ---
   /** Affected compliance frameworks (auto-detected from CWE if not provided) */
   compliance?: ComplianceFramework[];
