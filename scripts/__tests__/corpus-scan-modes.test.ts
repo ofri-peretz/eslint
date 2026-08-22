@@ -61,4 +61,40 @@ describe('corpus-scan modes', () => {
     expect(SOURCE).toMatch(/local \? `\$\{plugin\}:local:\$\{distHash\(plugin\)\}`/);
     expect(SOURCE).toContain('`${plugin}@${publishedVersion(plugin)}`');
   });
+
+  it('installs the devkit FROM THE WORKING TREE in local mode', () => {
+    // Without this, `--local` did not measure the local tree. Every plugin
+    // declares `@interlace/eslint-devkit` as a semver RANGE, so npm resolved it
+    // from the registry and the rig ran local plugins against the PUBLISHED
+    // devkit. Everything living there — isTestFilePath, createRule's skip
+    // flags, every shared detector — was measured at the last release while the
+    // report said "local working tree".
+    //
+    // Measured after the fix: react-features/hooks-exhaustive-deps reads 84,
+    // not 91. That number had disagreed with itself across runs for a day and
+    // the mechanism was recorded as unknown. It was this.
+    expect(SOURCE).toContain('@interlace/eslint-devkit@file:');
+    // The devkit's dist, NOT its package root. A plugin's `files` lists both
+    // `src/` and `dist/`; the devkit's lists only `src/` while its `main` is
+    // `./dist/src/index.js`, so packing its root yields a tarball whose entry
+    // point is not in it. It is published FROM `dist/`.
+    expect(SOURCE).toMatch(/'eslint-devkit', 'dist'/);
+  });
+
+  it('includes the devkit in the local fingerprint', () => {
+    // Hashing only the plugins left a devkit-only change stamped as unchanged,
+    // so the rig kept its stale copy. Adding an export made it loud; changing
+    // an existing one is silent.
+    expect(SOURCE).toContain("`eslint-devkit:local:${distHash('eslint-devkit')}`");
+  });
+
+  it('gives the rig a private npm cache and drops it on rebuild', () => {
+    // `--install-links` packs each file: dependency into a tarball npm caches
+    // under name@version, and a rebuild does not bump the version — so the
+    // shared cache serves the previous build. Scoped to the rig so wiping it
+    // cannot touch the developer's own.
+    expect(SOURCE).toContain('const NPM_CACHE');
+    expect(SOURCE).toContain('rmSync(NPM_CACHE');
+    expect(SOURCE).toMatch(/'--cache',\s*\n?\s*NPM_CACHE/);
+  });
 });
