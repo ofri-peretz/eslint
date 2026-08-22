@@ -53,7 +53,13 @@ export interface TrackedEventMap {
   // Peak-value rule-page CTA (RuleValueCTA): the ask shown right after a rule
   // caught something. `follow` (Dev.to) and `star` (GitHub) tracked separately
   // so we can see which conversion the rule-page traffic actually takes.
-  'rule_page:cta_click': { action: 'star' | 'follow'; plugin: string; rule: string };
+  'rule_page:cta_click': {
+    action: 'star' | 'follow';
+    plugin: string;
+    rule: string;
+    // Which placement produced the click — the experiment's whole point.
+    placement: 'top' | 'bottom';
+  };
   // Footer CTA on non-rule docs pages (DocsFooterCTA): getting-started,
   // concepts, guides — the evaluator audience. `slug` identifies which doc.
   'docs_page:cta_click': { action: 'star' | 'follow'; slug: string };
