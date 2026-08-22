@@ -1,5 +1,29 @@
 ## [2.0.4] - 2026-02-08
 
+## 2.2.0
+
+### Minor Changes
+
+- [#608](https://github.com/ofri-peretz/eslint/pull/608) [`087ce59`](https://github.com/ofri-peretz/eslint/commit/087ce5963e4f2e5ecd0603582d5db94e6b7fec43) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `ddd-anemic-domain-model` now only checks code in a **domain layer**.
+
+  An anemic domain model is a defect of a domain layer: an entity holding state
+  while its behaviour lives in a service. Outside one, a class with fields and no
+  methods is a transport object, an options bag or an error shape — which is what
+  a client library is supposed to ship.
+
+  New `domainPaths` option, default `['domain', 'domains', 'entities', 'entity',
+'aggregate', 'aggregates', 'model', 'models']`, matched by path **segment**.
+  Set it to `[]` to check every class, which is the previous behaviour.
+
+  **526 → 0** on the pinned corpus. Not one finding was in a domain layer: on
+  okta-auth-js all 38 sat under `idx/`, `myaccount/`, `errors/`, `exports/`,
+  `base/`, `authn/`, `core/` and `http/`.
+
+### Patch Changes
+
+- Updated dependencies [[`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 2.1.9
 
 ### Patch Changes
