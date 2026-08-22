@@ -617,11 +617,31 @@ export const CWE_MAPPING: Record<
     severity: 'HIGH',
     name: 'Uncontrolled Resource Consumption (ReDoS)',
   },
+  // CWE-407 is "Inefficient Algorithmic Complexity" — quadratic blowup, a hash
+  // table degrading to a list, a regex that backtracks. It was entered here
+  // under the name "Circular Dependencies", and `import-next/no-cycle` was
+  // pointed at it on the strength of that name. The correct identifier for a
+  // dependency cycle is CWE-1047, below.
   'CWE-407': {
     owasp: 'A06:2025',
     cvss: 5.3,
     severity: 'MEDIUM',
-    name: 'Circular Dependencies',
+    name: 'Inefficient Algorithmic Complexity',
+  },
+  // CWE-1047, "Modules with Circular Dependencies", sits in the Software
+  // Development view (CWE-699) as a QUALITY weakness, not a vulnerability.
+  // `no-relative-packages` already referenced it and got no enrichment at all,
+  // because the identifier was never in this table.
+  //
+  // The score is the quality band this repo gives structural findings, not a
+  // vulnerability score: a cycle has no attacker. It can still leave a module
+  // half-initialised at require time, which is worth more than a formatting
+  // nit, hence 5.3 rather than the 2.5 the pure style rules carry.
+  'CWE-1047': {
+    owasp: 'A06:2025',
+    cvss: 5.3,
+    severity: 'MEDIUM',
+    name: 'Modules with Circular Dependencies',
   },
   'CWE-697': {
     owasp: 'A06:2025',
