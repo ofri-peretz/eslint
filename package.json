@@ -30,6 +30,7 @@
     "rule-audit:gate": "tsx scripts/rule-audit-gate.ts",
     "probe-rule": "tsx scripts/probe-rule.mts",
     "lint:name-inference": "tsx scripts/lint-name-inference.ts",
+    "lint:severity-consistency": "tsx scripts/lint-severity-consistency.ts",
     "lint:seal": "tsx scripts/lint-seal.ts",
     "limits": "tsx scripts/limits.mts",
     "seal:audit": "tsx scripts/seal-audit.mts",
