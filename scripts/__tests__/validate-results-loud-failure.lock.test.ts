@@ -19,19 +19,24 @@
  * The locks confirm the **absence of the old behaviour**, not the presence
  * of the new: they assert the exit code is NOT the old value, and the old
  * message is NOT on stdout.
+ *
+ * The missing-directory case uses the ILB_RESULTS_ROOT env var (not a
+ * filesystem rename) to point the script at a non-existent path.  This
+ * avoids mutating the real benchmarks/results/ directory, which is shared
+ * state visible to parallel vitest workers (e.g. scorecard-source-integrity
+ * reads benchmarks/results/ilb-flagship).
  */
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, renameSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SCRIPT = join(REPO_ROOT, 'scripts', 'ilb-validate-results.ts');
 const TSX = join(REPO_ROOT, 'node_modules', '.bin', 'tsx');
-const RESULTS_DIR = join(REPO_ROOT, 'benchmarks', 'results');
-const BAK_DIR = RESULTS_DIR + '.bak';
 
 function runWithEmptyDir(extraArgs: string[] = []) {
   const emptyDir = mkdtempSync(join(tmpdir(), 'ilb-validate-empty-'));
@@ -43,21 +48,15 @@ function runWithEmptyDir(extraArgs: string[] = []) {
 }
 
 function runWithMissingResultsDir(extraArgs: string[] = []) {
-  // Temporarily rename benchmarks/results/ so the script's default
-  // RESULTS_ROOT resolves to a non-existent path.  try/finally restores
-  // it unconditionally — a crash mid-test must not leave the repo
-  // without its results directory.
-  if (existsSync(BAK_DIR)) renameSync(BAK_DIR, RESULTS_DIR);
-  renameSync(RESULTS_DIR, BAK_DIR);
-  try {
-    return spawnSync(TSX, [SCRIPT, ...extraArgs], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      timeout: 30_000,
-    });
-  } finally {
-    renameSync(BAK_DIR, RESULTS_DIR);
-  }
+  // Point the script at a path that does not exist, via the ILB_RESULTS_ROOT
+  // env var — no filesystem mutation, safe under parallel vitest workers.
+  const fakeRoot = join(tmpdir(), 'ilb-validate-missing-' + randomUUID());
+  return spawnSync(TSX, [SCRIPT, ...extraArgs], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    timeout: 30_000,
+    env: { ...process.env, ILB_RESULTS_ROOT: fakeRoot },
+  });
 }
 
 describe('ilb-validate-results — missing results directory (shallow-clone case)', () => {

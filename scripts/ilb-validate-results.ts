@@ -29,7 +29,12 @@ import { validateToolchain } from '../benchmarks/lib/toolchain.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
-const RESULTS_ROOT = path.join(REPO_ROOT, 'benchmarks', 'results');
+// Overridable via ILB_RESULTS_ROOT so tests can point the script at a
+// non-existent path without renaming the real benchmarks/results/ (which
+// would mutate shared state visible to parallel vitest workers).
+const RESULTS_ROOT = process.env.ILB_RESULTS_ROOT
+  ? path.resolve(process.env.ILB_RESULTS_ROOT)
+  : path.join(REPO_ROOT, 'benchmarks', 'results');
 const SCHEMA_PATH = path.join(REPO_ROOT, 'benchmarks', 'lib', 'result-schema.json');
 
 const SCHEMA = JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf8'));
