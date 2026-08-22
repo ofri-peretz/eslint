@@ -452,3 +452,97 @@ describe('no-self-import', () => {
     });
   });
 });
+
+/**
+ * A self-import is the specifier resolving to THIS file, not two paths that
+ * look alike once you cut their last dot off.
+ *
+ * These were the only two findings this rule produced on the pinned 8-repository
+ * corpus, and both were wrong:
+ *
+ *   main.jsx            importing './main.css'                → both became `main`
+ *   styleUtils.test.js  importing './styleUtils.test.constants'
+ *                                                             → both became `styleUtils.test`
+ *
+ * A stylesheet is not this module, and `.constants` is not an extension at all —
+ * it is part of the module's name. `\.[^/.]+$` cannot tell the difference, so
+ * only a closed list of real module extensions is stripped now.
+ */
+describe('no-self-import — a suffix is not an extension', () => {
+  ruleTester.run('extension handling', noSelfImport, {
+    valid: [
+      {
+        // A stylesheet beside a component of the same stem.
+        code: "import './main.css';",
+        filename: '/repo/src/main.jsx',
+      },
+      {
+        // `.constants` is a name segment, not an extension.
+        code: 'import { A } from "./styleUtils.test.constants";',
+        filename: '/repo/src/styleUtils.test.js',
+      },
+      {
+        code: "import data from './config.json';",
+        filename: '/repo/src/config.ts',
+      },
+      {
+        // A sibling module that merely shares a prefix.
+        code: "import { x } from './real.helpers';",
+        filename: '/repo/src/real.ts',
+      },
+    ],
+    invalid: [
+      {
+        // POSITIVE CONTROL: the extensionless self-import the rule exists for.
+        // Without it every valid case above passes on a rule that never fires.
+        code: "import { x } from './real';",
+        filename: '/repo/src/real.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        // And with the extension spelled out.
+        code: "import { x } from './real.ts';",
+        filename: '/repo/src/real.ts',
+        errors: [{ messageId: 'selfImport' }],
+      },
+    ],
+  });
+
+  /**
+   * `allowInTests` used `filename.includes('__tests__')`, which matches any
+   * path containing those characters anywhere. It suppresses rather than
+   * reports, so it cost recall rather than trust — but it is still the
+   * substring-on-a-name defect, and the devkit has the predicate.
+   */
+  ruleTester.run('allowInTests matches by segment', noSelfImport, {
+    valid: [
+      {
+        code: "import { x } from './a';",
+        filename: '/repo/src/__tests__/a.ts',
+        options: [{ allowInTests: true }],
+      },
+      {
+        code: "import { x } from './a';",
+        filename: '/repo/src/a.test.ts',
+        options: [{ allowInTests: true }],
+      },
+    ],
+    invalid: [
+      {
+        // A directory whose NAME merely contains the characters is not a test
+        // directory. This reported before only by luck of ordering.
+        code: "import { x } from './a';",
+        filename: '/repo/my__tests__project/src/a.ts',
+        options: [{ allowInTests: true }],
+        errors: [{ messageId: 'selfImport' }],
+      },
+      {
+        // CONTROL: the option off restores the finding in a real test file.
+        code: "import { x } from './a';",
+        filename: '/repo/src/__tests__/a.ts',
+        options: [{ allowInTests: false }],
+        errors: [{ messageId: 'selfImport' }],
+      },
+    ],
+  });
+});

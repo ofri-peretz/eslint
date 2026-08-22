@@ -31,11 +31,10 @@ import posthog, { type PostHogConfig } from 'posthog-js';
 export const APP_ID = 'eslint_docs' as const;
 
 /**
- * Same-eTLD+1 cookie scope so `*.interlace.tools` shares one anonymous
- * `distinct_id`. `cross_subdomain_cookie: true` makes posthog-js set the
- * cookie domain to the eTLD+1 of the current page automatically (so on
- * `eslint.interlace.tools` it becomes `.interlace.tools` — no explicit
- * config needed). Documented here as the intended scope.
+ * Kept only as documentation of intended scope. `cross_subdomain_cookie: true`
+ * below is a no-op while `cookieless_mode` is active — cookieless mode writes
+ * no cookie at all, so there is no cookie to scope. It stays set because it is
+ * the correct value the moment cookieless mode is ever turned off.
  */
 const COOKIE_DOMAIN = '.interlace.tools';
 void COOKIE_DOMAIN;
@@ -167,11 +166,21 @@ export function initPostHog(): void {
     api_host: '/ingest',
     ui_host: 'https://us.posthog.com',
     person_profiles: 'identified_only',
-    // Cookie-free mode: no `ph_` cookie is set, so no GDPR consent banner
-    // is required for EU visitors. Cross-session person stitching is lost
-    // (each page load is anonymous) but for a public docs site with no
-    // logged-in users this is the right trade-off.
-    persistence: 'memory',
+    // Cookieless mode: PostHog sets no cookie and touches no local or session
+    // storage, so no GDPR consent banner is required — and, unlike the
+    // `persistence: 'memory'` this replaces, identity is not thrown away.
+    //
+    // `persistence: 'memory'` meant every page load was a brand new anonymous
+    // person: 2,254 pageviews across 1,863 "people" in 30 days, 1.2 pageviews
+    // each, which made funnels, paths, retention, and session replay measure
+    // nothing. Cookieless mode instead derives identity from a
+    // privacy-preserving hash computed on PostHog's servers, so sessions and
+    // people are real again with no client-side storage.
+    //
+    // REQUIRES `cookieless_server_hash_mode` on the PostHog project (set to 2,
+    // Stateful, on 2026-08-22). Without it every cookieless event is silently
+    // DROPPED — the two must be changed together, project setting first.
+    cookieless_mode: 'always',
     capture_pageview: false,
     capture_pageleave: true,
     capture_performance: true,

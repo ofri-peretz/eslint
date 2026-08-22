@@ -44,7 +44,14 @@ export const noDuplicates = createRule<RuleOptions, MessageIds>({
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const source = node.source.value;
+        // Keyed by source AND importKind. `import type { T } from 'm'` beside
+        // `import { v } from 'm'` is not a duplicate: the type-only form is
+        // erased at compile time, so folding it into the value import creates a
+        // runtime dependency that was not there and defeats
+        // `verbatimModuleSyntax` and tree-shaking. 42 of the 94 findings on the
+        // pinned corpus — 45% — were this shape. ESLint core's
+        // `import/no-duplicates` separates them the same way.
+        const source = `${node.source.value}\u0000${node.importKind ?? 'value'}`;
         let sourceNodes = imports.get(source);
         if (!sourceNodes) {
           sourceNodes = [];
