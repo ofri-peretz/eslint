@@ -135,4 +135,28 @@ describe('createWithMockContext', () => {
       (context.getScope() as unknown as { variables: unknown[] }).variables,
     ).toEqual([]);
   });
+
+  it('exposes the comments and first token a real SourceCode would', () => {
+    const rule = {
+      defaultOptions: [],
+      create() {
+        return {};
+      },
+    };
+    const comment = { type: 'Block', value: ' @generated ' };
+    const token = { type: 'Keyword', value: 'const', range: [16, 21] };
+
+    const withAst = createWithMockContext(rule, {
+      ast: { type: 'Program', body: [], tokens: [token], comments: [comment] },
+    } as never);
+    const sc = withAst.context.getSourceCode();
+    expect(sc.getAllComments()).toEqual([comment]);
+    expect(sc.getFirstToken(sc.ast)).toEqual(token);
+
+    // An AST with neither, and no AST at all, both answer rather than throw —
+    // a rule reading the leading comment block must work on the bare default.
+    const bare = createWithMockContext(rule).context.getSourceCode();
+    expect(bare.getAllComments()).toEqual([]);
+    expect(bare.getFirstToken(bare.ast)).toBeNull();
+  });
 });
