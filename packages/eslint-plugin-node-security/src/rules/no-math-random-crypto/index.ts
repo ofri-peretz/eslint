@@ -367,12 +367,66 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /**
+     * Does the value still flow outward across this function boundary?
+     *
+     * Only two ways out: the expression body of a concise arrow, or a `return`
+     * we already walked through. Anything else — a draw buried in a statement
+     * body — stays inside.
+     */
+    function escapesFunction(
+      fn: TSESTree.Node,
+      cameFrom: TSESTree.Node,
+      passedReturn: boolean,
+    ): boolean {
+      if (
+        fn.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.body === cameFrom
+      ) {
+        return true;
+      }
+      return passedReturn;
+    }
+
     function isCryptoContext(node: TSESTree.Node, depth = 0): boolean {
       // Check variable declaration context
+      let child: TSESTree.Node = node;
       let current: TSESTree.Node | undefined = node.parent;
+      /**
+       * Whether the names met so far can still be naming THIS value.
+       *
+       * The ancestor walk used to read every enclosing `VariableDeclarator`,
+       * `AssignmentExpression` and `Property` no matter how many function
+       * bodies lay between, so an object-literal METHOD KEY named the draw
+       * inside its body. shardeum/json-rpc-server `src/api.ts` reported six
+       * times on exactly that:
+       *
+       *   eth_getBlockTransactionCountByHash: async function (args, callback) {
+       *     const ticket = crypto.createHash('sha1')
+       *       .update(api_name + Math.random() + Date.now()).digest('hex')
+       *
+       * `ticket` is a log-correlation id; `hash` and `code` were read out of
+       * the RPC method names — `eth_getUncleCountByBlockHash`, `eth_getCode` —
+       * one and two function boundaries away.
+       *
+       * The enclosing-FUNCTION arms below are unaffected: they ask what the
+       * surrounding function is for, which is a question about the function.
+       */
+      let namesThisValue = true;
+      let passedReturn = false;
       while (current) {
+        if (
+          current.type === AST_NODE_TYPES.FunctionDeclaration ||
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          if (!escapesFunction(current, child, passedReturn)) namesThisValue = false;
+          passedReturn = false;
+        }
+        if (current.type === AST_NODE_TYPES.ReturnStatement) passedReturn = true;
+
         // Check variable names
-        if (current.type === AST_NODE_TYPES.VariableDeclarator) {
+        if (namesThisValue && current.type === AST_NODE_TYPES.VariableDeclarator) {
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
             if (nameSuggestsCrypto(varName)) {
@@ -410,7 +464,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         // left side is an `Identifier`, and only the `MemberExpression` shape
         // was handled. So the textbook accumulator loop was silent while
         // `const token = Math.random().toString(36)` reported.
-        if (current.type === AST_NODE_TYPES.AssignmentExpression) {
+        if (namesThisValue && current.type === AST_NODE_TYPES.AssignmentExpression) {
           if (
             current.left.type === AST_NODE_TYPES.MemberExpression &&
             current.left.property.type === AST_NODE_TYPES.Identifier
@@ -428,7 +482,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         }
 
         // Check object property
-        if (current.type === AST_NODE_TYPES.Property) {
+        if (namesThisValue && current.type === AST_NODE_TYPES.Property) {
           if (current.key.type === AST_NODE_TYPES.Identifier) {
             const propName = current.key.name;
             if (nameSuggestsCrypto(propName)) {
@@ -457,6 +511,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           }
         }
 
+        child = current;
         current = current.parent;
       }
 

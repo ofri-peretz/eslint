@@ -398,6 +398,66 @@ function receiverIsForeignConstruction(receiver: TSESTree.Node): boolean {
   );
 }
 
+/**
+ * Whether a BARE callee — `verify(a, b)`, not `jwt.verify(a, b)` — resolves to
+ * something that is not a JWT library's.
+ *
+ * The file gate is what a foreign `verify` normally dies on, and on its own it
+ * is one import away from failing. shardeum/json-rpc-server
+ * `src/middlewares/debugMiddleware.ts:66` declares its own
+ * `function verify(obj: crypto.SignedObject, expectedPk?: string)` over Shardus
+ * ed25519 and calls it bare; LavaMoat's `packages/harden` imports `verify`
+ * from a local module. Both were reported as JWT verification without an
+ * algorithm whitelist. Neither repo contains a JWT — but a single unrelated
+ * `import jwt from 'jsonwebtoken'` elsewhere in either file is all it would
+ * take to bring the finding back.
+ *
+ * So the callee is resolved the same way a member receiver already is: an
+ * explicit binding to a non-JWT specifier rejects, and so does a definition in
+ * this very file. A name that resolves to nothing is still left alone, for the
+ * injected-client reason in `receiverIsForeignImport`.
+ */
+function calleeIsForeign(node: TSESTree.CallExpression): boolean {
+  if (node.callee.type !== AST_NODE_TYPES.Identifier) return false;
+  const name = node.callee.name;
+
+  // Reached only after `fileImportsJwtLibrary` proved the root is a Program.
+  let root = node as TSESTree.Node;
+  while (root.parent) root = root.parent;
+
+  for (const stmt of (root as TSESTree.Program).body) {
+    // `export function verify(…)` binds exactly as the unexported spelling does.
+    const declaration =
+      stmt.type === AST_NODE_TYPES.ExportNamedDeclaration && stmt.declaration
+        ? stmt.declaration
+        : stmt;
+
+    if (declaration.type === AST_NODE_TYPES.FunctionDeclaration) {
+      // A FunctionDeclaration reached from `Program.body`, with or without
+      // `export`, always carries a name — the anonymous spelling is
+      // `export default function () {}`, an ExportDefaultDeclaration, which is
+      // not unwrapped above. A null check here would be a branch no test could
+      // reach.
+      if ((declaration.id as TSESTree.Identifier).name === name) return true;
+      continue;
+    }
+
+    const source = bindingSourceOf(declaration, name);
+    if (source !== null) return !JWT_LIBRARY_ROOTS.has(packageRootOf(source));
+
+    // A local value — `const verify = (obj, pk) => …`. `bindingSourceOf`
+    // returns null both for "does not bind" and "binds to something that is
+    // not a module load", so the binding has to be re-asked here.
+    if (
+      declaration.type === AST_NODE_TYPES.VariableDeclaration &&
+      declaration.declarations.some((declarator) => patternBinds(declarator.id, name))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function isJwtLibraryCall(
   node: TSESTree.CallExpression,
   targetMethods: Set<string>,
@@ -406,6 +466,9 @@ export function isJwtLibraryCall(
     return false;
   }
   if (receiverIsForeignImport(node)) {
+    return false;
+  }
+  if (calleeIsForeign(node)) {
     return false;
   }
 
