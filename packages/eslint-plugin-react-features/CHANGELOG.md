@@ -607,7 +607,7 @@ This was a version bump only for eslint-plugin-react-features to align it with o
 - **release:** fix release workflow logic, docs cache, and promote lint warnings to errors ([5945113a](https://github.com/ofri-peretz/eslint/commit/5945113a))
 - **docs:** resolve MDX compatibility issues and add validation tests ([dac50031](https://github.com/ofri-peretz/eslint/commit/dac50031))
 - **docs:** revert inappropriate security additions to non-security plugins ([b8b7bac0](https://github.com/ofri-peretz/eslint/commit/b8b7bac0))
-- **docs:** strict readout alignment to NestJS structure and table consolidation --no-verify ([6e12c39f](https://github.com/ofri-peretz/eslint/commit/6e12c39f))
+- **docs:** strict readout alignment to NestJS structure and table consolidation ([6e12c39f](https://github.com/ofri-peretz/eslint/commit/6e12c39f))
 - **docs:** wrap lucide icons with span for title attribute compatibility ([bd36290d](https://github.com/ofri-peretz/eslint/commit/bd36290d))
 
 ### Documentation
