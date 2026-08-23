@@ -1,3 +1,141 @@
+## 4.3.0
+
+### Minor Changes
+
+- [#604](https://github.com/ofri-peretz/eslint/pull/604) [`3393c4f`](https://github.com/ofri-peretz/eslint/commit/3393c4f9aa87c238348102a7eafaaa73bca6cd26) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-magic-numbers` gains three exemptions, and stops being the highest-volume
+  rule in the ecosystem.
+
+  **`detectObjects`** (default `false`) — object property values are no longer
+  reported, matching ESLint core's own `no-magic-numbers`, which has shipped that
+  default for years. A config object is a place to write literals.
+
+  ```js
+  const cfg = { timeout: 5000, retries: 7 }; // no longer reported
+  ```
+
+  **`ignoreLoopBounds`** (default `true`) — a numeric bound in a `for` header is
+  the loop's shape, not a magic number. The loop **body** still reports.
+
+  **`ignoreLengthComparisons`** (default `true`) — **equality only**.
+  `arguments.length === 3` is an arity check; `users.length > 100` is a business
+  threshold and still reports.
+
+  **22,942 → 15,924** on a 20-repository corpus; **1,635 → 1,421** on the pinned
+  eight.
+
+- [#640](https://github.com/ofri-peretz/eslint/pull/640) [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-magic-numbers` stops reading machine-packed output.
+
+  8 minified bundles carried **2,446 of this rule's 10,129 findings** on the
+  pinned corpus, and one of them — `assets/speedscope/import.bcbb2033.js` — was
+  1,973 by itself. "Name this constant" is advice to whoever edits the file, and
+  nobody edits a bundle.
+
+  Corpus: **10,129 → 7,532.**
+
+  `@interlace/eslint-devkit` gains `isMinifiedFile` and a `skipMinifiedFiles`
+  flag on `createRule`, joining `skipTestFiles` and `skipGeneratedFiles`.
+
+  **Decided from the file's own shape, never its path.** `dist/`, `.min.js` and
+  `vendor/` are conventions a stranger's repository is free to ignore, and the
+  largest offender announces nothing in its name.
+
+  **Average line length, not maximum** — and that distinction is the whole
+  predicate. 13 corpus files had a line over 1,000 characters and only 8 were
+  minified; the rest were ordinary source with one long line, including SVG icon
+  components whose `d` attribute is a single 1,600-character path. Skipping those
+  would have been silent recall loss in application code.
+
+  |                     |  average line |
+  | ------------------- | ------------: |
+  | minified bundles    | 712 – 203,807 |
+  | hand-written source |       32 – 58 |
+
+  A 2 KB floor sits under the average, because a short file can exceed it without
+  being packed — a one-line barrel re-export is not a bundle.
+
+  Security rules must not set this: a bundle ships and runs, and a minified
+  bundle is exactly where a supply-chain problem would hide.
+
+### Patch Changes
+
+- [#599](https://github.com/ofri-peretz/eslint/pull/599) [`43db150`](https://github.com/ofri-peretz/eslint/commit/43db150127c7729f8b4099655fd66d0ea6d4a480) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-commented-code` no longer reports JSDoc blocks.
+
+  An `@example` body is the one place a comment is _supposed_ to contain code:
+
+  ```js
+  /**
+   * @example
+   *     const x = doThing()
+   *     return x
+   */
+  ```
+
+  Found by the 20-repository case ledger, where `/**` was the single largest
+  shape — **3,557 → 1,879**, with the pinned corpus unchanged.
+
+  Deliberately narrow: only `/**` is exempt. A plain `/* … */`, which is how
+  people actually comment code out, is still checked.
+
+- [#599](https://github.com/ofri-peretz/eslint/pull/599) [`43db150`](https://github.com/ofri-peretz/eslint/commit/43db150127c7729f8b4099655fd66d0ea6d4a480) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-commented-code` reports commented-out STATEMENTS again, whatever they end with.
+
+  The prose fix traded away recall, and the trade was documented as costing
+  `// x = 1`. It cost far more — an adversarial wave found **11 of 14** genuinely
+  commented-out lines going silent:
+
+  ```js
+  // const timeout = 5000
+  // import fs from "fs"
+  // throw new Error("x")
+  // promise.then(x => x).catch(noop)
+  ```
+
+  The terminator test is a proxy for "is this a sentence". That is right for a
+  line that merely _opens_ with a keyword, and far too blunt for a line that is
+  unmistakably a statement. A declaration with an initializer, a module
+  specifier, a constructed throw, a call on a member chain, an arrow, a strict
+  comparison, a decorator or JSX now count as code regardless of punctuation.
+
+  `throw` and `await` require a call shape after them, because a bare `await`
+  matched _"await for the retry window to elapse"_ — the same trap as the keyword
+  patterns, one keyword further along.
+
+  A bare fragment with no structure and no terminator — — is still
+  silent; the change covers structural shapes, not everything.
+
+  All 14 adversarial shapes now report, with **zero** prose false positives
+  across a 9-case prose set, and **zero** new findings on the pinned corpus.
+
+- [#615](https://github.com/ofri-peretz/eslint/pull/615) [`e2452ae`](https://github.com/ofri-peretz/eslint/commit/e2452ae2fbdd5a3970eb4ffe850318f1254cc089) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-magic-numbers`: `ignoreArrayIndexes` exempts an index, not a position.
+
+  The exemption tested only that the literal sat in the index slot of a computed
+  member access. It never checked the value, so all of these were silently
+  exempt:
+
+  ```js
+  arr[3.5]; // not an integer
+  arr[1e21]; // past any array's length
+  arr[4294967296]; // one past the largest addressable index
+  ```
+
+  None of them indexes anything. A non-integer or out-of-range key is an ordinary
+  string-keyed property lookup, and the number in it is exactly as magic as one
+  anywhere else. This now matches ESLint core, which has always required a
+  non-negative integer below the array-length limit.
+
+  `arr[42]` stays exempt — the fix costs no recall on the case the option exists
+  for.
+
+  Also fixes the extracted-constant name. `String(1e21)` is `"1e+21"`, and the
+  generator replaced only `.`, so the suggestion produced
+  `const MAGIC_1e+21 = 1e+21` — not an identifier. Applying it left the file
+  unable to parse. Every non-alphanumeric character is now a separator.
+
+  Both were found by an adversarial wave rather than by the corpus: the pinned
+  8 repositories contain no such code, so the count there is unchanged at 1,421.
+
+- Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 4.2.10
 
 ### Patch Changes

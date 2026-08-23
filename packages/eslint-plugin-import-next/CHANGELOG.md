@@ -1,5 +1,170 @@
 ## [2.3.6] - 2026-05-03
 
+## 2.4.0
+
+### Minor Changes
+
+- [#634](https://github.com/ofri-peretz/eslint/pull/634) [`01b02ae`](https://github.com/ofri-peretz/eslint/commit/01b02ae962021acc2e41888c011589bbc53eae74) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `recommended` no longer enables `order`, `first` or `newline-after-import`.
+
+  All three are pure formatting, fully auto-fixable, and together produced
+  **5,071** of this plugin's findings on the pinned 8-repository corpus —
+  `order` 3,597, `newline-after-import` 835, `first` 639.
+
+  A consumer who installs a security-positioned ecosystem and is met by four
+  thousand import-ordering warnings does not read them and does not keep the
+  plugin. The README's own FP/FN section makes the argument: an ignored tool has
+  zero recall regardless of what it detects.
+
+  This is parity with upstream rather than a novel opinion.
+  `eslint-plugin-import`'s `recommended` is eight rules and excludes all three
+  deliberately, and ESLint core deprecated its own formatting rules in 8.53 on
+  the same reasoning — formatting belongs to a formatter.
+
+  **Nothing is removed from the plugin.** `import-style` and `strict` already
+  carry all three, so opting back in is one config line:
+
+  ```js
+  import importNext from 'eslint-plugin-import-next';
+
+  export default [
+    importNext.configs.recommended,
+    importNext.configs['import-style'], // ← restores order / first / newline-after-import
+  ];
+  ```
+
+### Patch Changes
+
+- [#611](https://github.com/ofri-peretz/eslint/pull/611) [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-cycle` cites CWE-1047, and CWE-407 gets its real name back.
+
+  `CWE_MAPPING` carried **CWE-407** under the name "Circular Dependencies".
+  CWE-407 is **"Inefficient Algorithmic Complexity"** — quadratic blowup, a hash
+  table degrading to a list, a regex that backtracks. `import-next/no-cycle` was
+  pointed at it on the strength of that name.
+
+  The correct identifier is **CWE-1047, "Modules with Circular Dependencies"**,
+  which sits in the Software Development view as a quality weakness. It was
+  already referenced by `no-relative-packages` and was **not in the table at
+  all**, so that rule silently received no enrichment.
+
+  `no-cycle` also rendered a line that argued with itself:
+
+  ```
+  🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | CRITICAL
+  ```
+
+  CVSS 5.3 is the MEDIUM band, and `meta.docs.cvss` said 9.5 — the band reserved
+  for remote code execution, for a circular import. Now all three agree:
+
+  ```
+  🏗️ CWE-1047 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM
+  ```
+
+  New gate `npm run lint:severity-consistency`. Across the built plugins, 432
+  messages render both a CVSS score and a severity label and **165 of them —
+  38.2% — disagree**. Which value is right is a per-rule judgment, so the gate
+  does not pick: it records the existing set and fails on a new one, or on a
+  registry entry whose rule no longer disagrees.
+
+- [#622](https://github.com/ofri-peretz/eslint/pull/622) [`1b836b2`](https://github.com/ofri-peretz/eslint/commit/1b836b2d8222d374898142b5b0bcc053bb64b715) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `export`: a namespace member is not a module export.
+
+  `export type T` inside `export namespace A` exports `A.T`, not `T`. The rule
+  keyed its duplicate-detection maps on the bare name, so Stripe's `.d.ts` files
+  reported this as a duplicate:
+
+  ```ts
+  export namespace PaymentIntent {
+    export type SetupFutureUsage = 'off_session' | 'on_session';
+  }
+  export namespace PaymentIntentConfirmParams {
+    export type SetupFutureUsage = 'off_session' | 'on_session';
+  }
+  ```
+
+  Two distinct types that share a member name — which is what a namespace is for.
+  All 3 findings this rule produced on the pinned corpus were that shape, and the
+  corpus now reads 0.
+
+  The key is **prefixed** with the enclosing namespace path rather than the
+  declaration being skipped, so a genuine duplicate inside one namespace still
+  reports. All three forms of a module id are handled: `namespace A`,
+  `namespace A.B`, and `declare module 'x'`.
+
+- [#636](https://github.com/ofri-peretz/eslint/pull/636) [`4466e2e`](https://github.com/ofri-peretz/eslint/commit/4466e2e42e4882b1e2be556b96e454d60ddfd0a6) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-extraneous-dependencies`: `.`, `..` and `#subpath` are not packages.
+
+  Three things were being reported as undeclared dependencies that cannot be
+  dependencies at all:
+
+  ```js
+  require('..'); // the package root — how a package's own tests import it
+  import a from '.'; // likewise
+  import a from '#dep'; // a Node subpath import
+  ```
+
+  The relative guard tested only the `./` and `../` **prefixes**, so the bare
+  forms fell through and were reported as packages literally named `.` and `..`.
+  `require('..')` was four of the ten findings on
+  auth0/express-openid-connect — the first repository this rule was ever measured
+  against, because it had been excluded from the corpus gate on the false premise
+  that it needed an installed dependency tree.
+
+  A `#`-prefixed specifier resolves through the package's own `imports` field in
+  package.json. It is internal by specification and can never name an external
+  dependency.
+
+  The guard requires a `/` or end-of-string after the dots, so a package name
+  that legitimately begins with dots still reports — pinned as an invalid fixture.
+
+  Corpus: 3,147 → 3,111. A correctness fix rather than a volume one; the large
+  targets have genuinely undeclared imports, and those findings remain
+  unadjudicated.
+
+- [#620](https://github.com/ofri-peretz/eslint/pull/620) [`91ad2d3`](https://github.com/ofri-peretz/eslint/commit/91ad2d3fee8d1aace2bf9b9baf7f2fcf6b65c767) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-duplicates`: a type-only import is not a duplicate of a value import.
+
+  The rule grouped imports by module specifier alone, so
+
+  ```ts
+  import type { ActiveConfig } from '../project/active-config.js';
+  import { selectActiveConfig } from '../project/active-config.js';
+  ```
+
+  was reported as a duplicate. It is not. The type-only form is erased at compile
+  time, so folding it into the value import creates a runtime dependency that was
+  not there — which is what `verbatimModuleSyntax` exists to prevent and what
+  tree-shaking relies on. The two declarations are separate on purpose.
+
+  Grouping is now keyed by specifier **and** `importKind`, matching ESLint core's
+  `import/no-duplicates`. Two type-only imports from the same module are still
+  duplicates of each other and still merge.
+
+  On the pinned 8-repository corpus: **94 → 40 findings**.
+
+- [#618](https://github.com/ofri-peretz/eslint/pull/618) [`3fded2f`](https://github.com/ofri-peretz/eslint/commit/3fded2fba4784db6b41e91907078a4f86b85493d) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-self-import`: a suffix is not an extension.
+
+  The rule stripped the last dotted suffix from both the current filename and the
+  resolved specifier, then compared. Those were the only two findings it produced
+  on the pinned 8-repository corpus, and both were wrong:
+
+  ```
+  main.jsx            importing './main.css'                  → both became `main`
+  styleUtils.test.js  importing './styleUtils.test.constants' → both became `styleUtils.test`
+  ```
+
+  A stylesheet is not this module, and `.constants` is not an extension at all —
+  it is part of the module's name. `\.[^/.]+$` cannot tell the difference.
+
+  Now: a specifier whose last segment carries a dotted suffix that is not a JS/TS
+  module extension names a different file, full stop. Otherwise only real module
+  extensions (`.js .jsx .mjs .cjs .ts .tsx .mts .cts`) are stripped before
+  comparing. Genuine self-imports — `./real` and `./real.ts` from `real.ts` — are
+  unaffected, and both are pinned as `invalid` fixtures.
+
+  `allowInTests` also moves to the devkit's `isTestFilePath`. It matched
+  `filename.includes('__tests__')`, which is true of any path containing those
+  characters anywhere, `~/my__tests__project/src/a.ts` included.
+
+- Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 2.3.19
 
 ### Patch Changes

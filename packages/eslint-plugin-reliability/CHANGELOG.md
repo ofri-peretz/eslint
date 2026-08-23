@@ -1,5 +1,46 @@
 ## [3.1.3] - 2026-05-03
 
+## 4.0.1
+
+### Patch Changes
+
+- [#599](https://github.com/ofri-peretz/eslint/pull/599) [`43db150`](https://github.com/ofri-peretz/eslint/commit/43db150127c7729f8b4099655fd66d0ea6d4a480) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-missing-null-checks` no longer loses its evidence through an alias or a
+  conditional.
+
+  ```js
+  const hit = rows.find((r) => r.id === id);
+  const alias = hit;
+  alias.name; // now reported — one alias used to launder it
+
+  const chosen = flag ? rows.find((r) => r.ok) : null;
+  chosen.name; // now reported — a null arm is evidence
+  ```
+
+  Found by an adversarial wave written to break the rule shipped in `4.0.0`:
+  **11 of 14 genuine null-dereferences walked past it.** Four are now fixed — these two plus a bare `undefined` arm and an alias
+  resolved from the wrong scope. The remaining nine need analysis the rule does
+  not have and are recorded, each with a cited limit and the condition that reopens
+  it, in `benchmarks/rule-corpus/reliability__no-missing-null-checks/SEAL.json`.
+
+- [#599](https://github.com/ofri-peretz/eslint/pull/599) [`43db150`](https://github.com/ofri-peretz/eslint/commit/43db150127c7729f8b4099655fd66d0ea6d4a480) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-missing-null-checks` no longer treats declare-then-assign as a null value.
+
+  ```js
+  let childModel = null;
+  childModel = result.childModel;
+  childModel.hooks; // no longer reported
+  ```
+
+  The zero-writes rule was applied to `let x;` but not to `let x = null`, so the
+  most common shape in JavaScript reported every use that followed. A `const`
+  cannot be reassigned, so a genuine `const c = null; c.value` still reports.
+
+  Found by the 20-repository case ledger, which read **4,954** findings where the
+  8-repository corpus read 127 — a 15× per-repo gap that was the fix, not the
+  corpus. **4,954 → 1,743.**
+
+- Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 4.0.0
 
 ### Major Changes
