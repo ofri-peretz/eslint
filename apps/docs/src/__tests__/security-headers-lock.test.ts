@@ -55,6 +55,14 @@ describe('CSP directives that must never loosen', () => {
     expect(CONFIG).toContain(directive);
   });
 
+  it('validates the report token before putting it in a header', () => {
+    // The token is interpolated into the policy string. Trimming is not
+    // enough: `;` restructures the policy, CR/LF splits the response
+    // (CWE-113). The header must be dropped, never emitted malformed.
+    expect(CONFIG).toMatch(/test\(token\)/);
+    expect(CONFIG).toMatch(/\^\[\\w-\]\+\$/);
+  });
+
   it("does not allow 'unsafe-eval' in the enforcing header", () => {
     // VACUOUS BY DESIGN, TODAY. The policy is report-only, so `enforcing` is
     // false and the expectation below never runs. That is the intent, not an

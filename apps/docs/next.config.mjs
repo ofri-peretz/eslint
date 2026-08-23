@@ -30,7 +30,14 @@ const withMDX = createMDX();
  */
 function cspReportOnlyHeaders() {
   const token = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
-  if (!token) return [];
+  // Validated, not just trimmed. This value is interpolated into a response
+  // header: a `;` would silently restructure the policy by truncating or
+  // reordering directives, and a CR/LF would split the response entirely
+  // (CWE-113). PostHog project keys are `phc_` followed by URL-safe
+  // characters, so the shape check is both a correctness guard and the
+  // injection guard. A malformed value drops the header rather than emitting
+  // a corrupted one.
+  if (!token || !/^[\w-]+$/.test(token)) return [];
   const policy = [
     "default-src 'self'",
     "base-uri 'self'",
