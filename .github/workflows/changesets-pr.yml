@@ -49,6 +49,25 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          # THIS is the credential the Version PR's push actually uses.
+          #
+          # `actions/checkout` persists a git credential, and every later `git
+          # push` in the job uses it — regardless of what token the changesets
+          # action is handed in `env`. Setting only the env var (the previous
+          # change) was necessary and not sufficient: the push still went out as
+          # `GITHUB_TOKEN`, GitHub suppressed the workflow triggers it would
+          # otherwise fire, and the Version PR kept opening with ZERO checks.
+          # Measured: PR #600 sat at 0 checks through a full changesets run with
+          # the env var already set.
+          #
+          # `docs-data.yml` has had this right all along and its comment
+          # describes the same failure; the release workflow simply never got
+          # the same treatment. That workflow's PR (#578) is authored by
+          # `ofri-peretz` and carries 28 checks, which is the proof that the
+          # token in this chain has write access to this repository.
+          #
+          # `github.token` stays last, so this cannot be worse than today.
+          token: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
       - uses: ./.github/actions/setup
         with:
           turbo-cache: "false"
