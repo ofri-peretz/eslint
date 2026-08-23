@@ -438,9 +438,13 @@ ruleTester.run('no-filereader-innerhtml (coverage)', noFilereaderInnerhtml, {
 // ---------------------------------------------------------------------------
 ruleTester.run('no-http-urls (coverage)', noHttpUrls, {
   valid: [
-    // unparseable URL matched by allowedHosts pattern fallback
+    // Unparseable URL matched by the allowedHosts pattern fallback.
+    // `http://[` rather than `http://`: a bare scheme now returns before it
+    // reaches isAllowedException — it names no host, so there is nothing to
+    // judge — and this case exists to cover the catch branch, which needs a
+    // value that still has an authority to fail on.
     {
-      code: `const u = 'http://';`,
+      code: `const u = 'http://[';`,
       options: [{ allowedHosts: ['http:'] }],
     },
     // allowed port
@@ -450,9 +454,10 @@ ruleTester.run('no-http-urls (coverage)', noHttpUrls, {
     },
   ],
   invalid: [
-    // unparseable URL with no matching host pattern
+    // Unparseable URL with no matching host pattern — the other side of the
+    // same catch branch. See the note on its `valid` twin for why not `http://`.
     {
-      code: `const u = 'http://';`,
+      code: `const u = 'http://[';`,
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // port not in the allowed list
