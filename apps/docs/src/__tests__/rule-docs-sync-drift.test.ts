@@ -1,8 +1,8 @@
 /**
  * Rule-docs sync drift — regression lock.
  *
- * `packages/*​/docs/rules/*.md` is the source of truth; `sync-rules-docs.ts`
- * generates `apps/docs/content/docs/**​/rules/*.mdx` from it. Nothing enforced
+ * `packages/<plugin>/docs/rules/<rule>.md` is the source of truth; `sync-rules-docs.ts`
+ * generates `apps/docs/content/docs/<section>/rules/<rule>.mdx` from it. Nothing enforced
  * that the committed MDX was actually what the generator produces, and the two
  * drifted badly: on 2026-08-06, 73% of sampled rule pages had table content
  * that no longer matched their source. `jwt-security/no-algorithm-none`

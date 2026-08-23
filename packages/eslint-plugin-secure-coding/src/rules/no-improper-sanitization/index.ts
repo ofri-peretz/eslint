@@ -203,7 +203,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       const parent = node.parent as TSESTree.Node | undefined;
       const grandparent = parent?.parent as TSESTree.Node | undefined;
       // If the grandparent is a `.replace()` whose callee is this node's
-      // parent, then that parent is the `…​.replace` member access and this
+      // parent, then that parent is the `….replace` member access and this
       // node is its receiver: another link follows.
       return isReplaceCall(grandparent) && grandparent.callee === parent;
     };
