@@ -47,6 +47,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 
 import {
+  INTERNAL_ONLY,
   ROLLUP_POINTER,
   SAFE_TO_UPGRADE,
   breakingVerdict,
@@ -413,8 +414,17 @@ export function render(
   // Wording lives in `release-verdict.ts`, shared with the per-package notes:
   // a reader routinely sees both, and two spellings of the same verdict cost
   // more attention to reconcile than the sentence saves.
+  // Three verdicts, not two. "Safe to upgrade" answers "will this break me?",
+  // which is the wrong question when the answer is "none of this reaches you".
+  const anyPublished =
+    entries.some(affectsConsumers) || publishedNames.size > 0;
+
   out.push(
-    breaking > 0 ? breakingVerdict(breaking, ROLLUP_POINTER) : SAFE_TO_UPGRADE,
+    !anyPublished
+      ? INTERNAL_ONLY
+      : breaking > 0
+        ? breakingVerdict(breaking, ROLLUP_POINTER)
+        : SAFE_TO_UPGRADE,
     '',
   );
 
