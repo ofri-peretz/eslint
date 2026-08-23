@@ -9,14 +9,23 @@ const crypto = require('crypto');
 
 // X.509 thumbprint — the `x5t` value MSAL sends for certificate client auth.
 function calculateThumbprint(certificate) {
-  const certContent = certificate.replace(/-----[A-Z ]+-----/g, '').replace(/\s/g, '');
+  const certContent = certificate
+    .replace(/-----[A-Z ]+-----/g, '')
+    .replace(/\s/g, '');
   const certBuffer = Buffer.from(certContent, 'base64');
-  return crypto.createHash('sha1').update(certBuffer).digest('hex').toUpperCase();
+  return crypto
+    .createHash('sha1')
+    .update(certBuffer)
+    .digest('hex')
+    .toUpperCase();
 }
 
 // Log correlation ticket — used to join a request's start and end log lines.
 function newTicket(apiName) {
-  return crypto.createHash('sha1').update(apiName + Date.now()).digest('hex');
+  return crypto
+    .createHash('sha1')
+    .update(apiName + Date.now())
+    .digest('hex');
 }
 
 // HTTP ETag — a cache validator.

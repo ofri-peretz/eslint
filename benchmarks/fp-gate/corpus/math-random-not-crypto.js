@@ -6,9 +6,9 @@
 // inferring "cryptographic" from an identifier's *name* (`/hash/i`, `/key/i`,
 // `/code/i`), which is exactly what the repo's rule-design litmus forbids:
 // rename every variable to foo/bar and the rule must behave identically.
-let hashBucket = Math.floor(Math.random() * 16);        // consistent-hashing shard
-const cacheKey = `bust-${Math.random()}`;               // cache-buster suffix
-const retryCode = Math.random() < 0.5 ? 'a' : 'b';      // A/B branch for a retry test
-const backoffJitterMs = Math.random() * 100;            // retry jitter
+let hashBucket = Math.floor(Math.random() * 16); // consistent-hashing shard
+const cacheKey = `bust-${Math.random()}`; // cache-buster suffix
+const retryCode = Math.random() < 0.5 ? 'a' : 'b'; // A/B branch for a retry test
+const backoffJitterMs = Math.random() * 100; // retry jitter
 
 module.exports = { hashBucket, cacheKey, retryCode, backoffJitterMs };

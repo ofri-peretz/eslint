@@ -10,7 +10,12 @@
  * @see https://cwe.mitre.org/data/definitions/598.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -35,17 +40,24 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Credentials in Query Parameters',
         cwe: 'CWE-798',
-        description: 'Credentials detected in URL query parameters - this is a security risk',
+        description:
+          'Credentials detected in URL query parameters - this is a security risk',
         severity: 'CRITICAL',
         fix: 'Use secure methods: POST body, headers (Authorization), or secure cookies',
         documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
   create(context) {
-    const sensitiveParams = ['password=', 'token=', 'apikey=', 'secret=', 'auth='];
+    const sensitiveParams = [
+      'password=',
+      'token=',
+      'apikey=',
+      'secret=',
+      'auth=',
+    ];
 
     /**
      * Path segments of the out-of-band verification flows.
@@ -79,25 +91,87 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         (param) => !(param === 'token=' && OUT_OF_BAND_FLOWS.test(url)),
       );
     }
-    
+
+    /**
+     * Property names whose value is a REQUEST BODY, not a URL.
+     *
+     * `body` is the fetch/undici convention, `data` is axios, `form`/`formData` are
+     * got and request. A form-encoded body is where credentials are SUPPOSED to go:
+     * RFC 6749 §2.3.1 prescribes exactly
+     *
+     *   body: `client_id=${id}&client_secret=${secret}&token=${token}`
+     *
+     * for OAuth 2.0 token introspection and the client-credentials grant. Reporting
+     * it says "use a POST body instead" to code that is already using a POST body.
+     */
+    const BODY_PROPERTIES: ReadonlySet<string> = new Set([
+      'body',
+      'data',
+      'form',
+      'formData',
+    ]);
+
+    /**
+     * Is this string the value of a request-body property, or fed to a body builder?
+     *
+     * Structural, not textual: a query string and a form-encoded body are the same
+     * characters, so only the position distinguishes them.
+     */
+    function isRequestBody(node: TSESTree.Node): boolean {
+      const parent = node.parent;
+      if (!parent) return false;
+
+      if (
+        parent.type === AST_NODE_TYPES.Property &&
+        parent.value === node &&
+        !parent.computed
+      ) {
+        const key = parent.key;
+        if (
+          key.type === AST_NODE_TYPES.Identifier &&
+          BODY_PROPERTIES.has(key.name)
+        ) {
+          return true;
+        }
+        if (
+          key.type === AST_NODE_TYPES.Literal &&
+          typeof key.value === 'string' &&
+          BODY_PROPERTIES.has(key.value)
+        ) {
+          return true;
+        }
+      }
+
+      // `new URLSearchParams(`a=1&token=x`)` builds a body, not a location.
+      if (
+        parent.type === AST_NODE_TYPES.NewExpression &&
+        parent.callee.type === AST_NODE_TYPES.Identifier &&
+        parent.callee.name === 'URLSearchParams'
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
     function report(node: TSESTree.Node) {
       context.report({
         node,
         messageId: 'violationDetected',
       });
     }
-    
+
     return {
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {
           const url = node.value.toLowerCase();
-          
-          if (hasReportableCredential(url)) {
+
+          if (hasReportableCredential(url) && !isRequestBody(node)) {
             report(node);
           }
         }
       },
-      
+
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         // Read the STATIC text, not `sourceCode.getText(node)`.
         //
@@ -125,7 +199,7 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         // Same test the Literal branch uses. The asymmetry was the bug: a
         // literal needed `?token=` or `&token=`, a template matched a bare
         // `token=` anywhere — including the `: token=` of a log line.
-        if (hasReportableCredential(text)) {
+        if (hasReportableCredential(text) && !isRequestBody(node)) {
           report(node);
         }
       },
