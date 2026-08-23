@@ -1,5 +1,49 @@
 ## [1.2.3] - 2026-02-08
 
+## 2.0.2
+
+### Patch Changes
+
+- [#635](https://github.com/ofri-peretz/eslint/pull/635) [`0d30b1c`](https://github.com/ofri-peretz/eslint/commit/0d30b1c1b900c4664b7f67aebb87c6e5ee9f6bf4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Four false positives found by scanning nineteen open-source repositories.
+
+  Round two of the adoption loop, every finding read in source before it was
+  judged. Each of these reported correct code as a vulnerability.
+
+  - `node-security/detect-eval-with-expression` and
+    `secure-coding/no-unsafe-deserialization` treated an imported `Function` as the
+    `Function` constructor. `Function` from `aws-cdk-lib/aws-lambda` is an AWS
+    Lambda construct that deploys a handler and compiles nothing, so
+    `new Function(this, id, { runtime: Runtime.PYTHON_3_11 })` — how every CDK
+    stack declares a lambda — was a code-execution finding. Thirty of them in one
+    6 KLOC library. All three report paths now resolve the identifier through the
+    scope analyser; an unresolved identifier still reports, because that is what
+    being the global means.
+  - `browser-security/no-credentials-in-query-params` reported the shape RFC 6749
+    §2.3.1 prescribes: `body: \`client_id=${id}&client_secret=${s}&token=${t}\``,
+OAuth 2.0 sending credentials the way the spec says to. A query string and a
+form-encoded body are the same characters, so the exemption is positional — a
+`body`/`data`/`form`property value, or a`URLSearchParams` argument. The same
+    string in a URL still reports.
+  - `secure-coding/no-improper-type-validation` reported the correct null-safe
+    idiom `typeof x == 'object' && x !== null`, because its `typeof` arm accepted
+    only `===`/`!==` and the loose spelling fell through to the type-juggling arm.
+    Both operators now reach the `typeof` arm, which also gains recall: an
+    unguarded `typeof x == 'object'` reports the right message instead of the
+    wrong one. The rule also leaves the `owasp-top-10` preset, where its
+    loose-equality arm — 126 findings across 78 KLOC — re-reported `eqeqeq` under
+    a security banner, the same reason `no-insecure-comparison` left it. A new
+    `checkLooseEquality: false` keeps the three structural arms without it.
+
+  Adds `benchmarks/fp-gate/`, a corpus of code read by hand and confirmed benign,
+  mostly lifted verbatim from real repositories with provenance recorded. A rule's
+  own fixtures only contain code that already looks like its target domain, which
+  is why none of these were caught: every `require-algorithm-whitelist` fixture
+  names the receiver `jwt`. The gate ratchets, and aborts rather than report a
+  partial count when a plugin fails to load.
+
+- Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 2.0.1
 
 ### Patch Changes
