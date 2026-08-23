@@ -113,7 +113,27 @@ jobs:
           commit: "chore(release): version packages"
           # No `publish:` — release.yml does that on merge.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The SAME token chain the approve step below uses, and for a sharper
+          # reason: this is the push that decides whether the Version PR ever
+          # runs a check at all.
+          #
+          # GitHub deliberately suppresses workflow triggers for anything done
+          # with `GITHUB_TOKEN`, to stop a workflow opening a PR that triggers a
+          # workflow that opens a PR. The side effect here is total: the Version
+          # PR opened with ZERO checks, so the required checks could never go
+          # green, so it could never merge, so nothing was ever published.
+          # Measured 2026-08-23 on PR #600 — 0 checks, not failing, never run.
+          #
+          # A PAT is a person rather than the bot, so its pushes trigger CI
+          # normally. The `||` chain keeps `GITHUB_TOKEN` last, so behaviour is
+          # unchanged until a PAT exists — this line cannot make things worse,
+          # and it means setting the secret is the only remaining step.
+          #
+          # Until then the manual remedy is to close and reopen the Version PR,
+          # which re-triggers its workflows. Note that EVERY later merge to main
+          # force-pushes this branch again and resets the checks to zero, so the
+          # close/reopen has to be the last action before merging.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || secrets.GITHUB_TOKEN }}
           # changesets/action runs `git commit` + `git push origin
           # HEAD:changeset-release/main` to open the Version PR. CI installs
           # lefthook git hooks (npm ci → prepare), and the pre-push `changelog`
