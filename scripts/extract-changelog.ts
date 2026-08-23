@@ -27,6 +27,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
+import {
+  PACKAGE_POINTER,
+  SAFE_TO_UPGRADE,
+  breakingVerdict,
+} from './release-verdict';
+
 const args = process.argv.slice(2);
 const FALLBACK = args.includes('--fallback');
 const positional = args.filter((a) => !a.startsWith('--'));
@@ -54,7 +60,12 @@ try {
     name?: string;
     private?: boolean;
   };
-  pkgName = manifest.name ?? path.basename(pkgDir);
+  // `??` alone keeps `''` and any non-string that survives JSON.parse, either
+  // of which would render an `npm install @<version>` line nobody can run.
+  pkgName =
+    typeof manifest.name === 'string' && manifest.name.trim() !== ''
+      ? manifest.name
+      : path.basename(pkgDir);
   // Private workspaces (apps/*) get release notes too, but an
   // `npm install` line for something never published is a broken instruction.
   pkgPrivate = manifest.private === true;
@@ -136,16 +147,9 @@ const isPrivate = pkgPrivate;
 
 const footer: string[] = ['', '---', ''];
 
-if (isBreaking) {
-  footer.push(
-    '**⚠️ Breaking release.** Read the migration notes above before upgrading — ' +
-      'this version changes behaviour existing configs depend on.',
-  );
-} else {
-  footer.push(
-    '**Safe to upgrade.** No breaking changes: existing configs keep working as-is.',
-  );
-}
+// Counting entries is the rollup's job; here the question is only whether this
+// one version breaks anything, so the count is 1.
+footer.push(isBreaking ? breakingVerdict(1, PACKAGE_POINTER) : SAFE_TO_UPGRADE);
 
 if (!isPrivate) {
   footer.push(

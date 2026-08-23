@@ -52,6 +52,16 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only export shape
+import parseChangesetModule from '@changesets/parse';
+
+const parseChangeset = ((
+  parseChangesetModule as unknown as { default?: typeof parseChangesetModule }
+).default ?? parseChangesetModule) as (raw: string) => {
+  releases: Array<{ name: string; type: string }>;
+  summary: string;
+};
+
 const WORKSPACE_ROOTS = ['packages', 'apps'];
 const JSON_OUT = process.argv.includes('--json');
 
@@ -129,14 +139,21 @@ interface Changeset {
 
 function parse(dir: string, file: string): Changeset | null {
   const raw = readFileSync(join(dir, file), 'utf8');
-  const match = /^---\r?\n([\s\S]*?)\r?\n?---\r?\n?([\s\S]*)$/.exec(raw);
-  if (!match) return null;
 
-  const [, frontmatter, summary] = match;
-  const releases: Array<{ name: string; type: string }> = [];
-  for (const line of frontmatter.split('\n')) {
-    const entry = /^\s*['"]?([^'":]+)['"]?\s*:\s*(\w+)\s*$/.exec(line);
-    if (entry) releases.push({ name: entry[1].trim(), type: entry[2].trim() });
+  // changesets' own parser, not a regex over the frontmatter. The hand-rolled
+  // version rejected valid YAML that changesets itself accepts — notably a
+  // quoted bump (`'eslint-plugin-x': "major"`), which parsed to no releases at
+  // all and so skipped CS002/CS003 on a *published major*: the one case this
+  // gate exists for.
+  let releases: Array<{ name: string; type: string }>;
+  let summary: string;
+  try {
+    const parsed = parseChangeset(raw);
+    releases = parsed.releases.map((r) => ({ name: r.name, type: r.type }));
+    summary = parsed.summary;
+  } catch {
+    // Unparseable frontmatter is changeset-validity.test.ts's finding.
+    return null;
   }
 
   // Same title/body split the formatter uses, so the gate judges exactly the

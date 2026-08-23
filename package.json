@@ -265,6 +265,8 @@
   "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^3.0.1",
+    "@changesets/get-github-info": "^0.6.0",
+    "@changesets/parse": "^0.4.1",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
@@ -344,8 +346,7 @@
     "verdaccio": "^6.10.0",
     "vite": "^7.3.1",
     "vite-plugin-dts": "~5.0.3",
-    "vitest": "^4.1.10",
-    "@changesets/get-github-info": "^0.6.0"
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "html-encoding-sniffer": "^6.0.0",

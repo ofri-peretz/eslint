@@ -41,10 +41,16 @@
  * a release that already published successfully.
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
+
+import {
+  ROLLUP_POINTER,
+  SAFE_TO_UPGRADE,
+  breakingVerdict,
+} from './release-verdict';
 
 const WORKSPACE_ROOTS = ['packages', 'apps'];
 
@@ -102,10 +108,43 @@ function arg(flag: string): string | undefined {
   return found ? found.slice(flag.length + 1) : undefined;
 }
 
-/** Read a file as it existed at `ref`, or null when it did not exist there. */
+/**
+ * Read a file as it existed at `ref`; null means "not present at that ref".
+ *
+ * The distinction matters more than it looks. `null` is what marks a workspace
+ * as a **first release**, so conflating it with "git could not answer" means a
+ * bad `--since` ref reports every workspace in the repo as brand new — a
+ * rollup and a `rollup.json` that are confidently, comprehensively wrong.
+ *
+ * `git cat-file -e` answers "does this path exist at this ref" without reading
+ * content, and distinguishes a missing path (exit 1) from a bad ref, which
+ * `verifyRef` has already rejected before any of this runs.
+ */
 function showAtRef(ref: string, path: string): string | null {
-  const out = git(['show', `${ref}:${path}`]);
-  return out === '' ? null : out;
+  const exists = spawnSync('git', ['cat-file', '-e', `${ref}:${path}`], {
+    stdio: 'ignore',
+  });
+  if (exists.status !== 0) return null;
+  return git(['show', `${ref}:${path}`]);
+}
+
+/**
+ * Fail loudly on a ref we cannot resolve, before it can be mistaken for a repo
+ * full of new packages.
+ */
+function verifyRef(ref: string): void {
+  const ok = spawnSync(
+    'git',
+    ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`],
+    {
+      stdio: 'ignore',
+    },
+  );
+  if (ok.status !== 0) {
+    console.error(`❌ Cannot resolve \`${ref}\` to a commit.`);
+    console.error('   Release notes need a valid base ref to diff against.');
+    process.exit(1);
+  }
 }
 
 function listWorkspaces(baseRef: string): Workspace[] {
@@ -258,6 +297,19 @@ function dedupeKey(kind: string, title: string): string {
   return `${kind} ${title.toLowerCase().replace(/\s+/g, ' ').trim()}`;
 }
 
+/**
+ * Did this workspace ship in this range?
+ *
+ * `previousVersion === null` means it did not exist at the base ref — a first
+ * release, which `release.yml` does publish and which must therefore appear.
+ * Extracted and exported so the filter can be tested directly; `render()`
+ * takes an already-filtered list, so a test that passes it an unchanged
+ * workspace and finds it in the output proves nothing about this rule.
+ */
+export function isReleased(w: Workspace): boolean {
+  return w.previousVersion === null || w.previousVersion !== w.version;
+}
+
 function collect(workspaces: Workspace[]): {
   released: Workspace[];
   entries: Entry[];
@@ -268,9 +320,7 @@ function collect(workspaces: Workspace[]): {
   // `release.yml` publishes them ("🆕 first release" in its detect stage).
   // A release note that omits the one package nobody has seen before is
   // exactly backwards.
-  const released = workspaces.filter(
-    (w) => w.previousVersion === null || w.previousVersion !== w.version,
-  );
+  const released = workspaces.filter(isReleased);
   const byKey = new Map<string, Entry>();
 
   for (const ws of released) {
@@ -360,14 +410,11 @@ export function render(
   // 💥 badge is written by the release machinery from the changeset's declared
   // bump — so it cannot drift from the list underneath it.
   //
-  // Kept identical in wording to the per-package notes
-  // (`scripts/extract-changelog.ts`), so a reader who checks both does not
-  // have to work out whether two different phrasings mean the same thing.
+  // Wording lives in `release-verdict.ts`, shared with the per-package notes:
+  // a reader routinely sees both, and two spellings of the same verdict cost
+  // more attention to reconcile than the sentence saves.
   out.push(
-    breaking > 0
-      ? `⚠️ **This release contains ${breaking} breaking change${breaking === 1 ? '' : 's'}.** ` +
-          'Read the 💥 section below before upgrading — it changes behaviour existing configs depend on.'
-      : '✅ **Safe to upgrade.** No breaking changes: existing configs keep working as-is.',
+    breaking > 0 ? breakingVerdict(breaking, ROLLUP_POINTER) : SAFE_TO_UPGRADE,
     '',
   );
 
@@ -433,6 +480,7 @@ function main() {
   // that is exactly the pre-release state, which is the comparison we want.
   const baseRef = arg('--since') ?? git(['rev-parse', 'HEAD~1']) ?? 'HEAD~1';
 
+  verifyRef(baseRef);
   const workspaces = listWorkspaces(baseRef);
   const { released, entries } = collect(workspaces);
 

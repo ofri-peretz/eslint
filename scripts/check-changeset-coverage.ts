@@ -45,6 +45,14 @@
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+
+import parseChangesetModule from '@changesets/parse';
+
+const parseChangeset = ((
+  parseChangesetModule as unknown as { default?: typeof parseChangesetModule }
+).default ?? parseChangesetModule) as (raw: string) => {
+  releases: Array<{ name: string; type: string }>;
+};
 import process from 'node:process';
 
 /** Paths whose change is observable by someone installing or visiting. */
@@ -131,14 +139,12 @@ const addedChangesets = addedRaw
   .filter((f) => CHANGESET_FILE.test(f))
   .filter((f) => {
     try {
-      const frontmatter = /^---\r?\n([\s\S]*?)\r?\n?---/.exec(
-        readFileSync(f, 'utf8'),
-      )?.[1];
-      return Boolean(
-        frontmatter && /:\s*(major|minor|patch)\s*$/m.test(frontmatter),
-      );
+      // changesets' own parser: a regex over the frontmatter rejected valid
+      // YAML that changesets accepts (a quoted bump), which would report a
+      // real changeset as missing coverage.
+      return parseChangeset(readFileSync(f, 'utf8')).releases.length > 0;
     } catch {
-      // Deleted again before we looked, or unreadable — it vouches for nothing.
+      // Unparseable, or deleted before we looked — it vouches for nothing.
       return false;
     }
   });

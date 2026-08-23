@@ -55,10 +55,17 @@ function run(...args: string[]): { out: string; status: number } {
   delete env.GIT_DIR;
   delete env.GIT_WORK_TREE;
 
-  const result = spawnSync('npx', ['tsx', SCRIPT, ...args], {
+  // The repo-local `tsx`, invoked directly. The throwaway repo has no
+  // manifest, and NODE_PATH does not steer `npx` executable resolution — so
+  // `npx tsx` there could pick a global, cached, or freshly-fetched version
+  // and the test would silently be exercising a different toolchain.
+  const result = spawnSync('tsx', [SCRIPT, ...args], {
     cwd: repo,
     encoding: 'utf8',
-    env: { ...env, NODE_PATH: join(REPO_ROOT, 'node_modules') },
+    env: {
+      ...env,
+      PATH: `${join(REPO_ROOT, 'node_modules', '.bin')}:${env.PATH ?? ''}`,
+    },
   });
 
   return {
@@ -99,6 +106,22 @@ describe('empty changesets do not count as coverage', () => {
     const { out } = run('--since=base-ref');
     expect(out).toContain('no changeset');
     expect(out).toContain('packages/x');
+  });
+
+  it('accepts a quoted bump — valid YAML changesets itself parses', () => {
+    // A regex over the frontmatter rejected this and reported the PR as
+    // uncovered, for a changeset that is entirely well-formed.
+    write('packages/x/src/index.ts', 'export const a = 2;\n');
+    write(
+      '.changeset/quoted.md',
+      '---\n"eslint-plugin-x": "patch"\n---\n\nfix: a real change\n',
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change');
+
+    const { out, status } = run('--since=base-ref');
+    expect(status).toBe(0);
+    expect(out).toContain('Changeset present');
   });
 
   it('reports present when the changeset declares a release', () => {

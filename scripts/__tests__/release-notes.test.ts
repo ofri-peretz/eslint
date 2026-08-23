@@ -24,8 +24,10 @@
 
 import { describe, it, expect } from 'vitest';
 
+import { SAFE_TO_UPGRADE } from '../release-verdict';
 import {
   bulletsForVersion,
+  isReleased,
   parseBullet,
   render,
   type Entry,
@@ -58,7 +60,7 @@ describe('upgrade verdict', () => {
   it('declares a release with no breaking entries safe', () => {
     const out = render([ws()], [entry()], 'aaaaaaa', 'bbbbbbb');
 
-    expect(out).toContain('✅ **Safe to upgrade.**');
+    expect(out).toContain(SAFE_TO_UPGRADE);
     // The safe verdict itself says "No breaking changes", so assert the
     // absence of the *warning*, not of the phrase.
     expect(out).not.toContain('⚠️');
@@ -89,7 +91,7 @@ describe('upgrade verdict', () => {
       'bbbbbbb',
     );
 
-    expect(out).toContain('✅ **Safe to upgrade.**');
+    expect(out).toContain(SAFE_TO_UPGRADE);
     expect(out).not.toContain('This release contains');
   });
 
@@ -351,17 +353,26 @@ describe('first releases', () => {
     expect(out).not.toContain('`null`');
   });
 
-  it('still excludes a workspace whose version did not move', () => {
-    const out = render(
-      [ws({ previousVersion: '1.0.0', version: '1.0.0' })],
-      [],
-      'aaaaaaa',
-      'bbbbbbb',
+  it('excludes a workspace whose version did not move', () => {
+    // Asserted against the filter itself. The previous version of this test
+    // handed an unchanged workspace straight to `render()` and expected it in
+    // the output — but `render()` does not filter, so it proved the opposite
+    // of its own name and would have passed with the rule deleted.
+    expect(isReleased(ws({ previousVersion: '1.0.0', version: '1.0.0' }))).toBe(
+      false,
     );
-    // render() is given the already-filtered list, so assert the filter's
-    // contract via collect()'s caller instead: an unchanged workspace has no
-    // row. Here the list is empty, so the empty-release copy must appear.
-    expect(out).toContain('eslint-plugin-x');
+  });
+
+  it('includes a workspace whose version moved', () => {
+    expect(isReleased(ws({ previousVersion: '1.0.0', version: '1.1.0' }))).toBe(
+      true,
+    );
+  });
+
+  it('includes a workspace that is brand new', () => {
+    expect(isReleased(ws({ previousVersion: null, version: '0.1.0' }))).toBe(
+      true,
+    );
   });
 });
 

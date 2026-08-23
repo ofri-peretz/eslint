@@ -26,6 +26,12 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
+import {
+  PACKAGE_POINTER,
+  SAFE_TO_UPGRADE,
+  breakingVerdict,
+} from '../release-verdict';
+
 const SCRIPT = resolve(__dirname, '..', 'extract-changelog.ts');
 
 let root: string;
@@ -84,15 +90,17 @@ describe('upgrade verdict', () => {
   it('says a minor release is safe to upgrade', () => {
     const out = run(pkg('eslint-plugin-x', SAFE_CHANGELOG), '2.1.0');
 
-    expect(out).toContain('**Safe to upgrade.**');
-    expect(out).not.toContain('Breaking release');
+    expect(out).toContain(SAFE_TO_UPGRADE);
+    // The safe verdict itself reads "No breaking changes", so assert the
+    // absence of the warning marker rather than of the phrase.
+    expect(out).not.toContain('⚠️');
   });
 
   it('flags a release whose section carries "Major Changes"', () => {
     const out = run(pkg('eslint-plugin-x', SAFE_CHANGELOG), '2.0.0');
 
-    expect(out).toContain('⚠️ Breaking release');
-    expect(out).not.toContain('Safe to upgrade');
+    expect(out).toContain(breakingVerdict(1, PACKAGE_POINTER));
+    expect(out).not.toContain(SAFE_TO_UPGRADE);
   });
 
   it('flags a breaking badge even under a non-major heading', () => {
@@ -108,8 +116,8 @@ describe('upgrade verdict', () => {
 `;
     const out = run(pkg('eslint-plugin-x', changelog), '1.4.0');
 
-    expect(out).toContain('⚠️ Breaking release');
-    expect(out).not.toContain('Safe to upgrade');
+    expect(out).toContain(breakingVerdict(1, PACKAGE_POINTER));
+    expect(out).not.toContain(SAFE_TO_UPGRADE);
   });
 
   it('does not mistake a later breaking version for this one', () => {
@@ -130,7 +138,7 @@ describe('install instructions', () => {
     const out = run(pkg('docs', SAFE_CHANGELOG, { private: true }), '2.1.0');
 
     expect(out).not.toContain('npm install');
-    expect(out).toContain('Safe to upgrade');
+    expect(out).toContain(SAFE_TO_UPGRADE);
   });
 });
 
@@ -159,8 +167,8 @@ describe('fallback', () => {
     );
 
     expect(out).toContain('eslint-plugin-x@9.9.9');
-    expect(out).not.toContain('Safe to upgrade');
-    expect(out).not.toContain('Breaking release');
+    expect(out).not.toContain(SAFE_TO_UPGRADE);
+    expect(out).not.toContain('breaking change');
   });
 
   it('still fails loudly without --fallback', () => {

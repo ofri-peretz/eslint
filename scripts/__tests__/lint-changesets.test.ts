@@ -68,6 +68,18 @@ describe('CS002 — breaking change needs a migration path', () => {
     expect(rules(lint(dir, PRIVACY))).toContain('CS002');
   });
 
+  it('blocks a quoted published major — the regex parser missed these', () => {
+    // `"eslint-plugin-published": "major"` is valid YAML that changesets
+    // parses. The hand-rolled regex read it as zero releases, so the one case
+    // this gate exists for slipped through silently.
+    writeFileSync(
+      join(dir, 'a.md'),
+      '---\n"eslint-plugin-published": "major"\n---\n\nfeat: rework the resolver\n\nIt is different now.\n',
+    );
+    // CS002 only: the fixture has a body, and CS003 fires on an empty one.
+    expect(rules(lint(dir, PRIVACY))).toContain('CS002');
+  });
+
   it('blocks a `!`-marked change even at a minor bump', () => {
     write(
       'a.md',
