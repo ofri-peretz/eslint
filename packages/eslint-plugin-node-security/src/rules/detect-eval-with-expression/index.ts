@@ -15,7 +15,10 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { constInitializerOf, resolveConstantString } from '../../utils/const-value';
+import {
+  constInitializerOf,
+  resolveConstantString,
+} from '../../utils/const-value';
 
 /**
  * Three more used to sit here: `evalWithExpression`, `useFunctionConstructor`
@@ -70,41 +73,41 @@ const EVAL_PATTERNS: EvalPattern[] = [
     safeAlternative: 'JSON.parse()',
     example: {
       bad: 'eval(\'{"key": "\' + value + \'"}"\')',
-      good: 'JSON.parse(\'{"key": "\' + value + \'"}"\')'
+      good: 'JSON.parse(\'{"key": "\' + value + \'"}"\')',
     },
-    effort: '2 minutes'
+    effort: '2 minutes',
   },
   {
     pattern: 'Math\\.|parseInt|parseFloat',
     category: 'math',
     safeAlternative: 'Math functions or parseInt/parseFloat',
     example: {
-      bad: 'eval(\'Math.\' + method + \'(\' + arg + \')\')',
-      good: 'const mathMethods = {sin: Math.sin, cos: Math.cos}; mathMethods[method](arg)'
+      bad: "eval('Math.' + method + '(' + arg + ')')",
+      good: 'const mathMethods = {sin: Math.sin, cos: Math.cos}; mathMethods[method](arg)',
     },
-    effort: '5 minutes'
+    effort: '5 minutes',
   },
   {
     pattern: '\\$\\{|template|interpolat',
     category: 'template',
     safeAlternative: 'Template literals or template engine',
     example: {
-      bad: 'eval(\'Hello \' + userName + \'!\')',
+      bad: "eval('Hello ' + userName + '!')",
       // oxlint-disable-next-line no-template-curly-in-string
-      good: 'const template = `Hello ${userName}!`;'
+      good: 'const template = `Hello ${userName}!`;',
     },
-    effort: '3 minutes'
+    effort: '3 minutes',
   },
   {
     pattern: '\\[.*\\]|object\\[|obj\\.|\\.',
     category: 'object',
     safeAlternative: 'Direct property access or Map',
     example: {
-      bad: 'eval(\'obj.\' + property)',
-      good: 'const allowedProps = {name: true, age: true}; if (allowedProps[property]) obj[property]'
+      bad: "eval('obj.' + property)",
+      good: 'const allowedProps = {name: true, age: true}; if (allowedProps[property]) obj[property]',
     },
-    effort: '8 minutes'
-  }
+    effort: '8 minutes',
+  },
 ];
 
 /**
@@ -206,14 +209,16 @@ function isStaticStringNode(node: TSESTree.Node): boolean {
  * Generate refactoring steps based on pattern.
  * Module-scope so it is directly unit-testable (Layer-2).
  */
-export const generateRefactoringSteps = (pattern: EvalPattern | null): string => {
+export const generateRefactoringSteps = (
+  pattern: EvalPattern | null,
+): string => {
   if (!pattern) {
     return [
       '   1. Remove eval() usage entirely',
       '   2. Identify what the code is trying to achieve',
       '   3. Use appropriate safe alternative (JSON.parse, Map, etc.)',
       '   4. Add input validation if dynamic behavior needed',
-      '   5. Test thoroughly for edge cases'
+      '   5. Test thoroughly for edge cases',
     ].join('\n');
   }
 
@@ -223,7 +228,7 @@ export const generateRefactoringSteps = (pattern: EvalPattern | null): string =>
         '   1. Replace eval() with JSON.parse()',
         '   2. Ensure input is valid JSON string',
         '   3. Add try/catch for JSON parsing errors',
-        '   4. Consider using a JSON schema validator'
+        '   4. Consider using a JSON schema validator',
       ].join('\n');
 
     case 'math':
@@ -231,7 +236,7 @@ export const generateRefactoringSteps = (pattern: EvalPattern | null): string =>
         '   1. Create whitelist of allowed Math functions',
         '   2. Use direct function calls: Math.sin(x)',
         '   3. Validate inputs are numbers',
-        '   4. Consider using a math expression parser library'
+        '   4. Consider using a math expression parser library',
       ].join('\n');
 
     // oxlint-disable-next-line no-template-curly-in-string
@@ -241,7 +246,7 @@ export const generateRefactoringSteps = (pattern: EvalPattern | null): string =>
         '   1. Use template literals: `Hello ${name}`',
         '   2. Sanitize variables before interpolation',
         '   3. Use a template engine like Handlebars if complex',
-        '   4. Validate template structure'
+        '   4. Validate template structure',
       ].join('\n');
 
     case 'object':
@@ -249,7 +254,7 @@ export const generateRefactoringSteps = (pattern: EvalPattern | null): string =>
         '   1. Use Map or plain object for key-value access',
         '   2. Whitelist allowed property names',
         '   3. Use hasOwnProperty() check',
-        '   4. Consider Object.create(null) for clean objects'
+        '   4. Consider Object.create(null) for clean objects',
       ].join('\n');
 
     default:
@@ -257,7 +262,7 @@ export const generateRefactoringSteps = (pattern: EvalPattern | null): string =>
         '   1. Identify the specific use case',
         '   2. Find a safer alternative approach',
         '   3. Add comprehensive input validation',
-        '   4. Use static analysis if possible'
+        '   4. Use static analysis if possible',
       ].join('\n');
   }
 };
@@ -290,7 +295,8 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
           'vm.{{api}}() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — because any object reachable from the context carries a constructor chain back out: `this.constructor.constructor("return process")()`. A string that is not a constant is a string an attacker may be able to steer.',
         severity: 'CRITICAL',
         fix: 'Do not evaluate the value as code. Parse it (JSON.parse, an expression parser) or dispatch through a fixed map of allowed operations; if untrusted code genuinely has to run, isolate it in a separate process with its own privileges — not in vm.',
-        documentationLink: 'https://nodejs.org/api/vm.html#vm-executing-javascript',
+        documentationLink:
+          'https://nodejs.org/api/vm.html#vm-executing-javascript',
       }),
       vm2CodeExecution: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -307,30 +313,36 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe eval() for JSON parsing',
         cwe: 'CWE-95',
-        description: 'Use JSON.parse() instead of eval() for JSON string parsing',
+        description:
+          'Use JSON.parse() instead of eval() for JSON string parsing',
         severity: 'HIGH',
         fix: 'Replace eval() with JSON.parse()',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       useObjectAccess: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe eval() for property access',
         cwe: 'CWE-95',
-        description: 'Use direct property access instead of eval() for dynamic property access',
+        description:
+          'Use direct property access instead of eval() for dynamic property access',
         severity: 'HIGH',
         fix: 'Use obj[key] or Map.get(key) instead of eval()',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       useTemplateLiteral: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe eval() for string interpolation',
         cwe: 'CWE-95',
-        description: 'Use template literals instead of eval() for string interpolation',
+        description:
+          'Use template literals instead of eval() for string interpolation',
         // oxlint-disable-next-line no-template-curly-in-string
         severity: 'HIGH',
         // oxlint-disable-next-line no-template-curly-in-string
         fix: 'Replace eval() with template literals: `Hello ${name}`',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       strategyRemove: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -339,7 +351,8 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         description: 'eval() usage poses severe security risk',
         severity: 'CRITICAL',
         fix: 'Remove eval() entirely - security risk too high',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       strategyRefactor: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -348,7 +361,8 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         description: 'eval() can be refactored to safer alternative',
         severity: 'HIGH',
         fix: '{{safeAlternative}}',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
       }),
       strategyValidate: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -357,8 +371,9 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         description: 'eval() requires input validation for security',
         severity: 'MEDIUM',
         fix: 'Add input validation before using eval()',
-        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
-      })
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
     },
     schema: [
       {
@@ -367,20 +382,21 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
           allowLiteralStrings: {
             type: 'boolean',
             default: false,
-            description: 'Allow eval with literal strings (false = stricter)'
+            description: 'Allow eval with literal strings (false = stricter)',
           },
           additionalEvalFunctions: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional functions to treat as eval-like'
+            description: 'Additional functions to treat as eval-like',
           },
           strategy: {
             type: 'string',
             enum: ['remove', 'refactor', 'validate', 'auto'],
             default: 'auto',
-            description: 'Strategy for fixing eval usage (auto = smart detection)'
-          }
+            description:
+              'Strategy for fixing eval usage (auto = smart detection)',
+          },
         },
         additionalProperties: false,
       },
@@ -390,7 +406,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     {
       allowLiteralStrings: false,
       additionalEvalFunctions: [],
-      strategy: 'auto'
+      strategy: 'auto',
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -398,7 +414,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     const {
       allowLiteralStrings = false,
       additionalEvalFunctions = [],
-      strategy = 'auto'
+      strategy = 'auto',
     }: Options = options;
 
     /**
@@ -408,7 +424,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     const evalFunctions = new Set([
       'eval',
       'Function',
-      ...additionalEvalFunctions
+      ...additionalEvalFunctions,
     ]);
 
     /**
@@ -499,13 +515,43 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
      * scope analyser: `queue.run` and `HANDLERS.eval` stay quiet because they
      * do not resolve to eval, not because of how they are spelled.
      */
+    /**
+     * Does this identifier resolve to the GLOBAL of that name, rather than to an
+     * import, a local, or a parameter that merely shares the spelling?
+     *
+     * An unresolved identifier is the global — that is precisely what "not declared
+     * anywhere in this file" means for `eval` and `Function`.
+     */
+    const isGlobalBinding = (identifier: TSESTree.Identifier): boolean => {
+      // `findVariable` is the local helper declared below in this same `create`;
+      // it is initialised before any visitor runs.
+      const variable = findVariable(identifier);
+      return !variable || variable.defs.length === 0;
+    };
+
     const evalCalleeName = (
       callee: TSESTree.Node,
       depth = 0,
     ): string | null => {
       if (depth > 3) return null;
       if (callee.type === 'Identifier') {
-        if (evalFunctions.has(callee.name)) return callee.name;
+        if (evalFunctions.has(callee.name)) {
+          // The NAME is not the sink — the binding is. `Function` imported from
+          // `aws-cdk-lib/aws-lambda` is an AWS Lambda construct that deploys a
+          // Python handler, and every CDK stack that declares a lambda writes
+          // `new Function(this, id, { runtime: Runtime.PYTHON_3_11, ... })`.
+          // Matching the spelling reported 30 findings in a 6 KLOC CDK library
+          // (cdklabs/cdk-enterprise-iac) and would fire on essentially every CDK
+          // codebase in existence.
+          //
+          // A resolved definition means the identifier is a local, a parameter or
+          // an import — anything but the global. Fall through to the alias path so
+          // `const Function = globalThis.Function` is still caught, and an
+          // unresolved identifier still reports, because that IS the global.
+          if (isGlobalBinding(callee)) return callee.name;
+          const aliased = constInitializerOf(context.sourceCode, callee);
+          return aliased ? evalCalleeName(aliased, depth + 1) : null;
+        }
         const init = constInitializerOf(context.sourceCode, callee);
         return init ? evalCalleeName(init, depth + 1) : null;
       }
@@ -536,18 +582,21 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       // Check if it's a call to an eval-like function
       const evalName = evalCalleeName(node.callee);
       if (evalName !== null) {
-
         // Skip if it's a literal string and literals are allowed
-        if (allowLiteralStrings &&
-            node.arguments.length > 0 &&
-            isLiteralString(node.arguments[0])) {
+        if (
+          allowLiteralStrings &&
+          node.arguments.length > 0 &&
+          isLiteralString(node.arguments[0])
+        ) {
           return;
         }
 
         // Skip if it's a direct string literal (safe)
-        if (node.arguments.length > 0 &&
-            evalName === 'eval' &&
-            isLiteralString(node.arguments[0])) {
+        if (
+          node.arguments.length > 0 &&
+          evalName === 'eval' &&
+          isLiteralString(node.arguments[0])
+        ) {
           return;
         }
 
@@ -578,7 +627,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
             patternCategory: pattern?.category || 'dynamic code execution',
             safeAlternative: pattern?.safeAlternative || 'Remove eval entirely',
             steps,
-            effort: pattern?.effort || '15-30 minutes'
+            effort: pattern?.effort || '15-30 minutes',
           },
         });
       }
@@ -594,10 +643,22 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
      * Check NewExpression for Function constructor usage
      */
     const checkNewExpression = (node: TSESTree.NewExpression) => {
-      // Check for new Function() usage
-      if (node.callee.type === 'Identifier' && node.callee.name === 'Function') {
+      // Check for new Function() usage.
+      //
+      // `isGlobalBinding` and not just the name: `Function` imported from
+      // `aws-cdk-lib/aws-lambda` is an AWS Lambda construct that deploys a handler,
+      // and `new Function(this, id, { runtime: Runtime.PYTHON_3_11 })` is how every
+      // CDK stack declares one. Matching the spelling produced 30 findings in a
+      // 6 KLOC CDK library (cdklabs/cdk-enterprise-iac).
+      if (
+        node.callee.type === 'Identifier' &&
+        node.callee.name === 'Function' &&
+        isGlobalBinding(node.callee)
+      ) {
         const sourceCode = context.sourceCode;
-        const expression = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
+        const expression = node.arguments
+          .map((arg: TSESTree.Node) => sourceCode.getText(arg))
+          .join(', ');
         const pattern = detectPattern(expression);
 
         context.report({
@@ -611,10 +672,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
               '   1. Replace Function constructor with arrow function',
               '   2. Use regular function declaration',
               '   3. Validate any dynamic parts',
-              '   4. Consider module imports instead'
+              '   4. Consider module imports instead',
             ].join('\n'),
-            effort: '10 minutes'
-          }
+            effort: '10 minutes',
+          },
         });
       }
     };
@@ -642,7 +703,8 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
 
     /** The nearest binding for an identifier, walking outward through scopes. */
     const findVariable = (node: TSESTree.Identifier) => {
-      let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+      let scope: TSESLint.Scope.Scope | null =
+        context.sourceCode.getScope(node);
       while (scope) {
         const found = scope.variables.find((v) => v.name === node.name);
         if (found) return found;
@@ -742,7 +804,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     const trailingName = (callee: TSESTree.Node): string | null => {
       if (callee.type === 'MemberExpression' && callee.computed) {
         // A computed property is an expression, never a PrivateIdentifier.
-        return resolveConstantString(context.sourceCode, callee.property)?.value ?? null;
+        return (
+          resolveConstantString(context.sourceCode, callee.property)?.value ??
+          null
+        );
       }
       return calleeTrailingName(callee);
     };
@@ -784,7 +849,12 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
 
       for (const node of pendingVmCalls) {
         const name = trailingName(node.callee);
-        const vmApi = resolveModuleMember(node.callee, vmBindings, VM_MODULES, name);
+        const vmApi = resolveModuleMember(
+          node.callee,
+          vmBindings,
+          VM_MODULES,
+          name,
+        );
         if (vmApi !== null && VM_CODE_SINK_METHODS.has(vmApi)) {
           reportVmSite(node, node.arguments[0], 'vmCodeExecution', vmApi);
           continue;
@@ -796,12 +866,22 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
 
       for (const node of pendingVmNews) {
         const name = trailingName(node.callee);
-        const vmCtor = resolveModuleMember(node.callee, vmBindings, VM_MODULES, name);
+        const vmCtor = resolveModuleMember(
+          node.callee,
+          vmBindings,
+          VM_MODULES,
+          name,
+        );
         if (vmCtor !== null && VM_CODE_CONSTRUCTORS.has(vmCtor)) {
           reportVmSite(node, node.arguments[0], 'vmCodeExecution', vmCtor);
           continue;
         }
-        const vm2Ctor = resolveModuleMember(node.callee, vm2Bindings, VM2_MODULES, name);
+        const vm2Ctor = resolveModuleMember(
+          node.callee,
+          vm2Bindings,
+          VM2_MODULES,
+          name,
+        );
         if (vm2Ctor !== null && VM2_CODE_CONSTRUCTORS.has(vm2Ctor)) {
           reportVmSite(node, node.arguments[0], 'vm2CodeExecution', vm2Ctor);
         }
@@ -823,7 +903,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
           return;
         }
         const name = trailingName(node.callee);
-        if (name !== null && (VM_CODE_SINK_METHODS.has(name) || name === 'run')) {
+        if (
+          name !== null &&
+          (VM_CODE_SINK_METHODS.has(name) || name === 'run')
+        ) {
           pendingVmCalls.push(node);
         }
       },
@@ -859,7 +942,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       },
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         bindRequire(node);
-        if (node.id.type === 'Identifier' && node.init?.type === 'NewExpression') {
+        if (
+          node.id.type === 'Identifier' &&
+          node.init?.type === 'NewExpression'
+        ) {
           vm2SandboxCandidates.push({ local: node.id.name, init: node.init });
         }
       },

@@ -6,19 +6,18 @@
 
 /**
  * eslint-plugin-secure-coding
- * 
+ *
  * A comprehensive security-focused ESLint plugin restricted to "pure coding security rules"
  * (logic, AST patterns, and generic vulnerabilities independent of environment).
- * 
+ *
  * Rules focus on:
  * - Language-level logic flaws
  * - AST pattern risks
  * - Generic injection patterns
  * - Cryptographic logic (logic level)
- * 
+ *
  * @see https://github.com/ofri-peretz/eslint#readme
  */
-
 
 // Security rules - Injection
 import { noGraphqlInjection } from './rules/no-graphql-injection';
@@ -75,13 +74,15 @@ import { noElectronSecurityIssues } from './rules/no-electron-security-issues';
 import { noHardcodedSessionTokens } from './rules/no-hardcoded-session-tokens';
 import { requireSecureDefaults } from './rules/require-secure-defaults';
 
-
 import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 /**
  * Collection of all core security ESLint rules
  */
-export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+export const rules: Record<
+  string,
+  TSESLint.RuleModule<string, readonly unknown[]>
+> = {
   // Fundamental Injection (6 rules)
   'no-graphql-injection': noGraphqlInjection,
   'no-xxe-injection': noXxeInjection,
@@ -440,13 +441,16 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'secure-coding': plugin,
     },
     rules: Object.fromEntries(
-      Object.keys(rules).map(ruleName => [`secure-coding/${ruleName}`, 'error'])
+      Object.keys(rules).map((ruleName) => [
+        `secure-coding/${ruleName}`,
+        'error',
+      ]),
     ),
   } satisfies TSESLint.FlatConfig.Config,
 
   /**
    * OWASP Top 10 focused configuration
-   * 
+   *
    * Rules mapped to OWASP Top 10 2021 categories.
    */
   'owasp-top-10': {
@@ -457,23 +461,35 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       // A01:2021 – Broken Access Control
       // no-missing-authentication removed: Express-specific, use express-security plugin instead
       'secure-coding/no-privilege-escalation': 'warn',
-      
+
       // A02:2021 – Cryptographic Failures
       'secure-coding/no-hardcoded-credentials': 'error',
       // Demoted from 'error': naming-heuristic detection (fires on variable names
       // that sound sensitive). Cannot be enforcement-grade per I3 invariant.
       'secure-coding/no-sensitive-data-exposure': 'warn',
-      
+
       // A03:2021 – Injection
       'secure-coding/no-graphql-injection': 'error',
       'secure-coding/no-xxe-injection': 'error',
       'secure-coding/no-xpath-injection': 'error',
       'secure-coding/no-ldap-injection': 'error',
-      
+
       // A04:2021 – Insecure Design
       'secure-coding/no-weak-password-recovery': 'error',
-      'secure-coding/no-improper-type-validation': 'error',
-      
+      // no-improper-type-validation removed for the same reason as
+      // no-insecure-comparison below: its loose-equality arm re-reports `eqeqeq`
+      // under a security banner. Measured 2026-08-22 over 78 KLOC of well-maintained
+      // repositories, that arm was 126 findings — including
+      // `typeof x == 'object' && x !== null`, the correct null-safe idiom. It cannot
+      // be narrowed structurally: separating `req.body.otp == storedOtp` from
+      // `config.port != 636` requires knowing where the value came from, and this
+      // plugin does not do data-flow.
+      //
+      // `owasp-top-10` is enabled deliberately, for compliance, by exactly the
+      // security-literate maintainers least willing to forgive noise. The rule keeps
+      // its place in `strict`, where breadth is the contract, and its structural
+      // arms remain available via `checkLooseEquality: false`.
+
       // A07:2021 – Identification and Authentication Failures
       // no-insecure-comparison removed for the same reason as in
       // `recommended`: it re-reports `eqeqeq` under a security banner. Use
@@ -493,7 +509,4 @@ export default plugin;
 /**
  * Re-export all types from the types barrel
  */
-export type {
-  AllSecurityRulesOptions,
-} from './types/index';
-
+export type { AllSecurityRulesOptions } from './types/index';
