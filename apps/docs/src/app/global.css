@@ -47,14 +47,23 @@
 
 /* Light mode - AAA contrast on white */
 :root {
-  /* Primary burnt orange — #7d350c, 8.8:1 on white (AAA pass for normal text) */
-  --color-fd-primary: hsl(22, 82%, 27%) !important;
+  /* Primary burnt orange — #74320b. 9.7:1 on white AND 7.2:1 on the 10% tint
+     of itself that fumadocs paints behind an active sidebar link.
+     
+     It was hsl(22 82% 27%), justified as "8.8:1 on white" — true, and the wrong
+     background. `bg-fd-primary/10` composites to #e5deda, where the same colour
+     is 6.57:1 and misses AAA by four hundredths. fumadocs 16.14.5 restyled the
+     active link onto that tint and the axe run caught it immediately.
+     
+     Two points of lightness is the whole fix, and the constraint is recorded
+     here so the next adjustment is checked against BOTH backgrounds. */
+  --color-fd-primary: hsl(22, 82%, 25%) !important;
   --color-fd-primary-foreground: hsl(0, 0%, 100%) !important;
 
   /* shadcn-style primary tokens (used by `bg-primary` / `text-primary-foreground`
      in @interlace/ui Button + similar). Match fd-primary so the visual
      identity is consistent and contrast on white is AAA. */
-  --primary: hsl(22, 82%, 27%);
+  --primary: hsl(22, 82%, 25%);
   --primary-foreground: hsl(0, 0%, 100%);
 
   /* Foreground for body text — 19.6:1 on white (well clear of AAA) */

@@ -49,12 +49,25 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
         defaultOpenLevel: 1,
       }}
     >
-      {/* fumadocs DocsLayout / DocsPage render `<article>` for the page body
-          but no `<main>` landmark — wrap children so axe `landmark-one-main`
-          and `region` checks pass. */}
-      <main id="main-content" className="contents">
+      {/* A focusable wrapper, NOT a landmark.
+          
+          This was `<main id="main-content">`, added because fumadocs rendered
+          `<article>` for the page body and no `<main>`, so axe's
+          `landmark-one-main` failed without it. fumadocs-ui 16.14.5 changed
+          that: it now renders `<main>` from
+          `layouts/docs/page/slots/container`, where 16.14.2 did not. Two
+          landmarks then failed the same check from the other direction —
+          "exactly one <main>" — across six a11y tests.
+          
+          A `div` keeps the skip link working (it stays focusable via
+          `tabIndex={-1}`) and leaves fumadocs to own the landmark, which is
+          what every other route here already does: see `(home)/page.tsx`,
+          `articles/page.tsx` and `scorecard/page.tsx`, all of which target a
+          div for exactly this reason. This route was the last one still
+          providing its own. */}
+      <div id="main-content" tabIndex={-1} className="contents outline-hidden">
         {children}
-      </main>
+      </div>
     </DocsLayout>
   );
 }

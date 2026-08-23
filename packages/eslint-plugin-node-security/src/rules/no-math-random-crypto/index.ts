@@ -51,6 +51,17 @@ const CRYPTO_WORDS: readonly string[] = [
   'salt', 'iv', 'nonce', 'seed', 'hash', 'cipher', 'auth', 'session', 'csrf',
   'otp', 'pin', 'code', 'codes', 'verify', 'signature', 'credential', 'jwt',
   'encryption', 'apikey',
+  // The same three gaps the adversarial wave found in no-weak-hash-algorithm,
+  // present here too — the two rules keep separate lists, so a spelling missing
+  // from one is not missing from the other by construction. `Math.random()` for
+  // any of these is CWE-338.
+  //
+  // `pwd` is deliberately absent: in Node it is also the working directory,
+  // and it made `pwdDirectory` and `pwdPath` report. `passphrase` and
+  // `mnemonic` are long enough to match inside a compound, which is the same
+  // behaviour the list's existing entries already have — the unmodified rule
+  // reports `passwordHint` and `sessionLabel` too.
+  'passphrase', 'mnemonic',
 ];
 
 const CRYPTO_WORD_SET: ReadonlySet<string> = new Set(CRYPTO_WORDS);
