@@ -162,11 +162,20 @@ const url = '/api?' + params.toString();
 | `bodyProperties` | `string[]` | `['body', 'data', 'form', 'formData']` | Property names whose value is a request body rather than a URL |
 
 A string in one of these positions is form-encoded payload, not a query string, and
-credentials belong there: RFC 6749 §2.3.1 prescribes
-`body: \`client_id=${id}&client_secret=${secret}&token=${token}\`` for OAuth 2.0
-token introspection and the client-credentials grant. The defaults cover
-fetch/undici (`body`), axios (`data`), got and request (`form`, `formData`); extend
-the list for a client that names its payload something else.
+credentials belong there. RFC 6749 §2.3.1 prescribes exactly this for OAuth 2.0
+token introspection and the client-credentials grant:
+
+```js
+fetch(introspectUrl, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: `client_id=${id}&client_secret=${secret}&token=${token}`,
+});
+```
+
+The defaults cover fetch/undici (`body`), axios (`data`), got and request
+(`form`, `formData`); extend the list for a client that names its payload
+something else.
 
 The same string in a URL still reports — only the position is exempt.
 
