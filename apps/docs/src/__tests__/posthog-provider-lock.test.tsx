@@ -141,6 +141,14 @@ describe('PostHog: Init contract (ANALYTICS_PHILOSOPHY.md)', () => {
     expect(initSrc).toMatch(/doNotTrack/);
     expect(initSrc).toMatch(/globalPrivacyControl/);
   });
+  it('automated browsers are excluded before init', () => {
+    // CI was the largest single source of traffic on one property: 119 of ~140
+    // pageviews in a 12-hour window, each run a fresh person. PostHog can't
+    // filter it — the UA is a plain Chrome string — so navigator.webdriver is
+    // the only signal that separates a scripted browser from a person.
+    expect(initSrc).toMatch(/navigator\.webdriver === true/);
+    expect(initSrc).toMatch(/if \(isAutomatedBrowser\(\)\) return false;/);
+  });
   it('local-environment short-circuit before init (with localStorage opt-in)', () => {
     expect(initSrc).toMatch(/isLocalEnvironment/);
     expect(initSrc).toMatch(/interlace_local_analytics/);

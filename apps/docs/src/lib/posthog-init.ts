@@ -99,11 +99,33 @@ function isLocalOptIn(): boolean {
   }
 }
 
+/**
+ * True when the page is driven by automation — Playwright, Puppeteer, Selenium
+ * and headless Chrome all set `navigator.webdriver`; no real browser does.
+ *
+ * Measured, not assumed: on the Storybook property automated visits were the
+ * largest single source of traffic — 119 of roughly 140 pageviews in one
+ * 12-hour window, always landing on a single path, never navigating, each run
+ * counting as a brand new person because it starts with empty storage.
+ *
+ * PostHog cannot filter these itself. The user agent is a plain Chrome string,
+ * so its bot classifier correctly reports the traffic as Regular.
+ */
+function isAutomatedBrowser(): boolean {
+  try {
+    return navigator.webdriver === true;
+  } catch {
+    return false;
+  }
+}
+
 function isTrackingAllowed(): boolean {
   if (typeof window === 'undefined') return false;
   if (typeof navigator === 'undefined') return false;
   // Local dev short-circuit (ANALYTICS_PHILOSOPHY principle 9).
   if (isLocalEnvironment() && !isLocalOptIn()) return false;
+  // CI and scripted browsers are not visitors.
+  if (isAutomatedBrowser()) return false;
   const dnt = navigator.doNotTrack;
   if (dnt === '1' || dnt === 'yes') return false;
   const gpc = (
