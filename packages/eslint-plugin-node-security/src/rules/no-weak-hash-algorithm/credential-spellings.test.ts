@@ -48,6 +48,17 @@ const NOW_DETECTED = [
   'securityAnswer',
   'seedPhrase',
   'mnemonic',
+  // The list carries these three; without a case here they were claims, not
+  // coverage. `totp` is four characters, so it matches whole words only —
+  // `totp` and `userTotp`, never inside `total`.
+  //
+  // `userTotp`, NOT `totpSecret`: `secret` is already a list entry, so a
+  // `totpSecret` case passes whether or not `totp` was ever added. It would
+  // have been a test that stays green on the code it exists to lock.
+  'totp',
+  'userTotp',
+  'recoveryCode',
+  'backupCode',
 ];
 
 /**
@@ -70,6 +81,15 @@ const STILL_QUIET = [
   'mapPin',
   'passingTests',
   'seedData',
+  // Controls for the three above. `total*` is the whole reason `totp` is safe
+  // at four characters; the other two are the ordinary non-credential senses
+  // of "recovery" and "backup", which are far commoner than the code senses.
+  'totalCount',
+  'subtotal',
+  'recoveryTime',
+  'recoveryPoint',
+  'backupFile',
+  'backupPath',
   'etag',
   'cacheKey',
   'checksum',
