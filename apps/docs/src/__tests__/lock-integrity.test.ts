@@ -39,16 +39,47 @@ export function blankComments(text: string): string {
   let out = '';
   let i = 0;
   let quote: string | null = null;
+  // Depth of `${...}` interpolation nesting inside a template literal. Inside
+  // an interpolation we are back in code, so comments must be stripped there
+  // too — otherwise `` `${/* capture_x: true */ y}` `` would satisfy a lock
+  // assertion from what is really a comment. Caught in review of this file.
+  const templateStack: number[] = [];
   while (i < text.length) {
     const ch = text[i];
     if (quote) {
-      out += ch;
       if (ch === '\\' && i + 1 < text.length) {
-        out += text[i + 1];
+        out += ch + text[i + 1];
         i += 2;
         continue;
       }
+      if (quote === '`' && ch === '$' && text[i + 1] === '{') {
+        // Enter interpolation: code again until the matching brace.
+        templateStack.push(0);
+        quote = null;
+        out += '${';
+        i += 2;
+        continue;
+      }
+      out += ch;
       if (ch === quote) quote = null;
+      i += 1;
+      continue;
+    }
+    if (templateStack.length > 0 && (ch === '{' || ch === '}')) {
+      const depth = templateStack[templateStack.length - 1];
+      if (ch === '{') {
+        templateStack[templateStack.length - 1] = depth + 1;
+      } else if (depth === 0) {
+        // Closing the interpolation returns us to template text.
+        templateStack.pop();
+        quote = '`';
+        out += ch;
+        i += 1;
+        continue;
+      } else {
+        templateStack[templateStack.length - 1] = depth - 1;
+      }
+      out += ch;
       i += 1;
       continue;
     }
@@ -169,7 +200,28 @@ describe('lock integrity: the detector itself works', () => {
   it('does not mistake a URL for a comment', () => {
     // The bug that made the first version of this report false positives.
     const source = `const u = 'https://us.i.posthog.com/decide';\n`;
-    expect(/us\.i\.posthog\.com/.test(blankComments(source))).toBe(true);
+    // Anchored to the full literal: CodeQL flags a bare host pattern as
+    // matchable anywhere, and it is right that an unanchored host regex is a
+    // bad habit even in a test fixture.
+    expect(/'https:\/\/us\.i\.posthog\.com\/decide'/.test(blankComments(source))).toBe(
+      true,
+    );
+  });
+
+  it('strips comments inside template-literal interpolations', () => {
+    // Raised in review: treating a whole backtick literal as string data means
+    // a comment inside `${...}` survives, and could satisfy a lock assertion
+    // that nothing in the code actually satisfies — a false negative in the
+    // detector, which is the one failure it cannot afford.
+    const source = ['const s = `a ${', '/* capture_dead_clicks: true */', ' b}`;'].join('');
+    expect(/capture_dead_clicks: true/.test(source)).toBe(true);
+    expect(/capture_dead_clicks: true/.test(blankComments(source))).toBe(false);
+  });
+
+  it('preserves template text either side of an interpolation', () => {
+    const source = ['const s = `keep ${', 'x', '} keep`;'].join('');
+    expect(blankComments(source)).toContain('keep');
+    expect(blankComments(source)).toContain('${');
   });
 
   it('keeps real code that sits after a comment on the same line', () => {
