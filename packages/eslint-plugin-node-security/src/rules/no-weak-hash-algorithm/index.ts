@@ -153,7 +153,34 @@ const DEFAULT_SECURITY_USE_NAMES = [
   'certificate', 'cert', 'certs', 'apikey', 'privatekey', 'secretkey',
   'signingkey', 'encryptionkey', 'session', 'csrf', 'salt', 'jwt', 'nonce',
   'integrity', 'auth', 'authorization', 'authenticate',
+  // Added 2026-08-23 after an adversarial wave hashed 17 common credential
+  // spellings with MD5 and found 12 of them silent. Every one is CWE-327.
+  //
+  // Chosen against `makeNameTest`'s mechanics rather than by feel: an entry
+  // under 6 characters matches WHOLE WORDS only, and entries of 6 or more also
+  // match as a substring of the joined identifier — which is why the compound
+  // spellings are listed whole, `pincode` rather than `pin`.
+  'otp', 'mfa', 'totp',
+  'passphrase', 'pincode', 'mnemonic', 'seedphrase', 'masterkey',
+  'securityanswer', 'recoverycode', 'backupcode',
 ];
+
+/**
+ * Deliberately NOT here: `pwd`, `pass` and `pin`.
+ *
+ * `pwd` was added and then removed the same day. It is the commonest short
+ * spelling of "password" and it looked like the most valuable entry — but in
+ * Node it is also `pwd` the working directory, and a wider FP control caught
+ * `pwdDirectory`, `pwdPath` and `currentPwd` all reporting CWE-327 over
+ * ordinary filesystem code. `password` has no second meaning; `pwd` does, in
+ * exactly the ecosystem this plugin targets.
+ *
+ * Both are under six characters, so they would match whole words — and both
+ * are ordinary words in code that has nothing to do with credentials. A test
+ * `pass`, a loop `pass`, a `pin` on a map or a pinned tab. The compound forms
+ * that DO mean a credential are covered above by their full spelling, which is
+ * the same trade the list already makes for `cert` versus `certificate`.
+ */
 
 /** Strip separators and case so `cache_key`, `cache-key` and `cacheKey` unify. */
 function normalizeName(name: string): string {
