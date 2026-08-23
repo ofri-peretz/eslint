@@ -88,6 +88,12 @@ export function createWithMockContext(
     // rule defensive about a shape ESLint always provides. That would add a
     // branch no real input can take, which in a repo held at 100% coverage is
     // a permanent hole. Fix the mock instead.
+    // A real SourceCode exposes `lines`, so the mock must too — `isMinifiedFile`
+    // reads it, and without this the synthetic-AST tests die with "lines is not
+    // iterable". Second time this mock has been short of the real shape; the
+    // fix is the same as it was for getAllComments: complete the mock rather
+    // than make the predicate defensive about something ESLint always provides.
+    lines: (opts.sourceText ?? '').split('\n'),
     getAllComments: () => (opts.ast as { comments?: unknown[] } | undefined)?.comments ?? [],
     getFirstToken: () =>
       (opts.ast as { tokens?: unknown[] } | undefined)?.tokens?.[0] ?? null,
