@@ -232,16 +232,6 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
     function checkStringValue(node: TSESTree.Node, value: string): void {
       const httpPattern = /^http:\/\//i;
 
-      // A bare scheme names no host, so there is nothing to judge and nothing
-      // to rewrite. `const URL_PREFIXES = ['http://', 'https://', 'data:']` is
-      // Lighthouse's prefix table for classifying URLs, not a URL — and the
-      // report it drew read `Hardcoded HTTP URL detected: "http://"`, which is
-      // not a statement about anything. Same reasoning as the fully
-      // interpolated authority below, one node type earlier.
-      if (httpPattern.test(value) && !/^http:\/\/[^/?#]/i.test(value)) {
-        return;
-      }
-
       // An XML namespace URI is an opaque identifier, never fetched. Rewriting
       // it to https breaks the document, so reporting it is worse than noise.
       if (isXmlNamespaceUri(value, declarationName(node))) {
@@ -294,6 +284,20 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
         isRequestCallSiteUrl(node, context.sourceCode.getScope(node)) ||
         isSubresourcePosition(node)
       ) {
+        return;
+      }
+
+      // A bare scheme names no host, so there is nothing to judge and nothing to
+      // rewrite. `const URL_PREFIXES = ['http://', 'https://', 'data:']` is
+      // Lighthouse's table for classifying URLs, not a URL, and the report it
+      // drew read `Hardcoded HTTP URL detected: "http://"` — a statement about
+      // nothing. Same reasoning as the fully interpolated authority above.
+      //
+      // Deliberately last of the exemptions. Placed first it shadowed the
+      // protocol-inspection check, whose own shape (`s.indexOf('http://')`) is
+      // a bare scheme too — the more specific exemption should be the one that
+      // fires, and be the one seen to fire.
+      if (httpPattern.test(value) && !/^http:\/\/[^/?#]/i.test(value)) {
         return;
       }
 
