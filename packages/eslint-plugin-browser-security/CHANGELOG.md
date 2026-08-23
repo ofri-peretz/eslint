@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-http-urls` no longer reports test material or bare scheme strings. ([#666](https://github.com/ofri-peretz/eslint/pull/666))
+
+  Measured across four large public repositories (GoogleChrome/lighthouse,
+  getsentry/sentry-javascript, adobe/helix-cli, sveltejs/kit) this rule drew 328
+  of the 665 findings between them, and 295 of its 328 were inside test suites,
+  smoke-test definitions and integration fixtures. A smoke test named
+  `redirects-http` cannot be written without an `http://` URL, and a
+  mixed-content fixture exists precisely to hold one, so the rule now sets
+  `skipTestFiles`.
+
+  It also stops reporting a bare scheme with no authority. `['http://',
+'https://', 'data:']` is a table for classifying URLs rather than a URL, and
+  the diagnostic it produced — `Hardcoded HTTP URL detected: "http://"` — named
+  no host and suggested no fix.
+
+  Total on those four repositories: 671 findings before, 369 after.
+
 ## 2.0.3
 
 ### Patch Changes
