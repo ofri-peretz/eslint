@@ -148,3 +148,78 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
     // case above and the diverse valid cases.
   ],
 });
+
+/**
+ * What is not an external dependency.
+ *
+ * The relative guard tested only the `./` and `../` PREFIXES, so the bare forms
+ * fell through and were reported as packages literally named `.` and `..`.
+ * `require('..')` is how a package's own tests import its root, and it was four
+ * of the ten findings on auth0/express-openid-connect — the first repository
+ * this rule was ever measured against, because it had been excluded from the
+ * corpus gate on the false premise that it needed an installed tree.
+ *
+ * A `#`-prefixed specifier resolves through the package's own `imports` field.
+ * It is internal by specification and can never name an external dependency.
+ */
+ruleTester.run('no-extraneous-dependencies — what is not a package', noExtraneousDependencies, {
+  valid: [
+    // `require('..')` / `import from '..'` — the package root.
+    { code: "import a from '..';", options: [{ packageJson: mockPackageJson }] },
+    { code: "import a from '.';", options: [{ packageJson: mockPackageJson }] },
+    { code: "const a = require('..');", options: [{ packageJson: mockPackageJson }] },
+    // Still relative with a path attached.
+    { code: "import a from './sib';", options: [{ packageJson: mockPackageJson }] },
+    { code: "import a from '../sib';", options: [{ packageJson: mockPackageJson }] },
+    // Node subpath imports resolve through the package's own `imports` field.
+    { code: "import a from '#internal/thing';", options: [{ packageJson: mockPackageJson }] },
+    { code: "import a from '#dep';", options: [{ packageJson: mockPackageJson }] },
+    // An absolute path is not a package either.
+    { code: "import a from '/abs/path';", options: [{ packageJson: mockPackageJson }] },
+  ],
+  invalid: [
+    {
+      // POSITIVE CONTROL. Without it every valid case above passes on a rule
+      // that stopped reporting.
+      code: "import a from 'definitely-not-declared';",
+      options: [{ packageJson: mockPackageJson }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            {
+              messageId: 'addToDependencies',
+              output: `// TODO: Run: npm install definitely-not-declared\nimport a from 'definitely-not-declared';`,
+            },
+            {
+              messageId: 'addToDevDependencies',
+              output: `// TODO: Run: npm install --save-dev definitely-not-declared\nimport a from 'definitely-not-declared';`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // FN GUARD: a package name may legitimately BEGIN with dots. The guard
+      // requires a `/` or end-of-string after them, so `..weird` is still a
+      // package and still reports.
+      code: "import a from '..weird';",
+      options: [{ packageJson: mockPackageJson }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            {
+              messageId: 'addToDependencies',
+              output: `// TODO: Run: npm install ..weird\nimport a from '..weird';`,
+            },
+            {
+              messageId: 'addToDevDependencies',
+              output: `// TODO: Run: npm install --save-dev ..weird\nimport a from '..weird';`,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});
