@@ -102,10 +102,20 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
       while (current) {
         if (current.type === 'TSModuleDeclaration') {
           const id = (current as TSESTree.TSModuleDeclaration).id;
-          // `declare module 'x'` gives a StringLiteral and `namespace A.B` a
-          // TSQualifiedName, so the printed text is the one form that covers
-          // all three. It only has to be stable within a file.
-          parts.push(id.type === 'Identifier' ? id.name : context.sourceCode.getText(id));
+          // Three shapes. An Identifier for `namespace A`; a StringLiteral for
+          // `declare module 'x'`, where the VALUE is the key — printed text
+          // would keep the quote style, so `declare module 'x'` and
+          // `declare module "x"` would land in different buckets despite being
+          // the same ambient module to TypeScript; and a TSQualifiedName for
+          // `namespace A.B`, which has no value to read and whose printed text
+          // is unambiguous.
+          if (id.type === 'Identifier') {
+            parts.push(id.name);
+          } else if (id.type === 'Literal') {
+            parts.push(String(id.value));
+          } else {
+            parts.push(context.sourceCode.getText(id));
+          }
         }
         current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
       }
@@ -192,12 +202,20 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
             // twice report the same node twice, because both buckets were
             // already populated by the first enum. `id` is required here for
             // the same reason it is on interfaces and type aliases.
+            //
+            // Scoped like every other branch. This one wrote to the maps
+            // directly rather than through `checkAndAddExport`, so it was the
+            // one place the namespace prefix did not reach: two enums of the
+            // same name in different namespaces collided, and an enum beside a
+            // same-named type INSIDE one namespace was missed. The diagnostic
+            // still names the bare enum.
             const enumName = node.declaration.id.name;
-            if (valueNames.has(enumName) || typeNames.has(enumName)) {
+            const scopedEnum = `${scopeKey(node)}${enumName}`;
+            if (valueNames.has(scopedEnum) || typeNames.has(scopedEnum)) {
               context.report({ node, messageId: 'duplicateExport', data: { name: enumName } });
             } else {
-              valueNames.set(enumName, node);
-              typeNames.set(enumName, node);
+              valueNames.set(scopedEnum, node);
+              typeNames.set(scopedEnum, node);
             }
           }
         }

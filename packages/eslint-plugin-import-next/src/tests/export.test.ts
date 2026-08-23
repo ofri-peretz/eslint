@@ -282,8 +282,21 @@ describe('export — namespace scope is part of the identity', () => {
         // `declare module 'x'` reaches the StringLiteral branch.
         code: "declare module 'x' { export type T = 'x'; }\ndeclare module 'y' { export type T = 'y'; }",
       },
+      {
+        // Enums in different namespaces. The enum branch writes to the maps
+        // directly rather than through `checkAndAddExport`, so it was the one
+        // place the namespace prefix did not reach.
+        code: 'export namespace A { export enum E { a } }\nexport namespace B { export enum E { b } }',
+      },
     ],
     invalid: [
+      {
+        // The same ambient module spelled with different quotes is the same
+        // module to TypeScript. Keying on printed text would have put these in
+        // different buckets and missed the duplicate.
+        code: 'declare module \'x\' { export type T = \'a\'; }\ndeclare module "x" { export type T = \'b\'; }',
+        errors: [{ messageId: 'duplicateExport' }],
+      },
       {
         // POSITIVE CONTROL: a real duplicate at module scope. Without it the
         // valid cases pass on a rule that stopped reporting.
@@ -299,6 +312,18 @@ describe('export — namespace scope is part of the identity', () => {
       {
         // FN GUARD: same nested namespace, twice.
         code: "export namespace A { export namespace B {\n  export type T = 'a';\n  export type T = 'b';\n} }",
+        errors: [{ messageId: 'duplicateExport' }],
+      },
+      {
+        // FN GUARD: two enums of the same name inside ONE namespace.
+        code: 'export namespace A {\n  export enum E { a }\n  export enum E { b }\n}',
+        errors: [{ messageId: 'duplicateExport' }],
+      },
+      {
+        // FN GUARD: an enum creates a type AND a value, so it collides with a
+        // same-named type in the same namespace. Scoping the enum branch is
+        // what makes this reachable at all.
+        code: "export namespace A {\n  export enum E { a }\n  export type E = 'x';\n}",
         errors: [{ messageId: 'duplicateExport' }],
       },
     ],
