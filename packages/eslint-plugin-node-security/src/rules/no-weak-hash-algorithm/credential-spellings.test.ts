@@ -9,7 +9,7 @@
  *
  * Found by an adversarial wave on 2026-08-23: seventeen common credential
  * identifiers were hashed with MD5 and **twelve were silent**. Every one is
- * CWE-327 — `pwd`, `passphrase`, `otp`, `mfaCode`, `pinCode`, `masterKey`,
+ * CWE-327 — `passphrase`, `otp`, `mfaCode`, `pinCode`, `masterKey`,
  * `securityAnswer`, and the wallet pair `seedPhrase` / `mnemonic`, where an
  * MD5 digest is about as bad as this rule gets.
  *
@@ -39,8 +39,6 @@ const hash = (name: string) =>
   `import crypto from 'crypto';\nexport const h = (${name}: string) => crypto.createHash('md5').update(${name}).digest('hex');`;
 
 const NOW_DETECTED = [
-  'pwd',
-  'userPwd',
   'passphrase',
   'passPhrase',
   'otp',
@@ -52,8 +50,20 @@ const NOW_DETECTED = [
   'mnemonic',
 ];
 
-// Not credentials. Each is deliberately close to an entry in the list.
+/**
+ * Not credentials. Each is deliberately close to an entry in the list.
+ *
+ * The `pwd*` three are why `pwd` is not in the list. It was added first — the
+ * commonest short spelling of "password", and the highest-value entry on
+ * paper — and a wider FP control caught all three of these reporting CWE-327
+ * over ordinary filesystem code. In Node, `pwd` is also the working directory.
+ * `password` has no second meaning; `pwd` does, in exactly the ecosystem this
+ * plugin targets.
+ */
 const STILL_QUIET = [
+  'pwdDirectory',
+  'pwdPath',
+  'currentPwd',
   'passenger',
   'bypassRoute',
   'pinnedTabs',
