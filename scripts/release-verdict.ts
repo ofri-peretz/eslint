@@ -37,3 +37,16 @@ export const ROLLUP_POINTER = 'Read the 💥 section below';
 
 /** Where a package release sends a reader: the migration notes above it. */
 export const PACKAGE_POINTER = 'Read the migration notes above';
+
+/**
+ * Nothing in this release reaches npm.
+ *
+ * A release of only private workspaces — an app deploy, an internal package —
+ * still produces notes, and those notes still open with a verdict. "Safe to
+ * upgrade" is true there but vacuous: there is nothing to upgrade. Saying so
+ * up front spares the reader working it out from four sections of entries all
+ * marked internal, which is what the alternative asks of them.
+ */
+export const INTERNAL_ONLY =
+  'ℹ️ **Nothing published to npm in this release.** ' +
+  'Only internal packages and apps changed — no installed dependency is affected.';

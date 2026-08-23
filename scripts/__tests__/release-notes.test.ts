@@ -24,7 +24,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { SAFE_TO_UPGRADE } from '../release-verdict';
+import { INTERNAL_ONLY, SAFE_TO_UPGRADE } from '../release-verdict';
 import {
   bulletsForVersion,
   isReleased,
@@ -83,9 +83,13 @@ describe('upgrade verdict', () => {
     // A `docs: major` is genuinely breaking for the app and genuinely
     // irrelevant to someone deciding whether to upgrade a plugin. Counting it
     // warns people off a release that cannot affect them, and a banner that
-    // cries wolf is one readers learn to skip.
+    // cries wolf is one readers learn to skip. A published package is present,
+    // so this is a real release — just not a breaking one.
     const out = render(
-      [ws({ name: 'docs', isApp: true, isPrivate: true })],
+      [
+        ws({ name: 'eslint-plugin-x' }),
+        ws({ name: 'docs', isApp: true, isPrivate: true }),
+      ],
       [entry({ kind: 'breaking', title: 'redesign', packages: ['docs'] })],
       'aaaaaaa',
       'bbbbbbb',
@@ -95,11 +99,30 @@ describe('upgrade verdict', () => {
     expect(out).not.toContain('This release contains');
   });
 
+  it('says so plainly when nothing in the release reaches npm', () => {
+    // "Safe to upgrade" is true here and useless: there is nothing to upgrade.
+    // Without this the reader works that out only by noticing every entry is
+    // marked internal, four sections down.
+    const out = render(
+      [ws({ name: 'docs', isApp: true, isPrivate: true })],
+      [entry({ kind: 'breaking', title: 'redesign', packages: ['docs'] })],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+
+    expect(out).toContain(INTERNAL_ONLY);
+    expect(out).not.toContain(SAFE_TO_UPGRADE);
+    expect(out).not.toContain('This release contains');
+  });
+
   it('still lists the internal breaking change, marked', () => {
     // It stays in the 💥 section — the rollup documents the whole release —
     // but marked, so the list and the banner's count reconcile.
     const out = render(
-      [ws({ name: 'docs', isApp: true, isPrivate: true })],
+      [
+        ws({ name: 'eslint-plugin-x' }),
+        ws({ name: 'docs', isApp: true, isPrivate: true }),
+      ],
       [entry({ kind: 'breaking', title: 'redesign', packages: ['docs'] })],
       'aaaaaaa',
       'bbbbbbb',
