@@ -339,7 +339,31 @@ jobs:
           else
             git tag -a "$tag_name" -m "Release $tag_name"
           fi
-          git push origin "$tag_name" || echo "(tag push failed — likely already on remote)"
+          # Push the tag, then VERIFY it landed. The previous line was
+          #
+          #   git push origin "$tag_name" || echo "(tag push failed — likely already on remote)"
+          #
+          # which asserted the reassuring guess instead of checking it. Nine
+          # matrix jobs push tags to the same remote at once; five of nine lost
+          # that race on 2026-08-23, the `||` reported "likely already on
+          # remote", and the release step three lines below then died with
+          # "tag exists locally but has not been pushed". npm had every package;
+          # GitHub had no tag and no release for five of them.
+          #
+          # Contention is expected here, so retry — and if the tag still is not
+          # on the remote afterwards, say so rather than continue.
+          for attempt in 1 2 3; do
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag_name" >/dev/null 2>&1; then
+              echo "✅ tag $tag_name is on the remote"
+              break
+            fi
+            echo "pushing tag $tag_name (attempt $attempt)…"
+            git push origin "$tag_name" 2>&1 || true
+            sleep $(( attempt * 3 ))
+          done
+          if ! git ls-remote --exit-code --tags origin "refs/tags/$tag_name" >/dev/null 2>&1; then
+            echo "::warning::tag $tag_name never reached the remote; the release step will create it from $GITHUB_SHA"
+          fi
 
           # Stash the tag name + the per-version CHANGELOG slice for the
           # GitHub Release step that follows. We use --fallback so a missing
@@ -379,7 +403,14 @@ jobs:
             if [ "$DIST_TAG" != "latest" ]; then
               extra_flags+=(--prerelease)
             fi
+            # `--target` is what makes this survive a lost tag-push race: with
+            # it, GitHub creates the tag itself from the commit rather than
+            # requiring one to already be on the remote. Without it the step
+            # fails AFTER a successful npm publish, which is the worst place to
+            # fail — the package is public and unrecallable while the repo has
+            # no tag to diff against.
             gh release create "$TAG_NAME" \
+              --target "$GITHUB_SHA" \
               --title "$PKG_NAME@$PKG_VER" \
               --notes-file "$NOTES_FILE" \
               --latest=false \
