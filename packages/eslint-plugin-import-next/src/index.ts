@@ -229,9 +229,25 @@ export const configs = {
       'import-next/no-amd': 'warn',
 
       // Import Style - Recommended
-      'import-next/order': 'warn',
-      'import-next/first': 'warn',
-      'import-next/newline-after-import': 'warn',
+      //
+      // `order`, `first` and `newline-after-import` are NOT here, and their
+      // absence is the point. They are pure formatting, they are fully
+      // auto-fixable, and on the pinned 8-repository corpus they produced 5,071
+      // of this plugin's findings — `order` 3,597, `newline-after-import` 835,
+      // `first` 639. A consumer who installs a security-positioned ecosystem
+      // and is met by four thousand import-ordering warnings does not read them
+      // and does not keep the plugin; the README's own FP/FN section makes the
+      // argument, and an ignored tool has zero recall regardless of what it
+      // detects.
+      //
+      // This also restores parity with upstream. `eslint-plugin-import`'s
+      // `recommended` is eight rules and excludes all three deliberately, and
+      // ESLint core deprecated its own formatting rules in 8.53 on the same
+      // reasoning: formatting belongs to a formatter.
+      //
+      // They are not removed from the plugin. `import-style` already carries
+      // all three, and `strict` carries them too, so opting back in is one
+      // config line.
       'import-next/no-empty-named-blocks': 'warn',
 
       // Dependency Management
