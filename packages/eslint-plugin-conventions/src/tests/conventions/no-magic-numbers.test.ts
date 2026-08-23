@@ -301,3 +301,70 @@ describe('no-magic-numbers — ignoreArrayIndexes checks the VALUE', () => {
     ],
   });
 });
+
+/**
+ * `no-magic-numbers` does not look at machine-packed output.
+ *
+ * 8 minified bundles carried 2,446 of this rule's 10,129 findings on the pinned
+ * corpus, and one of them — `assets/speedscope/import.bcbb2033.js` — was 1,973
+ * on its own. "Name this constant" is advice to whoever edits the file, and
+ * nobody edits a bundle: it is rebuilt from a source that lives elsewhere, if
+ * it is in the repository at all.
+ *
+ * Decided from the file's own average line length, not its path and not its
+ * longest line. The SVG icon components in okta-signin-widget have a single
+ * 1,600-character `d` attribute and an average under 60; they still report, and
+ * that is pinned below.
+ */
+describe('no-magic-numbers — machine-packed output', () => {
+  // `if (res.status === N)` rather than `const n = N` or `x.length === N`.
+  // Assigning a literal to a named constant is exempt by design — that IS the
+  // fix the rule asks for — and `.length ===` is exempt via
+  // `ignoreLengthComparisons`. Two drafts of this fixture reported nothing for
+  // those reasons before landing on a shape the rule actually flags.
+  const packed = [
+    `const bundle1 = ${JSON.stringify('x'.repeat(3000))}; if (res.status === 4242) { throw new Error('a'); }`,
+    `const bundle2 = ${JSON.stringify('y'.repeat(3000))}; if (res.status === 8484) { throw new Error('b'); }`,
+  ].join('\n');
+
+  // The SVG-icon shape: one very long line among ordinary ones.
+  //
+  // Padded to ~200 lines on purpose: that is the shape of the real files, and
+  // it is what makes the average low. A first draft was five lines, one of them
+  // 1,600 characters, which averages ~335 and genuinely does look packed — the
+  // predicate was right to skip it and the fixture was wrong.
+  const iconLike = [
+    `const d = ${JSON.stringify('M' + '1 2 '.repeat(400))};`,
+    ...Array.from({ length: 200 }, (_, i) => `const p${i} = d;`),
+    'export function render(res) {',
+    '  if (res.status === 4242) { return d; }',
+    '  return null;',
+    '}',
+  ].join('\n');
+
+  ruleTester.run('minified', noMagicNumbers, {
+    valid: [{ code: packed }],
+    invalid: [
+      {
+        // POSITIVE CONTROL: the same comparisons in ordinary source still
+        // report, so the valid case is not passing on a rule gone quiet.
+        code: "if (res.status === 4242) { throw new Error('a'); }\nif (res.status === 8484) { throw new Error('b'); }",
+        errors: 2,
+      },
+    ],
+  });
+
+  ruleTester.run('one long line is not minified', noMagicNumbers, {
+    valid: [],
+    invalid: [
+      {
+        // FN GUARD. The longest line here is over 1,600 characters while the
+        // average is well under the threshold — the case that made `max` the
+        // wrong statistic to key on. Skipping this would be recall loss in
+        // ordinary application code.
+        code: iconLike,
+        errors: 1,
+      },
+    ],
+  });
+});
