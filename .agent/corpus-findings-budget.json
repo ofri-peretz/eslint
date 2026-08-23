@@ -46,7 +46,7 @@
     "react-a11y/iframe-has-title": 1,
     "react-a11y/interactive-supports-focus": 7,
     "react-a11y/prefer-tag-over-role": 31,
-    "react-features/hooks-exhaustive-deps": 84,
+    "react-features/hooks-exhaustive-deps": 91,
     "react-features/jsx-key": 13,
     "react-features/no-children-prop": 2,
     "react-features/no-unknown-property": 65,

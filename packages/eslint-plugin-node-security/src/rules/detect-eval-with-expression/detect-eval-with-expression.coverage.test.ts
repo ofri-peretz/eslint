@@ -8,10 +8,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import {
-  detectEvalWithExpression,
-  generateRefactoringSteps,
-} from './index';
+import { detectEvalWithExpression, generateRefactoringSteps } from './index';
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -45,7 +42,7 @@ describe('detect-eval-with-expression coverage gaps', () => {
 
     it('returns removal guidance when no pattern was detected', () => {
       expect(generateRefactoringSteps(null)).toContain(
-        'Remove eval() usage entirely'
+        'Remove eval() usage entirely',
       );
     });
 
@@ -55,17 +52,17 @@ describe('detect-eval-with-expression coverage gaps', () => {
       ['template', 'Use template literals'],
       ['object', 'Use Map or plain object for key-value access'],
     ] as const)('returns %s-specific guidance', (category, expected) => {
-      expect(
-        generateRefactoringSteps({ ...base, category })
-      ).toContain(expected);
+      expect(generateRefactoringSteps({ ...base, category })).toContain(
+        expected,
+      );
     });
 
     it('falls back to generic guidance for categories without a dedicated arm', () => {
       const steps = generateRefactoringSteps({ ...base, category: 'other' });
       expect(steps).toContain('Identify the specific use case');
-      expect(
-        generateRefactoringSteps({ ...base, category: 'dynamic' })
-      ).toBe(steps);
+      expect(generateRefactoringSteps({ ...base, category: 'dynamic' })).toBe(
+        steps,
+      );
     });
   });
 });

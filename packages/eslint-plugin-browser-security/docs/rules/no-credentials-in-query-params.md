@@ -1,6 +1,6 @@
 ---
 title: no-credentials-in-query-params
-description: "CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)"
+description: 'CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)'
 tags: ['security', 'browser']
 category: security
 severity: high
@@ -12,8 +12,8 @@ autofix: false
 > **CWE:** [CWE-598: Use of GET Request with Sensitive Query Strings](https://cwe.mitre.org/data/definitions/598.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
 
-
 <!-- @rule-summary -->
+
 CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)
 <!-- @/rule-summary -->
 
@@ -25,7 +25,7 @@ ESLint Rule: no-credentials-in-query-params. This rule is part of [`eslint-plugi
 | -------------- | --------------------------------------- |
 | **Severity**   | High (Credential Exposure)              |
 | **Auto-Fix**   | ❌ No (requires moving data to Body)    |
-| **Category**   | Security |
+| **Category**   | Security                                |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
 | **Best For**   | Web and Mobile applications using APIs  |
 
@@ -154,6 +154,30 @@ const url = '/api?' + params.toString();
 ```
 
 **Mitigation**: Standardize on a secure API caller that automatically handles sensitive data.
+
+## Options
+
+| Option           | Type       | Default                                | Description                                                    |
+| ---------------- | ---------- | -------------------------------------- | -------------------------------------------------------------- |
+| `bodyProperties` | `string[]` | `['body', 'data', 'form', 'formData']` | Property names whose value is a request body rather than a URL |
+
+A string in one of these positions is form-encoded payload, not a query string, and
+credentials belong there. RFC 6749 §2.3.1 prescribes exactly this for OAuth 2.0
+token introspection and the client-credentials grant:
+
+```js
+fetch(introspectUrl, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: `client_id=${id}&client_secret=${secret}&token=${token}`,
+});
+```
+
+The defaults cover fetch/undici (`body`), axios (`data`), got and request
+(`form`, `formData`); extend the list for a client that names its payload
+something else.
+
+The same string in a URL still reports — only the position is exempt.
 
 ## References
 

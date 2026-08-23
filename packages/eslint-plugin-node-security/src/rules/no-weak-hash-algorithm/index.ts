@@ -114,7 +114,22 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
  * busting. Matched case-insensitively with `_` and `-` stripped, so `cache_key`
  * and `cacheKey` are the same name.
  */
-const DEFAULT_NON_CRYPTOGRAPHIC_NAMES = ['sha', 'etag', 'cachekey', 'cachebuster'];
+const DEFAULT_NON_CRYPTOGRAPHIC_NAMES = [
+  'sha', 'etag', 'cachekey', 'cachebuster',
+  // A certificate THUMBPRINT is a protocol identifier, and SHA-1 is what the
+  // protocol says. Azure AD / MSAL client-certificate auth sends the SHA-1
+  // thumbprint as the JWS `x5t` header (RFC 7515 §4.1.7); picking SHA-256
+  // there does not harden anything, it just fails to authenticate.
+  // ahaenggli/AzureAD-LDAP-wrapper `src/graph.auth.js:43` is the measured
+  // case — `const thumbprint = createHash('sha1').update(certBuffer)…`, where
+  // the input name `certBuffer` is what promoted it to a security use.
+  //
+  // `thumbprint` and `x5t` only. NOT `fingerprint`, which is the broader word
+  // — a PGP key fingerprint, a TLS/JA3 fingerprint and a device fingerprint
+  // are all spelled that way and none of them is protocol-pinned to SHA-1.
+  // `certFingerprint` stays a finding, and has its own lock.
+  'thumbprint', 'x5t',
+];
 
 /**
  * Words that make a hash a SECURITY control rather than an identifier.
@@ -425,15 +440,26 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       reportUnclassifiedHashes = false,
     } = options as Options;
     const isSecurityUse = makeNameTest(securityUseNames);
+    // Whole-word, exactly as the security list is matched. A superset of the
+    // old exact-membership test — `cacheKey` still normalizes to `cachekey` —
+    // that additionally reads the compound spellings the corpus produced:
+    // `certThumbprint`, `calculateThumbprint`.
+    const isNonCryptographicName = makeNameTest(
+      nonCryptographicNames.map(normalizeName),
+    );
 
     const filename = context.filename;
     const isTestFile = allowInTests && isTestFilePath(filename);
-    const nonCryptoNames = new Set(nonCryptographicNames.map(normalizeName));
 
     /** Is this hash stored under a name that marks it as an identifier? */
     function isNonCryptographicUse(node: TSESTree.Node): boolean {
-      const name = assignedName(node);
-      return name !== null && nonCryptoNames.has(normalizeName(name));
+      const stored = assignedName(node);
+      if (stored !== null && isNonCryptographicName(stored)) return true;
+      // `function calculateThumbprint(cert) { return createHash('sha1')… }`
+      // stores nothing, so the name that says what this digest IS lives on the
+      // function.
+      const enclosing = enclosingFunctionName(node);
+      return enclosing !== null && isNonCryptographicName(enclosing);
     }
 
     /**
@@ -454,6 +480,23 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       for (const argument of hashInputNames(node)) {
         if (isSecurityUse(argument)) return true;
       }
+
+      // The enclosing function's name is the WEAKEST of the three, and it only
+      // speaks for a digest whose destination is otherwise invisible. When the
+      // digest IS stored somewhere, that name has already been read above and
+      // said "not a security control" — the function name then describes the
+      // function, not this value.
+      //
+      // shardeum/json-rpc-server `src/api.ts:1494` is the measured case:
+      //
+      //   eth_signTransaction: async function (args, callback) {
+      //     const ticket = crypto.createHash('sha1')
+      //       .update(api_name + Math.random() + Date.now()).digest('hex')
+      //     logEventEmitter.emit('fn_start', ticket, api_name, …)
+      //
+      // `ticket` is a log-correlation id. The only thing that made it a
+      // CRITICAL CWE-327 was the word `sign` inside the RPC method's name.
+      if (stored !== null) return false;
 
       const enclosing = enclosingFunctionName(node);
       return enclosing !== null && isSecurityUse(enclosing);
