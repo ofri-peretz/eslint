@@ -6,6 +6,7 @@
 
 // Rule creation utilities for building ESLint rules
 export * from './generated-file';
+export * from './minified-file';
 export * from './rule-creator';
 export * from './mock-context';
 // Shared CWE-89 detector — see sql-injection-rule.ts for why it lives here

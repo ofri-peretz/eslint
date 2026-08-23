@@ -128,6 +128,12 @@ function nearestStatement(node: TSESTree.Node): TSESTree.Statement | null {
 
 export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
   name: 'no-magic-numbers',
+  // 8 minified bundles carried 2,446 of this rule's 10,129 findings on the
+  // pinned corpus — one of them, `assets/speedscope/import.bcbb2033.js`, was
+  // 1,973 by itself. "Name this constant" is advice to whoever edits the file,
+  // and nobody edits a bundle: it is rebuilt from a source that lives
+  // elsewhere, if it is in the repository at all.
+  skipMinifiedFiles: true,
   meta: {
     type: 'suggestion',
     docs: {
