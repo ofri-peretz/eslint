@@ -53,13 +53,22 @@ describe('Homepage: scrollable regions are keyboard accessible', () => {
     }
   });
 
-  it('card snippets wrap instead of scrolling (no tab stop inside the Link)', () => {
-    const cardPres = preTags.filter((t) => t.includes('bg-fd-background/80'));
-    expect(cardPres.length).toBeGreaterThan(0);
-    for (const tag of cardPres) {
-      expect(tag).toMatch(/whitespace-pre-wrap/);
-      expect(tag).not.toMatch(/overflow-x-auto/);
+  // Identified by SEMANTIC POSITION (enclosed in <Link>), not by a styling class:
+  // a class-based fingerprint would silently go vacuous the moment the card is
+  // restyled, letting a re-introduced scroll region through unnoticed.
+  it('no <pre> inside a <Link> is a scrollable tab stop', () => {
+    const linkBlocks = code.match(/<Link\b[\s\S]*?<\/Link>/g) ?? [];
+    const presInLinks = linkBlocks.flatMap((b) => b.match(/<pre\b[^>]*>/g) ?? []);
+
+    // Non-vacuity guard: if this hits 0, the extraction broke, not the invariant.
+    expect(presInLinks.length).toBeGreaterThan(0);
+
+    for (const tag of presInLinks) {
+      // A tab stop nested inside an anchor is invalid and unreachable in practice.
       expect(tag).not.toMatch(/tabIndex/);
+      // ...so it must not be scrollable either, or it fails WCAG 2.1.1 with no fix available.
+      expect(tag).not.toMatch(/overflow-x-auto/);
+      expect(tag).toMatch(/whitespace-pre-wrap/);
     }
   });
 });
