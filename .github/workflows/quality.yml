@@ -290,6 +290,7 @@ jobs:
             echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
             echo "| Supply-chain floor  | $(icon "$R_SUPPLY") $R_SUPPLY          | OSV clean + Scorecard checks above floor |"
             echo "| Detection recall    | $(icon "$R_RECALL") $R_RECALL          | no CWE detects less than it used to |"
+            echo "| Results size guard  | $(icon "$R_BENCH_SIZE") $R_BENCH_SIZE      | benchmarks/results/ under 20 MiB |"
             echo ""
             echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"
             if ! $all_pass; then
