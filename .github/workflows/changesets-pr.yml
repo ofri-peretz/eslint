@@ -123,7 +123,22 @@ jobs:
       - name: Open / refresh Version PR
         id: changesets
         if: steps.pending.outputs.releases != '0'
-        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v1
+        # PINNED TO v1 ON PURPOSE, and the SHA is the thing that matters.
+        #
+        # changesets/action v2 requires Changesets CLI v3 and refuses to run
+        # against v2 — "This version of the Changesets action is designed to work
+        # with Changesets CLI v3". This repo is on @changesets/cli ^2.31.1.
+        #
+        # #579 bumped this SHA across that major as part of a 10-action group
+        # update and left the `# v1` comment untouched, so the pin READ as v1
+        # while resolving to v2.1.1. The Version PR then stopped being created —
+        # silently, because a missing PR looks identical to "nothing to release".
+        # Two customer-facing false-positive fixes sat unpublishable behind it.
+        #
+        # Moving to v2 means upgrading the CLI to v3 first. Until then this stays
+        # on v1.9.0, and the comment states the constraint so the next bump has to
+        # confront it rather than sail past it.
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
           # `version` runs `npm run changeset:version`, which bumps versions
           # AND regenerates the lockfile so the PR diff is complete.
