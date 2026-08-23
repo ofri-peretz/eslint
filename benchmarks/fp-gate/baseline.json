@@ -2,10 +2,7 @@
   "knownFalsePositives": [
     "constant-host-request-is-not-ssrf.js:node-security/no-ssrf",
     "intentionally-public-endpoints.js:express-security/no-exposed-debug-endpoints",
-    "intentionally-public-endpoints.js:secure-coding/no-missing-authentication",
     "introspection-is-verification.js:jwt-security/no-decode-without-verify",
-    "math-random-not-crypto.js:node-security/no-math-random-crypto",
-    "public-identifiers-are-not-secrets.js:secure-coding/no-hardcoded-credentials",
-    "sha1-as-identifier-not-security.js:node-security/no-weak-hash-algorithm"
+    "math-random-not-crypto.js:node-security/no-math-random-crypto"
   ]
 }
