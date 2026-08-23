@@ -149,3 +149,13 @@ npx vitest run apps/docs/scripts/sync-plugin-stats.test.ts
 2. Check `/llms.txt` and `/llms-full.txt` endpoints
 3. Verify `/robots.txt` and `/sitemap.xml` generate correctly
 4. Ensure MDX content renders properly
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

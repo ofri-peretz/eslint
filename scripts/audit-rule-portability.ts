@@ -311,7 +311,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.77.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.79.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -323,19 +323,25 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.77.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
-  // Re-verified at 1.77.0 (2026-08-09). All five APIs the blocker patterns
-  // depend on — sourceCode, getScope, getAllComments, getTokens, fixer — are
-  // present in the same runtime files as at 1.74. The public plugin type
-  // surface (plugins-dev.d.ts) differs by exactly 4 lines: `MetaProperty`
-  // moved within the `Expression` union (ordering only, no semantic change),
-  // and `justification` became required rather than optional. Neither is
-  // referenced by this audit or by any rule — our only `justification` hit is
-  // a word inside an error string, and `MetaProperty` is used as a node-type
-  // string, not positionally.
+  // Re-verified at 1.79.0 (2026-08-23) by `verify-oxlint-runtime.ts`, which
+  // probes the API surfaces the blocker patterns depend on rather than reading
+  // the bundles by eye: all 33 probes pass — sourceCode with its token and
+  // comment accessors, getScope, every fixer method, and parserServices.
+  //
+  // Kept from the earlier reviews, because `min` records the OLDEST version
+  // still verified and `--update` narrows it to the newest:
+  //
+  //   1.77.0 (2026-08-09) — all five APIs present in the same runtime files as
+  //   at 1.74. The public plugin type surface differed by exactly 4 lines:
+  //   `MetaProperty` moved within the `Expression` union (ordering only) and
+  //   `justification` became required rather than optional. Neither is
+  //   referenced by this audit or by any rule — our only `justification` hit is
+  //   a word inside an error string, and `MetaProperty` is used as a node-type
+  //   string, not positionally.
   'plugins.js': '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js': '69a98c6cc2e63369980ba2b42f8c66935ba76fc177469872d4f5236626f3742a',
-  'lint.js': '1ff3bdea407c77d5d5d4d5129505c510be74e4804f616a8d2688c2dbe6d4cd65',
-  'bindings.js': 'ed9e000a5e31e2ec3fb617b768bd297765ae87f42dc669ce8ba204fba323baf0',
+  'lint.js':   'beae3473c99f7de9421be82938ef5c350d09798746c343ba9dc4663cc29901af',
+  'bindings.js': 'eca0ade39d41ec024c4398df7b688c642d44a908e42c1fcd0af9cf4fa64d2bcb',
 };
 
 async function checkOxlintRuntimeHashes() {
