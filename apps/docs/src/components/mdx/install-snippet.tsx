@@ -110,7 +110,7 @@ export function InstallSnippet({
     const surface = pathname ?? '(unknown)';
     try {
       if (target?.closest('[role="tab"]')) {
-        track('install:pm_switch', {
+        track('install:pm_update', {
           packageManager: readPackageManager(target),
           surface,
         });
@@ -120,7 +120,7 @@ export function InstallSnippet({
       const now = Date.now();
       if (now - lastCopyAt.current < 1000) return;
       lastCopyAt.current = now;
-      track('install:command_copy', {
+      track('install:command_click', {
         packageManager: readPackageManager(target),
         packages,
         surface,

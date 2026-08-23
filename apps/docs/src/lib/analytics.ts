@@ -52,7 +52,12 @@ export interface TrackedEventMap {
   // 60 days, ahead of Google), the North Star is downloads, and until now the
   // moment a reader actually takes the command was completely unmeasured —
   // while the star/follow CTAs we *do* measure convert at roughly zero.
-  'install:command_copy': {
+  // Named `_click` rather than `_copy` because the verb list in
+  // `conventions/analytics-event-naming` is a contract we publish to other
+  // people's codebases — widening it to fit one of our own events would be
+  // backwards. The act is a click on the copy control; the properties carry
+  // the rest of the meaning.
+  'install:command_click': {
     /** Package manager tab active at the moment of copy. */
     packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
     /** Packages offered by this snippet, so per-plugin intent is visible. */
@@ -62,7 +67,7 @@ export interface TrackedEventMap {
   };
   // Which package manager the audience actually uses. Cheap to collect here
   // and otherwise unknowable: npm download counts can't distinguish the four.
-  'install:pm_switch': {
+  'install:pm_update': {
     packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
     surface: string;
   };

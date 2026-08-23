@@ -1,7 +1,7 @@
 /**
  * Lock for install-intent tracking.
  *
- * `install:command_copy` is the closest thing this site has to a conversion:
+ * `install:command_click` is the closest thing this site has to a conversion:
  * npm is the largest external referrer, the North Star is downloads, and the
  * star/follow CTAs we already measure convert at roughly zero. It went
  * unmeasured until 2026-08-22, so this pins the parts that would silently
@@ -18,15 +18,15 @@ const read = (p: string) => readFileSync(join(ROOT, 'src', p), 'utf-8');
 describe('install intent: events stay typed', () => {
   it('keeps both events in the typed map', () => {
     const analytics = read('lib/analytics.ts');
-    expect(analytics).toMatch(/'install:command_copy':\s*\{/);
-    expect(analytics).toMatch(/'install:pm_switch':\s*\{/);
+    expect(analytics).toMatch(/'install:command_click':\s*\{/);
+    expect(analytics).toMatch(/'install:pm_update':\s*\{/);
   });
 
   it('records which package manager and which packages were taken', () => {
     // Without `packages`, copy volume is a single undifferentiated number and
     // per-plugin adoption intent is unrecoverable.
     const analytics = read('lib/analytics.ts');
-    const block = analytics.slice(analytics.indexOf("'install:command_copy'"));
+    const block = analytics.slice(analytics.indexOf("'install:command_click'"));
     expect(block).toMatch(/packageManager:/);
     expect(block).toMatch(/packages:/);
     expect(block).toMatch(/surface:/);
@@ -37,8 +37,8 @@ describe('install intent: the snippet stays instrumented', () => {
   const snippet = () => read('components/mdx/install-snippet.tsx');
 
   it('tracks copies and package-manager switches', () => {
-    expect(snippet()).toMatch(/track\('install:command_copy'/);
-    expect(snippet()).toMatch(/track\('install:pm_switch'/);
+    expect(snippet()).toMatch(/track\('install:command_click'/);
+    expect(snippet()).toMatch(/track\('install:pm_update'/);
   });
 
   it('observes via capture-phase clicks, not Fumadocs internals', () => {
