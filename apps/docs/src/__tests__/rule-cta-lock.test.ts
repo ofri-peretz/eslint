@@ -16,15 +16,19 @@ const SRC = join(__dirname, '..');
 const read = (rel: string) => readFileSync(join(SRC, rel), 'utf8');
 
 describe('rule-page conversion CTA lock', () => {
-  it('renders RuleValueCTA on rule pages via the real Fumadocs page renderer', () => {
-    // The live rule pages are served by app/docs/[[...slug]]/page.tsx (it
-    // renders the generated MDX); RemoteRuleDoc is not in any route. The CTA
-    // must live here or it never reaches a reader.
+  it('renders the rule CTA on rule pages, in both experiment slots', () => {
+    // The CTA now renders through RuleCTAExperiment, which picks the visible
+    // slot from the `rule-cta-placement` flag. Both slots must exist in the
+    // page or the experiment can only ever measure one arm — and with the flag
+    // unresolved the bottom slot is what ships, exactly as before.
     const page = read('app/docs/[[...slug]]/page.tsx');
-    expect(page).toMatch(/import\s+\{\s*RuleValueCTA\s*\}/);
-    expect(page).toMatch(/<RuleValueCTA\s+plugin=\{rulePlugin\}\s+rule=\{ruleName\}\s*\/>/);
-    // Scoped to rule pages, not every doc page.
-    expect(page).toMatch(/isRulePage/);
+    expect(page).toMatch(/import\s+\{\s*RuleCTAExperiment\s*\}/);
+    expect(page).toMatch(/<RuleCTAExperiment[\s\S]*?placement="top"/);
+    expect(page).toMatch(/<RuleCTAExperiment[\s\S]*?placement="bottom"/);
+    const experiment = read('components/docs/rule-cta-experiment.tsx');
+    expect(experiment).toMatch(/RULE_CTA_FLAG\s*=\s*'rule-cta-placement'/);
+    // Unresolved flag must fall back to today's behaviour, never to nothing.
+    expect(experiment).toMatch(/variant === 'top' \? 'top' : 'bottom'/);
   });
 
   it('asks for both conversions — Dev.to follow and GitHub star', () => {
