@@ -79,11 +79,17 @@ describe('PostHog: source-map upload gate', () => {
     // an upload. Setting it here is a live mistake on
     // serverless.interlace.tools, where the uploader rejected it and failed
     // the production deploy. A nicety must not be able to do that.
+    const off = await loadConfig({});
     const wrongKind = await loadConfig({
       POSTHOG_PERSONAL_API_KEY: 'phc_project_key_not_personal',
       POSTHOG_PROJECT_ID: '428927',
     });
-    expect(Object.keys(wrongKind)).toContain('webpack');
+    // Compared against the untouched config, the same way the sibling test
+    // proves the wrapper DOES engage. `expect(keys).toContain('webpack')`
+    // would pass either way — `webpack` is in the base config — so it shows
+    // nothing. Identical `webpack` is the observable signature of the wrapper
+    // never having run.
+    expect(String(wrongKind.webpack)).toBe(String(off.webpack));
     expect(wrongKind.productionBrowserSourceMaps).not.toBe(true);
   });
 
