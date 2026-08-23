@@ -1,9 +1,49 @@
 {
-  "releaseCount": 449,
-  "packageCount": 32,
-  "entryCount": 1537,
+  "releaseCount": 452,
+  "packageCount": 34,
+  "entryCount": 1542,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "docs",
+      "short": "docs",
+      "version": "1.0.0",
+      "date": "2026-08-23T23:44:45Z",
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "categorised changelogs, a cross-package rollup, and versioned apps",
+          "pr": 660
+        },
+        {
+          "kind": "fix",
+          "title": "Correct the published rule count. It was overstated by 58 rules (513 → 455).",
+          "pr": 399
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/ui@0.1.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.0.4",
+      "date": "2026-08-23T23:37:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-http-urls` no longer reports test material or bare scheme strings.",
+          "pr": 666
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-node-security",
       "short": "eslint-plugin-node-security",
@@ -11931,6 +11971,21 @@
           "kind": "other",
           "title": "`no-cycle` cites CWE-1047, and CWE-407 gets its real name back.",
           "pr": 611
+        }
+      ]
+    },
+    {
+      "package": "@interlace/ui",
+      "short": "ui",
+      "version": "0.1.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
+          "pr": 628
         }
       ]
     },
