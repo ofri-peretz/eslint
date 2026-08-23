@@ -71,6 +71,11 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
       {
+        text: 'Plugins',
+        url: '/plugins',
+        active: 'nested-url',
+      },
+      {
         text: 'Playground',
         url: '/play',
         active: 'nested-url',
