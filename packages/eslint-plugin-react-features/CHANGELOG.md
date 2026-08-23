@@ -1,4 +1,9 @@
-## [1.1.4] - 2026-05-03
+# eslint-plugin-react-features
+
+All notable changes to `eslint-plugin-react-features` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 1.3.0
 
@@ -553,7 +558,9 @@
 
 - `jsx-no-target-blank`: replaced `/^\/\//.test(href)` with `href.startsWith('//')` (oxlint correctness rule).
 
-## [1.1.3] - 2026-02-08
+## 1.1.4 — 2026-05-03
+
+## 1.1.3 — 2026-02-08
 
 ### Bug Fixes
 
@@ -567,7 +574,7 @@
 
 - Ofri Peretz
 
-## [1.1.2] - 2026-02-06
+## 1.1.2 — 2026-02-06
 
 ### Bug Fixes
 
@@ -577,23 +584,16 @@
 
 - Ofri Peretz
 
-## [1.1.1] - 2026-02-02
+## 1.1.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-react-features to align it with other projects, there were no code changes.
-
-# Changelog
-
-All notable changes to `eslint-plugin-react-features` will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Documentation
 
 - 📘 Launched new documentation site: [eslint.interlace.tools](https://eslint.interlace.tools/)
 - 📝 Achieved 100% documentation parity (both .md and .mdx files)
 
-## [1.1.0] - 2026-02-02
+## 1.1.0 — 2026-02-02
 
 ### Features
 
@@ -625,7 +625,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ofri Peretz
 
-## [1.0.0] - 2026-01-26
+## 1.0.0 — 2026-01-26
 
 ### Added
 

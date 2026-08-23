@@ -1,4 +1,9 @@
-## [1.4.0] - 2026-05-03
+# @interlace/eslint-devkit
+
+All notable changes to `@interlace/eslint-devkit` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 1.17.0
 
@@ -1253,21 +1258,17 @@ Driver-scoped plugins that instantiate the factory ship separately.
 
 - `oxc-resolver` is now a hard `dependencies` entry. Note for adopters: NAPI prebuilds cover common targets (Linux x64/arm64 glibc + musl, macOS x64/arm64, Windows x64); rare targets may need to fall back to a build step.
 
-## [1.3.3] - 2026-02-08
+## 1.4.0 — 2026-05-03
+
+## 1.3.3 — 2026-02-08
 
 This was a version bump only for eslint-devkit to align it with other projects, there were no code changes.
 
-## [1.3.2] - 2026-02-06
+## 1.3.2 — 2026-02-06
 
 This was a version bump only for eslint-devkit to align it with other projects, there were no code changes.
 
-# Changelog
-
-All notable changes to `@interlace/eslint-devkit` are documented here.
-
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
-
-## [1.0.0] - 2025-11-30
+## 1.0.0 — 2025-11-30
 
 ### 🚀 Features
 
@@ -1289,7 +1290,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
-## [0.3.0] - 2025-11-15
+## 0.3.0 — 2025-11-15
 
 ### 🚀 Features
 
@@ -1308,7 +1309,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
-## [0.2.2] - 2025-11-07
+## 0.2.2 — 2025-11-07
 
 ### 🩹 Fixes
 
@@ -1322,7 +1323,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
-## [0.2.1] - 2025-11-07
+## 0.2.1 — 2025-11-07
 
 ### 🩹 Fixes
 
@@ -1334,18 +1335,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
-## [0.2.0] - 2025-11-02
+## 0.2.0 — 2025-11-02
 
 Version bump to align packages; no code changes.
 
 ---
 
-## [0.1.1] - 2025-11-02
+## 0.1.1 — 2025-11-02
 
 Version bump to align packages; no code changes.
 
 ---
 
-## [0.1.0] - 2025-11-02
+## 0.1.0 — 2025-11-02
 
 Initial prerelease for the devkit utilities.

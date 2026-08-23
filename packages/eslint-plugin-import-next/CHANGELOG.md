@@ -1,4 +1,9 @@
-## [2.3.6] - 2026-05-03
+# eslint-plugin-import-next
+
+All notable changes to `eslint-plugin-import-next` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 2.4.0
 
@@ -697,11 +702,13 @@
 
 - `no-cycle` rewritten to per-import targeted DFS (replaces upfront full-graph BFS+Tarjan SCC). The `nonCyclicFiles` cache provides O(1) rejection after first visit; only files along the actual DFS path are read. Detection parity with the previous algorithm is preserved.
 
-## 2.3.5 (2026-02-09)
+## 2.3.6 — 2026-05-03
+
+## 2.3.5 — 2026-02-09
 
 This was a version bump only for eslint-plugin-import-next to align it with other projects, there were no code changes.
 
-## [2.3.3] - 2026-02-08
+## 2.3.3 — 2026-02-08
 
 ### Bug Fixes
 
@@ -715,7 +722,7 @@ This was a version bump only for eslint-plugin-import-next to align it with othe
 
 - Ofri Peretz
 
-## [2.3.2] - 2026-02-06
+## 2.3.2 — 2026-02-06
 
 ### Bug Fixes
 
@@ -725,22 +732,15 @@ This was a version bump only for eslint-plugin-import-next to align it with othe
 
 - Ofri Peretz
 
-## [2.3.1] - 2026-02-02
+## 2.3.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-import-next to align it with other projects, there were no code changes.
-
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Documentation
 
 - 📘 Launched new documentation site: [eslint.interlace.tools](https://eslint.interlace.tools/)
 
-## [2.0.0] - 2025-12-30
+## 2.0.0 — 2025-12-30
 
 ### Changed
 
@@ -767,7 +767,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced Documentation**: All rules now feature AEO-compliant documentation with OWASP mappings.
 - **Improved Testing**: Comprehensive test suite covering all rules, including edge cases and TypeScript integration.
 
-## [1.0.0] - 2024-12-05
+## 1.0.0 — 2024-12-05
 
 ### Added
 

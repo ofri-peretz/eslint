@@ -1,0 +1,276 @@
+#!/usr/bin/env tsx
+
+/**
+ * normalize-changelogs.ts — keep every CHANGELOG.md in a shape changesets can
+ * safely prepend to, and re-sort the entries it already mangled.
+ *
+ * ## The bug this fixes
+ *
+ * `@changesets/apply-release-plan`'s `prependFile` decides where to insert a
+ * new version entry with exactly this test, against the whole file:
+ *
+ *     const isVersionHeading = /^#{1,6}\s+\d+\.\d+/.test(fileData);
+ *     if (isVersionHeading) newChangelog = data.trimStart() + fileData;
+ *     else                  newChangelog = <first line> + data + <rest>;
+ *
+ * So a file starting with a bare `## 1.4.1` gets the new entry prepended
+ * before everything (correct), and a file starting with a title line gets it
+ * inserted immediately *after* that first line (also correct).
+ *
+ * Our legacy Keep-a-Changelog files started with `## [1.4.0] - 2026-05-03`.
+ * The `[` sits where `\d` must be, so `isVersionHeading` is **false** — and
+ * changesets treated that version heading as if it were the file's title,
+ * inserting every subsequent release *below* it. The result, across 20 of
+ * 22 packages:
+ *
+ *   - a stale legacy version permanently pinned to line 1, so the top of the
+ *     file advertises the wrong "latest";
+ *   - the `# Changelog` H1 buried mid-file (line 1264 in eslint-devkit);
+ *   - version sections out of order across the legacy/changesets boundary.
+ *
+ * Nothing caught it because nothing asserted the file's shape.
+ *
+ * ## What this does
+ *
+ * 1. Hoists / replaces the H1 with `# <package name>` plus a canonical
+ *    preamble — matching what changesets itself writes for a new file, so
+ *    future prepends land in the right place forever.
+ * 2. Rewrites legacy `## [1.2.3] - 2026-02-08` headings to
+ *    `## 1.2.3 — 2026-02-08`. The version becomes parseable to both
+ *    changesets and the sorter below; the release date, which is real
+ *    information the changesets format drops, is preserved.
+ * 3. Re-sorts every `## <version>` section by semver, descending. Sections
+ *    with an unparseable heading (`## [Unreleased]`) are never dropped — they
+ *    keep their relative order and lead the file, per Keep a Changelog.
+ *
+ * Idempotent: running it twice is a no-op, which is what makes `--check`
+ * meaningful as a CI gate.
+ *
+ * Usage:
+ *   tsx scripts/normalize-changelogs.ts            # rewrite in place
+ *   tsx scripts/normalize-changelogs.ts --check    # exit 1 if any file drifts
+ *
+ * Wired into `changeset:version` (so a release can never re-introduce the
+ * drift) and locked by `scripts/__tests__/changelog-format.test.ts`.
+ */
+
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import process from 'node:process';
+
+const CHECK = process.argv.includes('--check');
+const WORKSPACE_ROOTS = ['packages', 'apps'];
+
+interface Section {
+  /** Heading line, e.g. `## 1.17.0`. */
+  heading: string;
+  /** Body lines, excluding the heading. */
+  body: string[];
+  /** Parsed semver, or null when the heading isn't a version. */
+  version: { major: number; minor: number; patch: number; pre: string } | null;
+  /** Original index, for a stable sort. */
+  order: number;
+}
+
+/**
+ * Parse `1.2.3`, `1.2.3-beta.1`. Returns null for anything else (e.g. an
+ * `## [Unreleased]` heading, which must not be sorted into the version list).
+ */
+function parseVersion(raw: string) {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(raw.trim());
+  if (!match) return null;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    pre: match[4] ?? '',
+  };
+}
+
+/** Descending semver. A prerelease sorts below its own release (SemVer §11). */
+function compareVersions(
+  a: NonNullable<Section['version']>,
+  b: NonNullable<Section['version']>,
+) {
+  if (a.major !== b.major) return b.major - a.major;
+  if (a.minor !== b.minor) return b.minor - a.minor;
+  if (a.patch !== b.patch) return b.patch - a.patch;
+  if (a.pre === b.pre) return 0;
+  if (a.pre === '') return -1; // release before prerelease in a descending list
+  if (b.pre === '') return 1;
+  return b.pre.localeCompare(a.pre);
+}
+
+/**
+ * Normalise one `## …` heading to `## <version>` or `## <version> — <date>`.
+ *
+ * Accepts the three dialects present in this repo:
+ *   `## 1.17.0`                 (changesets)
+ *   `## [1.4.0] - 2026-05-03`   (keep-a-changelog)
+ *   `## 2.1.5 (2026-02-09)`     (release-please era)
+ */
+function normalizeHeading(heading: string): {
+  heading: string;
+  version: Section['version'];
+} {
+  const rest = heading.replace(/^##\s*/, '').trim();
+
+  const dated =
+    /^\[?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\]?\s*[-–—(]\s*(\d{4}-\d{2}-\d{2})\)?\s*$/.exec(
+      rest,
+    );
+  if (dated) {
+    const version = parseVersion(dated[1]);
+    return { heading: `## ${dated[1]} — ${dated[2]}`, version };
+  }
+
+  const bare = /^\[?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\]?\s*$/.exec(rest);
+  if (bare) {
+    const version = parseVersion(bare[1]);
+    return { heading: `## ${bare[1]}`, version };
+  }
+
+  // `## 3.2.0 (Unreleased)` — a version heading carrying a note. The version
+  // still sorts; the note is kept verbatim because dropping it would silently
+  // promote never-shipped content to "released".
+  const annotated =
+    /^\[?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\]?\s*\(([^)]+)\)\s*$/.exec(rest);
+  if (annotated) {
+    const version = parseVersion(annotated[1]);
+    return { heading: `## ${annotated[1]} (${annotated[2]})`, version };
+  }
+
+  return { heading, version: null };
+}
+
+function preambleFor(pkgName: string): string[] {
+  return [
+    `# ${pkgName}`,
+    '',
+    `All notable changes to \`${pkgName}\` are documented here.`,
+    '',
+    'Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);',
+    'the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).',
+    '',
+  ];
+}
+
+/**
+ * Rebuild a CHANGELOG into canonical shape. Pure: takes and returns text, so
+ * the lock test can exercise it on fixtures without touching the repo.
+ */
+export function normalize(content: string, pkgName: string): string {
+  const lines = content.split('\n');
+
+  // Strip every H1 and the boilerplate paragraph trailing a buried one. Those
+  // paragraphs are pure "All notable changes …" preamble in every file here
+  // (verified across all 22 packages); the canonical preamble replaces them.
+  const stripped: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^#\s/.test(lines[i])) {
+      stripped.push(lines[i]);
+      continue;
+    }
+    // Skip the H1 itself, then everything up to the next heading of any level.
+    i++;
+    while (i < lines.length && !/^#{1,6}\s/.test(lines[i])) i++;
+    i--; // the outer loop's i++ re-reads the heading that stopped us
+  }
+
+  // Split into `## …` sections. Anything before the first one is dropped —
+  // after the H1 strip above it is only blank lines and stale preamble.
+  const sections: Section[] = [];
+  let current: Section | null = null;
+  for (const line of stripped) {
+    if (/^##\s/.test(line)) {
+      const { heading, version } = normalizeHeading(line);
+      current = { heading, body: [], version, order: sections.length };
+      sections.push(current);
+    } else if (current) {
+      current.body.push(line);
+    }
+  }
+
+  const versioned = sections
+    .filter((s) => s.version !== null)
+    .sort((a, b) => compareVersions(a.version!, b.version!));
+  const unversioned = sections
+    .filter((s) => s.version === null)
+    .sort((a, b) => a.order - b.order);
+
+  // Unversioned sections (`## [Unreleased]`) lead, per Keep a Changelog. A
+  // release prepends above them; the next normalize run hoists them back.
+  const out = preambleFor(pkgName);
+  for (const section of [...unversioned, ...versioned]) {
+    out.push(section.heading, '');
+    // Collapse leading/trailing blank lines so spacing is uniform regardless
+    // of which generator produced the section.
+    const body = [...section.body];
+    while (body.length > 0 && body[0].trim() === '') body.shift();
+    while (body.length > 0 && body[body.length - 1].trim() === '') body.pop();
+    if (body.length > 0) out.push(...body, '');
+  }
+
+  return (
+    out
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trimEnd() + '\n'
+  );
+}
+
+function workspaceDirs(): string[] {
+  const dirs: string[] = [];
+  for (const root of WORKSPACE_ROOTS) {
+    if (!existsSync(root)) continue;
+    for (const entry of readdirSync(root)) {
+      if (existsSync(join(root, entry, 'package.json')))
+        dirs.push(join(root, entry));
+    }
+  }
+  return dirs.sort();
+}
+
+function main() {
+  const drifted: string[] = [];
+  let checked = 0;
+
+  for (const dir of workspaceDirs()) {
+    const changelogPath = join(dir, 'CHANGELOG.md');
+    if (!existsSync(changelogPath)) continue;
+
+    const pkgName =
+      (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+        .name as string) ?? dir;
+    const before = readFileSync(changelogPath, 'utf8');
+    const after = normalize(before, pkgName);
+    checked++;
+
+    if (before === after) continue;
+    drifted.push(changelogPath);
+    if (!CHECK) writeFileSync(changelogPath, after);
+  }
+
+  if (drifted.length === 0) {
+    console.log(`✅ ${checked} CHANGELOG.md file(s) already canonical.`);
+    return;
+  }
+
+  if (CHECK) {
+    console.error(
+      `❌ ${drifted.length} of ${checked} CHANGELOG.md file(s) are not canonical:`,
+    );
+    for (const file of drifted) console.error(`   ${file}`);
+    console.error('\nRun `npm run changelog:normalize` to fix.');
+    process.exit(1);
+  }
+
+  console.log(
+    `✍️  Normalized ${drifted.length} of ${checked} CHANGELOG.md file(s):`,
+  );
+  for (const file of drifted) console.log(`   ${file}`);
+}
+
+// Guarded so the lock test can import `normalize` without running the sweep.
+if (process.argv[1] && process.argv[1].endsWith('normalize-changelogs.ts'))
+  main();

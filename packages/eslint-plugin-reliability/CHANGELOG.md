@@ -1,4 +1,9 @@
-## [3.1.3] - 2026-05-03
+# eslint-plugin-reliability
+
+All notable changes to `eslint-plugin-reliability` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 4.0.1
 
@@ -393,15 +398,17 @@
 - `no-missing-null-checks`: exempt provably-non-null identifiers (built-in singletons like `Math`, `JSON`, `console`, error classes; catch-clause params; constructor results; top-level imports) from the null-check requirement. Eliminates a large class of false positives without weakening real coverage.
 - `no-unhandled-promise`: refined detection (see source diff).
 
-## 3.1.2 (2026-02-09)
+## 3.1.3 — 2026-05-03
+
+## 3.1.2 — 2026-02-09
 
 This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
 
-## [3.1.0] - 2026-02-08
+## 3.1.0 — 2026-02-08
 
 This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
 
-## [3.0.4] - 2026-02-08
+## 3.0.4 — 2026-02-08
 
 ### Bug Fixes
 
@@ -415,7 +422,7 @@ This was a version bump only for eslint-plugin-reliability to align it with othe
 
 - Ofri Peretz
 
-## [3.0.3] - 2026-02-06
+## 3.0.3 — 2026-02-06
 
 ### Bug Fixes
 
@@ -425,31 +432,24 @@ This was a version bump only for eslint-plugin-reliability to align it with othe
 
 - Ofri Peretz
 
-## [3.0.2] - 2026-02-02
+## 3.0.2 — 2026-02-02
 
 This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
-
-# Changelog
-
-All notable changes to `eslint-plugin-reliability` will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Documentation
 
 - 📘 Launched new documentation site: [eslint.interlace.tools](https://eslint.interlace.tools/)
 - 📝 Achieved 100% documentation parity (both .md and .mdx files)
 
-## [3.0.1] - 2026-02-02
+## 3.0.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
 
-## [3.0.0] - 2026-02-02
+## 3.0.0 — 2026-02-02
 
 This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
 
-## [1.0.0] - 2026-01-26
+## 1.0.0 — 2026-01-26
 
 ### Added
 

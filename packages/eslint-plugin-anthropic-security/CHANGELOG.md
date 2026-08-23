@@ -1,4 +1,9 @@
-# Changelog — eslint-plugin-anthropic-security
+# eslint-plugin-anthropic-security
+
+All notable changes to `eslint-plugin-anthropic-security` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 0.3.1
 
@@ -229,7 +234,7 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://www.conventionalcommits.org) for commit guidelines.
 
-## 0.1.0 (2026-08-05)
+## 0.1.0 — 2026-08-05
 
 ### ✨ Features
 

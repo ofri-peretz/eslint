@@ -162,9 +162,26 @@ pre-push:
       glob: '.github/**'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent lint:workflows
     changelog:
-      # A changeset is only required when publishable source moves.
-      glob: '{.changeset/**,packages/**}'
-      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent changeset:status
+      # A changeset is only required when publishable source moves — which is
+      # what `check-changeset-coverage.ts` asks. Raw `changeset status` asks
+      # whether *any* file under a package changed, so it demanded a changeset
+      # for editing a CHANGELOG, which when consumed edits the CHANGELOG again.
+      # It also disagreed with the CI advisory, which had the right rule
+      # inlined in YAML; both now call the same script.
+      glob: '{.changeset/**,packages/**,apps/**}'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent changeset:coverage
+    changeset-quality:
+      # Blocks a breaking change to a published package that ships without an
+      # upgrade path, plus placeholder summaries. npm has no undo, and this
+      # text is the whole of what a consumer gets — see scripts/lint-changesets.ts.
+      glob: '.changeset/*.md'
+      run: perl -e 'alarm 60; exec @ARGV' -- npm run --silent changeset:lint
+    changelog-shape:
+      # Every CHANGELOG.md must open with an H1, or changesets files the next
+      # release *under* whatever heading is on line 1 instead of above it —
+      # see scripts/normalize-changelogs.ts for the failure this locks out.
+      glob: '{packages/*/CHANGELOG.md,apps/*/CHANGELOG.md}'
+      run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent changelog:check
     shim-drift:
       # Shims are generated from rule sources and the manifest.
       glob: '{packages/eslint-plugin-*/src/**,tools/oxlint-plugins/**,.agent/plugin-rule-manifest.json}'

@@ -1,4 +1,9 @@
-## [2.0.4] - 2026-02-08
+# eslint-plugin-modularity
+
+All notable changes to `eslint-plugin-modularity` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 2.2.0
 
@@ -368,7 +373,9 @@
 
 - Ofri Peretz
 
-## [2.0.3] - 2026-02-06
+## 2.0.4 — 2026-02-08
+
+## 2.0.3 — 2026-02-06
 
 ### Bug Fixes
 
@@ -378,31 +385,24 @@
 
 - Ofri Peretz
 
-## [2.0.2] - 2026-02-02
+## 2.0.2 — 2026-02-02
 
 This was a version bump only for eslint-plugin-modularity to align it with other projects, there were no code changes.
-
-# Changelog
-
-All notable changes to `eslint-plugin-modularity` will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Documentation
 
 - 📘 Launched new documentation site: [eslint.interlace.tools](https://eslint.interlace.tools/)
 - 📝 Achieved 100% documentation parity (both .md and .mdx files)
 
-## [2.0.1] - 2026-02-02
+## 2.0.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-modularity to align it with other projects, there were no code changes.
 
-## [2.0.0] - 2026-02-02
+## 2.0.0 — 2026-02-02
 
 This was a version bump only for eslint-plugin-modularity to align it with other projects, there were no code changes.
 
-## [1.0.0] - 2026-01-26
+## 1.0.0 — 2026-01-26
 
 ### Added
 
