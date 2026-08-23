@@ -659,6 +659,10 @@ describe('a flag is not a credential', () => {
         code: "localStorage.setItem('flag', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.abc');",
         errors: 1,
       },
+      // A `null` literal is neither boolean, number, nor string, so it falls past
+      // the exemption and the key heuristic decides. Conservative on purpose: the
+      // exemption only covers values it can positively identify as harmless.
+      { code: "localStorage.setItem('auth:token', null);", errors: 1 },
     ],
   });
 });
