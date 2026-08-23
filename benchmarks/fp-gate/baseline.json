@@ -1,5 +1,7 @@
 {
   "knownFalsePositives": [
+    "constant-host-request-is-not-ssrf.js:node-security/no-ssrf",
+    "idempotent-mkdir-is-not-toctou.js:node-security/no-toctou-vulnerability",
     "intentionally-public-endpoints.js:express-security/no-exposed-debug-endpoints",
     "intentionally-public-endpoints.js:secure-coding/no-missing-authentication",
     "math-random-not-crypto.js:node-security/no-math-random-crypto",
