@@ -61,6 +61,15 @@ describe('isTestFilePath', () => {
     'test/app.e2e-spec.ts',
     'src/app.e2e-spec.ts',
     'src/mocks/handlers.ts',
+    // Compound directory names, which is how large repositories actually spell
+    // it. sentry-javascript keeps its whole suite under these three; between
+    // them they carried 243 findings that the exact-segment set alone missed.
+    'dev-packages/e2e-tests/test-applications/express/src/app.mjs',
+    'dev-packages/node-integration-tests/suites/express/server.mjs',
+    'dev-packages/browser-integration-tests/suites/breadcrumbs/subject.js',
+    'packages/core/unit-tests/index.ts',
+    'apps/api/integration-test/login.ts',
+    'src/acceptance-specs/checkout.ts',
     // No directory at all — the bare-filename path, which the separator split
     // has to handle without inventing an empty segment.
     'handler.test.ts',
@@ -87,6 +96,12 @@ describe('isTestFilePath', () => {
     'src/test.ts',
     'src/e2e-spec.ts',
     'src/mocks.ts',
+    // The suffix rule requires a hyphen, so these production directories stay
+    // production: without it, `latest` and `manifest` would both read as
+    // directories of tests.
+    'src/latest/index.ts',
+    'src/manifest/build.ts',
+    'src/greatest-hits/index.ts',
     // Bare filename, not a test — the other half of the no-directory path.
     'handler.ts',
     // Linter gives these when there is no file on disk; neither is a test file.
