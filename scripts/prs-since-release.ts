@@ -40,11 +40,33 @@ if (!fs.existsSync(pkgPath)) {
 }
 const name = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name as string;
 
+/**
+ * Tags drop the scope. release.yml strips everything up to the last slash of the
+ * package name before joining it to the version, so `@interlace/eslint-devkit` is
+ * tagged `eslint-devkit@1.9.0`. Searching the full package name finds nothing for
+ * every scoped package, and — because a missing
+ * previous tag is legitimately "first release" — it would have reported the entire
+ * history as the range rather than erroring.
+ */
+const tagName = name.replace(/^@[^/]+\//, '');
+
+/**
+ * Fails loudly.
+ *
+ * The first version swallowed every git error into an empty string, which meant a
+ * broken `git log` produced an empty PR list and exited 0 — release notes that
+ * silently omit the thing they exist to show. That is the same failure shape as a
+ * lint harness that reports zero findings because it was wired to zero rules: the
+ * wrong answer is indistinguishable from the good one.
+ */
 const git = (...args: string[]): string => {
   try {
     return execFileSync('git', args, { encoding: 'utf8' }).trim();
-  } catch {
-    return '';
+  } catch (error) {
+    console.error(
+      `git ${args.join(' ')} failed: ${String(error).slice(0, 200)}`,
+    );
+    process.exit(1);
   }
 };
 
@@ -55,10 +77,10 @@ const git = (...args: string[]): string => {
  * above 5.1.9 — a plain sort puts 5.1.9 last and would silently truncate the
  * range to a single release.
  */
-const previous = git('tag', '--list', `${name}@*`, '--sort=-v:refname')
+const previous = git('tag', '--list', `${tagName}@*`, '--sort=-v:refname')
   .split('\n')
   .filter(Boolean)
-  .find((t) => t !== `${name}@${version}`);
+  .find((t) => t !== `${tagName}@${version}`);
 
 // No previous tag means this is the first release; the whole history is "since".
 const range = previous ? `${previous}..HEAD` : 'HEAD';
