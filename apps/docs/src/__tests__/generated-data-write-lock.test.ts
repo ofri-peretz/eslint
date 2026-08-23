@@ -25,7 +25,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, readFileSync, statSync, writeFileSync, readdirSync } from 'node:fs';
+import {
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+  readdirSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, basename } from 'node:path';
 import {
@@ -37,18 +43,23 @@ import {
 const SCRIPTS_DIR = resolve(__dirname, '../../scripts');
 
 describe('writeJsonIfChanged', () => {
-  const tmpFile = () => join(mkdtempSync(join(tmpdir(), 'data-write-lock-')), 'out.json');
+  const tmpFile = () =>
+    join(mkdtempSync(join(tmpdir(), 'data-write-lock-')), 'out.json');
 
   it('writes when the file does not exist yet', () => {
     const file = tmpFile();
     expect(writeJsonIfChanged(file, { totalRules: 501 })).toBe(true);
-    expect(JSON.parse(readFileSync(file, 'utf-8'))).toEqual({ totalRules: 501 });
+    expect(JSON.parse(readFileSync(file, 'utf-8'))).toEqual({
+      totalRules: 501,
+    });
   });
 
   it('writes when content changed', () => {
     const file = tmpFile();
     writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-01' });
-    expect(writeJsonIfChanged(file, { totalRules: 502, generatedAt: '2026-08-01' })).toBe(true);
+    expect(
+      writeJsonIfChanged(file, { totalRules: 502, generatedAt: '2026-08-01' }),
+    ).toBe(true);
     expect(JSON.parse(readFileSync(file, 'utf-8')).totalRules).toBe(502);
   });
 
@@ -61,7 +72,9 @@ describe('writeJsonIfChanged', () => {
     writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-01' });
     const before = statSync(file).mtimeMs;
 
-    expect(writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-04' })).toBe(false);
+    expect(
+      writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-04' }),
+    ).toBe(false);
     expect(statSync(file).mtimeMs).toBe(before);
   });
 
@@ -70,7 +83,9 @@ describe('writeJsonIfChanged', () => {
     writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-01' });
     writeJsonIfChanged(file, { totalRules: 501, generatedAt: '2026-08-04' });
 
-    expect(JSON.parse(readFileSync(file, 'utf-8')).generatedAt).toBe('2026-08-01');
+    expect(JSON.parse(readFileSync(file, 'utf-8')).generatedAt).toBe(
+      '2026-08-01',
+    );
   });
 
   it('ignores timestamps nested inside entries (the cached-tweets regression)', () => {
@@ -79,21 +94,33 @@ describe('writeJsonIfChanged', () => {
     // the cache even when Twitter returned byte-identical tweets.
     const file = tmpFile();
     const cache = (cachedAt: string) => ({
-      tweets: { '2006790779537121585': { text: 'hi', user: { name: 'Ofri' }, _cachedAt: cachedAt } },
+      tweets: {
+        '2006790779537121585': {
+          text: 'hi',
+          user: { name: 'Ofri' },
+          _cachedAt: cachedAt,
+        },
+      },
       _lastUpdated: cachedAt,
     });
 
     writeJsonIfChanged(file, cache('2026-07-31T02:29:36.206Z'));
     const before = statSync(file).mtimeMs;
 
-    expect(writeJsonIfChanged(file, cache('2026-08-09T09:00:00.000Z'))).toBe(false);
+    expect(writeJsonIfChanged(file, cache('2026-08-09T09:00:00.000Z'))).toBe(
+      false,
+    );
     expect(statSync(file).mtimeMs).toBe(before);
   });
 
   it('still writes when a nested entry actually changed', () => {
     const file = tmpFile();
     writeJsonIfChanged(file, { tweets: { a: { text: 'hi', _cachedAt: 'x' } } });
-    expect(writeJsonIfChanged(file, { tweets: { a: { text: 'bye', _cachedAt: 'x' } } })).toBe(true);
+    expect(
+      writeJsonIfChanged(file, {
+        tweets: { a: { text: 'bye', _cachedAt: 'x' } },
+      }),
+    ).toBe(true);
   });
 
   it('writes over an unparseable file instead of throwing', () => {
@@ -109,7 +136,11 @@ describe('writeJsonIfChanged', () => {
         meta: { generatedAt: 'now', source: 'local-lcov' },
         total: 1,
       }),
-    ).toEqual({ rules: [{ name: 'no-eval' }], meta: { source: 'local-lcov' }, total: 1 });
+    ).toEqual({
+      rules: [{ name: 'no-eval' }],
+      meta: { source: 'local-lcov' },
+      total: 1,
+    });
   });
 
   it('covers every timestamp key the generators actually emit', () => {
@@ -119,7 +150,9 @@ describe('writeJsonIfChanged', () => {
     // and the assignment form (`cache._lastUpdated = new Date()…`), which
     // sync-tweet-cache and sync-devto-cache use.
     const emitted = new Set<string>();
-    for (const file of readdirSync(SCRIPTS_DIR).filter((f) => f.endsWith('.ts'))) {
+    for (const file of readdirSync(SCRIPTS_DIR).filter((f) =>
+      f.endsWith('.ts'),
+    )) {
       const source = readFileSync(join(SCRIPTS_DIR, file), 'utf-8');
       // Only scripts that write committed JSON can cause the churn this locks
       // against. A script that renders markdown to stdout (lighthouse-report)
@@ -135,7 +168,9 @@ describe('writeJsonIfChanged', () => {
     // that matches nothing and this assertion would pass on an empty set.
     expect(emitted).toContain('generatedAt'); // object-literal form
     expect(emitted).toContain('_lastUpdated'); // assignment form
-    expect([...emitted].filter((key) => !BOOKKEEPING_KEYS.includes(key))).toEqual([]);
+    expect(
+      [...emitted].filter((key) => !BOOKKEEPING_KEYS.includes(key)),
+    ).toEqual([]);
   });
 });
 
@@ -151,7 +186,8 @@ describe('committed src/data files match what the helper writes', () => {
   const walk = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
       const full = join(dir, entry.name);
-      if (entry.isDirectory()) return entry.name === 'schemas' ? [] : walk(full);
+      if (entry.isDirectory())
+        return entry.name === 'schemas' ? [] : walk(full);
       return entry.name.endsWith('.json') ? [full] : [];
     });
   const files = walk(DATA_DIR);
@@ -173,11 +209,15 @@ describe('src/data generators route every write through writeJsonIfChanged', () 
   /** Scripts that resolve a path inside `src/data` — i.e. the generators. */
   const generators = readdirSync(SCRIPTS_DIR)
     .filter((file) => file.endsWith('.ts') && !file.endsWith('.test.ts'))
-    .map((file) => ({ file, source: readFileSync(join(SCRIPTS_DIR, file), 'utf-8') }))
+    .map((file) => ({
+      file,
+      source: readFileSync(join(SCRIPTS_DIR, file), 'utf-8'),
+    }))
     .filter(({ source }) => source.includes('src/data'));
 
   it('found the generators (guards against an empty scan passing vacuously)', () => {
     expect(generators.map((g) => basename(g.file)).sort()).toEqual([
+      'sync-changelog.ts',
       'sync-devto-cache.ts',
       'sync-plugin-stats.ts',
       'sync-readme-rules.ts',
@@ -187,13 +227,19 @@ describe('src/data generators route every write through writeJsonIfChanged', () 
     ]);
   });
 
-  it.each(generators.map((g) => g.file))('%s has no bare writeFileSync call', (file) => {
-    const source = readFileSync(join(SCRIPTS_DIR, file), 'utf-8');
-    expect(source).not.toMatch(/\b(?:fs\.)?writeFile(?:Sync)?\s*\(/);
-  });
+  it.each(generators.map((g) => g.file))(
+    '%s has no bare writeFileSync call',
+    (file) => {
+      const source = readFileSync(join(SCRIPTS_DIR, file), 'utf-8');
+      expect(source).not.toMatch(/\b(?:fs\.)?writeFile(?:Sync)?\s*\(/);
+    },
+  );
 
-  it.each(generators.map((g) => g.file))('%s imports writeJsonIfChanged', (file) => {
-    const source = readFileSync(join(SCRIPTS_DIR, file), 'utf-8');
-    expect(source).toContain('writeJsonIfChanged');
-  });
+  it.each(generators.map((g) => g.file))(
+    '%s imports writeJsonIfChanged',
+    (file) => {
+      const source = readFileSync(join(SCRIPTS_DIR, file), 'utf-8');
+      expect(source).toContain('writeJsonIfChanged');
+    },
+  );
 });
