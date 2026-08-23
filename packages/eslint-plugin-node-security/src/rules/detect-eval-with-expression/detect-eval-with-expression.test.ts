@@ -36,61 +36,69 @@ describe('detect-eval-with-expression', () => {
   });
 
   describe('Dangerous eval() Calls', () => {
-    ruleTester.run('invalid - eval with expressions', detectEvalWithExpression, {
-      valid: [],
-      invalid: [
-        {
-          code: 'eval(userInput);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: 'eval(`code: ${value}`);',
-          errors: [{ messageId: 'useTemplateLiteral' }],
-        },
-        {
-          code: 'const result = eval(expression);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: `
+    ruleTester.run(
+      'invalid - eval with expressions',
+      detectEvalWithExpression,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'eval(userInput);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: 'eval(`code: ${value}`);',
+            errors: [{ messageId: 'useTemplateLiteral' }],
+          },
+          {
+            code: 'const result = eval(expression);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: `
             function process(code) {
               return eval(code);
             }
           `,
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-      ],
-    });
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('eval() in Different Contexts', () => {
-    ruleTester.run('invalid - eval in various contexts', detectEvalWithExpression, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const runner = (code) => eval(code);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: `
+    ruleTester.run(
+      'invalid - eval in various contexts',
+      detectEvalWithExpression,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const runner = (code) => eval(code);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: `
             if (condition) {
               eval(code);
             }
           `,
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: `
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: `
             try {
               eval(code);
             } catch (e) {
               console.error(e);
             }
           `,
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-      ],
-    });
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Multiple eval() Calls', () => {
@@ -132,9 +140,7 @@ describe('detect-eval-with-expression', () => {
 
   describe('Edge Cases', () => {
     ruleTester.run('edge cases', detectEvalWithExpression, {
-      valid: [
-        'const evalString = "eval(code)"; console.log(evalString);',
-      ],
+      valid: ['const evalString = "eval(code)"; console.log(evalString);'],
       invalid: [
         {
           code: '(eval)(code);',
@@ -187,19 +193,23 @@ describe('detect-eval-with-expression', () => {
   describe('Uncovered Lines', () => {
     // Line 219: Default case in generateRefactoringSteps
     // This is triggered when the pattern doesn't match 'json', 'math', 'object', or 'template'
-    ruleTester.run('line 219 - default case in generateRefactoringSteps', detectEvalWithExpression, {
-      valid: [],
-      invalid: [
-        {
-          code: 'eval("someOtherPattern" + value);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: 'eval("customPattern" + data);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'line 219 - default case in generateRefactoringSteps',
+      detectEvalWithExpression,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'eval("someOtherPattern" + value);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: 'eval("customPattern" + data);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+        ],
+      },
+    );
 
     // Note: Line 327 default case is not reachable with current pattern definitions
     // All patterns have known categories ('json', 'math', 'template', 'object')
@@ -210,7 +220,7 @@ describe('detect-eval-with-expression', () => {
       valid: [],
       invalid: [
         {
-          code: 'eval(\'Math.sin(\' + angle + \')\');',
+          code: "eval('Math.sin(' + angle + ')');",
           errors: [{ messageId: 'strategyRefactor' }],
         },
         {
@@ -257,7 +267,7 @@ describe('detect-eval-with-expression', () => {
           options: [{ allowLiteralStrings: true }],
         },
         {
-          code: 'eval(\'another literal\');',
+          code: "eval('another literal');",
           options: [{ allowLiteralStrings: true }],
         },
       ],
@@ -307,19 +317,23 @@ describe('detect-eval-with-expression', () => {
   });
 
   describe('Edge Cases - Literal String (line 261)', () => {
-    ruleTester.run('edge cases - literal string eval', detectEvalWithExpression, {
-      valid: [
-        // eval with literal string is allowed by default (line 261)
-        'eval("literal string");',
-        "eval('literal string');",
-      ],
-      invalid: [
-        {
-          code: 'eval(variable);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'edge cases - literal string eval',
+      detectEvalWithExpression,
+      {
+        valid: [
+          // eval with literal string is allowed by default (line 261)
+          'eval("literal string");',
+          "eval('literal string');",
+        ],
+        invalid: [
+          {
+            code: 'eval(variable);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Edge Cases - No Arguments (line 239)', () => {
@@ -335,78 +349,90 @@ describe('detect-eval-with-expression', () => {
   });
 
   describe('Function Constructor - CallExpression (lines 298-300)', () => {
-    ruleTester.run('function constructor in call expression', detectEvalWithExpression, {
-      valid: [],
-      invalid: [
-        // Lines 298-300: Function constructor detection in CallExpression context
-        // This covers the case where Function is called as a function, not as a constructor
-        {
-          code: 'Function(code);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: 'Function("arg1", "arg2", "return arg1 + arg2");',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        // LOCK-TEST CORRECTION. These two asserted TWO diagnostics for one
-        // site — "CallExpression check" plus "NewExpression check" — which
-        // pinned a duplicate report as correct behaviour. A user reading the
-        // output saw the same finding twice at the same location, and a
-        // baseline counting findings counted it twice. The NewExpression
-        // visitor already covers every `new Function(...)`, invoked or not, so
-        // the CallExpression branch only ever duplicated it and is gone.
-        {
-          code: '(new Function)(code);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: '(new Function)("arg1", "return arg1 * 2");',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: 'new Function(code);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: 'new Function("arg1", "arg2", "return arg1 + arg2");',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'function constructor in call expression',
+      detectEvalWithExpression,
+      {
+        valid: [],
+        invalid: [
+          // Lines 298-300: Function constructor detection in CallExpression context
+          // This covers the case where Function is called as a function, not as a constructor
+          {
+            code: 'Function(code);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: 'Function("arg1", "arg2", "return arg1 + arg2");',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          // LOCK-TEST CORRECTION. These two asserted TWO diagnostics for one
+          // site — "CallExpression check" plus "NewExpression check" — which
+          // pinned a duplicate report as correct behaviour. A user reading the
+          // output saw the same finding twice at the same location, and a
+          // baseline counting findings counted it twice. The NewExpression
+          // visitor already covers every `new Function(...)`, invoked or not, so
+          // the CallExpression branch only ever duplicated it and is gone.
+          {
+            code: '(new Function)(code);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: '(new Function)("arg1", "return arg1 * 2");',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: 'new Function(code);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: 'new Function("arg1", "arg2", "return arg1 + arg2");',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Function Constructor - NewExpression (lines 324-328)', () => {
-    ruleTester.run('function constructor in new expression', detectEvalWithExpression, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const fn = new Function(userCode);',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: 'const fn = new Function("x", "y", "return x + y");',
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'function constructor in new expression',
+      detectEvalWithExpression,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const fn = new Function(userCode);',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: 'const fn = new Function("x", "y", "return x + y");',
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Additional Eval Functions', () => {
-    ruleTester.run('additional eval functions option', detectEvalWithExpression, {
-      valid: [],
-      invalid: [
-        {
-          code: 'customEval(userCode);',
-          options: [{ additionalEvalFunctions: ['customEval'] }],
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-        {
-          code: 'myEval(code);',
-          options: [{ additionalEvalFunctions: ['myEval', 'anotherEval'] }],
-          errors: [{ messageId: 'strategyRefactor' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'additional eval functions option',
+      detectEvalWithExpression,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'customEval(userCode);',
+            options: [{ additionalEvalFunctions: ['customEval'] }],
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+          {
+            code: 'myEval(code);',
+            options: [{ additionalEvalFunctions: ['myEval', 'anotherEval'] }],
+            errors: [{ messageId: 'strategyRefactor' }],
+          },
+        ],
+      },
+    );
   });
 });
 
@@ -767,4 +793,47 @@ describe('vm module code execution (CWE-94)', () => {
       ],
     });
   });
+});
+
+describe('the binding is the sink, not the name', () => {
+  /**
+   * Provenance: cdklabs/cdk-enterprise-iac
+   * src/constructs/ecsIsoServiceAutoscaler/ecsIsoServiceAutoscaler.ts:132 — 30
+   * findings in 6 KLOC, and the shape every AWS CDK stack uses to declare a lambda.
+   */
+  ruleTester.run(
+    'valid - Function imported from a library',
+    detectEvalWithExpression,
+    {
+      valid: [
+        `import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
+       new Function(this, id, { code: Code.fromAsset(p), runtime: Runtime.PYTHON_3_11 });`,
+        `const { Function } = require('aws-cdk-lib/aws-lambda');
+       new Function(this, id, {});`,
+        // A local of the same name is not the global either.
+        `function Function(a, b) { return a + b; }
+       Function(1, 2);`,
+      ],
+      invalid: [],
+    },
+  );
+
+  /** The real global still reports, and so does an alias of it. */
+  ruleTester.run(
+    'invalid - the actual Function constructor',
+    detectEvalWithExpression,
+    {
+      valid: [],
+      invalid: [
+        {
+          code: 'const fn = new Function("a", "return a + " + userInput);',
+          errors: 1,
+        },
+        {
+          code: 'const F = globalThis.Function; F("return " + userInput);',
+          errors: 1,
+        },
+      ],
+    },
+  );
 });
