@@ -1,4 +1,6 @@
 import { source } from '@/lib/source';
+import { TocNav } from '@/components/docs/toc-nav';
+import { TOCProvider, TOCPopover } from 'fumadocs-ui/layouts/docs/page/slots/toc';
 import { canonicalDocsUrl } from '@/lib/site-config';
 import {
   DocsBody,
@@ -47,8 +49,10 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       tableOfContent={{
         style: 'clerk',
         enabled: true,
-        
       }}
+      // The TOC goes inside a navigation landmark. fumadocs renders it as a
+      // bare div, and since 16.14.5 nothing else covers it — see TocNav.
+      slots={{ toc: { provider: TOCProvider, main: TocNav, popover: TOCPopover } }}
     >
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
