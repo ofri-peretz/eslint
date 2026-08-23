@@ -28,7 +28,7 @@ Detects improper type validation in user input handling. This rule is part of [`
 | **CWE Reference** | [CWE-1287](https://cwe.mitre.org/data/definitions/1287.html) (Improper Validation of Specified Type of Input) |
 | **Severity**      | Medium (CVSS 5.3)                                                                                             |
 | **Auto-Fix**      | 💡 Suggestions available                                                                                      |
-| **Category**   | Security |
+| **Category**      | Security                                                                                                      |
 
 ## Vulnerability and Risk
 
@@ -125,12 +125,13 @@ if (result.success) {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInstanceofSameRealm` | `boolean` | `true` | Allow instanceof for same-realm objects |
-| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as type validators |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| Option                     | Type       | Default | Description                                                                                                                             |
+| -------------------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowInstanceofSameRealm` | `boolean`  | `true`  | Allow instanceof for same-realm objects                                                                                                 |
+| `trustedSanitizers`        | `string[]` | `[]`    | Additional function names to consider as type validators                                                                                |
+| `trustedAnnotations`       | `string[]` | `[]`    | Additional JSDoc annotations to consider as safe markers                                                                                |
+| `strictMode`               | `boolean`  | `false` | Disable all false positive detection (strict mode)                                                                                      |
+| `checkLooseEquality`       | `boolean`  | `true`  | Report loose `==`/`!=` between operands of unprovable type. Set `false` to keep only the structural typeof/instanceof/constructor arms. |
 
 > `userInputVariables` was removed. It was a list of substrings matched against
 > identifier spellings, and it decided the verdict for every message this rule emits:
@@ -138,12 +139,12 @@ if (result.success) {
 > a real finding off. Nothing replaced it — the hazards this rule reports are
 > properties of the operator, not of where the value came from.
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInstanceofSameRealm` | `boolean` | `true` | Allow instanceof for same-realm objects |
-| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as type validators |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| Option                     | Type       | Default | Description                                              |
+| -------------------------- | ---------- | ------- | -------------------------------------------------------- |
+| `allowInstanceofSameRealm` | `boolean`  | `true`  | Allow instanceof for same-realm objects                  |
+| `trustedSanitizers`        | `string[]` | `[]`    | Additional function names to consider as type validators |
+| `trustedAnnotations`       | `string[]` | `[]`    | Additional JSDoc annotations to consider as safe markers |
+| `strictMode`               | `boolean`  | `false` | Disable all false positive detection (strict mode)       |
 
 ## Error Message Format
 

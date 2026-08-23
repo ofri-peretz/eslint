@@ -414,6 +414,17 @@ export function isPublishableKeyValue(value: string): boolean {
   if (/^https?:\/\/[A-Za-z0-9]+@[A-Za-z0-9.-]+(?::\d+)?\/\d+$/.test(value)) {
     return true;
   }
+  // An EVM account address: `0x` + exactly 40 hex characters. It is the public
+  // half by construction — every transaction that account has ever sent
+  // publishes it, and block explorers index it. Reported at CVSS 9.8 as a
+  // "Hard-coded Secret key" on shardeum/json-rpc-server `src/api.ts:1770`,
+  // where `0x2041B9176A4839dAf7A4DcC6a97BA023953d9ad9` is the default `from`
+  // used to simulate `eth_call`.
+  //
+  // The length is the whole guard, so it is exact rather than `{40,}`: an EVM
+  // PRIVATE key is `0x` + 64 hex, and a transaction hash is 64 too. Neither is
+  // exempted here.
+  if (/^0x[A-Fa-f0-9]{40}$/.test(value)) return true;
   return false;
 }
 
