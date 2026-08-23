@@ -86,6 +86,21 @@ changelog, a tag, or an analytics annotation. Private workspaces are versioned b
 4. **App deploys** — `auto-deploy.yml` / `deploy-docs.yml` ship affected apps, tag the deployed
    version (`docs@1.2.0`), and annotate the deploy in PostHog.
 
+## What a reader gets
+
+Both release surfaces lead with the same verdict, derived from the entries rather than asserted
+separately — so they can never disagree with the list underneath them:
+
+- **Per-package GitHub Release** (`scripts/extract-changelog.ts`) — the version's entries, then
+  either "✅ Safe to upgrade" or "⚠️ Breaking release", then the exact `npm install` line. Private
+  workspaces get the verdict but no install line.
+- **Rollup GitHub Release** (`scripts/release-notes.ts`) — the verdict, the workspace counts, then
+  every change grouped by kind with breaking first, then the full version table.
+
+The verdict comes from `### Major Changes` and the 💥 badge, both written by the release machinery
+from the changeset's declared bump. When a version cannot be found at all, the fallback stub carries
+**no** verdict — guessing one and presenting it as fact is worse than saying nothing.
+
 ## Prereleases and snapshots
 
 ```bash

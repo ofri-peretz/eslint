@@ -68,7 +68,7 @@ const KIND_SECTIONS: ReadonlyArray<{
   { key: 'deps', heading: '### 🔗 Dependencies', match: /🔗/ },
 ];
 
-interface Workspace {
+export interface Workspace {
   dir: string;
   name: string;
   version: string;
@@ -77,7 +77,7 @@ interface Workspace {
   isPrivate: boolean;
 }
 
-interface Entry {
+export interface Entry {
   kind: string;
   /** The bullet's prose, badge and trailer stripped. */
   title: string;
@@ -155,7 +155,10 @@ function listWorkspaces(baseRef: string): Workspace[] {
  * titles only — the full body stays in the per-package CHANGELOG, one click
  * away, which is what keeps a 19-package rollup readable.
  */
-function bulletsForVersion(changelog: string, version: string): string[] {
+export function bulletsForVersion(
+  changelog: string,
+  version: string,
+): string[] {
   const lines = changelog.split('\n');
   const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const start = lines.findIndex((l) =>
@@ -184,14 +187,56 @@ function bulletsForVersion(changelog: string, version: string): string[] {
  * `other` and keep their text verbatim rather than being dropped, so the
  * rollup still works across the format boundary.
  */
-function parseBullet(bullet: string): {
+export function parseBullet(bullet: string): {
   kind: string;
   title: string;
   trailer: string;
 } {
   const badged = /^-\s+\*\*([^*]+)\*\*\s+—\s+(.*)$/.exec(bullet);
-  const badge = badged ? badged[1] : '';
-  const rest = badged ? badged[2] : bullet.replace(/^-\s+/, '');
+  let badge = badged ? badged[1] : '';
+  let rest = badged ? badged[2] : bullet.replace(/^-\s+/, '');
+  let legacyTrailer = '';
+
+  // Entries written before the custom formatter landed carry
+  // `@changesets/changelog-github`'s prefix: roughly 120 characters of
+  // `[#651](…) [\`sha\`](…) Thanks [@user](…)! - ` ahead of the first word of
+  // prose. Left alone they render into the rollup verbatim, which makes every
+  // release spanning the format boundary — starting with the next one —
+  // unreadable. Peel the prefix, keep the PR link as the trailer, and let the
+  // prose be classified like any other entry.
+  if (!badged) {
+    const legacy =
+      /^(\[#\d+\]\([^)]*\))?\s*(\[`[^`]+`\]\([^)]*\))?\s*(?:Thanks\s+\[@[^\]]+\]\([^)]*\)!)?\s*-\s+(.*)$/.exec(
+        rest,
+      );
+    if (legacy && legacy[3] && (legacy[1] || legacy[2])) {
+      legacyTrailer = legacy[1] ?? legacy[2] ?? '';
+      rest = legacy[3].trim();
+    }
+  }
+
+  // A legacy entry has no badge, but its prose often still opens with a
+  // conventional-commit prefix. Reading it recovers the right section instead
+  // of dumping years of history into "Other changes".
+  if (!badge) {
+    const prefix = /^([a-z]+)(?:\([^)]*\))?(!)?:\s/.exec(rest);
+    if (prefix) {
+      badge = prefix[2]
+        ? '💥'
+        : ({
+            feat: '✨',
+            fix: '🐛',
+            perf: '⚡',
+            security: '🔒',
+            docs: '📚',
+            refactor: '🧹',
+            chore: '🧹',
+            build: '🏗',
+            ci: '🔧',
+            test: '🧪',
+          }[prefix[1]] ?? '');
+    }
+  }
 
   const kind = KIND_SECTIONS.find((s) => s.match.test(badge))?.key ?? 'other';
 
@@ -200,7 +245,7 @@ function parseBullet(bullet: string): {
   // must keep its parenthetical.
   const trailerMatch =
     /\s\(((?:\[[^\]]*\]\([^)]*\)|,\s*|thanks\s+)+)\)\s*$/.exec(rest);
-  const trailer = trailerMatch ? trailerMatch[1] : '';
+  const trailer = trailerMatch ? trailerMatch[1] : legacyTrailer;
   const title = trailerMatch
     ? rest.slice(0, trailerMatch.index).trim()
     : rest.trim();
@@ -269,7 +314,7 @@ function packageTag(entry: Entry, releasedCount: number): string {
     .join(' ')} +${short.length - 3} more`;
 }
 
-function render(
+export function render(
   released: Workspace[],
   entries: Entry[],
   baseRef: string,
@@ -286,17 +331,31 @@ function render(
   const breaking = entries.filter((e) => e.kind === 'breaking').length;
 
   out.push('## What shipped', '');
+
+  // The upgrade verdict leads, because it is the decision the reader came to
+  // make. Everything below it is detail they only need once they know whether
+  // this release can go in today. Derived from the entries themselves — the
+  // 💥 badge is written by the release machinery from the changeset's declared
+  // bump — so it cannot drift from the list underneath it.
+  //
+  // Kept identical in wording to the per-package notes
+  // (`scripts/extract-changelog.ts`), so a reader who checks both does not
+  // have to work out whether two different phrasings mean the same thing.
   out.push(
-    `**${released.length}** workspace${released.length === 1 ? '' : 's'} released` +
-      (apps.length > 0
-        ? ` (${packages.length} package${packages.length === 1 ? '' : 's'}, ${apps.length} app${apps.length === 1 ? '' : 's'})`
-        : '') +
-      (breaking > 0
-        ? ` · ⚠️ **${breaking} breaking change${breaking === 1 ? '' : 's'}**`
-        : '') +
-      '.',
+    breaking > 0
+      ? `⚠️ **This release contains ${breaking} breaking change${breaking === 1 ? '' : 's'}.** ` +
+          'Read the 💥 section below before upgrading — it changes behaviour existing configs depend on.'
+      : '✅ **Safe to upgrade.** No breaking changes: existing configs keep working as-is.',
     '',
   );
+
+  const counts: string[] = [
+    `${packages.length} package${packages.length === 1 ? '' : 's'}`,
+  ];
+  if (apps.length > 0) {
+    counts.push(`${apps.length} app${apps.length === 1 ? '' : 's'}`);
+  }
+  out.push(`Released: ${counts.join(', ')}.`, '');
 
   const sections = [
     ...KIND_SECTIONS,
@@ -358,4 +417,6 @@ function main() {
   process.stdout.write(render(released, entries, baseRef, headRef));
 }
 
-main();
+// Guarded so the lock test can import the pure renderers without shelling out
+// to git for a diff it does not need.
+if (process.argv[1] && process.argv[1].endsWith('release-notes.ts')) main();

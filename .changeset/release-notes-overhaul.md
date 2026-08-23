@@ -52,6 +52,21 @@ breaking change to a published package must ship an upgrade path with a code exa
 breaks someone's build, npm has no undo after 72 hours, and the changeset text is the whole of what a
 consumer gets — there is no later step where that quality gets added.
 
+**The notes never answered the question a reader arrives with.** A changelog says what changed; it
+does not say whether upgrading is safe, so readers infer it from the version digits — exactly the
+inference semver communicates worst on its own. Both release surfaces now lead with the verdict, in
+identical wording, derived from the entries themselves rather than asserted separately:
+
+> ✅ **Safe to upgrade.** No breaking changes: existing configs keep working as-is.
+>
+> ⚠️ **This release contains 1 breaking change.** Read the 💥 section below before upgrading.
+
+Per-package notes also drop the version heading the Release title already shows, and close with the
+exact `npm install --save-dev <pkg>@<version>` line — omitted for private workspaces, where it could
+not work. The rollup additionally parses the `@changesets/changelog-github` entries that predate the
+new formatter, so the next release — which contains both dialects — reads as one document instead of
+mixing clean prose with 120 characters of inline link plumbing.
+
 Also adopted: prerelease trains (`changeset:pre:enter`) and snapshot builds (`changeset:snapshot`)
 wired to the dist-tag input `release.yml` already had; a machine-readable `rollup.json` attached to
 the rollup release; and an immediate tag/npm/Release reconciliation after publish, closing the

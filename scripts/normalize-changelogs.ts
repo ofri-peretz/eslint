@@ -54,7 +54,7 @@
  * drift) and locked by `scripts/__tests__/changelog-format.test.ts`.
  */
 
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
@@ -219,14 +219,31 @@ export function normalize(content: string, pkgName: string): string {
   );
 }
 
+/**
+ * Errors that mean "this path is simply not a workspace changelog", as opposed
+ * to a real I/O failure worth crashing on. ENOTDIR covers a non-directory
+ * entry inside `packages/` — `packages/.gitkeep` is a file, so opening
+ * `packages/.gitkeep/CHANGELOG.md` fails this way rather than with ENOENT.
+ */
+function isMissingPath(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException).code;
+  return code === 'ENOENT' || code === 'ENOTDIR';
+}
+
 function workspaceDirs(): string[] {
   const dirs: string[] = [];
   for (const root of WORKSPACE_ROOTS) {
-    if (!existsSync(root)) continue;
-    for (const entry of readdirSync(root)) {
-      if (existsSync(join(root, entry, 'package.json')))
-        dirs.push(join(root, entry));
+    // Same reasoning as in main(): list-or-ENOENT instead of exists-then-list.
+    // A workspace without a package.json is simply not a workspace; main()
+    // discovers that when its read fails, so nothing is checked twice.
+    let entries: string[];
+    try {
+      entries = readdirSync(root);
+    } catch (error) {
+      if (isMissingPath(error)) continue;
+      throw error;
     }
+    for (const entry of entries) dirs.push(join(root, entry));
   }
   return dirs.sort();
 }
@@ -237,12 +254,25 @@ function main() {
 
   for (const dir of workspaceDirs()) {
     const changelogPath = join(dir, 'CHANGELOG.md');
-    if (!existsSync(changelogPath)) continue;
 
-    const pkgName =
-      (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
-        .name as string) ?? dir;
-    const before = readFileSync(changelogPath, 'utf8');
+    // Read first and treat ENOENT as "no changelog here", rather than testing
+    // with existsSync() and reading after. The check-then-read pair is a
+    // TOCTOU race (CodeQL js/file-system-race): the file can vanish between
+    // the two calls, and the read then throws the very error the check was
+    // supposed to prevent. Not a security issue for a repo-local script, but
+    // it is the exact shape this ecosystem's own rules flag in user code —
+    // and the version without the race is also the shorter one.
+    let before: string;
+    let pkgManifest: string;
+    try {
+      before = readFileSync(changelogPath, 'utf8');
+      pkgManifest = readFileSync(join(dir, 'package.json'), 'utf8');
+    } catch (error) {
+      if (isMissingPath(error)) continue;
+      throw error;
+    }
+
+    const pkgName = (JSON.parse(pkgManifest).name as string) ?? dir;
     const after = normalize(before, pkgName);
     checked++;
 

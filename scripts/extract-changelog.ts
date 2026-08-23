@@ -33,7 +33,9 @@ const positional = args.filter((a) => !a.startsWith('--'));
 const [pkgDir, version] = positional;
 
 if (!pkgDir || !version) {
-  console.error('Usage: extract-changelog.ts <package-dir> <version> [--fallback]');
+  console.error(
+    'Usage: extract-changelog.ts <package-dir> <version> [--fallback]',
+  );
   process.exit(2);
 }
 
@@ -46,8 +48,16 @@ if (!fs.existsSync(pkgJsonPath)) {
 }
 
 let pkgName = '';
+let pkgPrivate = false;
 try {
-  pkgName = (JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')).name as string) ?? path.basename(pkgDir);
+  const manifest = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')) as {
+    name?: string;
+    private?: boolean;
+  };
+  pkgName = manifest.name ?? path.basename(pkgDir);
+  // Private workspaces (apps/*) get release notes too, but an
+  // `npm install` line for something never published is a broken instruction.
+  pkgPrivate = manifest.private === true;
 } catch {
   pkgName = path.basename(pkgDir);
 }
@@ -100,4 +110,50 @@ for (let i = start + 1; i < lines.length; i++) {
 const slice = lines.slice(start, end);
 while (slice.length > 0 && slice[slice.length - 1].trim() === '') slice.pop();
 
-process.stdout.write(slice.join('\n') + '\n');
+// Drop the `## <version>` heading itself: the GitHub Release is already titled
+// `<pkg>@<version>`, so repeating it is the first thing a reader has to skip.
+const bodyLines = slice.slice(1);
+while (bodyLines.length > 0 && bodyLines[0].trim() === '') bodyLines.shift();
+
+/**
+ * Answer the one question every reader of a release note actually has.
+ *
+ * A changelog says what changed. It does not say whether upgrading is safe,
+ * and that is the decision the reader came to make — so they end up inferring
+ * it from the version digits, which is exactly the inference semver is bad at
+ * communicating on its own ("is 4.x → 5.0 a five-minute change or a sprint?").
+ *
+ * The answer is derived from the section's own content, never asserted
+ * independently: `### Major Changes` and the 💥 badge are both written by the
+ * release machinery from the changeset's declared bump. There is no separate
+ * source that could drift out of agreement with the notes above it.
+ */
+const isBreaking =
+  bodyLines.some((l) => /^###\s+Major Changes/.test(l)) ||
+  bodyLines.some((l) => l.startsWith('- ') && l.includes('💥'));
+
+const isPrivate = pkgPrivate;
+
+const footer: string[] = ['', '---', ''];
+
+if (isBreaking) {
+  footer.push(
+    '**⚠️ Breaking release.** Read the migration notes above before upgrading — ' +
+      'this version changes behaviour existing configs depend on.',
+  );
+} else {
+  footer.push(
+    '**Safe to upgrade.** No breaking changes: existing configs keep working as-is.',
+  );
+}
+
+if (!isPrivate) {
+  footer.push(
+    '',
+    '```bash',
+    `npm install --save-dev ${pkgName}@${version}`,
+    '```',
+  );
+}
+
+process.stdout.write([...bodyLines, ...footer].join('\n') + '\n');
