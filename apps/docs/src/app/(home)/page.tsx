@@ -169,7 +169,14 @@ export default async function HomePage() {
             </div>
 
             {/* Code Content — WCAG accessible colors for light/dark themes */}
-            <pre className="p-6 text-sm md:text-base overflow-x-auto">
+            {/* WCAG 2.1.1: this block scrolls horizontally below ~md, so it must be
+                reachable by keyboard. role+label give the scroll region a name. */}
+            <pre
+              className="p-6 text-sm md:text-base overflow-x-auto"
+              tabIndex={0}
+              role="region"
+              aria-label="Example eslint.config.js"
+            >
               <code className="font-mono">
                 <span className="text-orange-800 dark:text-orange-300">import</span> <span className="text-amber-800 dark:text-yellow-400">browserSecurity</span> <span className="text-orange-800 dark:text-orange-300">from</span> <span className="text-green-800 dark:text-green-400">&apos;eslint-plugin-browser-security&apos;</span>;{'\n'}
                 <span className="text-orange-800 dark:text-orange-300">import</span> <span className="text-amber-800 dark:text-yellow-400">jwt</span> <span className="text-orange-800 dark:text-orange-300">from</span> <span className="text-green-800 dark:text-green-400">&apos;eslint-plugin-jwt-security&apos;</span>;{'\n'}
@@ -551,7 +558,9 @@ function CatchCard({
         <code className="text-xs font-mono text-fd-foreground break-all">{ruleId}</code>
       </div>
       <h3 className="text-lg font-semibold mb-3 group-hover:text-fd-primary transition-colors">{title}</h3>
-      <pre className="bg-fd-background/80 rounded-md p-3 text-xs font-mono overflow-x-auto border border-fd-border/50">
+      {/* WCAG 2.1.1: this <pre> is inside the card <Link>, so it must not become a
+          focusable scroll region (a tab stop nested in an anchor). Wrap instead. */}
+      <pre className="bg-fd-background/80 rounded-md p-3 text-xs font-mono whitespace-pre-wrap break-words border border-fd-border/50">
         <code className="text-fd-foreground">{snippet}</code>
       </pre>
       <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-fd-muted-foreground group-hover:text-fd-primary transition-colors">
