@@ -71,6 +71,35 @@ const WEB_STORAGE: ReadonlySet<string> = new Set([
   'sessionStorage',
 ]);
 
+/**
+ * A literal value that CANNOT be a bearer credential.
+ *
+ * The key-name half of this rule is a heuristic — it reports because the key
+ * names a credential, not because it saw one. That is the right default, but it
+ * cannot survive a value the code writes in front of it: nobody stores a JWT as
+ * `'1'`.
+ *
+ * IGNF/cartes.gouv.fr-entree-carto, a French government mapping site running
+ * this rule, was shown two findings on
+ * `sessionStorage.setItem(AUTO_SSO_ATTEMPTED_KEY, '1')` — a flag meaning SSO was
+ * already tried once. The key names `auth`; the value is the string "1".
+ *
+ * Deliberately narrow: booleans, numbers, and the words that spell them. A short
+ * opaque string like `'a1b2c3'` is NOT exempted, because that could be a real
+ * secret and the point here is to be unarguable rather than generous.
+ */
+const NON_CREDENTIAL_LITERAL =
+  /^(?:true|false|yes|no|on|off|null|undefined|\d+)$/i;
+
+function isProvablyNotACredential(node: TSESTree.Node | undefined): boolean {
+  if (node === undefined) return false;
+  if (node.type !== AST_NODE_TYPES.Literal) return false;
+  const { value } = node;
+  if (typeof value === 'boolean' || typeof value === 'number') return true;
+  if (typeof value === 'string') return NON_CREDENTIAL_LITERAL.test(value);
+  return false;
+}
+
 export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
   name: 'no-jwt-in-storage',
   meta: {
@@ -124,10 +153,8 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const {
-      allowInTests = true,
-      bearerPatterns = BEARER_CREDENTIAL_TERMS,
-    } = options as Options;
+    const { allowInTests = true, bearerPatterns = BEARER_CREDENTIAL_TERMS } =
+      options as Options;
     const isTestFile = isTestFilePath(context.filename);
 
     if (allowInTests && isTestFile) {
@@ -149,6 +176,11 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
         valueNode !== undefined &&
         hasProvableJwtValue(valueNode, context.sourceCode);
 
+      // A value the code writes beats a guess about the key. Checked before the
+      // key heuristic, and never against `jwtValue`, so a literal that IS a JWT
+      // still reports however the key is spelled.
+      if (!jwtValue && isProvablyNotACredential(valueNode)) return;
+
       if (
         !jwtValue &&
         (key === null || !namesBearerCredential(key, bearerPatterns))
@@ -169,7 +201,11 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
         if (memberName(callee, context.sourceCode) !== 'setItem') return;
 
-        const storage = resolveStorageArea(callee.object, context.sourceCode, WEB_STORAGE);
+        const storage = resolveStorageArea(
+          callee.object,
+          context.sourceCode,
+          WEB_STORAGE,
+        );
         if (storage === null) return;
 
         const keyArg = node.arguments[0];
@@ -185,7 +221,11 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (node.left.type !== AST_NODE_TYPES.MemberExpression) return;
 
-        const storage = resolveStorageArea(node.left.object, context.sourceCode, WEB_STORAGE);
+        const storage = resolveStorageArea(
+          node.left.object,
+          context.sourceCode,
+          WEB_STORAGE,
+        );
         if (storage === null) return;
 
         // `localStorage.token = v` — the identifier IS the key.

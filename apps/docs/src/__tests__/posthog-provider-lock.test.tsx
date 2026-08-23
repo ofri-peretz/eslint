@@ -81,9 +81,7 @@ describe('PostHog: File Layout', () => {
 
 describe('PostHog: Layout integration', () => {
   it('root layout imports PostHogProvider', () => {
-    expect(layoutSrc).toMatch(
-      /from\s+['"]@\/components\/posthog-provider['"]/,
-    );
+    expect(layoutSrc).toMatch(/from\s+['"]@\/components\/posthog-provider['"]/);
   });
   it('root layout imports PostHogPageviewTracker', () => {
     expect(layoutSrc).toMatch(
@@ -247,9 +245,10 @@ describe('PostHog: Analytics primitives (vendor-neutral surface)', () => {
     const grammar =
       /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*_(click|submit|view|add|remove|start|end|generate|send|cancel|fail|create|delete|update|invite)$/;
     for (const k of keys) {
-      expect(k, `Event key "${k}" violates category:object_action grammar`).toMatch(
-        grammar,
-      );
+      expect(
+        k,
+        `Event key "${k}" violates category:object_action grammar`,
+      ).toMatch(grammar);
     }
   });
 });
@@ -266,6 +265,15 @@ describe('PostHog: Next.js reverse proxy', () => {
   it('source-map upload is env-gated so keyless builds are unchanged', () => {
     expect(nextConfigSrc).toMatch(/POSTHOG_PERSONAL_API_KEY/);
     expect(nextConfigSrc).toMatch(/POSTHOG_PROJECT_ID/);
+  });
+  it('skips the upload for a key of the wrong kind instead of failing the build', () => {
+    // Presence alone is not enough. A var that is set but holds a `phc_`
+    // project key makes the uploader run, reject it, and take the entire
+    // deploy down with `Invalid Personal API key`. That happened to
+    // serverless.interlace.tools: a production deploy lost to a source-map
+    // upload, which is a nicety. Symbolication is worth having; it is not
+    // worth a deploy.
+    expect(nextConfigSrc).toMatch(/startsWith\('phx_'\)/);
   });
   it('CSP violations report to PostHog through the /ingest proxy', () => {
     expect(nextConfigSrc).toMatch(/Content-Security-Policy-Report-Only/);
@@ -284,7 +292,7 @@ describe('PostHog: Provider + Tracker shape', () => {
   it('provider is a client component', () => {
     expect(providerSrc).toMatch(/^['"]use client['"]/);
   });
-  it("provider calls initPostHog from useEffect", () => {
+  it('provider calls initPostHog from useEffect', () => {
     expect(providerSrc).toMatch(/initPostHog\(\)/);
   });
   it('tracker is a client component', () => {

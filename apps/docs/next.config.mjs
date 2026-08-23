@@ -84,13 +84,32 @@ function cspReportOnlyHeaders() {
  * auth, and the deployment ships the same minified bundle it always did.
  * A lock test pins it; flipping it to false would publish our sources.
  *
- * Inert unless both env vars are set, so local builds, forks, and CI stay
- * byte-identical to today and no build can fail for want of a token.
+ * Inert unless both env vars are set AND the key is the right kind, so local
+ * builds, forks, and CI stay byte-identical to today and no build can fail
+ * for want of a usable token.
+ *
+ * The shape check is not decoration. This gate used to test presence alone,
+ * and the promise above was false for a token that is set but wrong: the
+ * uploader ran, rejected it, and took the whole deploy down with
+ * `Invalid Personal API key: "Token looks wrong, must start with 'phx_'"`.
+ * That is exactly what happened to serverless.interlace.tools, where the var
+ * held a `phc_` project key — its production deploy failed on a source-map
+ * upload that is meant to be a nicety. Symbolication is worth having; it is
+ * not worth a deploy. A wrong-shaped key now warns and skips.
  */
 async function withSourcemapUpload(nextConfig) {
   const personalApiKey = process.env.POSTHOG_PERSONAL_API_KEY?.trim();
   const projectId = process.env.POSTHOG_PROJECT_ID?.trim();
   if (!personalApiKey || !projectId) return nextConfig;
+  // `phx_` is the personal API key prefix. `phc_` is the *project* key — a
+  // different credential that is public by design and cannot authorise an
+  // upload. Confusing the two is the likely mistake, so name it.
+  if (!personalApiKey.startsWith('phx_')) {
+    console.warn(
+      '[sourcemaps] POSTHOG_PERSONAL_API_KEY is set but is not a personal API key (expected a `phx_` prefix; a `phc_` value is the public project key). Skipping source-map upload — errors will report unsymbolicated.',
+    );
+    return nextConfig;
+  }
   // Imported here rather than at module scope: the package is a
   // devDependency, and a top-level import would make this config
   // unloadable in an --omit=dev install even with the gate off.
