@@ -75,6 +75,21 @@ const DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1'];
 
 export const noHttpUrls = createRule<RuleOptions, MessageIds>({
   name: 'no-http-urls',
+  /**
+   * Test material states the insecure URL on purpose.
+   *
+   * Measured across four large public repositories: this rule drew 328 of the
+   * 665 findings between them, and 295 of its 328 were inside test suites,
+   * smoke-test definitions and integration fixtures — Lighthouse alone
+   * accounted for 186, every one under `cli/test/`. A smoke test named
+   * `redirects-http` cannot be written without an `http://` URL, and a
+   * mixed-content fixture exists precisely to hold one.
+   *
+   * This is a transport rule: it judges where bytes go at runtime, and test
+   * fixtures do not ship. That is what separates it from a secrets rule, where
+   * a credential in a test still leaks from the repository.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
@@ -269,6 +284,20 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
         isRequestCallSiteUrl(node, context.sourceCode.getScope(node)) ||
         isSubresourcePosition(node)
       ) {
+        return;
+      }
+
+      // A bare scheme names no host, so there is nothing to judge and nothing to
+      // rewrite. `const URL_PREFIXES = ['http://', 'https://', 'data:']` is
+      // Lighthouse's table for classifying URLs, not a URL, and the report it
+      // drew read `Hardcoded HTTP URL detected: "http://"` — a statement about
+      // nothing. Same reasoning as the fully interpolated authority above.
+      //
+      // Deliberately last of the exemptions. Placed first it shadowed the
+      // protocol-inspection check, whose own shape (`s.indexOf('http://')`) is
+      // a bare scheme too — the more specific exemption should be the one that
+      // fires, and be the one seen to fire.
+      if (httpPattern.test(value) && !/^http:\/\/[^/?#]/i.test(value)) {
         return;
       }
 

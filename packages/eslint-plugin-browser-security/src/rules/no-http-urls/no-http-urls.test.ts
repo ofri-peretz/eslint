@@ -21,6 +21,39 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-http-urls', noHttpUrls, {
   valid: [
+    // --- a bare scheme names no host ----------------------------------------
+    // Lighthouse's `report/renderer/details-renderer.js` classifies URLs with
+    // `const URL_PREFIXES = ['http://', 'https://', 'data:']`. There is no host
+    // here to be insecure and nothing to rewrite; the report it drew read
+    // `Hardcoded HTTP URL detected: "http://"`, a statement about nothing.
+    { code: "const URL_PREFIXES = ['http://', 'https://', 'data:'];" },
+    { code: "if (u.startsWith('http://')) { upgrade(u); }" },
+    { code: "const scheme = 'http://';" },
+    // The template form of the same thing, for the same reason.
+    { code: 'const u = `http://`;' },
+
+    // --- test material states the insecure URL on purpose -------------------
+    // 295 of this rule's 328 findings across four large public repositories
+    // were inside test suites and fixtures. A smoke test named `redirects-http`
+    // cannot be written without one, and Lighthouse's `cli/test/` accounted for
+    // 186 on its own. Directory and basename spellings both.
+    {
+      code: "const target = 'http://cdn.acmecorp.io/puppy.jpg';",
+      filename: 'cli/test/smokehouse/test-definitions/redirects-http.js',
+    },
+    {
+      code: "const flags = getFlags(['http://www.acmecorp.io']);",
+      filename: 'cli/test/cli/cli-flags-test.js',
+    },
+    {
+      code: "xhr.open('GET', 'http://acmecorp-test.io/foo');",
+      filename: 'suites/integrations/Breadcrumbs/xhr/get/subject.test.js',
+    },
+    {
+      code: "const insecure = 'http://cdn.acmecorp.io/a.jpg';",
+      filename: 'src/__tests__/mixed-content.js',
+    },
+
     // --- XML namespace URIs are identifiers, never requests -----------------
     // The single largest false-positive shape in the corpus: 29 occurrences in
     // okta/okta-signin-widget, reported by this rule AND detect-mixed-content.
@@ -91,9 +124,13 @@ ruleTester.run('no-http-urls', noHttpUrls, {
       code: 'const u = `http://api.${env}.acmecorp.io/x`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
-    // A lone `http://` with no chunk after it is not an interpolation.
+    // A tail template with no chunk after it is not an interpolation, so a host
+    // written down in one is judged normally. This used to be asserted with
+    // `` `http://` ``, which no longer reports — a bare scheme names no host,
+    // so the check that fires first is the same reasoning one node type
+    // earlier, and the fixture is now in `valid` alongside the literal form.
     {
-      code: 'const u = `http://`;',
+      code: 'const u = `http://api.acmecorp.io`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // A trailing chunk that merely *contains* an interpolation before the path
@@ -335,6 +372,18 @@ ruleTester.run('partition: deferred to a more specific sibling', noHttpUrls, {
     { code: "importScripts('http://cdn.acmecorp.io/sw.js');" },
   ],
   invalid: [
+    // FN GUARD — the test-file exemption is a path rule, not a licence. A file
+    // that merely has "test" inside a longer segment name is production code.
+    {
+      code: "const BASE = 'http://api.acmecorp.io';",
+      filename: 'src/latest-config/index.js',
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    // FN GUARD — a scheme WITH an authority is still the thing this rule is for.
+    {
+      code: "const u = 'http://a.acmecorp.io';",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
     // FN GUARD — the deferral must be exact, not "anything near a fetch".
     // A URL that is not the FIRST argument is not the request target, so no
     // sibling claims it and this rule must keep it.
