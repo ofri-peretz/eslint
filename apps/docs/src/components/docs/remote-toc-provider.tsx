@@ -2,7 +2,7 @@
 
 /**
  * RemoteTocProvider - Client-side TOC provider for remote content
- * 
+ *
  * Wraps remote content with Fumadocs' AnchorProvider to enable
  * TOC sidebar navigation for dynamically compiled content.
  */
@@ -18,11 +18,7 @@ interface RemoteTocProviderProps {
 }
 
 export function RemoteTocProvider({ toc, children }: RemoteTocProviderProps) {
-  return (
-    <AnchorProvider toc={toc}>
-      {children}
-    </AnchorProvider>
-  );
+  return <AnchorProvider toc={toc}>{children}</AnchorProvider>;
 }
 
 export default RemoteTocProvider;

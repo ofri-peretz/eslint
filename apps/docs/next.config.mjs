@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
+const pkg = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'),
+);
 // Set to monorepo root (where package-lock.json is)
 const monorepoRoot = path.resolve(__dirname, '../..');
 
@@ -49,8 +51,14 @@ function cspReportOnlyHeaders() {
     // MDX can inline a remote badge directly.
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    // Same-origin covers /ingest (PostHog) and /_vercel (Vercel Analytics).
-    "connect-src 'self' https://api.github.com https://api.npmjs.org",
+    // Same-origin covers /ingest (PostHog) and /_vercel (Vercel Analytics) for
+    // the capture path. posthog-js still reaches a few endpoints directly
+    // rather than through the proxy — remote config, surveys, the toolbar —
+    // and session replay opens a WebSocket, so those origins are named
+    // explicitly. Supabase is absent on purpose: impact data is read
+    // server-side in `lib/impact-source.ts` and never from the browser.
+    "connect-src 'self' https://api.github.com https://api.npmjs.org " +
+      'https://us.i.posthog.com https://us-assets.i.posthog.com wss://us.i.posthog.com',
     `report-uri /ingest/report/?token=${token}`,
   ].join('; ');
   return [{ key: 'Content-Security-Policy-Report-Only', value: policy }];
@@ -134,7 +142,10 @@ const config = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
-    minimumCacheTTL: 31536000,
+    // One hour, not one year. The optimizer keys on the *source* URL, and
+    // those are stable paths under /images — so a year-long floor pinned the
+    // optimized derivative long after its source had changed.
+    minimumCacheTTL: 3600,
     // External hosts we render via next/image: badges in plugin READMEs,
     // dev.to article covers + author avatars, GitHub raw README assets.
     remotePatterns: [
@@ -154,7 +165,13 @@ const config = {
   },
 
   experimental: {
-    optimizePackageImports: ['lucide-react', 'motion', 'motion/react', 'fumadocs-ui', 'fumadocs-core'],
+    optimizePackageImports: [
+      'lucide-react',
+      'motion',
+      'motion/react',
+      'fumadocs-ui',
+      'fumadocs-core',
+    ],
     webVitalsAttribution: ['CLS', 'LCP', 'FID', 'INP', 'TTFB'],
   },
 
@@ -181,9 +198,23 @@ const config = {
         { key: 'X-Frame-Options', value: 'DENY' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         { key: 'X-DNS-Prefetch-Control', value: 'on' },
-        { 
-          key: 'Permissions-Policy', 
-          value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' 
+        {
+          key: 'Permissions-Policy',
+          // `browsing-topics`, not `interest-cohort`: FLoC was withdrawn and
+          // no shipping browser reads the old token any more. The Topics API
+          // that replaced it reads this one.
+          value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+        },
+        // Vercel already sends HSTS, but without `includeSubDomains`. Adding
+        // it costs nothing here and covers anything ever served under
+        // *.eslint.interlace.tools. Note the apex (`interlace.tools`) is the
+        // host that would need this to protect the sibling subdomains — that
+        // header lives in the interlace repo, not this one. `preload` is
+        // deliberately omitted: it is a browser-baked commitment that is very
+        // hard to unwind.
+        {
+          key: 'Strict-Transport-Security',
+          value: 'max-age=63072000; includeSubDomains',
         },
         ...cspReportOnlyHeaders(),
       ],
@@ -195,21 +226,19 @@ const config = {
       ],
     },
     {
+      // NOT immutable, deliberately. `/_next/static/*` may be pinned for a
+      // year because its filenames carry a content hash — a new build means a
+      // new URL. These paths do not: `/images/og-jwt-security.png` is the same
+      // URL forever. `immutable` told every client never to revalidate it, so
+      // regenerating an OG image left the stale one live for up to a year with
+      // no way to evict it — and these images are fetched by Twitter,
+      // LinkedIn, Slack and GitHub's camo proxy from absolute URLs in package
+      // READMEs, which is exactly where a year-old social card is most visible
+      // and least noticed. `must-revalidate` costs one conditional request and
+      // returns 304 with no body, so a release propagates immediately.
       source: '/images/:path*',
       headers: [
-        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-      ],
-    },
-    {
-      source: '/public/:path*',
-      headers: [
-        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-      ],
-    },
-    {
-      source: '/_next/image/:path*',
-      headers: [
-        { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
       ],
     },
   ],

@@ -23,7 +23,24 @@ import { track } from '@/lib/analytics';
 const REPO_URL = 'https://github.com/ofri-peretz/eslint';
 const DEVTO_URL = 'https://dev.to/ofri-peretz';
 
-export function RuleValueCTA({ plugin, rule }: { plugin: string; rule: string }) {
+export function RuleValueCTA({
+  plugin,
+  rule,
+  placement = 'bottom',
+}: {
+  plugin: string;
+  rule: string;
+  /**
+   * Where on the page this instance renders. `top` sits directly under the
+   * rule description, above the documentation body; `bottom` is the original
+   * position after it.
+   *
+   * This exists because the bottom placement was never seen: median max scroll
+   * on rule pages is 0% and only 17.7% of visitors reach 80% of the page, so
+   * `rule_page:cta_click` had never once fired across 477 people.
+   */
+  placement?: 'top' | 'bottom';
+}) {
   return (
     // A labeled <section> (role=region), not <aside>: this callout renders
     // inside the page's <main> landmark, and axe's strict
@@ -32,7 +49,13 @@ export function RuleValueCTA({ plugin, rule }: { plugin: string; rule: string })
     // and keeps the callout discoverable in the AT landmark list.
     <section
       aria-label="Support this project"
-      className="mt-10 rounded-lg border border-fd-border bg-fd-muted/30 p-5"
+      className={
+        placement === 'top'
+          ? // Above the body: tighter, so it introduces the rule rather than
+            // interrupting it. Same content, same landmark, less vertical cost.
+            'mb-8 rounded-lg border border-fd-border bg-fd-muted/30 p-4'
+          : 'mt-10 rounded-lg border border-fd-border bg-fd-muted/30 p-5'
+      }
     >
       <p className="text-sm text-fd-muted-foreground">
         <strong className="font-semibold text-fd-foreground">
@@ -49,7 +72,7 @@ export function RuleValueCTA({ plugin, rule }: { plugin: string; rule: string })
               target="_blank"
               rel="noopener noreferrer"
               onClick={() =>
-                track('rule_page:cta_click', { action: 'follow', plugin, rule })
+                track('rule_page:cta_click', { action: 'follow', plugin, rule, placement })
               }
             />
           }
@@ -66,7 +89,7 @@ export function RuleValueCTA({ plugin, rule }: { plugin: string; rule: string })
               target="_blank"
               rel="noopener noreferrer"
               onClick={() =>
-                track('rule_page:cta_click', { action: 'star', plugin, rule })
+                track('rule_page:cta_click', { action: 'star', plugin, rule, placement })
               }
             />
           }
