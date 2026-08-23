@@ -95,6 +95,7 @@ export async function RemoteReadme({
     <RemoteMarkdown
       url={url}
       revalidate={3600}
+      tags={['github-markdown', 'remote-readme']}
       fallback={fallback}
       className="remote-readme"
       source={{
