@@ -27,6 +27,7 @@ describe('security header contract', () => {
     // short max-age is meaningfully weaker than what ships today, and an
     // assertion on the directive alone would stay green through that edit.
     ['Strict-Transport-Security', 'max-age=63072000; includeSubDomains'],
+    ['Cross-Origin-Opener-Policy', 'same-origin'],
   ])('sends %s', (header, value) => {
     expect(CONFIG).toContain(header);
     expect(CONFIG).toContain(value);
