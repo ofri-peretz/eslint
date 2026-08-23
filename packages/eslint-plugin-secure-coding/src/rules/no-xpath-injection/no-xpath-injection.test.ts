@@ -27,6 +27,19 @@ describe('no-xpath-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe XPath operations', noXpathInjection, {
       valid: [
+    // --- a router wildcard is not a location step -------------------------
+    // City-of-Helsinki/haitaton-ui reported CWE-643 at CVSS 9.8 twice on these,
+    // in a repository importing no XPath package and containing no XPath at
+    // all. `/*` is XPath's abbreviated `child::*` and also React Router's
+    // wildcard segment; on its own it is not evidence of either.
+    'const p = `/${lang}/*`;',
+    'const routes = LOCALES.map((l) => ({ path: `/${l}/*` }));',
+    // The wildcard gate is corroboration, not amnesty: a module that imports an
+    // XPath package gets the finding, so this one is deliberately NOT valid and
+    // lives in the invalid block below. What is valid is the same shape with a
+    // package that evaluates nothing.
+    "import { format } from 'date-fns'; const p = `/${lang}/*`;",
+
         // Only args[0] of an evaluator is the XPath expression; a template
         // in the context-node position is not the query.
         {
@@ -101,6 +114,7 @@ describe('no-xpath-injection', () => {
         },
       ],
       invalid: [
+
         {
           // Template quasis are string content too — same expression, backticks.
           code: "function q(req) { const x = `//user[name='` + req.query.n + `']`; doc.evaluate(x); }",
@@ -1287,6 +1301,7 @@ ruleTester.run('options: xpathPackages is configurable, default unchanged', noXp
     },
   ],
   invalid: [
+
     // ---- the default is unchanged ----------------------------------------
     // Positive control for the replacing case above: with an EMPTY option bag
     // the same bare call still reports.

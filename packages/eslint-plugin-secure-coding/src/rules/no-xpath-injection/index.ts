@@ -152,6 +152,32 @@ function looksLikeXpath(text: string): boolean {
 }
 
 /**
+ * Every XPath marker EXCEPT the bare wildcard step.
+ *
+ * `//name`, `[@attr`, `axis::`, `text()` and the rest are unambiguous: nothing
+ * else in a JavaScript codebase is spelled that way. `/*` is not — it is also
+ * the React Router wildcard segment, and
+ *
+ *   <Route path={`/${locale}/*`} element={<LocaleRoutes />} />
+ *
+ * reported CWE-643 at CVSS 9.8 twice in a city government's application, in
+ * files containing no XPath and a repository importing no XPath package.
+ *
+ * So the wildcard alone is treated as weak evidence and needs corroboration
+ * from the module; everything else still reports on its own, because a template
+ * carrying `[@id="${userId}"]` is an XPath injection whatever else the file does.
+ */
+const XPATH_SYNTAX_UNAMBIGUOUS = new RegExp(
+  `\\/\\/(?=[A-Za-z_*@.])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
+);
+
+/** Is the ONLY XPath marker here the wildcard step, which a router path shares? */
+function isWildcardOnlyXpath(text: string): boolean {
+  const cleaned = text.replace(/:\/\//g, ' ');
+  return XPATH_SYNTAX.test(cleaned) && !XPATH_SYNTAX_UNAMBIGUOUS.test(cleaned);
+}
+
+/**
  * Packages whose exports evaluate an XPath expression.
  *
  * Used to decide whether a BARE call — `select(expr, doc)`, `evaluate(ctx)` —
@@ -375,8 +401,53 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
 
     const xpathPackageSet = new Set([...xpathPackages, ...additionalXpathPackages]);
 
+
     const sourceCode = context.sourceCode;
     const filename = context.filename;
+
+    /**
+     * Does this module evaluate XPath at all?
+     *
+     * The call path already established the doctrine — "the import is the
+     * evidence; the name never was" — after `select` and `evaluate` reported
+     * CWE-643 at 9.8 in files containing no XML. The template path never
+     * applied it, and reported on shape alone.
+     *
+     * `<Route path={`/${locale}/*`} />` is a React Router wildcard. `/*` is
+     * also XPath's abbreviated `child::*`, so a router path in a React
+     * component was reported as XPath injection at CVSS 9.8 — twice, in a city
+     * government's application, with no XPath anywhere in the repository.
+     *
+     * Evidence is an import from an XPath package, or a DOM XPath API, which
+     * needs no import at all. Computed once per file: the answer cannot differ
+     * between two templates in the same module.
+     */
+    const moduleEvaluatesXpath = (() => {
+      for (const statement of sourceCode.ast.body) {
+        // `source.value` on an ImportDeclaration is always a string, so it is
+        // read directly — a `typeof` guard here is an uncoverable branch, and
+        // this repository gates on 100%.
+        if (
+          statement.type === AST_NODE_TYPES.ImportDeclaration &&
+          xpathPackageSet.has(String(statement.source.value))
+        ) {
+          return true;
+        }
+      }
+      // `document.evaluate`, `XPathEvaluator` and the IE-era `selectNodes`
+      // family are XPath sinks that arrive with the platform rather than from
+      // a package, so an import check alone would miss every browser use.
+      //
+      // A bare `.evaluate(` counts here even though the call path refuses to
+      // report on that name alone, and the difference is deliberate: this is
+      // module-level EVIDENCE, not a finding. Reporting still needs an
+      // XPath-shaped template carrying untrusted interpolation, so a
+      // feature-flag SDK's `evaluate(ctx)` only matters in a file that also
+      // builds something shaped like an XPath expression out of user input.
+      return /\b(?:XPathEvaluator|XPathResult|createExpression|selectSingleNode|selectNodes)\b|\.\s*evaluate\s*\(/.test(
+        sourceCode.getText(),
+      );
+    })();
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -845,6 +916,13 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // predicate — `/root/node[${input}]` — was XPath injection to one path
         // and invisible to the other.
         if (!looksLikeXpath(staticText)) {
+          return;
+        }
+
+        // A wildcard step on its own is shared with React Router's segment
+        // syntax, so it needs the module to actually evaluate XPath before it
+        // counts. Every other marker stands alone. See `isWildcardOnlyXpath`.
+        if (isWildcardOnlyXpath(staticText) && !moduleEvaluatesXpath) {
           return;
         }
 
