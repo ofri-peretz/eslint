@@ -73,10 +73,7 @@ function reportingRules(code: string): string[] {
 /** shape → the single rule that owns it */
 const MATRIX: ReadonlyArray<readonly [string, RuleName]> = [
   // --- the 4-way storage cluster -------------------------------------------
-  [
-    `localStorage.setItem('auth_token', res.data.token);`,
-    'no-jwt-in-storage',
-  ],
+  [`localStorage.setItem('auth_token', res.data.token);`, 'no-jwt-in-storage'],
   [
     `sessionStorage.setItem('access_token', res.data.token);`,
     'no-jwt-in-storage',
