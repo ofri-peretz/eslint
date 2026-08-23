@@ -47,6 +47,25 @@ export interface TrackedEventMap {
     channel: 'rss' | 'devto' | 'x' | 'github';
   };
   'articles:empty_state_view': { activeParams: string };
+  // The install command being copied is the closest thing this site has to a
+  // conversion. npm is the single largest external referrer (125 pageviews in
+  // 60 days, ahead of Google), the North Star is downloads, and until now the
+  // moment a reader actually takes the command was completely unmeasured —
+  // while the star/follow CTAs we *do* measure convert at roughly zero.
+  'install:command_copy': {
+    /** Package manager tab active at the moment of copy. */
+    packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
+    /** Packages offered by this snippet, so per-plugin intent is visible. */
+    packages: string;
+    /** Where the snippet lived — homepage hero, a rule page, a guide. */
+    surface: string;
+  };
+  // Which package manager the audience actually uses. Cheap to collect here
+  // and otherwise unknowable: npm download counts can't distinguish the four.
+  'install:pm_switch': {
+    packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
+    surface: string;
+  };
   // Homepage hero → GitHub star CTA. The npm→GitHub arrow is the widest leak
   // in the conversion funnel (GROWTH_PHILOSOPHY.md G1/G2); this measures it.
   'homepage:star_click': { stars: number | null };
