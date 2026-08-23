@@ -36,7 +36,7 @@ const SRC = readFileSync(
 describe('remote markdown is compiled as markdown, not MDX', () => {
   it('both remote compilers pass format: md', () => {
     const remoteFns = SRC.split(/export async function /).filter((chunk) =>
-      /^compileRemote/.test(chunk),
+      chunk.startsWith('compileRemote'),
     );
     expect(remoteFns).toHaveLength(2);
     for (const fn of remoteFns) {
