@@ -217,8 +217,12 @@ jobs:
           # Pinned separately from VERCEL_CLI_VERSION above: `cache invalidate`
           # postdates that pin, and this step must not force a bump of the CLI
           # that performs the actual build+deploy.
+          # `--yes` is required, not cosmetic: without it the CLI stops at an
+          # interactive confirmation ("You are about to invalidate all cached
+          # content associated with tag github-markdown") and exits non-zero
+          # in CI, so the invalidation silently never happens.
           if npx --yes "vercel@59.4.0" cache invalidate \
-               --tag github-markdown --token="$VERCEL_TOKEN"; then
+               --tag github-markdown --yes --token="$VERCEL_TOKEN"; then
             echo "Invalidated runtime cache tag: github-markdown"
             echo "- Runtime cache: \`github-markdown\` invalidated" >> "$GITHUB_STEP_SUMMARY"
           else
