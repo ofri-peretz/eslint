@@ -1,6 +1,6 @@
 {
   "$comment": "Maximum findings each rule may report across the pinned corpus in scripts/corpus-scan.ts, measured against the PUBLISHED plugin versions — the ones in each package.json, which is what a consumer installing today gets. A fix landing on main does NOT move these numbers until it is released, and that is deliberate: this gate reports shipped behaviour, not intent.\n\nThis is a RATCHET: lower an entry whenever the scan reports a rule under budget, which will typically be the release after the fix. Raising an entry requires `npx tsx scripts/corpus-scan.ts --update` so the increase is reviewable and deliberate. A rule absent from this file is budgeted at 0, so a newly-noisy rule cannot arrive unnoticed.",
-  "generated": "2026-08-22",
+  "generated": "2026-08-23",
   "budgets": {
     "browser-security/no-credentials-in-query-params": 1,
     "browser-security/no-eval": 1,
@@ -17,6 +17,7 @@
     "import-next/no-cycle": 1337,
     "import-next/no-duplicates": 37,
     "import-next/no-empty-named-blocks": 1,
+    "import-next/no-extraneous-dependencies": 1067,
     "import-next/order": 1825,
     "maintainability/cognitive-complexity": 671,
     "maintainability/identical-functions": 2076,
@@ -45,7 +46,7 @@
     "react-a11y/iframe-has-title": 1,
     "react-a11y/interactive-supports-focus": 7,
     "react-a11y/prefer-tag-over-role": 31,
-    "react-features/hooks-exhaustive-deps": 91,
+    "react-features/hooks-exhaustive-deps": 84,
     "react-features/jsx-key": 13,
     "react-features/no-children-prop": 2,
     "react-features/no-unknown-property": 65,
