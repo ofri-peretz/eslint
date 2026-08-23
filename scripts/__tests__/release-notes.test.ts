@@ -77,6 +77,57 @@ describe('upgrade verdict', () => {
     expect(out).not.toContain('Safe to upgrade');
   });
 
+  it('does not warn about a breaking change nobody can install', () => {
+    // A `docs: major` is genuinely breaking for the app and genuinely
+    // irrelevant to someone deciding whether to upgrade a plugin. Counting it
+    // warns people off a release that cannot affect them, and a banner that
+    // cries wolf is one readers learn to skip.
+    const out = render(
+      [ws({ name: 'docs', isApp: true, isPrivate: true })],
+      [entry({ kind: 'breaking', title: 'redesign', packages: ['docs'] })],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+
+    expect(out).toContain('✅ **Safe to upgrade.**');
+    expect(out).not.toContain('This release contains');
+  });
+
+  it('still lists the internal breaking change, marked', () => {
+    // It stays in the 💥 section — the rollup documents the whole release —
+    // but marked, so the list and the banner's count reconcile.
+    const out = render(
+      [ws({ name: 'docs', isApp: true, isPrivate: true })],
+      [entry({ kind: 'breaking', title: 'redesign', packages: ['docs'] })],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+
+    expect(out).toContain('💥 Breaking changes');
+    expect(out).toContain('_(internal — not published)_');
+  });
+
+  it('counts a breaking change that touches both a published and a private package', () => {
+    const out = render(
+      [
+        ws({ name: 'eslint-plugin-x' }),
+        ws({ name: 'docs', isApp: true, isPrivate: true }),
+      ],
+      [
+        entry({
+          kind: 'breaking',
+          title: 'shared break',
+          packages: ['eslint-plugin-x', 'docs'],
+        }),
+      ],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+
+    expect(out).toContain('contains 1 breaking change');
+    expect(out).not.toContain('_(internal — not published)_');
+  });
+
   it('counts multiple breaking changes', () => {
     const out = render(
       [ws()],

@@ -165,6 +165,64 @@ describe('normalize()', () => {
     expect(out).toContain('newest');
   });
 
+  it('reclaims preamble that a release prepend pushed into a section', () => {
+    // The shape `changeset version` actually produces: it inserts the new
+    // section directly under the H1, so the preamble ends up *inside* that
+    // section. Left there it renders in the middle of the GitHub Release body
+    // for that version, and again for every version after it.
+    const displaced = [
+      '# pkg',
+      '## 2.0.0',
+      '',
+      '### Major Changes',
+      '',
+      '- the change',
+      '',
+      'All notable changes to `pkg` are documented here.',
+      '',
+      'Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);',
+      'the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).',
+      '',
+      '## 1.0.0',
+      '',
+      'older',
+      '',
+    ].join('\n');
+
+    const out = normalize(displaced, 'pkg');
+    const section = out.slice(out.indexOf('## 2.0.0'), out.indexOf('## 1.0.0'));
+
+    expect(section).toContain('- the change');
+    expect(section).not.toContain('All notable changes');
+    expect(section).not.toContain('Keep a Changelog');
+
+    // Exactly one copy survives, at the top where it belongs.
+    expect(out.split('All notable changes').length - 1).toBe(1);
+    expect(out.indexOf('All notable changes')).toBeLessThan(
+      out.indexOf('## 2.0.0'),
+    );
+  });
+
+  it('also reclaims the legacy preamble wording', () => {
+    const legacy = [
+      '# pkg',
+      '## 2.0.0',
+      '',
+      '- the change',
+      '',
+      'All notable changes to `pkg` will be documented in this file.',
+      '',
+      'The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),',
+      'and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).',
+      '',
+    ].join('\n');
+
+    const section = normalize(legacy, 'pkg');
+    expect(section.slice(section.indexOf('## 2.0.0'))).not.toContain(
+      'Semantic Versioning',
+    );
+  });
+
   it('keeps [Unreleased] at the top rather than sorting it away', () => {
     const out = normalize(
       '## 1.0.0\n\nshipped\n\n## [Unreleased]\n\npending\n',

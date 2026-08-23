@@ -334,7 +334,23 @@ export function render(
 
   const packages = released.filter((w) => !w.isApp);
   const apps = released.filter((w) => w.isApp);
-  const breaking = entries.filter((e) => e.kind === 'breaking').length;
+
+  // Which of this release's workspaces someone can actually install.
+  const publishedNames = new Set(
+    released.filter((w) => !w.isPrivate).map((w) => w.name),
+  );
+  const affectsConsumers = (e: Entry) =>
+    e.packages.some((n) => publishedNames.has(n));
+
+  // The verdict counts only breaking changes a consumer can be hit by.
+  // A `docs: major` — a private app nobody installs — is genuinely breaking
+  // for that app and genuinely irrelevant to anyone reading this to decide
+  // whether to upgrade a plugin. Counting it warned people off a release that
+  // could not affect them, which is the failure mode that makes readers stop
+  // trusting the banner and skip it entirely.
+  const breaking = entries.filter(
+    (e) => e.kind === 'breaking' && affectsConsumers(e),
+  ).length;
 
   out.push('## What shipped', '');
 
@@ -375,7 +391,12 @@ export function render(
     for (const entry of matching) {
       const tag = packageTag(entry, released.length);
       const trailer = entry.trailer ? ` (${entry.trailer})` : '';
-      out.push(`- ${entry.title} — ${tag}${trailer}`);
+      // Without this marker the 💥 list can show more entries than the banner
+      // counts, and the discrepancy reads as a bug rather than as scoping.
+      const internal = affectsConsumers(entry)
+        ? ''
+        : ' _(internal — not published)_';
+      out.push(`- ${entry.title} — ${tag}${internal}${trailer}`);
     }
     out.push('');
   }

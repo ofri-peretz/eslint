@@ -178,6 +178,32 @@ function normalizeHeading(heading: string): {
   return { heading, version: null };
 }
 
+/**
+ * Boilerplate preamble lines, in every dialect this repo has produced.
+ *
+ * These must be recognised *anywhere* in the file, not just under the H1.
+ * `changeset version` prepends a new `## <version>` section immediately below
+ * the title, which pushes the preamble underneath it — the preamble is then no
+ * longer adjacent to the H1, it is loose text inside the newest release
+ * section, and a normaliser that only hoists what follows the H1 will keep it
+ * there as though it were release content. It then appears verbatim in the
+ * middle of that version's GitHub Release notes, and again below the next
+ * release, and so on once per release forever.
+ *
+ * Matching the generated text directly is safe precisely because we generate
+ * it: `preambleFor` below is the only thing that writes these lines.
+ */
+const PREAMBLE_LINES = [
+  /^All notable changes to .* (?:are|will be) documented (?:here|in this file)\.?$/,
+  /^Entries below `## <version>` are generated from \[changesets\]/,
+  /^(?:t|T)he format (?:follows|is based on) \[Keep a Changelog\]/,
+  /^and this project adheres to \[Semantic Versioning\]/,
+];
+
+function isPreambleLine(line: string): boolean {
+  return PREAMBLE_LINES.some((re) => re.test(line.trim()));
+}
+
 function preambleFor(pkgName: string): string[] {
   return [
     `# ${pkgName}`,
@@ -203,7 +229,9 @@ export function normalize(content: string, pkgName: string): string {
   const stripped: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     if (!/^#\s/.test(lines[i])) {
-      stripped.push(lines[i]);
+      // Drop orphaned preamble wherever it landed; `preambleFor` re-emits the
+      // canonical copy at the top.
+      if (!isPreambleLine(lines[i])) stripped.push(lines[i]);
       continue;
     }
     // Skip the H1 itself, then everything up to the next heading of any level.
