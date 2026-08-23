@@ -75,6 +75,21 @@ const DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1'];
 
 export const noHttpUrls = createRule<RuleOptions, MessageIds>({
   name: 'no-http-urls',
+  /**
+   * Test material states the insecure URL on purpose.
+   *
+   * Measured across four large public repositories: this rule drew 328 of the
+   * 665 findings between them, and 295 of its 328 were inside test suites,
+   * smoke-test definitions and integration fixtures — Lighthouse alone
+   * accounted for 186, every one under `cli/test/`. A smoke test named
+   * `redirects-http` cannot be written without an `http://` URL, and a
+   * mixed-content fixture exists precisely to hold one.
+   *
+   * This is a transport rule: it judges where bytes go at runtime, and test
+   * fixtures do not ship. That is what separates it from a secrets rule, where
+   * a credential in a test still leaks from the repository.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
@@ -216,6 +231,16 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
 
     function checkStringValue(node: TSESTree.Node, value: string): void {
       const httpPattern = /^http:\/\//i;
+
+      // A bare scheme names no host, so there is nothing to judge and nothing
+      // to rewrite. `const URL_PREFIXES = ['http://', 'https://', 'data:']` is
+      // Lighthouse's prefix table for classifying URLs, not a URL — and the
+      // report it drew read `Hardcoded HTTP URL detected: "http://"`, which is
+      // not a statement about anything. Same reasoning as the fully
+      // interpolated authority below, one node type earlier.
+      if (httpPattern.test(value) && !/^http:\/\/[^/?#]/i.test(value)) {
+        return;
+      }
 
       // An XML namespace URI is an opaque identifier, never fetched. Rewriting
       // it to https breaks the document, so reporting it is worse than noise.
