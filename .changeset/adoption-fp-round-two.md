@@ -20,9 +20,9 @@ judged. Each of these reported correct code as a vulnerability.
   being the global means.
 - `browser-security/no-credentials-in-query-params` reported the shape RFC 6749
   §2.3.1 prescribes: `body: \`client_id=${id}&client_secret=${s}&token=${t}\``,
-  OAuth 2.0 sending credentials the way the spec says to. A query string and a
-  form-encoded body are the same characters, so the exemption is positional — a
-  `body`/`data`/`form` property value, or a `URLSearchParams` argument. The same
+OAuth 2.0 sending credentials the way the spec says to. A query string and a
+form-encoded body are the same characters, so the exemption is positional — a
+`body`/`data`/`form`property value, or a`URLSearchParams` argument. The same
   string in a URL still reports.
 - `secure-coding/no-improper-type-validation` reported the correct null-safe
   idiom `typeof x == 'object' && x !== null`, because its `typeof` arm accepted

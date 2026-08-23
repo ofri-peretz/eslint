@@ -23,15 +23,15 @@ test suite. Until then a fix has changed nothing outside this repository.
 Across 7 repositories scanned and ~14 findings read by hand, **zero true positives** have
 survived verification:
 
-| repo | candidates read | TP |
-|---|---:|---:|
-| ahaenggli/AzureAD-LDAP-wrapper | 3 | 1 (too weak to lead with) |
-| shardeum/json-rpc-server | 4 | 0 |
-| add2cal/add-to-calendar-button | 2 | 0 |
-| LavaMoat/LavaMoat | 1 | 0 |
-| ApparyllisOrg/SimplyPluralApi | 2 | 0 |
-| ably-chat-js | 1 | 0 |
-| n11techhub/mcp-bitbucket | 2 | 0 |
+| repo                           | candidates read |                        TP |
+| ------------------------------ | --------------: | ------------------------: |
+| ahaenggli/AzureAD-LDAP-wrapper |               3 | 1 (too weak to lead with) |
+| shardeum/json-rpc-server       |               4 |                         0 |
+| add2cal/add-to-calendar-button |               2 |                         0 |
+| LavaMoat/LavaMoat              |               1 |                         0 |
+| ApparyllisOrg/SimplyPluralApi  |               2 |                         0 |
+| ably-chat-js                   |               1 |                         0 |
+| n11techhub/mcp-bitbucket       |               2 |                         0 |
 
 This is the finding that should drive planning: **the bottleneck is not target supply.**
 There are 131 qualified repos and only 7 have been scanned. The bottleneck is precision —
@@ -40,12 +40,11 @@ outreach stays gated on step 4.
 
 ## Rules for step 3
 
-Not every true positive is PR-worthy. Two recurring shapes that are *real* but must not
+Not every true positive is PR-worthy. Two recurring shapes that are _real_ but must not
 be filed:
 
-- **Maintainer-run scripts.** `exec(\`git ${command}\`)` in a deploy script, `process.argv[2]`
-  in a release script. Mechanically injection; no trust boundary, because the attacker is
-  the person running the release. Seen in `add-to-calendar-button` and `ably-chat-js`.
+- **Maintainer-run scripts.** `exec(\`git ${command}\`)`in a deploy script,`process.argv[2]`in a release script. Mechanically injection; no trust boundary, because the attacker is
+the person running the release. Seen in`add-to-calendar-button`and`ably-chat-js`.
 - **Findings the repo already knows about.** Check for an existing `eslint-disable` on the
   line before writing a word. Telling someone their rule is noisy when they already
   disabled it reads as condescension.
