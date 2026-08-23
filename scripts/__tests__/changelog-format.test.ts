@@ -33,7 +33,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 
-import { normalize } from '../normalize-changelogs';
+import { canonical, normalize } from '../normalize-changelogs';
 
 const REPO_ROOT = resolve(__dirname, '..', '..');
 const WORKSPACE_ROOTS = ['packages', 'apps'];
@@ -96,20 +96,22 @@ describe('CHANGELOG.md shape', () => {
     expect(headings).toEqual(sorted);
   });
 
-  it('is already canonical — `changelog:normalize` would be a no-op', () => {
+  it('is already canonical — `changelog:normalize` would be a no-op', async () => {
     // Equivalent to the `--check` CI gate, run here so a local `vitest` catches
-    // drift before it reaches a Version PR.
+    // drift before it reaches a Version PR. Uses `canonical`, not `normalize`,
+    // so this covers the Prettier layer too — markdown style in these files is
+    // otherwise consistent only by luck, since no CI job formats them.
     for (const dir of dirs) {
       const pkgName = JSON.parse(
         readFileSync(join(dir, 'package.json'), 'utf8'),
       ).name as string;
       const content = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8');
-      expect(
-        normalize(content, pkgName),
+      await expect(
+        canonical(content, pkgName),
         `${dir}/CHANGELOG.md is not canonical`,
-      ).toBe(content);
+      ).resolves.toBe(content);
     }
-  });
+  }, 60_000);
 });
 
 describe('normalize()', () => {
@@ -173,9 +175,70 @@ describe('normalize()', () => {
     expect(headings).toEqual(['## [Unreleased]', '## 1.0.0']);
   });
 
+  it('orders prereleases by SemVer, not alphabetically', () => {
+    // `'beta.11' < 'beta.2'` as text, so a lexical sort lists beta.2 above
+    // beta.11 — and a reader takes the top entry to be the newest.
+    const input = [
+      '## 1.0.0-beta.2',
+      '',
+      'two',
+      '',
+      '## 1.0.0-beta.11',
+      '',
+      'eleven',
+      '',
+    ].join('\n');
+    const headings = normalize(input, 'pkg')
+      .split('\n')
+      .filter((l) => l.startsWith('## '));
+
+    expect(headings).toEqual(['## 1.0.0-beta.11', '## 1.0.0-beta.2']);
+  });
+
+  it('ranks a release above its own prereleases', () => {
+    const input = '## 1.0.0-rc.1\n\nrc\n\n## 1.0.0\n\nfinal\n';
+    const headings = normalize(input, 'pkg')
+      .split('\n')
+      .filter((l) => l.startsWith('## '));
+
+    expect(headings).toEqual(['## 1.0.0', '## 1.0.0-rc.1']);
+  });
+
+  it('ranks a numeric identifier below a non-numeric one (SemVer §11.4)', () => {
+    const input = '## 1.0.0-alpha.1\n\na\n\n## 1.0.0-alpha.beta\n\nb\n';
+    const headings = normalize(input, 'pkg')
+      .split('\n')
+      .filter((l) => l.startsWith('## '));
+
+    expect(headings).toEqual(['## 1.0.0-alpha.beta', '## 1.0.0-alpha.1']);
+  });
+
   it('is idempotent', () => {
     const once = normalize('## [1.4.0] - 2026-05-03\n\nbody\n', 'pkg');
     expect(normalize(once, 'pkg')).toBe(once);
+  });
+});
+
+describe('canonical() — markdown style', () => {
+  it('normalises bullet markers a contributor may have varied', async () => {
+    // Changeset bodies arrive verbatim from whatever someone typed, so `*`
+    // and `-` lists mix freely across entries in one file.
+    const out = await canonical('## 1.0.0\n\n* one\n* two\n', 'pkg');
+
+    expect(out).toContain('- one');
+    expect(out).not.toContain('* one');
+  });
+
+  it('is idempotent through the Prettier layer too', async () => {
+    const once = await canonical('## 1.0.0\n\n*  ragged   bullet\n', 'pkg');
+    await expect(canonical(once, 'pkg')).resolves.toBe(once);
+  });
+
+  it('still produces the structural shape normalize() guarantees', async () => {
+    const out = await canonical('## [1.4.0] - 2026-05-03\n\nbody\n', 'pkg');
+
+    expect(out.split('\n')[0]).toBe('# pkg');
+    expect(out).toContain('## 1.4.0 — 2026-05-03');
   });
 });
 

@@ -67,6 +67,12 @@ not work. The rollup additionally parses the `@changesets/changelog-github` entr
 new formatter, so the next release — which contains both dialects — reads as one document instead of
 mixing clean prose with 120 characters of inline link plumbing.
 
+**Changelog markdown style was consistent only by luck.** Nothing in CI formats markdown inside
+`CHANGELOG.md`, and changeset bodies arrive verbatim from whatever a contributor typed — so bullet
+markers, emphasis, table padding and wrapping drift entry by entry. The canonical form now includes a
+Prettier pass, so `changelog:check` fails on style drift as well as structural drift, and every
+changelog matches every other markdown file in the repo.
+
 Also adopted: prerelease trains (`changeset:pre:enter`) and snapshot builds (`changeset:snapshot`)
 wired to the dist-tag input `release.yml` already had; a machine-readable `rollup.json` attached to
 the rollup release; and an immediate tag/npm/Release reconciliation after publish, closing the

@@ -262,8 +262,14 @@ function collect(workspaces: Workspace[]): {
   released: Workspace[];
   entries: Entry[];
 } {
+  // `previousVersion === null` means the workspace did not exist at the base
+  // ref — a brand-new package. Excluding it dropped first releases out of the
+  // rollup, `rollup.json` and the version table entirely, even though
+  // `release.yml` publishes them ("🆕 first release" in its detect stage).
+  // A release note that omits the one package nobody has seen before is
+  // exactly backwards.
   const released = workspaces.filter(
-    (w) => w.previousVersion !== null && w.previousVersion !== w.version,
+    (w) => w.previousVersion === null || w.previousVersion !== w.version,
   );
   const byKey = new Map<string, Entry>();
 
@@ -385,9 +391,11 @@ export function render(
     const link = ws.isPrivate
       ? `\`${ws.name}\``
       : `[\`${ws.name}\`](https://www.npmjs.com/package/${ws.name}/v/${ws.version})`;
-    out.push(
-      `| ${link} | ${label} | \`${ws.previousVersion}\` | \`${ws.version}\` |`,
-    );
+    // "new" rather than `null`: a first release has no previous version, and
+    // printing the literal null reads as a bug in the notes.
+    const from =
+      ws.previousVersion === null ? '_new_' : `\`${ws.previousVersion}\``;
+    out.push(`| ${link} | ${label} | ${from} | \`${ws.version}\` |`);
   }
   out.push('');
 

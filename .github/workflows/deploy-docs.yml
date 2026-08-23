@@ -250,8 +250,12 @@ jobs:
         run: |
           set -euo pipefail
           version="${APP_VERSION:-$(node -p "require('./apps/docs/package.json').version")}"
+          # HEAD, not $GITHUB_SHA: a dispatch with `ref` deploys the checked-out
+          # commit while GITHUB_SHA still names the workflow's event commit, so
+          # the marker would point at code that never shipped.
+          deployed_sha="$(git rev-parse --short=7 HEAD)"
           npx tsx scripts/posthog-annotate.ts \
-            --content="🚀 docs@${version} deployed to production (${GITHUB_SHA:0:7})"
+            --content="🚀 docs@${version} deployed to production (${deployed_sha})"
 
       # Advisory, like the tweet-cache HEAD probe: the deploy has already
       # succeeded by this point, and the failure mode is bounded (content is

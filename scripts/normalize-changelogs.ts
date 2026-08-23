@@ -98,7 +98,42 @@ function compareVersions(
   if (a.pre === b.pre) return 0;
   if (a.pre === '') return -1; // release before prerelease in a descending list
   if (b.pre === '') return 1;
-  return b.pre.localeCompare(a.pre);
+  return -comparePrerelease(a.pre, b.pre); // negated: this list is descending
+}
+
+/**
+ * SemVer §11.4 precedence for the prerelease tag, ascending.
+ *
+ * A plain string compare is wrong in the ordinary case, not an exotic one:
+ * `'beta.11' < 'beta.2'` lexically, so a changelog with more than nine
+ * prereleases in a series lists them in the wrong order — and a changelog
+ * whose ordering cannot be trusted is worse than one with none, because a
+ * reader takes the top entry to be the newest.
+ *
+ * The spec's rules: compare dot-separated identifiers left to right; numeric
+ * identifiers compare numerically, non-numeric lexically, numeric always
+ * ranks lower than non-numeric, and a shorter run of identifiers ranks lower
+ * when all preceding ones are equal.
+ */
+function comparePrerelease(a: string, b: string): number {
+  const left = a.split('.');
+  const right = b.split('.');
+
+  for (let i = 0; i < Math.max(left.length, right.length); i++) {
+    const l = left[i];
+    const r = right[i];
+    if (l === undefined) return -1;
+    if (r === undefined) return 1;
+    if (l === r) continue;
+
+    const lNum = /^\d+$/.test(l);
+    const rNum = /^\d+$/.test(r);
+    if (lNum && rNum) return Number(l) - Number(r);
+    if (lNum) return -1;
+    if (rNum) return 1;
+    return l < r ? -1 : 1;
+  }
+  return 0;
 }
 
 /**
@@ -230,6 +265,46 @@ function isMissingPath(error: unknown): boolean {
   return code === 'ENOENT' || code === 'ENOTDIR';
 }
 
+/**
+ * The canonical form: structural normalisation, then Prettier.
+ *
+ * `normalize()` fixes *structure* — the H1, the ordering, the preamble. It
+ * says nothing about how the markdown inside each entry is written, and that
+ * text arrives verbatim from whatever a contributor typed into a changeset.
+ * Bullet markers, emphasis characters, table padding, list indentation and
+ * line wrapping therefore drift entry by entry, and a changelog assembled from
+ * a dozen such entries reads like a dozen documents.
+ *
+ * Running the repo's own formatter over the result makes every changelog
+ * identical in style to every other markdown file here, and — because
+ * `--check` compares against this same function — makes that property
+ * enforceable rather than something that currently happens to hold.
+ *
+ * Prettier v3's API is async, which is the only reason this is not folded into
+ * `normalize()` itself; the structural half stays sync so it can be unit
+ * tested directly.
+ */
+export async function canonical(
+  content: string,
+  pkgName: string,
+): Promise<string> {
+  const structural = normalize(content, pkgName);
+  try {
+    const prettier = await import('prettier');
+    return await prettier.format(structural, {
+      ...(await prettier.resolveConfig('CHANGELOG.md')),
+      parser: 'markdown',
+    });
+  } catch (error) {
+    // Never let a formatter problem block a release: an unformatted changelog
+    // is a cosmetic loss, a failed `changeset version` is a stuck release.
+    console.warn(
+      `⚠️  Prettier unavailable (${(error as Error).message}); wrote structurally-normalized markdown only.`,
+    );
+    return structural;
+  }
+}
+
 function workspaceDirs(): string[] {
   const dirs: string[] = [];
   for (const root of WORKSPACE_ROOTS) {
@@ -248,7 +323,7 @@ function workspaceDirs(): string[] {
   return dirs.sort();
 }
 
-function main() {
+async function main() {
   const drifted: string[] = [];
   let checked = 0;
 
@@ -273,7 +348,7 @@ function main() {
     }
 
     const pkgName = (JSON.parse(pkgManifest).name as string) ?? dir;
-    const after = normalize(before, pkgName);
+    const after = await canonical(before, pkgName);
     checked++;
 
     if (before === after) continue;
@@ -303,4 +378,4 @@ function main() {
 
 // Guarded so the lock test can import `normalize` without running the sweep.
 if (process.argv[1] && process.argv[1].endsWith('normalize-changelogs.ts'))
-  main();
+  void main();

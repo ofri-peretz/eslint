@@ -161,8 +161,24 @@ function bareTitle(title: string): string {
   return title;
 }
 
-function isBreaking(cs: Changeset): boolean {
-  if (cs.releases.some((r) => r.type === 'major')) return true;
+/**
+ * Is this changeset breaking *for someone who installs a published package*?
+ *
+ * `published` is the subset of the changeset's releases that ship to npm. The
+ * major bump is checked only against those: one changeset can carry
+ * `'docs': major` (an app, nobody installs it) alongside
+ * `'eslint-plugin-x': patch`, and reading the major across the whole file
+ * would demand a migration guide for a patch that breaks nothing.
+ *
+ * The `!` marker and a `BREAKING CHANGE:` footer stay summary-wide — those are
+ * the author stating intent about the change itself, not about one entry in
+ * the frontmatter.
+ */
+function isBreaking(
+  cs: Changeset,
+  published: Array<{ name: string; type: string }>,
+): boolean {
+  if (published.some((r) => r.type === 'major')) return true;
   if (/^[a-z]+(?:\([^)]*\))?!:/.test(cs.title)) return true;
   return /^BREAKING[ -]CHANGE:/m.test(cs.summary);
 }
@@ -224,7 +240,7 @@ export function lint(
     }
 
     if (
-      isBreaking(cs) &&
+      isBreaking(cs, publishedReleases) &&
       publishedReleases.length > 0 &&
       !hasMigrationPath(cs.body)
     ) {
@@ -239,11 +255,8 @@ export function lint(
       });
     }
 
-    if (
-      cs.releases.some((r) => r.type === 'major') &&
-      publishedReleases.length > 0 &&
-      cs.body === ''
-    ) {
+    // Same scoping as CS002: only a published major owes an explanation.
+    if (publishedReleases.some((r) => r.type === 'major') && cs.body === '') {
       findings.push({
         rule: 'CS003',
         level: 'error',

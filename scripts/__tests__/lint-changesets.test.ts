@@ -105,9 +105,41 @@ describe('CS002 — breaking change needs a migration path', () => {
     expect(rules(lint(dir, PRIVACY))).toContain('CS002');
   });
 
+  it('does not let a private major implicate a published patch', () => {
+    // One changeset can bump the docs app major and a plugin patch. Reading
+    // the major across the whole frontmatter demanded a migration guide for a
+    // patch that breaks nothing for anyone.
+    writeFileSync(
+      join(dir, 'a.md'),
+      "---\n'docs': major\n'eslint-plugin-published': patch\n---\n\nfix: stop flagging the PNG writer\n",
+    );
+    const found = rules(lint(dir, PRIVACY));
+
+    expect(found).not.toContain('CS002');
+    expect(found).not.toContain('CS003');
+  });
+
   it('exempts private workspaces — nobody installs an app', () => {
     write('a.md', "'docs': major", 'feat: redesign the homepage\n\nAll new.');
     expect(rules(lint(dir, PRIVACY))).not.toContain('CS002');
+  });
+});
+
+describe('CS003 — a major needs more than a title', () => {
+  it('blocks a published major with an empty body', () => {
+    writeFileSync(
+      join(dir, 'a.md'),
+      "---\n'eslint-plugin-published': major\n---\n\nfeat: rework the resolver\n",
+    );
+    expect(rules(lint(dir, PRIVACY))).toContain('CS003');
+  });
+
+  it('does not fire for a private-only major', () => {
+    writeFileSync(
+      join(dir, 'a.md'),
+      "---\n'docs': major\n---\n\nfeat: redesign the homepage\n",
+    );
+    expect(rules(lint(dir, PRIVACY))).not.toContain('CS003');
   });
 });
 

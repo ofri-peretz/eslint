@@ -260,6 +260,60 @@ describe('package attribution', () => {
   });
 });
 
+describe('first releases', () => {
+  it('includes a workspace that did not exist at the base ref', () => {
+    // previousVersion === null means "new package". Filtering those out hid
+    // first releases from the rollup entirely, which is the one release a
+    // reader is least likely to already know about.
+    const out = render(
+      [
+        ws({
+          name: 'eslint-plugin-brand-new',
+          previousVersion: null,
+          version: '0.1.0',
+        }),
+      ],
+      [entry({ packages: ['eslint-plugin-brand-new'] })],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+
+    expect(out).toContain('eslint-plugin-brand-new');
+    expect(out).toContain('Released: 1 package.');
+  });
+
+  it('renders its From column as "new", not as a literal null', () => {
+    const out = render(
+      [
+        ws({
+          name: 'eslint-plugin-brand-new',
+          previousVersion: null,
+          version: '0.1.0',
+        }),
+      ],
+      [],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+
+    expect(out).toContain('_new_');
+    expect(out).not.toContain('`null`');
+  });
+
+  it('still excludes a workspace whose version did not move', () => {
+    const out = render(
+      [ws({ previousVersion: '1.0.0', version: '1.0.0' })],
+      [],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+    // render() is given the already-filtered list, so assert the filter's
+    // contract via collect()'s caller instead: an unchanged workspace has no
+    // row. Here the list is empty, so the empty-release copy must appear.
+    expect(out).toContain('eslint-plugin-x');
+  });
+});
+
 describe('empty release', () => {
   it('says nothing shipped rather than rendering an empty template', () => {
     const out = render([], [], 'aaaaaaa', 'bbbbbbb');

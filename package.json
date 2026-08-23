@@ -45,7 +45,7 @@
     "changeset:version": "changeset version && tsx scripts/normalize-changelogs.ts && tsx scripts/sync-source-versions.ts && npm install --package-lock-only",
     "changeset:pre:enter": "changeset pre enter",
     "changeset:pre:exit": "changeset pre exit",
-    "changeset:snapshot": "changeset version --snapshot canary",
+    "changeset:snapshot": "changeset version --snapshot canary && tsx scripts/normalize-changelogs.ts",
     "changelog:normalize": "tsx scripts/normalize-changelogs.ts",
     "changelog:check": "tsx scripts/normalize-changelogs.ts --check",
     "release:status": "tsx scripts/release-status.ts",

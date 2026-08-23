@@ -190,6 +190,26 @@ Keep the old behaviour with the explicit `algorithms` option, or accept the new 
 Private workspaces (`apps/*`) are exempt from CS002/CS003 — nobody installs an app, so there is no
 consumer with a build to migrate.
 
+## Formatting is enforced, not hoped for
+
+`npm run changelog:check` (pre-push hook, and inside `changeset:version`) asserts every
+`CHANGELOG.md` matches one canonical form:
+
+1. **Structure** — a `# <package-name>` H1, the standard preamble, version sections in descending
+   SemVer order (prereleases ranked per SemVer §11.4, so `beta.2` sits below `beta.11`),
+   `## [Unreleased]` first, legacy dates preserved as `## 1.2.3 — 2026-02-08`.
+2. **Markdown style** — the whole file is run through the repo's Prettier config, so bullet markers,
+   emphasis characters, table padding, list indentation and wrapping are identical across every
+   package. Changeset bodies arrive verbatim from whatever a contributor typed, so without this the
+   style drifts entry by entry and a changelog assembled from a dozen of them reads like a dozen
+   documents.
+
+This is a real gate, not a convention: `changelog:check` exits non-zero on any deviation, and
+`scripts/__tests__/changelog-format.test.ts` asserts the same thing on the real files. Nothing else
+in CI formats markdown in `CHANGELOG.md` — before this, consistency held only by luck.
+
+Run `npm run changelog:normalize` to fix a file rather than hand-editing it.
+
 ## When one is required
 
 `npm run changeset:coverage` (pre-push hook + the PR advisory) asks whether the branch touched

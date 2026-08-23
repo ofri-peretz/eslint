@@ -44,6 +44,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
 /** Paths whose change is observable by someone installing or visiting. */
@@ -62,39 +63,85 @@ const JSON_OUT = process.argv.includes('--json');
 const BASE = arg('--since') ?? 'origin/main';
 
 function git(args: string[]): string {
-  try {
-    // GIT_DIR leaks in from lefthook and would point at the wrong repo.
-    const env = { ...process.env };
-    delete env.GIT_DIR;
-    return execFileSync('git', args, {
-      encoding: 'utf8',
-      env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
-  } catch {
-    return '';
-  }
+  // GIT_DIR leaks in from lefthook and would point at the wrong repo.
+  const env = { ...process.env };
+  delete env.GIT_DIR;
+  return execFileSync('git', args, {
+    encoding: 'utf8',
+    env,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  }).trim();
+}
+
+/**
+ * Abort rather than guess.
+ *
+ * An earlier version swallowed every git error and returned `''`. An
+ * unreachable base (a shallow clone, a missing `origin/main`, a detached CI
+ * checkout) then produced an empty diff, which this script reads as "nothing
+ * consumer-visible changed" and reports as a clean pass. A gate that answers
+ * "fine" when it could not look is worse than no gate: it is indistinguishable
+ * from a real pass, so nobody investigates.
+ */
+function fail(message: string): never {
+  console.error(`❌ ${message}`);
+  console.error(
+    '   Cannot determine what this branch changed, so coverage cannot be judged.',
+  );
+  console.error(
+    `   Try \`git fetch origin ${BASE.replace(/^origin\//, '')}\`.`,
+  );
+  process.exit(1);
 }
 
 /**
  * Merge-base diff, so a branch is judged on its own commits rather than on
  * whatever landed on main since it was cut.
  */
-const mergeBase = git(['merge-base', BASE, 'HEAD']) || BASE;
-const changed = git(['diff', '--name-only', `${mergeBase}...HEAD`])
-  .split('\n')
-  .filter(Boolean);
+let mergeBase: string;
+let changedRaw: string;
+let addedRaw: string;
+try {
+  mergeBase = git(['merge-base', BASE, 'HEAD']);
+  changedRaw = git(['diff', '--name-only', `${mergeBase}...HEAD`]);
+  addedRaw = git([
+    'diff',
+    '--name-only',
+    '--diff-filter=A',
+    `${mergeBase}...HEAD`,
+  ]);
+} catch (error) {
+  fail(`git failed: ${(error as Error).message.split('\n')[0]}`);
+}
+
+if (!mergeBase) fail(`No merge base between ${BASE} and HEAD.`);
+
+const changed = changedRaw.split('\n').filter(Boolean);
 
 // Only *added* changeset files count. An edit to an existing one is a reword,
 // not new release intent — and it is already covered by its own PR.
-const addedChangesets = git([
-  'diff',
-  '--name-only',
-  '--diff-filter=A',
-  `${mergeBase}...HEAD`,
-])
+//
+// And only files that actually declare a release: an empty changeset
+// (`---\n---\n`) is a valid "this diff needs no release" marker, so counting
+// it as coverage would let it silently vouch for a `packages/*/src` change it
+// says nothing about — producing no version bump and no changelog entry, which
+// is the exact outcome the gate exists to catch.
+const addedChangesets = addedRaw
   .split('\n')
-  .filter((f) => CHANGESET_FILE.test(f));
+  .filter((f) => CHANGESET_FILE.test(f))
+  .filter((f) => {
+    try {
+      const frontmatter = /^---\r?\n([\s\S]*?)\r?\n?---/.exec(
+        readFileSync(f, 'utf8'),
+      )?.[1];
+      return Boolean(
+        frontmatter && /:\s*(major|minor|patch)\s*$/m.test(frontmatter),
+      );
+    } catch {
+      // Deleted again before we looked, or unreadable — it vouches for nothing.
+      return false;
+    }
+  });
 
 const releaseRelevant = changed.filter((f) => RELEASE_RELEVANT.test(f));
 
