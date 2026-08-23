@@ -349,6 +349,14 @@ jobs:
             oos/COMMITS.txt
           retention-days: 90
 
+      # ── Retention ─────────────────────────────────────────────────────
+      # Keep only the 3 most recent dated snapshots per suite. Long-term
+      # history is curated in benchmark-results/history.ndjson — raw results
+      # are not the canonical record. Runs before the commit so deletions
+      # are staged alongside new results.
+      - name: Prune old benchmark snapshots (keep 3 per suite)
+        run: npx tsx scripts/prune-benchmark-results.ts --keep=3
+
       # ── Publish ───────────────────────────────────────────────────────
       # Commit straight to main: these are generated artifacts, and the
       # verify gate above already refused anything not publishable.
@@ -359,8 +367,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A \
-            benchmarks/results/ilb-headline \
-            benchmarks/results/ilb-flagship \
+            benchmarks/results \
             benchmark-results/ilb-headline.md \
             benchmark-results/ilb-flagship-scorecard.md \
             apps/docs/src/data/headline-bench.json

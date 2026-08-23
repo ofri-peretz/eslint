@@ -20,6 +20,7 @@
  * the upstream one on every run so the port can't silently drift.
  */
 import { isGeneratedFile } from './generated-file';
+import { isMinifiedFile } from './minified-file';
 import type { TSESLint } from '@typescript-eslint/utils';
 
 // The `TSESLint` import above is type-only — it is erased at compile time and
@@ -154,6 +155,23 @@ export interface RuleCreateAndOptions<
    * live vulnerability regardless of what typed it.
    */
   skipGeneratedFiles?: boolean;
+
+  /**
+   * Skip machine-packed output — minified bundles and the like.
+   *
+   * The third member of this family, and opt-in for the same reason as the
+   * other two. Decided from the file's own shape rather than its path: `dist/`,
+   * `.min.js` and `vendor/` are conventions a stranger's repository is free to
+   * ignore, and the single largest offender on the pinned corpus is called
+   * `assets/speedscope/import.bcbb2033.js`, which announces nothing.
+   *
+   * Measured there: 8 files carried 2,446 of `no-magic-numbers`' findings.
+   *
+   * Only for rules that give MAINTAINABILITY advice. A security rule must not
+   * set this — a bundle ships and runs, and a minified bundle is exactly where
+   * a supply-chain problem would hide.
+   */
+  skipMinifiedFiles?: boolean;
 }
 
 export interface RuleWithMeta<
@@ -241,6 +259,7 @@ function createRuleInternal<
   name,
   skipTestFiles,
   skipGeneratedFiles,
+  skipMinifiedFiles,
 }: Readonly<RuleWithMeta<Options, MessageIds, Docs>>): RuleModuleWithName<
   MessageIds,
   Options,
@@ -256,6 +275,7 @@ function createRuleInternal<
       // After the filename test, which is string work, and before anything
       // that walks the AST.
       if (skipGeneratedFiles && isGeneratedFile(context.sourceCode)) return {};
+      if (skipMinifiedFiles && isMinifiedFile(context.sourceCode)) return {};
       return create(
         context,
         applyDefault(resolvedDefaultOptions, context.options),

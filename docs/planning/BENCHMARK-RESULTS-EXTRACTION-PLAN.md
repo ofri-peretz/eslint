@@ -6,6 +6,45 @@
 
 ---
 
+## Decision — prune, don't migrate (2026-08-23)
+
+**We chose pruning over migration.** The extraction plan below is superseded
+in favour of a simpler approach. Here's why:
+
+1. **77% of the size was one dead file.** `ilb-flagship/2026-05-11.json` was
+   51 MB — a single-rule retry (1 of 10 results) that `loadLatestFlagshipSnapshot`
+   in `benchmarks/lib/flagship-snapshot.ts` explicitly skips (it requires
+   `results.length >= FLAGSHIP_RULES.length`). Deleting it drops the directory
+   from 66 MB to ~15 MB. Migration was solving a problem that was mostly one
+   file.
+
+2. **The directory is a live CI working directory, not an archive.** Four
+   workflows write into `benchmarks/results/` — `weekly-benchmark.yml`,
+   `benchmark.yml`, `eslint-version-matrix.yml`, `oxlint-parity.yml`. Moving
+   it would mean CI pushing to a second repository, and
+   `per-rule-budget.yml`'s path trigger on `benchmarks/results/ilb-flagship/**`
+   would silently stop firing. The plan below only mapped readers; it missed
+   the writers.
+
+3. **Pruning is cheaper and safer.** Delete the dead file, add retention to
+   the weekly job (keep 3 snapshots per suite), and add a 20 MiB size guard
+   to the quality gate. No cross-repo orchestration, no link breakage, no
+   vacuous-pass risk from a missing directory.
+
+**What was done (PR: `chore/prune-benchmark-results`):**
+- Deleted `benchmarks/results/ilb-flagship/2026-05-11.json` (51 MB dead file).
+- Added `scripts/prune-benchmark-results.ts` — keeps 3 most recent dated
+  snapshots per suite, runs in the weekly job before commit.
+- Added `scripts/check-benchmark-results-size.ts` — fails CI if
+  `benchmarks/results/` exceeds 20 MiB. Runs in the `quality` composite and
+  as a job in `quality.yml`.
+
+**The migration plan below is retained as a reference.** Its consumer
+inventory (§1) and guardrail analysis (§2, §5) are still valuable if
+migration is reconsidered — but the recommendation is now: don't.
+
+---
+
 ## 0. The two directories — which is which
 
 This repo has two benchmark-output directories with confusingly similar names. They are fundamentally different things:
