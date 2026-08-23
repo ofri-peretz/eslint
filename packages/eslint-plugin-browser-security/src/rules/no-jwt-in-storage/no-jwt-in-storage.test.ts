@@ -69,13 +69,19 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
     {
       code: `localStorage.setItem('jwt', token);`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'jwt', storage: 'localStorage' },
+        },
       ],
     },
     {
       code: `localStorage.setItem('token', authToken);`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'token', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'token', storage: 'localStorage' },
+        },
       ],
     },
     {
@@ -118,7 +124,10 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
     {
       code: `sessionStorage.setItem('jwt', token);`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'sessionStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'jwt', storage: 'sessionStorage' },
+        },
       ],
     },
     {
@@ -134,21 +143,30 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
     {
       code: `localStorage.setItem(k[0], 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: '<dynamic>', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: '<dynamic>', storage: 'localStorage' },
+        },
       ],
     },
     // Value proof, innocuous key
     {
       code: `localStorage.setItem('data', '${EXAMPLE_JWT}');`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'data', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'data', storage: 'localStorage' },
+        },
       ],
     },
     // Direct assignment
     {
       code: `localStorage['token'] = jwt;`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'token', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'token', storage: 'localStorage' },
+        },
       ],
     },
     {
@@ -163,7 +181,10 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
     {
       code: `localStorage.setItem('bearer', authBearer);`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'bearer', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'bearer', storage: 'localStorage' },
+        },
       ],
     },
     // Test file with allowInTests: false
@@ -172,7 +193,10 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
       filename: 'auth.test.ts',
       options: [{ allowInTests: false }],
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'jwt', storage: 'localStorage' },
+        },
       ],
     },
     // Unresolvable identifier key falls back to its spelling — the only
@@ -189,7 +213,10 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
     {
       code: `localStorage.jwt = tokenValue;`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'jwt', storage: 'localStorage' },
+        },
       ],
     },
     {
@@ -273,7 +300,10 @@ ruleTester.run('lock: the global may be spelled out', noJwtInStorage, {
     {
       code: 'globalThis.sessionStorage["jwt"] = value;',
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'sessionStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'jwt', storage: 'sessionStorage' },
+        },
       ],
     },
   ],
@@ -315,7 +345,10 @@ ruleTester.run('lock: computed and optional-chained sinks', noJwtInStorage, {
     {
       code: `sessionStorage?.['setItem']('jwt', t);`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'sessionStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'jwt', storage: 'sessionStorage' },
+        },
       ],
     },
   ],
@@ -341,7 +374,10 @@ ruleTester.run('lock: JWT value evidence', noJwtInStorage, {
     {
       code: `localStorage.setItem('x', 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhIjoxfQ.sig');`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'x', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'x', storage: 'localStorage' },
+        },
       ],
     },
     // Resolved through a binding.
@@ -351,14 +387,20 @@ ruleTester.run('lock: JWT value evidence', noJwtInStorage, {
         localStorage.setItem('x', value);
       `,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'x', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'x', storage: 'localStorage' },
+        },
       ],
     },
     // Expression-free template.
     {
       code: `localStorage.setItem('x', \`${EXAMPLE_JWT}\`);`,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'x', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'x', storage: 'localStorage' },
+        },
       ],
     },
     // A call into a module that mints JWTs.
@@ -368,7 +410,10 @@ ruleTester.run('lock: JWT value evidence', noJwtInStorage, {
         localStorage.setItem('x', jwt.sign(claims, key));
       `,
       errors: [
-        { messageId: 'jwtInStorage', data: { key: 'x', storage: 'localStorage' } },
+        {
+          messageId: 'jwtInStorage',
+          data: { key: 'x', storage: 'localStorage' },
+        },
       ],
     },
   ],
@@ -462,7 +507,9 @@ ruleTester.run('lock: adversarial wave', noJwtInStorage, {
       code: `const { crypto: store } = window; store.setItem('access_token', t);`,
     },
     // A plain (non-destructuring) local binding named after the global.
-    { code: `const localStorage = fakeStore; localStorage.setItem('access_token', t);` },
+    {
+      code: `const localStorage = fakeStore; localStorage.setItem('access_token', t);`,
+    },
     // A composed key behind a binding that resolves to nothing.
     { code: `const K = a() + b(); localStorage.setItem(K, t);` },
     // Both sides of a concatenated key are unresolvable.
@@ -551,22 +598,71 @@ ruleTester.run('lock: adversarial wave', noJwtInStorage, {
  * lock in `no-cookie-auth-tokens`. The value path (`hasProvableJwtValue`) is
  * independent of the list and keeps reporting either way.
  */
-ruleTester.run('lock: bearerPatterns replaces the default vocabulary', noJwtInStorage, {
-  valid: [
-    {
-      code: `localStorage.setItem('access_token', t);`,
-      options: [{ bearerPatterns: ['handle'] }],
-    },
-  ],
-  invalid: [
-    {
-      code: `localStorage.setItem('handle', h);`,
-      options: [{ bearerPatterns: ['handle'] }],
-      errors: [{ messageId: 'jwtInStorage' }],
-    },
-    {
-      code: `localStorage.setItem('access_token', t);`,
-      errors: [{ messageId: 'jwtInStorage' }],
-    },
-  ],
+ruleTester.run(
+  'lock: bearerPatterns replaces the default vocabulary',
+  noJwtInStorage,
+  {
+    valid: [
+      {
+        code: `localStorage.setItem('access_token', t);`,
+        options: [{ bearerPatterns: ['handle'] }],
+      },
+    ],
+    invalid: [
+      {
+        code: `localStorage.setItem('handle', h);`,
+        options: [{ bearerPatterns: ['handle'] }],
+        errors: [{ messageId: 'jwtInStorage' }],
+      },
+      {
+        code: `localStorage.setItem('access_token', t);`,
+        errors: [{ messageId: 'jwtInStorage' }],
+      },
+    ],
+  },
+);
+
+describe('a flag is not a credential', () => {
+  /**
+   * Provenance: IGNF/cartes.gouv.fr-entree-carto — a French government mapping
+   * site that RUNS this rule — src/composables/useAuthentication.js:34 and
+   * src/services/ServiceBase.js:188.
+   *
+   * The key names `auth`, so the key heuristic fires. The value is the string
+   * "1", a flag meaning SSO was already attempted. Nobody stores a JWT as "1",
+   * and a value the code writes beats a guess about what the key is called.
+   */
+  ruleTester.run('valid - literal flag values', noJwtInStorage, {
+    valid: [
+      "sessionStorage.setItem('auth:auto-sso-attempted', '1');",
+      "sessionStorage.setItem('keycloak:silent-sso-blocked', '1');",
+      "localStorage.setItem('authRetries', '3');",
+      "sessionStorage.setItem('auth:seen', true);",
+      "localStorage.setItem('token:checked', 'false');",
+      "localStorage.setItem('bearer:count', 42);",
+    ],
+    invalid: [],
+  });
+
+  /** The guard must not reach anything that is actually a credential. */
+  ruleTester.run('invalid - real credentials still report', noJwtInStorage, {
+    valid: [],
+    invalid: [
+      { code: "localStorage.setItem('token', jwt);", errors: 1 },
+      {
+        code: "localStorage.setItem('auth:token', resp.accessToken);",
+        errors: 1,
+      },
+      // A provable JWT reports however innocuous the key is spelled — the value
+      // check runs before the guard, not instead of it.
+      {
+        code: "localStorage.setItem('flag', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.abc');",
+        errors: 1,
+      },
+      // A `null` literal is neither boolean, number, nor string, so it falls past
+      // the exemption and the key heuristic decides. Conservative on purpose: the
+      // exemption only covers values it can positively identify as harmless.
+      { code: "localStorage.setItem('auth:token', null);", errors: 1 },
+    ],
+  });
 });

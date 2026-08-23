@@ -372,6 +372,10 @@ jobs:
           mkdir -p .release-notes
           notes_file=".release-notes/${tag_name//\//_}.md"
           npx tsx scripts/extract-changelog.ts "packages/${{ matrix.dir }}" "$PKG_VER" --fallback > "$notes_file"
+          # The changeset says what changed, in our words. This says which PRs it
+          # arrived in — the question someone asks when a false positive they
+          # reported stops appearing, and one a CHANGELOG entry cannot answer.
+          npx tsx scripts/prs-since-release.ts "packages/${{ matrix.dir }}" "$PKG_VER" >> "$notes_file"
           echo "TAG_NAME=$tag_name" >> "$GITHUB_ENV"
           echo "NOTES_FILE=$notes_file" >> "$GITHUB_ENV"
 
