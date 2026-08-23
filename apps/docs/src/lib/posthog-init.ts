@@ -119,13 +119,39 @@ function isAutomatedBrowser(): boolean {
   }
 }
 
+/**
+ * Deliberate opt-in for synthetic monitoring.
+ *
+ * The `navigator.webdriver` guard above drops automated traffic, which is
+ * correct for CI but removes the only way to prove end-to-end that capture
+ * still works — a scripted browser can no longer answer "are events still
+ * flowing?". That question matters most precisely when something is broken.
+ *
+ * A synthetic check sets this key before navigating:
+ *
+ *   await page.addInitScript(() =>
+ *     localStorage.setItem('interlace_synthetic_check', '1'))
+ *
+ * Events then flow, but carry `is_synthetic: true` (see `loaded` below), so
+ * they are filterable rather than quietly mixed into real traffic. Allowing
+ * synthetic events without marking them would reintroduce the exact problem
+ * the webdriver guard exists to solve.
+ */
+function isSyntheticCheck(): boolean {
+  try {
+    return localStorage.getItem('interlace_synthetic_check') === '1';
+  } catch {
+    return false;
+  }
+}
+
 function isTrackingAllowed(): boolean {
   if (typeof window === 'undefined') return false;
   if (typeof navigator === 'undefined') return false;
   // Local dev short-circuit (ANALYTICS_PHILOSOPHY principle 9).
   if (isLocalEnvironment() && !isLocalOptIn()) return false;
   // CI and scripted browsers are not visitors.
-  if (isAutomatedBrowser()) return false;
+  if (isAutomatedBrowser() && !isSyntheticCheck()) return false;
   const dnt = navigator.doNotTrack;
   if (dnt === '1' || dnt === 'yes') return false;
   const gpc = (
@@ -256,6 +282,9 @@ export function initPostHog(): void {
     loaded: (ph) => {
       try {
         ph.register({ app: APP_ID });
+        // Marked, not hidden: a synthetic check that looked like a real
+        // visitor would be the same defect as unfiltered CI traffic.
+        if (isSyntheticCheck()) ph.register({ is_synthetic: true });
         if (
           typeof localStorage !== 'undefined' &&
           localStorage.getItem('interlace_internal') === '1'
