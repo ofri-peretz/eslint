@@ -97,4 +97,56 @@ describe('corpus-scan modes', () => {
     expect(SOURCE).toContain('rmSync(NPM_CACHE');
     expect(SOURCE).toMatch(/'--cache',\s*\n?\s*NPM_CACHE/);
   });
+
+  it('installs target dependencies only behind a flag, and never with scripts', () => {
+    // The targets are eight third-party repositories pinned by SHA. A lifecycle
+    // script in any of them — or in anything they depend on — would run with
+    // the privileges of whoever runs the scan. Nothing here needs a build to
+    // run, so there is no reason to hand one an interpreter.
+    expect(SOURCE).toContain("'--install-targets'");
+    expect(SOURCE).toContain("'--ignore-scripts'");
+    // Off by default: it costs minutes and gigabytes and the gate runs per PR.
+    expect(SOURCE).toMatch(/installTargets = process\.argv\.includes\('--install-targets'\)/);
+  });
+
+  it('stops excluding the dependency-dependent rules once targets are installed', () => {
+    // Without an install, `no-unresolved` answers a question about the clone.
+    // With one, it answers a question about the rule — measured on
+    // auth0/express-openid-connect, 86 findings went to 0.
+    expect(SOURCE).toContain('function unmeasurableRules(targetsInstalled: boolean)');
+    expect(SOURCE).toMatch(/targetsInstalled \? new Set<string>\(\) : DEPENDENCY_DEPENDENT_RULES/);
+    expect(SOURCE).toContain("'import-next/no-unresolved'");
+  });
+
+  it('decides measurability from the targets, not from the flag', () => {
+    // `node_modules` from an earlier `--install-targets` run survives in the
+    // shared cache, so a later run without the flag still resolves every
+    // specifier while claiming it could not. Same shape as the stale-rig
+    // defect — a number that depends on cache state nobody declared.
+    expect(SOURCE).toContain('let targetsInstalled = true;');
+    expect(SOURCE).toMatch(
+      /if \(!existsSync\(path\.join\(dir, 'node_modules'\)\)\) targetsInstalled = false;/,
+    );
+    expect(SOURCE).toContain('unmeasurableRules(targetsInstalled)');
+  });
+
+  it('does NOT exclude no-extraneous-dependencies — it never needed an install', () => {
+    // It compares imports against `package.json`, not against the installed
+    // tree, and reports the same 10 findings on auth0/express-openid-connect
+    // before and after an install. It was excluded by association with
+    // `no-unresolved` and 3,147 findings were invisible to this gate for no
+    // reason. An exclusion needs the same evidence as a budget.
+    const excluded = /DEPENDENCY_DEPENDENT_RULES: ReadonlySet<string> = new Set\(\[([\s\S]*?)\]\)/.exec(
+      SOURCE,
+    );
+    expect(excluded).not.toBeNull();
+    expect(excluded?.[1]).not.toContain('no-extraneous-dependencies');
+  });
+
+  it('does not abort the scan when a target fails to install', () => {
+    // Several targets are pnpm or yarn workspaces whose tree npm cannot always
+    // reproduce. The run still has something true to say about every rule that
+    // does not depend on it.
+    expect(SOURCE).toMatch(/failed to install; its dependency-dependent findings/);
+  });
 });

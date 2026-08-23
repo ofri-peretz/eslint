@@ -112,31 +112,62 @@ const TARGETS: ReadonlyArray<{ repo: string; ref: string }> = [
 const ROOT = path.resolve(import.meta.dirname, '..');
 
 /**
- * Rules this instrument CANNOT measure, and why.
+ * Rules that cannot be measured against a bare clone, and what fixes each.
  *
- * The targets are shallow git clones. They are never `npm install`ed and never
- * built, so any rule whose verdict depends on the dependency tree or on
- * generated output is answering a question about the clone rather than about
- * the rule. Measured 2026-08-21 on `import-next`:
+ * The targets are shallow git clones. Without `--install-targets` they are
+ * never `npm install`ed and never built, so any rule whose verdict depends on
+ * the dependency tree is answering a question about the clone rather than about
+ * the rule.
  *
- *   no-unresolved                3,671 — 1,108 bare specifiers with no
- *                                        node_modules to resolve against, and
- *                                        2,402 relative imports of files that
- *                                        graphql-codegen writes at build time
- *                                        (Shopify/cli `./types.js`)
- *   no-extraneous-dependencies   1,067 — cannot compare against packages that
- *                                        were never installed
+ * `--install-targets` closes the dependency half. Measured on the pinned
+ * corpus, `no-unresolved` splits almost evenly:
  *
- * A budget would be worse than an exclusion here: the number would look like a
- * quality signal, and it would drift whenever a pinned SHA moves for reasons
- * that have nothing to do with the rule. Excluding it says the true thing —
- * this gate has nothing to say about these rules. They need a rig that
- * installs and builds each target, which is a separate piece of work.
+ *   4,374 (49%)  BARE specifiers — `find-up`, `fs-extra`, `fast-glob`. Nothing
+ *                but a missing `node_modules`. On auth0/express-openid-connect
+ *                the count went 86 -> 0 once the target was installed.
+ *   4,530 (51%)  RELATIVE specifiers, 4,451 of them in Shopify/cli, almost all
+ *                `./types.js` — which graphql-codegen writes at BUILD time.
+ *
+ * So an install is not enough for the second half, and building eight
+ * third-party repositories is a different and much heavier piece of work. That
+ * half stays excluded, and it is excluded for an honest reason: in a fresh
+ * checkout `./types.js` really is absent, so the finding describes the
+ * environment rather than the rule. `eslint-plugin-import` behaves the same way.
+ *
+ * A budget would be worse than an exclusion for the un-installed case: the
+ * number would look like a quality signal, and it would drift whenever a pinned
+ * SHA moves for reasons that have nothing to do with the rule.
+ *
+ * `no-extraneous-dependencies` USED to be in this set and never belonged.
+ * It compares imports against `package.json`, not against the installed tree,
+ * so it never needed a `node_modules` at all — measured on
+ * auth0/express-openid-connect, it reports the same 10 findings before and
+ * after an install. It was excluded by association with `no-unresolved`, and
+ * 3,147 findings were invisible to this gate for no reason. It is budgeted now.
+ *
+ * Worth stating plainly because the exclusion was argued at length in this very
+ * comment and the argument was still wrong: an exclusion needs the same
+ * evidence as a budget, and "it is about dependencies" is a name, not a
+ * measurement.
  */
-const UNMEASURABLE_RULES: ReadonlySet<string> = new Set([
+const DEPENDENCY_DEPENDENT_RULES: ReadonlySet<string> = new Set([
   'import-next/no-unresolved',
-  'import-next/no-extraneous-dependencies',
 ]);
+
+/**
+ * What THIS run cannot speak to.
+ *
+ * Keyed on whether the targets are actually installed, not on whether the flag
+ * was passed. The two diverge: `node_modules` from an earlier `--install-targets`
+ * run survives in the shared cache, so a later run without the flag still
+ * resolves every specifier while claiming it could not. That is the same shape
+ * as the stale-rig defect — a number that depends on cache state nobody
+ * declared — and it would be a strange one to reintroduce in the change that
+ * exists to make these rules measurable.
+ */
+function unmeasurableRules(targetsInstalled: boolean): ReadonlySet<string> {
+  return targetsInstalled ? new Set<string>() : DEPENDENCY_DEPENDENT_RULES;
+}
 
 /**
  * The EXACT version of a rig dependency, read from the workspace lockfile.
@@ -378,9 +409,56 @@ function scanTarget(dir: string, configPath: string): Map<string, number> {
   return counts;
 }
 
+/**
+ * Install one target's dependencies, so a rule that asks "does this specifier
+ * resolve" can be answered about the RULE rather than about the clone.
+ *
+ * `--ignore-scripts` is not optional. These are eight third-party repositories
+ * pinned by SHA; a lifecycle script in any of them, or in anything they depend
+ * on, would execute with the privileges of whoever runs the scan. Nothing here
+ * needs a build step to run, so there is no reason to hand one an interpreter.
+ *
+ * `--legacy-peer-deps` because several targets predate npm 7's peer resolution
+ * and would otherwise fail outright; `--no-audit --no-fund` because neither
+ * says anything about the measurement.
+ *
+ * A target that fails to install is left alone rather than aborted on. Some of
+ * these repositories are pnpm or yarn workspaces and npm cannot always
+ * reproduce their tree — the scan still has something true to say about the
+ * rules that do not depend on it, and the summary reports which targets are
+ * partial.
+ */
+function installTargetDependencies(dir: string, repo: string): void {
+  if (existsSync(path.join(dir, 'node_modules'))) return;
+  if (!existsSync(path.join(dir, 'package.json'))) return;
+  log(`Installing dependencies for ${repo}…`);
+  try {
+    sh(
+      'npm',
+      [
+        'install',
+        // See the note above: never negotiable.
+        '--ignore-scripts',
+        '--legacy-peer-deps',
+        '--no-audit',
+        '--no-fund',
+        '--silent',
+      ],
+      dir,
+    );
+  } catch {
+    console.error(
+      `::warning::${repo} failed to install; its dependency-dependent findings describe the clone, not the rule.`,
+    );
+  }
+}
+
 function main(): number {
   const update = process.argv.includes('--update');
   const local = process.argv.includes('--local');
+  // Install each target's dependencies before scanning it. Off by default: it
+  // costs minutes and gigabytes, and the default gate runs on every PR.
+  const installTargets = process.argv.includes('--install-targets');
   if (local && update) {
     console.error(
       '::error::--local --update is refused. The budget records PUBLISHED behaviour; a\n' +
@@ -554,6 +632,9 @@ function main(): number {
 
   const totals = new Map<string, number>();
   let scanned = 0;
+  // Every target has to be installed for the dependency-dependent rules to mean
+  // anything. One bare clone is enough to make the total describe the clone.
+  let targetsInstalled = true;
   const failed: string[] = [];
 
   for (const { repo, ref } of TARGETS) {
@@ -589,6 +670,8 @@ function main(): number {
         sh('git', ['-C', dir, 'fetch', '--depth', '1', '--quiet', 'origin', ref]);
         sh('git', ['-C', dir, 'checkout', '--quiet', 'FETCH_HEAD']);
       }
+      if (installTargets) installTargetDependencies(dir, repo);
+      if (!existsSync(path.join(dir, 'node_modules'))) targetsInstalled = false;
       for (const [rule, n] of scanTarget(dir, configPath)) {
         totals.set(rule, (totals.get(rule) ?? 0) + n);
       }
@@ -609,6 +692,31 @@ function main(): number {
   if (failed.length > 0) {
     console.error(`::warning::${failed.length} of ${TARGETS.length} targets failed to scan`);
     for (const f of failed) console.error(`  ${f}`);
+  }
+
+  // Decided AFTER the loop, from what the targets actually hold. See
+  // `unmeasurableRules` for why the flag alone is not enough.
+  const unmeasurable = unmeasurableRules(targetsInstalled);
+  if (targetsInstalled && !installTargets) {
+    log(
+      'Targets already carry node_modules from an earlier --install-targets run;\n' +
+        'the dependency-dependent rules are being measured accordingly.',
+    );
+  }
+
+  // A budget written against a state the default gate cannot reproduce is not a
+  // budget. `node_modules` survives in the shared cache, so a developer who ran
+  // `--install-targets` once would otherwise write `no-unresolved: 2630` into a
+  // file CI evaluates against bare clones — where the same rule reports
+  // thousands. Same refusal, and same reason, as `--local --update`.
+  if (update && targetsInstalled !== installTargets) {
+    console.error(
+      `::error::--update refused. The targets are ${targetsInstalled ? '' : 'not '}installed ` +
+        `while --install-targets was ${installTargets ? '' : 'not '}passed, so this run measures ` +
+        'a state the next one will not reproduce. Pass the flag, or clear the ' +
+        'targets\u2019 node_modules, so the two agree.',
+    );
+    return 2;
   }
 
   const budget: Budget = JSON.parse(readFileSync(BUDGET_FILE, 'utf-8')) as Budget;
@@ -638,7 +746,7 @@ function main(): number {
       generated: new Date().toISOString().slice(0, 10),
       budgets: Object.fromEntries(
         [...totals.entries()]
-          .filter(([rule]) => !UNMEASURABLE_RULES.has(rule))
+          .filter(([rule]) => !unmeasurable.has(rule))
           .sort(([a], [b]) => a.localeCompare(b)),
       ),
       ...(budget.triage ? { triage: budget.triage } : {}),
@@ -652,8 +760,8 @@ function main(): number {
   const under: Array<{ rule: string; found: number; allowed: number }> = [];
 
   for (const [rule, found] of totals) {
-    // Skipped, not budgeted at zero — see UNMEASURABLE_RULES.
-    if (UNMEASURABLE_RULES.has(rule)) continue;
+    // Skipped, not budgeted at zero — see DEPENDENCY_DEPENDENT_RULES.
+    if (unmeasurable.has(rule)) continue;
     // A rule with no budget entry is new to the corpus. Treat 0 as its budget
     // so a newly-noisy rule cannot arrive unnoticed.
     const allowed = budget.budgets[rule] ?? 0;

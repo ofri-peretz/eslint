@@ -81,13 +81,59 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
 
     type Space = 'value' | 'type' | 'interface';
 
-    function checkAndAddExport(name: string, node: TSESTree.Node, space: Space = 'value') {
+    /**
+     * The namespace path a declaration sits inside, as a key prefix.
+     *
+     * `export type T` inside `export namespace A` exports `A.T`, not `T`. The
+     * maps were keyed on the bare name, so Stripe's `.d.ts` files reported
+     * `PaymentIntent.SetupFutureUsage` and
+     * `PaymentIntentConfirmParams.SetupFutureUsage` as the same export. They
+     * are two distinct types that happen to share a member name — which is the
+     * whole point of a namespace.
+     *
+     * A prefix rather than a skip, so a genuine duplicate INSIDE one namespace
+     * still reports. Anonymous or computed module names (`declare module 'x'`)
+     * contribute their raw text, which is stable within a file and is all this
+     * key needs to be.
+     */
+    function scopeKey(node: TSESTree.Node): string {
+      const parts: string[] = [];
+      let current = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      while (current) {
+        if (current.type === 'TSModuleDeclaration') {
+          const id = (current as TSESTree.TSModuleDeclaration).id;
+          // Three shapes. An Identifier for `namespace A`; a StringLiteral for
+          // `declare module 'x'`, where the VALUE is the key — printed text
+          // would keep the quote style, so `declare module 'x'` and
+          // `declare module "x"` would land in different buckets despite being
+          // the same ambient module to TypeScript; and a TSQualifiedName for
+          // `namespace A.B`, which has no value to read and whose printed text
+          // is unambiguous.
+          if (id.type === 'Identifier') {
+            parts.push(id.name);
+          } else if (id.type === 'Literal') {
+            parts.push(String(id.value));
+          } else {
+            parts.push(context.sourceCode.getText(id));
+          }
+        }
+        current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      }
+      return parts.length > 0 ? `${parts.reverse().join('.')}.` : '';
+    }
+
+    function checkAndAddExport(
+      rawName: string,
+      node: TSESTree.Node,
+      space: Space = 'value',
+    ) {
+      const name = `${scopeKey(node)}${rawName}`;
       // `interface X` merges with an earlier `interface X`, so a repeat is only
       // a conflict when the earlier declaration was NOT an interface.
       if (space === 'interface') {
         const clash = typeNames.get(name);
         if (clash && !mergeableInterfaces.has(name)) {
-          context.report({ node, messageId: 'duplicateExport', data: { name } });
+          context.report({ node, messageId: 'duplicateExport', data: { name: rawName } });
           return;
         }
         mergeableInterfaces.add(name);
@@ -100,7 +146,7 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'duplicateExport',
-          data: { name },
+          data: { name: rawName },
         });
         return;
       }
@@ -156,12 +202,20 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
             // twice report the same node twice, because both buckets were
             // already populated by the first enum. `id` is required here for
             // the same reason it is on interfaces and type aliases.
+            //
+            // Scoped like every other branch. This one wrote to the maps
+            // directly rather than through `checkAndAddExport`, so it was the
+            // one place the namespace prefix did not reach: two enums of the
+            // same name in different namespaces collided, and an enum beside a
+            // same-named type INSIDE one namespace was missed. The diagnostic
+            // still names the bare enum.
             const enumName = node.declaration.id.name;
-            if (valueNames.has(enumName) || typeNames.has(enumName)) {
+            const scopedEnum = `${scopeKey(node)}${enumName}`;
+            if (valueNames.has(scopedEnum) || typeNames.has(scopedEnum)) {
               context.report({ node, messageId: 'duplicateExport', data: { name: enumName } });
             } else {
-              valueNames.set(enumName, node);
-              typeNames.set(enumName, node);
+              valueNames.set(scopedEnum, node);
+              typeNames.set(scopedEnum, node);
             }
           }
         }
