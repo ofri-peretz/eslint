@@ -431,7 +431,7 @@ describe('no-unsafe-buffer-alloc', () => {
           code: 'const h = Buffer.allocUnsafe(4); h.writeUInt16BE(a, 0); h.writeUInt32BE(b, 0); socket.write(h);',
         },
         // The depth cap terminates a long member chain rather than the walk
-        // running away. `new Array(a.b.…​.length)` is eleven hops.
+        // running away. `new Array(a.b.….length)` is eleven hops.
         {
           code: 'function d(chunk) { return new Array(a.b.c.d.e.f.g.h.i.j.k.length); }',
         },
