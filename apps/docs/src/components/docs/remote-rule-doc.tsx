@@ -62,6 +62,7 @@ export async function RemoteRuleDoc({ plugin, rule }: RemoteRuleDocProps) {
     <RemoteMarkdown
       url={url}
       revalidate={21600}
+      tags={['github-markdown', 'remote-rule-doc']}
       fallback={fallback}
       className="remote-rule-doc"
       source={{

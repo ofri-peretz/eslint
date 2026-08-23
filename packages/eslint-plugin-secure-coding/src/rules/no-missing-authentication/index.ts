@@ -100,6 +100,14 @@ const DEFAULT_PUBLIC_ROUTE_PATTERNS = [
   'healthz',
   'readyz',
   'livez',
+  // Liveness / readiness probes under their other common spellings.
+  // shardeum/json-rpc-server `src/routes/healthCheck.ts:8` registers
+  // `get('/is-alive')` and was reported at CVSS 9.8 — a probe called by
+  // infrastructure that holds no session is unauthenticated on purpose.
+  'alive',
+  'liveness',
+  'readiness',
+  'heartbeat',
   'status',
   'metrics',
   'ping',
