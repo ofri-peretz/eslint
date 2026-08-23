@@ -1,4 +1,9 @@
-## [1.2.3] - 2026-02-08
+# eslint-plugin-lambda-security
+
+All notable changes to `eslint-plugin-lambda-security` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 2.0.0
 
@@ -693,7 +698,9 @@ exit`. They used a grouped `:exit` selector (`'A:exit, B:exit, C:exit'`); ESLint
 
 - Ofri Peretz
 
-## [1.2.2] - 2026-02-06
+## 1.2.3 — 2026-02-08
+
+## 1.2.2 — 2026-02-06
 
 ### Bug Fixes
 
@@ -703,18 +710,11 @@ exit`. They used a grouped `:exit` selector (`'A:exit, B:exit, C:exit'`); ESLint
 
 - Ofri Peretz
 
-## [1.2.1] - 2026-02-02
+## 1.2.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-lambda-security to align it with other projects, there were no code changes.
 
-# Changelog
-
-All notable changes to `eslint-plugin-lambda-security` will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [1.0.0] - 2025-12-29
+## 1.0.0 — 2025-12-29
 
 ### Added
 

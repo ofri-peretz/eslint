@@ -1,4 +1,9 @@
-## [1.4.3] - 2026-02-08
+# eslint-plugin-postgresql-security
+
+All notable changes to `eslint-plugin-postgresql-security` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 2.2.0
 
@@ -415,7 +420,9 @@
 
 - Ofri Peretz
 
-## [1.4.2] - 2026-02-06
+## 1.4.3 — 2026-02-08
+
+## 1.4.2 — 2026-02-06
 
 ### Bug Fixes
 
@@ -425,15 +432,11 @@
 
 - Ofri Peretz
 
-## [1.4.1] - 2026-02-02
+## 1.4.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-postgresql-security to align it with other projects, there were no code changes.
 
-# Changelog
-
-All notable changes to `eslint-plugin-postgresql-security` will be documented in this file.
-
-## [0.0.1] - 2024-12-20
+## 0.0.1 — 2024-12-20
 
 ### Added
 
