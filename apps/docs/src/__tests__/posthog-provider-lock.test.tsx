@@ -147,7 +147,22 @@ describe('PostHog: Init contract (ANALYTICS_PHILOSOPHY.md)', () => {
     // filter it — the UA is a plain Chrome string — so navigator.webdriver is
     // the only signal that separates a scripted browser from a person.
     expect(initSrc).toMatch(/navigator\.webdriver === true/);
-    expect(initSrc).toMatch(/if \(isAutomatedBrowser\(\)\) return false;/);
+    // Excluded unless a synthetic check has deliberately opted in — the
+    // escape hatch must not become a way for CI to drift back into the data.
+    expect(initSrc).toMatch(
+      /if \(isAutomatedBrowser\(\) && !isSyntheticCheck\(\)\) return false;/,
+    );
+  });
+  it('synthetic monitoring can opt in, and is tagged when it does', () => {
+    // The webdriver guard removed the only way to prove capture still works.
+    // The escape hatch restores it — but marks the events, because synthetic
+    // traffic that looks real is the same defect as unfiltered CI traffic.
+    expect(initSrc).toMatch(/interlace_synthetic_check/);
+    expect(initSrc).toMatch(/isAutomatedBrowser\(\) && !isSyntheticCheck\(\)/);
+    // Anchored to the register call, not the phrase: the docstring above the
+    // option also contains `is_synthetic: true`, so a looser pattern passes
+    // even with the tagging deleted.
+    expect(initSrc).toMatch(/ph\.register\(\{ is_synthetic: true \}\)/);
   });
   it('local-environment short-circuit before init (with localStorage opt-in)', () => {
     expect(initSrc).toMatch(/isLocalEnvironment/);
