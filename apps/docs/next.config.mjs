@@ -216,6 +216,17 @@ const config = {
           key: 'Strict-Transport-Security',
           value: 'max-age=63072000; includeSubDomains',
         },
+        // Severs the window.opener relationship with cross-origin openers, so
+        // this document cannot be reached from another browsing context group.
+        // Safe here: nothing in this app calls window.open, so there is no
+        // popup flow to break. Not pairing this with COEP — that would require
+        // every cross-origin image and font to opt in via CORP, which is a
+        // much larger change and buys cross-origin isolation we have no use
+        // for (no SharedArrayBuffer, no high-resolution timers).
+        {
+          key: 'Cross-Origin-Opener-Policy',
+          value: 'same-origin',
+        },
         ...cspReportOnlyHeaders(),
       ],
     },
