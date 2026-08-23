@@ -168,3 +168,35 @@ describe('a form-encoded body is not a query string', () => {
     },
   );
 });
+
+describe('option: bodyProperties extends the payload vocabulary', () => {
+  ruleTester.run('valid - a custom body property', noCredentialsInQueryParams, {
+    valid: [
+      {
+        code: 'client.send({ payload: `client_id=${id}&token=${t}` });',
+        options: [{ bodyProperties: ['payload'] }],
+      },
+      // A quoted key is the same key. `{ 'body': ... }` is what a serialiser or a
+      // codegen emits, and it must be exempt on the same terms as `{ body: ... }`.
+      "fetch(url, { 'body': `client_id=${id}&token=${t}` });",
+      "fetch(url, { 'data': 'client_id=a&token=b' });",
+    ],
+    invalid: [],
+  });
+
+  /** Narrowing the vocabulary re-exposes what the default would have exempted. */
+  ruleTester.run(
+    'invalid - body dropped from the vocabulary',
+    noCredentialsInQueryParams,
+    {
+      valid: [],
+      invalid: [
+        {
+          code: 'fetch(url, { body: `client_id=${id}&token=${t}` });',
+          options: [{ bodyProperties: ['form'] }],
+          errors: 1,
+        },
+      ],
+    },
+  );
+});

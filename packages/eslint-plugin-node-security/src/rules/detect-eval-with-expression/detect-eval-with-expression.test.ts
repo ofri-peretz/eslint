@@ -833,6 +833,13 @@ describe('the binding is the sink, not the name', () => {
           code: 'const F = globalThis.Function; F("return " + userInput);',
           errors: 1,
         },
+        // A local that SHADOWS the name and aliases the real global. The binding
+        // resolves to a declaration, so the alias path has to follow it home
+        // rather than stopping at "not the global".
+        {
+          code: 'const Function = globalThis.Function; Function("return " + userInput);',
+          errors: 1,
+        },
       ],
     },
   );

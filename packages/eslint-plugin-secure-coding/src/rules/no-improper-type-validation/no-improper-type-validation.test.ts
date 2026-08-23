@@ -1115,3 +1115,45 @@ describe('null guards: && for the positive form, || for the negated one', () => 
     ],
   });
 });
+
+describe('option: checkLooseEquality turns off the arm that needs data-flow', () => {
+  /**
+   * The three structural arms survive; only the loose-equality arm goes quiet. That
+   * arm reported 126 findings across 78 KLOC because, without knowing where a value
+   * came from, it cannot separate `req.body.otp == storedOtp` from
+   * `config.port != 636`.
+   */
+  ruleTester.run('valid - loose equality off', noImproperTypeValidation, {
+    valid: [
+      {
+        code: 'if (req.body.otp == storedOtp) { grant(); }',
+        options: [{ checkLooseEquality: false }],
+      },
+      {
+        code: 'if (config.port != 636) { listen(); }',
+        options: [{ checkLooseEquality: false }],
+      },
+    ],
+    invalid: [],
+  });
+
+  ruleTester.run(
+    'invalid - structural arms survive the option',
+    noImproperTypeValidation,
+    {
+      valid: [],
+      invalid: [
+        {
+          code: 'if (typeof userInput === "object") { processData(userInput); }',
+          options: [{ checkLooseEquality: false }],
+          errors: [{ messageId: 'unsafeTypeofCheck' }],
+        },
+        {
+          code: 'if (data.constructor.name === "Array") { handleArray(data); }',
+          options: [{ checkLooseEquality: false }],
+          errors: [{ messageId: 'unreliableConstructorCheck' }],
+        },
+      ],
+    },
+  );
+});

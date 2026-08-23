@@ -20,8 +20,31 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+/**
+ * Property names whose value is a REQUEST BODY, not a URL.
+ *
+ * `body` is the fetch/undici convention, `data` is axios, `form`/`formData` are got
+ * and request. A form-encoded body is where credentials are SUPPOSED to go:
+ * RFC 6749 §2.3.1 prescribes exactly
+ *
+ *   body: `client_id=${id}&client_secret=${secret}&token=${token}`
+ *
+ * for OAuth 2.0 token introspection and the client-credentials grant. Reporting it
+ * says "use a POST body instead" to code already using a POST body.
+ */
+const DEFAULT_BODY_PROPERTIES = ['body', 'data', 'form', 'formData'];
+
+export interface Options {
+  /**
+   * Property names whose value is a request BODY rather than a URL.
+   *
+   * Defaults to `['body', 'data', 'form', 'formData']` — fetch/undici, axios, got
+   * and request respectively. Extend it for a client that names the payload
+   * something else; a string in one of these positions is form-encoded data, not a
+   * query string, and credentials belong there.
+   */
+  bodyProperties?: string[];
+}
 
 type RuleOptions = [Options?];
 
@@ -47,10 +70,27 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          bodyProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_BODY_PROPERTIES,
+            description:
+              'Property names whose value is a request body rather than a URL',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
+  defaultOptions: [{ bodyProperties: DEFAULT_BODY_PROPERTIES }],
   create(context) {
+    const { bodyProperties = DEFAULT_BODY_PROPERTIES } =
+      context.options[0] ?? {};
+    const bodyPropertyNames: ReadonlySet<string> = new Set(bodyProperties);
     const sensitiveParams = [
       'password=',
       'token=',
@@ -93,33 +133,19 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Property names whose value is a REQUEST BODY, not a URL.
-     *
-     * `body` is the fetch/undici convention, `data` is axios, `form`/`formData` are
-     * got and request. A form-encoded body is where credentials are SUPPOSED to go:
-     * RFC 6749 §2.3.1 prescribes exactly
-     *
-     *   body: `client_id=${id}&client_secret=${secret}&token=${token}`
-     *
-     * for OAuth 2.0 token introspection and the client-credentials grant. Reporting
-     * it says "use a POST body instead" to code that is already using a POST body.
-     */
-    const BODY_PROPERTIES: ReadonlySet<string> = new Set([
-      'body',
-      'data',
-      'form',
-      'formData',
-    ]);
-
-    /**
      * Is this string the value of a request-body property, or fed to a body builder?
      *
      * Structural, not textual: a query string and a form-encoded body are the same
      * characters, so only the position distinguishes them.
      */
     function isRequestBody(node: TSESTree.Node): boolean {
-      const parent = node.parent;
-      if (!parent) return false;
+      // Asserted rather than guarded. ESLint sets `parent` on every node it
+      // visits; the type is optional only because TSESTree shares it with detached
+      // nodes that never reach a visitor. A runtime guard here is a branch no input
+      // can take, and this package holds genuine 100% coverage — it carries no
+      // ignore comments anywhere, so an unreachable branch is a real gate failure
+      // rather than a metric to wave through.
+      const parent = node.parent as TSESTree.Node;
 
       if (
         parent.type === AST_NODE_TYPES.Property &&
@@ -129,14 +155,14 @@ export const noCredentialsInQueryParams = createRule<RuleOptions, MessageIds>({
         const key = parent.key;
         if (
           key.type === AST_NODE_TYPES.Identifier &&
-          BODY_PROPERTIES.has(key.name)
+          bodyPropertyNames.has(key.name)
         ) {
           return true;
         }
         if (
           key.type === AST_NODE_TYPES.Literal &&
           typeof key.value === 'string' &&
-          BODY_PROPERTIES.has(key.value)
+          bodyPropertyNames.has(key.value)
         ) {
           return true;
         }
