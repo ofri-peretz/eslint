@@ -65,20 +65,30 @@ describe('no-unsafe-buffer-alloc', () => {
         `,
       },
       // The whole-buffer copy idiom, with and without a receiver form.
-      { code: 'const b = Buffer.allocUnsafe(src.length); src.copy(b); send(b);' },
+      {
+        code: 'const b = Buffer.allocUnsafe(src.length); src.copy(b); send(b);',
+      },
       { code: 'const b = Buffer.allocUnsafe(n); b.set(src); send(b);' },
       { code: 'const b = Buffer.allocUnsafe(n); b.fill(0); send(b);' },
-      { code: 'const b = Buffer.allocUnsafe(n); crypto.randomFillSync(b); send(b);' },
+      {
+        code: 'const b = Buffer.allocUnsafe(n); crypto.randomFillSync(b); send(b);',
+      },
       // A moving offset inside a `while` covers the buffer just as a `for` does.
       {
         code: 'const b = Buffer.allocUnsafe(n); let o = 0; while (o < n) { b.write(s, o); o += 1; } send(b);',
       },
       // Metadata reads disclose nothing, so they do not end the scan.
-      { code: 'const b = Buffer.allocUnsafe(n); log(b.length); src.copy(b); send(b);' },
+      {
+        code: 'const b = Buffer.allocUnsafe(n); log(b.length); src.copy(b); send(b);',
+      },
       // A partial write is not a read either — it keeps the scan going until a
       // covering write settles it.
-      { code: 'const b = Buffer.allocUnsafe(n); b.writeUInt8(1, 0); src.copy(b); send(b);' },
-      { code: 'const b = Buffer.allocUnsafe(n); b[0] = 1; src.copy(b); send(b);' },
+      {
+        code: 'const b = Buffer.allocUnsafe(n); b.writeUInt8(1, 0); src.copy(b); send(b);',
+      },
+      {
+        code: 'const b = Buffer.allocUnsafe(n); b[0] = 1; src.copy(b); send(b);',
+      },
     ],
     invalid: [
       {
@@ -237,9 +247,13 @@ describe('no-unsafe-buffer-alloc', () => {
       invalid: [
         // The docs' own ❌ example: 4 of 16 bytes written at a FIXED offset,
         // then the whole thing goes out on the wire.
-        stillReports('const header = Buffer.allocUnsafe(16); header.writeUInt32BE(len, 0); socket.write(header);'),
+        stillReports(
+          'const header = Buffer.allocUnsafe(16); header.writeUInt32BE(len, 0); socket.write(header);',
+        ),
         // A moving offset, but not in a loop — one write, one place.
-        stillReports('const b = Buffer.allocUnsafe(n); b.write(s, off); send(b);'),
+        stillReports(
+          'const b = Buffer.allocUnsafe(n); b.write(s, off); send(b);',
+        ),
         // Read first, written after: the disclosure has already happened.
         stillReports('const b = Buffer.allocUnsafe(n); send(b); src.copy(b);'),
         // Allocated and never touched again.
@@ -254,7 +268,9 @@ describe('no-unsafe-buffer-alloc', () => {
         // A write METHOD referenced without being invoked.
         stillReports('const b = Buffer.allocUnsafe(n); schedule(b.fill);'),
         // A private-name member, which is not an Identifier property.
-        stillReports('class C { #x; m() { const b = Buffer.allocUnsafe(n); return b.#x; } }'),
+        stillReports(
+          'class C { #x; m() { const b = Buffer.allocUnsafe(n); return b.#x; } }',
+        ),
         // First argument of a call that does not write through it.
         stillReports('const b = Buffer.allocUnsafe(n); hash.update(b);'),
         stillReports('const b = Buffer.allocUnsafe(n); send(b);'),
@@ -262,7 +278,9 @@ describe('no-unsafe-buffer-alloc', () => {
         // Not the first argument, so not the destination of a copy either.
         stillReports('const b = Buffer.allocUnsafe(n); send(x, b);'),
         // `copy` at a fixed destination offset covers one fixed slice.
-        stillReports('const b = Buffer.allocUnsafe(n); src.copy(b, 0, 0, 4); send(b);'),
+        stillReports(
+          'const b = Buffer.allocUnsafe(n); src.copy(b, 0, 0, 4); send(b);',
+        ),
 
         // ── rule-corpus regression: the OMITTED offset ────────────────────
         // `writeUInt32BE(value)` defaults to offset 0 and still writes four
@@ -304,7 +322,9 @@ describe('no-unsafe-buffer-alloc', () => {
         // A partial write whose span is NOT fixed-width — `write` runs for a
         // runtime length, so it contributes no decidable coverage even with a
         // byte map in hand.
-        stillReports('const b = Buffer.allocUnsafe(8); b.write(s, 0); send(b);'),
+        stillReports(
+          'const b = Buffer.allocUnsafe(8); b.write(s, 0); send(b);',
+        ),
       ],
     });
   });
@@ -316,48 +336,54 @@ describe('no-unsafe-buffer-alloc', () => {
   // is not mitigating it: a config-driven pool picks its allocator exactly
   // that way, and a hot-path serializer destructures it.
   describe('Allocator resolution', () => {
-    ruleTester.run('computed and destructured allocators', noUnsafeBufferAlloc, {
-      valid: [
-        // The key resolves to the SAFE allocator.
-        { code: "const M = 'alloc';\nconst b = Buffer[M](64);\nsend(b);" },
-        // A computed key this file cannot resolve is not evidence.
-        { code: 'const b = Buffer[pick()](64);\nsend(b);' },
-        // Destructured off something that is not `Buffer`.
-        { code: 'const { allocUnsafe } = pool;\nsend(allocUnsafe(64));' },
-        // Destructured, but not an unsafe allocator.
-        { code: 'const { alloc } = Buffer;\nsend(alloc(64));' },
-        // A computed destructuring key is not read.
-        { code: 'const { [k]: make } = Buffer;\nsend(make(64));' },
-        // A non-computed property that is not an Identifier.
-        { code: 'class C { static #allocUnsafe; m() { return Buffer.#allocUnsafe(4); } }' },
-        // A parameter binding has no initializer to resolve.
-        { code: 'function f(allocUnsafe) { return allocUnsafe(64); }' },
-        // Neither a member expression nor an identifier.
-        { code: 'send((0, Buffer.alloc)(64));' },
-      ],
-      invalid: [
-        // vulnerable/08 — computed member with a `const` string key. The
-        // suggestion is withheld: `Buffer[alloc](n)` would not compile.
-        {
-          code: "const ALLOCATOR = 'allocUnsafe';\nconst slot = Buffer[ALLOCATOR](64);\nsend(slot);",
-          errors: [{ messageId: 'unsafeAlloc' }],
-        },
-        {
-          code: 'const slot = Buffer["allocUnsafeSlow"](64);\nsend(slot);',
-          errors: [{ messageId: 'unsafeAllocSlow' }],
-        },
-        // vulnerable/09 — destructured off `Buffer`, and off the required
-        // module object.
-        {
-          code: 'const { allocUnsafe } = Buffer;\nconst p = allocUnsafe(64);\nsend(p);',
-          errors: [{ messageId: 'unsafeAlloc' }],
-        },
-        {
-          code: "const { allocUnsafeSlow } = require('node:buffer').Buffer;\nconst p = allocUnsafeSlow(64);\nsend(p);",
-          errors: [{ messageId: 'unsafeAllocSlow' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'computed and destructured allocators',
+      noUnsafeBufferAlloc,
+      {
+        valid: [
+          // The key resolves to the SAFE allocator.
+          { code: "const M = 'alloc';\nconst b = Buffer[M](64);\nsend(b);" },
+          // A computed key this file cannot resolve is not evidence.
+          { code: 'const b = Buffer[pick()](64);\nsend(b);' },
+          // Destructured off something that is not `Buffer`.
+          { code: 'const { allocUnsafe } = pool;\nsend(allocUnsafe(64));' },
+          // Destructured, but not an unsafe allocator.
+          { code: 'const { alloc } = Buffer;\nsend(alloc(64));' },
+          // A computed destructuring key is not read.
+          { code: 'const { [k]: make } = Buffer;\nsend(make(64));' },
+          // A non-computed property that is not an Identifier.
+          {
+            code: 'class C { static #allocUnsafe; m() { return Buffer.#allocUnsafe(4); } }',
+          },
+          // A parameter binding has no initializer to resolve.
+          { code: 'function f(allocUnsafe) { return allocUnsafe(64); }' },
+          // Neither a member expression nor an identifier.
+          { code: 'send((0, Buffer.alloc)(64));' },
+        ],
+        invalid: [
+          // vulnerable/08 — computed member with a `const` string key. The
+          // suggestion is withheld: `Buffer[alloc](n)` would not compile.
+          {
+            code: "const ALLOCATOR = 'allocUnsafe';\nconst slot = Buffer[ALLOCATOR](64);\nsend(slot);",
+            errors: [{ messageId: 'unsafeAlloc' }],
+          },
+          {
+            code: 'const slot = Buffer["allocUnsafeSlow"](64);\nsend(slot);',
+            errors: [{ messageId: 'unsafeAllocSlow' }],
+          },
+          // vulnerable/09 — destructured off `Buffer`, and off the required
+          // module object.
+          {
+            code: 'const { allocUnsafe } = Buffer;\nconst p = allocUnsafe(64);\nsend(p);',
+            errors: [{ messageId: 'unsafeAlloc' }],
+          },
+          {
+            code: "const { allocUnsafeSlow } = require('node:buffer').Buffer;\nconst p = allocUnsafeSlow(64);\nsend(p);",
+            errors: [{ messageId: 'unsafeAllocSlow' }],
+          },
+        ],
+      },
+    );
   });
 
   // ── Coverage evidence the rule was blind to ───────────────────────────
@@ -384,7 +410,9 @@ describe('no-unsafe-buffer-alloc', () => {
         // memory. `buffer` is in WIRE_NAMES as a conventional PARAMETER name,
         // which made every `Buffer.*`-sized allocation read as wire-derived.
         // benchmarks/rule-corpus/…/safe/07-alloc-from-bytelength.js
-        { code: 'const b = Buffer.alloc(Buffer.byteLength(json, "utf8")); b.write(json, 0);' },
+        {
+          code: 'const b = Buffer.alloc(Buffer.byteLength(json, "utf8")); b.write(json, 0);',
+        },
         {
           code: "import { Buffer } from 'node:buffer';\nconst b = Buffer.alloc(Buffer.byteLength(json, 'utf8'));\nb.write(json, 0);",
         },
@@ -398,7 +426,9 @@ describe('no-unsafe-buffer-alloc', () => {
         // A spread into `Math.min` is not counted as a bound, but `readsWire`
         // does not walk spread arguments either, so the whole expression is
         // unresolved rather than clamped. Documented, not claimed as safe.
-        { code: 'function reserve(req) { return Buffer.alloc(Math.min(...req.body.sizes)); }' },
+        {
+          code: 'function reserve(req) { return Buffer.alloc(Math.min(...req.body.sizes)); }',
+        },
         // byteMapFor: no size argument, and a spread size argument.
         { code: 'const b = Buffer.alloc(); send(b);' },
         { code: 'const b = Buffer.alloc(...args); send(b);' },
@@ -451,7 +481,9 @@ describe('no-unsafe-buffer-alloc', () => {
         // all — a computed byte assignment — and one whose parent IS the call
         // (`src.copy(b, …)`). Neither contributes coverage.
         stillReports('const b = Buffer.allocUnsafe(8); b[i] = 1; send(b);'),
-        stillReports('const b = Buffer.allocUnsafe(8); src.copy(b, 0, 0, 4); send(b);'),
+        stillReports(
+          'const b = Buffer.allocUnsafe(8); src.copy(b, 0, 0, 4); send(b);',
+        ),
         // The `let` whose last write before the sink comes off the request.
         // benchmarks/rule-corpus/…/vulnerable/11-let-reassigned-from-request.js
         {
@@ -685,5 +717,59 @@ describe('no-unsafe-buffer-alloc', () => {
         },
       ],
     });
+  });
+});
+
+describe('a visible origin beats a wire-shaped name', () => {
+  /**
+   * Provenance: IGNF/cartes.gouv.fr-entree-carto — a French government mapping
+   * site running this plugin — src/components/carte/control/printUtils/png.js,
+   * three findings on a PNG writer that never touches a socket.
+   *
+   * `data` left WIRE_NAMES for the reason `bytes` did: it is the most generic
+   * parameter name in JavaScript and denotes a buffer only sometimes. And where
+   * an identifier resolves to a local variable, the initializer is visible, so
+   * the rule follows it instead of trusting the spelling.
+   */
+  ruleTester.run('valid - locally built buffers', noUnsafeBufferAlloc, {
+    valid: [
+      // The parameter is named `data`, and the only call passes local metadata.
+      `function buildPngChunk(type, data) {
+         const crcInput = new Uint8Array(4 + data.length);
+         return crcInput;
+       }
+       const chunk = buildPngChunk('pHYs', new Uint8Array(9));`,
+      // `chunk` resolves to a local whose initializer is a local call.
+      `function build() { return new Uint8Array(8); }
+       const chunk = build();
+       const result = new Uint8Array(chunk.length);`,
+    ],
+    invalid: [],
+  });
+
+  /** The name still carries where the origin is genuinely invisible. */
+  ruleTester.run('invalid - the origin is off the wire', noUnsafeBufferAlloc, {
+    valid: [],
+    invalid: [
+      {
+        // Follows the initializer to the request rather than stopping at `chunk`.
+        code: `function handler(req) {
+                 const chunk = req.body.raw;
+                 return new Uint8Array(chunk.length);
+               }`,
+        errors: 1,
+      },
+      {
+        // A parameter: nothing local to follow, so the name is the evidence.
+        code: `function decode(chunk) { return new Uint8Array(chunk.readUInt32BE(0)); }`,
+        errors: 1,
+      },
+      {
+        // Never declared in this file — the purest "origin invisible" case, and
+        // the one the name list exists for.
+        code: `const result = new Uint8Array(chunk.length);`,
+        errors: 1,
+      },
+    ],
   });
 });

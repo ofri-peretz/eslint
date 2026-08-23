@@ -77,14 +77,14 @@ import {
   MessageIcons,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
-import { resolveConstant, resolveConstantString } from '../../utils/const-value';
+import {
+  resolveConstant,
+  resolveConstantString,
+} from '../../utils/const-value';
 import { findVariable } from '../../utils/provenance';
 
 type MessageIds =
-  | 'unsafeAlloc'
-  | 'unsafeAllocSlow'
-  | 'useSafeAlloc'
-  | 'unboundedAllocation';
+  'unsafeAlloc' | 'unsafeAllocSlow' | 'useSafeAlloc' | 'unboundedAllocation';
 
 /** The two uninitialized-memory allocators on `Buffer`. */
 const UNSAFE_ALLOCATORS = new Set(['allocUnsafe', 'allocUnsafeSlow']);
@@ -109,9 +109,20 @@ const UNSAFE_ALLOCATORS = new Set(['allocUnsafe', 'allocUnsafeSlow']);
  * allocators below have no such threshold — they commit n bytes at every n.
  */
 const SIZED_ALLOCATORS: ReadonlySet<string> = new Set([
-  'Array', 'Buffer', 'Uint8Array', 'Uint16Array', 'Uint32Array', 'Int8Array',
-  'Int16Array', 'Int32Array', 'Float32Array', 'Float64Array', 'BigInt64Array',
-  'BigUint64Array', 'ArrayBuffer', 'SharedArrayBuffer',
+  'Array',
+  'Buffer',
+  'Uint8Array',
+  'Uint16Array',
+  'Uint32Array',
+  'Int8Array',
+  'Int16Array',
+  'Int32Array',
+  'Float32Array',
+  'Float64Array',
+  'BigInt64Array',
+  'BigUint64Array',
+  'ArrayBuffer',
+  'SharedArrayBuffer',
 ]);
 
 /**
@@ -131,7 +142,9 @@ function looksNumeric(node: TSESTree.Node): boolean {
     case AST_NODE_TYPES.Literal:
       return typeof node.value === 'number';
     case AST_NODE_TYPES.BinaryExpression:
-      return ['+', '-', '*', '/', '%', '<<', '>>', '>>>'].includes(node.operator);
+      return ['+', '-', '*', '/', '%', '<<', '>>', '>>>'].includes(
+        node.operator,
+      );
     case AST_NODE_TYPES.Identifier:
       return COUNT_NAMES.has(node.name.toLowerCase());
     case AST_NODE_TYPES.MemberExpression:
@@ -160,12 +173,22 @@ function looksNumeric(node: TSESTree.Node): boolean {
 
 /** Names that hold a count, not a payload. */
 const COUNT_NAMES: ReadonlySet<string> = new Set([
-  'length', 'len', 'size', 'count', 'n', 'num', 'total', 'capacity', 'bytelength',
+  'length',
+  'len',
+  'size',
+  'count',
+  'n',
+  'num',
+  'total',
+  'capacity',
+  'bytelength',
 ]);
 
 /** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.allocUnsafeSlow`. */
 const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
-  'alloc', 'allocUnsafe', 'allocUnsafeSlow',
+  'alloc',
+  'allocUnsafe',
+  'allocUnsafeSlow',
 ]);
 
 /**
@@ -184,10 +207,32 @@ const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
  * definition of a name-inference false positive. Removed; the decoder shapes
  * this list exists for (`benchmarks/corpus/CWE-770/vulnerable/*`) still report
  * through `chunk`/`req`.
+ *
+ * `data` went the same way, for the same reason. It is the most generic
+ * parameter name in JavaScript and denotes a buffer only sometimes, which fails
+ * the test stated above: every name here must denote a BUFFER. It reported
+ * IGNF/cartes.gouv.fr-entree-carto — a French government mapping site running
+ * this plugin — three times in a PNG chunk builder, on
+ * `new Uint8Array(4 + data.length)`, where the only call in the file passes
+ * locally-built metadata: `buildPngChunk('pHYs', phys)`. Nothing is off the wire,
+ * and renaming the parameter would have silenced it.
+ *
+ * Removing it costs no real detection: the interprocedural half of this arm is
+ * what catches a genuinely wire-fed parameter. A `data` argument that receives
+ * `req.body.something` at any call site in the file is still recorded as
+ * wire-derived, whatever it is named.
  */
 const WIRE_NAMES: ReadonlySet<string> = new Set([
-  'chunk', 'chunks', 'buffer', 'buf', 'data', 'payload', 'frame', 'packet',
-  'raw', 'message', 'msg',
+  'chunk',
+  'chunks',
+  'buffer',
+  'buf',
+  'payload',
+  'frame',
+  'packet',
+  'raw',
+  'message',
+  'msg',
 ]);
 
 /**
@@ -201,7 +246,10 @@ const WIRE_NAMES: ReadonlySet<string> = new Set([
  * wire" is the whole predicate.
  */
 const REQUEST_ROOTS: ReadonlySet<string> = new Set([
-  'req', 'request', 'ctx', 'event',
+  'req',
+  'request',
+  'ctx',
+  'event',
 ]);
 
 /**
@@ -220,12 +268,17 @@ function isWriteMethod(name: string): boolean {
  * `arguments[0]` of one of these is being filled, not read.
  */
 const DESTINATION_ARGUMENT_CALLS: ReadonlySet<string> = new Set([
-  'copy', 'randomFill', 'randomFillSync',
+  'copy',
+  'randomFill',
+  'randomFillSync',
 ]);
 
 /** Properties that report the buffer's shape, not its contents. */
 const METADATA_PROPERTIES: ReadonlySet<string> = new Set([
-  'length', 'byteLength', 'byteOffset', 'buffer',
+  'length',
+  'byteLength',
+  'byteOffset',
+  'buffer',
 ]);
 
 /**
@@ -243,13 +296,24 @@ const METADATA_PROPERTIES: ReadonlySet<string> = new Set([
  * depends on a runtime value, so they are judged by the offset rule instead.
  */
 const WRITE_WIDTHS: ReadonlyMap<string, number> = new Map([
-  ['writeUInt8', 1], ['writeInt8', 1],
-  ['writeUInt16LE', 2], ['writeUInt16BE', 2], ['writeInt16LE', 2], ['writeInt16BE', 2],
-  ['writeUInt32LE', 4], ['writeUInt32BE', 4], ['writeInt32LE', 4], ['writeInt32BE', 4],
-  ['writeFloatLE', 4], ['writeFloatBE', 4],
-  ['writeDoubleLE', 8], ['writeDoubleBE', 8],
-  ['writeBigInt64LE', 8], ['writeBigInt64BE', 8],
-  ['writeBigUInt64LE', 8], ['writeBigUInt64BE', 8],
+  ['writeUInt8', 1],
+  ['writeInt8', 1],
+  ['writeUInt16LE', 2],
+  ['writeUInt16BE', 2],
+  ['writeInt16LE', 2],
+  ['writeInt16BE', 2],
+  ['writeUInt32LE', 4],
+  ['writeUInt32BE', 4],
+  ['writeInt32LE', 4],
+  ['writeInt32BE', 4],
+  ['writeFloatLE', 4],
+  ['writeFloatBE', 4],
+  ['writeDoubleLE', 8],
+  ['writeDoubleBE', 8],
+  ['writeBigInt64LE', 8],
+  ['writeBigInt64BE', 8],
+  ['writeBigUInt64LE', 8],
+  ['writeBigUInt64BE', 8],
 ]);
 
 /**
@@ -269,7 +333,10 @@ const BUFFER_MODULES: ReadonlySet<string> = new Set(['buffer', 'node:buffer']);
 const CRYPTO_MODULES: ReadonlySet<string> = new Set(['crypto', 'node:crypto']);
 
 /** Entropy writers that fill their FIRST argument. */
-const RANDOM_FILL_CALLS: ReadonlySet<string> = new Set(['randomFill', 'randomFillSync']);
+const RANDOM_FILL_CALLS: ReadonlySet<string> = new Set([
+  'randomFill',
+  'randomFillSync',
+]);
 
 /** `require('crypto')` / `require('node:crypto')`. */
 function isCryptoModuleRequire(node: TSESTree.Node): boolean {
@@ -341,7 +408,10 @@ function isInsideLoop(node: TSESTree.Node): boolean {
  * walked, a literal offset is one fixed field being stamped and the rest of the
  * allocation left as the allocator handed it over.
  */
-function coversWholeBuffer(call: TSESTree.CallExpression, method: string): boolean {
+function coversWholeBuffer(
+  call: TSESTree.CallExpression,
+  method: string,
+): boolean {
   if (method === 'fill') return true;
   const width = WRITE_WIDTHS.get(method);
   if (width !== undefined) {
@@ -376,7 +446,10 @@ function fixedWriteSpan(
   if (width === undefined) return null;
   const offset = call.arguments[1];
   if (offset === undefined) return { start: 0, end: width };
-  if (offset.type !== AST_NODE_TYPES.Literal || typeof offset.value !== 'number') {
+  if (
+    offset.type !== AST_NODE_TYPES.Literal ||
+    typeof offset.value !== 'number'
+  ) {
     return null;
   }
   return { start: offset.value, end: offset.value + width };
@@ -395,7 +468,8 @@ function calleeName(callee: TSESTree.Node): string | null {
 
 /** The declared name of a function-ish node, however it was written. */
 function declaredName(node: TSESTree.Node): string | null {
-  if (node.type === AST_NODE_TYPES.FunctionDeclaration && node.id) return node.id.name;
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration && node.id)
+    return node.id.name;
   const parent = node.parent;
   if (parent?.type === AST_NODE_TYPES.VariableDeclarator) {
     return parent.id.type === AST_NODE_TYPES.Identifier ? parent.id.name : null;
@@ -497,9 +571,12 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     /** Function name → parameter indices fed a wire-derived argument. */
     const wireParams = new Map<string, Set<number>>();
     /** Allocations to judge at Program:exit, once every call site is known. */
-    const pendingAllocations: { node: TSESTree.Node; size: TSESTree.Node }[] = [];
+    const pendingAllocations: { node: TSESTree.Node; size: TSESTree.Node }[] =
+      [];
     /** Call sites to record at Program:exit, once every binding is known. */
-    const pendingCallSites: (TSESTree.CallExpression | TSESTree.NewExpression)[] = [];
+    const pendingCallSites: (
+      TSESTree.CallExpression | TSESTree.NewExpression
+    )[] = [];
 
     // A size is almost never used where it is produced: it is parsed into a
     // local and allocated from the local one line later, and following that hop
@@ -539,7 +616,34 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
             if (bound.defs[0].type === 'ImportBinding') return false;
           }
           const lower = node.name.toLowerCase();
-          if (WIRE_NAMES.has(lower) || REQUEST_ROOTS.has(lower)) return true;
+          if (WIRE_NAMES.has(lower) || REQUEST_ROOTS.has(lower)) {
+            // A name is evidence only where the ORIGIN is invisible — a
+            // parameter, or a binding this file never declares. When the
+            // identifier resolves to a local variable the initializer is right
+            // there, so follow it rather than trusting the spelling. Same move
+            // the `Buffer` case above makes, generalised.
+            //
+            // `const chunk = buildPngChunk('pHYs', phys)` then
+            // `new Uint8Array(bytes.length + chunk.length)` was reported as "the
+            // peer picks the allocation" on the strength of the word `chunk`, in
+            // a PNG writer at IGNF/cartes.gouv.fr-entree-carto that never touches
+            // a socket. Following the initializer answers it; the name cannot.
+            //
+            // Recursing rather than returning false keeps the true case: a
+            // `const chunk = req.body.raw` still reads wire, now for a reason
+            // rather than for a spelling.
+            const bound = findVariable(sourceCode, node);
+            const def = bound === null ? undefined : bound.defs[0];
+            if (
+              def !== undefined &&
+              def.type === 'Variable' &&
+              def.node.init !== null &&
+              def.node.init !== undefined
+            ) {
+              return readsWire(def.node.init, depth + 1);
+            }
+            return true;
+          }
           const owner = enclosingFunction(node);
           if (owner !== null) {
             const name = declaredName(owner);
@@ -616,10 +720,14 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
 
     /** If this identifier is a parameter of `owner`, its index. */
     // oxlint-disable-next-line consistent-function-scoping
-    function paramIndexOf(node: TSESTree.Identifier, owner: TSESTree.Node): number | null {
+    function paramIndexOf(
+      node: TSESTree.Identifier,
+      owner: TSESTree.Node,
+    ): number | null {
       const params = (owner as TSESTree.FunctionDeclaration).params;
       const index = params.findIndex(
-        (param) => param.type === AST_NODE_TYPES.Identifier && param.name === node.name,
+        (param) =>
+          param.type === AST_NODE_TYPES.Identifier && param.name === node.name,
       );
       return index === -1 ? null : index;
     }
@@ -647,7 +755,8 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       ) {
         return size.arguments.some(
           (argument) =>
-            argument.type !== AST_NODE_TYPES.SpreadElement && !readsWire(argument),
+            argument.type !== AST_NODE_TYPES.SpreadElement &&
+            !readsWire(argument),
         );
       }
       if (size.type !== AST_NODE_TYPES.Identifier) return false;
@@ -686,11 +795,12 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     function mentionsInComparison(test: TSESTree.Node, name: string): boolean {
       if (test.type === AST_NODE_TYPES.LogicalExpression) {
         return (
-          mentionsInComparison(test.left, name) || mentionsInComparison(test.right, name)
+          mentionsInComparison(test.left, name) ||
+          mentionsInComparison(test.right, name)
         );
       }
       if (test.type !== AST_NODE_TYPES.BinaryExpression) return false;
-      if (!['<', '<=', '>', '>=' ].includes(test.operator)) return false;
+      if (!['<', '<=', '>', '>='].includes(test.operator)) return false;
       const named = (side: TSESTree.Node): boolean =>
         side.type === AST_NODE_TYPES.Identifier && side.name === name;
       return named(test.left as TSESTree.Node) || named(test.right);
@@ -701,7 +811,8 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       node: TSESTree.CallExpression | TSESTree.NewExpression,
     ): TSESTree.Node | null {
       const size = node.arguments[0];
-      if (size === undefined || size.type === AST_NODE_TYPES.SpreadElement) return null;
+      if (size === undefined || size.type === AST_NODE_TYPES.SpreadElement)
+        return null;
       const callee = node.callee;
       if (
         node.type === AST_NODE_TYPES.NewExpression &&
@@ -725,7 +836,9 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     }
 
     /** Record which parameters of a local function receive wire data. */
-    function recordCallSite(node: TSESTree.CallExpression | TSESTree.NewExpression): void {
+    function recordCallSite(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): void {
       const name = calleeName(node.callee);
       if (name === null) return;
       node.arguments.forEach((argument, index) => {
@@ -759,7 +872,10 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     function classifyUse(identifier: TSESTree.Identifier): Use {
       const parent = identifier.parent;
-      if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === identifier) {
+      if (
+        parent.type === AST_NODE_TYPES.MemberExpression &&
+        parent.object === identifier
+      ) {
         if (parent.computed) {
           // `buf[i] = x` writes one byte at one index; `x = buf[i]` reads one.
           const grandparent = parent.parent;
@@ -782,7 +898,10 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         return coversWholeBuffer(grandparent, name) ? 'covering' : 'partial';
       }
       // `src.copy(buf, offset)` / `crypto.randomFillSync(buf)`.
-      if (parent.type === AST_NODE_TYPES.CallExpression && parent.arguments[0] === identifier) {
+      if (
+        parent.type === AST_NODE_TYPES.CallExpression &&
+        parent.arguments[0] === identifier
+      ) {
         const method = destinationArgumentCallee(parent.callee);
         if (method === null) return 'read';
         return coversWholeBuffer(parent, method) ? 'covering' : 'partial';
@@ -889,7 +1008,10 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         if (kind === 'metadata') continue;
         if (kind === 'partial') {
           if (covered !== null) {
-            remaining -= markFixedWrite(covered, use.identifier as TSESTree.Identifier);
+            remaining -= markFixedWrite(
+              covered,
+              use.identifier as TSESTree.Identifier,
+            );
             if (remaining === 0) return true;
           }
           continue;
@@ -906,13 +1028,20 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     function byteMapFor(call: TSESTree.CallExpression): Uint8Array | null {
       const argument = call.arguments[0];
-      if (argument === undefined || argument.type === AST_NODE_TYPES.SpreadElement) {
+      if (
+        argument === undefined ||
+        argument.type === AST_NODE_TYPES.SpreadElement
+      ) {
         return null;
       }
       const resolved = resolveConstant(sourceCode, argument);
       if (resolved === null || typeof resolved.value !== 'number') return null;
       const size = resolved.value;
-      if (!Number.isInteger(size) || size <= 0 || size > MAX_TRACKED_ALLOCATION) {
+      if (
+        !Number.isInteger(size) ||
+        size <= 0 ||
+        size > MAX_TRACKED_ALLOCATION
+      ) {
         return null;
       }
       return new Uint8Array(size);
@@ -927,7 +1056,10 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
      * coverage of the buffer it overflows.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    function markFixedWrite(covered: Uint8Array, identifier: TSESTree.Identifier): number {
+    function markFixedWrite(
+      covered: Uint8Array,
+      identifier: TSESTree.Identifier,
+    ): number {
       const member = identifier.parent;
       if (
         member.type !== AST_NODE_TYPES.MemberExpression ||
@@ -938,7 +1070,8 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       const call = member.parent;
       if (call.type !== AST_NODE_TYPES.CallExpression) return 0;
       const span = fixedWriteSpan(call, member.property.name);
-      if (span === null || span.start < 0 || span.end > covered.length) return 0;
+      if (span === null || span.start < 0 || span.end > covered.length)
+        return 0;
       let added = 0;
       for (let index = span.start; index < span.end; index += 1) {
         if (covered[index] === 0) {
@@ -992,7 +1125,9 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       ) {
         return null;
       }
-      return UNSAFE_ALLOCATORS.has(property.key.name) ? property.key.name : null;
+      return UNSAFE_ALLOCATORS.has(property.key.name)
+        ? property.key.name
+        : null;
     }
 
     /**
@@ -1028,7 +1163,8 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
 
       'Program:exit'() {
         for (const call of pendingCallSites) recordCallSite(call);
-        for (const { node, size } of pendingAllocations) judgeAllocation(node, size);
+        for (const { node, size } of pendingAllocations)
+          judgeAllocation(node, size);
       },
 
       CallExpression(node) {
@@ -1056,7 +1192,8 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
 
         context.report({
           node,
-          messageId: allocator === 'allocUnsafe' ? 'unsafeAlloc' : 'unsafeAllocSlow',
+          messageId:
+            allocator === 'allocUnsafe' ? 'unsafeAlloc' : 'unsafeAllocSlow',
           ...(rewritable === null
             ? {}
             : {
