@@ -1,3 +1,10 @@
+# eslint-plugin-react-a11y
+
+All notable changes to `eslint-plugin-react-a11y` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
+
 ## 2.3.0
 
 ### Minor Changes
@@ -367,11 +374,11 @@
 - Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
   - @interlace/eslint-devkit@1.4.1
 
-## 2.1.5 (2026-02-09)
+## 2.1.5 — 2026-02-09
 
 This was a version bump only for eslint-plugin-react-a11y to align it with other projects, there were no code changes.
 
-## [2.1.3] - 2026-02-08
+## 2.1.3 — 2026-02-08
 
 ### Bug Fixes
 
@@ -385,7 +392,7 @@ This was a version bump only for eslint-plugin-react-a11y to align it with other
 
 - Ofri Peretz
 
-## [2.1.2] - 2026-02-06
+## 2.1.2 — 2026-02-06
 
 ### Bug Fixes
 
@@ -395,18 +402,11 @@ This was a version bump only for eslint-plugin-react-a11y to align it with other
 
 - Ofri Peretz
 
-## [2.1.1] - 2026-02-02
+## 2.1.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-react-a11y to align it with other projects, there were no code changes.
 
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [1.0.0] - 2025-12-05
+## 1.0.0 — 2025-12-05
 
 ### Added
 

@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: read
+      contents: write # tag the deployed app version (production only)
       deployments: write # GitHub Deployments API → record the deploy URL
     environment:
       # Maps to GitHub Environments — gate on reviewers if you want a manual
@@ -203,6 +203,60 @@ jobs:
       # applied at every RemoteMarkdown call site precisely so this command
       # can reach it.
       #
+      # ───────────────────────────────────────────────────────────────────
+      # Make the deployed app version legible outside the Actions log.
+      #
+      # `apps/docs` is versioned by changesets like any package (see
+      # `privatePackages.version` in .changeset/config.json) and its version
+      # is already compiled into the bundle as NEXT_PUBLIC_APP_VERSION. What
+      # was missing was any durable record of *which* version is live: no npm
+      # entry exists for a private app, so without a tag the only answer was
+      # "read the build log of whichever run last succeeded".
+      #
+      # Both steps below are advisory — the site is already serving by now.
+      # ───────────────────────────────────────────────────────────────────
+      - name: Tag the deployed app version
+        if: inputs.environment == 'production'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./apps/docs/package.json').version")
+          tag="docs@${version}"
+
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || \
+             git ls-remote --exit-code --tags origin "$tag" >/dev/null 2>&1; then
+            echo "(tag $tag already exists — a redeploy of the same version)"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$tag" -m "Deploy docs $version"
+            git push origin "$tag"
+            echo "🏷  Tagged $tag"
+          fi
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Annotate deploy in PostHog
+        # Puts a marker on every chart at the moment the deploy landed, so a
+        # trend break can be attributed to a release without cross-referencing
+        # Actions history. See scripts/posthog-annotate.ts.
+        if: inputs.environment == 'production'
+        continue-on-error: true
+        env:
+          POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ vars.POSTHOG_PROJECT_ID }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+        run: |
+          set -euo pipefail
+          version="${APP_VERSION:-$(node -p "require('./apps/docs/package.json').version")}"
+          # HEAD, not $GITHUB_SHA: a dispatch with `ref` deploys the checked-out
+          # commit while GITHUB_SHA still names the workflow's event commit, so
+          # the marker would point at code that never shipped.
+          deployed_sha="$(git rev-parse --short=7 HEAD)"
+          npx tsx scripts/posthog-annotate.ts \
+            --content="🚀 docs@${version} deployed to production (${deployed_sha})"
+
       # Advisory, like the tweet-cache HEAD probe: the deploy has already
       # succeeded by this point, and the failure mode is bounded (content is
       # stale until `revalidate` elapses, an hour or two) — which does not
@@ -248,6 +302,10 @@ jobs:
             echo "| Environment | \`${{ inputs.environment }}\` |"
             echo "| Ref         | \`${{ inputs.ref || github.ref }}\` |"
             echo "| Triggered   | @${{ github.actor }} |"
+            # Read from the tree rather than $APP_VERSION: the tagging step
+            # that sets it is production-only, and a preview deploy should
+            # still report which version it built.
+            echo "| Version     | \`docs@$(node -p "require('./apps/docs/package.json').version")\` |"
             echo "| Status      | $status |"
             if [ -n "${URL:-}" ]; then
               echo "| URL         | $URL |"

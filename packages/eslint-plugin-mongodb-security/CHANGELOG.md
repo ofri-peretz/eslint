@@ -1,4 +1,9 @@
-## [8.3.0] - 2026-02-08
+# eslint-plugin-mongodb-security
+
+All notable changes to `eslint-plugin-mongodb-security` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 9.0.1
 
@@ -442,6 +447,8 @@
 - Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:
   - @interlace/eslint-devkit@1.6.1
 
+## 8.3.0 — 2026-02-08
+
 ## 8.3.0
 
 ### Minor Changes
@@ -561,7 +568,7 @@
 - Comprehensive test suites for all 8 rules (163 total tests)
 - Test coverage improved from 72.61% to 91.30% lines
 
-## [8.2.3] - 2026-02-08
+## 8.2.3 — 2026-02-08
 
 ### Bug Fixes
 
@@ -575,7 +582,7 @@
 
 - Ofri Peretz
 
-## [8.2.2] - 2026-02-06
+## 8.2.2 — 2026-02-06
 
 ### Bug Fixes
 
@@ -585,18 +592,11 @@
 
 - Ofri Peretz
 
-## [8.2.1] - 2026-02-02
+## 8.2.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-mongodb-security to align it with other projects, there were no code changes.
 
-# Changelog
-
-All notable changes to `eslint-plugin-mongodb-security` will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [1.0.0] - 2026-01-09
+## 1.0.0 — 2026-01-09
 
 ### Added
 

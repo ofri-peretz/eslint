@@ -1,3 +1,10 @@
+# eslint-plugin-node-security
+
+All notable changes to `eslint-plugin-node-security` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
+
 ## 5.2.0
 
 ### Minor Changes
@@ -1534,7 +1541,7 @@ form-encoded body are the same characters, so the exemption is positional — a
 - Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:
   - @interlace/eslint-devkit@1.4.1
 
-## [4.1.0] - 2026-05-03
+## 4.1.0 — 2026-05-03
 
 ### Added
 
@@ -1545,7 +1552,7 @@ form-encoded body are the same characters, so the exemption is positional — a
 - `no-zip-slip`: removed redundant dangerous-destination check from the literal handler. Extraction-call handler already reports `dangerousArchiveDestination`; the literal-side check was producing duplicate errors and (separately) firing on unrelated calls like `fs.readFileSync('/etc/app/config')`.
 - `lock-file`, `detect-child-process`: minor refinements (see source diff).
 
-## [4.0.4] - 2026-02-08
+## 4.0.4 — 2026-02-08
 
 ### Bug Fixes
 
@@ -1561,7 +1568,7 @@ form-encoded body are the same characters, so the exemption is positional — a
 
 - Ofri Peretz
 
-## [4.0.3] - 2026-02-06
+## 4.0.3 — 2026-02-06
 
 ### Bug Fixes
 
@@ -1576,31 +1583,24 @@ form-encoded body are the same characters, so the exemption is positional — a
 
 - Ofri Peretz
 
-## [4.0.2] - 2026-02-02
+## 4.0.2 — 2026-02-02
 
 This was a version bump only for eslint-plugin-node-security to align it with other projects, there were no code changes.
-
-# Changelog
-
-All notable changes to `eslint-plugin-node-security` will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Documentation
 
 - 📘 Launched new documentation site: [eslint.interlace.tools](https://eslint.interlace.tools/)
 - 📝 Achieved 100% documentation parity (both .md and .mdx files)
 
-## [4.0.1] - 2026-02-02
+## 4.0.1 — 2026-02-02
 
 This was a version bump only for eslint-plugin-node-security to align it with other projects, there were no code changes.
 
-## [4.0.0] - 2026-02-02
+## 4.0.0 — 2026-02-02
 
 This was a version bump only for eslint-plugin-node-security to align it with other projects, there were no code changes.
 
-## [1.0.0] - 2026-01-26
+## 1.0.0 — 2026-01-26
 
 ### Added
 

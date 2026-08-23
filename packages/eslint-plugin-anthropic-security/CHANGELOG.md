@@ -1,4 +1,9 @@
-# Changelog — eslint-plugin-anthropic-security
+# eslint-plugin-anthropic-security
+
+All notable changes to `eslint-plugin-anthropic-security` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## 0.3.1
 
@@ -226,10 +231,9 @@
 - Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:
   - @interlace/eslint-devkit@1.8.0
 
-All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://www.conventionalcommits.org) for commit guidelines.
 
-## 0.1.0 (2026-08-05)
+## 0.1.0 — 2026-08-05
 
 ### ✨ Features
 
