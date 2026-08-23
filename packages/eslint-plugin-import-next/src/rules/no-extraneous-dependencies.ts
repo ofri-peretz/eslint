@@ -278,13 +278,28 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
 
     // oxlint-disable-next-line consistent-function-scoping
     function isExternalPackage(importPath: string): string | null {
-      // Skip relative imports
-      if (importPath.startsWith('./') || importPath.startsWith('../')) {
+      // Skip relative imports.
+      //
+      // `.` and `..` are relative specifiers too — `require('..')` is how a
+      // package's own tests import the package root, and it appeared four times
+      // in ten findings on auth0/express-openid-connect. Testing only for the
+      // `./` and `../` PREFIXES let both fall through and be reported as
+      // packages literally named `.` and `..`.
+      if (/^\.\.?(\/|$)/.test(importPath)) {
         return null;
       }
 
       // Skip absolute paths
       if (importPath.startsWith('/')) {
+        return null;
+      }
+
+      // Skip Node subpath imports.
+      //
+      // A `#`-prefixed specifier resolves through the package's OWN `imports`
+      // field in package.json. It is internal by specification and can never
+      // name an external dependency, so reporting one is always wrong.
+      if (importPath.startsWith('#')) {
         return null;
       }
 
