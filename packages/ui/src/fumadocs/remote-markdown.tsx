@@ -41,19 +41,35 @@ export interface RemoteMarkdownProps {
    * Pass an object to render `<RemoteSourceCallout>` with those props.
    */
   source?: false | Omit<RemoteSourceCalloutProps, 'className'>;
+  /**
+   * Cache tags applied to the underlying fetch.
+   *
+   * Without these the cached entry is untargetable: Vercel's runtime cache
+   * outlives a deployment, so shipping a fix to the *remote* document leaves
+   * the old copy served until `revalidate` happens to elapse, and nothing can
+   * force it sooner. Tagging makes `revalidateTag()` /
+   * `vercel cache invalidate --tag` able to reach it, which is what turns a
+   * release into a real invalidation instead of a wait.
+   */
+  tags?: string[];
 }
 
-// Next.js extends `fetch` with a `next.revalidate` option for ISR.
+// Next.js extends `fetch` with `next.revalidate` / `next.tags` options.
 // Type widening here keeps the package usable in plain React-server-component
 // environments without a hard dependency on Next types.
-type NextFetchInit = RequestInit & { next?: { revalidate?: number } };
+type NextFetchInit = RequestInit & {
+  next?: { revalidate?: number; tags?: string[] };
+};
 
 async function fetchSource(
   url: string,
   revalidate: number,
+  tags: string[] | undefined,
 ): Promise<string | null> {
   try {
-    const res = await fetch(url, { next: { revalidate } } as NextFetchInit);
+    const res = await fetch(url, {
+      next: { revalidate, ...(tags?.length ? { tags } : {}) },
+    } as NextFetchInit);
     if (!res.ok) {
       console.error(`[RemoteMarkdown] ${url} responded ${res.status}`);
       return null;
@@ -81,8 +97,9 @@ export async function RemoteMarkdown({
   className,
   as: Tag = 'article',
   source,
+  tags,
 }: RemoteMarkdownProps) {
-  const fetched = await fetchSource(url, revalidate);
+  const fetched = await fetchSource(url, revalidate, tags);
   if (fetched === null) return <>{fallback}</>;
   const processed = preprocess ? preprocess(fetched) : fetched;
   const { Body, toc } = await compile(processed);
