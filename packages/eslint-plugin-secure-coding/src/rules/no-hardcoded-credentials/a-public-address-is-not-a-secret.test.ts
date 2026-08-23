@@ -57,6 +57,12 @@ ruleTester.run(
         code: `const apiKey = '0x2041B9176A4839dAf7A4DcC6a97BA023953d9a';`,
         errors: 1,
       },
+      // Not an address: 41 hex, one over. Pins the UPPER bound — a `{40,}`
+      // typo would exempt this while the 64-hex control above still passed.
+      {
+        code: `const apiKey = '0x2041B9176A4839dAf7A4DcC6a97BA023953d9ad9a';`,
+        errors: 1,
+      },
     ],
   },
 );

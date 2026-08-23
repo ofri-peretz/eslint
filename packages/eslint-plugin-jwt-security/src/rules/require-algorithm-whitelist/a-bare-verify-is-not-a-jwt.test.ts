@@ -48,6 +48,10 @@ ruleTester.run(
       `import jwt from 'jsonwebtoken';\nexport function verify(obj, pk) { return ed25519.check(obj, pk); }\nexport const guard = (o, pk) => verify(o, pk);`,
       `import jwt from 'jsonwebtoken';\nconst verify = (obj, pk) => ed25519.check(obj, pk);\nexport const guard = (o, pk) => verify(o, pk);`,
       `import jwt from 'jsonwebtoken';\nconst { verify } = require('@shardeum-foundation/lib-crypto-utils');\nexport const guard = (o, pk) => verify(o, pk);`,
+      `import jwt from 'jsonwebtoken';\nexport default function verify(obj, pk) { return ed25519.check(obj, pk); }\nconst guard = (o, pk) => verify(o, pk);`,
+      // `export { guard }` is an ExportNamedDeclaration carrying no declaration
+      // of its own — the shape that would crash an unwrap assuming one is there.
+      `import jwt from 'jsonwebtoken';\nexport { guard };\nfunction verify(obj, pk) { return ed25519.check(obj, pk); }\nconst guard = (o, pk) => verify(o, pk);`,
     ],
     invalid: [
       // The positive control. Without one of these the file above proves only
@@ -70,6 +74,13 @@ ruleTester.run(
       // A require of a JWT package binds the library's `verify`, not a local one.
       {
         code: `const jwt = require('jsonwebtoken');\nconst { verify } = require('jsonwebtoken');\nexport const check = (t, k) => verify(t, k);`,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      // An ANONYMOUS default export binds no name, so a bare `verify(…)` beside
+      // one still resolves to nothing — and a callee that resolves to nothing is
+      // deliberately left alone by both gates rather than exempted by them.
+      {
+        code: `import jwt from 'jsonwebtoken';\nexport default function (obj, pk) { return ed25519.check(obj, pk); }\nexport const check = (t, k) => verify(t, k);`,
         errors: [{ messageId: 'missingAlgorithmWhitelist' }],
       },
     ],

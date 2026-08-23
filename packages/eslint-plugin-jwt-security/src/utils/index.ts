@@ -426,19 +426,20 @@ function calleeIsForeign(node: TSESTree.CallExpression): boolean {
   while (root.parent) root = root.parent;
 
   for (const stmt of (root as TSESTree.Program).body) {
-    // `export function verify(…)` binds exactly as the unexported spelling does.
+    // `export function verify(…)` and `export default function verify(…)` bind
+    // exactly as the unexported spelling does. `export { verify } from './x'`
+    // is an ExportNamedDeclaration with no declaration of its own, which is why
+    // this falls back to the statement rather than assuming one is there.
     const declaration =
-      stmt.type === AST_NODE_TYPES.ExportNamedDeclaration && stmt.declaration
-        ? stmt.declaration
+      stmt.type === AST_NODE_TYPES.ExportNamedDeclaration ||
+      stmt.type === AST_NODE_TYPES.ExportDefaultDeclaration
+        ? (stmt.declaration ?? stmt)
         : stmt;
 
     if (declaration.type === AST_NODE_TYPES.FunctionDeclaration) {
-      // A FunctionDeclaration reached from `Program.body`, with or without
-      // `export`, always carries a name — the anonymous spelling is
-      // `export default function () {}`, an ExportDefaultDeclaration, which is
-      // not unwrapped above. A null check here would be a branch no test could
-      // reach.
-      if ((declaration.id as TSESTree.Identifier).name === name) return true;
+      // `export default function () {}` binds no name at all, so it cannot be
+      // what a bare `verify(…)` resolves to.
+      if (declaration.id !== null && declaration.id.name === name) return true;
       continue;
     }
 
