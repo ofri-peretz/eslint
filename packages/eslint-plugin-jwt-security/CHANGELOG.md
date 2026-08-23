@@ -1,5 +1,40 @@
 ## [2.2.3] - 2026-02-08
 
+## 3.0.2
+
+### Patch Changes
+
+- [#635](https://github.com/ofri-peretz/eslint/pull/635) [`0d30b1c`](https://github.com/ofri-peretz/eslint/commit/0d30b1c1b900c4664b7f67aebb87c6e5ee9f6bf4) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - Five false positives that would have shipped a false claim.
+
+  The 2026-08-22 adoption-campaign hand-verification run read every finding in
+  source before judging it: 8 candidates on open-source repos cloned at HEAD, 7
+  false positives. Each of these would have gone to a stranger's repo under our
+  name.
+
+  - `jwt/require-algorithm-whitelist` reported a bare `verify(a, b)` in files
+    with no JWT in them — LavaMoat's `packages/harden` twice, and shardeum's
+    `debugMiddleware.ts`, where it is a Shardus ed25519 signature check. The
+    callee's own binding is now resolved: a local declaration, or a binding to a
+    non-JWT specifier, is not a JWT call.
+  - `secure-coding/no-hardcoded-credentials` rated a public EVM address CVSS 9.8
+    "Hard-coded Secret key". `0x` + exactly 40 hex is the published half by
+    construction; a 64-hex private key still reports.
+  - `node-security/no-weak-hash-algorithm` reported an X.509 certificate
+    thumbprint, which Azure AD/MSAL mandates as the SHA-1 `x5t` header, and a
+    log-correlation ticket whose only security signal was the word `sign` in the
+    enclosing RPC method's name.
+  - `node-security/no-math-random-crypto` fired six times on one log-ticket
+    idiom, reading `hash` and `code` out of JSON-RPC method names one and two
+    function boundaries away from the draw.
+  - `secure-coding/no-missing-authentication` flagged `get('/is-alive')` at CVSS
+    9.8. A liveness probe is unauthenticated on purpose.
+
+  Every fix carries a lock that fails on the unfixed rule, and a positive control
+  that fails if the rule stops detecting the real thing.
+
+- Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 3.0.1
 
 ### Patch Changes

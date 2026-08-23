@@ -195,7 +195,12 @@ export async function compileRemoteMDX(
   }
   
   // Create compiler instance with our dynamic remark plugins
+  // `format: 'md'` — see the note on compileRemoteMarkdown below. This path
+  // renders CHANGELOG.md fetched from GitHub at build time, and a CHANGELOG is
+  // CommonMark assembled from arbitrary changeset prose. Compiling it as MDX
+  // makes every `{...}` in someone's release note a JSX expression to evaluate.
   const localCompiler = createCompiler({
+    format: 'md',
     remarkPlugins,
     remarkImageOptions: REMARK_IMAGE_OPTIONS,
   });
@@ -230,8 +235,26 @@ export async function compileRemoteMarkdown(
     remarkPlugins.push(remarkRelativeLinks(options));
   }
   
-  // Create compiler instance with our dynamic remark plugins
+  // Create compiler instance with our dynamic remark plugins.
+  //
+  // `format: 'md'` — this path renders CHANGELOG.md and README.md fetched from
+  // GitHub, and those are CommonMark, not MDX. Compiling them as MDX makes
+  // every `{...}` in someone's release note a JSX expression to evaluate.
+  //
+  // That is not hypothetical. A changeset merged on 2026-08-23 contained
+  //
+  //     `body: \`client_id=${id}&...\``
+  //
+  // and markdown does not honour backslash escapes inside a code span, so the
+  // inner backtick closed it early and `{id}` fell outside. The docs build died
+  // with `ReferenceError: id is not defined` on three plugins' changelog pages.
+  //
+  // The build FETCHES this content from `main` at build time, so the break
+  // arrived with no code change and could not be fixed by editing the file
+  // locally — the pre-push hook runs this same build, which re-fetches the
+  // broken text. Parsing as markdown removes the whole class.
   const localCompiler = createCompiler({
+    format: 'md',
     remarkPlugins,
     remarkImageOptions: REMARK_IMAGE_OPTIONS,
   });

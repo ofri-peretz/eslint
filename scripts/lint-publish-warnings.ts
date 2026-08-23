@@ -7,7 +7,7 @@
  * mistakes and prints a warning nobody reads, because it scrolls past under
  * the tarball listing. Every one of our 24 publishable packages shipped with
  *
- *   npm warn publish "repository.url" was normalized to "git+https://…​.git"
+ *   npm warn publish "repository.url" was normalized to "git+https://….git"
  *
  * for months. The published metadata was fixed up by npm, so nothing broke —
  * which is exactly why it never got fixed. A warning that is never enforced is

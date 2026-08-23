@@ -1,5 +1,36 @@
 ## [3.0.5] - 2026-02-08
 
+## 3.1.0
+
+### Minor Changes
+
+- [#607](https://github.com/ofri-peretz/eslint/pull/607) [`b77623a`](https://github.com/ofri-peretz/eslint/commit/b77623a2b0ef91ddfb09f35b83c01b1bbac32b1f) Thanks [@ofri-peretz](https://github.com/ofri-peretz)! - `no-console-log` and `no-debug-code-in-production` no longer report code that
+  never ships.
+
+  Both rules gain `ignoreNonProductionPaths` (default `true`), skipping
+  `scripts/`, `bin/`, `tools/`, `env/`, `benchmarks/`, examples and demos, plus
+  top-level build config (`*.config.js`, `Gruntfile`).
+
+  ```js
+  // scripts/build.js
+  console.log('building…'); // no longer reported by either rule
+  ```
+
+  A `console.log` in a build script is a deliberate build-time message, not debug
+  output left in an application — and the rule's own name is the argument for it:
+  a build script is not production.
+
+  **107 → 24** and **120 → 30** on the pinned corpus.
+
+  Matched by path **segment**, not prefix: a repository is linted from an
+  absolute path, so `/repo/scripts/build.js` does not start with `scripts/` and a
+  prefix test would silently never fire.
+
+### Patch Changes
+
+- Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:
+  - @interlace/eslint-devkit@1.17.0
+
 ## 3.0.16
 
 ### Patch Changes
