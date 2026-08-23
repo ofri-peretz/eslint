@@ -55,12 +55,10 @@ const git = (...args: string[]): string => {
  * above 5.1.9 — a plain sort puts 5.1.9 last and would silently truncate the
  * range to a single release.
  */
-const tags = git('tag', '--list', `${name}@*`, '--sort=-v:refname')
+const previous = git('tag', '--list', `${name}@*`, '--sort=-v:refname')
   .split('\n')
   .filter(Boolean)
-  .filter((t) => t !== `${name}@${version}`);
-
-const previous = tags[0];
+  .find((t) => t !== `${name}@${version}`);
 
 // No previous tag means this is the first release; the whole history is "since".
 const range = previous ? `${previous}..HEAD` : 'HEAD';
@@ -75,7 +73,7 @@ for (const subject of log) {
   // The changesets bot's own "version packages" PR carries the bump and the
   // CHANGELOG for this very release, so listing it tells the reader nothing they
   // are not already looking at.
-  if (/^chore\(release\): version packages/.test(subject)) continue;
+  if (subject.startsWith('chore(release): version packages')) continue;
   const m = subject.match(/^(.*?)\s*\(#(\d+)\)$/);
   if (m) prs.set(m[2], m[1]);
 }
