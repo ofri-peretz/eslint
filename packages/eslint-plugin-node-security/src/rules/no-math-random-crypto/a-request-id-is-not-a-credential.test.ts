@@ -55,6 +55,15 @@ ruleTester.run(
         code: `function generateSessionId() { return Math.random().toString(36).slice(2); }`,
         errors: 1,
       },
+      // A crypto word outranks the correlation word. `generateRequestTokenId`
+      // contains `request`, but it also contains `token` and matches
+      // /generate.*token/i on its own — review caught that the subtraction was
+      // suppressing a match it was never asked to judge. Written without a
+      // return, so no later context can restore the finding.
+      {
+        code: `function generateRequestTokenId() { const v = Math.random().toString(36).slice(2); store(v); }`,
+        errors: 1,
+      },
       // Neither is a user id used as a bearer value, or a bare id factory with
       // nothing qualifying it.
       {

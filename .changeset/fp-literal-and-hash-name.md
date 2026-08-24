@@ -52,3 +52,13 @@ string, because `isSafeText` accepted only strings: `res.json([{ id: 1, text:
 "You don't have permission" }])` was still a finding. Numbers, booleans, `null`
 and array holes cannot carry markup and are accepted; a regex literal is not,
 because its source can.
+
+A second review pass found both narrowing guards still too wide. The
+correlation-id subtraction in `no-math-random-crypto` suppressed
+`generateRequestTokenId`, which carries `token` and matches
+`/generate.*token/i` on its own; a crypto word anywhere in the name now
+outranks the correlation word. And `no-hardcoded-credentials` treated any
+single-slash-prefixed value as a route, so a secret starting with `/` — `/` is
+in the base64 alphabet — was suppressed before the shape checks ran. A route is
+made of route-shaped segments, and a lone segment mixing case and digits is a
+key rather than a path.

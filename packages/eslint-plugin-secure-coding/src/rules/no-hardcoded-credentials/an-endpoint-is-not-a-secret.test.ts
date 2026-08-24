@@ -67,10 +67,24 @@ ruleTester.run(
         code: `const cache = 'redis://user:s3cr3tP4ss@cache.internal:6379';`,
         errors: 1,
       },
-      // A protocol-relative URL is not an absolute path, and a real secret
-      // that happens to start with a slash still reports on its shape.
+      // A real secret that happens to start with a slash. `/` is in the
+      // base64 alphabet, so this one ALSO matches the structural key pattern —
+      // review pointed out that it therefore proves nothing about the path
+      // guard, since the structural match returns before shape is consulted.
       {
         code: `const clientSecret = '/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug';`,
+        errors: 1,
+      },
+      // So here is the case that DOES exercise the guard: one opaque segment,
+      // too short for the base64 pattern, reachable only through the shape
+      // check. A single leading slash must not be enough to call it a route.
+      {
+        code: `const clientSecret = '/aB3xK9mQ2vL8';`,
+        errors: 1,
+      },
+      // A segment carrying characters no route segment carries.
+      {
+        code: `const apiSecret = '/xK9!mQ2$vL8pR4wZ';`,
         errors: 1,
       },
     ],
