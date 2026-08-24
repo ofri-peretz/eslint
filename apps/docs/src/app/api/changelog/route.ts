@@ -1,12 +1,47 @@
 /**
  * GitHub Changelog API Route
- * 
+ *
  * Fetches CHANGELOG.md files from GitHub with caching.
  * Uses json-cache policy for 2-hour TTL on changelog data.
  */
 
 import { NextResponse } from 'next/server';
 import { PLUGINS } from '@/lib/plugins';
+import changelogData from '@/data/changelog.json';
+
+/**
+ * `<package>@<version>` → release facts, from the build-time changelog data.
+ *
+ * The parser below reads dates out of the version heading. Changesets writes
+ * `## 1.4.1` with no date at all, so from the day this repo adopted changesets
+ * every entry this endpoint returned carried `"date": "Unknown"` — a
+ * documented public field that has never once held a date for a modern
+ * release. The real date is the release's git tag, which
+ * `apps/docs/scripts/sync-changelog.ts` already resolves for every version.
+ *
+ * `kind` comes from the changeset's conventional-commit prefix, which is what
+ * the author declared. The keyword guess below (`content.includes('fix')`)
+ * fires on any entry whose prose happens to contain the word.
+ */
+const RELEASE_FACTS = new Map(
+  (
+    changelogData.releases as Array<{
+      package: string;
+      version: string;
+      date: string | null;
+      entries: Array<{ kind: string }>;
+    }>
+  ).map((r) => [`${r.package}@${r.version}`, r]),
+);
+
+/** Our `kind` vocabulary → the `type` values this endpoint has always used. */
+const KIND_TO_TYPE: Record<string, ChangelogEntry['type']> = {
+  breaking: 'breaking',
+  security: 'security',
+  fix: 'fix',
+  perf: 'perf',
+  feature: 'feature',
+};
 
 // GitHub configuration
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'ofri-peretz';
@@ -41,28 +76,52 @@ interface PluginChangelog {
 /**
  * Parse a CHANGELOG.md into structured entries
  */
-function parseChangelog(raw: string): ChangelogEntry[] {
+function parseChangelog(raw: string, packageName?: string): ChangelogEntry[] {
   const entries: ChangelogEntry[] = [];
-  
+
   // Match version headers like: ## [1.2.3] - 2026-01-15 or ## 1.2.3 (2026-01-15)
-  const versionRegex = /^##\s*\[?(\d+\.\d+\.\d+)\]?\s*[-–(]?\s*(\d{4}-\d{2}-\d{2})?/gm;
+  const versionRegex =
+    /^##\s*\[?(\d+\.\d+\.\d+)\]?\s*[-–(]?\s*(\d{4}-\d{2}-\d{2})?/gm;
   const sections = raw.split(versionRegex);
-  
+
   for (let i = 1; i < sections.length; i += 3) {
     const version = sections[i];
-    const date = sections[i + 1] || 'Unknown';
     const content = sections[i + 2]?.trim() || '';
-    
-    // Determine type from content
-    let type: ChangelogEntry['type'] = 'feature';
-    if (content.toLowerCase().includes('breaking')) type = 'breaking';
-    else if (content.toLowerCase().includes('security') || content.toLowerCase().includes('vulnerability')) type = 'security';
-    else if (content.toLowerCase().includes('fix') || content.toLowerCase().includes('bug')) type = 'fix';
-    else if (content.toLowerCase().includes('perf') || content.toLowerCase().includes('faster')) type = 'perf';
-    
+    const facts = packageName
+      ? RELEASE_FACTS.get(`${packageName}@${version}`)
+      : undefined;
+
+    // Git tag first, then the heading, then the honest admission.
+    //
+    // The tag is when the release actually published; a legacy heading date
+    // was hand-written and records when someone edited the changelog, which is
+    // not the same day. Where both exist and differ, the tag is right.
+    //
+    // This order also matches `sync-changelog.ts` (`tagged ?? headingDate`),
+    // which builds the data this route now reads — the reverse order had the
+    // two disagreeing about the same field.
+    const date = facts?.date || sections[i + 1] || 'Unknown';
+
+    // Prefer the declared kind; fall back to the keyword guess. `other` is not
+    // a `type` this endpoint has ever returned, so it falls through too.
+    const declared = facts?.entries
+      .map((e) => KIND_TO_TYPE[e.kind])
+      .find(Boolean);
+
+    let type: ChangelogEntry['type'] = declared ?? 'feature';
+    if (!declared) {
+      const lower = content.toLowerCase();
+      if (lower.includes('breaking')) type = 'breaking';
+      else if (lower.includes('security') || lower.includes('vulnerability'))
+        type = 'security';
+      else if (lower.includes('fix') || lower.includes('bug')) type = 'fix';
+      else if (lower.includes('perf') || lower.includes('faster'))
+        type = 'perf';
+    }
+
     entries.push({ version, date, type, content });
   }
-  
+
   return entries.slice(0, 10); // Return last 10 versions
 }
 
@@ -74,7 +133,9 @@ function parseChangelog(raw: string): ChangelogEntry[] {
  * log-injection (CodeQL: "Log injection" / "Use of externally-controlled
  * format string"), since the value can only be one of our hard-coded slugs.
  */
-async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | null> {
+async function fetchPluginChangelog(
+  plugin: string,
+): Promise<PluginChangelog | null> {
   const path = PLUGIN_PATHS[plugin];
   if (!path) return null;
 
@@ -83,7 +144,7 @@ async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | n
   try {
     const response = await fetch(url, {
       next: { revalidate: CHANGELOG_TTL },
-      headers: { 'Accept': 'text/plain' },
+      headers: { Accept: 'text/plain' },
     });
 
     if (!response.ok) {
@@ -92,12 +153,19 @@ async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | n
       // log line. `plugin` is also restricted to PLUGIN_PATHS keys at the API
       // boundary, but the explicit sanitizer is what CodeQL's `js/log-injection`
       // query recognizes.
-      console.warn('[Changelog] No CHANGELOG.md for', JSON.stringify(plugin), 'status', response.status);
+      console.warn(
+        '[Changelog] No CHANGELOG.md for',
+        JSON.stringify(plugin),
+        'status',
+        response.status,
+      );
       return null;
     }
 
     const raw = await response.text();
-    const entries = parseChangelog(raw);
+    // `path` is `packages/<dir>`; the data is keyed by the package's *name*,
+    // which for every plugin equals that directory name.
+    const entries = parseChangelog(raw, path.replace(/^packages\//, ''));
 
     return {
       plugin,
@@ -118,7 +186,7 @@ async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | n
 
 /**
  * GET /api/changelog
- * 
+ *
  * Query params:
  * - plugin: Specific plugin name (optional, returns all if not specified)
  * - raw: If "true", returns raw markdown (default: parsed entries)
@@ -147,11 +215,14 @@ export async function GET(request: Request) {
 
       if (!changelog) {
         return NextResponse.json(
-          { success: false, error: `Changelog not found for plugin: ${pluginFilter}` },
-          { status: 404 }
+          {
+            success: false,
+            error: `Changelog not found for plugin: ${pluginFilter}`,
+          },
+          { status: 404 },
         );
       }
-      
+
       return NextResponse.json({
         success: true,
         data: includeRaw ? changelog : { ...changelog, raw: undefined },
@@ -162,18 +233,18 @@ export async function GET(request: Request) {
         },
       });
     }
-    
+
     // Fetch all plugins
     const plugins = Object.keys(PLUGIN_PATHS);
     const results = await Promise.all(
-      plugins.map(plugin => fetchPluginChangelog(plugin))
+      plugins.map((plugin) => fetchPluginChangelog(plugin)),
     );
-    
+
     const changelogs = results.filter(Boolean) as PluginChangelog[];
-    
+
     return NextResponse.json({
       success: true,
-      data: changelogs.map(c => includeRaw ? c : { ...c, raw: undefined }),
+      data: changelogs.map((c) => (includeRaw ? c : { ...c, raw: undefined })),
       meta: {
         source: 'github',
         ttl: CHANGELOG_TTL,
@@ -189,7 +260,7 @@ export async function GET(request: Request) {
         error: 'Failed to fetch changelog data',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
