@@ -1,0 +1,43 @@
+---
+title: eslint-plugin-mcp-sdk-security
+description: MCP SDK security — tool-input validation and transport hygiene
+icon: Plug
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Shield, BookOpen, History, Lock, ExternalLink } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="success" title="AI-Optimized Security">
+  Every rule includes CWE, OWASP, and CVSS metadata for AI assistants to provide
+  precise, context-aware fixes.
+</Callout>
+
+## Install
+
+<InstallSnippet packages="eslint-plugin-mcp-sdk-security" dev />
+
+<Cards>
+  <Card
+    title="Rules (4)"
+    description="Browse all rules with CWE/OWASP mapping"
+    href="/docs/security/plugin-mcp-sdk-security/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/security/plugin-mcp-sdk-security/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<RemoteReadme plugin="mcp-sdk-security" sections={['full']} />

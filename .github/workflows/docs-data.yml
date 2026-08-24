@@ -84,7 +84,11 @@ jobs:
       - name: Sync articles
         if: inputs.targets == '' || contains(inputs.targets, 'articles')
         env:
-          DEV_TO_API_KEY: ${{ secrets.DEV_TO_API_KEY }}
+          # The secret is named DEVTO_API_KEY (no underscore between DEV and TO) —
+          # referencing secrets.DEV_TO_API_KEY passed an empty string for months,
+          # so the sync silently used the public endpoint, which reports
+          # page_views_count as 0, and /stats showed REACH 0 over 86 reactions.
+          DEV_TO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
         run: npx tsx apps/docs/scripts/update-articles-data.ts
 
       - name: Sync coverage stats

@@ -59,7 +59,7 @@ export function DownloadsByPackage({
       config={chartConfig}
       className="h-80 w-full"
       role="img"
-      aria-label={`Bar chart: top ${data.length} packages by weekly npm downloads`}
+      aria-label={`Bar chart: top ${data.length} packages by cumulative npm downloads`}
     >
       <BarChart
         accessibilityLayer

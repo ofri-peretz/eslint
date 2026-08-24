@@ -14,6 +14,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
+import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 import { noBrowserApiKeyExposure } from './rules/no-browser-api-key-exposure';
 import { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
@@ -31,6 +32,17 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   // CWE-1427: Improper Neutralization of Input Used for LLM Prompting
   'no-untrusted-content-in-prompt': noUntrustedContentInPrompt,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-anthropic-security', rules);
+
 
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {

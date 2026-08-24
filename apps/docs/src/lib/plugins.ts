@@ -122,6 +122,30 @@ export const PLUGINS: PluginEntry[] = [
     description: 'Knex security',
   },
   {
+    slug: 'anthropic-security',
+    package: 'eslint-plugin-anthropic-security',
+    pillar: 'security',
+    description: 'Anthropic SDK security',
+  },
+  {
+    slug: 'gemini-security',
+    package: 'eslint-plugin-gemini-security',
+    pillar: 'security',
+    description: 'Google Gemini SDK security',
+  },
+  {
+    slug: 'mcp-sdk-security',
+    package: 'eslint-plugin-mcp-sdk-security',
+    pillar: 'security',
+    description: 'MCP SDK security',
+  },
+  {
+    slug: 'openai-security',
+    package: 'eslint-plugin-openai-security',
+    pillar: 'security',
+    description: 'OpenAI SDK security',
+  },
+  {
     slug: 'sqlite-security',
     package: 'eslint-plugin-sqlite-security',
     pillar: 'security',

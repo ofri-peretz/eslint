@@ -339,10 +339,13 @@ describe('EditorToolbar', () => {
     expect(src).toContain('Reset');
   });
 
-  it('renders the disabled Run · Phase 2 placeholder wrapped in a Tooltip', () => {
-    expect(src).toContain('disabled');
-    expect(src).toContain('Run · Phase 2');
-    expect(src).toContain('oxlint WASM');
+  it('has no Run button and no roadmap jargon — linting is automatic', () => {
+    // The old disabled "Run · Phase 2" placeholder outlived the phase it was
+    // gating: live linting shipped (useLiveLinting), so a disabled Run button
+    // and internal phase names misdescribed the product to visitors.
+    expect(src).toContain('Lints as you type');
+    expect(src).not.toContain('Run · Phase 2');
+    expect(src).not.toMatch(/Phase \d/);
   });
 });
 
