@@ -76,6 +76,30 @@ type RuleOptions = [Options?];
  * first argument is a string. `setTimeout(fn, 0)` is a scheduler, not a
  * deserializer.
  */
+/**
+ * Names that are the JavaScript code-execution sink ONLY as a global.
+ *
+ * `serializer.deserialize(x)` is meaningfully dangerous on any receiver, so
+ * these two are listed rather than the whole dangerous set.
+ */
+const GLOBAL_ONLY_SINKS: ReadonlySet<string> = new Set(['eval', 'Function']);
+
+/**
+ * Receivers on which `eval` really is THE `eval`.
+ *
+ * @protocol-constant The four spellings of the global object — `globalThis`
+ * from the language, `window` and `self` from the DOM and worker globals,
+ * `global` from Node. Not English words standing in for evidence: the set is
+ * fixed by the runtimes, and a consumer given control of it could only remove
+ * `window` and lose the sink this branch exists to catch.
+ */
+const GLOBAL_OBJECTS: ReadonlySet<string> = new Set([
+  'window',
+  'globalThis',
+  'global',
+  'self',
+]);
+
 const TIMER_FUNCTIONS = new Set(['setTimeout', 'setInterval']);
 
 /**
@@ -519,6 +543,23 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           (objectName === 'yaml' && memberName === 'safeLoad')
         ) {
           return false;
+        }
+
+        // `eval` and `Function` as a MEMBER are the JavaScript sink only on a
+        // global object. Everywhere else the name belongs to some library's
+        // own API and compiles nothing in this process:
+        //
+        //   client.eval(luaScript, 1, key, …)   // Redis EVAL — Lua, server-side
+        //
+        // That is animir/node-rate-limiter-flexible `lib/RateLimiterRedis.js:155`,
+        // where the script is a hardcoded class field, and it was the ONLY
+        // finding in that repository.
+        //
+        // The Identifier branch above already restricts these two names to
+        // globals for the same reason; the member branch did not, so `.eval`
+        // on any receiver was a CWE-502 sink.
+        if (GLOBAL_ONLY_SINKS.has(memberName)) {
+          return GLOBAL_OBJECTS.has(objectName);
         }
 
         // Check dangerous methods
