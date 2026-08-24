@@ -68,6 +68,12 @@ describe('isTestFilePath', () => {
     'dev-packages/node-integration-tests/suites/express/server.mjs',
     'dev-packages/browser-integration-tests/suites/breadcrumbs/subject.js',
     'packages/core/unit-tests/index.ts',
+    // Scaffolding FOR tests, which is scaffolding all the same.
+    'src/domain/auth/testUtils/userTestUtil.ts',
+    'src/test-utils/render.tsx',
+    'packages/testing/src/index.ts',
+    'src/testHelpers/build.ts',
+    'src/test_data/users.ts',
     'apps/api/integration-test/login.ts',
     'src/acceptance-specs/checkout.ts',
     // No directory at all — the bare-filename path, which the separator split
@@ -102,6 +108,10 @@ describe('isTestFilePath', () => {
     'src/latest/index.ts',
     'src/manifest/build.ts',
     'src/greatest-hits/index.ts',
+    // `test` starts `testimonials`; the support-directory pattern is spelled
+    // out precisely so that prefix cannot leak into production code.
+    'src/testimonials/index.ts',
+    'src/tester/index.ts',
     // Bare filename, not a test — the other half of the no-directory path.
     'handler.ts',
     // Linter gives these when there is no file on disk; neither is a test file.

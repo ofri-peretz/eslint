@@ -248,6 +248,19 @@ const TEST_BASENAME = /\.(test|spec|fixture|mock|e2e-spec)\.[cm]?[jt]sx?$/;
  */
 const TEST_DIR_SUFFIX = /-(tests?|specs?)$/;
 
+/**
+ * Directories of scaffolding FOR tests, rather than of tests.
+ *
+ * `testUtils/`, `test-utils/` and `testing/` hold the builders and fake objects
+ * the suite consumes, and they were the last shape still reporting: a fake OIDC
+ * user in `src/domain/auth/testUtils/userTestUtil.ts` drew CWE-338 for the
+ * `Math.random()` it uses to fill a throwaway `session_state`.
+ *
+ * Spelled out rather than matched as a prefix, because `test` is the start of
+ * `testimonials`, which the existing cases already insist is production code.
+ */
+const TEST_SUPPORT_DIR = /^test(?:[-_]?(?:utils?|helpers?|support|data|doubles?|factories|fixtures?|setup))$|^testing$/i;
+
 export function isTestFilePath(filename: string): boolean {
   if (!filename || filename === '<input>' || filename === '<text>') return false;
   // Split at the last separator rather than `split(…).pop()`: `pop()` is typed
@@ -260,7 +273,12 @@ export function isTestFilePath(filename: string): boolean {
   return filename
     .slice(0, slash)
     .split(/[\\/]/)
-    .some((segment) => TEST_DIR_SEGMENTS.has(segment) || TEST_DIR_SUFFIX.test(segment));
+    .some(
+      (segment) =>
+        TEST_DIR_SEGMENTS.has(segment) ||
+        TEST_DIR_SUFFIX.test(segment) ||
+        TEST_SUPPORT_DIR.test(segment),
+    );
 }
 
 function createRuleInternal<

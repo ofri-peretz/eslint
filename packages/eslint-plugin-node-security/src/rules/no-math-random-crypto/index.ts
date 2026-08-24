@@ -228,8 +228,8 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         properties: {
           allowInTests: {
             type: 'boolean',
-            default: false,
-            description: 'Allow Math.random() in test files',
+            default: true,
+            description: 'Allow Math.random() in test files. Default: true',
           },
         },
         additionalProperties: false,
@@ -238,14 +238,27 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowInTests: false,
+      /**
+       * A throwaway value in a fixture is not a weak token.
+       *
+       * `Math.random()` filling a fake `session_state` on a stubbed OIDC user
+       * is what a test double looks like — City-of-Helsinki/haitaton-ui's
+       * `testUtils/userTestUtil.ts` was the whole of that repository's
+       * remaining findings. Reporting it says nothing an author can act on,
+       * because the fix — use `crypto.getRandomValues` — makes a fixture no
+       * safer and the suite no better.
+       *
+       * The rule's subject is unpredictability at runtime, and a fixture has
+       * no runtime. Set `false` to report everywhere.
+       */
+      allowInTests: true,
     },
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = false } = options as Options;
+    const { allowInTests = true } = options as Options;
     const sourceCode = context.sourceCode;
 
     const filename = context.filename;
