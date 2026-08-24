@@ -7,7 +7,12 @@ import {
 } from 'lucide-react';
 
 import { cn } from '../lib/cn.js';
-import { buttonVariants } from './button.js';
+// `./button-variants.js`, not `./button.js`: the latter is `'use client'`
+// (Base UI useRender), so importing it here made every `<Pagination>` a client
+// island — and calling `buttonVariants()` from a server component threw
+// "Attempted to call buttonVariants() from the server". Pagination is links;
+// it has no business hydrating. The variants module exists for exactly this.
+import { buttonVariants } from './button-variants.js';
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
   return (

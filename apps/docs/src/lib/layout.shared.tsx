@@ -94,6 +94,10 @@ export function baseOptions(): BaseLayoutProps {
         url: '/stats',
       },
       {
+        text: 'Changelog',
+        url: '/changelog',
+      },
+      {
         text: 'Articles',
         url: '/articles',
       },

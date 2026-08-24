@@ -55,6 +55,8 @@
     "release:reconcile:releases": "tsx scripts/reconcile-tags.ts --create-releases",
     "release:notes": "tsx scripts/extract-changelog.ts",
     "release:rollup": "tsx scripts/release-notes.ts",
+    "sync:changelog": "tsx apps/docs/scripts/sync-changelog.ts",
+    "sync:changelog:check": "tsx apps/docs/scripts/sync-changelog.ts --check",
     "posthog:annotate": "tsx scripts/posthog-annotate.ts",
     "dev": "turbo run dev",
     "dev:docs": "turbo run dev --filter=docs",
