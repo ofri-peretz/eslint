@@ -12,7 +12,7 @@
  * @see https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-prisma-security
  */
 
-import { TSESLint } from '@interlace/eslint-devkit';
+import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 import { noMassAssignment } from './rules/no-mass-assignment';
 import { noRawIdentifierInterpolation } from './rules/no-raw-identifier-interpolation';
@@ -28,6 +28,17 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-unsafe-query': noUnsafeQuery,
   'no-unscoped-mutation': noUnscopedMutation,
 };
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-prisma-security', rules);
+
 
 /**
  * ESLint Plugin object

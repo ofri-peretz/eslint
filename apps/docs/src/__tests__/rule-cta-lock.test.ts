@@ -17,18 +17,37 @@ const read = (rel: string) => readFileSync(join(SRC, rel), 'utf8');
 
 describe('rule-page conversion CTA lock', () => {
   it('renders the rule CTA on rule pages, in both experiment slots', () => {
-    // The CTA now renders through RuleCTAExperiment, which picks the visible
-    // slot from the `rule-cta-placement` flag. Both slots must exist in the
-    // page or the experiment can only ever measure one arm — and with the flag
-    // unresolved the bottom slot is what ships, exactly as before.
+    // The CTA renders through RuleCTAExperiment. v2 of the experiment: the
+    // bottom slot is the support ask (RuleValueCTA) in BOTH arms, and the top
+    // slot is the install offer (RuleInstallCTA) only for the treatment. Both
+    // slots must exist in the page or one arm can never render.
     const page = read('app/docs/[[...slug]]/page.tsx');
     expect(page).toMatch(/import\s+\{\s*RuleCTAExperiment\s*\}/);
     expect(page).toMatch(/<RuleCTAExperiment[\s\S]*?placement="top"/);
     expect(page).toMatch(/<RuleCTAExperiment[\s\S]*?placement="bottom"/);
     const experiment = read('components/docs/rule-cta-experiment.tsx');
     expect(experiment).toMatch(/RULE_CTA_FLAG\s*=\s*'rule-cta-placement'/);
-    // Unresolved flag must fall back to today's behaviour, never to nothing.
-    expect(experiment).toMatch(/variant === 'top' \? 'top' : 'bottom'/);
+    // The support ask must be unconditional in the bottom slot…
+    expect(experiment).toMatch(
+      /placement === 'bottom'[\s\S]*?<RuleValueCTA[\s\S]*?placement="bottom"/,
+    );
+    // …and an unresolved flag must render exactly today's page: nothing at top.
+    expect(experiment).toMatch(/variant !== 'top'\) return null/);
+    expect(experiment).toMatch(/<RuleInstallCTA plugin=\{plugin\} \/>/);
+  });
+
+  it('the install offer is instrumented, not decorative', () => {
+    // RuleInstallCTA exists because rule pages are search landing pages for
+    // pre-install visitors, yet install:command_click had never fired — no
+    // rule page contained an install command. The offer must go through the
+    // instrumented InstallSnippet (which emits install:command_click /
+    // install:pm_update) and must install the plugin the rule belongs to.
+    const cta = read('components/docs/rule-install-cta.tsx');
+    expect(cta).toMatch(/import\s+\{\s*InstallSnippet\s*\}\s+from\s+'@\/components\/mdx\/install-snippet'/);
+    expect(cta).toMatch(/eslint-plugin-\$\{plugin\}/);
+    expect(cta).toMatch(/<InstallSnippet packages=\{pkg\} dev \/>/);
+    const snippet = read('components/mdx/install-snippet.tsx');
+    expect(snippet).toMatch(/install:command_click/);
   });
 
   it('asks for both conversions — Dev.to follow and GitHub star', () => {

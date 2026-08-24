@@ -25,7 +25,7 @@ import {
   isTestFilePath,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'mathRandomCrypto';
+type MessageIds = 'mathRandomCrypto' | 'pseudoRandomBytes';
 
 export interface Options {
   /** Allow Math.random() in test files. Default: false */
@@ -205,10 +205,38 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
       description: 'Disallow Math.random() for cryptographic purposes',
       cwe: 'CWE-338',
-      cvss: 5.3,
+      // 7.5 matches the primary emitted finding (pseudoRandomBytes, HIGH) —
+      // the CVSS docs/message consistency lock holds these two in lockstep.
+      cvss: 7.5,
       confidence: 'medium',
     },
     messages: {
+
+      pseudoRandomBytes: formatLLMMessage({
+
+        icon: MessageIcons.SECURITY,
+
+        issueName: 'Non-cryptographic random bytes',
+
+        cwe: 'CWE-338',
+
+        owasp: 'A02:2021',
+
+        cvss: 7.5,
+
+        description:
+
+          "crypto.pseudoRandomBytes() is not cryptographically secure. The name is the API's own warning: it was deprecated in Node 4 precisely because callers assumed otherwise.",
+
+        severity: 'HIGH',
+
+        compliance: ['SOC2', 'PCI-DSS', 'ISO27001'],
+
+        fix: 'Use crypto.randomBytes(n), or crypto.randomUUID() for identifiers.',
+
+        documentationLink: 'https://cwe.mitre.org/data/definitions/338.html',
+
+      }),
       mathRandomCrypto: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Math.random() used for crypto',
@@ -560,6 +588,24 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (isTestFile) return;
+
+        /**
+         * `crypto.pseudoRandomBytes()` needs no context test, unlike
+         * `Math.random()`. Math.random has legitimate non-security uses —
+         * jitter, sampling, a DOM id — which is why that path gates on
+         * surrounding names. `pseudoRandomBytes` has exactly one meaning: the
+         * caller asked for bytes that are explicitly not cryptographic, from an
+         * API deprecated in Node 4 for being mistaken for one.
+         */
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          !node.callee.computed &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === 'pseudoRandomBytes'
+        ) {
+          context.report({ node, messageId: 'pseudoRandomBytes' });
+          return;
+        }
 
         // Check for Math.random(), in any of its bindings
         if (isMathRandomCallee(node.callee)) {

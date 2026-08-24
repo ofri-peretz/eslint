@@ -84,6 +84,13 @@ function isStringConcatOrTemplate(node: TSESTree.Node): boolean {
 
 export const noShellInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-shell-injection',
+  /**
+   * A test invoking its own build script — `execSync(`npm run sam:build:${suffix}`)` — composes the command from its own fixture data, not from anything a caller supplies.
+   *
+   * Found on alphagov/govuk-mobile-backend, which runs eslint-plugin-security
+   * and would have seen this as added noise rather than added coverage.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {

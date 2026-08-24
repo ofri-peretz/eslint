@@ -26,6 +26,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
+import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // Original P0 Critical Rules
 import { noHardcodedCredentialsSdk } from './rules/no-hardcoded-credentials-sdk';
@@ -84,6 +85,17 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-exposed-error-details': noExposedErrorDetails,
   'no-exposed-debug-endpoints': noExposedDebugEndpoints,
 };
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-lambda-security', rules);
+
 
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {

@@ -19,7 +19,7 @@
  * @see https://github.com/ofri-peretz/eslint#readme
  */
 
-import { TSESLint } from '@interlace/eslint-devkit';
+import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // P0 Critical Rules
 import { requireGuards } from './rules/require-guards';
@@ -56,6 +56,17 @@ export const rules: Record<
   'no-hybrid-app-config-loss': noHybridAppConfigLoss,
   'no-unsafe-multer-filename': noUnsafeMulterFilename,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-nestjs-security', rules);
+
 
 /**
  * ESLint Plugin object

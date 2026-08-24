@@ -9,6 +9,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
+import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // React rules
 import { requiredAttributes } from './rules/react/required-attributes';
@@ -224,6 +225,17 @@ export const rules = {
   'component-api/no-kind-prop-discriminator': noKindPropDiscriminator,
   'component-api/no-wrapper-sub-component': noWrapperSubComponent,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-react-features', rules);
+
 
 export const plugin = {
   meta: {

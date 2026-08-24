@@ -5,6 +5,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
+import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // Operability rules
 import { noConsoleLog } from './rules/operability/no-console-log';
@@ -30,6 +31,17 @@ export const rules = {
   'operability/require-code-minification': requireCodeMinification,
   'operability/require-data-minimization': requireDataMinimization,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-operability', rules);
+
 
 export const plugin = {
   meta: {

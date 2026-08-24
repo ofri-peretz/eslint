@@ -178,7 +178,7 @@ However, **always sanitize WebSocket data** before rendering as HTML.
 This rule fires **only when the receiver is positively identified** as a `new WebSocket(...)` in
 the same file. `X.onmessage = …` on a receiver this file cannot resolve is not
 evidence of WebSocket — it is unknown, and unknown belongs to
-[`no-innerhtml`](./no-innerhtml.md) / [`no-eval`](./no-eval.md), which report it
+[`no-innerhtml`](./no-innerhtml) / [`no-eval`](./no-eval), which report it
 without claiming a provenance they cannot prove.
 
 The two tests are complements, so exactly one rule reports any given value.
@@ -191,8 +191,8 @@ the generic rule. That is deliberate: the alternative is guessing.
 
 ## Related Rules
 
-- [`browser-security/require-websocket-wss`](./require-websocket-wss.md) - Require secure wss:// connections
-- [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
+- [`browser-security/require-websocket-wss`](./require-websocket-wss) - Require secure wss:// connections
+- [`browser-security/no-innerhtml`](./no-innerhtml) - General innerHTML prevention
 
 <WhenNotToUse />
 

@@ -275,10 +275,8 @@
     "readInt8",
     "readIntBE",
     "readIntLE",
-    "readUIntBE",
     "readUIntLE",
-    "writeUInt32LE",
-    "writeUInt8"
+    "writeUInt32LE"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/index.ts#CRYPTO_WORDS": [
     "cipher",

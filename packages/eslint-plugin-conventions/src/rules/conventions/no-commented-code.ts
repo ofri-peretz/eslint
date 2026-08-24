@@ -217,6 +217,18 @@ function countCommentLines(comment: string): number {
 
 export const noCommentedCode = createRule<RuleOptions, MessageIds>({
   name: 'no-commented-code',
+  /**
+   * Not reported inside generated files.
+   *
+   * Commented-out code in generated output is the generator's template, not a decision anyone made here.
+   *
+   * The line, from #671 and #686: a rule opts out where its judgement cannot
+   * be ACTED ON where it is raised. A security rule finding a hardcoded secret
+   * in generated output still reports, because that file ships and the fix
+   * belongs in the generator — this is not a blanket "generated code is
+   * exempt" policy.
+   */
+  skipGeneratedFiles: true,
   meta: {
     type: 'suggestion',
     docs: {

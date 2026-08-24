@@ -1,4 +1,4 @@
-import { source } from '@/lib/source';
+import { getPageImage, source } from '@/lib/source';
 import { TocNav } from '@/components/docs/toc-nav';
 import { TOCProvider, TOCPopover } from 'fumadocs-ui/layouts/docs/page/slots/toc';
 import { canonicalDocsUrl } from '@/lib/site-config';
@@ -99,8 +99,10 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>) {
     openGraph: {
       title: page.data.title,
       description: page.data.description ?? 'ESLint Interlace documentation',
-      // We rely on the root layout for the default image, 
-      // but individual pages could override if they had specific images.
+      // The per-page generator at /og/docs/[...slug] existed for months while
+      // nothing referenced it, so every docs share card fell back to the
+      // site-wide default. Point at it: rule pages are the pages people share.
+      images: getPageImage(page).url,
     },
   };
 }
