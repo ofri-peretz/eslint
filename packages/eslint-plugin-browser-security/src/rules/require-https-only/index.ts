@@ -80,6 +80,8 @@ function writtenAuthority(cooked: string): string | null {
 
 export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
   name: 'require-https-only',
+  /** Transport rule: it judges where bytes go at runtime, and a test fixture's endpoint is not a runtime endpoint. */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {

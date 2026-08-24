@@ -51,6 +51,8 @@ const HTTP_METHODS = new Set([
 
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
+  /** A debug route mounted by a test application is the fixture, not an exposure — it never ships. */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
