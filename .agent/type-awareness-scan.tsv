@@ -459,3 +459,11 @@ node-security	no-dynamic-algorithm-selection	unaware
 node-security	no-shell-injection	unaware	
 secure-coding	no-bidi-characters	unaware	
 secure-coding	no-template-injection	unaware	
+conventions	analytics-event-naming	unaware	
+conventions	no-magic-numbers	unaware	
+conventions	no-raw-cross-property-href	unaware	
+conventions	utm-taxonomy	unaware	
+express-security	no-missing-cors-check	unaware	
+express-security	no-missing-csrf-protection	unaware	
+express-security	no-missing-security-headers	unaware	
+express-security	no-user-controlled-redirect	unaware	

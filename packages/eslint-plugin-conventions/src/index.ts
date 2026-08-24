@@ -5,6 +5,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
+import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // Conventions rules
 import { noCommentedCode } from './rules/conventions/no-commented-code';
@@ -41,6 +42,17 @@ export const rules = {
   'no-magic-numbers': noMagicNumbers,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-conventions', rules);
+
+
 export const plugin = {
   meta: {
     name: 'eslint-plugin-conventions',
@@ -61,7 +73,6 @@ export const configs = {
       'conventions/utm-taxonomy': 'error',
       'conventions/no-raw-cross-property-href': 'error',
       'conventions/analytics-event-naming': 'error',
-      'conventions/no-magic-numbers': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;

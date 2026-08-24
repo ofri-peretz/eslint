@@ -265,6 +265,41 @@ describe('no-improper-sanitization', () => {
         {
           code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').trim()`,
         },
+        // ofri-peretz/blog PR #162 (2026-08-23) — the RSS route's XML escaper,
+        // reported twice at the `.replace` chain by the shipped rule. Complete
+        // and correctly ordered (`&` first, so nothing double-escapes).
+        {
+          code: `const esc = (s) =>
+            s.replace(/&/g, '&amp;')
+             .replace(/</g, '&lt;')
+             .replace(/>/g, '&gt;')
+             .replace(/"/g, '&quot;')
+             .replace(/'/g, '&apos;')`,
+        },
+        // `&apos;` as the ONLY quote entity. Every other chain fixture spells
+        // the quote `&quot;` or `&#039;`, so this is the sole cover for that
+        // arm of the quote-entity alternation.
+        {
+          code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/'/g, '&apos;')`,
+        },
+        // The single-pass table form: one regex, a character class, a lookup.
+        // Quiet because a character-class pattern is not the character `<` or
+        // `>`, so escapesTagChar is false and the chain logic never judges it.
+        // Pinned so a future character-class expansion cannot begin reporting
+        // a complete escaper. Note the cost of that quiet: an INCOMPLETE table
+        // (`/[<>]/g` with a two-entry map) is equally quiet, and that is a real
+        // false negative this rule does not yet cover.
+        {
+          code: `const XML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }
+            const esc = (s) => s.replace(/[&<>"']/g, (c) => XML_ESCAPES[c] ?? c)`,
+        },
+        // The same idiom with the table inlined at the call site. Complete on
+        // purpose: an INCOMPLETE table is also quiet today, but that is a known
+        // false negative, not a property worth pinning as valid.
+        {
+          code: `const esc = (s) =>
+            s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c])`,
+        },
       ],
       invalid: [
         // The genuine shape must still report: tags escaped, quotes and

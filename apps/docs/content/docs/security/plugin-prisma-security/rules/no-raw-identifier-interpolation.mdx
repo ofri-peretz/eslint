@@ -107,7 +107,7 @@ without the allowlist above is the mistake.
 - **A literal.** `` $queryRaw`SELECT * FROM ${'users'}` `` is a constant you
   typed. There is no untrusted input in it.
 - **`$queryRawUnsafe` / `$executeRawUnsafe`.** Those belong to
-  [`no-unsafe-query`](./no-unsafe-query.md), which reports every interpolation
+  [`no-unsafe-query`](./no-unsafe-query), which reports every interpolation
   reaching them. Reporting them here as well would put two findings from one
   plugin on one line.
 

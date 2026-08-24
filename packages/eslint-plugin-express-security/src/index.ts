@@ -19,7 +19,7 @@
  * @see https://github.com/ofri-peretz/eslint#readme
  */
 
-import { TSESLint } from '@interlace/eslint-devkit';
+import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // Security rules - Headers & CORS
 import { requireHelmet } from './rules/require-helmet';
@@ -124,6 +124,17 @@ export const rules: Record<
   'no-client-controlled-authorization': noClientControlledAuthorization,
   'no-idor-resource-access': noIdorResourceAccess,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-express-security', rules);
+
 
 /**
  * ESLint Plugin object
