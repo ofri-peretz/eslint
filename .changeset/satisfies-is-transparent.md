@@ -55,3 +55,15 @@ connect, and all 21 findings on mariadb-connector-nodejs were under `test/`.
 Its sibling `no-self-signed-certs` deliberately does NOT — it already owns the
 decision through `allowInTests`, and `skipTestFiles` runs before `create()`,
 which would make that option dead.
+
+`no-xpath-injection` matched `[@` as an unambiguous XPath marker. Objective-C
+dictionary subscript is spelled the same way, and a code generator emits it as
+a string: `bodySnippet += indent + 'if (param[@"fileName"]) {\n'` drew four
+CWE-643 findings on postmanlabs/postman-code-generators, in a repository with
+no XPath library and no XPath API call. An attribute predicate names the
+attribute right after the `@`, so the marker now requires a name or `*`.
+
+`no-hardcoded-credentials` reported `__PYTHON#%0True__`. A dunder-delimited
+value is a slot a generator substitutes later — the same argument the rule
+already makes for `{{API_KEY}}` and `${SECRET}` — and the same repository
+declares `trueToken`, `falseToken` and `nullToken` that way in three files.

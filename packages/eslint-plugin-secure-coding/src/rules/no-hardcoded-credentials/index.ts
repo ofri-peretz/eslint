@@ -462,9 +462,17 @@ const DEFAULT_PLACEHOLDER_WORDS = [
  *
  * Three shapes, each unambiguous on its own:
  *   1. Bracketed template slots — `<your-secret-here>`, `{{API_KEY}}`,
- *      `${SECRET}`, `[token]`. No real credential is delimited this way, and
- *      the brackets are what push the string past `isSecretShaped`'s
- *      two-character-class gate in the first place.
+ *      `${SECRET}`, `[token]`, `__PYTHON#%0True__`. No real credential is
+ *      delimited this way, and the delimiters are what push the string past
+ *      `isSecretShaped`'s two-character-class gate in the first place.
+ *
+ *      The dunder form is the same argument one delimiter over, and it is how
+ *      code generators mark a slot they will substitute later:
+ *      postmanlabs/postman-code-generators declares `trueToken`, `falseToken`
+ *      and `nullToken` as `__PYTHON#%0True__` and friends, seven CWE-798
+ *      findings across three of its `parseBody.js` files. The name ends in
+ *      `token`, so the credential-context gate opens; the value is a sentinel
+ *      the generator swaps for a Python literal.
  *   2. A placeholder word standing as its own token — `changeme`,
  *      `YOUR_API_KEY`, `example.com`. Substring matching is deliberately
  *      avoided: a real key may contain `bar` by chance.
@@ -480,8 +488,8 @@ export function isPlaceholderValue(
   const trimmed = value.trim();
   if (trimmed.length === 0) return false;
 
-  // 1. Bracketed template slots.
-  if (/^(?:<.*>|\{\{.*\}\}|\$\{.*\}|\[.*\])$/.test(trimmed)) return true;
+  // 1. Bracketed template slots, and the dunder form code generators use.
+  if (/^(?:<.*>|\{\{.*\}\}|\$\{.*\}|\[.*\]|__.+__)$/.test(trimmed)) return true;
 
   // 3. One character repeated (4+).
   if (trimmed.length >= 4 && new Set(trimmed).size === 1) return true;

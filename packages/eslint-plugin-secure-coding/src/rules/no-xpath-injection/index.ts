@@ -128,7 +128,7 @@ const XPATH_SYNTAX = new RegExp(
   // runs, so the scheme-ful form was handled; this is the scheme-less one.
   // Where the string really is `'//' + tagName + '[@id=1]'`, the `[@`
   // alternative still carries it.
-  `\\/\\/(?=[A-Za-z_*@.])|\\/\\*(?![\\w.*/-])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
+  `\\/\\/(?=[A-Za-z_*@.])|\\/\\*(?![\\w.*/-])|\\[@(?=[A-Za-z_*])|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
 );
 
 /**
@@ -154,9 +154,21 @@ function looksLikeXpath(text: string): boolean {
 /**
  * Every XPath marker EXCEPT the bare wildcard step.
  *
- * `//name`, `[@attr`, `axis::`, `text()` and the rest are unambiguous: nothing
- * else in a JavaScript codebase is spelled that way. `/*` is not — it is also
- * the React Router wildcard segment, and
+ * `//name`, `[@attr`, `axis::`, `text()` and the rest are unambiguous — with
+ * one qualification learned the same way the wildcard was. An XPath attribute
+ * predicate names the attribute right after the `@`, so the marker is `[@`
+ * followed by a NAME (or `*`). `[@` followed by a quote is Objective-C
+ * dictionary subscript:
+ *
+ *   bodySnippet += indent + 'if (param[@"fileName"]) {\n';
+ *
+ * That is postmanlabs/postman-code-generators emitting Objective-C source as a
+ * JavaScript string — four CWE-643 findings in a repository with no XPath
+ * library, no XPath API call and no XPath anywhere. The lookahead is what
+ * separates a predicate from a subscript.
+ *
+ * `/*` is ambiguous for the same reason — it is also the React Router wildcard
+ * segment, and
  *
  *   <Route path={`/${locale}/*`} element={<LocaleRoutes />} />
  *
@@ -168,7 +180,7 @@ function looksLikeXpath(text: string): boolean {
  * carrying `[@id="${userId}"]` is an XPath injection whatever else the file does.
  */
 const XPATH_SYNTAX_UNAMBIGUOUS = new RegExp(
-  `\\/\\/(?=[A-Za-z_*@.])|\\[@|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
+  `\\/\\/(?=[A-Za-z_*@.])|\\[@(?=[A-Za-z_*])|\\b(?:${XPATH_AXIS})::|\\btext\\(\\)|\\bnode\\(\\)|\\bcontains\\(|\\bstarts-with\\(|\\blocal-name\\(|\\bposition\\(\\)|\\/[A-Za-z_*][\\w.-]*\\[`,
 );
 
 /** Is the ONLY XPath marker here the wildcard step, which a router path shares? */
