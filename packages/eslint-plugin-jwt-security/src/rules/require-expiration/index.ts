@@ -30,6 +30,13 @@ type RuleOptions = [RequireExpirationOptions?];
 
 export const requireExpiration = createRule<RuleOptions, MessageIds>({
   name: 'require-expiration',
+  /**
+   * A throwaway token signed inside a test does not need an expiry; the test is the lifetime.
+   *
+   * Found on alphagov/govuk-mobile-backend, which runs eslint-plugin-security
+   * and would have seen this as added noise rather than added coverage.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {

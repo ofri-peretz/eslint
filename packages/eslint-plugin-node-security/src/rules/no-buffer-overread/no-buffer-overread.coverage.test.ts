@@ -47,6 +47,13 @@ const UNVALIDATED = [{ reportUnvalidatedIndices: true }];
 describe('no-buffer-overread coverage gaps', () => {
   ruleTester.run('no-buffer-overread', noBufferOverread, {
     valid: [
+    // Without the flag the read throws on an out-of-range offset, which is the
+    // behaviour this rule wants.
+    'export const f = (b) => b.readUInt8(0);',
+    'export const f = (b) => b.readUIntBE(0, 4);',
+    // `false` is the default spelled out, not a disabled check.
+    'export const f = (b) => b.readUInt8(0, false);',
+
       // isIndexValidated: an index assigned from a declared bounds-check
       // function, and one assigned from Math.min — both validated, so the
       // branch is exercised in its suppressing direction.
@@ -149,6 +156,24 @@ describe('no-buffer-overread coverage gaps', () => {
       },
     ],
     invalid: [
+    // The deprecated noAssert argument, CWE-125 — distinct from this rule's
+    // CWE-126 work. The offset may be perfectly ordinary; the caller has
+    // switched off the check that would catch it being wrong.
+    {
+      code: 'export const f = (b) => b.readUInt8(0, true);',
+      errors: [{ messageId: 'boundsCheckDisabled' }],
+    },
+    // The three-argument form: readUIntBE(offset, byteLength, noAssert).
+    {
+      code: 'export const f = (b) => b.readUIntBE(0, 4, true);',
+      errors: [{ messageId: 'boundsCheckDisabled' }],
+    },
+    // Writes take it too.
+    {
+      code: 'export const f = (b, v) => b.writeUInt8(v, 0, true);',
+      errors: [{ messageId: 'boundsCheckDisabled' }],
+    },
+
       // ── isIndexValidated / hasBoundsCheck arms ─────────────────────────
       // These live behind `reportUnvalidatedIndices` now, so each is driven
       // through the restoring option.
