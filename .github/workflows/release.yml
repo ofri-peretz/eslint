@@ -586,6 +586,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COUNT: ${{ needs.detect.outputs.count }}
+          # Optional. Set this repo variable to a Discussions category name
+          # (e.g. `Releases`) to open a feedback thread on every rollup. Left
+          # empty — or with Discussions disabled — the release is created
+          # exactly as before.
+          DISCUSSION_CATEGORY: ${{ vars.RELEASE_DISCUSSION_CATEGORY }}
         run: |
           set -euo pipefail
           # Date-stamped tag, disambiguated by the short SHA so two releases on
@@ -594,13 +599,41 @@ jobs:
           tag="release-$(git log -1 --format=%cd --date=format:%Y-%m-%d)-$(git rev-parse --short HEAD)"
 
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release edit "$tag" --notes-file rollup-notes.md
+            gh release edit "$tag" --notes-file rollup-notes.md --latest
             echo "↻ Updated rollup release $tag"
           else
-            gh release create "$tag" \
-              --title "Release $tag · ${COUNT} package(s)" \
-              --notes-file rollup-notes.md
-            echo "🆕 Created rollup release $tag"
+            # `--latest` explicitly. Every per-package release passes
+            # `--latest=false`, and nothing claimed the badge — so which release
+            # GitHub showed as "Latest" was decided by whichever job happened to
+            # finish last. The rollup is the one release that describes the
+            # whole thing, so it should hold the badge on purpose.
+            #
+            # `--discussion-category` is attempted only when the variable is
+            # set, and falls back to a plain create: the flag errors outright if
+            # Discussions is disabled or the category does not exist, and a
+            # feedback thread is not worth failing a release that already
+            # published to npm.
+            created=false
+            if [ -n "${DISCUSSION_CATEGORY:-}" ]; then
+              if gh release create "$tag" \
+                   --title "Release $tag · ${COUNT} package(s)" \
+                   --notes-file rollup-notes.md \
+                   --latest \
+                   --discussion-category "$DISCUSSION_CATEGORY"; then
+                created=true
+                echo "🆕 Created rollup release $tag (with discussion)"
+              else
+                echo "::warning::Could not open a release discussion in category '${DISCUSSION_CATEGORY}'. Is Discussions enabled and the category present? Creating the release without one."
+              fi
+            fi
+
+            if [ "$created" = "false" ]; then
+              gh release create "$tag" \
+                --title "Release $tag · ${COUNT} package(s)" \
+                --notes-file rollup-notes.md \
+                --latest
+              echo "🆕 Created rollup release $tag"
+            fi
           fi
           # Idempotent: --clobber replaces the asset on a re-run.
           gh release upload "$tag" rollup.json --clobber
