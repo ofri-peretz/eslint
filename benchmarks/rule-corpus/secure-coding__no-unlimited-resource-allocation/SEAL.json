@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@5.1.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.2",
     "node": "24"
   },
   "axes": {
@@ -61,8 +61,8 @@
       "command": "npx vitest run --coverage src/rules/no-unlimited-resource-allocation"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 404L +0.60±0.09ms · 1616L +1.36±4.03ms · 6464L +3.73±2.43ms — 2.3x time for 4.0x lines (404→1616), linear",
+      "state": "met",
+      "evidence": "attributed to the rule's own frames: 10x 8.42ms (113 samples) · 20x 6.95ms (167 samples) · 40x 8.53ms (213 samples) · 80x 15.52ms (434 samples) — 2.04x cost for 2.0x work (40x→80x), linear or better",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
     },
     "recorded": {
