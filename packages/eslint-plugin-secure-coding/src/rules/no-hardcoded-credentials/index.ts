@@ -299,10 +299,42 @@ const CONTEXT_FREE_RANDOM_LENGTH = 32;
  * says *what the slot is for*; this says *whether the value is plausibly a
  * secret rather than a message, label, or identifier*.
  */
+/**
+ * A URL, or an absolute path — the address of a thing rather than the secret
+ * that opens it.
+ *
+ * Deliberately narrow. A single leading slash with no whitespace is a path;
+ * `scheme://` is a URL. A value with an embedded `user:pass@` is neither, so
+ * connection strings never take this exit even if they reach it.
+ */
+function isUrlOrPath(value: string): boolean {
+  if (/\s/.test(value)) return false;
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
+    return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
+  }
+  return value.startsWith('/') && !value.startsWith('//');
+}
+
 export function isSecretShaped(value: string, minLength: number): boolean {
   if (value.length < minLength) return false;
   // Sentences and phrases are messages, never credentials.
   if (/\s/.test(value)) return false;
+  // An endpoint is not a secret. Every OAuth client names its route constants
+  // after the thing they reach —
+  //
+  //   const authPaths = { handoverToken: '/oauth2/token', hmppsToken: '/oauth/token' }
+  //
+  // — and the name ends in `token`, which opens the credential-context gate.
+  // The value then clears the two-character-class test on its slashes and
+  // digits, and a route path is reported as a CRITICAL CVSS 9.8 hard-coded
+  // credential tagged SOC2 / PCI-DSS / HIPAA / GDPR. Both findings in
+  // ministryofjustice/hmpps-arns-assessment-platform-ui's authentication
+  // middleware were paths.
+  //
+  // Connection strings keep reporting: `postgres://user:pass@host` is matched
+  // structurally by `looksLikeCredential` and returns before shape is ever
+  // consulted, and `isUrlOrPath` rejects a URL carrying userinfo regardless.
+  if (isUrlOrPath(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset

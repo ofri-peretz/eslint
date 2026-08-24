@@ -24,3 +24,12 @@ its suggestion rewrote the call to `sha256(...)` — renaming a local function
 out of existence while changing no algorithm. HMAC-SHA1 does not inherit
 SHA-1's collision weakness. Calls to locally-defined helpers are now skipped;
 whatever the body really uses is still reported where it is written.
+
+`no-hardcoded-credentials` reported OAuth route paths as CRITICAL CVSS 9.8
+hard-coded credentials tagged SOC2/PCI-DSS/HIPAA/GDPR. Two checks have to
+agree before it fires and both said yes for the wrong reason: the property
+name ends in `token`, and slashes plus digits clear the two-character-class
+shape test. `isSecretShaped` now rejects a URL or an absolute path — an
+endpoint is the address of a secret, not the secret. Connection strings are
+unaffected: `protocol://user:pass@host` is matched structurally before shape
+is consulted, and the new guard refuses any URL carrying userinfo.
