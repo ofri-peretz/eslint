@@ -7,6 +7,126 @@
     {
       "package": "docs",
       "short": "docs",
+      "version": "1.1.0",
+      "date": "2026-08-24T01:42:16Z",
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "a `/changelog` page for the whole ecosystem",
+          "pr": 670
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.17.1",
+      "date": "2026-08-24T01:41:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Test-file detection now recognises compound directory names.",
+          "pr": 671
+        },
+        {
+          "kind": "fix",
+          "title": "Scaffolding for tests is now recognised as test material, and `no-math-random-crypto` allows test files by default.",
+          "pr": 671
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.2.1",
+      "date": "2026-08-24T01:41:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Scaffolding for tests is now recognised as test material, and `no-math-random-crypto` allows test files by default.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.1.2",
+      "date": "2026-08-24T01:41:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-xpath-injection` no longer reports React Router wildcard paths.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "3.1.2",
+      "date": "2026-08-24T01:41:16Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Test-file detection now recognises compound directory names.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.0.5",
+      "date": "2026-08-24T01:41:13Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-http-urls` no longer reports test material or bare scheme strings.",
+          "pr": 671
+        },
+        {
+          "kind": "fix",
+          "title": "Test-file detection now recognises compound directory names.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "docs",
+      "short": "docs",
       "version": "1.0.0",
       "date": "2026-08-23T23:44:45Z",
       "isApp": true,
@@ -108,8 +228,8 @@
           "pr": 607
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -133,8 +253,8 @@
           "pr": 599
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -158,8 +278,8 @@
           "pr": 635
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -198,8 +318,8 @@
           "pr": 615
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -218,8 +338,8 @@
           "pr": 635
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -243,8 +363,8 @@
           "pr": 599
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -263,8 +383,8 @@
           "pr": 635
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -308,8 +428,8 @@
           "pr": 618
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -328,8 +448,8 @@
           "pr": 608
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -353,8 +473,8 @@
           "pr": 635
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -373,8 +493,8 @@
           "pr": 610
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`3854526`](https://github.com/ofri-peretz/eslint/commit/38545268c6028267787a1cb7c0a7e065babad99c), [`16bae7b`](https://github.com/ofri-peretz/eslint/commit/16bae7ba0451ed19757231be60b8ed88abb35d9e), [`5e0e029`](https://github.com/ofri-peretz/eslint/commit/5e0e029acc7ad5877c915d56bea5f4f707983fe6), [`d81469f`](https://github.com/ofri-peretz/eslint/commit/d81469fa2921043b44b1f042e23cb9148ae72c04), [`a22fd9b`](https://github.com/ofri-peretz/eslint/commit/a22fd9b7755f3988739f9d67a7c209b77836612a), [`6f9124e`](https://github.com/ofri-peretz/eslint/commit/6f9124e5e29a7cf7c5e0dde3127bcf219c1538d7)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -568,8 +688,8 @@
           "pr": 574
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -598,8 +718,8 @@
           "pr": 574
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -628,8 +748,8 @@
           "pr": 574
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -648,8 +768,8 @@
           "pr": 574
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`79f480f`](https://github.com/ofri-peretz/eslint/commit/79f480f21e369d0fec45985d33d4080b6989980d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -668,8 +788,8 @@
           "pr": 565
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`20b22aa`](https://github.com/ofri-peretz/eslint/commit/20b22aab4cf3f49f9c3f72b8235550b55db92fb8)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -688,8 +808,8 @@
           "pr": 563
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`20b22aa`](https://github.com/ofri-peretz/eslint/commit/20b22aab4cf3f49f9c3f72b8235550b55db92fb8)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -708,8 +828,8 @@
           "pr": 563
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`20b22aa`](https://github.com/ofri-peretz/eslint/commit/20b22aab4cf3f49f9c3f72b8235550b55db92fb8)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -728,8 +848,8 @@
           "pr": 563
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`20b22aa`](https://github.com/ofri-peretz/eslint/commit/20b22aab4cf3f49f9c3f72b8235550b55db92fb8)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -763,8 +883,8 @@
           "pr": 563
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`20b22aa`](https://github.com/ofri-peretz/eslint/commit/20b22aab4cf3f49f9c3f72b8235550b55db92fb8)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -783,8 +903,8 @@
           "pr": 563
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`20b22aa`](https://github.com/ofri-peretz/eslint/commit/20b22aab4cf3f49f9c3f72b8235550b55db92fb8)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -803,8 +923,8 @@
           "pr": 565
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`20b22aa`](https://github.com/ofri-peretz/eslint/commit/20b22aab4cf3f49f9c3f72b8235550b55db92fb8)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -883,8 +1003,8 @@
           "pr": 555
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`485f3ec`](https://github.com/ofri-peretz/eslint/commit/485f3ecdd86a1085eb893ee711322582ca58187f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -903,8 +1023,8 @@
           "pr": 555
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`485f3ec`](https://github.com/ofri-peretz/eslint/commit/485f3ecdd86a1085eb893ee711322582ca58187f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -923,8 +1043,8 @@
           "pr": 555
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`485f3ec`](https://github.com/ofri-peretz/eslint/commit/485f3ecdd86a1085eb893ee711322582ca58187f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -968,8 +1088,8 @@
           "pr": 537
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -988,8 +1108,8 @@
           "pr": 548
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1008,8 +1128,8 @@
           "pr": 548
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1028,8 +1148,8 @@
           "pr": 548
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1048,8 +1168,8 @@
           "pr": 548
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1078,8 +1198,8 @@
           "pr": 546
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1128,8 +1248,8 @@
           "pr": 537
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1148,8 +1268,8 @@
           "pr": 548
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`d86a8d8`](https://github.com/ofri-peretz/eslint/commit/d86a8d8de3e6fa4c404192365a7aa66c9646233d)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1388,8 +1508,8 @@
           "pr": 496
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1408,8 +1528,8 @@
           "pr": 502
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1428,8 +1548,8 @@
           "pr": 490
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`82aebb4`](https://github.com/ofri-peretz/eslint/commit/82aebb405fb9267c22c3edcf97b74087053bc019)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1453,8 +1573,8 @@
           "pr": 494
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1473,8 +1593,8 @@
           "pr": 478
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1493,8 +1613,8 @@
           "pr": 478
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1513,8 +1633,8 @@
           "pr": 478
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1533,8 +1653,8 @@
           "pr": 478
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1573,8 +1693,8 @@
           "pr": 468
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1593,8 +1713,8 @@
           "pr": 478
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1623,8 +1743,8 @@
           "pr": 483
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1648,8 +1768,8 @@
           "pr": 492
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1683,8 +1803,8 @@
           "pr": 494
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1703,8 +1823,8 @@
           "pr": 478
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1723,8 +1843,8 @@
           "pr": 497
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1753,8 +1873,8 @@
           "pr": 483
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1773,8 +1893,8 @@
           "pr": 475
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1808,8 +1928,8 @@
           "pr": 478
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`574b1ae`](https://github.com/ofri-peretz/eslint/commit/574b1aef52bdf06f0e48b3d86e9c67206a5a6617)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1833,8 +1953,8 @@
           "pr": 329
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1903,8 +2023,8 @@
           "pr": 422
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1928,8 +2048,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1953,8 +2073,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -1978,8 +2098,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2003,8 +2123,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2033,8 +2153,8 @@
           "pr": 309
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2068,8 +2188,8 @@
           "pr": 414
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2093,8 +2213,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2118,8 +2238,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2158,8 +2278,8 @@
           "pr": 417
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2193,8 +2313,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2213,8 +2333,8 @@
           "pr": 407
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2238,8 +2358,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2263,8 +2383,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2283,8 +2403,8 @@
           "pr": 407
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2313,8 +2433,8 @@
           "pr": 309
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2348,8 +2468,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2383,8 +2503,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2418,8 +2538,8 @@
           "pr": 414
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2453,8 +2573,8 @@
           "pr": 309
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2483,8 +2603,8 @@
           "pr": 309
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2508,8 +2628,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2553,8 +2673,8 @@
           "pr": 407
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2583,8 +2703,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2628,8 +2748,8 @@
           "pr": 416
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2648,8 +2768,8 @@
           "pr": 407
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2678,8 +2798,8 @@
           "pr": 309
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2708,8 +2828,8 @@
           "pr": 309
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2733,8 +2853,8 @@
           "pr": 423
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`b59e984`](https://github.com/ofri-peretz/eslint/commit/b59e984f8f98dcb59e6bd5d4ef23a75376821d17), [`5ecf4d1`](https://github.com/ofri-peretz/eslint/commit/5ecf4d1baa56135ed2029a4477e9c45d8a921e25), [`4794017`](https://github.com/ofri-peretz/eslint/commit/4794017c3e21db2aa0b0f64af2d1703ebca97211)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2798,8 +2918,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2818,8 +2938,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2838,8 +2958,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2858,8 +2978,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2878,8 +2998,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2898,8 +3018,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2918,8 +3038,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2938,8 +3058,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2958,8 +3078,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -2978,8 +3098,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3003,8 +3123,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3023,8 +3143,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3043,8 +3163,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3063,8 +3183,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3083,8 +3203,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3103,8 +3223,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3123,8 +3243,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3143,8 +3263,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3163,8 +3283,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3183,8 +3303,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3203,8 +3323,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3223,8 +3343,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3243,8 +3363,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3263,8 +3383,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3288,8 +3408,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3308,8 +3428,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3333,8 +3453,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3373,8 +3493,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3393,8 +3513,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3413,8 +3533,8 @@
           "pr": 411
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7663cfd`](https://github.com/ofri-peretz/eslint/commit/7663cfda0d2c41b4c7dc0b4c680550cb74a27faa), [`d0cc8b6`](https://github.com/ofri-peretz/eslint/commit/d0cc8b647a41c1a85950c87a60296ece0f3abc31)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3438,8 +3558,8 @@
           "pr": 389
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3463,8 +3583,8 @@
           "pr": 389
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3488,8 +3608,8 @@
           "pr": 403
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3508,8 +3628,8 @@
           "pr": 401
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3533,8 +3653,8 @@
           "pr": 385
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3563,8 +3683,8 @@
           "pr": 400
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3583,8 +3703,8 @@
           "pr": 380
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3608,8 +3728,8 @@
           "pr": 389
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3663,8 +3783,8 @@
           "pr": 402
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3688,8 +3808,8 @@
           "pr": 385
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3708,8 +3828,8 @@
           "pr": 386
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3733,8 +3853,8 @@
           "pr": 402
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`6f5f164`](https://github.com/ofri-peretz/eslint/commit/6f5f164c7461d66f17689039d19fa9d7d84111ef), [`5980f89`](https://github.com/ofri-peretz/eslint/commit/5980f89a65113e43d504ecc72a86d61aa1e522cb), [`81acd9c`](https://github.com/ofri-peretz/eslint/commit/81acd9ca270940529b455fbfa685b842b8cfe982), [`8e238ea`](https://github.com/ofri-peretz/eslint/commit/8e238ea3a7f18aa47c6d02368c6023d8575deca4), [`0cbcc46`](https://github.com/ofri-peretz/eslint/commit/0cbcc46f89258c888de7354cf24b90c316df43b0)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3768,8 +3888,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3803,8 +3923,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3838,8 +3958,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3868,8 +3988,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3898,8 +4018,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3933,8 +4053,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -3973,8 +4093,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4003,8 +4123,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4033,8 +4153,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4058,8 +4178,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4093,8 +4213,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4123,8 +4243,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4153,8 +4273,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4193,8 +4313,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4228,8 +4348,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4258,8 +4378,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4293,8 +4413,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4323,8 +4443,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4358,8 +4478,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4388,8 +4508,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4423,8 +4543,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4463,8 +4583,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4493,8 +4613,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4523,8 +4643,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4558,8 +4678,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4588,8 +4708,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4663,8 +4783,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4693,8 +4813,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4723,8 +4843,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -4753,8 +4873,8 @@
           "pr": 335
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`85e57a7`](https://github.com/ofri-peretz/eslint/commit/85e57a7c2facace33cae73749f6385fb8c7da41b), [`74bbf60`](https://github.com/ofri-peretz/eslint/commit/74bbf60fe22feaed15df4330e73db1f72a8cee98), [`e5d31ab`](https://github.com/ofri-peretz/eslint/commit/e5d31abb924de8473ba64093d6d514f3c44049ae), [`1fb1cad`](https://github.com/ofri-peretz/eslint/commit/1fb1caddf8e5c20d43de9cede5d66565b297bee6), [`d1a3d8c`](https://github.com/ofri-peretz/eslint/commit/d1a3d8c62778ed027a8c522a3cf9b12a3b1c90b9)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -5888,8 +6008,8 @@
           "pr": 358
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -5908,8 +6028,8 @@
           "pr": 353
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -5933,8 +6053,8 @@
           "pr": 358
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -5953,8 +6073,8 @@
           "pr": 358
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -5973,8 +6093,8 @@
           "pr": 358
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -5993,8 +6113,8 @@
           "pr": 359
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6013,8 +6133,8 @@
           "pr": 353
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6038,8 +6158,8 @@
           "pr": 358
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6058,8 +6178,8 @@
           "pr": 358
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6078,8 +6198,8 @@
           "pr": 353
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e8e9ee6`](https://github.com/ofri-peretz/eslint/commit/e8e9ee6d521bac301d0554e54ec22afbe8f49e98)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6158,8 +6278,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6178,8 +6298,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6198,8 +6318,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6218,8 +6338,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6238,8 +6358,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6258,8 +6378,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6283,8 +6403,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6303,8 +6423,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6323,8 +6443,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6343,8 +6463,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6363,8 +6483,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6383,8 +6503,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6403,8 +6523,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6423,8 +6543,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6443,8 +6563,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6463,8 +6583,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6483,8 +6603,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6503,8 +6623,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6523,8 +6643,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6543,8 +6663,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6563,8 +6683,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6583,8 +6703,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6618,8 +6738,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6638,8 +6758,8 @@
           "pr": 338
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`dc25c81`](https://github.com/ofri-peretz/eslint/commit/dc25c81ffda3c261c9f3d80a87931679cf8c059f)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6683,8 +6803,8 @@
           "pr": 311
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`a5fad9f`](https://github.com/ofri-peretz/eslint/commit/a5fad9f97a5ef5a64c091d5174fec74fbe1e96c3), [`0231140`](https://github.com/ofri-peretz/eslint/commit/023114046b2844d3daab88f40293bddd75519fe3), [`4cc62d6`](https://github.com/ofri-peretz/eslint/commit/4cc62d63908f91a7c54addadf21678c46c2bcc19)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6703,8 +6823,8 @@
           "pr": 313
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`a5fad9f`](https://github.com/ofri-peretz/eslint/commit/a5fad9f97a5ef5a64c091d5174fec74fbe1e96c3), [`0231140`](https://github.com/ofri-peretz/eslint/commit/023114046b2844d3daab88f40293bddd75519fe3), [`4cc62d6`](https://github.com/ofri-peretz/eslint/commit/4cc62d63908f91a7c54addadf21678c46c2bcc19)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6723,8 +6843,8 @@
           "pr": 313
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`a5fad9f`](https://github.com/ofri-peretz/eslint/commit/a5fad9f97a5ef5a64c091d5174fec74fbe1e96c3), [`0231140`](https://github.com/ofri-peretz/eslint/commit/023114046b2844d3daab88f40293bddd75519fe3), [`4cc62d6`](https://github.com/ofri-peretz/eslint/commit/4cc62d63908f91a7c54addadf21678c46c2bcc19)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6748,8 +6868,8 @@
           "pr": 320
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`a5fad9f`](https://github.com/ofri-peretz/eslint/commit/a5fad9f97a5ef5a64c091d5174fec74fbe1e96c3), [`0231140`](https://github.com/ofri-peretz/eslint/commit/023114046b2844d3daab88f40293bddd75519fe3), [`4cc62d6`](https://github.com/ofri-peretz/eslint/commit/4cc62d63908f91a7c54addadf21678c46c2bcc19)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6768,8 +6888,8 @@
           "pr": 299
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`09d2951`](https://github.com/ofri-peretz/eslint/commit/09d2951b3ac74efc9ba49b64e9089d66800b16cc)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6793,8 +6913,8 @@
           "pr": 317
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`09d2951`](https://github.com/ofri-peretz/eslint/commit/09d2951b3ac74efc9ba49b64e9089d66800b16cc)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6828,8 +6948,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6858,8 +6978,8 @@
           "pr": 296
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6878,8 +6998,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6898,8 +7018,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6918,8 +7038,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6953,8 +7073,8 @@
           "pr": 296
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6973,8 +7093,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -6993,8 +7113,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7013,8 +7133,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7038,8 +7158,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7058,8 +7178,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7078,8 +7198,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7098,8 +7218,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7118,8 +7238,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7143,8 +7263,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7163,8 +7283,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7218,8 +7338,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7268,8 +7388,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7288,8 +7408,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7308,8 +7428,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7328,8 +7448,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7348,8 +7468,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7368,8 +7488,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7388,8 +7508,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7408,8 +7528,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7428,8 +7548,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7448,8 +7568,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7468,8 +7588,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7488,8 +7608,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7508,8 +7628,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7528,8 +7648,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7563,8 +7683,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7583,8 +7703,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -7603,8 +7723,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8158,8 +8278,8 @@
           "pr": 154
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8198,8 +8318,8 @@
           "pr": 148
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8223,8 +8343,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8248,8 +8368,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8278,8 +8398,8 @@
           "pr": 180
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8308,8 +8428,8 @@
           "pr": 186
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8333,8 +8453,8 @@
           "pr": 148
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8368,8 +8488,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8388,8 +8508,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8478,8 +8598,8 @@
           "pr": 148
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8498,8 +8618,8 @@
           "pr": 148
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8538,8 +8658,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -8563,8 +8683,8 @@
           "pr": 186
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8588,8 +8708,8 @@
           "pr": 141
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8668,8 +8788,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -8793,7 +8913,7 @@
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.1.0",
-      "date": "2026-05-03T00:00:00Z",
+      "date": "2026-05-11T00:35:17-05:00",
       "isApp": false,
       "isPrivate": true,
       "entries": [
@@ -11937,26 +12057,6 @@
     {
       "package": "@interlace/eslint-devkit",
       "short": "eslint-devkit",
-      "version": "1.17.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Test-file detection now recognises compound directory names.",
-          "pr": 671
-        },
-        {
-          "kind": "fix",
-          "title": "Scaffolding for tests is now recognised as test material, and `no-math-random-crypto` allows test files by default.",
-          "pr": 671
-        }
-      ]
-    },
-    {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
       "version": "1.17.0",
       "date": null,
       "isApp": false,
@@ -12010,66 +12110,6 @@
       ]
     },
     {
-      "package": "docs",
-      "short": "docs",
-      "version": "1.1.0",
-      "date": null,
-      "isApp": true,
-      "isPrivate": true,
-      "entries": [
-        {
-          "kind": "feature",
-          "title": "a `/changelog` page for the whole ecosystem",
-          "pr": 670
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-browser-security",
-      "short": "eslint-plugin-browser-security",
-      "version": "2.0.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-http-urls` no longer reports test material or bare scheme strings.",
-          "pr": 671
-        },
-        {
-          "kind": "fix",
-          "title": "Test-file detection now recognises compound directory names.",
-          "pr": 671
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-express-security",
-      "short": "eslint-plugin-express-security",
-      "version": "3.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Test-file detection now recognises compound directory names.",
-          "pr": 671
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -12083,8 +12123,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -12103,8 +12143,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -12168,8 +12208,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -12190,26 +12230,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Scaffolding for tests is now recognised as test material, and `no-math-random-crypto` allows test files by default.",
-          "pr": 671
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -12223,8 +12243,8 @@
           "pr": 294
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`e1cdf83`](https://github.com/ofri-peretz/eslint/commit/e1cdf83e3db761907f0ab06f7fc6c1f1da7513a5), [`659f6dc`](https://github.com/ofri-peretz/eslint/commit/659f6dc0181b03b675f72b5949fcf123dd066358)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -12243,8 +12263,8 @@
           "pr": 269
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`7028fe2`](https://github.com/ofri-peretz/eslint/commit/7028fe2668a42266d831014184dcef70e73101ad)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         }
       ]
@@ -12308,8 +12328,8 @@
           "pr": 143
         },
         {
-          "kind": "other",
-          "title": "Updated dependencies [[`736a5fe`](https://github.com/ofri-peretz/eslint/commit/736a5fed47e673f6157ea900b29fe2a54e4bc7df)]:",
+          "kind": "deps",
+          "title": "Updated internal dependencies",
           "pr": null
         },
         {
@@ -12330,26 +12350,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-xpath-injection` no longer reports React Router wildcard paths.",
-          "pr": 671
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
           "pr": null
         }
       ]

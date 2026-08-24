@@ -1,5 +1,5 @@
 /**
- * Regression lock: every `<RemoteReadme plugin="X" />` / `<RemoteChangelog
+ * Regression lock: every `<RemoteReadme plugin="X" />` / `<PluginChangelog
  * plugin="X" />` in the docs content must name a package that actually exists
  * at `packages/eslint-plugin-X/` with the file it intends to render.
  *
@@ -27,8 +27,15 @@ const REPO_ROOT = join(__dirname, '../../../..');
 const CONTENT_DIR = join(REPO_ROOT, 'apps/docs/content/docs');
 const PACKAGES_DIR = join(REPO_ROOT, 'packages');
 
-/** `<RemoteReadme plugin="x" ...>` / `<RemoteChangelog plugin="x" ...>` */
-const USAGE = /<Remote(Readme|Changelog)\b[^>]*?plugin="([^"]+)"/g;
+/**
+ * `<RemoteReadme plugin="x">` / `<PluginChangelog plugin="x">`.
+ *
+ * `PluginChangelog` replaced `RemoteChangelog` on the 26 per-plugin pages
+ * (the old component is gone). Without `PluginChangelog` here the lock would
+ * still pass — on zero changelog usages — and a typo'd slug would render an
+ * empty history with nothing failing.
+ */
+const USAGE = /<(RemoteReadme|PluginChangelog)\b[^>]*?plugin="([^"]+)"/g;
 
 function mdxFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
