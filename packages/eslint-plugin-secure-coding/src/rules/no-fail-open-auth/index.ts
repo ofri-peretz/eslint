@@ -150,6 +150,14 @@ function hasWorkAfter(tryStatement: TSESTree.TryStatement): boolean {
 
 export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
   name: 'no-fail-open-auth',
+  /**
+   * A test asserting how a component behaves when auth fails is not a
+   * fail-open path — it is the assertion that the path is closed.
+   * cds-snc/canadalogin-user-selfservice-webapp reported one, inside
+   * `__tests__/AddMFAPage.test.jsx`, on a mock component written to exercise
+   * exactly this rule's subject. The rule had no test handling at all.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
