@@ -24,6 +24,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { resolvedReference } from '../../utils/resolve-reference';
 import {
   createSafetyChecker,
   type SecurityRuleOptions,
@@ -195,6 +196,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     }: Options = options;
 
     const filename = context.filename;
+    const sourceCode = context.sourceCode;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -548,6 +550,39 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * The interpolation is another GraphQL document — composition, not input.
+     *
+     * Building a query out of fragments is the idiom every GraphQL client
+     * teaches. Shopify's hydrogen writes `${MENU_FRAGMENT}` under a selection
+     * set and `${CART_QUERY_FRAGMENT}` at the end of a mutation; the scan
+     * reported 53 findings across the repository, and the ones that resolve
+     * this way carry no caller input at all.
+     *
+     * Resolution is the whole safety argument, so it is deliberately strict:
+     * a single `const` definition, never written again, whose initialiser is
+     * itself a template this rule recognises as GraphQL. A parameter, an
+     * import or a re-assigned binding resolves to nothing knowable and keeps
+     * reporting — `cartFragment: string` is a hole a caller fills.
+     */
+    const isGraphqlComposition = (expr: TSESTree.Expression): boolean => {
+      if (expr.type !== 'Identifier') return false;
+      const variable = resolvedReference(sourceCode.getScope(expr), expr);
+      if (variable === null || variable.defs.length !== 1) return false;
+      // `defs.length === 1` above, so index 0 exists.
+      const def = variable.defs[0] as TSESLint.Scope.Definition;
+      if (def.type !== 'Variable') return false;
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1) {
+        return false;
+      }
+      // `let frag;` declares a binding with nothing in it.
+      const init = def.node.init;
+      if (init === null) return false;
+      // `as const` is how a typed client pins a document literal.
+      const literal = init.type === 'TSAsExpression' ? init.expression : init;
+      return literal.type === 'TemplateLiteral' && isGraphqlTemplate(literal);
+    };
+
+    /**
      * Check if a TemplateLiteral contains introspection patterns.
      * AST-based: scans quasis directly.
      */
@@ -713,7 +748,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         if (node.expressions.length > 0) {
           // FALSE POSITIVE REDUCTION: Skip if all expressions are validated
           const allExpressionsSafe = node.expressions.every((expr: TSESTree.Expression) =>
-            isInputValidated(expr) || safetyChecker.isSafe(expr, context)
+            isGraphqlComposition(expr) || isInputValidated(expr) || safetyChecker.isSafe(expr, context)
           );
 
           if (!allExpressionsSafe) {
