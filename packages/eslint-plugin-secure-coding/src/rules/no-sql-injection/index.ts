@@ -779,7 +779,12 @@ function attributedSource(
     if (
       attribution.untrustedParameters &&
       isParameterBinding(variable) &&
-      !allWritesStatic(variable, scope)
+      !allWritesStatic(variable, scope) &&
+      // …unless the file narrows it to a fixed set before use. See
+      // `isNarrowedByGuardClause`: an allowlist plus a leaving guard is the
+      // correct fix for an identifier no driver can bind, and reporting it
+      // flags the defence as the vulnerability.
+      !isNarrowedByGuardClause(node.name, node, attribution.sourceCode)
     ) {
       return `${node.name} (a caller-supplied parameter)`;
     }
@@ -787,6 +792,124 @@ function attributedSource(
   }
 
   return null;
+}
+
+
+/**
+ * Is this parameter narrowed to a fixed set of literals before it is used?
+ *
+ * Table and column names cannot be parameterised — no driver binds an
+ * identifier — so an allowlist plus a guard clause is the correct fix for that
+ * case, and it is what the standard advice tells people to write. Reporting it
+ * flags the defence as the vulnerability.
+ *
+ * bcgov/sso-requests is the reference shape, comment and all:
+ *
+ *   const ALLOWED_TABLES = new Set(['Requests', 'Users', 'Teams', 'Events']);
+ *   if (!ALLOWED_TABLES.has(table)) throw new Error(`Invalid table: ${table}`);
+ *   … sequelize.query(`SELECT … FROM ${table} ORDER BY ${orderBy}`)
+ *
+ * Structural and deliberately narrow. It requires a guard clause that LEAVES —
+ * `throw` or `return` — because that is what makes the values after it a subset
+ * of the allowlist. A membership test whose failure branch falls through
+ * constrains nothing, and is not accepted.
+ */
+function isNarrowedByGuardClause(
+  name: string,
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  // Find the function body this identifier lives in.
+  // Walk to the enclosing function, stopping at Program. No separate
+  // `fn === undefined` guard: this only runs for a value that resolved to a
+  // parameter, so a function always encloses it, and the branch would be
+  // uncoverable. Program falls out through the block-body check below, whose
+  // other side an expression-bodied arrow reaches.
+  let fn: TSESTree.Node = node;
+  while (
+    fn.parent !== undefined &&
+    fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+    fn.type !== AST_NODE_TYPES.FunctionExpression &&
+    fn.type !== AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    fn = fn.parent as TSESTree.Node;
+  }
+  const body = (fn as { body?: TSESTree.Node }).body;
+  if (body === undefined || body.type !== AST_NODE_TYPES.BlockStatement) return false;
+
+  for (const statement of body.body) {
+    // Only statements BEFORE the interpolation can constrain it.
+    if (statement.range[0] >= node.range[0]) break;
+    if (statement.type !== AST_NODE_TYPES.IfStatement) continue;
+
+    // The guard has to leave: `throw`, or `return`.
+    const leaves = (consequent: TSESTree.Statement): boolean => {
+      if (consequent.type === AST_NODE_TYPES.ThrowStatement) return true;
+      if (consequent.type === AST_NODE_TYPES.ReturnStatement) return true;
+      if (consequent.type === AST_NODE_TYPES.BlockStatement) {
+        return consequent.body.some(
+          (inner) =>
+            inner.type === AST_NODE_TYPES.ThrowStatement ||
+            inner.type === AST_NODE_TYPES.ReturnStatement,
+        );
+      }
+      return false;
+    };
+    if (!leaves(statement.consequent)) continue;
+
+    // `!ALLOWED.has(name)` / `!ALLOWED.includes(name)`.
+    const test = statement.test;
+    if (test.type !== AST_NODE_TYPES.UnaryExpression || test.operator !== '!') continue;
+    const call = test.argument;
+    if (call.type !== AST_NODE_TYPES.CallExpression) continue;
+    if (call.callee.type !== AST_NODE_TYPES.MemberExpression) continue;
+    const method = call.callee.property;
+    if (
+      method.type !== AST_NODE_TYPES.Identifier ||
+      (method.name !== 'has' && method.name !== 'includes')
+    ) {
+      continue;
+    }
+    const [checked] = call.arguments;
+    if (checked?.type !== AST_NODE_TYPES.Identifier || checked.name !== name) continue;
+
+    // The set has to be a fixed list of literals, or the "allowlist" is itself
+    // caller-supplied and constrains nothing.
+    const receiver = call.callee.object;
+    if (receiver.type !== AST_NODE_TYPES.Identifier) continue;
+    // Resolve up the scope chain rather than through the references of the
+    // node's own scope. The allowlist is declared at module level while the
+    // query often sits inside a nested block — bcgov/sso-requests puts it
+    // inside `if (table == 'Requests')` — and a block scope holds no reference
+    // to a name it never mentions.
+    let search: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+    let declared: TSESLint.Scope.Variable | undefined;
+    while (search !== null && declared === undefined) {
+      declared = search.variables.find((v) => v.name === receiver.name);
+      search = search.upper;
+    }
+    const source =
+      declared?.defs[0]?.node.type === AST_NODE_TYPES.VariableDeclarator
+        ? declared.defs[0].node.init
+        : undefined;
+    if (source === undefined || source === null) continue;
+    const listOf = (init: TSESTree.Node): TSESTree.Node[] | undefined => {
+      if (init.type === AST_NODE_TYPES.ArrayExpression) return [...init.elements].filter(Boolean) as TSESTree.Node[];
+      if (
+        init.type === AST_NODE_TYPES.NewExpression &&
+        init.callee.type === AST_NODE_TYPES.Identifier &&
+        init.callee.name === 'Set' &&
+        init.arguments[0]?.type === AST_NODE_TYPES.ArrayExpression
+      ) {
+        return [...init.arguments[0].elements].filter(Boolean) as TSESTree.Node[];
+      }
+      return undefined;
+    };
+    const members = listOf(source);
+    if (members === undefined || members.length === 0) continue;
+    if (members.every((el) => el.type === AST_NODE_TYPES.Literal)) return true;
+  }
+  return false;
 }
 
 /**

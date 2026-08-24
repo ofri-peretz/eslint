@@ -52,6 +52,18 @@ function hasRuntimeOperand(node: TSESTree.BinaryExpression): boolean {
 
 export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
   name: 'prefer-template-literal',
+  /**
+   * Not reported inside generated files.
+   *
+   * A modernisation suggestion cannot be applied to a file that is regenerated; the change belongs in the generator, and reporting it here just adds noise the consumer cannot clear.
+   *
+   * The line, from #671 and #686: a rule opts out where its judgement cannot
+   * be ACTED ON where it is raised. A security rule finding a hardcoded secret
+   * in generated output still reports, because that file ships and the fix
+   * belongs in the generator — this is not a blanket "generated code is
+   * exempt" policy.
+   */
+  skipGeneratedFiles: true,
   meta: {
     type: 'suggestion',
     docs: {

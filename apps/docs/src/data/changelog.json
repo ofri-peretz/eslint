@@ -1,9 +1,44 @@
 {
-  "releaseCount": 458,
+  "releaseCount": 460,
   "packageCount": 34,
-  "entryCount": 1554,
+  "entryCount": 1557,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "docs",
+      "short": "docs",
+      "version": "1.2.0",
+      "date": "2026-08-24T04:53:12Z",
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "plugin changelogs render from build-time data, not a runtime fetch",
+          "pr": 679
+        },
+        {
+          "kind": "fix",
+          "title": "the changelog API returned `\"date\": \"Unknown\"` for every modern release",
+          "pr": 682
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.5.0",
+      "date": "2026-08-24T04:48:31Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-cycle` no longer reports inside generated files.",
+          "pr": 686
+        }
+      ]
+    },
     {
       "package": "docs",
       "short": "docs",
@@ -8913,7 +8948,7 @@
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.1.0",
-      "date": "2026-05-11T00:35:17-05:00",
+      "date": "2026-05-03T00:00:00Z",
       "isApp": false,
       "isPrivate": true,
       "entries": [
