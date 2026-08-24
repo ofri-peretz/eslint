@@ -45,6 +45,14 @@ async function fetchArticles() {
     // If authenticated endpoint fails, try public endpoint as fallback
     if (apiKey && response.status === 401) {
       console.warn('⚠️  Authentication failed, falling back to public API');
+      // Surface the failure on the run summary — this exact 401 fallback ran
+      // silently inside "success" jobs for months while /stats showed REACH 0:
+      // the secret existed, its VALUE was rejected. An annotation makes the
+      // next bad key visible without wedging the rest of the data sync.
+      console.warn(
+        '::warning title=Dev.to auth failed::DEVTO_API_KEY was rejected (401). ' +
+          'Article views will sync as 0 until a valid key is re-pasted into the repo secret.',
+      );
       const fallbackResponse = await fetch(
         `https://dev.to/api/articles?username=${DEVTO_USERNAME}&per_page=100`
       );
