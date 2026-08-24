@@ -92,11 +92,29 @@ describe('no-weak-hash-algorithm', () => {
           const tag = md5(payload);
         `,
       },
+      // A `const` bound to something that is not a function is still a local
+      // name rather than a package's digest export.
+      {
+        code: `
+          const md5 = require('./local-helpers').md5;
+          const tag = md5(payload);
+        `,
+      },
       // A quoted key names the same property as a bare one; the exemption
       // must not depend on quoting style.
       { code: `const meta = { 'cache-key': createHash("sha1").update(x).digest("hex") };` },
     ],
     invalid: [
+      // An import IS evidence: `crypto-hash` really does export a bare digest
+      // under the algorithm's own name, which is what the branch is for.
+      {
+        code: `
+          import { sha1 } from 'crypto-hash';
+          const digest = await sha1(secretMaterial);
+        `,
+        options: UNCLASSIFIED,
+        errors: 1,
+      },
       // The exemption moves the report, it does not remove it: a local helper
       // that really computes a bare digest is still reported where the
       // algorithm is written.

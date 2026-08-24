@@ -564,13 +564,13 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       ) {
         const variable = current.variables.find((v) => v.name === callee.name);
         if (!variable) continue;
-        return variable.defs.some(
-          (def) =>
-            def.type === 'FunctionName' ||
-            (def.type === 'Variable' &&
-              (def.node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-                def.node.init?.type === AST_NODE_TYPES.FunctionExpression)),
-        );
+        // Anything but an import. Distinguishing a function declaration from
+        // an arrow assigned to a `const` bought nothing — either way the name
+        // was chosen here rather than by a package, which is the whole
+        // question. An ImportBinding is the one definition that IS evidence:
+        // `import { sha1 } from 'crypto-hash'` is a real bare digest, and it
+        // has to keep reporting.
+        return variable.defs.some((def) => def.type !== 'ImportBinding');
       }
       return false;
     }

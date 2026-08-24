@@ -303,12 +303,16 @@ const CONTEXT_FREE_RANDOM_LENGTH = 32;
  * A URL, or an absolute path — the address of a thing rather than the secret
  * that opens it.
  *
- * Deliberately narrow. A single leading slash with no whitespace is a path;
- * `scheme://` is a URL. A value with an embedded `user:pass@` is neither, so
- * connection strings never take this exit even if they reach it.
+ * Deliberately narrow. A single leading slash is a path; `scheme://` is a URL.
+ * A value with an embedded `user:pass@` is neither, so connection strings never
+ * take this exit even if they reach it.
+ *
+ * Whitespace is not re-tested here. The only caller is {@link isSecretShaped},
+ * which rejects anything containing whitespace two lines earlier — a guard
+ * repeated here would be unreachable, and an unreachable guard reads as a
+ * check that runs.
  */
 function isUrlOrPath(value: string): boolean {
-  if (/\s/.test(value)) return false;
   if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
     return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
   }

@@ -338,7 +338,6 @@
     "certs",
     "csrf",
     "encryptionkey",
-    "hmac",
     "integrity",
     "jwt",
     "nonce",
@@ -347,7 +346,6 @@
     "salt",
     "secretkey",
     "secrets",
-    "session",
     "signingkey",
     "tokens"
   ],
