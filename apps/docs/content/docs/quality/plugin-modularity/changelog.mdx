@@ -4,12 +4,12 @@ description: Release history and version updates for eslint-plugin-modularity
 icon: History
 ---
 
-import { RemoteChangelog } from '@/components/docs/remote-changelog';
+import { PluginChangelog } from '@/components/docs/plugin-changelog';
 
-<Callout type="info" title="Live from GitHub">
-  This changelog is fetched directly from
-  [CHANGELOG.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/CHANGELOG.md)
-  on GitHub and cached for 2 hours.
+<Callout type="info" title="Generated from the release history">
+  Built from this package's `CHANGELOG.md` at deploy time, so it matches the
+  version these docs describe. The full cross-package history lives on the
+  [changelog](/changelog).
 </Callout>
 
-<RemoteChangelog plugin="modularity" />
+<PluginChangelog plugin="modularity" />

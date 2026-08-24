@@ -278,6 +278,20 @@ export function parseBullet(bullet: string): {
     }
   }
 
+  // `@changesets/changelog-github` wrote internal dependency bumps as
+  // `Updated dependencies [[\`sha\`](url), [\`sha\`](url), …]` — 248 of the
+  // 1554 entries in the corpus, up to 622 characters of raw commit links. The
+  // information content is "internal dependencies moved"; the SHAs are noise
+  // to anyone reading a changelog, and they crowd out the entries that say
+  // something. Collapse to the same shape the current formatter emits.
+  if (/^Updated dependencies\s*\[/.test(rest)) {
+    return {
+      kind: 'deps',
+      title: 'Updated internal dependencies',
+      trailer: '',
+    };
+  }
+
   const kind = KIND_SECTIONS.find((s) => s.match.test(badge))?.key ?? 'other';
 
   // Peel a trailing `(…)` group only when it is link plumbing, never when it

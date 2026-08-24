@@ -273,6 +273,27 @@ describe('parseBullet — legacy changelog-github entries', () => {
     expect(parseBullet(bullet).kind).toBe('breaking');
   });
 
+  it('collapses the legacy dependency SHA wall', () => {
+    // 248 of 1554 entries were this shape, up to 622 characters of commit
+    // links. "Internal dependencies moved" is the whole information content.
+    const bullet =
+      '- Updated dependencies [[`3854526`](https://github.com/o/r/commit/3854526), [`16bae7b`](https://github.com/o/r/commit/16bae7b)]:';
+    const { kind, title, trailer } = parseBullet(bullet);
+
+    expect(kind).toBe('deps');
+    expect(title).toBe('Updated internal dependencies');
+    expect(trailer).toBe('');
+  });
+
+  it('does not collapse prose that merely mentions updated dependencies', () => {
+    const { title } = parseBullet(
+      '- Updated dependencies so the peer range finally includes v7',
+    );
+    expect(title).toBe(
+      'Updated dependencies so the peer range finally includes v7',
+    );
+  });
+
   it('leaves a plain bullet untouched instead of mangling it', () => {
     const { title, kind } = parseBullet('- Module resolver swapped to oxc.');
     expect(title).toBe('Module resolver swapped to oxc.');
