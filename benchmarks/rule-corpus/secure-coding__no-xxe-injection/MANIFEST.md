@@ -53,8 +53,8 @@ Four further defects the corpus surfaced:
 - **`parseXml` was not in the method list.** `parseXML` and `parseXmlString`
   were; `parseXml`, libxmljs2's real entry point and the API the rule's own fix
   text names, was not. `vulnerable/01`, `vulnerable/10`.
-- **Bare-identifier callees were never classified.** `import { parseString }
-  from 'xml2js'` and `const parseDocument = libxmljs.parseXml` were both
+- **Bare-identifier callees were never classified.** `import { parseXml } from
+  'libxmljs2'` and `const parseDocument = libxmljs.parseXml` were both
   invisible. `vulnerable/02`, `vulnerable/12`.
 - **`new XMLHttpRequest()` was reported as an unsafe XML parser on sight.**
   XHR parses nothing; it has carried those letters since 1999 and is used to
@@ -62,12 +62,50 @@ Four further defects the corpus surfaced:
   `safe/10`.
 - **`new DOMParser()` was reported on sight too.** Per the HTML standard a user
   agent does not fetch external entities, so the browser global cannot perform
-  XXE at all. Only `@xmldom/xmldom`'s server-side namesake can, and only the
-  parse call with non-static input is evidence of anything. `safe/11`.
+  XXE at all. `safe/11`.
 
 Construction-site options are now read as well as call-site options, because
 fast-xml-parser takes its entity policy on `new XMLParser({...})` and not on
 `parse` — `safe/02` and `vulnerable/03` are the same call differing only there.
+
+## 2026-08-24 — three fixtures were mislabelled, and the rule agreed with them
+
+XXE is a file read. A parser that cannot resolve an external entity cannot
+perform one however it is called, so `vulnerable/` needs a parser that can.
+Probed with a document declaring `<!ENTITY xxe SYSTEM "file:///…">` over a
+canary file:
+
+```
+  @xmldom/xmldom   no leak; `&xxe;` left unresolved, "entity not found"
+  fast-xml-parser  threw "External entities are not supported"
+  xml2js           threw "Invalid character entity"
+```
+
+The corpus asserted the opposite in prose — `vulnerable/04` said outright that
+@xmldom/xmldom "will honour a DTD" — and the rule's module list agreed, so the
+two corroborated each other and neither was evidence. In the wild that cost 31
+findings on nasa/earthdata-search, 9 on refactoringhq/tolaria and 5 on
+aws/aws-toolkit-vscode: every one a parser handed a document it is
+structurally unable to leak with. `xpath` was on the list too, and it parses
+nothing at all.
+
+What changed:
+
+- `vulnerable/04-xmldom-upload.js` → `safe/12-xmldom-upload.js`. The premise
+  was untested; the probe went the other way.
+- `vulnerable/02` and `vulnerable/08` keep their SHAPES — a bare-import callee
+  and a parameter as the tainted root — on libxmljs2, which binds libxml2 and
+  does load external entities. Renamed `02-bare-import-callee.js`.
+- `vulnerable/03` and `vulnerable/07` stay as they are. Both turn
+  `processEntities` ON explicitly, and switching entity expansion on is a
+  decision with consequences even where the consequence is expansion rather
+  than exfiltration; the rule reports those through the option path, not the
+  untrusted-input path.
+
+The rule now exits the untrusted-input path only for a name that RESOLVES to
+one of the four probed packages. An unresolvable receiver still reports —
+silencing it would trade a measured false positive for an unmeasured false
+negative.
 
 ## Residual gaps, documented rather than papered over
 
