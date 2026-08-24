@@ -60,7 +60,7 @@ const DEBT_FILE = path.join(ROOT, '.agent', 'detection-list-coverage-debt.json')
  * "10-15 minutes". Requiring no whitespace is what separates the two.
  */
 export const isDetectionToken = (value: string): boolean =>
-  /^[A-Za-z0-9@._/-]{2,40}$/.test(value) && !value.startsWith('http');
+  /^[A-Za-z0-9@._/-]{2,40}$/.test(value);
 
 /** A table is a detection table when it is overwhelmingly tokens. */
 const TOKEN_RATIO = 0.8;
@@ -98,7 +98,41 @@ export interface DetectionList {
  * opens a block that swallows everything to the next close-comment.
  */
 export const stripComments = (source: string): string =>
-  source.replaceAll(/^[ \t]*\/\/.*$/gm, '').replaceAll(/\/\*[\s\S]*?\*\//g, '');
+  source
+    .replaceAll(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map(stripLineComment)
+    .join('\n');
+
+/**
+ * Truncate a line at the first `//` that is not inside a string literal.
+ *
+ * Whole-line stripping was not enough: TypeScript allows a comment AFTER an
+ * entry, and an apostrophe in one corrupts quote pairing exactly as the
+ * between-entries case did. Truncating at any `//` is not enough either — that
+ * eats the `//` in a `docs.url`, and `suggestions-meta-lock` documents that
+ * exact regression. Tracking quotes is what distinguishes them.
+ */
+function stripLineComment(line: string): string {
+  let quote: string | null = null;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '\\') {
+      i++;
+      continue;
+    }
+    if (quote) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      quote = ch;
+      continue;
+    }
+    if (ch === '/' && line[i + 1] === '/') return line.slice(0, i);
+  }
+  return line;
+}
 
 export function extractLists(rawSource: string, file: string): DetectionList[] {
   const source = stripComments(rawSource);
@@ -136,21 +170,56 @@ function collectListsUnder(dir: string): DetectionList[] {
   return out;
 }
 
-/** Every test file beside the rule — the tests that could plausibly cover it. */
-function testTextBeside(file: string): string {
+/**
+ * The tests for THIS rule, and only this rule.
+ *
+ * Both layouts in the repo are covered, and the difference matters:
+ *
+ *   `src/rules/<rule>/index.ts` — the rule owns its directory, so every test
+ *      under it belongs to it. Recurse.
+ *   `src/rules/<rule>.ts` (and `src/rules/<cat>/<rule>.ts`) — the rule is a
+ *      flat file among siblings. Recursing from its dirname would read every
+ *      test in `src/rules`, and a token in ANOTHER rule's test would mark this
+ *      rule's entry covered. Match by the rule's own basename instead.
+ *
+ * Getting this wrong makes coverage look better than it is, which is the one
+ * direction this gate must never fail in.
+ */
+export function testTextFor(file: string): string {
+  const dir = path.dirname(file);
+  const base = path.basename(file, '.ts');
   let text = '';
-  const collect = (dir: string) => {
-    if (!fs.existsSync(dir)) return;
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
+
+  const readTestsUnder = (d: string) => {
+    if (!fs.existsSync(d)) return;
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const full = path.join(d, entry.name);
       if (entry.isDirectory()) {
-        collect(full);
+        readTestsUnder(full);
         continue;
       }
       if (/\.(test|spec)\.tsx?$/.test(entry.name)) text += fs.readFileSync(full, 'utf8');
     }
   };
-  collect(path.dirname(file));
+
+  if (base === 'index') {
+    readTestsUnder(dir);
+    return text;
+  }
+
+  // Flat rule: `<rule>.test.ts`, `<rule>.coverage.test.ts`, and a `__tests__`
+  // sibling holding `<rule>.test.ts`.
+  const owns = (name: string) =>
+    new RegExp(`^${base.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.[^/]*\\.(test|spec)\\.tsx?$|^${base.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.(test|spec)\\.tsx?$`).test(
+      name,
+    );
+  for (const d of [dir, path.join(dir, '__tests__')]) {
+    if (!fs.existsSync(d)) continue;
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      if (entry.isDirectory()) continue;
+      if (owns(entry.name)) text += fs.readFileSync(path.join(d, entry.name), 'utf8');
+    }
+  }
   return text;
 }
 
@@ -171,7 +240,7 @@ function main(): void {
   let entryCount = 0;
   for (const list of lists) {
     entryCount += list.entries.length;
-    const missing = uncoveredEntries(list, testTextBeside(list.file));
+    const missing = uncoveredEntries(list, testTextFor(list.file));
     if (missing.length) current[keyOf(list)] = missing.sort();
   }
 

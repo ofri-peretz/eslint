@@ -20,10 +20,13 @@
     "trackingallowed"
   ],
   "packages/eslint-plugin-conventions/src/rules/conventions/analytics-event-naming.ts#ACTION_VERBS": [
+    "add",
     "cancel",
     "click",
     "create",
     "delete",
+    "end",
+    "fail",
     "generate",
     "invite",
     "remove",
@@ -42,7 +45,8 @@
     "NOTICE",
     "PATENTS",
     "README",
-    "SECURITY"
+    "SECURITY",
+    "VERSION"
   ],
   "packages/eslint-plugin-express-security/src/rules/no-exposed-debug-endpoints/index.ts#DEFAULT_DEBUG_PATHS": [
     "/__debug__",
@@ -90,26 +94,13 @@
     "withdraw"
   ],
   "packages/eslint-plugin-express-security/src/rules/require-route-authentication/index.ts#DEFAULT_PUBLIC_PATHS": [
-    "activation",
-    "assets",
-    "callback",
     "confirm",
-    "docs",
-    "favicon",
     "forgot",
-    "livez",
     "logout",
-    "oauth",
-    "openapi",
-    "readyz",
-    "robots",
     "sign-in",
     "sign-up",
     "signin",
     "signup",
-    "sso",
-    "status",
-    "swagger",
     "verify"
   ],
   "packages/eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/index.ts#DEFAULT_DEBUG_PATHS": [
@@ -142,6 +133,20 @@
     "entity",
     "model",
     "models"
+  ],
+  "packages/eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts#DEFAULT_HTTP_MODULES": [
+    "axios",
+    "got",
+    "http",
+    "http2",
+    "https",
+    "ky",
+    "needle",
+    "node-fetch",
+    "phin",
+    "request",
+    "superagent",
+    "undici"
   ],
   "packages/eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts#DEFAULT_NETWORK_METHODS": [
     "all",
@@ -548,6 +553,13 @@
   "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/index.ts#DEFAULT_BROWSER_GLOBALS": [
     "navigator",
     "sessionStorage"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/index.ts#DEFAULT_SERVER_MODULES": [
+    "@hapi/hapi",
+    "@nestjs/core",
+    "fastify",
+    "https",
+    "koa"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/require-secure-defaults/index.ts#DEFAULT_COOKIE_ATTRIBUTES": [
     "expires",
