@@ -231,7 +231,13 @@ const TEST_DIR_SEGMENTS = new Set([
 // the assertions that consume them. `e2e-spec` is Nest's own generator output
 // (`app.e2e-spec.ts`); the mongodb, nestjs and jwt predicates this replaced all
 // carried it, and `\.spec\.` does not match it — the char before `spec` is `-`.
-const TEST_BASENAME = /\.(test|spec|fixture|mock|e2e-spec)\.[cm]?[jt]sx?$/;
+// `stories` is here for the same reason as `fixture`: a Storybook story is a
+// development artefact that never enters the application bundle, and its props
+// are stand-ins. cds-snc/canadalogin-user-selfservice-webapp reported five
+// hardcoded credentials, every one of them a `password: "TestPassword123!"` on
+// a story for a user called John Doe.
+const TEST_BASENAME =
+  /\.(test|spec|fixture|mock|e2e-spec|stories|story)\.[cm]?[jt]sx?$/;
 
 /**
  * A directory whose name ENDS in `-test`/`-tests`/`-spec`/`-specs`.
