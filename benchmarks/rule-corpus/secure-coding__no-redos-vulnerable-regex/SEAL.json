@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-secure-coding@5.1.0",
+    "plugin": "eslint-plugin-secure-coding@5.1.2",
     "node": "24"
   },
   "axes": {
@@ -61,8 +61,8 @@
       "command": "npx vitest run --coverage src/rules/no-redos-vulnerable-regex"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 440L +2.24±0.48ms · 1760L +10.98±1.96ms · 7040L +24.23±1.27ms — 2.2x time for 4.0x lines (1760→7040), linear",
+      "state": "met",
+      "evidence": "attributed to the rule's own frames: 10x 7.59ms (115 samples) · 20x 6.16ms (144 samples) · 40x 9.80ms (244 samples) · 80x 16.30ms (418 samples) — 1.71x cost for 2.0x work (40x→80x), linear or better",
       "command": "npx tsx scripts/seal-audit.mts secure-coding/no-redos-vulnerable-regex"
     },
     "recorded": {
