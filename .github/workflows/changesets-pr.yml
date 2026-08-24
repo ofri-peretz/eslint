@@ -138,7 +138,7 @@ jobs:
         # Moving to v2 means upgrading the CLI to v3 first. Until then this stays
         # on v1.9.0, and the comment states the constraint so the next bump has to
         # confront it rather than sail past it.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
           # `version` runs `npm run changeset:version`, which bumps versions
           # AND regenerates the lockfile so the PR diff is complete.
