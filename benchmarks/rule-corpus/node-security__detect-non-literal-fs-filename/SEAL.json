@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-node-security@5.1.1",
+    "plugin": "eslint-plugin-node-security@5.2.1",
     "node": "24"
   },
   "axes": {
@@ -61,8 +61,8 @@
       "command": "npx vitest run --coverage src/rules/detect-non-literal-fs-filename"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "NOT REPRODUCIBLE: two consecutive measurements disagreed — linear then not-established. First: 164L +0.31±0.08ms · 656L +0.81±0.03ms · 2624L +4.82±3.95ms — 5.9x time for 4.0x lines (656→2624), linear",
+      "state": "met",
+      "evidence": "attributed to the rule's own frames: 10x 5.82ms (75 samples) · 20x 7.98ms (132 samples) · 40x 10.75ms (215 samples) · 80x 16.94ms (428 samples) — 1.99x cost for 2.0x work (40x→80x), linear or better",
       "command": "npx tsx scripts/seal-audit.mts node-security/detect-non-literal-fs-filename"
     },
     "recorded": {
