@@ -1,9 +1,10 @@
 ---
+'@interlace/eslint-devkit': patch
 'eslint-plugin-secure-coding': patch
 'eslint-plugin-node-security': patch
 ---
 
-fix: four false positives found by scanning real repositories.
+fix: five false positives found by scanning real repositories.
 
 `no-improper-sanitization` reported every string literal nested inside an
 array in a response payload. The safety walk already climbed through arrays,
