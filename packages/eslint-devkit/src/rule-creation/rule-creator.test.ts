@@ -96,6 +96,28 @@ describe('canonical documentation URLs', () => {
     const rules = { 'no-docs': { meta: {}, create: () => ({}) } } as never;
     expect(() => withCanonicalDocsUrls('plugin-browser-security', rules)).not.toThrow();
   });
+
+  it('routes quality plugins under /docs/quality/, not /docs/security/', () => {
+    expect(docsUrlFor('plugin-import-next', 'no-cycle')).toBe(
+      'https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cycle',
+    );
+  });
+
+  it('returns null for a plugin with no docs pages instead of minting a dead link', () => {
+    expect(docsUrlFor('plugin-anthropic-security', 'no-hardcoded-api-key')).toBeNull();
+  });
+
+  it('keeps the existing url when the plugin has no docs pages', () => {
+    const placeholder = 'https://example.invalid/placeholder.md';
+    const rules = {
+      'no-thing': { meta: { docs: { url: placeholder } }, create: () => ({}) },
+    } as never;
+    const result = withCanonicalDocsUrls('plugin-anthropic-security', rules) as unknown as Record<
+      string,
+      { meta: { docs: { url: string } } }
+    >;
+    expect(result['no-thing'].meta.docs.url).toBe(placeholder);
+  });
 });
 
 /**
