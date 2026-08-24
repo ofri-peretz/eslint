@@ -128,8 +128,45 @@ describe('upgrade verdict', () => {
       'bbbbbbb',
     );
 
-    expect(out).toContain('💥 Breaking changes');
-    expect(out).toContain('_(internal — not published)_');
+    // It is listed, but under the internal section rather than interleaved
+    // with consumer-facing entries — a "💥 Breaking changes" heading directly
+    // under "✅ Safe to upgrade" reads as a contradiction, because a heading
+    // is read before its contents.
+    expect(out).toContain('Internal changes');
+    expect(out).toContain('redesign');
+    expect(out.indexOf('Internal changes')).toBeGreaterThan(
+      out.indexOf('Safe to upgrade'),
+    );
+  });
+
+  it('keeps consumer-facing sections above the internal fold', () => {
+    const out = render(
+      [
+        ws({ name: 'eslint-plugin-x' }),
+        ws({ name: 'docs', isApp: true, isPrivate: true }),
+      ],
+      [
+        entry({
+          kind: 'fix',
+          title: 'a real fix',
+          packages: ['eslint-plugin-x'],
+        }),
+        entry({ kind: 'breaking', title: 'app redesign', packages: ['docs'] }),
+      ],
+      'aaaaaaa',
+      'bbbbbbb',
+    );
+
+    // The consumer's fix leads; the app's breaking change does not.
+    expect(out.indexOf('🐛 Fixes')).toBeLessThan(
+      out.indexOf('Internal changes'),
+    );
+    expect(out.indexOf('a real fix')).toBeLessThan(out.indexOf('app redesign'));
+  });
+
+  it('omits the internal section entirely when there is nothing internal', () => {
+    const out = render([ws()], [entry()], 'aaaaaaa', 'bbbbbbb');
+    expect(out).not.toContain('Internal changes');
   });
 
   it('counts a breaking change that touches both a published and a private package', () => {

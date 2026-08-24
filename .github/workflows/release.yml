@@ -606,6 +606,37 @@ jobs:
           gh release upload "$tag" rollup.json --clobber
           echo "[$tag](https://github.com/${{ github.repository }}/releases/tag/$tag)" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify the release notes that just published
+        # Everything upstream of the publish is unit-tested; nothing tested the
+        # artifact. Every defect found in this system so far was found by
+        # opening the published page and reading it — this is that reading,
+        # automated, against exactly the tags this run created (not the latest
+        # N, which would re-report pre-#660 releases forever).
+        #
+        # Advisory: the packages are on npm by now, so a red X here cannot
+        # un-publish anything and would only teach people to ignore red Xs.
+        if: ${{ !inputs.dry-run && needs.publish.result == 'success' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MATRIX: ${{ needs.detect.outputs.matrix }}
+        run: |
+          set -uo pipefail
+          tags=$(echo "$MATRIX" | jq -r '[.include[]? | "\(.name | sub("^@[^/]+/"; ""))@\(.version)"] | join(",")')
+          rollup="release-$(git log -1 --format=%cd --date=format:%Y-%m-%d)-$(git rev-parse --short HEAD)"
+
+          npx tsx scripts/verify-release-notes.ts --tags="${tags},${rollup}" 2>&1 | tee notes-check.txt
+          {
+            echo ""
+            echo "<details><summary>Release-note verification</summary>"
+            echo ""
+            echo '```'
+            cat notes-check.txt
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify tags / npm / Releases agree
         # release-hygiene.yml runs this same reconciliation weekly, which means
         # a partially-failed release could sit undetected for up to seven days.
