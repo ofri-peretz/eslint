@@ -34,17 +34,27 @@ const SCHEMES = ['postgres', 'postgresql', 'mysql'];
 
 describe('urlEmbedsCredentials', () => {
   it('matches the userinfo form that actually carries a secret', () => {
-    expect(urlEmbedsCredentials('postgres://app:s3cret@db.internal/app', SCHEMES)).toBe(true);
-    expect(urlEmbedsCredentials('postgres://app:s3cret@db:5432/app', SCHEMES)).toBe(true);
+    expect(
+      urlEmbedsCredentials('postgres://app:s3cret@db.internal/app', SCHEMES),
+    ).toBe(true);
+    expect(
+      urlEmbedsCredentials('postgres://app:s3cret@db:5432/app', SCHEMES),
+    ).toBe(true);
     expect(urlEmbedsCredentials('MYSQL://u:p@h/d', SCHEMES)).toBe(true);
   });
 
   it('does NOT match a connection string with no password in it', () => {
     // The whole reason this helper exists. These are safe to commit, and the
     // detection this generalizes reports all of them.
-    expect(urlEmbedsCredentials('postgres://localhost:5432/app', SCHEMES)).toBe(false);
-    expect(urlEmbedsCredentials('postgres://app@db.internal/app', SCHEMES)).toBe(false);
-    expect(urlEmbedsCredentials('postgres://db.internal/app', SCHEMES)).toBe(false);
+    expect(urlEmbedsCredentials('postgres://localhost:5432/app', SCHEMES)).toBe(
+      false,
+    );
+    expect(
+      urlEmbedsCredentials('postgres://app@db.internal/app', SCHEMES),
+    ).toBe(false);
+    expect(urlEmbedsCredentials('postgres://db.internal/app', SCHEMES)).toBe(
+      false,
+    );
   });
 
   it('requires a scheme this driver actually speaks', () => {
@@ -54,7 +64,9 @@ describe('urlEmbedsCredentials', () => {
   });
 
   it('reports an empty username, which still carries a real password', () => {
-    expect(urlEmbedsCredentials('postgres://:s3cret@db/app', SCHEMES)).toBe(true);
+    expect(urlEmbedsCredentials('postgres://:s3cret@db/app', SCHEMES)).toBe(
+      true,
+    );
   });
 
   // Regression for CodeQL js/polynomial-redos. With `:` inside the username
@@ -71,7 +83,9 @@ describe('urlEmbedsCredentials', () => {
 
   it('is not fooled by an @ that is not userinfo', () => {
     expect(urlEmbedsCredentials('not a url at all', SCHEMES)).toBe(false);
-    expect(urlEmbedsCredentials('postgres://host/path:with@at', SCHEMES)).toBe(false);
+    expect(urlEmbedsCredentials('postgres://host/path:with@at', SCHEMES)).toBe(
+      false,
+    );
   });
 });
 
@@ -79,8 +93,10 @@ describe('isLiteralSecret', () => {
   const valueOf = (code: string): TSESTree.Node =>
     (
       (
-        (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-          .expression as TSESTree.ObjectExpression
+        (
+          parser.parse(code, { range: true })
+            .body[0] as TSESTree.ExpressionStatement
+        ).expression as TSESTree.ObjectExpression
       ).properties[0] as TSESTree.Property
     ).value;
 
@@ -89,7 +105,9 @@ describe('isLiteralSecret', () => {
   });
 
   it('is false for the env lookup that is the fix', () => {
-    expect(isLiteralSecret(valueOf('({ password: process.env.DB_PASSWORD })'))).toBe(false);
+    expect(
+      isLiteralSecret(valueOf('({ password: process.env.DB_PASSWORD })')),
+    ).toBe(false);
   });
 
   it('is false for an empty string — the driver "no password" sentinel', () => {
@@ -137,7 +155,10 @@ const rule = createHardcodedCredentialsRule({
 });
 
 const ruleTester = new RuleTester({
-  languageOptions: { parser, parserOptions: { ecmaVersion: 2022, sourceType: 'module' } },
+  languageOptions: {
+    parser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
 });
 
 const DRIVER = "import knex from 'test-orm';\n";
@@ -147,7 +168,8 @@ describe('createHardcodedCredentialsRule', () => {
     valid: [
       {
         name: 'the env lookup that is the fix',
-        code: DRIVER + 'knex({ host, user, password: process.env.DB_PASSWORD });',
+        code:
+          DRIVER + 'knex({ host, user, password: process.env.DB_PASSWORD });',
       },
       {
         // Regression against the generalized detection: a credential-free URL
@@ -157,7 +179,8 @@ describe('createHardcodedCredentialsRule', () => {
       },
       {
         name: 'a URL with a username but no password',
-        code: DRIVER + "knex({ connection: 'postgres://app@db.internal/app' });",
+        code:
+          DRIVER + "knex({ connection: 'postgres://app@db.internal/app' });",
       },
       {
         name: 'an empty password — the local trust-auth sentinel',
@@ -183,7 +206,9 @@ describe('createHardcodedCredentialsRule', () => {
       },
       {
         name: 'a test fixture user record',
-        code: DRIVER + "const fixture = { username: 'alice', password: 'test123' };",
+        code:
+          DRIVER +
+          "const fixture = { username: 'alice', password: 'test123' };",
       },
       {
         name: 'a URL for a scheme this driver does not speak',
@@ -214,7 +239,9 @@ describe('createHardcodedCredentialsRule', () => {
       },
       {
         name: 'credentials embedded in a connection URL',
-        code: DRIVER + "knex({ connection: 'postgres://app:s3cret@db.internal/app' });",
+        code:
+          DRIVER +
+          "knex({ connection: 'postgres://app:s3cret@db.internal/app' });",
         errors: [{ messageId: 'credentialsInUrl' }],
       },
       {
@@ -224,13 +251,18 @@ describe('createHardcodedCredentialsRule', () => {
       },
       {
         name: 'nested connection config',
-        code: DRIVER + "knex({ client: 'pg', connection: { host, password: 'hunter2' } });",
+        code:
+          DRIVER +
+          "knex({ client: 'pg', connection: { host, password: 'hunter2' } });",
         errors: [{ messageId: 'hardcodedPassword' }],
       },
       {
         name: 'the other credential spellings',
         code: DRIVER + "knex({ host, user, pwd: 'a', secret: 'b' });",
-        errors: [{ messageId: 'hardcodedPassword' }, { messageId: 'hardcodedPassword' }],
+        errors: [
+          { messageId: 'hardcodedPassword' },
+          { messageId: 'hardcodedPassword' },
+        ],
       },
       {
         // Regression: one character — a backtick — used to bypass the rule.
@@ -250,7 +282,9 @@ describe('createHardcodedCredentialsRule', () => {
       },
       {
         name: 'a credential directly under a driver config key still reports',
-        code: DRIVER + "knex({ host, database, connection: { password: 'hunter2' } });",
+        code:
+          DRIVER +
+          "knex({ host, database, connection: { password: 'hunter2' } });",
         errors: [{ messageId: 'hardcodedPassword' }],
       },
       {
@@ -292,7 +326,12 @@ const bareRule = createHardcodedCredentialsRule({
 
 describe('createHardcodedCredentialsRule — no driver-specific connection keys', () => {
   ruleTester.run('bare config', bareRule, {
-    valid: [{ name: 'still not a login form', code: DRIVER + "const c = { user, password: 'x' };" }],
+    valid: [
+      {
+        name: 'still not a login form',
+        code: DRIVER + "const c = { user, password: 'x' };",
+      },
+    ],
     invalid: [
       {
         name: 'the shared defaults still identify a connection',
@@ -316,12 +355,15 @@ describe('object shapes the scanner has to walk past', () => {
         // A spread has no key at all; the scanner must skip it and keep going
         // rather than stop at the first non-Property member.
         name: 'a spread does not hide a later credential',
-        code: DRIVER + "knex({ host, database, ...defaults, password: 'hunter2' });",
+        code:
+          DRIVER +
+          "knex({ host, database, ...defaults, password: 'hunter2' });",
         errors: [{ messageId: 'hardcodedPassword' }],
       },
       {
         name: 'a computed key does not hide a later credential',
-        code: DRIVER + "knex({ host, database, [key]: v, password: 'hunter2' });",
+        code:
+          DRIVER + "knex({ host, database, [key]: v, password: 'hunter2' });",
         errors: [{ messageId: 'hardcodedPassword' }],
       },
     ],
@@ -330,8 +372,12 @@ describe('object shapes the scanner has to walk past', () => {
 
 describe('rule metadata', () => {
   it('carries both message ids with their own remediations', () => {
-    expect(rule.meta.messages.hardcodedPassword).toContain('read it from the environment');
-    expect(rule.meta.messages.credentialsInUrl).toContain('inject the whole URL');
+    expect(rule.meta.messages.hardcodedPassword).toContain(
+      'read it from the environment',
+    );
+    expect(rule.meta.messages.credentialsInUrl).toContain(
+      'inject the whole URL',
+    );
   });
 
   it('emits the CWE it documents, so the two cannot drift', () => {

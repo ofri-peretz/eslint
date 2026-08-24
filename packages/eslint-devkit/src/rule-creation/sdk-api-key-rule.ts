@@ -81,9 +81,7 @@ export const POSITIONAL_KEY_LABEL = 'The first argument';
  * prop — naming the wrong option whenever a later one was the offender.
  */
 export type KeyVerdict =
-  | { kind: 'literal'; prop: string }
-  | { kind: 'safe' }
-  | { kind: 'unreadable' };
+  { kind: 'literal'; prop: string } | { kind: 'safe' } | { kind: 'unreadable' };
 
 /**
  * Whether the client options literal carries an inline credential.
@@ -109,7 +107,8 @@ export function readCredential(
     // Computed keys are already skipped, so a key here is an Identifier
     // (`apiKey:`) or a Literal (`'apiKey':`) — there is no third form, and a
     // guard for one would be unreachable.
-    const name = prop.key.type === 'Identifier' ? prop.key.name : String(prop.key.value);
+    const name =
+      prop.key.type === 'Identifier' ? prop.key.name : String(prop.key.value);
     if (!keyProps.has(name)) continue;
     if (prop.value.type !== 'Literal') continue;
     // An empty string is a placeholder, not a credential.
@@ -126,7 +125,11 @@ export function readCredential(
  */
 export function calleeName(node: TSESTree.Node): string | undefined {
   if (node.type === 'Identifier') return node.name;
-  if (node.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier') {
+  if (
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property.type === 'Identifier'
+  ) {
     return node.property.name;
   }
   return undefined;
@@ -173,7 +176,10 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
       // what the old two-visitor gate needed a `Program:exit` pass to survive.
       if (!usesSdk(context.sourceCode.ast)) return {};
 
-      function inspect(node: TSESTree.Node, args: readonly TSESTree.Node[]): void {
+      function inspect(
+        node: TSESTree.Node,
+        args: readonly TSESTree.Node[],
+      ): void {
         const first = args[0];
         if (first === undefined) return;
 
@@ -188,7 +194,11 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
             typeof first.value === 'string' &&
             first.value.length > 0
           ) {
-            context.report({ node, messageId: 'hardcodedApiKey', data: { prop: POSITIONAL_KEY_LABEL } });
+            context.report({
+              node,
+              messageId: 'hardcodedApiKey',
+              data: { prop: POSITIONAL_KEY_LABEL },
+            });
           }
           return;
         }
@@ -196,7 +206,11 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
         if (first.type !== 'ObjectExpression') return;
         const verdict = readCredential(first, keyProps);
         if (verdict.kind === 'literal') {
-          context.report({ node, messageId: 'hardcodedApiKey', data: { prop: verdict.prop } });
+          context.report({
+            node,
+            messageId: 'hardcodedApiKey',
+            data: { prop: verdict.prop },
+          });
         }
       }
 

@@ -47,10 +47,33 @@ type RuleOptions = [Options?];
  * is the only question CWE-338 asks.
  */
 const CRYPTO_WORDS: readonly string[] = [
-  'token', 'tokens', 'key', 'keys', 'secret', 'secrets', 'password', 'passwd',
-  'salt', 'iv', 'nonce', 'seed', 'hash', 'cipher', 'auth', 'session', 'csrf',
-  'otp', 'pin', 'code', 'codes', 'verify', 'signature', 'credential', 'jwt',
-  'encryption', 'apikey',
+  'token',
+  'tokens',
+  'key',
+  'keys',
+  'secret',
+  'secrets',
+  'password',
+  'passwd',
+  'salt',
+  'iv',
+  'nonce',
+  'seed',
+  'hash',
+  'cipher',
+  'auth',
+  'session',
+  'csrf',
+  'otp',
+  'pin',
+  'code',
+  'codes',
+  'verify',
+  'signature',
+  'credential',
+  'jwt',
+  'encryption',
+  'apikey',
   // The same three gaps the adversarial wave found in no-weak-hash-algorithm,
   // present here too — the two rules keep separate lists, so a spelling missing
   // from one is not missing from the other by construction. `Math.random()` for
@@ -61,7 +84,8 @@ const CRYPTO_WORDS: readonly string[] = [
   // `mnemonic` are long enough to match inside a compound, which is the same
   // behaviour the list's existing entries already have — the unmodified rule
   // reports `passwordHint` and `sessionLabel` too.
-  'passphrase', 'mnemonic',
+  'passphrase',
+  'mnemonic',
 ];
 
 const CRYPTO_WORD_SET: ReadonlySet<string> = new Set(CRYPTO_WORDS);
@@ -77,9 +101,23 @@ const CRYPTO_WORD_SET: ReadonlySet<string> = new Set(CRYPTO_WORDS);
  * token, `tokenDelay` is a delay.
  */
 const DURATION_TAILS: ReadonlySet<string> = new Set([
-  'delay', 'timeout', 'interval', 'jitter', 'backoff', 'ms', 'millis',
-  'milliseconds', 'seconds', 'duration', 'wait', 'sleep', 'ttl', 'deadline',
-  'elapsed', 'latency', 'budget',
+  'delay',
+  'timeout',
+  'interval',
+  'jitter',
+  'backoff',
+  'ms',
+  'millis',
+  'milliseconds',
+  'seconds',
+  'duration',
+  'wait',
+  'sleep',
+  'ttl',
+  'deadline',
+  'elapsed',
+  'latency',
+  'budget',
 ]);
 
 /**
@@ -92,8 +130,22 @@ const DURATION_TAILS: ReadonlySet<string> = new Set([
  * a count, so this subtracts no true positive.
  */
 const QUANTITY_TAILS: ReadonlySet<string> = new Set([
-  'count', 'counts', 'length', 'size', 'total', 'limit', 'quota', 'offset',
-  'index', 'rank', 'score', 'percent', 'ratio', 'rate', 'version', 'page',
+  'count',
+  'counts',
+  'length',
+  'size',
+  'total',
+  'limit',
+  'quota',
+  'offset',
+  'index',
+  'rank',
+  'score',
+  'percent',
+  'ratio',
+  'rate',
+  'version',
+  'page',
 ]);
 
 /**
@@ -112,18 +164,69 @@ const QUANTITY_TAILS: ReadonlySet<string> = new Set([
  * `verify` is not listed, and the finding stands — as it also would on
  * `verify` alone, which is a strong word.
  */
-const NON_SECURITY_QUALIFIERS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  ['code', new Set([
-    'http', 'status', 'error', 'err', 'exit', 'country', 'zip', 'postal',
-    'area', 'language', 'lang', 'locale', 'currency', 'promo', 'coupon',
-    'discount', 'color', 'colour', 'qr', 'bar', 'region', 'iso', 'mime',
-    'media', 'sort', 'source', 'char', 'unicode', 'ascii', 'airport',
-  ])],
-  ['key', new Set([
-    'cache', 'map', 'object', 'row', 'index', 'partition', 'primary',
-    'foreign', 'sort', 'storage', 'translation', 'locale', 'i18n', 'react',
-    'idempotency', 'shortcut', 'keyboard', 'press', 'modifier',
-  ])],
+const NON_SECURITY_QUALIFIERS: ReadonlyMap<
+  string,
+  ReadonlySet<string>
+> = new Map([
+  [
+    'code',
+    new Set([
+      'http',
+      'status',
+      'error',
+      'err',
+      'exit',
+      'country',
+      'zip',
+      'postal',
+      'area',
+      'language',
+      'lang',
+      'locale',
+      'currency',
+      'promo',
+      'coupon',
+      'discount',
+      'color',
+      'colour',
+      'qr',
+      'bar',
+      'region',
+      'iso',
+      'mime',
+      'media',
+      'sort',
+      'source',
+      'char',
+      'unicode',
+      'ascii',
+      'airport',
+    ]),
+  ],
+  [
+    'key',
+    new Set([
+      'cache',
+      'map',
+      'object',
+      'row',
+      'index',
+      'partition',
+      'primary',
+      'foreign',
+      'sort',
+      'storage',
+      'translation',
+      'locale',
+      'i18n',
+      'react',
+      'idempotency',
+      'shortcut',
+      'keyboard',
+      'press',
+      'modifier',
+    ]),
+  ],
 ]);
 
 /** Does this name suggest the value is a security value? */
@@ -153,7 +256,9 @@ function nameSuggestsCrypto(name: string): boolean {
 
   return !matched.every((word) => {
     const qualifiers = NON_SECURITY_QUALIFIERS.get(word);
-    return qualifiers !== undefined && words.some((other) => qualifiers.has(other));
+    return (
+      qualifiers !== undefined && words.some((other) => qualifiers.has(other))
+    );
   });
 }
 
@@ -171,12 +276,91 @@ function isMathRandomProperty(node: TSESTree.Node): boolean {
   if (node.object.name !== 'Math') return false;
   const property = node.property;
   if (!node.computed) {
-    return property.type === AST_NODE_TYPES.Identifier && property.name === 'random';
+    return (
+      property.type === AST_NODE_TYPES.Identifier && property.name === 'random'
+    );
   }
-  return property.type === AST_NODE_TYPES.Literal && property.value === 'random';
+  return (
+    property.type === AST_NODE_TYPES.Literal && property.value === 'random'
+  );
 }
 
 // Function names that suggest cryptographic usage
+/**
+ * Words that make an `id` a CORRELATION id rather than a credential.
+ *
+ * `/generate.*id/i` is the loosest pattern in the list, and it matches the
+ * single most common identifier factory in Node: arangojs `src/lib/util.ts:77`
+ * defines
+ *
+ *   export function generateRequestId() {
+ *     return `${Date.now() % THIRTY_MINUTES}_${Math.random().toString(36).substring(2, 15)}`;
+ *   }
+ *
+ * documented `@internal Generate a unique request ID`. That is the value the
+ * driver puts in a log line to match a response to a request; predicting it
+ * grants nothing. It was the ONLY finding in the whole repository, reported at
+ * CWE-338 CRITICAL.
+ *
+ * Subtraction only, exact word membership, same shape as
+ * {@link NON_SECURITY_QUALIFIERS}: a name the pattern matched can be ruled
+ * out, never ruled in. `generateSessionId` and `generateUserId` keep
+ * reporting — a session id IS the credential — because neither `session` nor
+ * `user` appears here.
+ */
+const NON_SECURITY_ID_QUALIFIERS: ReadonlySet<string> = new Set([
+  'request',
+  'req',
+  'correlation',
+  'trace',
+  'span',
+  'transaction',
+  'txn',
+  'message',
+  'msg',
+  'event',
+  'job',
+  'run',
+  'task',
+  'batch',
+  'element',
+  'node',
+  'row',
+  'record',
+  'instance',
+  'component',
+  'widget',
+  'dom',
+  'operation',
+  'call',
+  'invocation',
+  'frame',
+  'render',
+]);
+
+/**
+ * Did the function name match only through the `id` pattern, on an id the
+ * qualifier list says is for correlation?
+ */
+function isCorrelationIdFactory(name: string): boolean {
+  const words = identifierWords(name);
+  if (words[words.length - 1] !== 'id') return false;
+  // A crypto word anywhere in the name outranks the correlation word.
+  // `generateRequestTokenId` contains `request`, but it also contains `token`
+  // and matches `/generate.*token/i` on its own — subtracting it would have
+  // suppressed a match this list was never asked to judge. The subtraction is
+  // only for names whose ONLY claim to being crypto is the trailing `id`.
+  if (words.some((word) => CRYPTO_WORD_SET.has(word))) return false;
+  return words.some((word) => NON_SECURITY_ID_QUALIFIERS.has(word));
+}
+
+/** The name says this function builds a security value. */
+function functionNameSuggestsCrypto(name: string): boolean {
+  if (!CRYPTO_FUNCTION_PATTERNS.some((pattern) => pattern.test(name)))
+    return false;
+  return !isCorrelationIdFactory(name);
+}
+
 const CRYPTO_FUNCTION_PATTERNS = [
   /generate.*token/i,
   /generate.*key/i,
@@ -211,9 +395,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       confidence: 'medium',
     },
     messages: {
-
       pseudoRandomBytes: formatLLMMessage({
-
         icon: MessageIcons.SECURITY,
 
         issueName: 'Non-cryptographic random bytes',
@@ -225,7 +407,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         cvss: 7.5,
 
         description:
-
           "crypto.pseudoRandomBytes() is not cryptographically secure. The name is the API's own warning: it was deprecated in Node 4 precisely because callers assumed otherwise.",
 
         severity: 'HIGH',
@@ -235,7 +416,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         fix: 'Use crypto.randomBytes(n), or crypto.randomUUID() for identifiers.',
 
         documentationLink: 'https://cwe.mitre.org/data/definitions/338.html',
-
       }),
       mathRandomCrypto: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -248,7 +428,6 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation',
       }),
-
     },
     schema: [
       {
@@ -339,7 +518,8 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         callee.property.type === AST_NODE_TYPES.Identifier
       ) {
         const init = stableDeclarator(callee.object)?.init;
-        if (!init || init.type !== AST_NODE_TYPES.ObjectExpression) return false;
+        if (!init || init.type !== AST_NODE_TYPES.ObjectExpression)
+          return false;
         const wanted = callee.property.name;
         return init.properties.some(
           (property) =>
@@ -360,13 +540,16 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         return isMathRandomProperty(init);
       }
       if (declarator.id.type !== AST_NODE_TYPES.ObjectPattern) return false;
-      if (init.type !== AST_NODE_TYPES.Identifier || init.name !== 'Math') return false;
+      if (init.type !== AST_NODE_TYPES.Identifier || init.name !== 'Math')
+        return false;
       return declarator.id.properties.some((property) => {
-        if (property.type !== AST_NODE_TYPES.Property || property.computed) return false;
+        if (property.type !== AST_NODE_TYPES.Property || property.computed)
+          return false;
         if (property.value.type !== AST_NODE_TYPES.Identifier) return false;
         if (property.value.name !== callee.name) return false;
         const key = property.key;
-        if (key.type === AST_NODE_TYPES.Identifier) return key.name === 'random';
+        if (key.type === AST_NODE_TYPES.Identifier)
+          return key.name === 'random';
         return key.type === AST_NODE_TYPES.Literal && key.value === 'random';
       });
     }
@@ -406,7 +589,10 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
      * BINDING forward puts both back under the same predicate rather than
      * widening any name list.
      */
-    function usedInCryptoContext(id: TSESTree.Identifier, depth: number): boolean {
+    function usedInCryptoContext(
+      id: TSESTree.Identifier,
+      depth: number,
+    ): boolean {
       const variable = findVariable(sourceCode, id);
       if (!variable) return false;
       // `reference.init` skips the declarator's own write — the only reference
@@ -472,19 +658,27 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           current.type === AST_NODE_TYPES.FunctionExpression ||
           current.type === AST_NODE_TYPES.ArrowFunctionExpression
         ) {
-          if (!escapesFunction(current, child, passedReturn)) namesThisValue = false;
+          if (!escapesFunction(current, child, passedReturn))
+            namesThisValue = false;
           passedReturn = false;
         }
-        if (current.type === AST_NODE_TYPES.ReturnStatement) passedReturn = true;
+        if (current.type === AST_NODE_TYPES.ReturnStatement)
+          passedReturn = true;
 
         // Check variable names
-        if (namesThisValue && current.type === AST_NODE_TYPES.VariableDeclarator) {
+        if (
+          namesThisValue &&
+          current.type === AST_NODE_TYPES.VariableDeclarator
+        ) {
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
             if (nameSuggestsCrypto(varName)) {
               return true;
             }
-            if (depth < MAX_BINDING_HOPS && usedInCryptoContext(current.id, depth + 1)) {
+            if (
+              depth < MAX_BINDING_HOPS &&
+              usedInCryptoContext(current.id, depth + 1)
+            ) {
               return true;
             }
           }
@@ -493,7 +687,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         // Check function names
         if (current.type === AST_NODE_TYPES.FunctionDeclaration && current.id) {
           const funcName = current.id.name;
-          if (CRYPTO_FUNCTION_PATTERNS.some((p) => p.test(funcName))) {
+          if (functionNameSuggestsCrypto(funcName)) {
             return true;
           }
         }
@@ -516,7 +710,10 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         // left side is an `Identifier`, and only the `MemberExpression` shape
         // was handled. So the textbook accumulator loop was silent while
         // `const token = Math.random().toString(36)` reported.
-        if (namesThisValue && current.type === AST_NODE_TYPES.AssignmentExpression) {
+        if (
+          namesThisValue &&
+          current.type === AST_NODE_TYPES.AssignmentExpression
+        ) {
           if (
             current.left.type === AST_NODE_TYPES.MemberExpression &&
             current.left.property.type === AST_NODE_TYPES.Identifier
@@ -554,7 +751,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             ) {
               const funcName = func.id.name;
               if (
-                CRYPTO_FUNCTION_PATTERNS.some((p) => p.test(funcName)) ||
+                functionNameSuggestsCrypto(funcName) ||
                 nameSuggestsCrypto(funcName)
               ) {
                 return true;

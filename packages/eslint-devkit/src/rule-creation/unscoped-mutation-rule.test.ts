@@ -100,18 +100,31 @@ describe('createUnscopedMutationRule', () => {
   describe('options-object scope', () => {
     ruleTester.run('options', optionsShape, {
       valid: [
-        { name: 'where filter present', code: D + 'prisma.user.deleteMany({ where: { id } });' },
-        { name: 'string-literal where key', code: D + "prisma.user.deleteMany({ 'where': { id } });" },
+        {
+          name: 'where filter present',
+          code: D + 'prisma.user.deleteMany({ where: { id } });',
+        },
+        {
+          name: 'string-literal where key',
+          code: D + "prisma.user.deleteMany({ 'where': { id } });",
+        },
         {
           name: 'updateMany with where alongside data',
-          code: D + 'prisma.user.updateMany({ where: { id }, data: { name } });',
+          code:
+            D + 'prisma.user.updateMany({ where: { id }, data: { name } });',
         },
         {
           name: 'options passed as an identifier — unreadable, deliberate FN',
           code: D + 'prisma.user.deleteMany(opts);',
         },
-        { name: 'spread options may carry the filter', code: D + 'prisma.user.deleteMany({ ...f });' },
-        { name: 'computed key may be the filter', code: D + 'prisma.user.deleteMany({ [k]: v });' },
+        {
+          name: 'spread options may carry the filter',
+          code: D + 'prisma.user.deleteMany({ ...f });',
+        },
+        {
+          name: 'computed key may be the filter',
+          code: D + 'prisma.user.deleteMany({ [k]: v });',
+        },
         { name: 'non-sink method', code: D + 'prisma.user.findMany();' },
         {
           name: 'a file without the driver import is skipped wholesale',
@@ -125,8 +138,14 @@ describe('createUnscopedMutationRule', () => {
           name: 'a receiver that is not a driver handle is skipped',
           code: D + 'queue.deleteMany();',
         },
-        { name: 'bare call, not a member expression', code: D + 'deleteMany();' },
-        { name: 'computed sink name is not resolvable', code: D + "prisma.user['deleteMany']();" },
+        {
+          name: 'bare call, not a member expression',
+          code: D + 'deleteMany();',
+        },
+        {
+          name: 'computed sink name is not resolvable',
+          code: D + "prisma.user['deleteMany']();",
+        },
       ],
       invalid: [
         {
@@ -156,8 +175,14 @@ describe('createUnscopedMutationRule', () => {
   describe('truncate flag', () => {
     ruleTester.run('truncate', truncateShape, {
       valid: [
-        { name: 'scoped destroy', code: D + 'User.destroy({ where: { id } });' },
-        { name: 'truncate explicitly disabled', code: D + 'User.destroy({ where: { id }, truncate: false });' },
+        {
+          name: 'scoped destroy',
+          code: D + 'User.destroy({ where: { id } });',
+        },
+        {
+          name: 'truncate explicitly disabled',
+          code: D + 'User.destroy({ where: { id }, truncate: false });',
+        },
         {
           name: 'a falsy non-false truncate is still not a truncate',
           code: D + 'User.destroy({ where: { id }, truncate: null });',
@@ -203,13 +228,27 @@ describe('createUnscopedMutationRule', () => {
   describe('builder-chain scope', () => {
     ruleTester.run('chain', chainShape, {
       valid: [
-        { name: 'where after the sink', code: D + "knex('users').del().where({ id });" },
-        { name: 'where before the sink', code: D + "knex('users').where({ id }).del();" },
-        { name: 'whereIn variant', code: D + "knex('users').del().whereIn('id', ids);" },
-        { name: 'whereRaw variant', code: D + "knex('users').del().whereRaw('id = ?', [id]);" },
+        {
+          name: 'where after the sink',
+          code: D + "knex('users').del().where({ id });",
+        },
+        {
+          name: 'where before the sink',
+          code: D + "knex('users').where({ id }).del();",
+        },
+        {
+          name: 'whereIn variant',
+          code: D + "knex('users').del().whereIn('id', ids);",
+        },
+        {
+          name: 'whereRaw variant',
+          code: D + "knex('users').del().whereRaw('id = ?', [id]);",
+        },
         {
           name: 'drizzle table argument plus chained where',
-          code: D + 'db.update(users).set({ active: false }).where(eq(users.id, id));',
+          code:
+            D +
+            'db.update(users).set({ active: false }).where(eq(users.id, id));',
         },
       ],
       invalid: [
@@ -253,7 +292,9 @@ describe('createUnscopedMutationRule', () => {
           // A guard matching source text would see "where" in the callback
           // and treat the whole call as scoped.
           name: 'the word where appearing elsewhere in the statement',
-          code: D + 'prisma.user.deleteMany({ data: rows.filter((r) => r.where) });',
+          code:
+            D +
+            'prisma.user.deleteMany({ data: rows.filter((r) => r.where) });',
           errors: [{ messageId: 'unscopedMutation' }],
         },
       ],
@@ -273,7 +314,9 @@ describe('createUnscopedMutationRule', () => {
         {
           // A sibling chain in the same statement is a different expression.
           name: 'scope on a sibling chain does not transfer',
-          code: D + "await Promise.all([knex('a').where({ id }).del(), knex('b').del()]);",
+          code:
+            D +
+            "await Promise.all([knex('a').where({ id }).del(), knex('b').del()]);",
           errors: [{ messageId: 'unscopedMutation' }],
         },
         {
@@ -365,13 +408,17 @@ describe('createUnscopedMutationRule', () => {
         "const knex = require('test-orm');",
         "const { drizzle } = require('test-orm/node-postgres');",
         "const other = require('unrelated');",
-        "const notACall = 1;",
+        'const notACall = 1;',
         "const notRequire = compute('test-orm');",
         "const { ...rest } = require('test-orm');",
         "const { nested: { deep } } = require('test-orm');",
       ].join('\n');
-      const program = parser.parse(src, { sourceType: 'module' }) as TSESTree.Program;
-      expect(driverBindings(program, ['test-orm'])).toEqual(new Set(['knex', 'drizzle']));
+      const program = parser.parse(src, {
+        sourceType: 'module',
+      }) as TSESTree.Program;
+      expect(driverBindings(program, ['test-orm'])).toEqual(
+        new Set(['knex', 'drizzle']),
+      );
     });
 
     it('driverBindings collects namespace and default imports, and ignores others', () => {
@@ -380,18 +427,26 @@ describe('createUnscopedMutationRule', () => {
         "import def, { named } from 'test-orm/sub';",
         "import nope from 'other-pkg';",
       ].join('\n');
-      const program = parser.parse(src, { sourceType: 'module' }) as TSESTree.Program;
-      expect(driverBindings(program, ['test-orm'])).toEqual(new Set(['orm', 'def', 'named']));
+      const program = parser.parse(src, {
+        sourceType: 'module',
+      }) as TSESTree.Program;
+      expect(driverBindings(program, ['test-orm'])).toEqual(
+        new Set(['orm', 'def', 'named']),
+      );
     });
 
     it('driverBindings returns empty for a file that never imports the driver', () => {
-      const program = parser.parse('const a = 1;', { sourceType: 'module' }) as TSESTree.Program;
+      const program = parser.parse('const a = 1;', {
+        sourceType: 'module',
+      }) as TSESTree.Program;
       expect(driverBindings(program, ['test-orm'])).toEqual(new Set());
     });
 
     it('receiverBaseName walks member, call and this chains', () => {
       const base = (expr: string): string | undefined => {
-        const program = parser.parse(expr, { sourceType: 'module' }) as TSESTree.Program;
+        const program = parser.parse(expr, {
+          sourceType: 'module',
+        }) as TSESTree.Program;
         const stmt = program.body[0] as TSESTree.ExpressionStatement;
         const call = stmt.expression as TSESTree.CallExpression;
         return receiverBaseName(call.callee as TSESTree.MemberExpression);

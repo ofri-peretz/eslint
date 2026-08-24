@@ -164,3 +164,5 @@ packages/*/src/**/*.d.ts
 # Written by scripts/ci-build.mts so post-build checks know what this shard built.
 .ci-built-packages.json
 benchmarks/.real-source-cache/
+
+benchmarks/.corpus-gh-cache.json

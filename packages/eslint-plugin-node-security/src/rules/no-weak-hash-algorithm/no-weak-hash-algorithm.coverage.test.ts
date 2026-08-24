@@ -64,7 +64,7 @@ describe('no-weak-hash-algorithm coverage gaps', () => {
         noWeakHashAlgorithm as never,
         // The mock node has no parent chain, so no security use is visible;
         // this suite is about the fixer, not the classification.
-        { options: [{ reportUnclassifiedHashes: true }] } as never
+        { options: [{ reportUnclassifiedHashes: true }] } as never,
       );
       const callee = {
         type: 'Identifier',
@@ -76,7 +76,12 @@ describe('no-weak-hash-algorithm coverage gaps', () => {
         callee,
         arguments: [],
         range: [0, 12],
-      } as { type: string; callee: unknown; arguments: never[]; range: number[] };
+      } as {
+        type: string;
+        callee: unknown;
+        arguments: never[];
+        range: number[];
+      };
 
       (listeners.CallExpression as (n: unknown) => void)(node);
 
@@ -87,7 +92,10 @@ describe('no-weak-hash-algorithm coverage gaps', () => {
         suggest: { messageId: string; fix: (f: unknown) => unknown }[];
       };
       expect(report.messageId).toBe('weakHashAlgorithm');
-      expect(report.data).toEqual({ algorithm: 'SHA-1', replacement: 'sha256' });
+      expect(report.data).toEqual({
+        algorithm: 'SHA-1',
+        replacement: 'sha256',
+      });
       expect(report.suggest[0].messageId).toBe('useSha256');
 
       const replaced: unknown[] = [];

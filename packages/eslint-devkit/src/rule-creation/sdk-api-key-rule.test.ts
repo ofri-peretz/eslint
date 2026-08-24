@@ -25,13 +25,12 @@ RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
 
 const objOf = (code: string): TSESTree.ObjectExpression =>
-  (
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-      .expression as TSESTree.ObjectExpression
-  );
+  (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
+    .expression as TSESTree.ObjectExpression;
 
 const calleeOf = (code: string): TSESTree.Node => {
-  const stmt = parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement;
+  const stmt = parser.parse(code, { range: true })
+    .body[0] as TSESTree.ExpressionStatement;
   return (stmt.expression as TSESTree.NewExpression).callee;
 };
 
@@ -45,7 +44,10 @@ const calleeOf = (code: string): TSESTree.Node => {
 describe('createModuleListEvidence — the `modules` list', () => {
   const opens = (modules: readonly string[], code: string): boolean =>
     createModuleListEvidence(modules)(
-      parser.parse(code, { range: true, sourceType: 'module' }) as TSESTree.Program,
+      parser.parse(code, {
+        range: true,
+        sourceType: 'module',
+      }) as TSESTree.Program,
     );
 
   it('matches the exact specifier', () => {
@@ -54,18 +56,24 @@ describe('createModuleListEvidence — the `modules` list', () => {
 
   it('matches a subpath', () => {
     expect(opens(['openai'], `import x from 'openai/resources';`)).toBe(true);
-    expect(opens(['@anthropic-ai'], `import x from '@anthropic-ai/sdk';`)).toBe(true);
+    expect(opens(['@anthropic-ai'], `import x from '@anthropic-ai/sdk';`)).toBe(
+      true,
+    );
   });
 
   it('does not match a different package that shares the prefix', () => {
     // The load-bearing case: `openai-edge` is a separate client. A bare
     // startsWith would open the gate on it.
     expect(opens(['openai'], `import x from 'openai-edge';`)).toBe(false);
-    expect(opens(['@anthropic-ai'], `import x from '@anthropic-ai-community/x';`)).toBe(false);
+    expect(
+      opens(['@anthropic-ai'], `import x from '@anthropic-ai-community/x';`),
+    ).toBe(false);
   });
 
   it('is false when no module is configured to match', () => {
-    expect(opens(['openai', '@anthropic-ai'], `import x from 'cohere-ai';`)).toBe(false);
+    expect(
+      opens(['openai', '@anthropic-ai'], `import x from 'cohere-ai';`),
+    ).toBe(false);
   });
 
   it('reads CommonJS, import-equals and dynamic import, not just ESM', () => {
@@ -75,13 +83,18 @@ describe('createModuleListEvidence — the `modules` list', () => {
     expect(opens(['openai'], `const OpenAI = require('openai');`)).toBe(true);
     expect(opens(['openai'], `import OpenAI = require('openai');`)).toBe(true);
     expect(
-      opens(['openai'], `async function f() { const m = await import('openai'); return m; }`),
+      opens(
+        ['openai'],
+        `async function f() { const m = await import('openai'); return m; }`,
+      ),
     ).toBe(true);
     expect(opens(['openai'], `export { OpenAI } from 'openai';`)).toBe(true);
   });
 
   it('does not treat a locally bound `require` parameter as a module load', () => {
-    expect(opens(['openai'], `function wrap(require) { return require('openai'); }`)).toBe(false);
+    expect(
+      opens(['openai'], `function wrap(require) { return require('openai'); }`),
+    ).toBe(false);
   });
 });
 
@@ -106,10 +119,17 @@ describe('readCredential', () => {
     // so a hardcoded second credential right after it was never inspected.
     // Anthropic configures two key props, so this was a live CWE-798 miss.
     expect(
-      readCredential(objOf("({ apiKey: process.env.ANTHROPIC_API_KEY, authToken: 'sk-ant-123' })"), keys),
+      readCredential(
+        objOf(
+          "({ apiKey: process.env.ANTHROPIC_API_KEY, authToken: 'sk-ant-123' })",
+        ),
+        keys,
+      ),
     ).toEqual({ kind: 'literal', prop: 'authToken' });
     // Same when the first prop is an empty-string placeholder.
-    expect(readCredential(objOf("({ apiKey: '', authToken: 'sk-ant-123' })"), keys)).toEqual({
+    expect(
+      readCredential(objOf("({ apiKey: '', authToken: 'sk-ant-123' })"), keys),
+    ).toEqual({
       kind: 'literal',
       prop: 'authToken',
     });
@@ -129,29 +149,41 @@ describe('readCredential', () => {
   });
 
   it('treats an environment read as safe', () => {
-    expect(readCredential(objOf('({ apiKey: process.env.OPENAI_API_KEY })'), keys)).toEqual({
+    expect(
+      readCredential(objOf('({ apiKey: process.env.OPENAI_API_KEY })'), keys),
+    ).toEqual({
       kind: 'safe',
     });
   });
 
   it('treats an empty string as a placeholder, not a credential', () => {
-    expect(readCredential(objOf("({ apiKey: '' })"), keys)).toEqual({ kind: 'safe' });
+    expect(readCredential(objOf("({ apiKey: '' })"), keys)).toEqual({
+      kind: 'safe',
+    });
   });
 
   it('treats a non-string literal as safe', () => {
-    expect(readCredential(objOf('({ apiKey: null })'), keys)).toEqual({ kind: 'safe' });
+    expect(readCredential(objOf('({ apiKey: null })'), keys)).toEqual({
+      kind: 'safe',
+    });
   });
 
   it('gives up on a spread rather than guess what it carries', () => {
-    expect(readCredential(objOf('({ ...base })'), keys)).toEqual({ kind: 'unreadable' });
+    expect(readCredential(objOf('({ ...base })'), keys)).toEqual({
+      kind: 'unreadable',
+    });
   });
 
   it('skips a computed key it cannot name', () => {
-    expect(readCredential(objOf("({ [k]: 'sk-live-1' })"), keys)).toEqual({ kind: 'safe' });
+    expect(readCredential(objOf("({ [k]: 'sk-live-1' })"), keys)).toEqual({
+      kind: 'safe',
+    });
   });
 
   it('skips properties that are not credential options', () => {
-    expect(readCredential(objOf("({ baseURL: 'https://x', timeout: 1 })"), keys)).toEqual({
+    expect(
+      readCredential(objOf("({ baseURL: 'https://x', timeout: 1 })"), keys),
+    ).toEqual({
       kind: 'safe',
     });
   });
@@ -163,13 +195,17 @@ describe('readCredential', () => {
 
 describe('calleeName', () => {
   it('names a bare constructor', () => {
-    expect(calleeName(calleeOf("new GoogleGenerativeAI('k')"))).toBe('GoogleGenerativeAI');
+    expect(calleeName(calleeOf("new GoogleGenerativeAI('k')"))).toBe(
+      'GoogleGenerativeAI',
+    );
   });
 
   it('names the property of a namespaced constructor', () => {
     // The namespace is not the identity — `genai.GoogleGenerativeAI` is the
     // same constructor.
-    expect(calleeName(calleeOf("new genai.GoogleGenerativeAI('k')"))).toBe('GoogleGenerativeAI');
+    expect(calleeName(calleeOf("new genai.GoogleGenerativeAI('k')"))).toBe(
+      'GoogleGenerativeAI',
+    );
   });
 
   it('returns undefined for a computed or non-identifier callee', () => {
@@ -191,7 +227,10 @@ describe('POSITIONAL_KEY_LABEL', () => {
  * including the positional path, which only one of them configures.
  */
 const ruleTester = new RuleTester({
-  languageOptions: { parser, parserOptions: { ecmaVersion: 2022, sourceType: 'module' } },
+  languageOptions: {
+    parser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
 });
 
 const rule = createSdkApiKeyRule({
@@ -210,13 +249,31 @@ const SDK = "import Client from 'test-sdk';\n";
 describe('createSdkApiKeyRule', () => {
   ruleTester.run('no-hardcoded-api-key', rule, {
     valid: [
-      { name: 'no SDK import, no opinion', code: "new Client({ apiKey: 'k' });" },
-      { name: 'read from the environment', code: SDK + 'new Client({ apiKey: process.env.K });' },
-      { name: 'empty string placeholder', code: SDK + "new Client({ apiKey: '' });" },
+      {
+        name: 'no SDK import, no opinion',
+        code: "new Client({ apiKey: 'k' });",
+      },
+      {
+        name: 'read from the environment',
+        code: SDK + 'new Client({ apiKey: process.env.K });',
+      },
+      {
+        name: 'empty string placeholder',
+        code: SDK + "new Client({ apiKey: '' });",
+      },
       { name: 'no arguments', code: SDK + 'new Client();' },
-      { name: 'a spread is unreadable', code: SDK + 'new Client({ ...base });' },
-      { name: 'a non-object, non-literal argument', code: SDK + 'new Client(cfg);' },
-      { name: 'unrelated options', code: SDK + "new Client({ baseURL: 'https://x' });" },
+      {
+        name: 'a spread is unreadable',
+        code: SDK + 'new Client({ ...base });',
+      },
+      {
+        name: 'a non-object, non-literal argument',
+        code: SDK + 'new Client(cfg);',
+      },
+      {
+        name: 'unrelated options',
+        code: SDK + "new Client({ baseURL: 'https://x' });",
+      },
       {
         name: 'a positional literal to a constructor that takes no positional key',
         code: SDK + "new Client('k');",
@@ -276,7 +333,12 @@ describe('createSdkApiKeyRule', () => {
       {
         name: 'the positional form for a configured constructor',
         code: SDK + "new PositionalClient('k');",
-        errors: [{ messageId: 'hardcodedApiKey', data: { prop: POSITIONAL_KEY_LABEL } }],
+        errors: [
+          {
+            messageId: 'hardcodedApiKey',
+            data: { prop: POSITIONAL_KEY_LABEL },
+          },
+        ],
       },
       {
         // The gate must not depend on statement order.
