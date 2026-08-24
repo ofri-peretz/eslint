@@ -20,7 +20,7 @@
  * @see https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-mongodb-security
  */
 
-import { TSESLint } from '@interlace/eslint-devkit';
+import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // Critical - NoSQL Injection
 import { noUnsafeQuery } from './rules/no-unsafe-query';
@@ -74,6 +74,17 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'require-lean-queries': requireLeanQueries,
   'no-debug-mode-production': noDebugModeProduction,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-mongodb-security', rules);
+
 
 /**
  * ESLint Plugin object
