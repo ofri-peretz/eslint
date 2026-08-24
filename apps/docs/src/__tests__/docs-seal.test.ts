@@ -173,3 +173,36 @@ describe('docs seal: discoverability', () => {
     expect(robots).toMatch(/disallow: \['\/ingest\/'\]/);
   });
 });
+
+describe('docs seal: every plugin overview sells before it lectures', () => {
+  // The #1 page by traffic is a plugin overview whose install command sat
+  // 2,225px deep, below five sections of philosophy fetched live from GitHub —
+  // and real-user LCP p75 on it was 6.7s. The contract: every overview offers
+  // the instrumented install snippet for ITS OWN package before the remote
+  // README content begins.
+  const overviews = globSync('*/plugin-*/index.mdx', { cwd: CONTENT });
+
+  it('finds overviews to audit (guards a vacuous pass)', () => {
+    expect(overviews.length).toBeGreaterThanOrEqual(20);
+  });
+
+  it.each(overviews)('%s installs its own package above the README', (rel) => {
+    const body = readFileSync(join(CONTENT, rel), 'utf8');
+    const slug = rel.split('/')[1]; // plugin-<name>
+    const install = body.indexOf(`<InstallSnippet packages="eslint-${slug}"`);
+    const readme = body.indexOf('<RemoteReadme');
+    expect(install, 'InstallSnippet for the wrong package, or missing').toBeGreaterThan(-1);
+    expect(readme, 'RemoteReadme missing').toBeGreaterThan(-1);
+    expect(install, 'install must come before the fetched README').toBeLessThan(readme);
+  });
+});
+
+describe('docs seal: share cards', () => {
+  it('docs pages reference their generated OG image, not just the site default', () => {
+    const page = readFileSync(
+      join(APP, 'src/app/docs/[[...slug]]/page.tsx'),
+      'utf8',
+    );
+    expect(page).toMatch(/images: getPageImage\(page\)\.url/);
+  });
+});
