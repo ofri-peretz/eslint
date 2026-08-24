@@ -44,6 +44,14 @@ new detection work. Reports carry the same CWE metadata as before.
 
 No source changes are needed — only the rule id in your config.
 
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing CORS checks in test files |
+| `trustedLibraries` | `string[]` | `[]` | Custom CORS libraries to trust (wildcard origins in these libraries will not be reported) |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
+
 ## Related Rules
 
 - [`no-permissive-cors`](./no-permissive-cors) — the maintained replacement

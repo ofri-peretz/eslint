@@ -44,6 +44,13 @@ new detection work. Reports carry the same CWE metadata as before.
 
 No source changes are needed — only the rule id in your config.
 
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `requiredHeaders` | `string[]` | the built-in header set | Security headers every response must set |
+| `ignoreInTests` | `boolean` | `true` | Skip the check in test files |
+
 ## Related Rules
 
 - [`require-helmet`](./require-helmet) — the maintained replacement

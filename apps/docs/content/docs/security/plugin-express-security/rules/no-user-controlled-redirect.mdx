@@ -77,6 +77,13 @@ app.get('/go', (req, res) => {
 }
 ```
 
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `responseObjects` | `string[]` | — | Additional response object names (e.g. `["reply"]` for Fastify) |
+| `requestObjects` | `string[]` | — | Additional request object names |
+
 ## When Not To Use It
 
 An internal admin tool where every user already holds full trust in the

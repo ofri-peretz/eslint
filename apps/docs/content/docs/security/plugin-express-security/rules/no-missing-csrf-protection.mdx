@@ -45,6 +45,15 @@ new detection work. Reports carry the same CWE metadata as before.
 
 No source changes are needed — only the rule id in your config.
 
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing CSRF protection in test files |
+| `csrfMiddlewarePatterns` | `string[]` | `[]` | CSRF middleware patterns to recognize |
+| `protectedMethods` | `string[]` | `[]` | HTTP methods that require CSRF protection |
+| `ignorePatterns` | `string[]` | `[]` | Additional safe patterns to ignore |
+
 ## Related Rules
 
 - [`require-csrf-protection`](./require-csrf-protection) — the maintained replacement
