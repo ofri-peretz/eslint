@@ -287,7 +287,8 @@ export function createModuleEvidence(
 export function createModuleListEvidence(
   modules: readonly string[],
 ): (ast: TSESTree.Program) => boolean {
-  const isBareScope = (m: string): boolean => m.startsWith('@') && !m.includes('/');
+  const isBareScope = (m: string): boolean =>
+    m.startsWith('@') && !m.includes('/');
   return createModuleEvidence({
     packages: modules.filter((m) => !isBareScope(m)),
     scopes: modules.filter(isBareScope),
@@ -307,6 +308,9 @@ export function createModuleListEvidence(
  * would make devkit a major and strand every plugin on a `^1` range — the
  * opposite of shipping these fixes.
  */
-export function matchesModule(source: string, modules: readonly string[]): boolean {
+export function matchesModule(
+  source: string,
+  modules: readonly string[],
+): boolean {
   return modules.some((m) => source === m || source.startsWith(`${m}/`));
 }

@@ -33,7 +33,10 @@ describe('createModuleEvidence', () => {
   describe('imports', () => {
     it.each([
       ["import { Pool } from 'pg';", 'bare package'],
-      ["import c from 'pg/lib/client';", 'deep path counts — matched on the root'],
+      [
+        "import c from 'pg/lib/client';",
+        'deep path counts — matched on the root',
+      ],
       ["import 'pg';", 'side-effect import with no bindings'],
       ["export { Pool } from 'pg';", 're-export'],
       ["export * from 'pg';", 'star re-export'],
@@ -45,7 +48,10 @@ describe('createModuleEvidence', () => {
     it.each([
       ["import x from 'mysql2';", 'a different driver'],
       ["import x from 'pgx';", 'a package merely sharing the prefix'],
-      ["import x from './pg';", 'relative — a local file named after the package'],
+      [
+        "import x from './pg';",
+        'relative — a local file named after the package',
+      ],
       ["import x from '../db/pg';", 'relative parent'],
       ["import x from '/pg';", 'absolute'],
       ['export const x = 1;', 'a local export with no source'],
@@ -61,7 +67,9 @@ describe('createModuleEvidence', () => {
       expect(ai(ast("import { openai } from '@ai-sdk/openai';"))).toBe(true);
       // The point of matching the scope rather than enumerating providers: a
       // provider we have never heard of still opens the gate.
-      expect(ai(ast("import x from '@ai-sdk/some-future-provider';"))).toBe(true);
+      expect(ai(ast("import x from '@ai-sdk/some-future-provider';"))).toBe(
+        true,
+      );
       expect(ai(ast("import x from '@ai-sdk/openai/edge';"))).toBe(true);
     });
 
@@ -94,7 +102,11 @@ describe('createModuleEvidence', () => {
 
     it('deno.land/x URLs are matched on the package segment', () => {
       expect(
-        pg(ast("import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts';")),
+        pg(
+          ast(
+            "import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts';",
+          ),
+        ),
       ).toBe(true);
       expect(
         pg(ast("import x from 'http://deno.land/x/postgres/mod.ts';")),
@@ -103,7 +115,9 @@ describe('createModuleEvidence', () => {
 
     it('an unrelated URL is not evidence', () => {
       expect(pg(ast("import x from 'https://esm.sh/lodash';"))).toBe(false);
-      expect(pg(ast("import x from 'https://deno.land/x/oak/mod.ts';"))).toBe(false);
+      expect(pg(ast("import x from 'https://deno.land/x/oak/mod.ts';"))).toBe(
+        false,
+      );
     });
   });
 
@@ -119,7 +133,9 @@ describe('createModuleEvidence', () => {
     });
 
     it('an import-equals alias of a namespace is not a module load', () => {
-      expect(pg(ast('namespace N { export const x = 1; }\nimport A = N;'))).toBe(false);
+      expect(
+        pg(ast('namespace N { export const x = 1; }\nimport A = N;')),
+      ).toBe(false);
     });
   });
 
@@ -162,16 +178,36 @@ describe('createModuleEvidence', () => {
     // in the plugin whenever any inner binding existed — an FP fix that created
     // an FN, which is the worse direction.
     it('an unshadowed require survives a shadowing binding elsewhere', () => {
-      expect(pg(ast("const c = require('pg');\nfunction w(require) {}"))).toBe(true);
-      expect(pg(ast("function w(require) {}\nconst c = require('pg');"))).toBe(true);
+      expect(pg(ast("const c = require('pg');\nfunction w(require) {}"))).toBe(
+        true,
+      );
+      expect(pg(ast("function w(require) {}\nconst c = require('pg');"))).toBe(
+        true,
+      );
       expect(
-        pg(ast("function outer() { const c = require('pg'); }\nfunction w(require) {}")),
+        pg(
+          ast(
+            "function outer() { const c = require('pg'); }\nfunction w(require) {}",
+          ),
+        ),
       ).toBe(true);
     });
 
     it('the other arms still apply when `require` is shadowed', () => {
-      expect(pg(ast("import { Pool } from 'pg';\nfunction f(require) { require('pg'); }"))).toBe(true);
-      expect(pg(ast("import c = require('pg');\nfunction f(require) { require('pg'); }"))).toBe(true);
+      expect(
+        pg(
+          ast(
+            "import { Pool } from 'pg';\nfunction f(require) { require('pg'); }",
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        pg(
+          ast(
+            "import c = require('pg');\nfunction f(require) { require('pg'); }",
+          ),
+        ),
+      ).toBe(true);
     });
   });
 
@@ -190,15 +226,21 @@ describe('createModuleEvidence', () => {
     });
 
     it('opens the gate with no import at all', () => {
-      expect(withHandler(ast('export const handler = async (e) => {};'))).toBe(true);
+      expect(withHandler(ast('export const handler = async (e) => {};'))).toBe(
+        true,
+      );
     });
 
     it('does not fire for a near-miss', () => {
-      expect(withHandler(ast('export const handleRequest = async (e) => {};'))).toBe(false);
+      expect(
+        withHandler(ast('export const handleRequest = async (e) => {};')),
+      ).toBe(false);
     });
 
     it('is additive — the import arm still works without it', () => {
-      expect(withHandler(ast("import type { Handler } from 'aws-lambda';"))).toBe(true);
+      expect(
+        withHandler(ast("import type { Handler } from 'aws-lambda';")),
+      ).toBe(true);
     });
 
     it('a probe with no extraEvidence is unaffected', () => {
@@ -226,7 +268,6 @@ describe('createModuleEvidence', () => {
     });
   });
 
-
   describe('the shapes only a real rule produces', () => {
     const nest = createModuleEvidence({
       packages: ['@nestjs/common', '@nestjs/core'],
@@ -234,8 +275,12 @@ describe('createModuleEvidence', () => {
     });
 
     it('a scoped package can be listed exactly, not only by scope', () => {
-      expect(nest(ast("import { Injectable } from '@nestjs/common';"))).toBe(true);
-      expect(nest(ast("import { NestFactory } from '@nestjs/core';"))).toBe(true);
+      expect(nest(ast("import { Injectable } from '@nestjs/common';"))).toBe(
+        true,
+      );
+      expect(nest(ast("import { NestFactory } from '@nestjs/core';"))).toBe(
+        true,
+      );
       // Same scope, package not listed — the scope alone is not the signal here.
       expect(nest(ast("import x from '@nestjs/graphql';"))).toBe(false);
     });
@@ -248,7 +293,9 @@ describe('createModuleEvidence', () => {
     });
 
     it('a prefix can match inside a scope', () => {
-      expect(nest(ast("import { Express } from '@nestjs/platform-express';"))).toBe(true);
+      expect(
+        nest(ast("import { Express } from '@nestjs/platform-express';")),
+      ).toBe(true);
       expect(nest(ast("import x from '@nestjs/platform';"))).toBe(false);
     });
 
@@ -265,7 +312,11 @@ describe('createModuleEvidence', () => {
             for (const child of value) {
               if (child && typeof child.type === 'string') link(child, node);
             }
-          } else if (value && typeof value === 'object' && typeof (value as { type?: unknown }).type === 'string') {
+          } else if (
+            value &&
+            typeof value === 'object' &&
+            typeof (value as { type?: unknown }).type === 'string'
+          ) {
             link(value as Record<string, unknown>, node);
           }
         }

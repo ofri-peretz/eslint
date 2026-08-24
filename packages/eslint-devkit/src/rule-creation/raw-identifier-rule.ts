@@ -59,7 +59,8 @@ import { driverBindings } from './unscoped-mutation-rule';
  * escaper. A sort direction has exactly two legal values, so the fix is a
  * ternary — reaching for an escaper there is overkill and reads as noise.
  */
-export type RawIdentifierMessageIds = 'identifierInterpolation' | 'sortDirectionInterpolation';
+export type RawIdentifierMessageIds =
+  'identifierInterpolation' | 'sortDirectionInterpolation';
 
 export interface RawIdentifierRuleConfig {
   /**
@@ -188,7 +189,8 @@ export function identifierPosition(
 ): 'identifier' | 'sortDirection' | false {
   // Scan the gap off first, then anchor the keyword at the end. Neither step
   // has adjacent quantifiers, so neither can backtrack. See stripIdentifierGap.
-  if (IDENTIFIER_KEYWORDS.test(stripIdentifierGap(precedingText))) return 'identifier';
+  if (IDENTIFIER_KEYWORDS.test(stripIdentifierGap(precedingText)))
+    return 'identifier';
   // `ORDER BY created_at ${dir}` — not immediately after the keyword, but
   // still inside the clause, so still an identifier-grade splice. A later
   // clause keyword (`LIMIT`, `OFFSET`) means the hole has left ORDER BY.
@@ -315,7 +317,8 @@ export function createRawIdentifierRule(
 
           const { quasis, expressions } = node.quasi;
           expressions.forEach((expr, index) => {
-            if (isExemptExpression(expr, config.identifierHelpers, config.tags)) return;
+            if (isExemptExpression(expr, config.identifierHelpers, config.tags))
+              return;
             // Everything statically known to the left of this hole. Joining
             // the quasis is what makes clause detection work across earlier
             // interpolations: in `WHERE a = ${a} ORDER BY ${c}` the second

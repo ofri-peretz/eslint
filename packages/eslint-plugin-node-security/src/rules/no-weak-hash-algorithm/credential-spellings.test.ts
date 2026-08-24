@@ -32,7 +32,10 @@ import parser from '@typescript-eslint/parser';
 import { noWeakHashAlgorithm } from './index';
 
 const ruleTester = new RuleTester({
-  languageOptions: { parser, parserOptions: { ecmaVersion: 2022, sourceType: 'module' } },
+  languageOptions: {
+    parser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
 });
 
 const hash = (name: string) =>
@@ -95,10 +98,14 @@ const STILL_QUIET = [
   'checksum',
 ];
 
-ruleTester.run('no-weak-hash-algorithm — credential spellings', noWeakHashAlgorithm, {
-  valid: STILL_QUIET.map((name) => ({ code: hash(name) })),
-  invalid: NOW_DETECTED.map((name) => ({
-    code: hash(name),
-    errors: 1,
-  })),
-});
+ruleTester.run(
+  'no-weak-hash-algorithm — credential spellings',
+  noWeakHashAlgorithm,
+  {
+    valid: STILL_QUIET.map((name) => ({ code: hash(name) })),
+    invalid: NOW_DETECTED.map((name) => ({
+      code: hash(name),
+      errors: 1,
+    })),
+  },
+);

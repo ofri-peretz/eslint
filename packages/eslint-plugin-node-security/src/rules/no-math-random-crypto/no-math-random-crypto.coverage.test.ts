@@ -28,9 +28,9 @@ const ruleTester = new RuleTester({
 describe('no-math-random-crypto coverage gaps', () => {
   ruleTester.run('no-math-random-crypto', noMathRandomCrypto, {
     valid: [
-    // The secure sibling stays silent.
-    'import crypto from "crypto"; export const t = () => crypto.randomBytes(16);',
-    'import { randomBytes } from "crypto"; export const t = () => randomBytes(16);',
+      // The secure sibling stays silent.
+      'import crypto from "crypto"; export const t = () => crypto.randomBytes(16);',
+      'import { randomBytes } from "crypto"; export const t = () => randomBytes(16);',
 
       // Assignment with a plain identifier LHS → member check false
       { code: 'result = Math.random();' },
@@ -50,15 +50,15 @@ describe('no-math-random-crypto coverage gaps', () => {
       { code: 'const v = function plain() { return Math.random(); };' },
     ],
     invalid: [
-    // crypto.pseudoRandomBytes — eslint-plugin-security has detected this since
-    // 2016 and nothing here did. Unconditional: unlike Math.random, which has
-    // legitimate uses and so gates on surrounding names, this API has exactly
-    // one meaning and was deprecated in Node 4 for being mistaken for the
-    // secure one.
-    {
-      code: 'import crypto from "crypto"; export const t = () => crypto.pseudoRandomBytes(16);',
-      errors: [{ messageId: 'pseudoRandomBytes' }],
-    },
+      // crypto.pseudoRandomBytes — eslint-plugin-security has detected this since
+      // 2016 and nothing here did. Unconditional: unlike Math.random, which has
+      // legitimate uses and so gates on surrounding names, this API has exactly
+      // one meaning and was deprecated in Node 4 for being mistaken for the
+      // secure one.
+      {
+        code: 'import crypto from "crypto"; export const t = () => crypto.pseudoRandomBytes(16);',
+        errors: [{ messageId: 'pseudoRandomBytes' }],
+      },
 
       // Crypto-named FunctionDeclaration ancestor → reported
       {
@@ -95,7 +95,9 @@ describe('no-math-random-crypto coverage gaps', () => {
         // FP: a quantity is not a credential.
         { code: 'const tokenCount = Math.floor(200 + Math.random() * 1800);' },
         // FP: `code` and `key` in their ordinary English sense.
-        { code: 'const httpCode = CODES[Math.floor(Math.random() * CODES.length)];' },
+        {
+          code: 'const httpCode = CODES[Math.floor(Math.random() * CODES.length)];',
+        },
         { code: 'const cacheKey = `_=${Math.floor(Math.random() * 1e9)}`;' },
         // …but the qualifier must be present to neutralise them.
         { code: 'const shard = Math.floor(Math.random() * 8);' },
@@ -135,11 +137,19 @@ const apiKey = rand().toString(36);`,
         { code: 'const { "floor": f } = Math; const token = f(1);' },
         { code: 'const { random: { z } } = Math; const token = z();' },
         { code: 'const [first] = Math.things; const token = first();' },
-        { code: 'const rng = { next: crypto.randomInt }; const token = rng.next();' },
+        {
+          code: 'const rng = { next: crypto.randomInt }; const token = rng.next();',
+        },
         { code: 'const rng = makeRng(); const token = rng.next();' },
-        { code: 'const rng = { next: Math.random }; const token = rng.other();' },
-        { code: 'const rng = { ["next"]: Math.random }; const token = rng.next();' },
-        { code: 'const rng = { next: Math.random }; const token = rng["next"]();' },
+        {
+          code: 'const rng = { next: Math.random }; const token = rng.other();',
+        },
+        {
+          code: 'const rng = { ["next"]: Math.random }; const token = rng.next();',
+        },
+        {
+          code: 'const rng = { next: Math.random }; const token = rng["next"]();',
+        },
         { code: 'const token = Math["floor"](1.5);' },
         { code: 'const token = Math[keyName]();' },
         { code: 'const token = Maths.random();' },
@@ -235,7 +245,7 @@ const recoveryCode = rng.next().toString(36).slice(2, 10);`,
   describe('Layer 2: return statement with no containing function', () => {
     it('treats a floating ReturnStatement ancestor as non-crypto context', () => {
       const { listeners, reports } = createWithMockContext(
-        noMathRandomCrypto as never
+        noMathRandomCrypto as never,
       );
       const ret: { type: string; parent?: unknown; argument?: unknown } = {
         type: 'ReturnStatement',
@@ -262,7 +272,7 @@ const recoveryCode = rng.next().toString(36).slice(2, 10);`,
       // no scope to answer — the mock context's stub — the answer must be
       // "no evidence", not a crash and not a report.
       const { listeners, reports } = createWithMockContext(
-        noMathRandomCrypto as never
+        noMathRandomCrypto as never,
       );
       const declarator: Record<string, unknown> = {
         type: 'VariableDeclarator',

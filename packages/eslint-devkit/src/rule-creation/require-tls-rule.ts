@@ -56,7 +56,8 @@ import { formatLLMMessage, MessageIcons } from '../messaging';
 import { driverBindings, propertyKeyName } from './unscoped-mutation-rule';
 
 /** Message ids every rule built by this factory reports. */
-export type RequireTlsMessageIds = 'tlsDisabled' | 'certificateValidationDisabled';
+export type RequireTlsMessageIds =
+  'tlsDisabled' | 'certificateValidationDisabled';
 
 export interface RequireTlsRuleConfig {
   /**
@@ -130,7 +131,14 @@ const DEFAULT_CONNECTION_KEYS = [
 ] as const;
 
 /** Keys whose falsy value turns TLS off outright. */
-const TLS_OFF_KEYS = ['ssl', 'secure', 'tls', 'encrypt', 'useSSL', 'requireSSL'] as const;
+const TLS_OFF_KEYS = [
+  'ssl',
+  'secure',
+  'tls',
+  'encrypt',
+  'useSSL',
+  'requireSSL',
+] as const;
 
 /** Keys whose falsy value keeps TLS but stops authenticating the server. */
 const VERIFY_OFF_KEYS = [
@@ -190,7 +198,10 @@ export function looksLikeConnectionConfig(
  *   - `#?sslmode=disable` — the text sits *inside* the fragment, which no
  *     driver parses as a connection option, so this is not a finding.
  */
-export function urlDisablesTls(value: string, schemes: readonly string[]): boolean {
+export function urlDisablesTls(
+  value: string,
+  schemes: readonly string[],
+): boolean {
   if (!schemes.some((scheme) => value.startsWith(`${scheme}://`))) return false;
   const query = value.split('#')[0]!;
   return /[?&](?:sslmode=disable|ssl=(?:false|0))(?:&|$)/i.test(query);
@@ -244,7 +255,10 @@ export function inConnectionPosition(
 }
 
 /** Does this callee chain start at a name introduced by importing the driver? */
-function calleeBaseIsDriver(callee: TSESTree.Node, bindings: ReadonlySet<string>): boolean {
+function calleeBaseIsDriver(
+  callee: TSESTree.Node,
+  bindings: ReadonlySet<string>,
+): boolean {
   let cursor: TSESTree.Node = callee;
   for (;;) {
     if (cursor.type === AST_NODE_TYPES.MemberExpression) {
@@ -255,7 +269,9 @@ function calleeBaseIsDriver(callee: TSESTree.Node, bindings: ReadonlySet<string>
       cursor = cursor.callee;
       continue;
     }
-    return cursor.type === AST_NODE_TYPES.Identifier && bindings.has(cursor.name);
+    return (
+      cursor.type === AST_NODE_TYPES.Identifier && bindings.has(cursor.name)
+    );
   }
 }
 
@@ -269,7 +285,10 @@ function calleeBaseIsDriver(callee: TSESTree.Node, bindings: ReadonlySet<string>
 export function createRequireTlsRule(
   config: RequireTlsRuleConfig,
 ): TSESLint.RuleModule<RequireTlsMessageIds, []> {
-  const connectionKeys = [...DEFAULT_CONNECTION_KEYS, ...(config.connectionKeys ?? [])];
+  const connectionKeys = [
+    ...DEFAULT_CONNECTION_KEYS,
+    ...(config.connectionKeys ?? []),
+  ];
   const urlSchemes = config.urlSchemes ?? [];
 
   return {
@@ -319,14 +338,21 @@ export function createRequireTlsRule(
        */
       let reported = new WeakSet<TSESTree.Property>();
 
-      const report = (prop: TSESTree.Property, messageId: RequireTlsMessageIds): void => {
+      const report = (
+        prop: TSESTree.Property,
+        messageId: RequireTlsMessageIds,
+      ): void => {
         if (reported.has(prop)) return;
         reported.add(prop);
         context.report({ node: prop, messageId });
       };
 
-      const reportVerifyOffProperty = (prop: TSESTree.Property, name: string): void => {
-        if (!VERIFY_OFF_KEYS.includes(name as (typeof VERIFY_OFF_KEYS)[number])) return;
+      const reportVerifyOffProperty = (
+        prop: TSESTree.Property,
+        name: string,
+      ): void => {
+        if (!VERIFY_OFF_KEYS.includes(name as (typeof VERIFY_OFF_KEYS)[number]))
+          return;
         // `trustServerCertificate` is the inverted spelling: dangerous when true.
         const inverted = name === 'trustServerCertificate';
         if (!isLiteralBoolean(prop.value, inverted)) return;

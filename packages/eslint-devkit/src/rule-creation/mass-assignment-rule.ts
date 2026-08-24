@@ -123,9 +123,14 @@ const UNTRUSTED_PROPS = ['body', 'query', 'params', 'payload'] as const;
  * `form.body` out of the findings.
  */
 export function isUntrustedSource(node: TSESTree.Node): boolean {
-  if (node.type !== AST_NODE_TYPES.MemberExpression || node.computed) return false;
+  if (node.type !== AST_NODE_TYPES.MemberExpression || node.computed)
+    return false;
   if (node.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (!UNTRUSTED_PROPS.includes(node.property.name as (typeof UNTRUSTED_PROPS)[number])) {
+  if (
+    !UNTRUSTED_PROPS.includes(
+      node.property.name as (typeof UNTRUSTED_PROPS)[number],
+    )
+  ) {
     return false;
   }
   return baseIsRequest(node.object);
@@ -134,7 +139,8 @@ export function isUntrustedSource(node: TSESTree.Node): boolean {
 /** Walk a member chain down to its root identifier and test it. */
 function baseIsRequest(node: TSESTree.Node): boolean {
   let cursor = node;
-  while (cursor.type === AST_NODE_TYPES.MemberExpression) cursor = cursor.object;
+  while (cursor.type === AST_NODE_TYPES.MemberExpression)
+    cursor = cursor.object;
   return (
     cursor.type === AST_NODE_TYPES.Identifier &&
     REQUEST_OBJECTS.includes(cursor.name as (typeof REQUEST_OBJECTS)[number])
@@ -248,7 +254,8 @@ export function createMassAssignmentRule(
               const name = propertyKeyName(prop);
               if (name === undefined || !payloadKeys.has(name)) continue;
               const nested = classifyPayload(prop.value);
-              if (nested) context.report({ node: prop.value, messageId: nested });
+              if (nested)
+                context.report({ node: prop.value, messageId: nested });
             }
           }
         },
