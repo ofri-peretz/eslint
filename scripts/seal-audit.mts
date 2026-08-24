@@ -478,7 +478,14 @@ for (const dir of dirs) {
         0,
       );
   if (newestSource(path.join(pkg, 'src')) > built) {
-    throw new Error(`dist is older than src for eslint-plugin-${prefix} — run the build before auditing ${ruleId}`);
+    throw new Error(
+      `dist is older than src for eslint-plugin-${prefix}, so ${ruleId} would be measured against a stale build.\n` +
+        `  Either the build has not been run since src changed — build and retry —\n` +
+        `  or src changed WHILE the audit was running, which a checkout, merge or reset\n` +
+        `  in this worktree will do, including one made by another session sharing it.\n` +
+        `  In the second case the run is void rather than fixable: rebuild, and audit from\n` +
+        `  a worktree nothing else is writing to.`,
+    );
   }
   const mod = await import(path.join(pkg, 'dist/src/index.js'));
   const plugin = mod.default ?? mod;
