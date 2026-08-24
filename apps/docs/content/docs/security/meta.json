@@ -23,6 +23,10 @@
         "plugin-sqlite-security",
         "plugin-typeorm-security",
         "plugin-vercel-ai-security",
-        "plugin-crypto"
+        "plugin-crypto",
+        "plugin-anthropic-security",
+        "plugin-gemini-security",
+        "plugin-mcp-sdk-security",
+        "plugin-openai-security"
     ]
 }

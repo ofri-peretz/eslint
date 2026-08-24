@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: gemini-security",
+    "icon": "Sparkles",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

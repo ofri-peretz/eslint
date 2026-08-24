@@ -36,10 +36,15 @@ export const FLAGSHIP_RULES = [
 
 export type FlagshipRuleId = (typeof FLAGSHIP_RULES)[number];
 
+// "Peer", never "competitor": ECOSYSTEM_LANDSCAPE framing is
+// landscape/specialization, and these labels render on public surfaces
+// (the /scorecard page and the markdown report). The internal type keys
+// keep their historical names — renaming them would churn every snapshot
+// consumer for zero user-visible gain.
 export const STACK_LABELS = {
   oursEslint: 'Ours (ESLint)',
-  competitorEslint: 'Competitor (ESLint)',
-  oxlintNative: 'oxlint native (competitor)',
+  competitorEslint: 'Peer (ESLint)',
+  oxlintNative: 'oxlint native (peer)',
 } as const;
 
 export type Stack = keyof typeof STACK_LABELS;

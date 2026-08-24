@@ -1,0 +1,10 @@
+{
+  "title": "Rules",
+  "defaultOpen": false,
+  "pages": [
+    "no-command-injection-in-tool",
+    "no-tool-description-injection",
+    "no-unvalidated-tool-args",
+    "require-tool-input-schema"
+  ]
+}

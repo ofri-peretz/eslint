@@ -236,7 +236,7 @@ export function ArticlesClient({
             <span data-testid="article-count">{totalArticles} Articles Published</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-fd-foreground dark:text-white dark:drop-shadow-lg" suppressHydrationWarning>
-            Technical Insights
+            Articles
           </h1>
           <p className="text-lg text-fd-muted-foreground dark:text-orange-100/80 leading-relaxed dark:drop-shadow" suppressHydrationWarning>
             Deep dives into ESLint security, JavaScript performance, and modern development practices.

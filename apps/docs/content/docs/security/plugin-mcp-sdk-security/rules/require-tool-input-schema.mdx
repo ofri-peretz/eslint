@@ -1,0 +1,74 @@
+---
+title: require-tool-input-schema
+description: "Require an input schema when registering an MCP tool"
+tags: ['security','mcp']
+category: security
+severity: high
+cwe: CWE-20
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Require an input schema when registering an MCP tool.
+
+- **CWE:** [CWE-20 — Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+- **OWASP:** A03:2021 — Injection
+- **CVSS:** 7.5 (High)
+- **Recommended:** `error`
+
+## Why
+
+An MCP tool registered without an input schema receives whatever arguments the client sends. The handler then runs on unvalidated, attacker-influenced input — the entry point for tool poisoning and argument injection. Where the handler reaches a filesystem, shell, or network sink, the missing schema is the difference between a constrained parameter and arbitrary input.
+
+The schema is also what the model sees when deciding how to call the tool. Without it, the model guesses the shape, which makes malformed and adversarial calls likelier.
+
+## Rule details
+
+The rule fires only in files that import `@modelcontextprotocol/sdk`. It reports:
+
+- `registerTool(name, config, handler)` where `config` is an object literal with no `inputSchema` property.
+- `tool(name, handler)` — the legacy arity with no schema between the name and the callback.
+
+It deliberately stays silent when it cannot read the configuration: a config passed by reference or built from a spread may well carry the schema, and guessing there would flag correct code.
+
+## Incorrect
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+server.registerTool('read_file', { description: 'Read a file' }, async (args) => {
+  return readFileSync(args.path, 'utf8');
+});
+
+server.tool('delete_record', async (args) => db.delete(args.id));
+```
+
+## Correct
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+server.registerTool('read_file', {
+  description: 'Read a file',
+  inputSchema: { path: z.string() },
+}, async (args) => {
+  return readFileSync(args.path, 'utf8');
+});
+
+server.tool('delete_record', { id: z.string().uuid() }, async (args) => db.delete(args.id));
+```
+
+## When not to use it
+
+If the server registers tools through a wrapper that injects the schema, the rule cannot see it and will report the wrapper's call site. Disable it there rather than repeating the schema.
+
+## Further reading
+
+- [MCP — Tools](https://modelcontextprotocol.io/docs/concepts/tools)
+- [CWE-20 — Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
