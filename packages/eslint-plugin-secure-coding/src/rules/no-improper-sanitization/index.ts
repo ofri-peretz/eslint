@@ -616,6 +616,21 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
               ) {
                 current = parent;
               } else if (
+                // TypeScript wrappers are transparent: `[…] satisfies Block[]`
+                // is the array, not something else. The climb stopped at them,
+                // so the literal fell through to the dangerous-character check
+                // and the apostrophe reported again — on
+                // vercel/example-marketplace-integration, twice, AFTER the
+                // ArrayExpression arm was supposed to have closed it. The unit
+                // test written for that fix used a bare array and passed,
+                // which is why the real file is the one that settles it.
+                parent?.type === 'TSSatisfiesExpression' ||
+                parent?.type === 'TSAsExpression' ||
+                parent?.type === 'TSNonNullExpression' ||
+                parent?.type === 'TSTypeAssertion'
+              ) {
+                current = parent;
+              } else if (
                 parent?.type === 'MemberExpression' &&
                 parent.object === current &&
                 parent.property.type === 'Identifier' &&
@@ -707,6 +722,14 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             //
             // A hole in the element list means something non-literal is
             // being spread or elided, so it is not safe text.
+            if (
+              expr.type === 'TSSatisfiesExpression' ||
+              expr.type === 'TSAsExpression' ||
+              expr.type === 'TSNonNullExpression' ||
+              expr.type === 'TSTypeAssertion'
+            ) {
+              return isSafeText(expr.expression);
+            }
             if (expr.type === AST_NODE_TYPES.ArrayExpression) {
               // `null` here is a HOLE (`[1, , 3]`), not a null literal — the
               // parser models the two differently. A hole evaluates to
