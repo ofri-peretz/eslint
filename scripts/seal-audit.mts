@@ -151,7 +151,6 @@ const throughputOf = async (ruleId: string, rule: unknown, dir: string): Promise
       command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
     };
   }
-  const unit = fixtures.split('\n');
   const linter = new Linter({ configType: 'flat' });
   const configFor = (r: unknown) => [
     {
