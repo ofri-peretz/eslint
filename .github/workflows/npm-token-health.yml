@@ -14,13 +14,21 @@ name: NPM Token Health Check
 # ═══════════════════════════════════════════════════════════════════════════════
 
 on:
-  # schedule: # DISABLED — quota conservation
-    # Every Monday at 9:00 AM UTC
-    # - cron: "0 9 * * 1"
+  schedule:
+    # Mon 09:15 UTC — weekly. Re-enabled: the "quota conservation" reason no
+    # longer applies, because this repository is public and GitHub Actions
+    # minutes are free for public repositories. Staggered 15 minutes off
+    # weekly-benchmark.yml, which holds 09:00 on the same day.
+    #
+    # This is the shape of check that belongs on a schedule rather than in the
+    # PR pipeline: it costs nothing per push, and its output is an action item
+    # (an issue naming an expiring token), not a gate. npm Granular Access
+    # Tokens expire after 90 days, and a lapsed one fails a release silently.
+    - cron: '15 9 * * 1'
   workflow_dispatch:
     inputs:
       create-issue:
-        description: "Create GitHub issue if token is invalid/missing"
+        description: 'Create GitHub issue if token is invalid/missing'
         required: false
         type: boolean
         default: true
@@ -35,7 +43,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
-      issues: write   # creates / comments on the failure issue
+      issues: write # creates / comments on the failure issue
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,8 +52,8 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version-file: .nvmrc
-          registry-url: "https://registry.npmjs.org/"
-          cache: "npm"
+          registry-url: 'https://registry.npmjs.org/'
+          cache: 'npm'
 
       - name: 🔍 Check NPM Token Status
         id: token-check
