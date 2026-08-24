@@ -56,7 +56,10 @@ export function PluginToggleStrip({
                 onClick={onCopyConfig}
                 aria-live="polite"
                 disabled={enabled.size === 0}
-                className="font-mono text-xs uppercase tracking-wider"
+                // No uppercase: the label is a literal filename, and
+                // eslint.config.js shouted as ESLINT.CONFIG.JS is a wrong
+                // name, not a style.
+                className="font-mono text-xs"
               >
                 {copied ? (
                   <>
