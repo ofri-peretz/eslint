@@ -38,6 +38,7 @@
     "lib/**/*.ts",
     "suites/*/run.ts",
     "suites/*/scorecard.ts",
+    "suites/*/badges.ts",
     "suites/*/harvest-fixtures.ts",
     "suites/ilb-formatter/runner.ts",
     "suites/ilb-formatter/fixtures.ts",
