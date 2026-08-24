@@ -422,32 +422,32 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
      * needs no import at all. Computed once per file: the answer cannot differ
      * between two templates in the same module.
      */
-    const moduleEvaluatesXpath = (() => {
-      for (const statement of sourceCode.ast.body) {
-        // `source.value` on an ImportDeclaration is always a string, so it is
-        // read directly — a `typeof` guard here is an uncoverable branch, and
-        // this repository gates on 100%.
-        if (
-          statement.type === AST_NODE_TYPES.ImportDeclaration &&
-          xpathPackageSet.has(String(statement.source.value))
-        ) {
-          return true;
-        }
-      }
-      // `document.evaluate`, `XPathEvaluator` and the IE-era `selectNodes`
-      // family are XPath sinks that arrive with the platform rather than from
-      // a package, so an import check alone would miss every browser use.
-      //
-      // A bare `.evaluate(` counts here even though the call path refuses to
-      // report on that name alone, and the difference is deliberate: this is
-      // module-level EVIDENCE, not a finding. Reporting still needs an
-      // XPath-shaped template carrying untrusted interpolation, so a
-      // feature-flag SDK's `evaluate(ctx)` only matters in a file that also
-      // builds something shaped like an XPath expression out of user input.
-      return /\b(?:XPathEvaluator|XPathResult|createExpression|selectSingleNode|selectNodes)\b|\.\s*evaluate\s*\(/.test(
-        sourceCode.getText(),
-      );
-    })();
+    /**
+     * Does this module evaluate XPath at all?
+     *
+     * The call path already established the doctrine — "the import is the
+     * evidence; the name never was" — after `select` and `evaluate` reported
+     * CWE-643 at 9.8 in files containing no XML. The template path never
+     * applied it and reported on shape alone, so a React Router wildcard
+     * `path={`/${locale}/*`}` was XPath injection at CVSS 9.8.
+     *
+     * Set during traversal rather than by walking the AST up front: a rule that
+     * matches against the whole program text reads comments and string bodies
+     * as if they were code, and the rule-audit ratchet flags it for that.
+     * Templates that need it are therefore held until `Program:exit`, by which
+     * point the answer is known however late in the file the evidence sits.
+     */
+    let moduleEvaluatesXpath = false;
+    /** Nodes only: one messageId is ever deferred, so it is written at the report site. */
+    const wildcardPending: TSESTree.Node[] = [];
+
+    /** Only as a member — `doc.evaluate(x)`. A bare `evaluate(ctx)` is a feature flag. */
+    const DOM_XPATH_MEMBERS = new Set([
+      'evaluate',
+      'selectNodes',
+      'selectSingleNode',
+      'createExpression',
+    ]);
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -877,6 +877,39 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       },
 
       // Check template literals for XPath expressions
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (xpathPackageSet.has(String(node.source.value))) {
+          moduleEvaluatesXpath = true;
+        }
+      },
+
+      'MemberExpression[computed=false] > Identifier.property'(
+        node: TSESTree.Identifier,
+      ) {
+        if (DOM_XPATH_MEMBERS.has(node.name)) {
+          moduleEvaluatesXpath = true;
+        }
+      },
+
+      'Program:exit'() {
+        // Held until now because evidence can sit after the template that needs
+        // it — `const q = `/${s}/*`` on line 1, `doc.evaluate(q)` on line 2.
+        if (!moduleEvaluatesXpath) return;
+        for (const pending of wildcardPending) {
+          context.report({
+            node: pending,
+            messageId: 'unsafeXpathConcatenation',
+            data: {
+              filePath: filename,
+              // No `?? 0` fallback here, unlike the sites a mock-context test
+              // reaches: `loc` is non-optional on a parsed node, so the guard
+              // would be an uncoverable branch and this repo gates on 100%.
+              line: String(pending.loc.start.line),
+            },
+          });
+        }
+      },
+
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         // The static text the template contributes, not its printed source.
         // `sourceCode.getText(node)` includes the interpolated expressions, so
@@ -922,9 +955,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // A wildcard step on its own is shared with React Router's segment
         // syntax, so it needs the module to actually evaluate XPath before it
         // counts. Every other marker stands alone. See `isWildcardOnlyXpath`.
-        if (isWildcardOnlyXpath(staticText) && !moduleEvaluatesXpath) {
-          return;
-        }
+        const wildcardOnly = isWildcardOnlyXpath(staticText);
 
         // Check for interpolation in XPath-like expressions
         if (node.expressions.length > 0) {
@@ -944,6 +975,10 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
               return;
             }
 
+            if (wildcardOnly) {
+              wildcardPending.push(node);
+              return;
+            }
             context.report({
               node,
               messageId: 'unsafeXpathConcatenation',

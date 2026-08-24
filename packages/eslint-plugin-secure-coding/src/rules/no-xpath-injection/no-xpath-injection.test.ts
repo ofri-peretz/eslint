@@ -164,6 +164,14 @@ describe('no-xpath-injection', () => {
     ruleTester.run('invalid - dangerous XPath expressions', noXpathInjection, {
       valid: [],
       invalid: [
+        // FN GUARD — the wildcard gate is corroboration, not amnesty. The same
+        // `/*` shape that is a React Router path in a component is still an
+        // XPath injection in a module that evaluates XPath, and the evidence is
+        // allowed to arrive AFTER the template it justifies.
+        {
+          code: 'const q = `/${req.query.id}/*`; doc.evaluate(q, root);',
+          errors: [{ messageId: 'unsafeXpathConcatenation' }],
+        },
         {
           code: 'const xpath = "//users/user/..";',
           // `dangerousXpathExpression` is opt-in: these are CONSTANT XPath
