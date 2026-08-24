@@ -1,0 +1,15 @@
+[
+  "conventions/no-commented-code",
+  "maintainability/cognitive-complexity",
+  "maintainability/identical-functions",
+  "maintainability/max-parameters",
+  "modernization/prefer-at",
+  "modernization/prefer-event-target",
+  "modernization/prefer-template-literal",
+  "modularity/ddd-value-object-immutability",
+  "react-a11y/prefer-tag-over-role",
+  "react-features/hooks-exhaustive-deps",
+  "react-features/jsx-key",
+  "react-features/no-unknown-property",
+  "reliability/no-missing-null-checks"
+]
