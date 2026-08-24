@@ -46,10 +46,12 @@ const inlinePath = join(
 );
 const dataLibPath = join(APP_ROOT, 'src/lib/changelog-data.ts');
 const dataPath = join(APP_ROOT, 'src/data/changelog.json');
+const layoutPath = join(APP_ROOT, 'src/app/changelog/layout.tsx');
 
 describe('Changelog page: files exist', () => {
   it.each([
     ['page', pagePath],
+    ['layout', layoutPath],
     ['release list', listPath],
     ['filters', filtersPath],
     ['pagination', paginationPath],
@@ -58,6 +60,15 @@ describe('Changelog page: files exist', () => {
     ['generated data', dataPath],
   ])('%s', (_label, path) => {
     expect(existsSync(path)).toBe(true);
+  });
+});
+
+describe('Changelog page: site nav', () => {
+  it('wraps in fumadocs HomeLayout — without it the page has no nav and no way back (2026-08-24)', () => {
+    const layout = readFileSync(layoutPath, 'utf-8');
+    expect(layout).toContain("from 'fumadocs-ui/layouts/home'");
+    expect(layout).toContain('<HomeLayout');
+    expect(layout).toContain('baseOptions');
   });
 });
 

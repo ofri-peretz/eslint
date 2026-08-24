@@ -3,14 +3,24 @@
  *
  * /stats is the public data surface for the Interlace ecosystem. A silent
  * regression here (a chart dropped, a card swapped for a `<div>`, the
- * plugins table reverting to raw HTML, the NSM math reverting to the
- * old views+reactions+comments sum) erodes trust without showing up in CI
+ * plugins table reverting to raw HTML, internal engagement metrics leaking
+ * back onto the visitor-facing page) erodes trust without showing up in CI
  * unless a structural lock catches it. Pattern mirrors `scorecard-lock`.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+
+/**
+ * Blank comments so prose in docstrings can neither satisfy nor trip a
+ * source-string assertion — only code and JSX text count.
+ */
+function blankComments(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (_m, p1: string) => p1);
+}
 
 // Use __dirname so this works regardless of whether vitest is invoked from the
 // repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
@@ -85,9 +95,8 @@ describe('Stats page: structure lock', () => {
       expect(pageSource).toContain('<Badge');
     });
 
-    it('names engagement as the North Star Metric', () => {
-      expect(pageSource).toMatch(/North Star/i);
-      expect(pageSource).toMatch(/engagement/i);
+    it('frames the page around adoption (visitor-facing), not internal metrics', () => {
+      expect(pageSource).toMatch(/adoption/i);
     });
 
     it('uses Container primitive (LAYOUT_PHILOSOPHY §2)', () => {
@@ -155,8 +164,8 @@ describe('Stats page: structure lock', () => {
     );
   });
 
-  describe('Engagement NSM math', () => {
-    it('helper exposes Reach + EngagementRate (not the old sum)', () => {
+  describe('Engagement stays internal (2026-08-24 decision)', () => {
+    it('helper still exposes Reach + EngagementRate for internal consumers', () => {
       expect(helperSource).toContain('reach');
       expect(helperSource).toContain('ratePercent');
       // The old misleading sum and breakdown shape must NOT come back.
@@ -164,9 +173,22 @@ describe('Stats page: structure lock', () => {
       expect(helperSource).not.toMatch(/engagement\.breakdown/);
     });
 
-    it('ImpactCard renders both Reach and Engagement rate', () => {
-      expect(impactCardSource).toMatch(/Reach/);
-      expect(impactCardSource).toMatch(/Engagement rate/);
+    // Article engagement (reach / rate / reactions) is an internal growth
+    // metric. On a visitor-facing page it answers a question no visitor
+    // asks — and while the audience is early-stage, a sparse value reads
+    // as abandonment. It must not leak back onto the public surface.
+    it('public /stats surfaces render no engagement / North Star metrics', () => {
+      for (const src of [blankComments(pageSource), blankComments(impactCardSource)]) {
+        expect(src).not.toMatch(/North Star/i);
+        expect(src).not.toMatch(/\bengagement\b/i);
+        expect(src).not.toMatch(/\bReach\b/);
+      }
+    });
+
+    it('ImpactCard renders the adoption metrics', () => {
+      expect(impactCardSource).toMatch(/Code adoption/);
+      expect(impactCardSource).toMatch(/GitHub stars/);
+      expect(impactCardSource).toMatch(/npm downloads/);
     });
   });
 
