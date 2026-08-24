@@ -5,6 +5,50 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.17.1
+
+### Patch Changes
+
+- **🐛 Fix** — Test-file detection now recognises compound directory names. ([#671](https://github.com/ofri-peretz/eslint/pull/671))
+
+  The shared predicate matched exact segments — `test`, `tests`, `spec`, `e2e` —
+  and missed the compound names large repositories actually use.
+  sentry-javascript keeps its entire suite under `dev-packages/e2e-tests/`,
+  `dev-packages/node-integration-tests/` and
+  `dev-packages/browser-integration-tests/`, none of which matched.
+
+  A directory segment ending in `-test`, `-tests`, `-spec` or `-specs` is now
+  treated as test material. The hyphen is required, so `latest` and `manifest`
+  stay production code.
+
+  `require-https-only` and `no-exposed-debug-endpoints` additionally opt out of
+  test files entirely. Both judge runtime posture — where bytes go, and what a
+  server is configured to expose — and a test application's posture never ships.
+  Rules that already expose their own `allowInTests` option were deliberately left
+  alone: skipping ahead of them would override a user's explicit
+  `allowInTests: false`.
+
+  Measured across four large public repositories, together with the `no-http-urls`
+  fix in this release: 671 findings before, 164 after. sentry-javascript alone
+  went from 248 to 43.
+
+- **🐛 Fix** — Scaffolding for tests is now recognised as test material, and `no-math-random-crypto` allows test files by default. ([#671](https://github.com/ofri-peretz/eslint/pull/671))
+
+  `testUtils/`, `test-utils/`, `testing/`, `test-helpers/` and their siblings hold
+  the builders and fake objects a suite consumes. They appear in six of the eight
+  public repositories in the current sample, and none of them was recognised. The
+  pattern is spelled out rather than matched as a prefix, because `test` also
+  starts `testimonials`.
+
+  `no-math-random-crypto` defaulted to reporting in test files. A fake OIDC user
+  whose `session_state` is filled with `Math.random()` is what a test double looks
+  like, and the suggested fix — use `crypto.getRandomValues` — makes a fixture no
+  safer. The rule's subject is unpredictability at runtime and a fixture has no
+  runtime. Set `allowInTests: false` to restore the old behaviour.
+
+  Together these take City-of-Helsinki/haitaton-ui from 4 findings to 0 across
+  61.7 KLOC.
+
 ## 1.17.0
 
 ### Minor Changes

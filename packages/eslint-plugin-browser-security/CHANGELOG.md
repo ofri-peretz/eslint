@@ -5,6 +5,52 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-http-urls` no longer reports test material or bare scheme strings. ([#671](https://github.com/ofri-peretz/eslint/pull/671))
+
+  Measured across four large public repositories (GoogleChrome/lighthouse,
+  getsentry/sentry-javascript, adobe/helix-cli, sveltejs/kit) this rule drew 328
+  of the 665 findings between them, and 295 of its 328 were inside test suites,
+  smoke-test definitions and integration fixtures. A smoke test named
+  `redirects-http` cannot be written without an `http://` URL, and a
+  mixed-content fixture exists precisely to hold one, so the rule now sets
+  `skipTestFiles`.
+
+  It also stops reporting a bare scheme with no authority. `['http://',
+'https://', 'data:']` is a table for classifying URLs rather than a URL, and
+  the diagnostic it produced — `Hardcoded HTTP URL detected: "http://"` — named
+  no host and suggested no fix.
+
+  Total on those four repositories: 671 findings before, 369 after.
+
+- **🐛 Fix** — Test-file detection now recognises compound directory names. ([#671](https://github.com/ofri-peretz/eslint/pull/671))
+
+  The shared predicate matched exact segments — `test`, `tests`, `spec`, `e2e` —
+  and missed the compound names large repositories actually use.
+  sentry-javascript keeps its entire suite under `dev-packages/e2e-tests/`,
+  `dev-packages/node-integration-tests/` and
+  `dev-packages/browser-integration-tests/`, none of which matched.
+
+  A directory segment ending in `-test`, `-tests`, `-spec` or `-specs` is now
+  treated as test material. The hyphen is required, so `latest` and `manifest`
+  stay production code.
+
+  `require-https-only` and `no-exposed-debug-endpoints` additionally opt out of
+  test files entirely. Both judge runtime posture — where bytes go, and what a
+  server is configured to expose — and a test application's posture never ships.
+  Rules that already expose their own `allowInTests` option were deliberately left
+  alone: skipping ahead of them would override a user's explicit
+  `allowInTests: false`.
+
+  Measured across four large public repositories, together with the `no-http-urls`
+  fix in this release: 671 findings before, 164 after. sentry-javascript alone
+  went from 248 to 43.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`
+
 ## 2.0.4
 
 ### Patch Changes

@@ -1,7 +1,7 @@
 {
-  "releaseCount": 452,
+  "releaseCount": 458,
   "packageCount": 34,
-  "entryCount": 1542,
+  "entryCount": 1554,
   "oldestYear": 2024,
   "releases": [
     {
@@ -8793,7 +8793,7 @@
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.1.0",
-      "date": "2026-05-11T00:35:17-05:00",
+      "date": "2026-05-03T00:00:00Z",
       "isApp": false,
       "isPrivate": true,
       "entries": [
@@ -11937,6 +11937,26 @@
     {
       "package": "@interlace/eslint-devkit",
       "short": "eslint-devkit",
+      "version": "1.17.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Test-file detection now recognises compound directory names.",
+          "pr": 671
+        },
+        {
+          "kind": "fix",
+          "title": "Scaffolding for tests is now recognised as test material, and `no-math-random-crypto` allows test files by default.",
+          "pr": 671
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
       "version": "1.17.0",
       "date": null,
       "isApp": false,
@@ -11986,6 +12006,66 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "docs",
+      "short": "docs",
+      "version": "1.1.0",
+      "date": null,
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "a `/changelog` page for the whole ecosystem",
+          "pr": 670
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.0.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-http-urls` no longer reports test material or bare scheme strings.",
+          "pr": 671
+        },
+        {
+          "kind": "fix",
+          "title": "Test-file detection now recognises compound directory names.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "3.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Test-file detection now recognises compound directory names.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
+          "pr": null
         }
       ]
     },
@@ -12105,6 +12185,26 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Scaffolding for tests is now recognised as test material, and `no-math-random-crypto` allows test files by default.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
           "pr": null
         }
       ]
@@ -12230,6 +12330,26 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-xpath-injection` no longer reports React Router wildcard paths.",
+          "pr": 671
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`",
           "pr": null
         }
       ]

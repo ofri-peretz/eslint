@@ -5,6 +5,28 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — `no-xpath-injection` no longer reports React Router wildcard paths. ([#671](https://github.com/ofri-peretz/eslint/pull/671))
+
+  `<Route path={`/${locale}/*`} element={<LocaleRoutes />} />` was reported as
+  XPath injection at CVSS 9.8 — twice in a city government's application, in files
+  containing no XPath, in a repository importing no XPath package. `/*` is XPath's
+  abbreviated `child::*` and also React Router's wildcard segment.
+
+  The wildcard step alone is now treated as weak evidence and needs corroboration
+  from the module: an import from an XPath package, or a DOM XPath API. Every
+  other marker — `//name`, `[@attr`, a named axis, `text()` — still reports on its
+  own, because nothing else in a JavaScript codebase is spelled that way.
+
+  This is the doctrine the rule already applied to bare calls, where `select` and
+  `evaluate` were reporting CWE-643 in files containing no XML: the import is the
+  evidence, the shape never was. The template path simply never applied it.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`
+
 ## 5.1.1
 
 ### Patch Changes

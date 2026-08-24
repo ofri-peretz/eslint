@@ -23,6 +23,19 @@ const ruleTester = new RuleTester({
 describe('no-math-random-crypto', () => {
   ruleTester.run('no-math-random-crypto', noMathRandomCrypto, {
     valid: [
+    // --- scaffolding for tests is scaffolding ------------------------------
+    // City-of-Helsinki/haitaton-ui's only remaining findings were a fake OIDC
+    // user in `testUtils/`, whose `session_state` is filled with Math.random().
+    // A fixture has no runtime, so it has nothing to make unpredictable.
+    {
+      code: 'const sessionState = String(`${Math.random()}${Math.random()}`);',
+      filename: 'src/domain/auth/testUtils/userTestUtil.ts',
+    },
+    {
+      code: 'const token = Math.random().toString(36);',
+      filename: 'src/test-utils/build-user.ts',
+    },
+
       // Non-crypto variable names — benign randomness
       { code: 'const count = Math.random() * 10;' },
       { code: 'const position = Math.random();' },
@@ -51,6 +64,21 @@ describe('no-math-random-crypto', () => {
     ],
 
     invalid: [
+    // FN GUARD — the exemption is the test directory, not the word "test".
+    // `testimonials` is production code and always was.
+    {
+      code: 'const token = Math.random().toString(36);',
+      filename: 'src/testimonials/share-link.ts',
+      errors: 1,
+    },
+    // FN GUARD — turning the option off reports everywhere, including fixtures.
+    {
+      code: 'const token = Math.random().toString(36);',
+      filename: 'src/test-utils/build-user.ts',
+      options: [{ allowInTests: false }],
+      errors: 1,
+    },
+
       // Crypto-named variable
       {
         code: 'const token = Math.random().toString(36);',

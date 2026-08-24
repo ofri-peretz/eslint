@@ -5,6 +5,35 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — Test-file detection now recognises compound directory names. ([#671](https://github.com/ofri-peretz/eslint/pull/671))
+
+  The shared predicate matched exact segments — `test`, `tests`, `spec`, `e2e` —
+  and missed the compound names large repositories actually use.
+  sentry-javascript keeps its entire suite under `dev-packages/e2e-tests/`,
+  `dev-packages/node-integration-tests/` and
+  `dev-packages/browser-integration-tests/`, none of which matched.
+
+  A directory segment ending in `-test`, `-tests`, `-spec` or `-specs` is now
+  treated as test material. The hyphen is required, so `latest` and `manifest`
+  stay production code.
+
+  `require-https-only` and `no-exposed-debug-endpoints` additionally opt out of
+  test files entirely. Both judge runtime posture — where bytes go, and what a
+  server is configured to expose — and a test application's posture never ships.
+  Rules that already expose their own `allowInTests` option were deliberately left
+  alone: skipping ahead of them would override a user's explicit
+  `allowInTests: false`.
+
+  Measured across four large public repositories, together with the `no-http-urls`
+  fix in this release: 671 findings before, 164 after. sentry-javascript alone
+  went from 248 to 43.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.1`
+
 ## 3.1.1
 
 ### Patch Changes
