@@ -31,11 +31,10 @@ const CONTENT = join(APP, 'content/docs');
  * only shrink. Each entry is a real npm package whose 3–4 rules are invisible
  * on the site — writing those docs removes the entry.
  */
-const UNDOCUMENTED_ALLOWLIST = new Set([
-  'eslint-plugin-anthropic-security',
-  'eslint-plugin-gemini-security',
-  'eslint-plugin-mcp-sdk-security',
-  'eslint-plugin-openai-security',
+const UNDOCUMENTED_ALLOWLIST = new Set<string>([
+  // EMPTY as of 2026-08-24 — every published plugin is documented. Keep it
+  // that way: an entry here is a plugin whose rules are invisible on the site
+  // and whose /plugins card 404s.
 ]);
 
 /**
