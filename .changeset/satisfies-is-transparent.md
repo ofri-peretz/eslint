@@ -38,3 +38,20 @@ scheme-gated on purpose, because a `mongodb://` string carries credentials that
 survive a host swap. Twenty-one findings on moleculerjs/moleculer. Loopback in
 a test file is now exempt on any scheme when the consumer opts in; a real host
 in a test file, and loopback in production code, both still report.
+
+`no-unsafe-buffer-alloc` cleared a covering write only when the allocation
+landed in a `const` declarator. Protocol code allocates inside a branch and
+assigns to a binding declared above it — `geoBuff = Buffer.allocUnsafe(9 + size)`
+— which the analysis never inspected: 38 findings on
+mariadb-connector-nodejs, every one a fully-written buffer. The assignment form
+is now resolved too, counting only references after the allocation so a write
+belonging to the previous value cannot clear this one. A loop writing
+`buf[i] = …` at a moving index is also recognised as covering, which is the
+same walk `writeUInt8(v, pos)` performs.
+
+`no-disabled-certificate-validation` takes `skipTestFiles`: an integration test
+against a local server with a self-signed certificate has no other way to
+connect, and all 21 findings on mariadb-connector-nodejs were under `test/`.
+Its sibling `no-self-signed-certs` deliberately does NOT — it already owns the
+decision through `allowInTests`, and `skipTestFiles` runs before `create()`,
+which would make that option dead.
