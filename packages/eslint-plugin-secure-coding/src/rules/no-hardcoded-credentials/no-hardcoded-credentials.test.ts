@@ -108,7 +108,8 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  output: "const password = process.env.PASSWORD || 'supersecret123';",
+                  output:
+                    "const password = process.env.PASSWORD || 'supersecret123';",
                 },
                 {
                   messageId: 'useSecretManager',
@@ -130,7 +131,8 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  output: "const password = process.env.PASSWORD || 'supersecret123';",
+                  output:
+                    "const password = process.env.PASSWORD || 'supersecret123';",
                 },
                 {
                   messageId: 'useSecretManager',
@@ -157,12 +159,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: 'API key' },
-                  output: 'const apiKey = process.env.API_KEY || \'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890\';',
+                  output:
+                    "const apiKey = process.env.API_KEY || 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'API key' },
-                  output: 'const apiKey = await getSecret(\'api_key\');',
+                  output: "const apiKey = await getSecret('api_key');",
                 },
               ],
             },
@@ -177,12 +180,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'KEY', credentialType: 'AWS access key' },
-                  output: 'const key = process.env.KEY || \'AKIAIOSFODNN7EXAMPLE\';',
+                  output:
+                    "const key = process.env.KEY || 'AKIAIOSFODNN7EXAMPLE';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'AWS access key' },
-                  output: 'const key = await getSecret(\'key\');',
+                  output: "const key = await getSecret('key');",
                 },
               ],
             },
@@ -196,13 +200,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'AWS_KEY', credentialType: 'AWS access key' },
-                  output: 'const awsKey = process.env.AWS_KEY || \'AKIA1234567890ABCDEF\';',
+                  data: {
+                    envVarName: 'AWS_KEY',
+                    credentialType: 'AWS access key',
+                  },
+                  output:
+                    "const awsKey = process.env.AWS_KEY || 'AKIA1234567890ABCDEF';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'AWS access key' },
-                  output: 'const awsKey = await getSecret(\'aws_key\');',
+                  output: "const awsKey = await getSecret('aws_key');",
                 },
               ],
             },
@@ -217,12 +225,14 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: 'API key' },
-                  output: 'const config = { apiKey: process.env.API_KEY || \'sk_test_FAKE_TEST_KEY_FOR_TESTING_PURPOSES_ONLY_ABCDEF\' };',
+                  output:
+                    "const config = { apiKey: process.env.API_KEY || 'sk_test_FAKE_TEST_KEY_FOR_TESTING_PURPOSES_ONLY_ABCDEF' };",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'API key' },
-                  output: 'const config = { apiKey: await getSecret(\'api_key\') };',
+                  output:
+                    "const config = { apiKey: await getSecret('api_key') };",
                 },
               ],
             },
@@ -245,12 +255,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'TOKEN', credentialType: 'JWT token' },
-                  output: 'const token = process.env.TOKEN || \'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\';',
+                  output:
+                    "const token = process.env.TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'JWT token' },
-                  output: 'const token = await getSecret(\'token\');',
+                  output: "const token = await getSecret('token');",
                 },
               ],
             },
@@ -264,13 +275,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'AUTH_TOKEN', credentialType: 'OAuth token' },
-                  output: 'const authToken = process.env.AUTH_TOKEN || \'ghp_1234567890123456789012345678901234567890\';',
+                  data: {
+                    envVarName: 'AUTH_TOKEN',
+                    credentialType: 'OAuth token',
+                  },
+                  output:
+                    "const authToken = process.env.AUTH_TOKEN || 'ghp_1234567890123456789012345678901234567890';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'OAuth token' },
-                  output: 'const authToken = await getSecret(\'auth_token\');',
+                  output: "const authToken = await getSecret('auth_token');",
                 },
               ],
             },
@@ -285,12 +300,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'TOKEN', credentialType: 'OAuth token' },
-                  output: 'const token = process.env.TOKEN || \'gho_1234567890123456789012345678901234567890\';',
+                  output:
+                    "const token = process.env.TOKEN || 'gho_1234567890123456789012345678901234567890';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'OAuth token' },
-                  output: 'const token = await getSecret(\'token\');',
+                  output: "const token = await getSecret('token');",
                 },
               ],
             },
@@ -305,12 +321,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'TOKEN', credentialType: 'OAuth token' },
-                  output: 'const token = process.env.TOKEN || \'ghu_1234567890123456789012345678901234567890\';',
+                  output:
+                    "const token = process.env.TOKEN || 'ghu_1234567890123456789012345678901234567890';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'OAuth token' },
-                  output: 'const token = await getSecret(\'token\');',
+                  output: "const token = await getSecret('token');",
                 },
               ],
             },
@@ -325,12 +342,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'TOKEN', credentialType: 'OAuth token' },
-                  output: 'const token = process.env.TOKEN || \'ghs_1234567890123456789012345678901234567890\';',
+                  output:
+                    "const token = process.env.TOKEN || 'ghs_1234567890123456789012345678901234567890';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'OAuth token' },
-                  output: 'const token = await getSecret(\'token\');',
+                  output: "const token = await getSecret('token');",
                 },
               ],
             },
@@ -345,12 +363,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'TOKEN', credentialType: 'OAuth token' },
-                  output: 'const token = process.env.TOKEN || \'ghr_1234567890123456789012345678901234567890\';',
+                  output:
+                    "const token = process.env.TOKEN || 'ghr_1234567890123456789012345678901234567890';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'OAuth token' },
-                  output: 'const token = await getSecret(\'token\');',
+                  output: "const token = await getSecret('token');",
                 },
               ],
             },
@@ -372,13 +391,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PASSWORD', credentialType: 'Common password' },
-                  output: 'const password = process.env.PASSWORD || \'password123\';',
+                  data: {
+                    envVarName: 'PASSWORD',
+                    credentialType: 'Common password',
+                  },
+                  output:
+                    "const password = process.env.PASSWORD || 'password123';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Common password' },
-                  output: 'const password = await getSecret(\'password\');',
+                  output: "const password = await getSecret('password');",
                 },
               ],
             },
@@ -392,13 +415,16 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PWD', credentialType: 'Common password' },
-                  output: 'const pwd = process.env.PWD || \'admin\';',
+                  data: {
+                    envVarName: 'PWD',
+                    credentialType: 'Common password',
+                  },
+                  output: "const pwd = process.env.PWD || 'admin';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Common password' },
-                  output: 'const pwd = await getSecret(\'pwd\');',
+                  output: "const pwd = await getSecret('pwd');",
                 },
               ],
             },
@@ -412,13 +438,16 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PASS', credentialType: 'Common password' },
-                  output: 'const pass = process.env.PASS || \'123456\';',
+                  data: {
+                    envVarName: 'PASS',
+                    credentialType: 'Common password',
+                  },
+                  output: "const pass = process.env.PASS || '123456';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Common password' },
-                  output: 'const pass = await getSecret(\'pass\');',
+                  output: "const pass = await getSecret('pass');",
                 },
               ],
             },
@@ -440,13 +469,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'DB_URL', credentialType: 'Database connection string' },
-                  output: 'const dbUrl = process.env.DB_URL || \'mysql://user:password@localhost:3306/dbname\';',
+                  data: {
+                    envVarName: 'DB_URL',
+                    credentialType: 'Database connection string',
+                  },
+                  output:
+                    "const dbUrl = process.env.DB_URL || 'mysql://user:password@localhost:3306/dbname';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Database connection string' },
-                  output: 'const dbUrl = await getSecret(\'db_url\');',
+                  output: "const dbUrl = await getSecret('db_url');",
                 },
               ],
             },
@@ -460,13 +493,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'MONGO_URI', credentialType: 'Database connection string' },
-                  output: 'const mongoUri = process.env.MONGO_URI || \'mongodb://admin:secret123@localhost:27017/mydb\';',
+                  data: {
+                    envVarName: 'MONGO_URI',
+                    credentialType: 'Database connection string',
+                  },
+                  output:
+                    "const mongoUri = process.env.MONGO_URI || 'mongodb://admin:secret123@localhost:27017/mydb';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Database connection string' },
-                  output: 'const mongoUri = await getSecret(\'mongo_uri\');',
+                  output: "const mongoUri = await getSecret('mongo_uri');",
                 },
               ],
             },
@@ -480,13 +517,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'CONN_STRING', credentialType: 'Database connection string' },
-                  output: 'const connString = process.env.CONN_STRING || \'postgres://user:pass@localhost:5432/db\';',
+                  data: {
+                    envVarName: 'CONN_STRING',
+                    credentialType: 'Database connection string',
+                  },
+                  output:
+                    "const connString = process.env.CONN_STRING || 'postgres://user:pass@localhost:5432/db';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Database connection string' },
-                  output: 'const connString = await getSecret(\'conn_string\');',
+                  output: "const connString = await getSecret('conn_string');",
                 },
               ],
             },
@@ -509,12 +550,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'SECRET', credentialType: 'Secret key' },
-                  output: 'const secret = process.env.SECRET || \'dGhpcyBpcyBhIHNlY3JldCBrZXkgdGhhdCBpcyB2ZXJ5IGxvbmc=\';',
+                  output:
+                    "const secret = process.env.SECRET || 'dGhpcyBpcyBhIHNlY3JldCBrZXkgdGhhdCBpcyB2ZXJ5IGxvbmc=';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Secret key' },
-                  output: 'const secret = await getSecret(\'secret\');',
+                  output: "const secret = await getSecret('secret');",
                 },
               ],
             },
@@ -537,12 +579,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: 'Secret key' },
-                  output: 'const apiKey = process.env.API_KEY || \'abcdef1234567890abcdef1234567890abcdef12\';',
+                  output:
+                    "const apiKey = process.env.API_KEY || 'abcdef1234567890abcdef1234567890abcdef12';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Secret key' },
-                  output: 'const apiKey = await getSecret(\'api_key\');',
+                  output: "const apiKey = await getSecret('api_key');",
                 },
               ],
             },
@@ -565,12 +608,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: 'API key' },
-                  output: 'const query = process.env.API_KEY || `sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456`;',
+                  output:
+                    'const query = process.env.API_KEY || `sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456`;',
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'API key' },
-                  output: 'const query = await getSecret(\'api_key\');',
+                  output: "const query = await getSecret('api_key');",
                 },
               ],
             },
@@ -636,12 +680,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: 'API key' },
-                  output: 'const apiKey = process.env.API_KEY || \'sk_test_FAKE_TEST_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890\';',
+                  output:
+                    "const apiKey = process.env.API_KEY || 'sk_test_FAKE_TEST_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'API key' },
-                  output: 'const apiKey = await getSecret(\'api_key\');',
+                  output: "const apiKey = await getSecret('api_key');",
                 },
               ],
             },
@@ -676,12 +721,14 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: 'API key' },
-                  output: 'const config = { apiKey: process.env.API_KEY || \'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456\' };',
+                  output:
+                    "const config = { apiKey: process.env.API_KEY || 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456' };",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'API key' },
-                  output: 'const config = { apiKey: await getSecret(\'api_key\') };',
+                  output:
+                    "const config = { apiKey: await getSecret('api_key') };",
                 },
               ],
             },
@@ -697,12 +744,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'MY_API_KEY', credentialType: 'API key' },
-                  output: 'const myApiKey = process.env.MY_API_KEY || \'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456\';',
+                  output:
+                    "const myApiKey = process.env.MY_API_KEY || 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'API key' },
-                  output: 'const myApiKey = await getSecret(\'my_api_key\');',
+                  output: "const myApiKey = await getSecret('my_api_key');",
                 },
               ],
             },
@@ -748,20 +796,30 @@ describe('no-hardcoded-credentials', () => {
         // user-supplied type label.
         {
           code: 'const value = "CUSTOM-SECRET-9f8e7d6c5b4a";',
-          options: [{ customPatterns: [{ pattern: '^CUSTOM-SECRET-', type: 'Custom secret' }] }],
+          options: [
+            {
+              customPatterns: [
+                { pattern: '^CUSTOM-SECRET-', type: 'Custom secret' },
+              ],
+            },
+          ],
           errors: [
             {
               messageId: 'useEnvironmentVariable',
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'VALUE', credentialType: 'Custom secret' },
-                  output: 'const value = process.env.VALUE || \'CUSTOM-SECRET-9f8e7d6c5b4a\';',
+                  data: {
+                    envVarName: 'VALUE',
+                    credentialType: 'Custom secret',
+                  },
+                  output:
+                    "const value = process.env.VALUE || 'CUSTOM-SECRET-9f8e7d6c5b4a';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Custom secret' },
-                  output: 'const value = await getSecret(\'value\');',
+                  output: "const value = await getSecret('value');",
                 },
               ],
             },
@@ -781,12 +839,13 @@ describe('no-hardcoded-credentials', () => {
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: 'Secret key' },
-                  output: 'const apiKey = process.env.API_KEY || \'aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC\';',
+                  output:
+                    "const apiKey = process.env.API_KEY || 'aB3xY9zQ7mK1pL5vN8wR2tS6uH4jF0dC';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Secret key' },
-                  output: 'const apiKey = await getSecret(\'api_key\');',
+                  output: "const apiKey = await getSecret('api_key');",
                 },
               ],
             },
@@ -807,13 +866,18 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
-                  output: 'const config = { password: process.env.PASSWORD || \'SuperSecretPhrase!!\' };',
+                  data: {
+                    envVarName: 'PASSWORD',
+                    credentialType: 'Credential value',
+                  },
+                  output:
+                    "const config = { password: process.env.PASSWORD || 'SuperSecretPhrase!!' };",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Credential value' },
-                  output: 'const config = { password: await getSecret(\'password\') };',
+                  output:
+                    "const config = { password: await getSecret('password') };",
                 },
               ],
             },
@@ -831,13 +895,18 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
-                  output: 'const config = { "password": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
+                  data: {
+                    envVarName: 'API_KEY',
+                    credentialType: 'Credential value',
+                  },
+                  output:
+                    'const config = { "password": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Credential value' },
-                  output: 'const config = { "password": await getSecret(\'api_key\') };',
+                  output:
+                    'const config = { "password": await getSecret(\'api_key\') };',
                 },
               ],
             },
@@ -854,13 +923,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
-                  output: 'this.password = process.env.API_KEY || \'SuperSecretPhrase!!\';',
+                  data: {
+                    envVarName: 'API_KEY',
+                    credentialType: 'Credential value',
+                  },
+                  output:
+                    "this.password = process.env.API_KEY || 'SuperSecretPhrase!!';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Credential value' },
-                  output: 'this.password = await getSecret(\'api_key\');',
+                  output: "this.password = await getSecret('api_key');",
                 },
               ],
             },
@@ -879,13 +952,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'CREDENTIALS', credentialType: 'Credential value' },
-                  output: 'const credentials = process.env.CREDENTIALS || \'SuperSecretPhrase!!\';',
+                  data: {
+                    envVarName: 'CREDENTIALS',
+                    credentialType: 'Credential value',
+                  },
+                  output:
+                    "const credentials = process.env.CREDENTIALS || 'SuperSecretPhrase!!';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Credential value' },
-                  output: 'const credentials = await getSecret(\'credentials\');',
+                  output: "const credentials = await getSecret('credentials');",
                 },
               ],
             },
@@ -903,13 +980,17 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
-                  output: 'const secrets = [process.env.API_KEY || \'SuperSecretPhrase!!\'];',
+                  data: {
+                    envVarName: 'API_KEY',
+                    credentialType: 'Credential value',
+                  },
+                  output:
+                    "const secrets = [process.env.API_KEY || 'SuperSecretPhrase!!'];",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Credential value' },
-                  output: 'const secrets = [await getSecret(\'api_key\')];',
+                  output: "const secrets = [await getSecret('api_key')];",
                 },
               ],
             },
@@ -929,13 +1010,18 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
-                  output: 'let mySecret; mySecret = process.env.API_KEY || \'SuperSecretPhrase!!\';',
+                  data: {
+                    envVarName: 'API_KEY',
+                    credentialType: 'Credential value',
+                  },
+                  output:
+                    "let mySecret; mySecret = process.env.API_KEY || 'SuperSecretPhrase!!';",
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Credential value' },
-                  output: 'let mySecret; mySecret = await getSecret(\'api_key\');',
+                  output:
+                    "let mySecret; mySecret = await getSecret('api_key');",
                 },
               ],
             },
@@ -951,13 +1037,18 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: 'Credential value' },
-                  output: 'const config = { "secretKey": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
+                  data: {
+                    envVarName: 'API_KEY',
+                    credentialType: 'Credential value',
+                  },
+                  output:
+                    'const config = { "secretKey": process.env.API_KEY || \'SuperSecretPhrase!!\' };',
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Credential value' },
-                  output: 'const config = { "secretKey": await getSecret(\'api_key\') };',
+                  output:
+                    'const config = { "secretKey": await getSecret(\'api_key\') };',
                 },
               ],
             },
@@ -968,12 +1059,16 @@ describe('no-hardcoded-credentials', () => {
     // Ground-truthed negative: 'secretValue' doesn't match matches() at
     // all (must END in a credential suffix; 'Value' doesn't qualify), so
     // this is a genuinely valid case, not a bug.
-    ruleTester.run('secretValue name does not match credential suffix', noHardcodedCredentials, {
-      valid: [
-        { code: 'let secretValue; secretValue = "SuperSecretPhrase!!";' },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'secretValue name does not match credential suffix',
+      noHardcodedCredentials,
+      {
+        valid: [
+          { code: 'let secretValue; secretValue = "SuperSecretPhrase!!";' },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Coverage — isTestFile filename patterns, remaining label/credential-context branches', () => {
@@ -981,78 +1076,125 @@ describe('no-hardcoded-credentials', () => {
       valid: [
         // Each fixture's filename avoids every earlier pattern in the OR
         // chain so the short-circuit actually reaches this one.
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/foo.fixture.ts', options: [{ allowInTests: true }] },
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/foo.mock.ts', options: [{ allowInTests: true }] },
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/__tests__/foo.ts', options: [{ allowInTests: true }] },
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/__mocks__/foo.ts', options: [{ allowInTests: true }] },
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/test/foo.ts', options: [{ allowInTests: true }] },
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/tests/foo.ts', options: [{ allowInTests: true }] },
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/fixtures/foo.ts', options: [{ allowInTests: true }] },
-        { code: 'const apiKey = "AKIA1234567890ABCDEF";', filename: 'src/mocks/foo.ts', options: [{ allowInTests: true }] },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/foo.fixture.ts',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/foo.mock.ts',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/__tests__/foo.ts',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/__mocks__/foo.ts',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/test/foo.ts',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/tests/foo.ts',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/fixtures/foo.ts',
+          options: [{ allowInTests: true }],
+        },
+        {
+          code: 'const apiKey = "AKIA1234567890ABCDEF";',
+          filename: 'src/mocks/foo.ts',
+          options: [{ allowInTests: true }],
+        },
       ],
       invalid: [],
     });
 
-    ruleTester.run('label and credential context - remaining branches', noHardcodedCredentials, {
-      valid: [
-        // isLabelContext: Property with an Identifier key that's directly
-        // in LABEL_CONTEXT_NAMES ('type').
-        { code: 'const config = { type: "password" };' },
-        // isLabelContext: Property key isn't label-typed, but the
-        // enclosing object's own variable is 'labels' — the Property
-        // fallback recursion (walks Property -> ObjectExpression ->
-        // VariableDeclarator).
-        { code: 'const labels = { foo: "SuperSecretPhrase!!" };' },
-        // isLabelContext: MemberExpression call whose method name is
-        // neither setAttribute nor getAttribute — false branch of that
-        // check, falls through to "not a label", then the value/context
-        // don't look like a credential either.
-        { code: 'el.someOtherMethod("type", "just-a-plain-value-not-a-secret");' },
-        // isCredentialContext: AssignmentExpression to a MemberExpression
-        // property whose name doesn't match any credential suffix.
-        { code: 'this.randomThing = "just a plain long value";' },
-        // isCredentialContext: AssignmentExpression to a bare Identifier
-        // whose name doesn't match any credential suffix.
-        { code: 'let randomVar; randomVar = "just a plain long value";' },
-        // isCredentialContext: Property with an Identifier key that
-        // doesn't match any credential suffix.
-        { code: 'const config = { randomField: "just a plain long value" };' },
-        // isCredentialContext: Property with a string-Literal key that
-        // doesn't match any credential suffix.
-        { code: 'const config = { "randomField": "just a plain long value" };' },
-        // Template literal (no interpolation) whose text doesn't look like
-        // a credential.
-        { code: '`just a plain safe string`;' },
-        // Template literal WITH interpolation whose quasi parts don't look
-        // like a credential.
-        { code: '`Hello ${name}, welcome!`;' },
-      ],
-      invalid: [
-        // process.env fallback skip-check: the left side of `||` is not a
-        // `process.env.X` MemberExpression, so the exemption doesn't
-        // apply and a structurally-obvious credential still reports.
-        {
-          code: 'const apiKey = someOtherFallback || "AKIA1234567890ABCDEF";',
-          errors: [
-            {
-              messageId: 'useEnvironmentVariable',
-              suggestions: [
-                {
-                  messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY', credentialType: 'AWS access key' },
-                  output: 'const apiKey = someOtherFallback || process.env.API_KEY || \'AKIA1234567890ABCDEF\';',
-                },
-                {
-                  messageId: 'useSecretManager',
-                  data: { credentialType: 'AWS access key' },
-                  output: 'const apiKey = someOtherFallback || await getSecret(\'api_key\');',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'label and credential context - remaining branches',
+      noHardcodedCredentials,
+      {
+        valid: [
+          // isLabelContext: Property with an Identifier key that's directly
+          // in LABEL_CONTEXT_NAMES ('type').
+          { code: 'const config = { type: "password" };' },
+          // isLabelContext: Property key isn't label-typed, but the
+          // enclosing object's own variable is 'labels' — the Property
+          // fallback recursion (walks Property -> ObjectExpression ->
+          // VariableDeclarator).
+          { code: 'const labels = { foo: "SuperSecretPhrase!!" };' },
+          // isLabelContext: MemberExpression call whose method name is
+          // neither setAttribute nor getAttribute — false branch of that
+          // check, falls through to "not a label", then the value/context
+          // don't look like a credential either.
+          {
+            code: 'el.someOtherMethod("type", "just-a-plain-value-not-a-secret");',
+          },
+          // isCredentialContext: AssignmentExpression to a MemberExpression
+          // property whose name doesn't match any credential suffix.
+          { code: 'this.randomThing = "just a plain long value";' },
+          // isCredentialContext: AssignmentExpression to a bare Identifier
+          // whose name doesn't match any credential suffix.
+          { code: 'let randomVar; randomVar = "just a plain long value";' },
+          // isCredentialContext: Property with an Identifier key that
+          // doesn't match any credential suffix.
+          {
+            code: 'const config = { randomField: "just a plain long value" };',
+          },
+          // isCredentialContext: Property with a string-Literal key that
+          // doesn't match any credential suffix.
+          {
+            code: 'const config = { "randomField": "just a plain long value" };',
+          },
+          // Template literal (no interpolation) whose text doesn't look like
+          // a credential.
+          { code: '`just a plain safe string`;' },
+          // Template literal WITH interpolation whose quasi parts don't look
+          // like a credential.
+          { code: '`Hello ${name}, welcome!`;' },
+        ],
+        invalid: [
+          // process.env fallback skip-check: the left side of `||` is not a
+          // `process.env.X` MemberExpression, so the exemption doesn't
+          // apply and a structurally-obvious credential still reports.
+          {
+            code: 'const apiKey = someOtherFallback || "AKIA1234567890ABCDEF";',
+            errors: [
+              {
+                messageId: 'useEnvironmentVariable',
+                suggestions: [
+                  {
+                    messageId: 'useEnvironmentVariable',
+                    data: {
+                      envVarName: 'API_KEY',
+                      credentialType: 'AWS access key',
+                    },
+                    output:
+                      "const apiKey = someOtherFallback || process.env.API_KEY || 'AKIA1234567890ABCDEF';",
+                  },
+                  {
+                    messageId: 'useSecretManager',
+                    data: { credentialType: 'AWS access key' },
+                    output:
+                      "const apiKey = someOtherFallback || await getSecret('api_key');",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   /**
@@ -1074,7 +1216,9 @@ describe('no-hardcoded-credentials', () => {
       valid: [
         // FALSE POSITIVE (killed): i18n error keys. Pure word strings in a
         // credential-named slot are message constants, not secrets.
-        { code: `throw new Error({ errors: { password: 'incorrectPassword' } });` },
+        {
+          code: `throw new Error({ errors: { password: 'incorrectPassword' } });`,
+        },
         { code: `const errors = { password: 'incorrectPassword' };` },
         { code: `const e = { token: 'notFoundToken' };` },
         { code: `const e = { secret: 'missingSecret' };` },
@@ -1161,7 +1305,10 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
+                  data: {
+                    envVarName: 'PASSWORD',
+                    credentialType: 'Credential value',
+                  },
                   output: `const password = process.env.PASSWORD || 'bcdfghjklmnpqrstvwxyz';`,
                 },
                 {
@@ -1185,7 +1332,10 @@ describe('no-hardcoded-credentials', () => {
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
+                  data: {
+                    envVarName: 'PASSWORD',
+                    credentialType: 'Credential value',
+                  },
                   output: `const seed = { password: process.env.PASSWORD || 'aaAA@123' };`,
                 },
                 {
@@ -1251,11 +1401,17 @@ describe('no-hardcoded-credentials', () => {
           errors: [
             {
               messageId: 'useEnvironmentVariable',
-              data: { credentialType: 'Database connection string', envVarName: 'DB_URL' },
+              data: {
+                credentialType: 'Database connection string',
+                envVarName: 'DB_URL',
+              },
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'DB_URL', credentialType: 'Database connection string' },
+                  data: {
+                    envVarName: 'DB_URL',
+                    credentialType: 'Database connection string',
+                  },
                   output: `const dbUrl = process.env.DB_URL || 'postgres://admin:changeme@example.com:5432/app';`,
                 },
                 {
@@ -1274,11 +1430,17 @@ describe('no-hardcoded-credentials', () => {
           errors: [
             {
               messageId: 'useEnvironmentVariable',
-              data: { credentialType: 'Credential value', envVarName: 'PASSWORD' },
+              data: {
+                credentialType: 'Credential value',
+                envVarName: 'PASSWORD',
+              },
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'PASSWORD', credentialType: 'Credential value' },
+                  data: {
+                    envVarName: 'PASSWORD',
+                    credentialType: 'Credential value',
+                  },
                   output: `const password = process.env.PASSWORD || 'exampleton9!K';`,
                 },
                 {
@@ -1297,11 +1459,17 @@ describe('no-hardcoded-credentials', () => {
           errors: [
             {
               messageId: 'useEnvironmentVariable',
-              data: { credentialType: 'Credential value', envVarName: 'SECRET' },
+              data: {
+                credentialType: 'Credential value',
+                envVarName: 'SECRET',
+              },
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'SECRET', credentialType: 'Credential value' },
+                  data: {
+                    envVarName: 'SECRET',
+                    credentialType: 'Credential value',
+                  },
                   output: `const secret = process.env.SECRET || '<your-secret-here>';`,
                 },
                 {
@@ -1382,7 +1550,9 @@ describe('no-hardcoded-credentials — CVSS docs/message consistency (lock)', ()
 // is.
 describe('Layer 2 - mock context', () => {
   it('isLabelContext returns false when the enclosing ObjectExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     literal({
@@ -1395,7 +1565,9 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isLabelContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     literal({
@@ -1408,7 +1580,9 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isCredentialContext returns false when the enclosing ArrayExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     literal({
@@ -1421,7 +1595,9 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isLabelContext recurses to the grandparent when the enclosing ObjectExpression has one', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     literal({
@@ -1429,7 +1605,10 @@ describe('Layer 2 - mock context', () => {
       value: 'AKIA1234567890ABCDEF',
       parent: {
         type: 'ObjectExpression',
-        parent: { type: 'VariableDeclarator', id: { type: 'Identifier', name: 'labels' } },
+        parent: {
+          type: 'VariableDeclarator',
+          id: { type: 'Identifier', name: 'labels' },
+        },
       },
     });
 
@@ -1437,7 +1616,9 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isLabelContext returns true for a JSXAttribute parent', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     literal({
@@ -1450,7 +1631,9 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isLabelContext returns false when parent is undefined (top-level literal) and a structural match still reports', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     literal({
@@ -1463,7 +1646,9 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isCredentialContext returns false when parent is undefined, gating off an ambiguous match', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     // Lowercase hex: matches the base64/hex `secretKey` charset (ambiguous
@@ -1480,7 +1665,9 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isCredentialContext returns false for an ArrayExpression parent with no parent of its own (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
     // Secret-shaped value, so the context-positive path is reached, but the
@@ -1495,10 +1682,15 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isLabelContext Property fallback does not recurse when the Property has no ObjectExpression parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
-    const node: Record<string, unknown> = { type: 'Literal', value: 'AKIA1234567890ABCDEF' };
+    const node: Record<string, unknown> = {
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+    };
     node.parent = {
       type: 'Property',
       key: { type: 'Identifier', name: 'foo' },
@@ -1512,10 +1704,15 @@ describe('Layer 2 - mock context', () => {
   });
 
   it('isLabelContext Property fallback does not recurse when the enclosing ObjectExpression has no parent (detached node)', () => {
-    const { listeners, reports } = createWithMockContext(noHardcodedCredentials);
+    const { listeners, reports } = createWithMockContext(
+      noHardcodedCredentials,
+    );
     const literal = listeners.Literal as (node: unknown) => void;
 
-    const node: Record<string, unknown> = { type: 'Literal', value: 'AKIA1234567890ABCDEF' };
+    const node: Record<string, unknown> = {
+      type: 'Literal',
+      value: 'AKIA1234567890ABCDEF',
+    };
     node.parent = {
       type: 'Property',
       key: { type: 'Identifier', name: 'foo' },
@@ -1537,37 +1734,41 @@ describe('Corpus false positives — word-shaped identifiers and enum labels', (
   // `looksRandom` had. The ordinal that distinguishes representative 1 from
   // representative 2 was doing the work of "contains digits, therefore
   // entropy". Identifiers are numbered; secrets are dense.
-  ruleTester.run('word-shaped identifiers are not random blobs', noHardcodedCredentials, {
-    valid: [
-      'if (params["authorizedRepresentative1FirstName"] !== undefined) { use(); }',
-      'data["AuthorizedRepresentative1FirstName"] = params["authorizedRepresentative1FirstName"];',
-      'const field = "businessRegistrationAuthority2Identifier";',
-      // An enum whose value restates a word of its own key is a label for a
-      // kind of thing, not an instance of one. A secret never spells out the
-      // name of its slot.
-      "const Enums = { RECOVERY_TYPE_PASSWORD: 'PASSWORD' };",
-      "const Enums = { 'RECOVERY_TYPE_PASSWORD': 'PASSWORD' };",
-      "const Enums = { recoveryTypePassword: 'PASSWORD' };",
-      // A key that is neither an identifier nor a string has no tokens to
-      // compare against, so the enum-label escape does not apply.
-      "const o = { 1: 'password' };",
-    ],
-    invalid: [
-      // Still caught: a genuine committed key. Dense, unpronounceable, and it
-      // says nothing about the slot it sits in. Both corpus survivors are this
-      // exact value, in Shopify/cli.
-      {
-        code: "const apiKey = '9e1e6889176fd0c795d5c659225e0fae';",
-        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
-      },
-      // The enum-label escape needs the value to match a token of the KEY.
-      // An unrelated value in a credential-named slot is still a finding.
-      {
-        code: "const config = { RECOVERY_TYPE_PASSWORD: '9e1e6889176fd0c795d5c659225e0fae' };",
-        errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'word-shaped identifiers are not random blobs',
+    noHardcodedCredentials,
+    {
+      valid: [
+        'if (params["authorizedRepresentative1FirstName"] !== undefined) { use(); }',
+        'data["AuthorizedRepresentative1FirstName"] = params["authorizedRepresentative1FirstName"];',
+        'const field = "businessRegistrationAuthority2Identifier";',
+        // An enum whose value restates a word of its own key is a label for a
+        // kind of thing, not an instance of one. A secret never spells out the
+        // name of its slot.
+        "const Enums = { RECOVERY_TYPE_PASSWORD: 'PASSWORD' };",
+        "const Enums = { 'RECOVERY_TYPE_PASSWORD': 'PASSWORD' };",
+        "const Enums = { recoveryTypePassword: 'PASSWORD' };",
+        // A key that is neither an identifier nor a string has no tokens to
+        // compare against, so the enum-label escape does not apply.
+        "const o = { 1: 'password' };",
+      ],
+      invalid: [
+        // Still caught: a genuine committed key. Dense, unpronounceable, and it
+        // says nothing about the slot it sits in. Both corpus survivors are this
+        // exact value, in Shopify/cli.
+        {
+          code: "const apiKey = '9e1e6889176fd0c795d5c659225e0fae';",
+          errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+        },
+        // The enum-label escape needs the value to match a token of the KEY.
+        // An unrelated value in a credential-named slot is still a finding.
+        {
+          code: "const config = { RECOVERY_TYPE_PASSWORD: '9e1e6889176fd0c795d5c659225e0fae' };",
+          errors: [{ messageId: 'useEnvironmentVariable', suggestions: 2 }],
+        },
+      ],
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -1723,58 +1924,62 @@ describe('isPublishableKeyValue', () => {
  * Every QUIET case is paired with a positive control on the SAME snippet.
  */
 describe('placeholderWords is overridable', () => {
-  ruleTester.run('placeholderWords and its additional variant', noHardcodedCredentials, {
-    valid: [
-      {
-        name: 'DEFAULT: `changeme` is a built-in placeholder word',
-        code: `const password = 'changeme-1234abcd';`,
-      },
-      {
-        name: 'additionalPlaceholderWords extends the built-ins',
-        code: `const password = 'fillmein-1234abcd';`,
-        options: [{ additionalPlaceholderWords: ['fillmein'] }],
-      },
-    ],
-    invalid: [
-      {
-        name: 'placeholderWords REPLACES the built-ins: an empty list suppresses nothing',
-        code: `const password = 'changeme-1234abcd';`,
-        options: [{ placeholderWords: [] }],
-        errors: [
-          {
-            messageId: 'useEnvironmentVariable',
-            suggestions: [
-              {
-                messageId: 'useEnvironmentVariable',
-                output: `const password = process.env.PASSWORD || 'changeme-1234abcd';`,
-              },
-              {
-                messageId: 'useSecretManager',
-                output: `const password = await getSecret('password');`,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        name: 'DEFAULT: `fillmein` is not a built-in placeholder word',
-        code: `const password = 'fillmein-1234abcd';`,
-        errors: [
-          {
-            messageId: 'useEnvironmentVariable',
-            suggestions: [
-              {
-                messageId: 'useEnvironmentVariable',
-                output: `const password = process.env.PASSWORD || 'fillmein-1234abcd';`,
-              },
-              {
-                messageId: 'useSecretManager',
-                output: `const password = await getSecret('password');`,
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  });
+  ruleTester.run(
+    'placeholderWords and its additional variant',
+    noHardcodedCredentials,
+    {
+      valid: [
+        {
+          name: 'DEFAULT: `changeme` is a built-in placeholder word',
+          code: `const password = 'changeme-1234abcd';`,
+        },
+        {
+          name: 'additionalPlaceholderWords extends the built-ins',
+          code: `const password = 'fillmein-1234abcd';`,
+          options: [{ additionalPlaceholderWords: ['fillmein'] }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'placeholderWords REPLACES the built-ins: an empty list suppresses nothing',
+          code: `const password = 'changeme-1234abcd';`,
+          options: [{ placeholderWords: [] }],
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  output: `const password = process.env.PASSWORD || 'changeme-1234abcd';`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  output: `const password = await getSecret('password');`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'DEFAULT: `fillmein` is not a built-in placeholder word',
+          code: `const password = 'fillmein-1234abcd';`,
+          errors: [
+            {
+              messageId: 'useEnvironmentVariable',
+              suggestions: [
+                {
+                  messageId: 'useEnvironmentVariable',
+                  output: `const password = process.env.PASSWORD || 'fillmein-1234abcd';`,
+                },
+                {
+                  messageId: 'useSecretManager',
+                  output: `const password = await getSecret('password');`,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  );
 });

@@ -68,6 +68,14 @@ describe('isTestFilePath', () => {
     'dev-packages/node-integration-tests/suites/express/server.mjs',
     'dev-packages/browser-integration-tests/suites/breadcrumbs/subject.js',
     'packages/core/unit-tests/index.ts',
+    // Underscore is the same separator. `integration_tests/` is the HMPPS house
+    // layout across the UK Ministry of Justice estate; requiring a hyphen made
+    // detect-object-injection report thirteen times inside the builders and
+    // page objects of hmpps-arns-assessment-platform-ui.
+    'integration_tests/builders/AssessmentBuilder.ts',
+    'integration_tests/pages/sentencePlan/aboutPage.ts',
+    'packages/core/unit_test/index.ts',
+    'apps/api/e2e_specs/login.ts',
     // Scaffolding FOR tests, which is scaffolding all the same.
     'src/domain/auth/testUtils/userTestUtil.ts',
     'src/test-utils/render.tsx',
@@ -106,6 +114,10 @@ describe('isTestFilePath', () => {
     // production: without it, `latest` and `manifest` would both read as
     // directories of tests.
     'src/latest/index.ts',
+    // The underscore relaxation must not widen what counts as production.
+    // Neither of these has a separator before its final `est`/`pec`.
+    'src/manifest/index.ts',
+    'src/protest_group/index.ts',
     'src/manifest/build.ts',
     'src/greatest-hits/index.ts',
     // `test` starts `testimonials`; the support-directory pattern is spelled
@@ -127,7 +139,12 @@ describe('createRule skipTestFiles gate', () => {
   const mk = (skipTestFiles: boolean) =>
     createRule<[], 'hit'>({
       name: 'probe',
-      meta: { type: 'problem', docs: { description: 'probe' }, schema: [], messages: { hit: 'hit' } },
+      meta: {
+        type: 'problem',
+        docs: { description: 'probe' },
+        schema: [],
+        messages: { hit: 'hit' },
+      },
       skipTestFiles,
       defaultOptions: [],
       create: (context) => ({

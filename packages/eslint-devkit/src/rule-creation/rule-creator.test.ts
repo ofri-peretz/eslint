@@ -3,7 +3,12 @@
  * Tests the rule creator factory functions
  */
 import { describe, it, expect, vi } from 'vitest';
-import { createRuleCreator, createRule, docsUrlFor, withCanonicalDocsUrls } from './rule-creator';
+import {
+  createRuleCreator,
+  createRule,
+  docsUrlFor,
+  withCanonicalDocsUrls,
+} from './rule-creator';
 
 describe('createRuleCreator', () => {
   it('should return a function', () => {
@@ -75,14 +80,17 @@ describe('canonical documentation URLs', () => {
 
   it('rewrites every rule in a plugin export map', () => {
     const rules = {
-      'no-thing': { meta: { docs: { url: 'https://example.invalid/placeholder.md' } }, create: () => ({}) },
+      'no-thing': {
+        meta: { docs: { url: 'https://example.invalid/placeholder.md' } },
+        create: () => ({}),
+      },
       'no-other': { meta: { docs: { url: undefined } }, create: () => ({}) },
     } as never;
 
-    const result = withCanonicalDocsUrls('plugin-secure-coding', rules) as unknown as Record<
-      string,
-      { meta: { docs: { url: string } } }
-    >;
+    const result = withCanonicalDocsUrls(
+      'plugin-secure-coding',
+      rules,
+    ) as unknown as Record<string, { meta: { docs: { url: string } } }>;
 
     expect(result['no-thing'].meta.docs.url).toBe(
       'https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-thing',
@@ -94,7 +102,9 @@ describe('canonical documentation URLs', () => {
 
   it('leaves a rule without a docs block untouched rather than throwing', () => {
     const rules = { 'no-docs': { meta: {}, create: () => ({}) } } as never;
-    expect(() => withCanonicalDocsUrls('plugin-browser-security', rules)).not.toThrow();
+    expect(() =>
+      withCanonicalDocsUrls('plugin-browser-security', rules),
+    ).not.toThrow();
   });
 
   it('routes quality plugins under /docs/quality/, not /docs/security/', () => {
@@ -104,7 +114,9 @@ describe('canonical documentation URLs', () => {
   });
 
   it('returns null for a plugin with no docs pages instead of minting a dead link', () => {
-    expect(docsUrlFor('plugin-anthropic-security', 'no-hardcoded-api-key')).toBeNull();
+    expect(
+      docsUrlFor('plugin-anthropic-security', 'no-hardcoded-api-key'),
+    ).toBeNull();
   });
 
   it('keeps the existing url when the plugin has no docs pages', () => {
@@ -112,10 +124,10 @@ describe('canonical documentation URLs', () => {
     const rules = {
       'no-thing': { meta: { docs: { url: placeholder } }, create: () => ({}) },
     } as never;
-    const result = withCanonicalDocsUrls('plugin-anthropic-security', rules) as unknown as Record<
-      string,
-      { meta: { docs: { url: string } } }
-    >;
+    const result = withCanonicalDocsUrls(
+      'plugin-anthropic-security',
+      rules,
+    ) as unknown as Record<string, { meta: { docs: { url: string } } }>;
     expect(result['no-thing'].meta.docs.url).toBe(placeholder);
   });
 });
@@ -132,13 +144,19 @@ describe('canonical documentation URLs', () => {
 describe('withCanonicalDocsUrls does not invoke getters', () => {
   it('leaves a lazy property unread until it is accessed', () => {
     let reads = 0;
-    const rules = {} as Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+    const rules = {} as Record<
+      string,
+      TSESLint.RuleModule<string, readonly unknown[]>
+    >;
     Object.defineProperty(rules, 'my-rule', {
       configurable: true,
       enumerable: true,
       get() {
         reads++;
-        return { meta: { docs: {} } } as unknown as TSESLint.RuleModule<string, readonly unknown[]>;
+        return { meta: { docs: {} } } as unknown as TSESLint.RuleModule<
+          string,
+          readonly unknown[]
+        >;
       },
     });
 
@@ -147,22 +165,34 @@ describe('withCanonicalDocsUrls does not invoke getters', () => {
 
     const rule = rules['my-rule'];
     expect(reads).toBe(1);
-    expect((rule.meta.docs as { url?: string }).url).toContain('plugin-node-security/rules/my-rule');
+    expect((rule.meta.docs as { url?: string }).url).toContain(
+      'plugin-node-security/rules/my-rule',
+    );
   });
 
   it('still stamps a plain-value property, which cannot be deferred', () => {
     const rules = {
       'my-rule': { meta: { docs: {} } },
-    } as unknown as Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+    } as unknown as Record<
+      string,
+      TSESLint.RuleModule<string, readonly unknown[]>
+    >;
 
     withCanonicalDocsUrls('plugin-node-security', rules);
-    expect((rules['my-rule'].meta.docs as { url?: string }).url).toContain('rules/my-rule');
+    expect((rules['my-rule'].meta.docs as { url?: string }).url).toContain(
+      'rules/my-rule',
+    );
   });
 
   it('tolerates a property with no docs block', () => {
     const rules = {
       'my-rule': { meta: {} },
-    } as unknown as Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
-    expect(() => withCanonicalDocsUrls('plugin-node-security', rules)).not.toThrow();
+    } as unknown as Record<
+      string,
+      TSESLint.RuleModule<string, readonly unknown[]>
+    >;
+    expect(() =>
+      withCanonicalDocsUrls('plugin-node-security', rules),
+    ).not.toThrow();
   });
 });

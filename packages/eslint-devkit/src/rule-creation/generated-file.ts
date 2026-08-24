@@ -74,7 +74,9 @@ function leadingComments(
  * ships and runs, so an injection in it is a live vulnerability whoever typed
  * it. This predicate is for maintainability advice only.
  */
-export function isGeneratedFile(sourceCode: Readonly<TSESLint.SourceCode>): boolean {
+export function isGeneratedFile(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+): boolean {
   for (const comment of leadingComments(sourceCode)) {
     if (GENERATED_BANNER.test(comment.value)) return true;
   }

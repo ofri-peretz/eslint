@@ -12,15 +12,17 @@
  * @see https://cwe.mitre.org/data/definitions/327.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { makeNameTest } from '../../utils/names';
 import { resolveConstantString } from '../../utils/const-value';
 
-type MessageIds =
-  | 'weakHashAlgorithm'
-  | 'useSha256'
-  | 'useSha512'
-  | 'useSha3';
+type MessageIds = 'weakHashAlgorithm' | 'useSha256' | 'useSha512' | 'useSha3';
 
 export interface Options {
   /** Additional weak algorithms to detect. Default: [] */
@@ -115,7 +117,10 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
  * and `cacheKey` are the same name.
  */
 const DEFAULT_NON_CRYPTOGRAPHIC_NAMES = [
-  'sha', 'etag', 'cachekey', 'cachebuster',
+  'sha',
+  'etag',
+  'cachekey',
+  'cachebuster',
   // A certificate THUMBPRINT is a protocol identifier, and SHA-1 is what the
   // protocol says. Azure AD / MSAL client-certificate auth sends the SHA-1
   // thumbprint as the JWS `x5t` header (RFC 7515 §4.1.7); picking SHA-256
@@ -128,7 +133,8 @@ const DEFAULT_NON_CRYPTOGRAPHIC_NAMES = [
   // — a PGP key fingerprint, a TLS/JA3 fingerprint and a device fingerprint
   // are all spelled that way and none of them is protocol-pinned to SHA-1.
   // `certFingerprint` stays a finding, and has its own lock.
-  'thumbprint', 'x5t',
+  'thumbprint',
+  'x5t',
 ];
 
 /**
@@ -148,11 +154,36 @@ const DEFAULT_NON_CRYPTOGRAPHIC_NAMES = [
  * weak-hash call listed.
  */
 const DEFAULT_SECURITY_USE_NAMES = [
-  'password', 'passwd', 'secret', 'secrets', 'token', 'tokens', 'signature',
-  'signing', 'signed', 'sign', 'hmac', 'credential', 'credentials',
-  'certificate', 'cert', 'certs', 'apikey', 'privatekey', 'secretkey',
-  'signingkey', 'encryptionkey', 'session', 'csrf', 'salt', 'jwt', 'nonce',
-  'integrity', 'auth', 'authorization', 'authenticate',
+  'password',
+  'passwd',
+  'secret',
+  'secrets',
+  'token',
+  'tokens',
+  'signature',
+  'signing',
+  'signed',
+  'sign',
+  'hmac',
+  'credential',
+  'credentials',
+  'certificate',
+  'cert',
+  'certs',
+  'apikey',
+  'privatekey',
+  'secretkey',
+  'signingkey',
+  'encryptionkey',
+  'session',
+  'csrf',
+  'salt',
+  'jwt',
+  'nonce',
+  'integrity',
+  'auth',
+  'authorization',
+  'authenticate',
   // Added 2026-08-23 after an adversarial wave hashed 17 common credential
   // spellings with MD5 and found 12 of them silent. Every one is CWE-327.
   //
@@ -160,9 +191,17 @@ const DEFAULT_SECURITY_USE_NAMES = [
   // under 6 characters matches WHOLE WORDS only, and entries of 6 or more also
   // match as a substring of the joined identifier — which is why the compound
   // spellings are listed whole, `pincode` rather than `pin`.
-  'otp', 'mfa', 'totp',
-  'passphrase', 'pincode', 'mnemonic', 'seedphrase', 'masterkey',
-  'securityanswer', 'recoverycode', 'backupcode',
+  'otp',
+  'mfa',
+  'totp',
+  'passphrase',
+  'pincode',
+  'mnemonic',
+  'seedphrase',
+  'masterkey',
+  'securityanswer',
+  'recoverycode',
+  'backupcode',
 ];
 
 /**
@@ -206,12 +245,18 @@ function assignedName(node: TSESTree.Node): string | null {
   // Climb the `.update(…).digest(…)` chain: each step must have `current` as
   // the *receiver*, never as an argument.
   while (parent) {
-    if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === current) {
+    if (
+      parent.type === AST_NODE_TYPES.MemberExpression &&
+      parent.object === current
+    ) {
       current = parent;
       parent = current.parent;
       continue;
     }
-    if (parent.type === AST_NODE_TYPES.CallExpression && parent.callee === current) {
+    if (
+      parent.type === AST_NODE_TYPES.CallExpression &&
+      parent.callee === current
+    ) {
       current = parent;
       parent = current.parent;
       continue;
@@ -221,10 +266,16 @@ function assignedName(node: TSESTree.Node): string | null {
 
   if (!parent) return null;
 
-  if (parent.type === AST_NODE_TYPES.VariableDeclarator && parent.init === current) {
+  if (
+    parent.type === AST_NODE_TYPES.VariableDeclarator &&
+    parent.init === current
+  ) {
     return parent.id.type === AST_NODE_TYPES.Identifier ? parent.id.name : null;
   }
-  if (parent.type === AST_NODE_TYPES.AssignmentExpression && parent.right === current) {
+  if (
+    parent.type === AST_NODE_TYPES.AssignmentExpression &&
+    parent.right === current
+  ) {
     const target = parent.left;
     if (target.type === AST_NODE_TYPES.Identifier) return target.name;
     if (
@@ -242,7 +293,10 @@ function assignedName(node: TSESTree.Node): string | null {
     if (parent.key.type === AST_NODE_TYPES.Identifier) return parent.key.name;
     // `{ 'cache-key': … }` names the same property as `{ cache_key: … }`.
     // Reading only Identifier keys made the exemption depend on quoting.
-    if (parent.key.type === AST_NODE_TYPES.Literal && typeof parent.key.value === 'string') {
+    if (
+      parent.key.type === AST_NODE_TYPES.Literal &&
+      typeof parent.key.value === 'string'
+    ) {
       return parent.key.value;
     }
     return null;
@@ -282,12 +336,18 @@ function hashInputNames(node: TSESTree.CallExpression): string[] {
   let current: TSESTree.Node = node;
   let parent = current.parent;
   while (parent) {
-    if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === current) {
+    if (
+      parent.type === AST_NODE_TYPES.MemberExpression &&
+      parent.object === current
+    ) {
       current = parent;
       parent = current.parent;
       continue;
     }
-    if (parent.type === AST_NODE_TYPES.CallExpression && parent.callee === current) {
+    if (
+      parent.type === AST_NODE_TYPES.CallExpression &&
+      parent.callee === current
+    ) {
       for (const argument of parent.arguments) {
         const name = expressionName(argument);
         if (name !== null) names.push(name);
@@ -310,13 +370,18 @@ function enclosingFunctionName(node: TSESTree.Node): string | null {
       current.type === AST_NODE_TYPES.FunctionExpression ||
       current.type === AST_NODE_TYPES.ArrowFunctionExpression
     ) {
-      if (current.type !== AST_NODE_TYPES.ArrowFunctionExpression && current.id) {
+      if (
+        current.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        current.id
+      ) {
         return current.id.name;
       }
       // `const signRequest = () => …`, `{ signRequest() {} }`, `class … { sign() {} }`
       const owner = current.parent;
       if (owner?.type === AST_NODE_TYPES.VariableDeclarator) {
-        return owner.id.type === AST_NODE_TYPES.Identifier ? owner.id.name : null;
+        return owner.id.type === AST_NODE_TYPES.Identifier
+          ? owner.id.name
+          : null;
       }
       if (
         (owner?.type === AST_NODE_TYPES.Property ||
@@ -337,7 +402,7 @@ function enclosingFunctionName(node: TSESTree.Node): string | null {
  */
 function findWeakHash(
   value: string,
-  additionalPatterns: string[]
+  additionalPatterns: string[],
 ): WeakHashPattern | null {
   // Check standard patterns
   for (const pattern of WEAK_HASH_PATTERNS) {
@@ -378,10 +443,12 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Weak hash algorithm',
         cwe: 'CWE-327',
-        description: 'Use of weak hash algorithm: {{algorithm}}. {{algorithm}} is cryptographically broken and unsuitable for security purposes.',
+        description:
+          'Use of weak hash algorithm: {{algorithm}}. {{algorithm}} is cryptographically broken and unsuitable for security purposes.',
         severity: 'CRITICAL',
         fix: 'Replace with {{replacement}}: crypto.createHash("{{replacement}}").update(data). If this hash is an identifier rather than a security control — an EVALSHA key, an ETag, a cache key — store it under one of the nonCryptographicNames instead.',
-        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
+        documentationLink:
+          'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
       }),
       useSha256: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -389,7 +456,8 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
         description: 'Replace with SHA-256 for secure hashing',
         severity: 'LOW',
         fix: 'crypto.createHash("sha256").update(data)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatehashmethod-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatehashmethod-options',
       }),
       useSha512: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -397,7 +465,8 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
         description: 'Replace with SHA-512 for stronger hashing',
         severity: 'LOW',
         fix: 'crypto.createHash("sha512").update(data)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatehashmethod-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatehashmethod-options',
       }),
       useSha3: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -405,7 +474,8 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
         description: 'Replace with SHA-3 for latest standard',
         severity: 'LOW',
         fix: 'crypto.createHash("sha3-256").update(data)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatehashmethod-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatehashmethod-options',
       }),
     },
     schema: [
@@ -457,7 +527,7 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       additionalWeakAlgorithms = [],
@@ -532,6 +602,119 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a call expression uses a weak hash
      */
+    /**
+     * Is this `sha1(...)` call a local wrapper whose body is visible here?
+     *
+     * The bare-identifier branch exists for `crypto-hash`-style packages that
+     * export a digest function under the algorithm's own name. It has no way
+     * to tell those apart from a helper the file defines itself — and a
+     * locally-defined helper is a name, not an algorithm:
+     *
+     *   function sha1(data, secret) {
+     *     return crypto.createHmac("sha1", secret).update(data).digest("hex");
+     *   }
+     *
+     * That is vercel/example-marketplace-integration's webhook verifier. It
+     * computes an HMAC, and HMAC-SHA1 carries none of SHA-1's collision
+     * weakness — the CRITICAL CWE-327 report was wrong on the substance, and
+     * its suggestion rewrote the call to `sha256(...)`, renaming a function
+     * that does not exist under that name and changing no algorithm at all.
+     *
+     * Skipping the call site loses nothing: whatever the body really uses is
+     * reported where it is written, by the `createHash` branch above. An
+     * identifier that resolves to nothing local — an import, a global, a
+     * `crypto-hash` binding — still reports, so the branch keeps its job.
+     */
+    function isLocalHmacHelper(callee: TSESTree.Identifier): boolean {
+      const scope = context.sourceCode.getScope(callee);
+      for (
+        let current: TSESLint.Scope.Scope | null = scope;
+        current;
+        current = current.upper
+      ) {
+        const variable = current.variables.find((v) => v.name === callee.name);
+        if (!variable) continue;
+        // An ImportBinding is evidence rather than a name: `import { sha1 }
+        // from 'crypto-hash'` really is a bare digest export.
+        return variable.defs.some(
+          (def) => def.type !== 'ImportBinding' && computesHmac(def.node),
+        );
+      }
+      return false;
+    }
+
+    /**
+     * Does this definition's body reach `createHmac`?
+     *
+     * A local binding on its own proves nothing, which the first version of
+     * this fix got wrong. It skipped every locally-defined helper, so
+     *
+     *   function sha1(data) { return crypto.createHash("sha1").update(data).digest(); }
+     *   const sessionToken = sha1(secret);
+     *
+     * lost its finding entirely: the call site was skipped, and the
+     * `createHash` inside the helper sees only `data` and the enclosing name
+     * `sha1`, so with the default `reportUnclassifiedHashes: false` it exits
+     * without reporting either. A weak digest feeding a session token went
+     * silent — the opposite of what the fix was for.
+     *
+     * The evidence that makes the Vercel case safe is not "defined here", it
+     * is `createHmac`: HMAC-SHA1 carries none of SHA-1's collision weakness.
+     * So look for that call and nothing else. A helper that selects a bare
+     * digest keeps reporting at the call site, where the security-use name
+     * lives.
+     */
+    function computesHmac(root: TSESTree.Node): boolean {
+      // No visited-set: with `parent` skipped below, an ESTree node graph is a
+      // tree, so nothing is reachable twice. A guard that can never fire reads
+      // as one that does.
+      const stack: TSESTree.Node[] = [root];
+      while (stack.length > 0) {
+        const node = stack.pop() as TSESTree.Node;
+        if (
+          node.type === AST_NODE_TYPES.CallExpression &&
+          isCreateHmacCall(node)
+        ) {
+          return true;
+        }
+        for (const key of Object.keys(node)) {
+          // `parent` walks back up and would make this unbounded.
+          if (key === 'parent') continue;
+          const value = (node as unknown as Record<string, unknown>)[key];
+          for (const child of Array.isArray(value) ? value : [value]) {
+            if (
+              child !== null &&
+              typeof child === 'object' &&
+              typeof (child as TSESTree.Node).type === 'string'
+            ) {
+              stack.push(child as TSESTree.Node);
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    /**
+     * `crypto.createHmac(...)`, and the destructured `createHmac(...)`.
+     *
+     * A computed member is deliberately not matched: `crypto[name]` reads a
+     * variable, so the property node says nothing about which function is
+     * being called.
+     */
+    function isCreateHmacCall(node: TSESTree.CallExpression): boolean {
+      const callee = node.callee;
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        return callee.name === 'createHmac';
+      }
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        !callee.computed &&
+        callee.property.type === AST_NODE_TYPES.Identifier &&
+        callee.property.name === 'createHmac'
+      );
+    }
+
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
       if (isNonCryptographicUse(node)) return;
@@ -556,14 +739,25 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       }
 
       // Check for crypto-hash package: sha1(), md5()
+      //
+      // Gated on the identifier actually resolving to one of those packages.
+      // The name alone is not evidence: a local `function sha1(data, secret)`
+      // that wraps `createHmac('sha1', secret)` is an HMAC, not a bare digest,
+      // and HMAC-SHA1 carries none of SHA-1's collision weakness. Reported by
+      // name, the suggestion also rewrote the call to `sha256(...)` — renaming
+      // a local helper that does not exist under that name, changing no
+      // algorithm and breaking the build.
       if (node.callee.type === AST_NODE_TYPES.Identifier) {
         const funcName = node.callee.name.toLowerCase();
-        if (funcName === 'sha1' || funcName === 'md5' || funcName === 'md4') {
+        if (
+          (funcName === 'sha1' || funcName === 'md5' || funcName === 'md4') &&
+          !isLocalHmacHelper(node.callee)
+        ) {
           // funcName is one of sha1/md5/md4, each of which always matches a
           // WEAK_HASH_PATTERNS entry, so findWeakHash cannot return null here.
           const weakPattern = findWeakHash(
             funcName,
-            additionalWeakAlgorithms
+            additionalWeakAlgorithms,
           ) as WeakHashPattern;
           context.report({
             node,
@@ -598,7 +792,10 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
         // algorithm to a module constant a silencer — see `utils/const-value`.
         const resolved = resolveConstantString(context.sourceCode, arg);
         if (resolved === null) continue;
-        const weakPattern = findWeakHash(resolved.value, additionalWeakAlgorithms);
+        const weakPattern = findWeakHash(
+          resolved.value,
+          additionalWeakAlgorithms,
+        );
         if (!weakPattern) continue;
 
         // Report at the call site the reader is looking at; fix at the
@@ -614,15 +811,18 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'useSha256',
-              fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"sha256"`),
+              fix: (fixer: TSESLint.RuleFixer) =>
+                fixer.replaceText(target, `"sha256"`),
             },
             {
               messageId: 'useSha512',
-              fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"sha512"`),
+              fix: (fixer: TSESLint.RuleFixer) =>
+                fixer.replaceText(target, `"sha512"`),
             },
             {
               messageId: 'useSha3',
-              fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"sha3-256"`),
+              fix: (fixer: TSESLint.RuleFixer) =>
+                fixer.replaceText(target, `"sha3-256"`),
             },
           ],
         });
