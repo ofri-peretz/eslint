@@ -67,3 +67,12 @@ attribute right after the `@`, so the marker now requires a name or `*`.
 value is a slot a generator substitutes later — the same argument the rule
 already makes for `{{API_KEY}}` and `${SECRET}` — and the same repository
 declares `trueToken`, `falseToken` and `nullToken` that way in three files.
+
+`no-fail-open-auth` reported an empty catch that leaves the caller denied.
+`let token = null; try { token = verifyJWT(…).accessToken } catch (err) {}`
+followed by `if (token) { …grant…; return }` and a deny path below it is closed:
+the variable is still falsy, and the gate that reads it returns without
+granting. Verified on nightscout/cgm-remote-monitor. The corpus case that must
+stay reported has the same opening and then runs the privileged work with
+nothing branching on the variable — the difference is a guard that reads it and
+leaves, which is now what the rule looks for.
