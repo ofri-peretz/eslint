@@ -17,8 +17,9 @@ the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   install" without opening thirty tabs.
 
   `/changelog` is that page: 449 releases across 32 packages, newest first,
-  filterable by package, with every entry linked to the pull request that shipped
-  it and every published version showing the exact install command.
+  filterable by package, with entries linked to the pull request that shipped them
+  where one is recorded, and every published version showing the exact install
+  command.
 
   Three things it does that a naive version would not:
 
