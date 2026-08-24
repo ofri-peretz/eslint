@@ -39,10 +39,13 @@ const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
 });
 
-ruleTester.run('no-fail-open-auth — a swallow that fails closed', noFailOpenAuth, {
-  valid: [
-    // The corpus shape.
-    `async function resolve(data) {
+ruleTester.run(
+  'no-fail-open-auth — a swallow that fails closed',
+  noFailOpenAuth,
+  {
+    valid: [
+      // The corpus shape.
+      `async function resolve(data) {
        let token = null;
        try {
          token = verifyJWT(data.token).accessToken;
@@ -53,84 +56,131 @@ ruleTester.run('no-fail-open-auth — a swallow that fails closed', noFailOpenAu
        recordFailure(data.ip);
        return deny();
      }`,
-    // An unrelated exiting guard sits between the try and the real one, so
-    // the scan has to keep looking rather than stop at the first `if`.
-    `async function resolve(req, data) {
+      // An unrelated exiting guard sits between the try and the real one, so
+      // the scan has to keep looking rather than stop at the first `if`.
+      `async function resolve(req, data) {
        let token = null;
        try { token = verifyJWT(data.token).accessToken; } catch (err) {}
        if (req.method === 'OPTIONS') { return preflight(); }
        if (token) { return grant(token); }
        return deny();
      }`,
-    // `false` and `undefined` are deny states too.
-    `async function check(req) {
+      // `false` is a deny state too. `undefined` is not: it parses as an
+      // Identifier rather than a Literal, so `let allowed = undefined` misses
+      // the deny-state test — see the invalid case that pins that.
+      `async function check(req) {
        let allowed = false;
        try { allowed = await authenticate(req); } catch (e) {}
        if (!allowed) { return reject(); }
        return proceed();
      }`,
-  ],
-  invalid: [
-    // Nothing branches on the variable before the privileged work — the
-    // corpus case, restated so this file carries both sides.
-    {
-      code: `async function handleAdminAction(req, res) {
+    ],
+    invalid: [
+      // Nothing branches on the variable before the privileged work — the
+      // corpus case, restated so this file carries both sides.
+      {
+        code: `async function handleAdminAction(req, res) {
          let actor = null;
          try { actor = await assertAdmin(req.headers.authorization); } catch (err) {}
          await purgeTable(req.body.table);
          res.json({ ok: true, actor: actor && actor.id });
        }`,
-      errors: [{ messageId: 'failOpenSwallow' as const }],
-    },
-    // A guard that reads the variable but does NOT leave — execution falls
-    // through to the privileged work either way.
-    {
-      code: `async function handler(req, res) {
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // The guard reads the variable and leaves, but it runs AFTER the
+      // privileged call — the corpus case with its last two statements swapped.
+      {
+        code: `async function handleAdminAction(req, res) {
+         let actor = null;
+         try { actor = await assertAdmin(req.headers.authorization); } catch (err) {}
+         await purgeTable(req.body.table);
+         if (actor) { return res.json({ ok: true }); }
+       }`,
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // The only `return` under the guard belongs to a callback, so control
+      // falls through to the privileged work regardless of `token`.
+      {
+        code: `async function resolve(req, res) {
+         let token = null;
+         try { token = await authenticate(req); } catch (e) {}
+         if (token) { req.scopes.forEach((s) => { return s; }); }
+         await dropDatabase();
+       }`,
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // Every statement after the try is a guard that leaves without ever
+      // reading the swallowed variable, so the scan runs out — no guard gates
+      // the swallow.
+      {
+        code: `async function resolve(req, res) {
+         let token = null;
+         try { token = await authenticate(req); } catch (e) {}
+         if (req.method === 'OPTIONS') { return preflight(); }
+       }`,
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // `undefined` is an Identifier, not a Literal, so the deny-state test
+      // does not recognise it and the swallow stays reported.
+      {
+        code: `async function check(req) {
+         let allowed = undefined;
+         try { allowed = await authenticate(req); } catch (e) {}
+         if (!allowed) { return reject(); }
+         return proceed();
+       }`,
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // A guard that reads the variable but does NOT leave — execution falls
+      // through to the privileged work either way.
+      {
+        code: `async function handler(req, res) {
          let user = null;
          try { user = await authenticate(req); } catch (e) {}
          if (user) { log('authenticated'); }
          await deleteEverything();
        }`,
-      errors: [{ messageId: 'failOpenSwallow' as const }],
-    },
-    // A member-expression target has no binding to carry a deny state.
-    {
-      code: `async function handler(req, res) {
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // A member-expression target has no binding to carry a deny state.
+      {
+        code: `async function handler(req, res) {
          const state = { user: null };
          try { state.user = await authenticate(req); } catch (e) {}
          if (state.user) { return ok(res); }
          await purge();
        }`,
-      errors: [{ messageId: 'failOpenSwallow' as const }],
-    },
-    // A parameter is not a declaration with a falsy initialiser, so there is
-    // no prior deny state either — the caller chose the incoming value.
-    {
-      code: `async function handler(req, res, user) {
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // A parameter is not a declaration with a falsy initialiser, so there is
+      // no prior deny state either — the caller chose the incoming value.
+      {
+        code: `async function handler(req, res, user) {
          try { user = await authenticate(req); } catch (e) {}
          if (user) { return ok(res); }
          await purge();
        }`,
-      errors: [{ messageId: 'failOpenSwallow' as const }],
-    },
-    // Declared with a TRUTHY initialiser — swallowing leaves it granted.
-    {
-      code: `async function handler(req, res) {
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // Declared with a TRUTHY initialiser — swallowing leaves it granted.
+      {
+        code: `async function handler(req, res) {
          let allowed = true;
          try { allowed = await authenticate(req); } catch (e) {}
          if (allowed) { return ok(res); }
          await purge();
        }`,
-      errors: [{ messageId: 'failOpenSwallow' as const }],
-    },
-    // Declared inside the try — there is no prior deny state to preserve.
-    {
-      code: `async function handler(req, res) {
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+      // Declared inside the try — there is no prior deny state to preserve.
+      {
+        code: `async function handler(req, res) {
          try { var session = await authenticate(req); } catch (e) {}
          if (session) { return ok(res); }
          await purge();
        }`,
-      errors: [{ messageId: 'failOpenSwallow' as const }],
-    },
-  ],
-});
+        errors: [{ messageId: 'failOpenSwallow' as const }],
+      },
+    ],
+  },
+);

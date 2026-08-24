@@ -455,6 +455,18 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
           ) {
             return true;
           }
+          // A `return` inside a nested function leaves that callback, not this
+          // function — `if (token) { xs.forEach(() => { return x; }); }` falls
+          // straight through to the privileged work. The rule stops at
+          // function boundaries everywhere else (see `enclosingHandler`).
+          if (
+            current !== node &&
+            (current.type === AST_NODE_TYPES.FunctionDeclaration ||
+              current.type === AST_NODE_TYPES.FunctionExpression ||
+              current.type === AST_NODE_TYPES.ArrowFunctionExpression)
+          ) {
+            continue;
+          }
           for (const key of Object.keys(current)) {
             if (key === 'parent') continue;
             const value = (current as unknown as Record<string, unknown>)[key];
@@ -472,13 +484,29 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
         return false;
       };
 
-      return enclosing.body.some(
-        (statement) =>
-          statement.range[0] > tryStatement.range[1] &&
+      // Order matters as much as existence. A guard that reads the variable
+      // but sits AFTER the privileged call gates nothing:
+      //
+      //   try { actor = await assertAdmin(req); } catch (err) {}
+      //   await purgeTable(req.body.table);   // runs with actor === null
+      //   if (actor) { return res.json({ ok: true }); }
+      //
+      // So the scan walks forward and stops at the first statement that can
+      // do work. Guards that leave are stepped over — an unrelated
+      // `if (req.method === 'OPTIONS') return preflight()` between the try and
+      // the real guard runs no privileged code on the path that continues.
+      for (const statement of enclosing.body) {
+        if (statement.range[0] < tryStatement.range[1]) continue;
+        if (
           statement.type === AST_NODE_TYPES.IfStatement &&
-          readsAName(statement.test) &&
-          exits(statement.consequent),
-      );
+          exits(statement.consequent)
+        ) {
+          if (readsAName(statement.test)) return true;
+          continue;
+        }
+        return false;
+      }
+      return false;
     }
 
     return {

@@ -499,7 +499,18 @@ export function isPlaceholderValue(
   const dunder = /^__(.+)__$/.exec(trimmed);
   if (dunder !== null) {
     const inner = dunder[1] as string;
-    return inner.trim().length > 0 && !looksRandom(inner);
+    const candidate = inner.trim();
+    // `looksRandom` alone is not enough: it needs 20 characters before it
+    // consults entropy at all, so `__aaAA@123__` — a password with delimiters
+    // around it — would read as a name.
+    //
+    // Shape cannot separate a short password from a short marker; convention
+    // can. A substitution sentinel SHOUTS the language or type it stands for,
+    // ahead of anything else: `__PYTHON#%0True__`, `__RUBY#%0NULL__`,
+    // `__JAVA#%0nil__`. A credential is not written that way. Requiring the
+    // caps run keeps postman-code-generators' seven findings suppressed and
+    // reports `__aaAA@123__`, which starts lowercase.
+    return /^[^A-Za-z]*[A-Z]{3,}/.test(candidate) && !looksRandom(candidate);
   }
 
   // 3. One character repeated (4+).

@@ -98,6 +98,13 @@ ruleTester.run(
         code: `const dbPassword = 'aaAA@123';`,
         errors: 1,
       },
+      // The wrapped form of the same value. `looksRandom` needs 20 characters
+      // before it consults entropy, so the dunder exemption used to accept
+      // this — a password suppressed by the punctuation around it.
+      {
+        code: `const dbPassword = '__aaAA@123__';`,
+        errors: 1,
+      },
       // A segment carrying characters no route segment carries.
       {
         code: `const apiSecret = '/xK9!mQ2$vL8pR4wZ';`,
