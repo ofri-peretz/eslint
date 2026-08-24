@@ -57,11 +57,19 @@ describe('no-weak-hash-algorithm', () => {
       // Redis wire protocol mandates — a cache key, not a security control.
       { code: 'this.sha = createHash("sha1").update(lua).digest("hex");' },
       // The same shape through each supported assignment form.
-      { code: 'const etag = crypto.createHash("md5").update(body).digest("hex");' },
-      { code: 'cacheKey = crypto.createHash("md5").update(input).digest("hex");' },
-      { code: 'const meta = { cache_key: createHash("sha1").update(x).digest("hex") };' },
+      {
+        code: 'const etag = crypto.createHash("md5").update(body).digest("hex");',
+      },
+      {
+        code: 'cacheKey = crypto.createHash("md5").update(input).digest("hex");',
+      },
+      {
+        code: 'const meta = { cache_key: createHash("sha1").update(x).digest("hex") };',
+      },
       // Separators and case are normalised, so cache-key is the same name.
-      { code: 'const res = { "x": 1 }; res.cacheBuster = createHash("md5").update(v).digest("hex");' },
+      {
+        code: 'const res = { "x": 1 }; res.cacheBuster = createHash("md5").update(v).digest("hex");',
+      },
       // A user-supplied name list replaces the default.
       {
         code: 'const scriptDigest = createHash("sha1").update(lua).digest("hex");',
@@ -92,6 +100,15 @@ describe('no-weak-hash-algorithm', () => {
           const tag = md5(payload);
         `,
       },
+      // The destructured spelling — the callee is a bare Identifier rather
+      // than a member of `crypto`, and it is the same HMAC.
+      {
+        code: `
+          const { createHmac } = require('crypto');
+          function sha1(data, secret) { return createHmac('sha1', secret).update(data).digest('hex'); }
+          const signature = sha1(body, clientSecret);
+        `,
+      },
       // A `const` bound to something that is not a function is still a local
       // name rather than a package's digest export.
       {
@@ -102,7 +119,9 @@ describe('no-weak-hash-algorithm', () => {
       },
       // A quoted key names the same property as a bare one; the exemption
       // must not depend on quoting style.
-      { code: `const meta = { 'cache-key': createHash("sha1").update(x).digest("hex") };` },
+      {
+        code: `const meta = { 'cache-key': createHash("sha1").update(x).digest("hex") };`,
+      },
     ],
     invalid: [
       // An import IS evidence: `crypto-hash` really does export a bare digest
@@ -115,9 +134,10 @@ describe('no-weak-hash-algorithm', () => {
         options: UNCLASSIFIED,
         errors: 1,
       },
-      // The exemption moves the report, it does not remove it: a local helper
-      // that really computes a bare digest is still reported where the
-      // algorithm is written.
+      // A local helper that really computes a bare digest keeps reporting, and
+      // under UNCLASSIFIED it reports twice: once where the algorithm is
+      // selected, once at the call site whose name says what the value is for.
+      // The exemption is for HMAC helpers only.
       {
         code: `
           function sha1(data) {
@@ -126,162 +146,272 @@ describe('no-weak-hash-algorithm', () => {
           const sessionToken = sha1(secret);
         `,
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            {
-              messageId: 'useSha256',
-              output: `
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: `
           function sha1(data) {
             return crypto.createHash("sha256").update(data).digest("hex");
           }
           const sessionToken = sha1(secret);
         `,
-            },
-            {
-              messageId: 'useSha512',
-              output: `
+              },
+              {
+                messageId: 'useSha512',
+                output: `
           function sha1(data) {
             return crypto.createHash("sha512").update(data).digest("hex");
           }
           const sessionToken = sha1(secret);
         `,
-            },
-            {
-              messageId: 'useSha3',
-              output: `
+              },
+              {
+                messageId: 'useSha3',
+                output: `
           function sha1(data) {
             return crypto.createHash("sha3-256").update(data).digest("hex");
           }
           const sessionToken = sha1(secret);
         `,
-            },
-          ],
-        }],
+              },
+            ],
+          },
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: `
+          function sha1(data) {
+            return crypto.createHash("sha1").update(data).digest("hex");
+          }
+          const sessionToken = sha256(secret);
+        `,
+              },
+            ],
+          },
+        ],
+      },
+      // A computed member says nothing about which function is called, so it
+      // is not HMAC evidence and the helper keeps reporting.
+      {
+        code: `
+          function sha1(data, secret) { return crypto['createHmac']('sha1', secret).update(data).digest(); }
+          const sessionToken = sha1(body, secret);
+        `,
+        errors: 1,
+      },
+      // The default mode is the one that matters, and it is where the first
+      // version of this fix went silent: no `reportUnclassifiedHashes`, a weak
+      // digest chosen inside the helper, and a security-use name at the call.
+      {
+        code: `
+          function sha1(data) { return crypto.createHash("sha1").update(data).digest(); }
+          const sessionToken = sha1(secret);
+        `,
+        errors: 1,
       },
       // Invalid: MD5
       {
         code: 'crypto.createHash("md5").update(data);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'crypto.createHash("sha256").update(data);' },
-            { messageId: 'useSha512', output: 'crypto.createHash("sha512").update(data);' },
-            { messageId: 'useSha3', output: 'crypto.createHash("sha3-256").update(data);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: SHA-1
       {
         code: 'crypto.createHash("sha1").update(data);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'crypto.createHash("sha256").update(data);' },
-            { messageId: 'useSha512', output: 'crypto.createHash("sha512").update(data);' },
-            { messageId: 'useSha3', output: 'crypto.createHash("sha3-256").update(data);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: MD4
       {
         code: 'crypto.createHash("md4").update(data);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'crypto.createHash("sha256").update(data);' },
-            { messageId: 'useSha512', output: 'crypto.createHash("sha512").update(data);' },
-            { messageId: 'useSha3', output: 'crypto.createHash("sha3-256").update(data);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: Case insensitive
       {
         code: 'crypto.createHash("MD5").update(data);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'crypto.createHash("sha256").update(data);' },
-            { messageId: 'useSha512', output: 'crypto.createHash("sha512").update(data);' },
-            { messageId: 'useSha3', output: 'crypto.createHash("sha3-256").update(data);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: Standalone createHash function
       {
         code: 'createHash("md5");',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'createHash("sha256");' },
-            { messageId: 'useSha512', output: 'createHash("sha512");' },
-            { messageId: 'useSha3', output: 'createHash("sha3-256");' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: 'createHash("sha256");' },
+              { messageId: 'useSha512', output: 'createHash("sha512");' },
+              { messageId: 'useSha3', output: 'createHash("sha3-256");' },
+            ],
+          },
+        ],
       },
       // Invalid: RIPEMD
       {
         code: 'crypto.createHash("ripemd").update(data);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'crypto.createHash("sha256").update(data);' },
-            { messageId: 'useSha512', output: 'crypto.createHash("sha512").update(data);' },
-            { messageId: 'useSha3', output: 'crypto.createHash("sha3-256").update(data);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
       },
       // Invalid: Direct sha1() function call (lines 205-221)
       {
         code: 'sha1(data);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'sha256(data);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [{ messageId: 'useSha256', output: 'sha256(data);' }],
+          },
+        ],
       },
       // Invalid: Direct md5() function call (lines 83-85, 205-221)
       {
         code: 'md5(password);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'sha256(password);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              { messageId: 'useSha256', output: 'sha256(password);' },
+            ],
+          },
+        ],
       },
       // Invalid: Direct md4() function call
       {
         code: 'md4(data);',
         options: UNCLASSIFIED,
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'sha256(data);' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [{ messageId: 'useSha256', output: 'sha256(data);' }],
+          },
+        ],
       },
       // Invalid: Additional weak algorithms option
       {
         code: 'crypto.createHash("whirlpool").update(data);',
-        options: [{ additionalWeakAlgorithms: ['whirlpool'], reportUnclassifiedHashes: true }],
-        errors: [{ 
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'crypto.createHash("sha256").update(data);' },
-            { messageId: 'useSha512', output: 'crypto.createHash("sha512").update(data);' },
-            { messageId: 'useSha3', output: 'crypto.createHash("sha3-256").update(data);' },
-          ],
-        }],
+        options: [
+          {
+            additionalWeakAlgorithms: ['whirlpool'],
+            reportUnclassifiedHashes: true,
+          },
+        ],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
       },
 
       // ---- The non-cryptographic exemption is narrow ----------------------
@@ -294,107 +424,219 @@ describe('no-weak-hash-algorithm', () => {
       {
         code: 'const signature = createHash("sha1").update(data).digest("hex");',
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'const signature = createHash("sha256").update(data).digest("hex");' },
-            { messageId: 'useSha512', output: 'const signature = createHash("sha512").update(data).digest("hex");' },
-            { messageId: 'useSha3', output: 'const signature = createHash("sha3-256").update(data).digest("hex");' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output:
+                  'const signature = createHash("sha256").update(data).digest("hex");',
+              },
+              {
+                messageId: 'useSha512',
+                output:
+                  'const signature = createHash("sha512").update(data).digest("hex");',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'const signature = createHash("sha3-256").update(data).digest("hex");',
+              },
+            ],
+          },
+        ],
       },
       // Returned, never stored — the walk finds no assignment target.
       {
         code: 'function f() { return createHash("md5").update(pw).digest("hex"); }',
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'function f() { return createHash("sha256").update(pw).digest("hex"); }' },
-            { messageId: 'useSha512', output: 'function f() { return createHash("sha512").update(pw).digest("hex"); }' },
-            { messageId: 'useSha3', output: 'function f() { return createHash("sha3-256").update(pw).digest("hex"); }' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output:
+                  'function f() { return createHash("sha256").update(pw).digest("hex"); }',
+              },
+              {
+                messageId: 'useSha512',
+                output:
+                  'function f() { return createHash("sha512").update(pw).digest("hex"); }',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'function f() { return createHash("sha3-256").update(pw).digest("hex"); }',
+              },
+            ],
+          },
+        ],
       },
       // Passed straight to another call. The chain walk only climbs receivers,
       // so an argument position stops it.
       {
         code: 'verify(createHash("sha1").update(x).digest("hex"));',
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'verify(createHash("sha256").update(x).digest("hex"));' },
-            { messageId: 'useSha512', output: 'verify(createHash("sha512").update(x).digest("hex"));' },
-            { messageId: 'useSha3', output: 'verify(createHash("sha3-256").update(x).digest("hex"));' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'verify(createHash("sha256").update(x).digest("hex"));',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'verify(createHash("sha512").update(x).digest("hex"));',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'verify(createHash("sha3-256").update(x).digest("hex"));',
+              },
+            ],
+          },
+        ],
       },
       // A computed member target hides the name, so it cannot be trusted.
       {
         code: 'obj[key] = createHash("sha1").update(x).digest("hex");',
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'obj[key] = createHash("sha256").update(x).digest("hex");' },
-            { messageId: 'useSha512', output: 'obj[key] = createHash("sha512").update(x).digest("hex");' },
-            { messageId: 'useSha3', output: 'obj[key] = createHash("sha3-256").update(x).digest("hex");' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output:
+                  'obj[key] = createHash("sha256").update(x).digest("hex");',
+              },
+              {
+                messageId: 'useSha512',
+                output:
+                  'obj[key] = createHash("sha512").update(x).digest("hex");',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'obj[key] = createHash("sha3-256").update(x).digest("hex");',
+              },
+            ],
+          },
+        ],
       },
       // Destructuring target: not an Identifier, so no name to check.
       {
         code: 'const [a] = createHash("md5").update(x).digest("hex");',
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'const [a] = createHash("sha256").update(x).digest("hex");' },
-            { messageId: 'useSha512', output: 'const [a] = createHash("sha512").update(x).digest("hex");' },
-            { messageId: 'useSha3', output: 'const [a] = createHash("sha3-256").update(x).digest("hex");' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output:
+                  'const [a] = createHash("sha256").update(x).digest("hex");',
+              },
+              {
+                messageId: 'useSha512',
+                output:
+                  'const [a] = createHash("sha512").update(x).digest("hex");',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'const [a] = createHash("sha3-256").update(x).digest("hex");',
+              },
+            ],
+          },
+        ],
       },
       // A numeric key has no name to match.
       {
         code: 'const meta = { 1: createHash("md5").update(x).digest("hex") };',
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'const meta = { 1: createHash("sha256").update(x).digest("hex") };' },
-            { messageId: 'useSha512', output: 'const meta = { 1: createHash("sha512").update(x).digest("hex") };' },
-            { messageId: 'useSha3', output: 'const meta = { 1: createHash("sha3-256").update(x).digest("hex") };' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output:
+                  'const meta = { 1: createHash("sha256").update(x).digest("hex") };',
+              },
+              {
+                messageId: 'useSha512',
+                output:
+                  'const meta = { 1: createHash("sha512").update(x).digest("hex") };',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'const meta = { 1: createHash("sha3-256").update(x).digest("hex") };',
+              },
+            ],
+          },
+        ],
       },
       // A computed object key is likewise unreadable.
       {
         code: 'const meta = { [k]: createHash("sha1").update(x).digest("hex") };',
         options: UNCLASSIFIED,
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'const meta = { [k]: createHash("sha256").update(x).digest("hex") };' },
-            { messageId: 'useSha512', output: 'const meta = { [k]: createHash("sha512").update(x).digest("hex") };' },
-            { messageId: 'useSha3', output: 'const meta = { [k]: createHash("sha3-256").update(x).digest("hex") };' },
-          ],
-        }],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output:
+                  'const meta = { [k]: createHash("sha256").update(x).digest("hex") };',
+              },
+              {
+                messageId: 'useSha512',
+                output:
+                  'const meta = { [k]: createHash("sha512").update(x).digest("hex") };',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'const meta = { [k]: createHash("sha3-256").update(x).digest("hex") };',
+              },
+            ],
+          },
+        ],
       },
       // An empty name list switches the exemption off entirely, restoring the
       // pre-change behaviour on the ioredis shape.
       {
         code: 'this.sha = createHash("sha1").update(lua).digest("hex");',
-        options: [{ nonCryptographicNames: [], reportUnclassifiedHashes: true }],
-        errors: [{
-          messageId: 'weakHashAlgorithm',
-          suggestions: [
-            { messageId: 'useSha256', output: 'this.sha = createHash("sha256").update(lua).digest("hex");' },
-            { messageId: 'useSha512', output: 'this.sha = createHash("sha512").update(lua).digest("hex");' },
-            { messageId: 'useSha3', output: 'this.sha = createHash("sha3-256").update(lua).digest("hex");' },
-          ],
-        }],
+        options: [
+          { nonCryptographicNames: [], reportUnclassifiedHashes: true },
+        ],
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output:
+                  'this.sha = createHash("sha256").update(lua).digest("hex");',
+              },
+              {
+                messageId: 'useSha512',
+                output:
+                  'this.sha = createHash("sha512").update(lua).digest("hex");',
+              },
+              {
+                messageId: 'useSha3',
+                output:
+                  'this.sha = createHash("sha3-256").update(lua).digest("hex");',
+              },
+            ],
+          },
+        ],
       },
     ],
   });
@@ -433,74 +675,131 @@ describe('no-weak-hash-algorithm', () => {
         // visible from the argument alone.
         {
           code: `const digest = crypto.createHash('md5').update(password).digest('hex');`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const digest = crypto.createHash("sha256").update(password).digest('hex');` },
-              { messageId: 'useSha512', output: `const digest = crypto.createHash("sha512").update(password).digest('hex');` },
-              { messageId: 'useSha3', output: `const digest = crypto.createHash("sha3-256").update(password).digest('hex');` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const digest = crypto.createHash("sha256").update(password).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha512',
+                  output: `const digest = crypto.createHash("sha512").update(password).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha3',
+                  output: `const digest = crypto.createHash("sha3-256").update(password).digest('hex');`,
+                },
+              ],
+            },
+          ],
         },
         // Visible from what the digest is STORED as.
         {
           code: `const signature = crypto.createHash('sha1').update(body).digest('hex');`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const signature = crypto.createHash("sha256").update(body).digest('hex');` },
-              { messageId: 'useSha512', output: `const signature = crypto.createHash("sha512").update(body).digest('hex');` },
-              { messageId: 'useSha3', output: `const signature = crypto.createHash("sha3-256").update(body).digest('hex');` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const signature = crypto.createHash("sha256").update(body).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha512',
+                  output: `const signature = crypto.createHash("sha512").update(body).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha3',
+                  output: `const signature = crypto.createHash("sha3-256").update(body).digest('hex');`,
+                },
+              ],
+            },
+          ],
         },
         // Visible from the enclosing function, including an arrow bound to a
         // const and a class method.
         {
           code: `const signRequest = (body) => md5(body);`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const signRequest = (body) => sha256(body);` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const signRequest = (body) => sha256(body);`,
+                },
+              ],
+            },
+          ],
         },
         {
           code: `class Signer { authToken(body) { return sha1(body); } }`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `class Signer { authToken(body) { return sha256(body); } }` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `class Signer { authToken(body) { return sha256(body); } }`,
+                },
+              ],
+            },
+          ],
         },
         // The boundary guard: `certPath` is a security use, `certainty` is not.
         {
           code: `const certFingerprint = createHash('sha1').update(pem).digest('hex');`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const certFingerprint = createHash("sha256").update(pem).digest('hex');` },
-              { messageId: 'useSha512', output: `const certFingerprint = createHash("sha512").update(pem).digest('hex');` },
-              { messageId: 'useSha3', output: `const certFingerprint = createHash("sha3-256").update(pem).digest('hex');` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const certFingerprint = createHash("sha256").update(pem).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha512',
+                  output: `const certFingerprint = createHash("sha512").update(pem).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha3',
+                  output: `const certFingerprint = createHash("sha3-256").update(pem).digest('hex');`,
+                },
+              ],
+            },
+          ],
         },
         // The hashed input read as a MEMBER rather than a bare identifier.
         {
           code: `const d = md5(user.password);`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [{ messageId: 'useSha256', output: `const d = sha256(user.password);` }],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const d = sha256(user.password);`,
+                },
+              ],
+            },
+          ],
         },
         // The enclosing function is an object-literal method.
         {
           code: `const api = { signPayload(body) { return md5(body); } };`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [{ messageId: 'useSha256', output: `const api = { signPayload(body) { return sha256(body); } };` }],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const api = { signPayload(body) { return sha256(body); } };`,
+                },
+              ],
+            },
+          ],
         },
         // checkHashArgument: a non-literal and a non-string algorithm argument
         // are not algorithm names, so nothing is reported for them — but the
@@ -509,25 +808,41 @@ describe('no-weak-hash-algorithm', () => {
           code: `const signature = crypto.createHash(algo).update(body).digest('hex');
                  const other = crypto.createHash(5);
                  const digest = crypto.createHash('md5').update(token).digest('hex');`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha256").update(token).digest('hex');` },
-              { messageId: 'useSha512', output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha512").update(token).digest('hex');` },
-              { messageId: 'useSha3', output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha3-256").update(token).digest('hex');` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha256").update(token).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha512',
+                  output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha512").update(token).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha3',
+                  output: `const signature = crypto.createHash(algo).update(body).digest('hex');\n                 const other = crypto.createHash(5);\n                 const digest = crypto.createHash("sha3-256").update(token).digest('hex');`,
+                },
+              ],
+            },
+          ],
         },
         // `securityUseNames` is configurable.
         {
           code: `const licence = md5(payload);`,
           options: [{ securityUseNames: ['licence'] }],
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const licence = sha256(payload);` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const licence = sha256(payload);`,
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -574,26 +889,48 @@ describe('no-weak-hash-algorithm', () => {
       invalid: [
         {
           code: `const HASH_ALGORITHM = 'md5';\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const HASH_ALGORITHM = "sha256";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');` },
-              { messageId: 'useSha512', output: `const HASH_ALGORITHM = "sha512";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');` },
-              { messageId: 'useSha3', output: `const HASH_ALGORITHM = "sha3-256";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const HASH_ALGORITHM = "sha256";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha512',
+                  output: `const HASH_ALGORITHM = "sha512";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');`,
+                },
+                {
+                  messageId: 'useSha3',
+                  output: `const HASH_ALGORITHM = "sha3-256";\nconst signature = crypto.createHash(HASH_ALGORITHM).update(token).digest('hex');`,
+                },
+              ],
+            },
+          ],
         },
         // Backticks spell the same constant as quotes.
         {
           code: `const ALGO = \`sha1\`;\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }`,
-          errors: [{
-            messageId: 'weakHashAlgorithm',
-            suggestions: [
-              { messageId: 'useSha256', output: `const ALGO = "sha256";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }` },
-              { messageId: 'useSha512', output: `const ALGO = "sha512";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }` },
-              { messageId: 'useSha3', output: `const ALGO = "sha3-256";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }` },
-            ],
-          }],
+          errors: [
+            {
+              messageId: 'weakHashAlgorithm',
+              suggestions: [
+                {
+                  messageId: 'useSha256',
+                  output: `const ALGO = "sha256";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }`,
+                },
+                {
+                  messageId: 'useSha512',
+                  output: `const ALGO = "sha512";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }`,
+                },
+                {
+                  messageId: 'useSha3',
+                  output: `const ALGO = "sha3-256";\nfunction signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }`,
+                },
+              ],
+            },
+          ],
         },
       ],
     });

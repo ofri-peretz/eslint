@@ -20,7 +20,7 @@
  * - Context-aware validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -79,7 +79,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         description: 'HTML escaping misses dangerous characters',
         severity: 'MEDIUM',
         fix: 'Escape all HTML special characters: & < > " \'',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
       }),
       // Named for the check it was written against, but it is reported from
       // exactly one place: a string reaching a response or `innerHTML`
@@ -104,7 +105,14 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           safeSanitizers: {
             type: 'array',
             items: { type: 'string' },
-            default: ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'], description: 'Sanitizer calls treated as sufficient'
+            default: [
+              'DOMPurify.sanitize',
+              'he.encode',
+              'encodeURIComponent',
+              'encodeURI',
+              'escape',
+            ],
+            description: 'Sanitizer calls treated as sufficient',
           },
           // HTML-escaping characters only. This list used to also carry the SHELL
           // metacharacters ` $ { } | ; ( ) — in a rule whose messages are
@@ -116,12 +124,15 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           dangerousChars: {
             type: 'array',
             items: { type: 'string' },
-            default: ['<', '>', '"', "'", '&'], description: 'Characters a sanitizer is expected to handle'
+            default: ['<', '>', '"', "'", '&'],
+            description: 'Characters a sanitizer is expected to handle',
           },
           contexts: {
             type: 'array',
             items: { type: 'string' },
-            default: ['html', 'url', 'sql', 'command', 'javascript', 'css'], description: 'Output contexts checked for a context-appropriate sanitizer'
+            default: ['html', 'url', 'sql', 'command', 'javascript', 'css'],
+            description:
+              'Output contexts checked for a context-appropriate sanitizer',
           },
           trustedSanitizers: {
             type: 'array',
@@ -133,7 +144,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -147,7 +159,13 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      safeSanitizers: ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'],
+      safeSanitizers: [
+        'DOMPurify.sanitize',
+        'he.encode',
+        'encodeURIComponent',
+        'encodeURI',
+        'escape',
+      ],
       dangerousChars: ['<', '>', '"', "'", '&'],
       contexts: ['html', 'url', 'sql', 'command', 'javascript', 'css'],
       trustedSanitizers: [],
@@ -158,7 +176,13 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      safeSanitizers = ['DOMPurify.sanitize', 'he.encode', 'encodeURIComponent', 'encodeURI', 'escape'],
+      safeSanitizers = [
+        'DOMPurify.sanitize',
+        'he.encode',
+        'encodeURIComponent',
+        'encodeURI',
+        'escape',
+      ],
       dangerousChars = ['<', '>', '"', "'", '&'],
       trustedSanitizers = [],
       trustedAnnotations = [],
@@ -180,7 +204,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
      * Check if sanitization is safe
      */
     const isSafeSanitizer = (callText: string): boolean => {
-      return safeSanitizers.some(sanitizer => callText.includes(sanitizer));
+      return safeSanitizers.some((sanitizer) => callText.includes(sanitizer));
     };
 
     /** `x.replace(…)` — the same predicate the CallExpression handler uses. */
@@ -220,15 +244,21 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
      * (a variable, a `new RegExp`, a concatenation) yields undefined — the rule
      * cannot say which character it targets, so it must not guess.
      */
-    const staticPattern = (node: TSESTree.Node | undefined): string | undefined => {
+    const staticPattern = (
+      node: TSESTree.Node | undefined,
+    ): string | undefined => {
       if (node?.type !== 'Literal') return undefined;
-      const withRegex = node as TSESTree.Literal & { regex?: { pattern: string } };
+      const withRegex = node as TSESTree.Literal & {
+        regex?: { pattern: string };
+      };
       if (withRegex.regex) return withRegex.regex.pattern;
       return typeof node.value === 'string' ? node.value : undefined;
     };
 
     /** The literal replacement text of a `.replace()` second argument. */
-    const staticReplacement = (node: TSESTree.Node | undefined): string | undefined => {
+    const staticReplacement = (
+      node: TSESTree.Node | undefined,
+    ): string | undefined => {
       if (node?.type === 'Literal') {
         return typeof node.value === 'string' ? node.value : undefined;
       }
@@ -273,7 +303,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
      * 2. Given that it IS escaping, the chain is incomplete unless it also
      *    produces an ampersand entity and a quote entity somewhere.
      */
-    const isIncompleteReplaceSanitization = (callExpression: TSESTree.CallExpression): boolean => {
+    const isIncompleteReplaceSanitization = (
+      callExpression: TSESTree.CallExpression,
+    ): boolean => {
       const pairs = replaceChain(callExpression);
 
       const escapesTagChar = pairs.some(
@@ -285,7 +317,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       if (!escapesTagChar) return false;
 
       const replacements = pairs.map((pair) => pair.replacement ?? '').join('');
-      const hasQuoteEscaping = /&quot;|&#x27;|&#0?39;|&apos;/i.test(replacements);
+      const hasQuoteEscaping = /&quot;|&#x27;|&#0?39;|&apos;/i.test(
+        replacements,
+      );
       const hasAmpersandEscaping = /&amp;/.test(replacements);
 
       return !(hasQuoteEscaping && hasAmpersandEscaping);
@@ -304,13 +338,25 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         if (text.includes('innerhtml') || text.includes('outerhtml')) {
           return 'html';
         }
-        if (text.includes('href') || text.includes('src') || text.includes('url')) {
+        if (
+          text.includes('href') ||
+          text.includes('src') ||
+          text.includes('url')
+        ) {
           return 'url';
         }
-        if (text.includes('sql') || text.includes('query') || text.includes('execute')) {
+        if (
+          text.includes('sql') ||
+          text.includes('query') ||
+          text.includes('execute')
+        ) {
           return 'sql';
         }
-        if (text.includes('exec') || text.includes('spawn') || text.includes('command')) {
+        if (
+          text.includes('exec') ||
+          text.includes('spawn') ||
+          text.includes('command')
+        ) {
           return 'command';
         }
 
@@ -326,9 +372,11 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
 
         // Check for replace() sanitization
-        if (callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier' &&
-            callee.property.name === 'replace') {
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier' &&
+          callee.property.name === 'replace'
+        ) {
           // One decision per chain — see isMidChain.
           if (isMidChain(node)) {
             return;
@@ -382,11 +430,17 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         const right = node.right;
 
         // Check for assignments to potentially dangerous properties
-        if (left.type === 'MemberExpression' &&
-            left.property.type === 'Identifier') {
+        if (
+          left.type === 'MemberExpression' &&
+          left.property.type === 'Identifier'
+        ) {
           const propertyName = left.property.name.toLowerCase();
 
-          if (['innerhtml', 'outerhtml', 'innertext', 'textcontent'].includes(propertyName)) {
+          if (
+            ['innerhtml', 'outerhtml', 'innertext', 'textcontent'].includes(
+              propertyName,
+            )
+          ) {
             const encodingContext = needsContextEncoding(node);
 
             if (encodingContext === 'html' && propertyName === 'innerhtml') {
@@ -395,10 +449,11 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
 
               if (!isSafeSanitizer(rightText)) {
                 // Check if right side contains user input
-                const hasUserInput = rightText.includes('req.') ||
-                                   rightText.includes('body') ||
-                                   rightText.includes('query') ||
-                                   rightText.includes('input');
+                const hasUserInput =
+                  rightText.includes('req.') ||
+                  rightText.includes('body') ||
+                  rightText.includes('query') ||
+                  rightText.includes('input');
 
                 if (hasUserInput) {
                   if (safetyChecker.isSafe(node, context)) {
@@ -440,15 +495,20 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         if (
           directParent?.type === 'AssignmentExpression' &&
           (directParent as TSESTree.AssignmentExpression).right === node &&
-          (directParent as TSESTree.AssignmentExpression).left.type === 'MemberExpression'
+          (directParent as TSESTree.AssignmentExpression).left.type ===
+            'MemberExpression'
         ) {
-          const left = (directParent as TSESTree.AssignmentExpression).left as TSESTree.MemberExpression;
+          const left = (directParent as TSESTree.AssignmentExpression)
+            .left as TSESTree.MemberExpression;
           if (
             left.property.type === 'Identifier' &&
             ['innerHTML', 'outerHTML'].includes(left.property.name)
           ) {
             const literalValue = node.value;
-            const hasDangerousMarkup = /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(literalValue);
+            const hasDangerousMarkup =
+              /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(
+                literalValue,
+              );
             if (!hasDangerousMarkup) {
               return;
             }
@@ -466,17 +526,21 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         while (current) {
           if (current.type === 'AssignmentExpression') {
             const left = current.left;
-            if (left.type === 'MemberExpression' &&
-                left.property.type === 'Identifier' &&
-                ['innerHTML', 'outerHTML'].includes(left.property.name)) {
+            if (
+              left.type === 'MemberExpression' &&
+              left.property.type === 'Identifier' &&
+              ['innerHTML', 'outerHTML'].includes(left.property.name)
+            ) {
               isInDangerousContext = true;
               break;
             }
           } else if (current.type === 'CallExpression') {
             const callee = current.callee;
-            if (callee.type === 'MemberExpression' &&
-                callee.property.type === 'Identifier' &&
-                ['write', 'send', 'json'].includes(callee.property.name)) {
+            if (
+              callee.type === 'MemberExpression' &&
+              callee.property.type === 'Identifier' &&
+              ['write', 'send', 'json'].includes(callee.property.name)
+            ) {
               // Could be response output
               isInDangerousContext = true;
               break;
@@ -534,7 +598,10 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             // call on a value — stops the climb, which is what keeps the
             // #441 false negatives closed.
             for (;;) {
-              if (parent?.type === 'BinaryExpression' && parent.operator === '+') {
+              if (
+                parent?.type === 'BinaryExpression' &&
+                parent.operator === '+'
+              ) {
                 current = parent;
               } else if (parent?.type === 'ArrayExpression') {
                 current = parent;
@@ -544,7 +611,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                 // application/json, so an apostrophe in it is not markup. The
                 // literal was reported because `'` is in `dangerousChars`.
                 parent?.type === 'Property' ||
-                (parent?.type === 'ObjectExpression' && current.type === 'Property')
+                (parent?.type === 'ObjectExpression' &&
+                  current.type === 'Property')
               ) {
                 current = parent;
               } else if (
@@ -554,7 +622,10 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                 parent.property.name === 'join'
               ) {
                 current = parent;
-              } else if (parent?.type === 'CallExpression' && parent.callee === current) {
+              } else if (
+                parent?.type === 'CallExpression' &&
+                parent.callee === current
+              ) {
                 current = parent;
               } else {
                 break;
@@ -598,8 +669,27 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
            * reaches the sink unescaped.
            */
           const isSafeText = (expr: TSESTree.Node): boolean => {
-            if (expr.type === 'Literal') return typeof expr.value === 'string';
-            if (expr.type === 'TemplateLiteral') return expr.expressions.length === 0;
+            if (expr.type === 'Literal') {
+              // A number, a boolean or `null` cannot carry markup, so it cannot
+              // be the thing that needs escaping. Excluding them made one
+              // primitive poison the whole payload: `res.json([{ id: 1, text:
+              // "You don't have permission" }])` — an id field beside the
+              // string — put the array back on the dangerous-character path and
+              // reported the apostrophe again. A regex literal is deliberately
+              // NOT here; `expr.value` is a RegExp object and its source can
+              // contain `<`.
+              if (
+                expr.value === null ||
+                typeof expr.value === 'number' ||
+                typeof expr.value === 'boolean' ||
+                typeof expr.value === 'bigint'
+              ) {
+                return true;
+              }
+              return typeof expr.value === 'string';
+            }
+            if (expr.type === 'TemplateLiteral')
+              return expr.expressions.length === 0;
             if (expr.type === 'BinaryExpression' && expr.operator === '+') {
               return isSafeText(expr.left) && isSafeText(expr.right);
             }
@@ -617,9 +707,13 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             //
             // A hole in the element list means something non-literal is
             // being spread or elided, so it is not safe text.
-            if (expr.type === 'ArrayExpression') {
+            if (expr.type === AST_NODE_TYPES.ArrayExpression) {
+              // `null` here is a HOLE (`[1, , 3]`), not a null literal — the
+              // parser models the two differently. A hole evaluates to
+              // `undefined`, which cannot carry markup either, so it is safe
+              // for the same reason the primitives above are.
               return expr.elements.every(
-                (element) => element !== null && isSafeText(element),
+                (element) => element === null || isSafeText(element),
               );
             }
             // `.length` is a number in every JavaScript engine, and a number
@@ -672,10 +766,15 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           }
 
           // Check if string contains dangerous characters without proper escaping
-          const hasDangerousChars = dangerousChars.some(char => text.includes(char));
-          const hasEscaping = text.includes('&lt;') || text.includes('&gt;') ||
-                            text.includes('&quot;') || text.includes('&#x27;') ||
-                            text.includes('&amp;');
+          const hasDangerousChars = dangerousChars.some((char) =>
+            text.includes(char),
+          );
+          const hasEscaping =
+            text.includes('&lt;') ||
+            text.includes('&gt;') ||
+            text.includes('&quot;') ||
+            text.includes('&#x27;') ||
+            text.includes('&amp;');
 
           if (hasDangerousChars && !hasEscaping) {
             if (safetyChecker.isSafe(node, context)) {
@@ -692,7 +791,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             });
           }
         }
-      }
+      },
     };
   },
 });

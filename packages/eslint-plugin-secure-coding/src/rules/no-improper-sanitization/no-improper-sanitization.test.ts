@@ -42,6 +42,15 @@ describe('no-improper-sanitization', () => {
         // The same shape one level shallower, and with the apostrophe inside
         // quotes rather than as a contraction.
         `res.json({ error: { message: "Failed to validate metadata: metadata should have valid property 'region'" } });`,
+        // A JSON primitive beside the string must not poison the payload.
+        // Reported by review on the first pass of this fix: an `id` field is
+        // the most common thing to sit next to a message, and a numeric
+        // literal was making the whole array unsafe again.
+        `res.json([{ id: 1, text: "You don't have permission" }]);`,
+        `res.json([{ ok: true, total: null, text: "That's all" }]);`,
+        // A hole is `undefined`, which carries no markup either.
+        `res.json([, { text: "You don't have permission" }]);`,
+        // A regex literal is NOT a safe primitive — its source can hold markup.
         // Markup in a nested payload still reports — see the invalid block.
         // Safe sanitization with trusted libraries
         'element.innerHTML = DOMPurify.sanitize(userInput);',
@@ -76,110 +85,124 @@ describe('no-improper-sanitization', () => {
   });
 
   describe('#398 regression: static output stays silent, real sinks do not', () => {
-    ruleTester.run('static vs tainted response output', noImproperSanitization, {
-      valid: [
-        // express/examples/online/index.js:53. `.length` is a number in every
-        // JavaScript engine, so there is nothing to escape — but the
-        // concatenation was reported as an unescaped interpolation, twice.
-        `res.send('<p>Users online: ' + ids.length + '</p>');`,
-        `res.send('<ul>' + items.length + '</ul>');`,
-      ],
-      invalid: [
-        // `obj[length]` reads a VARIABLE named length, not the array property,
-        // so it carries whatever that variable holds. The `.length` exemption
-        // is non-computed only and must never become a way to smuggle an
-        // attacker-controlled key past the check.
-        {
-          code: `res.send('<p>' + data[length] + '</p>');`,
-          errors: [
-            { messageId: 'unsafeReplaceSanitization' },
-            { messageId: 'unsafeReplaceSanitization' },
-          ],
-        },
-        // Hardcoded but genuinely dangerous: the literal IS the vector, so
-        // author-controlled is not a defence. Must still report.
-        {
-          code: `res.send('<script>alert(1)</script>');`,
-          errors: [{ messageId: 'unsafeReplaceSanitization' }],
-        },
-        // User input concatenated into the response — the actual CWE-116 shape
-        // the rule exists for.
-        //
-        // Two errors, not one: the Literal visitor fires per string literal, so
-        // the opening `'<div>'` and closing `'</div>'` each report. That
-        // duplicate is pre-existing behaviour on this branch and is asserted
-        // here as-is rather than silently accepted by a looser matcher — if it
-        // is ever deduplicated, this test should fail and be updated.
-        {
-          code: `res.send('<div>' + req.query.name + '</div>');`,
-          errors: [
-            { messageId: 'unsafeReplaceSanitization' },
-            { messageId: 'unsafeReplaceSanitization' },
-          ],
-        },
-        // The literal is a fallback, not the argument — tainted input still
-        // reaches the sink. An earlier version of this exemption excluded
-        // TemplateLiteral/BinaryExpression by name and silenced both of these,
-        // turning a false-positive fix into a false negative. The exemption is
-        // now an allowlist (literal IS the argument), so any wrapper falls
-        // through to the normal checks.
-        {
-          code: `res.send(req.query.name || '<p>fallback</p>');`,
-          errors: [{ messageId: 'unsafeReplaceSanitization' }],
-        },
-        {
-          code: `res.send(flag ? req.query.name : '<p>x</p>');`,
-          errors: [{ messageId: 'unsafeReplaceSanitization' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'static vs tainted response output',
+      noImproperSanitization,
+      {
+        valid: [
+          // express/examples/online/index.js:53. `.length` is a number in every
+          // JavaScript engine, so there is nothing to escape — but the
+          // concatenation was reported as an unescaped interpolation, twice.
+          `res.send('<p>Users online: ' + ids.length + '</p>');`,
+          `res.send('<ul>' + items.length + '</ul>');`,
+        ],
+        invalid: [
+          // `obj[length]` reads a VARIABLE named length, not the array property,
+          // so it carries whatever that variable holds. The `.length` exemption
+          // is non-computed only and must never become a way to smuggle an
+          // attacker-controlled key past the check.
+          {
+            code: `res.send('<p>' + data[length] + '</p>');`,
+            errors: [
+              { messageId: 'unsafeReplaceSanitization' },
+              { messageId: 'unsafeReplaceSanitization' },
+            ],
+          },
+          // Hardcoded but genuinely dangerous: the literal IS the vector, so
+          // author-controlled is not a defence. Must still report.
+          {
+            code: `res.send('<script>alert(1)</script>');`,
+            errors: [{ messageId: 'unsafeReplaceSanitization' }],
+          },
+          // User input concatenated into the response — the actual CWE-116 shape
+          // the rule exists for.
+          //
+          // Two errors, not one: the Literal visitor fires per string literal, so
+          // the opening `'<div>'` and closing `'</div>'` each report. That
+          // duplicate is pre-existing behaviour on this branch and is asserted
+          // here as-is rather than silently accepted by a looser matcher — if it
+          // is ever deduplicated, this test should fail and be updated.
+          {
+            code: `res.send('<div>' + req.query.name + '</div>');`,
+            errors: [
+              { messageId: 'unsafeReplaceSanitization' },
+              { messageId: 'unsafeReplaceSanitization' },
+            ],
+          },
+          // The literal is a fallback, not the argument — tainted input still
+          // reaches the sink. An earlier version of this exemption excluded
+          // TemplateLiteral/BinaryExpression by name and silenced both of these,
+          // turning a false-positive fix into a false negative. The exemption is
+          // now an allowlist (literal IS the argument), so any wrapper falls
+          // through to the normal checks.
+          {
+            code: `res.send(req.query.name || '<p>fallback</p>');`,
+            errors: [{ messageId: 'unsafeReplaceSanitization' }],
+          },
+          {
+            code: `res.send(flag ? req.query.name : '<p>x</p>');`,
+            errors: [{ messageId: 'unsafeReplaceSanitization' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Incomplete HTML Escaping', () => {
-    ruleTester.run('invalid - incomplete HTML escaping', noImproperSanitization, {
-      valid: [],
-      invalid: [
-        // The array exemption must not become a false negative: markup nested
-        // in an array is still the vector, whoever typed it.
-        {
-          code: `res.json([{ children: [{ text: "<script>alert(1)</script>" }] }]);`,
-          errors: [{ messageId: 'unsafeReplaceSanitization' }],
-        },
-        // A non-literal element anywhere in the array taints the whole
-        // payload — the array is only safe text when every leaf is.
-        {
-          code: `res.json([{ text: "<b>" + req.query.name + "</b>" }]);`,
-          errors: [
-            { messageId: 'unsafeReplaceSanitization' },
-            { messageId: 'unsafeReplaceSanitization' },
-          ],
-        },
-        // Incomplete escaping - only escapes < but not other dangerous chars
-        {
-          code: 'element.innerHTML = userInput.replace(/</g, "&lt;");',
-          errors: [
-            {
-              messageId: 'incompleteHtmlEscaping',
-            },
-          ],
-        },
-        // Incomplete escaping - only escapes > but not other dangerous chars
-        {
-          code: 'const safe = data.replace(/>/g, "&gt;");',
-          errors: [
-            {
-              messageId: 'incompleteHtmlEscaping',
-            },
-          ],
-        },
+    ruleTester.run(
+      'invalid - incomplete HTML escaping',
+      noImproperSanitization,
+      {
+        valid: [],
+        invalid: [
+          // The array exemption must not become a false negative: markup nested
+          // in an array is still the vector, whoever typed it.
+          {
+            code: `res.json([{ children: [{ text: "<script>alert(1)</script>" }] }]);`,
+            errors: [{ messageId: 'unsafeReplaceSanitization' }],
+          },
+          // A regex literal's source can carry markup, so it is not a safe
+          // primitive the way a number or a boolean is.
+          {
+            code: `res.json([/<script>/, { text: "it's here" }]);`,
+            errors: 1,
+          },
+          // A non-literal element anywhere in the array taints the whole
+          // payload — the array is only safe text when every leaf is.
+          {
+            code: `res.json([{ text: "<b>" + req.query.name + "</b>" }]);`,
+            errors: [
+              { messageId: 'unsafeReplaceSanitization' },
+              { messageId: 'unsafeReplaceSanitization' },
+            ],
+          },
+          // Incomplete escaping - only escapes < but not other dangerous chars
+          {
+            code: 'element.innerHTML = userInput.replace(/</g, "&lt;");',
+            errors: [
+              {
+                messageId: 'incompleteHtmlEscaping',
+              },
+            ],
+          },
+          // Incomplete escaping - only escapes > but not other dangerous chars
+          {
+            code: 'const safe = data.replace(/>/g, "&gt;");',
+            errors: [
+              {
+                messageId: 'incompleteHtmlEscaping',
+              },
+            ],
+          },
 
-        // A chain that never becomes complete still reports — once.
-        {
-          code: 'element.innerHTML = userInput.replace(/</g, "&lt;").replace(/>/g, "&gt;");',
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-      ],
-    });
+          // A chain that never becomes complete still reports — once.
+          {
+            code: 'element.innerHTML = userInput.replace(/</g, "&lt;").replace(/>/g, "&gt;");',
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+        ],
+      },
+    );
   });
 
   /**
@@ -197,19 +220,22 @@ describe('no-improper-sanitization', () => {
    *    is escaping anything.
    */
   describe('corpus regressions - replace() chains', () => {
-    ruleTester.run('complete escapers and non-escapers', noImproperSanitization, {
-      valid: [
-        // Shopify CLI packages/store/.../auth/callback.ts:18-19 — a complete
-        // escaper reported twice, once at `.replace(/</…)` and once at
-        // `.replace(/>/…)`, because the text read at those links did not yet
-        // contain `&quot;`. Judged at the end of the chain it is complete.
-        {
-          code: `const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')`,
-        },
-        // Shopify CLI theme-environment/hot-reload/error-page.ts:9 — all five
-        // characters, still reported twice.
-        {
-          code: `function escapeHtml(unsafe) {
+    ruleTester.run(
+      'complete escapers and non-escapers',
+      noImproperSanitization,
+      {
+        valid: [
+          // Shopify CLI packages/store/.../auth/callback.ts:18-19 — a complete
+          // escaper reported twice, once at `.replace(/</…)` and once at
+          // `.replace(/>/…)`, because the text read at those links did not yet
+          // contain `&quot;`. Judged at the end of the chain it is complete.
+          {
+            code: `const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')`,
+          },
+          // Shopify CLI theme-environment/hot-reload/error-page.ts:9 — all five
+          // characters, still reported twice.
+          {
+            code: `function escapeHtml(unsafe) {
             return unsafe
               .replace(/&/g, '&amp;')
               .replace(/</g, '&lt;')
@@ -217,159 +243,160 @@ describe('no-improper-sanitization', () => {
               .replace(/"/g, '&quot;')
               .replace(/'/g, '&#039;')
           }`,
-        },
-        // okta-signin-widget babel-plugin-handlebars-inline-precompile/
-        // handlebars/patch-precompile.js:6 — whitespace normalisation. Three
-        // findings, because `/>\s+/` starts with `>`.
-        {
-          code: `template = template
+          },
+          // okta-signin-widget babel-plugin-handlebars-inline-precompile/
+          // handlebars/patch-precompile.js:6 — whitespace normalisation. Three
+          // findings, because `/>\s+/` starts with `>`.
+          {
+            code: `template = template
             .replace(/\\s+</g, '<')
             .replace(/>\\s+/g, '>')
             .replace(/}}\\s+{{/g, '}}{{')
             .replace(/\\s+/g, ' ')
             .trim();`,
-        },
-        // Shopify CLI hot-reload/server.ts:468 — comment stripping. Three findings.
-        {
-          code: `otherContent = normalizeContent(
+          },
+          // Shopify CLI hot-reload/server.ts:468 — comment stripping. Three findings.
+          {
+            code: `otherContent = normalizeContent(
             otherContent
               .replace(/<!--[\\s\\S]*?-->/g, '')
               .replace(/{%\\s*comment\\s*%}[\\s\\S]*?{%\\s*endcomment\\s*%}/g, '')
               .replace(/{%\\s*doc\\s*%}[\\s\\S]*?{%\\s*enddoc\\s*%}/g, ''),
           )`,
-        },
-        // Shopify CLI hot-reload/server.ts:397 and :411 — injecting a <script>
-        // tag before </head>. The rule called tag injection "incomplete HTML
-        // escaping".
-        {
-          code: `return html.replace(/<\\/head>/, '<script src="x" defer></script></head>')`,
-        },
-        // Removing markup is not escaping it either.
-        { code: `return html.replace(scriptRE, '')` },
-        // The pattern must BE the tag character, not merely start with it.
-        { code: `const s = html.replace(/<b>/g, '&lt;b&gt;')` },
-        // A non-entity replacement is a rewrite, not an escape.
-        { code: `const s = html.replace(/</g, '[')` },
-        // A computed pattern yields no character the rule can name.
-        { code: `const s = html.replace(tagRE, '&lt;')` },
-        { code: `const s = html.replace(new RegExp(ch, 'g'), '&lt;')` },
-        // A computed replacement yields no entity the rule can name.
-        { code: `const s = html.replace(/</g, entityFor('<'))` },
-        // A non-string literal on either side is not a pattern or an entity.
-        { code: `const s = html.replace(/</g, 0)` },
-        { code: `const s = html.replace(1, '&lt;')` },
-        // A template replacement with an expression is not statically known.
-        { code: 'const s = html.replace(/</g, `${entity}`)' },
-        // Something other than `.replace` consuming the result ends the chain
-        // at the replace, and the chain is complete.
-        {
-          code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').trim()`,
-        },
-        // ofri-peretz/blog PR #162 (2026-08-23) — the RSS route's XML escaper,
-        // reported twice at the `.replace` chain by the shipped rule. Complete
-        // and correctly ordered (`&` first, so nothing double-escapes).
-        {
-          code: `const esc = (s) =>
+          },
+          // Shopify CLI hot-reload/server.ts:397 and :411 — injecting a <script>
+          // tag before </head>. The rule called tag injection "incomplete HTML
+          // escaping".
+          {
+            code: `return html.replace(/<\\/head>/, '<script src="x" defer></script></head>')`,
+          },
+          // Removing markup is not escaping it either.
+          { code: `return html.replace(scriptRE, '')` },
+          // The pattern must BE the tag character, not merely start with it.
+          { code: `const s = html.replace(/<b>/g, '&lt;b&gt;')` },
+          // A non-entity replacement is a rewrite, not an escape.
+          { code: `const s = html.replace(/</g, '[')` },
+          // A computed pattern yields no character the rule can name.
+          { code: `const s = html.replace(tagRE, '&lt;')` },
+          { code: `const s = html.replace(new RegExp(ch, 'g'), '&lt;')` },
+          // A computed replacement yields no entity the rule can name.
+          { code: `const s = html.replace(/</g, entityFor('<'))` },
+          // A non-string literal on either side is not a pattern or an entity.
+          { code: `const s = html.replace(/</g, 0)` },
+          { code: `const s = html.replace(1, '&lt;')` },
+          // A template replacement with an expression is not statically known.
+          { code: 'const s = html.replace(/</g, `${entity}`)' },
+          // Something other than `.replace` consuming the result ends the chain
+          // at the replace, and the chain is complete.
+          {
+            code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').trim()`,
+          },
+          // ofri-peretz/blog PR #162 (2026-08-23) — the RSS route's XML escaper,
+          // reported twice at the `.replace` chain by the shipped rule. Complete
+          // and correctly ordered (`&` first, so nothing double-escapes).
+          {
+            code: `const esc = (s) =>
             s.replace(/&/g, '&amp;')
              .replace(/</g, '&lt;')
              .replace(/>/g, '&gt;')
              .replace(/"/g, '&quot;')
              .replace(/'/g, '&apos;')`,
-        },
-        // `&apos;` as the ONLY quote entity. Every other chain fixture spells
-        // the quote `&quot;` or `&#039;`, so this is the sole cover for that
-        // arm of the quote-entity alternation.
-        {
-          code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/'/g, '&apos;')`,
-        },
-        // The single-pass table form: one regex, a character class, a lookup.
-        // Quiet because a character-class pattern is not the character `<` or
-        // `>`, so escapesTagChar is false and the chain logic never judges it.
-        // Pinned so a future character-class expansion cannot begin reporting
-        // a complete escaper. Note the cost of that quiet: an INCOMPLETE table
-        // (`/[<>]/g` with a two-entry map) is equally quiet, and that is a real
-        // false negative this rule does not yet cover.
-        {
-          code: `const XML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }
+          },
+          // `&apos;` as the ONLY quote entity. Every other chain fixture spells
+          // the quote `&quot;` or `&#039;`, so this is the sole cover for that
+          // arm of the quote-entity alternation.
+          {
+            code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/'/g, '&apos;')`,
+          },
+          // The single-pass table form: one regex, a character class, a lookup.
+          // Quiet because a character-class pattern is not the character `<` or
+          // `>`, so escapesTagChar is false and the chain logic never judges it.
+          // Pinned so a future character-class expansion cannot begin reporting
+          // a complete escaper. Note the cost of that quiet: an INCOMPLETE table
+          // (`/[<>]/g` with a two-entry map) is equally quiet, and that is a real
+          // false negative this rule does not yet cover.
+          {
+            code: `const XML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }
             const esc = (s) => s.replace(/[&<>"']/g, (c) => XML_ESCAPES[c] ?? c)`,
-        },
-        // The same idiom with the table inlined at the call site. Complete on
-        // purpose: an INCOMPLETE table is also quiet today, but that is a known
-        // false negative, not a property worth pinning as valid.
-        {
-          code: `const esc = (s) =>
+          },
+          // The same idiom with the table inlined at the call site. Complete on
+          // purpose: an INCOMPLETE table is also quiet today, but that is a known
+          // false negative, not a property worth pinning as valid.
+          {
+            code: `const esc = (s) =>
             s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c])`,
-        },
-      ],
-      invalid: [
-        // The genuine shape must still report: tags escaped, quotes and
-        // ampersand left alone. If this ever goes quiet the narrowing above
-        // has become a false negative.
-        {
-          code: `const s = html.replace(/</g, '&lt;').replace(/>/g, '&gt;')`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // A template-literal replacement with no expressions is static text
-        // and counts as an entity.
-        {
-          code: 'const s = html.replace(/</g, `&lt;`)',
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // A string-literal pattern (not a regex) still names the character.
-        {
-          code: `const s = html.replace('<', '&lt;')`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // Escaping continues after a non-escaping link — the chain is walked
-        // whole, so the trailing `.trim`-style link does not hide it.
-        {
-          code: `const s = html.replace(/</g, '&lt;').replace(/\\s+/g, ' ')`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // `&amp;` present, quotes missing.
-        {
-          code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;')`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // Quotes present, `&amp;` missing — the classic double-escape hole.
-        {
-          code: `const s = html.replace(/</g, '&lt;').replace(/"/g, '&quot;')`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // A non-static replacement contributes nothing to the entity set, so
-        // the chain stays incomplete rather than being skipped.
-        {
-          code: `const s = html.replace(/</g, '&lt;').replace(/x/g, fn)`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // --- isMidChain / isReplaceCall shapes that do NOT continue a chain.
-        // The result is consumed by a computed member call.
-        {
-          code: `const s = html.replace(/</g, '&lt;')[key](x)`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // A `.replace()` grandparent whose callee is NOT this node's parent.
-        {
-          code: `foo.replace(bar[html.replace(/</g, '&lt;')], z)`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // A grandparent call with a plain-identifier callee.
-        {
-          code: `foo(bar[html.replace(/</g, '&lt;')])`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // A grandparent call whose callee property is a Literal, not an Identifier.
-        {
-          code: `foo['bar'](baz[html.replace(/</g, '&lt;')])`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-        // A grandparent call to a method that is not `replace`.
-        {
-          code: `foo.bar(baz[html.replace(/</g, '&lt;')])`,
-          errors: [{ messageId: 'incompleteHtmlEscaping' }],
-        },
-      ],
-    });
+          },
+        ],
+        invalid: [
+          // The genuine shape must still report: tags escaped, quotes and
+          // ampersand left alone. If this ever goes quiet the narrowing above
+          // has become a false negative.
+          {
+            code: `const s = html.replace(/</g, '&lt;').replace(/>/g, '&gt;')`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // A template-literal replacement with no expressions is static text
+          // and counts as an entity.
+          {
+            code: 'const s = html.replace(/</g, `&lt;`)',
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // A string-literal pattern (not a regex) still names the character.
+          {
+            code: `const s = html.replace('<', '&lt;')`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // Escaping continues after a non-escaping link — the chain is walked
+          // whole, so the trailing `.trim`-style link does not hide it.
+          {
+            code: `const s = html.replace(/</g, '&lt;').replace(/\\s+/g, ' ')`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // `&amp;` present, quotes missing.
+          {
+            code: `const s = html.replace(/&/g, '&amp;').replace(/</g, '&lt;')`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // Quotes present, `&amp;` missing — the classic double-escape hole.
+          {
+            code: `const s = html.replace(/</g, '&lt;').replace(/"/g, '&quot;')`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // A non-static replacement contributes nothing to the entity set, so
+          // the chain stays incomplete rather than being skipped.
+          {
+            code: `const s = html.replace(/</g, '&lt;').replace(/x/g, fn)`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // --- isMidChain / isReplaceCall shapes that do NOT continue a chain.
+          // The result is consumed by a computed member call.
+          {
+            code: `const s = html.replace(/</g, '&lt;')[key](x)`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // A `.replace()` grandparent whose callee is NOT this node's parent.
+          {
+            code: `foo.replace(bar[html.replace(/</g, '&lt;')], z)`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // A grandparent call with a plain-identifier callee.
+          {
+            code: `foo(bar[html.replace(/</g, '&lt;')])`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // A grandparent call whose callee property is a Literal, not an Identifier.
+          {
+            code: `foo['bar'](baz[html.replace(/</g, '&lt;')])`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+          // A grandparent call to a method that is not `replace`.
+          {
+            code: `foo.bar(baz[html.replace(/</g, '&lt;')])`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
+        ],
+      },
+    );
   });
 
   // The "custom sanitizer" checks that lived here asserted that calling a
@@ -390,142 +417,221 @@ describe('no-improper-sanitization', () => {
   // 8 of this rule's 42 findings on the wild corpus came from the same path.
   // The detection and its messageId are gone; these tests went with them.
 
-
   describe('Invalid Code - innerHTML Without Sanitization', () => {
-    ruleTester.run('invalid - innerHTML with user input', noImproperSanitization, {
-      valid: [],
-      invalid: [
-        // innerHTML with unsanitized user input
-        {
-          code: 'element.innerHTML = req.body.content;',
-          errors: [{ messageId: 'insufficientXssProtection' }],
-        },
-        // innerHTML with query parameter
-        {
-          code: 'div.innerHTML = req.query.html;',
-          errors: [{ messageId: 'insufficientXssProtection' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - innerHTML with user input',
+      noImproperSanitization,
+      {
+        valid: [],
+        invalid: [
+          // innerHTML with unsanitized user input
+          {
+            code: 'element.innerHTML = req.body.content;',
+            errors: [{ messageId: 'insufficientXssProtection' }],
+          },
+          // innerHTML with query parameter
+          {
+            code: 'div.innerHTML = req.query.html;',
+            errors: [{ messageId: 'insufficientXssProtection' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - String Literals in Dangerous Contexts', () => {
-    ruleTester.run('invalid - unescaped strings in dangerous contexts', noImproperSanitization, {
-      valid: [],
-      invalid: [
-        // String with dangerous chars in innerHTML context
-        {
-          code: 'element.innerHTML = "<script>alert(1)</script>";',
-          errors: [{ messageId: 'unsafeReplaceSanitization' }],
-        },
-        // String with dangerous chars in response send
-        {
-          code: 'res.send("<img src=x onerror=alert(1)>");',
-          errors: [{ messageId: 'unsafeReplaceSanitization' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - unescaped strings in dangerous contexts',
+      noImproperSanitization,
+      {
+        valid: [],
+        invalid: [
+          // String with dangerous chars in innerHTML context
+          {
+            code: 'element.innerHTML = "<script>alert(1)</script>";',
+            errors: [{ messageId: 'unsafeReplaceSanitization' }],
+          },
+          // String with dangerous chars in response send
+          {
+            code: 'res.send("<img src=x onerror=alert(1)>");',
+            errors: [{ messageId: 'unsafeReplaceSanitization' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Context Encoding Detection', () => {
-    ruleTester.run('context - URL and SQL context detection', noImproperSanitization, {
-      valid: [
-        // Proper URL encoding
-        'const url = "https://example.com?q=" + encodeURIComponent(userInput);',
-        // Parameterized query (not direct)
-        'db.query("SELECT * FROM users WHERE id = ?", [userId]);',
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'context - URL and SQL context detection',
+      noImproperSanitization,
+      {
+        valid: [
+          // Proper URL encoding
+          'const url = "https://example.com?q=" + encodeURIComponent(userInput);',
+          // Parameterized query (not direct)
+          'db.query("SELECT * FROM users WHERE id = ?", [userId]);',
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Coverage - branch gaps', () => {
     // id 6 FALSE: replace pattern doesn't escape < or > → escapesOnlyTags = false → return false
-    ruleTester.run('coverage - replace without tag escaping', noImproperSanitization, {
-      valid: [{ code: 'const clean = text.replace(/\\s+/g, " ");' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - replace without tag escaping',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'const clean = text.replace(/\\s+/g, " ");' }],
+        invalid: [],
+      },
+    );
 
     // id 10 TRUE: URL context in needsContextEncoding (innerText + url in text)
-    ruleTester.run('coverage - innerText with url context', noImproperSanitization, {
-      valid: [{ code: 'element.innerText = req.body.url;' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - innerText with url context',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'element.innerText = req.body.url;' }],
+        invalid: [],
+      },
+    );
 
     // id 12 TRUE: SQL context in needsContextEncoding
-    ruleTester.run('coverage - textContent with sql context', noImproperSanitization, {
-      valid: [{ code: 'element.textContent = getSqlQuery();' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - textContent with sql context',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'element.textContent = getSqlQuery();' }],
+        invalid: [],
+      },
+    );
 
     // id 14 TRUE: command context in needsContextEncoding (exec in text)
-    ruleTester.run('coverage - textContent with exec-command context', noImproperSanitization, {
-      valid: [{ code: 'element.textContent = execResult;' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - textContent with exec-command context',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'element.textContent = execResult;' }],
+        invalid: [],
+      },
+    );
 
     // id 19 TRUE: safetyChecker.isSafe in replace handler → early return
-    ruleTester.run('coverage - @safe annotation bypasses replace report', noImproperSanitization, {
-      valid: [{ code: '/** @safe */\nelement.innerHTML = userInput.replace(/</g, "&lt;");' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - @safe annotation bypasses replace report',
+      noImproperSanitization,
+      {
+        valid: [
+          {
+            code: '/** @safe */\nelement.innerHTML = userInput.replace(/</g, "&lt;");',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
     // id 20: hasQuoteEscaping && hasAmpersandEscaping both true → complete escaping → valid
-    ruleTester.run('coverage - single replace with complete escaping', noImproperSanitization, {
-      valid: [{ code: 'element.innerHTML = text.replace(/</g, "&lt;&amp;&quot;");' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - single replace with complete escaping',
+      noImproperSanitization,
+      {
+        valid: [
+          {
+            code: 'element.innerHTML = text.replace(/</g, "&lt;&amp;&quot;");',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
     // id 24 FALSE: function in safeSanitizers list ('escape' matches escapeHTML)
-    ruleTester.run('coverage - escapeHTML is in safe list', noImproperSanitization, {
-      valid: [{ code: 'const safe = escapeHTML(req.body.x);' }],
-      invalid: [],
-    });
-
+    ruleTester.run(
+      'coverage - escapeHTML is in safe list',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'const safe = escapeHTML(req.body.x);' }],
+        invalid: [],
+      },
+    );
 
     // id 30 FALSE: AssignmentExpression left is not MemberExpression
-    ruleTester.run('coverage - assignment to identifier left side', noImproperSanitization, {
-      valid: [{ code: 'x = req.body.content;' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - assignment to identifier left side',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'x = req.body.content;' }],
+        invalid: [],
+      },
+    );
 
     // id 32 FALSE: MemberExpression property not in innerHTML list
-    ruleTester.run('coverage - assignment to non-innerHTML property', noImproperSanitization, {
-      valid: [{ code: 'element.style = req.body.css;' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - assignment to non-innerHTML property',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'element.style = req.body.css;' }],
+        invalid: [],
+      },
+    );
 
     // id 38 TRUE: safetyChecker.isSafe in innerHTML assignment handler
-    ruleTester.run('coverage - @safe annotation bypasses innerHTML report', noImproperSanitization, {
-      valid: [{ code: '/** @safe */\nelement.innerHTML = req.body.content;' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - @safe annotation bypasses innerHTML report',
+      noImproperSanitization,
+      {
+        valid: [
+          { code: '/** @safe */\nelement.innerHTML = req.body.content;' },
+        ],
+        invalid: [],
+      },
+    );
 
     // ids 43+48 FALSE: Literal in assignment to non-innerHTML property
-    ruleTester.run('coverage - literal assigned to textContent (non-innerHTML)', noImproperSanitization, {
-      valid: [{ code: 'element.textContent = "<div>hello</div>";' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - literal assigned to textContent (non-innerHTML)',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'element.textContent = "<div>hello</div>";' }],
+        invalid: [],
+      },
+    );
 
     // id 46 TRUE: !hasDangerousMarkup → early return for safe static HTML
-    ruleTester.run('coverage - safe static HTML in innerHTML is valid', noImproperSanitization, {
-      valid: [{ code: 'element.innerHTML = "<div>hello</div>";' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - safe static HTML in innerHTML is valid',
+      noImproperSanitization,
+      {
+        valid: [{ code: 'element.innerHTML = "<div>hello</div>";' }],
+        invalid: [],
+      },
+    );
 
     // id 57 TRUE: safetyChecker.isSafe in Literal handler → early return
-    ruleTester.run('coverage - @safe annotation bypasses literal report', noImproperSanitization, {
-      valid: [{ code: '/** @safe */\nelement.innerHTML = "<script>alert(1)</script>";' }],
-      invalid: [],
-    });
+    ruleTester.run(
+      'coverage - @safe annotation bypasses literal report',
+      noImproperSanitization,
+      {
+        valid: [
+          {
+            code: '/** @safe */\nelement.innerHTML = "<script>alert(1)</script>";',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   // Layer 2 — mock context for node.loc?.start.line ?? 0 fallback
   describe('Layer 2 - mock context', () => {
     it('CallExpression incompleteHtmlEscaping falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noImproperSanitization, {
-        sourceText: 'userInput.replace(/</g, "&lt;")',
-      });
+      const { listeners, reports } = createWithMockContext(
+        noImproperSanitization,
+        {
+          sourceText: 'userInput.replace(/</g, "&lt;")',
+        },
+      );
       (listeners.CallExpression as (n: unknown) => void)({
         type: 'CallExpression',
         callee: {
@@ -544,9 +650,12 @@ describe('no-improper-sanitization', () => {
     });
 
     it('AssignmentExpression insufficientXssProtection falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noImproperSanitization, {
-        sourceText: 'element.innerHTML = req.body.data',
-      });
+      const { listeners, reports } = createWithMockContext(
+        noImproperSanitization,
+        {
+          sourceText: 'element.innerHTML = req.body.data',
+        },
+      );
       (listeners.AssignmentExpression as (n: unknown) => void)({
         type: 'AssignmentExpression',
         left: {
@@ -561,9 +670,12 @@ describe('no-improper-sanitization', () => {
     });
 
     it('Literal unsafeReplaceSanitization falls back to line 0 when loc is missing', () => {
-      const { listeners, reports } = createWithMockContext(noImproperSanitization, {
-        sourceText: '<script>alert(1)</script>',
-      });
+      const { listeners, reports } = createWithMockContext(
+        noImproperSanitization,
+        {
+          sourceText: '<script>alert(1)</script>',
+        },
+      );
       const literalNode: Record<string, unknown> = {
         type: 'Literal',
         value: '<script>alert(1)</script>',
@@ -600,113 +712,117 @@ describe('no-improper-sanitization', () => {
  * invalid case that pins its edge.
  */
 describe('corpus regressions', () => {
-  ruleTester.run('authored text reaching a response sink', noImproperSanitization, {
-    valid: [
-      // express/examples/cookies/index.js:28 — three string literals, zero
-      // variables, reported three times.
-      {
-        code: `res.send('<form method="post"><p>Check to <label>'
+  ruleTester.run(
+    'authored text reaching a response sink',
+    noImproperSanitization,
+    {
+      valid: [
+        // express/examples/cookies/index.js:28 — three string literals, zero
+        // variables, reported three times.
+        {
+          code: `res.send('<form method="post"><p>Check to <label>'
           + '<input type="checkbox" name="remember"/> remember me</label> '
           + '<input type="submit" value="Submit"/>.</p></form>');`,
-      },
-      // express/examples/resource/index.js:80-87 — eight lines of static
-      // markup in an array, joined. Eight findings.
-      {
-        code: `res.send(['<h1>Examples:</h1> <ul>', '<li>GET /users</li>', '</ul>'].join('\\n'));`,
-      },
-      // express/examples/route-map/index.js:47 — the input IS escaped. This
-      // rule exists to demand escaping and was reporting the code that does it.
-      {
-        code: `res.send('user ' + escapeHtml(req.params.uid) + "'s pets")`,
-      },
-      // express/examples/web-service/index.js:110 — an object argument is
-      // serialised as JSON and served as application/json; the apostrophe in
-      // it is not markup. Reported because `'` is in dangerousChars.
-      {
-        code: `res.send({ error: "Sorry, can't find that" })`,
-      },
-      {
-        code: `res.json({ message: 'Done <ok>' })`,
-      },
-      // A sanitizer reached through a member chain, not a bare identifier.
-      {
-        code: `res.send('<p>' + DOMPurify.sanitize(req.body.bio) + '</p>')`,
-      },
-      {
-        code: `res.send('<p>' + he.encode(req.body.bio) + '</p>')`,
-      },
-    ],
-    invalid: [
-      // Each concatenation reports once per literal operand — two literals
-      // bracketing a tainted value gives two findings, which is the existing
-      // behaviour and not what these cases are pinning.
-      //
-      // An unescaped value inside an otherwise-static array still taints it,
-      // so the `.join()` exemption cannot be reached by hiding input in the
-      // array.
-      {
-        code: `res.send(['<li>', req.query.name, '</li>'].join(''))`,
-        errors: [
-          { messageId: 'unsafeReplaceSanitization' },
-          { messageId: 'unsafeReplaceSanitization' },
-        ],
-      },
-      // Only *named* sanitizers earn the exemption — an arbitrary call does
-      // not, or `escapeHtml` recognition would become "any call launders
-      // taint".
-      {
-        code: `res.send('<p>' + renderBio(req.body.bio) + '</p>')`,
-        errors: [
-          { messageId: 'unsafeReplaceSanitization' },
-          { messageId: 'unsafeReplaceSanitization' },
-        ],
-      },
-      // A tainted object property is still tainted — the JSON exemption is
-      // per-value, not per-argument.
-      {
-        code: `res.send({ error: '<b>' + req.query.msg + '</b>' })`,
-        errors: [
-          { messageId: 'unsafeReplaceSanitization' },
-          { messageId: 'unsafeReplaceSanitization' },
-        ],
-      },
-      // A computed callee yields no resolvable name, so it cannot match the
-      // sanitizer list — taint launders through nothing.
-      {
-        code: `res.send('<p>' + sanitizers[kind](req.body.bio) + '</p>')`,
-        errors: [
-          { messageId: 'unsafeReplaceSanitization' },
-          { messageId: 'unsafeReplaceSanitization' },
-        ],
-      },
-      // A deeper member chain (`lib.html.escape`) resolves to no name at all,
-      // so it cannot match the sanitizer list. Widening the resolver to walk
-      // arbitrary chains would let `attacker.controlled.escape()` launder taint.
-      {
-        code: `res.send('<p>' + lib.html.escape(req.body.bio) + '</p>')`,
-        errors: [
-          { messageId: 'unsafeReplaceSanitization' },
-          { messageId: 'unsafeReplaceSanitization' },
-        ],
-      },
-      // A template literal WITH expressions is interpolation, not authored text.
-      {
-        code: 'res.send(\'<p>\' + `${req.body.bio}` + \'</p>\')',
-        errors: [
-          { messageId: 'unsafeReplaceSanitization' },
-          { messageId: 'unsafeReplaceSanitization' },
-        ],
-      },
-      // A non-string literal operand is not authored text either.
-      {
-        code: `res.send('<b>' + count + '</b>')`,
-        errors: [
-          { messageId: 'unsafeReplaceSanitization' },
-          { messageId: 'unsafeReplaceSanitization' },
-        ],
-      },
-    ],
-  });
+        },
+        // express/examples/resource/index.js:80-87 — eight lines of static
+        // markup in an array, joined. Eight findings.
+        {
+          code: `res.send(['<h1>Examples:</h1> <ul>', '<li>GET /users</li>', '</ul>'].join('\\n'));`,
+        },
+        // express/examples/route-map/index.js:47 — the input IS escaped. This
+        // rule exists to demand escaping and was reporting the code that does it.
+        {
+          code: `res.send('user ' + escapeHtml(req.params.uid) + "'s pets")`,
+        },
+        // express/examples/web-service/index.js:110 — an object argument is
+        // serialised as JSON and served as application/json; the apostrophe in
+        // it is not markup. Reported because `'` is in dangerousChars.
+        {
+          code: `res.send({ error: "Sorry, can't find that" })`,
+        },
+        {
+          code: `res.json({ message: 'Done <ok>' })`,
+        },
+        // A sanitizer reached through a member chain, not a bare identifier.
+        {
+          code: `res.send('<p>' + DOMPurify.sanitize(req.body.bio) + '</p>')`,
+        },
+        {
+          code: `res.send('<p>' + he.encode(req.body.bio) + '</p>')`,
+        },
+      ],
+      invalid: [
+        // Each concatenation reports once per literal operand — two literals
+        // bracketing a tainted value gives two findings, which is the existing
+        // behaviour and not what these cases are pinning.
+        //
+        // An unescaped value inside an otherwise-static array still taints it,
+        // so the `.join()` exemption cannot be reached by hiding input in the
+        // array.
+        {
+          code: `res.send(['<li>', req.query.name, '</li>'].join(''))`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
+        // Only *named* sanitizers earn the exemption — an arbitrary call does
+        // not, or `escapeHtml` recognition would become "any call launders
+        // taint".
+        {
+          code: `res.send('<p>' + renderBio(req.body.bio) + '</p>')`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
+        // A tainted object property is still tainted — the JSON exemption is
+        // per-value, not per-argument.
+        {
+          code: `res.send({ error: '<b>' + req.query.msg + '</b>' })`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
+        // A computed callee yields no resolvable name, so it cannot match the
+        // sanitizer list — taint launders through nothing.
+        {
+          code: `res.send('<p>' + sanitizers[kind](req.body.bio) + '</p>')`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
+        // A deeper member chain (`lib.html.escape`) resolves to no name at all,
+        // so it cannot match the sanitizer list. Widening the resolver to walk
+        // arbitrary chains would let `attacker.controlled.escape()` launder taint.
+        {
+          code: `res.send('<p>' + lib.html.escape(req.body.bio) + '</p>')`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
+        // A template literal WITH expressions is interpolation, not authored text.
+        {
+          code: "res.send('<p>' + `${req.body.bio}` + '</p>')",
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
+        // A non-string literal operand is not authored text either.
+        {
+          code: `res.send('<b>' + count + '</b>')`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -718,18 +834,22 @@ describe('corpus regressions', () => {
  * any literal containing a semicolon, parenthesis or brace, which is most of them. Shell
  * metacharacters belong to the command-injection rules, which have their own lists.
  */
-ruleTester.run('lock: dangerousChars is HTML, not shell', noImproperSanitization, {
-  valid: [
-    { code: "process.stdout.write(chalk.green(name + ' | '));" },
-    { code: "const s = 'a; b(c)';" },
-    { code: "const s = prefix + '${}';" },
-    { code: 'const s = tag + "`" + value;' },
-  ],
-  invalid: [
-    // Real HTML characters still report.
-    { code: 'el.innerHTML = "<div>" + userInput + "</div>";', errors: 2 },
-  ],
-});
+ruleTester.run(
+  'lock: dangerousChars is HTML, not shell',
+  noImproperSanitization,
+  {
+    valid: [
+      { code: "process.stdout.write(chalk.green(name + ' | '));" },
+      { code: "const s = 'a; b(c)';" },
+      { code: "const s = prefix + '${}';" },
+      { code: 'const s = tag + "`" + value;' },
+    ],
+    invalid: [
+      // Real HTML characters still report.
+      { code: 'el.innerHTML = "<div>" + userInput + "</div>";', errors: 2 },
+    ],
+  },
+);
 
 /**
  * Option coverage — `safeSanitizers`, `trustedSanitizers`,

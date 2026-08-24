@@ -3,13 +3,13 @@
 'eslint-plugin-node-security': patch
 ---
 
-fix: three false positives found by scanning real repositories.
+fix: four false positives found by scanning real repositories.
 
 `no-improper-sanitization` reported every string literal nested inside an
 array in a response payload. The safety walk already climbed through arrays,
 but the check that decides whether the composed text is developer-authored
 did not handle `ArrayExpression`, so the literal fell through to a test that
-asks only whether it contains a dangerous *character* — and `'` is one.
+asks only whether it contains a dangerous _character_ — and `'` is one.
 `Response.json([{ children: [{ text: "You don't have permission…" }] }])`
 was a CWE-116 finding on the apostrophe.
 
@@ -41,3 +41,14 @@ the most common identifier factory in Node. An id qualified by a correlation
 word (`request`, `trace`, `span`, `message`, `element`…) is now subtracted, in
 the shape the rule already uses for `code` and `key`. `generateSessionId` and
 `generateId` still report.
+
+Review found two residual gaps in the first pass of these fixes, both closed
+here. Skipping every locally-defined helper in `no-weak-hash-algorithm` opened
+a false negative — a local `sha1()` that really calls `createHash("sha1")`,
+feeding a session token, went silent in the default mode. The skip is now gated
+on `createHmac` evidence rather than on the binding being local. And
+`no-improper-sanitization` still reported when a JSON primitive sat beside the
+string, because `isSafeText` accepted only strings: `res.json([{ id: 1, text:
+"You don't have permission" }])` was still a finding. Numbers, booleans, `null`
+and array holes cannot carry markup and are accepted; a regex literal is not,
+because its source can.
