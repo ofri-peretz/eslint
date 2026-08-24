@@ -86,6 +86,11 @@ export function PlaygroundEditor({
         onMount={handleMount}
         height={EDITOR_HEIGHT_PX}
         options={{
+          // The editor sits inside an overflow-hidden rounded card, which
+          // clips Monaco's absolutely-positioned hover widgets — the error
+          // tooltip rendered mostly outside the card and was swallowed.
+          // fixedOverflowWidgets portals hovers out via position:fixed.
+          fixedOverflowWidgets: true,
           fontSize: 14,
           lineNumbers: 'on',
           minimap: { enabled: false },

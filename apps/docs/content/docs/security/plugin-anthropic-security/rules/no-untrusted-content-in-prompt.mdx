@@ -33,7 +33,7 @@ A string literal, a template with no interpolations, or a concatenation of those
 ## Not this rule
 
 - **The Vercel AI SDK.** `generateText({ system })` and `streamText({ system })` belong to [`vercel-ai-security/no-dynamic-system-prompt`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security). This rule gates on Anthropic's own request paths, so no line is ever reported by both.
-- **User turns.** `{ role: 'user', content: \`\${input}\` }` is the *remediation*, not the bug — a user message is where runtime values belong, because the model reads them as data.
+- **User turns.** `` { role: 'user', content: `${input}` } `` is the *remediation*, not the bug — a user message is where runtime values belong, because the model reads them as data.
 
 ## Known limitations
 

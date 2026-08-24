@@ -63,7 +63,7 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
             </p>
             <Badge variant="outline" className="font-mono text-[10px] uppercase tracking-wider">
               <span aria-hidden className="size-1.5 rounded-full bg-green-500/70" />
-              Phase 3 · plugin-driven linting
+              Live · linted by the published plugins
             </Badge>
           </div>
           <h2 className="font-mono text-lg text-fd-foreground">{state.snippet.title}</h2>
@@ -92,17 +92,9 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
             lintStatus={state.lintStatus}
           />
         </div>
-
-        {/* Minimal footer crediting the spec + primary inspiration. */}
+        {/* Minimal footer: credit the inspiration, keep the roadmap internal. */}
         <p className="text-xs text-fd-muted-foreground">
-          Built for the{' '}
-          <Link
-            href="https://github.com/ofri-peretz/eslint/blob/main/PLAYGROUND_SPEC.md"
-            className="font-mono text-fd-foreground underline-offset-2 hover:underline"
-          >
-            PLAYGROUND_SPEC.md
-          </Link>{' '}
-          roadmap · inspired by{' '}
+          Inspired by{' '}
           <Link
             href="https://playground.oxc.rs/"
             className="font-mono text-fd-foreground underline-offset-2 hover:underline"

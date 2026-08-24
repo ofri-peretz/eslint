@@ -136,7 +136,9 @@ describe('Stats page: structure lock', () => {
       'Plugin',
       'Category',
       'Rules',
-      'Downloads / wk',
+      // Was 'Downloads / wk' — the data source is cumulative (impact-source:
+      // "Cumulative npm downloads"), so the unit suffix was simply wrong.
+      'Downloads',
       'Coverage',
       'Version',
     ];

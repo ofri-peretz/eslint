@@ -150,12 +150,12 @@ export default async function StatsPage() {
           Top packages by downloads
         </h2>
         <p className="mt-2 text-sm text-fd-muted-foreground">
-          Weekly npm downloads per plugin, top 10. Same data as the table below,
+          Cumulative npm downloads per plugin since tracking began (December 2025), top 10. Same data as the table below,
           ranked visually.
         </p>
         <Card className="mt-6">
           <CardHeader className="sr-only">
-            <CardTitle>Weekly npm downloads by plugin (top 10)</CardTitle>
+            <CardTitle>Cumulative npm downloads by plugin (top 10)</CardTitle>
           </CardHeader>
           <CardContent>
             <DownloadsByPackage packages={packages} />
@@ -171,14 +171,14 @@ export default async function StatsPage() {
           Plugins
         </h2>
         <p className="mt-2 text-sm text-fd-muted-foreground">
-          Every published Interlace plugin with rule count, weekly downloads,
+          Every published Interlace plugin with rule count, cumulative downloads,
           test coverage, and the latest published version. Sorted by downloads,
           descending.
         </p>
         <Card className="mt-6">
           <Table>
             <TableCaption className="sr-only">
-              Published Interlace ESLint plugins — category, rule count, weekly
+              Published Interlace ESLint plugins — category, rule count, cumulative
               downloads, line coverage, and version.
             </TableCaption>
             <TableHeader>
@@ -186,7 +186,7 @@ export default async function StatsPage() {
                 <TableHead>Plugin</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">Rules</TableHead>
-                <TableHead className="text-right">Downloads / wk</TableHead>
+                <TableHead className="text-right">Downloads</TableHead>
                 <TableHead className="text-right">Coverage</TableHead>
                 <TableHead>Version</TableHead>
                 <TableHead className="text-right">Get it</TableHead>

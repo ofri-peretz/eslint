@@ -104,7 +104,7 @@ describe('canonical documentation URLs', () => {
   });
 
   it('returns null for a plugin with no docs pages instead of minting a dead link', () => {
-    expect(docsUrlFor('plugin-anthropic-security', 'no-hardcoded-api-key')).toBeNull();
+    expect(docsUrlFor('plugin-not-a-real-plugin', 'no-thing')).toBeNull();
   });
 
   it('keeps the existing url when the plugin has no docs pages', () => {
@@ -112,7 +112,7 @@ describe('canonical documentation URLs', () => {
     const rules = {
       'no-thing': { meta: { docs: { url: placeholder } }, create: () => ({}) },
     } as never;
-    const result = withCanonicalDocsUrls('plugin-anthropic-security', rules) as unknown as Record<
+    const result = withCanonicalDocsUrls('plugin-not-a-real-plugin', rules) as unknown as Record<
       string,
       { meta: { docs: { url: string } } }
     >;
