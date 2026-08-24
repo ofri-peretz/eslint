@@ -107,11 +107,30 @@ export function verify(tag: string, body: string): Finding[] {
   const parsed = parseTag(tag);
 
   if (!isRollup && parsed) {
-    const install = `npm install --save-dev ${parsed.name}@${parsed.version}`;
+    // The tag is the *unscoped* name (release.yml strips the scope when it
+    // builds `<name>@<version>`), while the install line in the body carries
+    // the full package name. So `@interlace/eslint-devkit@2.0.0` publishes as
+    // tag `eslint-devkit@2.0.0`, and a literal comparison against the tag name
+    // fails on the `@interlace/` sitting between the prefix and the name —
+    // every scoped package would report RN004 on every run.
+    //
+    // Match the version and the unscoped name, allowing an optional scope.
+    const escaped = parsed.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedVersion = parsed.version.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      '\\$&',
+    );
+    const install = new RegExp(
+      `npm install --save-dev (?:@[^/\\s]+/)?${escaped}@${escapedVersion}\\b`,
+    );
+
     // Private workspaces get no install line; they also get no GitHub Release
     // from release.yml, so anything reaching here should have one.
-    if (!body.includes(install)) {
-      add('RN004', `Missing or wrong install line — expected \`${install}\`.`);
+    if (!install.test(body)) {
+      add(
+        'RN004',
+        `Missing or wrong install line — expected \`npm install --save-dev ${parsed.name}@${parsed.version}\` (a scope prefix is fine).`,
+      );
     }
   }
 

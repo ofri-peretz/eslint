@@ -107,12 +107,32 @@ describe('a bad release is caught', () => {
   });
 });
 
-describe('tag parsing', () => {
-  it('handles a scoped package name', () => {
-    const body =
-      '✅ **Safe to upgrade.** No breaking changes.\n\nnpm install --save-dev @interlace/eslint-devkit@2.0.0\n';
-    expect(rules('@interlace/eslint-devkit@2.0.0', body)).not.toContain(
-      'RN004',
+describe('scoped packages', () => {
+  // The tag release.yml publishes is the *unscoped* name — it builds
+  // `<name>@<version>` with `sub("^@[^/]+/"; "")`. So the real pairing for
+  // `@interlace/eslint-devkit` is tag `eslint-devkit@2.0.0` against a body
+  // containing `@interlace/eslint-devkit@2.0.0`. An earlier version of this
+  // test passed the full scoped name as the tag — a shape that cannot occur —
+  // and so reported green on a check that would have fired RN004 on every
+  // scoped release, every run.
+  const SCOPED_BODY =
+    '✅ **Safe to upgrade.** No breaking changes: existing configs keep working as-is.\n\n```bash\nnpm install --save-dev @interlace/eslint-devkit@2.0.0\n```\n';
+
+  it('accepts the scope prefix the body carries but the tag does not', () => {
+    expect(rules('eslint-devkit@2.0.0', SCOPED_BODY)).not.toContain('RN004');
+  });
+
+  it('still catches a scoped package whose install line names another version', () => {
+    const stale = SCOPED_BODY.replace('2.0.0', '1.9.0');
+    expect(rules('eslint-devkit@2.0.0', stale)).toContain('RN004');
+  });
+
+  it('does not accept a different package that merely ends the same way', () => {
+    // `eslint-devkit` must not be satisfied by `@scope/not-eslint-devkit`.
+    const other = SCOPED_BODY.replace(
+      '@interlace/eslint-devkit',
+      '@interlace/not-eslint-devkit',
     );
+    expect(rules('eslint-devkit@2.0.0', other)).toContain('RN004');
   });
 });
