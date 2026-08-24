@@ -440,22 +440,51 @@ export function render(
     ...KIND_SECTIONS,
     { key: 'other', heading: '### Other changes', match: /$^/ },
   ];
+
+  const line = (entry: Entry) => {
+    const tag = packageTag(entry, released.length);
+    const trailer = entry.trailer ? ` (${entry.trailer})` : '';
+    return `- ${entry.title} — ${tag}${trailer}`;
+  };
+
+  // Consumer-facing entries first, internal ones gathered at the end.
+  //
+  // Interleaved, a release of mostly app churn opens "✅ Safe to upgrade"
+  // and then leads with a "💥 Breaking changes" heading — the first release
+  // this shipped did exactly that. The per-line `(internal)` marker resolves
+  // the contradiction only *after* the reader has read the line, and a
+  // heading is read before its contents. Partitioning means a consumer-facing
+  // document leads with consumer-facing content, and nothing is dropped:
+  // everything internal is still listed, under a heading that says what it is.
+  const consumerEntries = entries.filter(affectsConsumers);
+  const internalEntries = entries.filter((e) => !affectsConsumers(e));
+
   for (const section of sections) {
-    const matching = entries.filter((e) => e.kind === section.key);
+    const matching = consumerEntries.filter((e) => e.kind === section.key);
     if (matching.length === 0) continue;
 
     out.push(section.heading, '');
-    for (const entry of matching) {
-      const tag = packageTag(entry, released.length);
-      const trailer = entry.trailer ? ` (${entry.trailer})` : '';
-      // Without this marker the 💥 list can show more entries than the banner
-      // counts, and the discrepancy reads as a bug rather than as scoping.
-      const internal = affectsConsumers(entry)
-        ? ''
-        : ' _(internal — not published)_';
-      out.push(`- ${entry.title} — ${tag}${internal}${trailer}`);
-    }
+    for (const entry of matching) out.push(line(entry));
     out.push('');
+  }
+
+  if (internalEntries.length > 0) {
+    out.push(
+      '<details><summary>Internal changes — apps and unpublished packages</summary>',
+      '',
+      'Not installable, and not part of any dependency you have. Listed so the',
+      'release record is complete.',
+      '',
+    );
+    for (const section of sections) {
+      const matching = internalEntries.filter((e) => e.kind === section.key);
+      if (matching.length === 0) continue;
+
+      out.push(`**${section.heading.replace(/^###\s*/, '')}**`, '');
+      for (const entry of matching) out.push(line(entry));
+      out.push('');
+    }
+    out.push('</details>', '');
   }
 
   out.push(

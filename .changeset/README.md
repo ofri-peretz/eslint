@@ -101,6 +101,28 @@ The verdict comes from `### Major Changes` and the 💥 badge, both written by t
 from the changeset's declared bump. When a version cannot be found at all, the fallback stub carries
 **no** verdict — guessing one and presenting it as fact is worse than saying nothing.
 
+## The published artifact is checked too
+
+`scripts/verify-release-notes.ts` reads back the GitHub Release bodies a run
+just created and asserts what a human would check first: the body is not the
+fallback stub, the upgrade verdict is present, published packages carry a
+correct `npm install` line, no bullet leads with raw `[#123](…)` link plumbing,
+and no code span is left split.
+
+Everything upstream of the publish is unit-tested; nothing tested the artifact.
+Between a green suite and a reader on npm sit a markdown slice, a shell
+heredoc, `gh release create`, and GitHub's renderer — and every defect found in
+this system so far was found by opening the published page and reading it.
+
+It runs in `release.yml` against exactly the tags that run created, and is
+advisory: the packages are already on npm, so failing the workflow cannot
+un-publish anything and would only teach people to ignore a red X. Audit any
+range by hand:
+
+```bash
+npm run release:verify-notes -- --latest=10
+```
+
 ## Prereleases and snapshots
 
 ```bash
