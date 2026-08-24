@@ -101,7 +101,13 @@ export function classify(
     if (!(name in current) && !unbuiltSet.has(name)) removed.push(name);
   }
 
-  return { grew, shrank, added, removed, unmeasured: [...unbuilt].sort() };
+  return {
+    grew,
+    shrank,
+    added,
+    removed: removed.sort(),
+    unmeasured: [...unbuilt].sort(),
+  };
 }
 
 function collect(): { current: Record<string, number>; unbuilt: string[] } {

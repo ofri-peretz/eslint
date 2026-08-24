@@ -64,5 +64,9 @@ describe('classify', () => {
     expect(diff.grew.map((r) => r.name)).toEqual(['eslint-plugin-jwt']);
     expect(diff.shrank).toEqual([]);
     expect(diff.added).toEqual([]);
+    // The buckets stay disjoint here too: operability is neither built nor
+    // unbuilt-and-present, so it is the only genuine removal.
+    expect(diff.unmeasured).toEqual(['eslint-plugin-node-security']);
+    expect(diff.removed).toEqual(['eslint-plugin-operability']);
   });
 });
