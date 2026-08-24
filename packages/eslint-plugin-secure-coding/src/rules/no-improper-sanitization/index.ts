@@ -624,10 +624,10 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
                 // ArrayExpression arm was supposed to have closed it. The unit
                 // test written for that fix used a bare array and passed,
                 // which is why the real file is the one that settles it.
-                parent?.type === 'TSSatisfiesExpression' ||
-                parent?.type === 'TSAsExpression' ||
-                parent?.type === 'TSNonNullExpression' ||
-                parent?.type === 'TSTypeAssertion'
+                parent?.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+                parent?.type === AST_NODE_TYPES.TSAsExpression ||
+                parent?.type === AST_NODE_TYPES.TSNonNullExpression ||
+                parent?.type === AST_NODE_TYPES.TSTypeAssertion
               ) {
                 current = parent;
               } else if (
@@ -723,10 +723,10 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             // A hole in the element list means something non-literal is
             // being spread or elided, so it is not safe text.
             if (
-              expr.type === 'TSSatisfiesExpression' ||
-              expr.type === 'TSAsExpression' ||
-              expr.type === 'TSNonNullExpression' ||
-              expr.type === 'TSTypeAssertion'
+              expr.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+              expr.type === AST_NODE_TYPES.TSAsExpression ||
+              expr.type === AST_NODE_TYPES.TSNonNullExpression ||
+              expr.type === AST_NODE_TYPES.TSTypeAssertion
             ) {
               return isSafeText(expr.expression);
             }

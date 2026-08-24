@@ -85,6 +85,27 @@ type RuleOptions = [Options?];
 const GLOBAL_ONLY_SINKS: ReadonlySet<string> = new Set(['eval', 'Function']);
 
 /**
+ * Does this identifier have a declaration in some enclosing scope?
+ *
+ * A true global does not — that is the whole difference between `window.eval`
+ * and a parameter someone happened to name `window`.
+ */
+function isLocallyBoundIn(
+  identifier: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  for (
+    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+    scope !== null;
+    scope = scope.upper
+  ) {
+    const variable = scope.variables.find((v) => v.name === identifier.name);
+    if (variable !== undefined) return variable.defs.length > 0;
+  }
+  return false;
+}
+
+/**
  * Receivers on which `eval` really is THE `eval`.
  *
  * @protocol-constant The four spellings of the global object — `globalThis`
@@ -559,7 +580,16 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         // globals for the same reason; the member branch did not, so `.eval`
         // on any receiver was a CWE-502 sink.
         if (GLOBAL_ONLY_SINKS.has(memberName)) {
-          return GLOBAL_OBJECTS.has(objectName);
+          // The NAME is not enough — `function run(window) { window.eval(x) }`
+          // binds a parameter, and a library client called `window` is not the
+          // global object. Require the identifier to resolve to nothing local:
+          // a global has no declaration in any enclosing scope.
+          if (!GLOBAL_OBJECTS.has(objectName)) return false;
+          const object = callee.object;
+          return (
+            object.type === 'Identifier' &&
+            !isLocallyBoundIn(object, sourceCode)
+          );
         }
 
         // Check dangerous methods

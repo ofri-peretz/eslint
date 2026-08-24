@@ -88,12 +88,14 @@ ruleTester.run(
         code: `const clientSecret = '/aB3xK9mQ2vL8';`,
         errors: 1,
       },
-      // A real key is not a sentinel just because something wraps it. A
-      // vendor-prefixed value is deliberately NOT used here: GitHub push
-      // protection blocks the whole branch on one, documentation key or not,
-      // and a fixture that cannot be pushed is a fixture nobody runs.
+      // A real secret is not a sentinel just because something wraps it.
+      //
+      // Deliberately a short password shape rather than a long key shape: a
+      // vendor prefix trips GitHub push protection (documentation key or not)
+      // and a 40-char blob trips the repo's secret scanner. A fixture that
+      // cannot be committed is a fixture nobody runs.
       {
-        code: `const apiToken = 'a7F2kQ9mZx4Lp0RtY6WcN3bJvH8sD1gE5uT7iO2q';`,
+        code: `const dbPassword = 'aaAA@123';`,
         errors: 1,
       },
       // A segment carrying characters no route segment carries.

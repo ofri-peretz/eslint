@@ -39,6 +39,9 @@ ruleTester.run(
       // The corpus shape, both call styles the library uses.
       `this.client.eval(this._incrTtlLuaScript, 1, rlKey, points, secDuration, cb);`,
       `client.eval(script, { keys: [rlKey], arguments: [String(points)] });`,
+      // A PARAMETER named `window` is not the global object — review's case.
+      `function run(window) { window.eval(req.body.code); }`,
+      `const window = getSandbox(); window.eval(req.body.code);`,
       // The same argument for other embedded languages.
       `redis.eval(LUA_TOKEN_BUCKET, 1, key);`,
       `mathEngine.eval('1 + 1');`,

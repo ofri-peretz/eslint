@@ -488,8 +488,19 @@ export function isPlaceholderValue(
   const trimmed = value.trim();
   if (trimmed.length === 0) return false;
 
-  // 1. Bracketed template slots, and the dunder form code generators use.
-  if (/^(?:<.*>|\{\{.*\}\}|\$\{.*\}|\[.*\]|__.+__)$/.test(trimmed)) return true;
+  // 1. Bracketed template slots.
+  if (/^(?:<.*>|\{\{.*\}\}|\$\{.*\}|\[.*\])$/.test(trimmed)) return true;
+
+  // The dunder form code generators use — but the delimiters alone are not
+  // enough. `__.+__` would exempt `__<forty random chars>__`, suppressing a
+  // real CWE-798 finding on punctuation, and would accept `__ __` as well.
+  // The inner text has to look like a NAME rather than a secret, which is the
+  // same question `looksRandom` already answers for the rest of this rule.
+  const dunder = /^__(.+)__$/.exec(trimmed);
+  if (dunder !== null) {
+    const inner = dunder[1] as string;
+    return inner.trim().length > 0 && !looksRandom(inner);
+  }
 
   // 3. One character repeated (4+).
   if (trimmed.length >= 4 && new Set(trimmed).size === 1) return true;
