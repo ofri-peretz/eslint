@@ -21,10 +21,8 @@ RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
 
 const objOf = (code: string): TSESTree.ObjectExpression =>
-  (
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-      .expression as TSESTree.ObjectExpression
-  );
+  (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
+    .expression as TSESTree.ObjectExpression;
 
 describe('BROWSER_ESCAPE_FLAG', () => {
   it('is the flag both SDKs spell identically', () => {
@@ -35,24 +33,34 @@ describe('BROWSER_ESCAPE_FLAG', () => {
 
 describe('readFlag', () => {
   it('reports the flag turned on', () => {
-    expect(readFlag(objOf('({ dangerouslyAllowBrowser: true })'))).toBe('enabled');
+    expect(readFlag(objOf('({ dangerouslyAllowBrowser: true })'))).toBe(
+      'enabled',
+    );
   });
 
   it('reads a quoted key the same as a bare one', () => {
-    expect(readFlag(objOf("({ 'dangerouslyAllowBrowser': true })"))).toBe('enabled');
+    expect(readFlag(objOf("({ 'dangerouslyAllowBrowser': true })"))).toBe(
+      'enabled',
+    );
   });
 
   it('treats an explicit false as the safe choice already made', () => {
-    expect(readFlag(objOf('({ dangerouslyAllowBrowser: false })'))).toBe('absent');
+    expect(readFlag(objOf('({ dangerouslyAllowBrowser: false })'))).toBe(
+      'absent',
+    );
   });
 
   it('treats a non-boolean literal as absent rather than enabled', () => {
-    expect(readFlag(objOf("({ dangerouslyAllowBrowser: 'yes' })"))).toBe('absent');
+    expect(readFlag(objOf("({ dangerouslyAllowBrowser: 'yes' })"))).toBe(
+      'absent',
+    );
   });
 
   it('gives up on a non-literal value rather than guess', () => {
     // `isBrowser` could be either at runtime; reporting would flag correct code.
-    expect(readFlag(objOf('({ dangerouslyAllowBrowser: isBrowser })'))).toBe('unreadable');
+    expect(readFlag(objOf('({ dangerouslyAllowBrowser: isBrowser })'))).toBe(
+      'unreadable',
+    );
   });
 
   it('gives up on a spread, which could carry the flag', () => {
@@ -60,20 +68,28 @@ describe('readFlag', () => {
   });
 
   it('gives up when a spread follows the flag and can unset it', () => {
-    expect(readFlag(objOf('({ dangerouslyAllowBrowser: true, ...base })'))).toBe('unreadable');
+    expect(
+      readFlag(objOf('({ dangerouslyAllowBrowser: true, ...base })')),
+    ).toBe('unreadable');
   });
 
   it('reads past an ordinary property that follows the flag', () => {
-    expect(readFlag(objOf('({ dangerouslyAllowBrowser: true, timeout: 1 })'))).toBe('enabled');
+    expect(
+      readFlag(objOf('({ dangerouslyAllowBrowser: true, timeout: 1 })')),
+    ).toBe('enabled');
   });
 
   it('reports the flag when it comes AFTER the spread', () => {
     // The explicit key wins at runtime whatever `base` held, so this is a
     // definite finding — not a guess. Bailing on the first spread seen made
     // it silent, which is a false negative rather than caution.
-    expect(readFlag(objOf('({ ...base, dangerouslyAllowBrowser: true })'))).toBe('enabled');
+    expect(
+      readFlag(objOf('({ ...base, dangerouslyAllowBrowser: true })')),
+    ).toBe('enabled');
     // Same positional logic for the safe choice.
-    expect(readFlag(objOf('({ ...base, dangerouslyAllowBrowser: false })'))).toBe('absent');
+    expect(
+      readFlag(objOf('({ ...base, dangerouslyAllowBrowser: false })')),
+    ).toBe('absent');
   });
 
   it('skips a computed key it cannot name', () => {
@@ -87,7 +103,10 @@ describe('readFlag', () => {
 });
 
 const ruleTester = new RuleTester({
-  languageOptions: { parser, parserOptions: { ecmaVersion: 2022, sourceType: 'module' } },
+  languageOptions: {
+    parser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
 });
 
 const rule = createBrowserEscapeHatchRule({
@@ -107,11 +126,20 @@ describe('createBrowserEscapeHatchRule', () => {
         name: 'the flag set in a file that never imports the SDK',
         code: 'new Client({ dangerouslyAllowBrowser: true });',
       },
-      { name: 'the flag explicitly off', code: SDK + 'new Client({ dangerouslyAllowBrowser: false });' },
-      { name: 'the flag absent', code: SDK + "new Client({ apiKey: process.env.K });" },
+      {
+        name: 'the flag explicitly off',
+        code: SDK + 'new Client({ dangerouslyAllowBrowser: false });',
+      },
+      {
+        name: 'the flag absent',
+        code: SDK + 'new Client({ apiKey: process.env.K });',
+      },
       { name: 'no options', code: SDK + 'new Client();' },
       { name: 'a non-object argument', code: SDK + 'new Client(cfg);' },
-      { name: 'a spread is unreadable', code: SDK + 'new Client({ ...base });' },
+      {
+        name: 'a spread is unreadable',
+        code: SDK + 'new Client({ ...base });',
+      },
       {
         name: 'a spread after the flag can unset it',
         code: SDK + 'new Client({ dangerouslyAllowBrowser: true, ...base });',
@@ -156,8 +184,7 @@ describe('createBrowserEscapeHatchRule', () => {
       },
       {
         name: 'require() opens the gate',
-        code:
-          "const Client = require('test-sdk');\nnew Client({ dangerouslyAllowBrowser: true });",
+        code: "const Client = require('test-sdk');\nnew Client({ dangerouslyAllowBrowser: true });",
         errors: [{ messageId: 'browserKeyExposure' }],
       },
       {
@@ -168,8 +195,7 @@ describe('createBrowserEscapeHatchRule', () => {
       {
         // The gate must not depend on statement order.
         name: 'a construction above its import',
-        code:
-          "new Client({ dangerouslyAllowBrowser: true });\nimport Client from 'test-sdk';",
+        code: "new Client({ dangerouslyAllowBrowser: true });\nimport Client from 'test-sdk';",
         errors: [{ messageId: 'browserKeyExposure' }],
       },
       {
@@ -178,7 +204,10 @@ describe('createBrowserEscapeHatchRule', () => {
           SDK +
           'new Client({ dangerouslyAllowBrowser: true });\n' +
           'new Client({ dangerouslyAllowBrowser: true });',
-        errors: [{ messageId: 'browserKeyExposure' }, { messageId: 'browserKeyExposure' }],
+        errors: [
+          { messageId: 'browserKeyExposure' },
+          { messageId: 'browserKeyExposure' },
+        ],
       },
     ],
   });

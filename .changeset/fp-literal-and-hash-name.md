@@ -62,3 +62,12 @@ single-slash-prefixed value as a route, so a secret starting with `/` — `/` is
 in the base64 alphabet — was suppressed before the shape checks ran. A route is
 made of route-shaped segments, and a lone segment mixing case and digits is a
 key rather than a path.
+
+`skipTestFiles` required a hyphen before `tests`/`specs` in a directory name,
+so `integration_tests/` did not count. That is the HMPPS house layout across
+the UK Ministry of Justice estate, and it made `detect-object-injection` report
+thirteen times inside `integration_tests/builders/` and
+`integration_tests/pages/` — test builders and page objects linted as
+production code. Underscore is now an accepted separator; `latest` and
+`manifest` still are not directories of tests, since neither has a separator
+before its final `est`.

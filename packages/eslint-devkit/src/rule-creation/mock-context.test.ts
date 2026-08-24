@@ -130,7 +130,9 @@ describe('createWithMockContext', () => {
     expect(context.getPhysicalFilename()).toBe('mock.ts');
     expect(context.getCwd()).toBe('/');
     expect(context.getAncestors()).toEqual([]);
-    expect(context.getSourceCode().getDeclaredVariables(undefined as never)).toEqual([]);
+    expect(
+      context.getSourceCode().getDeclaredVariables(undefined as never),
+    ).toEqual([]);
     expect(
       (context.getScope() as unknown as { variables: unknown[] }).variables,
     ).toEqual([]);

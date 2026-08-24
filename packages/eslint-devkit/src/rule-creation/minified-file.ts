@@ -53,7 +53,9 @@ const MINIFIED_MINIMUM_BYTES = 2000;
  * vulnerability no matter how the bytes got there — and a minified bundle is
  * exactly where a supply-chain problem would hide.
  */
-export function isMinifiedFile(sourceCode: Readonly<TSESLint.SourceCode>): boolean {
+export function isMinifiedFile(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+): boolean {
   const lines = sourceCode.lines;
   // `lines` is never empty for a parsed file — ESLint yields [''] for an empty
   // one — so there is no zero-division branch to guard, and adding one would be

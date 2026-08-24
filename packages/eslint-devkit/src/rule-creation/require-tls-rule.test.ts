@@ -92,7 +92,9 @@ describe('createRequireTlsRule', () => {
       // Unreadable value — a variable this rule cannot resolve. Staying silent
       // here is the deliberate false negative that keeps findings real.
       { code: `${IMPORT}const config = { host: 'db', ssl: useTls };` },
-      { code: `${IMPORT}const config = { host: 'db', ssl: { rejectUnauthorized: flag } };` },
+      {
+        code: `${IMPORT}const config = { host: 'db', ssl: { rejectUnauthorized: flag } };`,
+      },
       // A TLS key with no connection-shaped sibling is not a database config.
       { code: `${IMPORT}const agent = { ssl: false };` },
       { code: `${IMPORT}const agent = { rejectUnauthorized: false };` },
@@ -120,7 +122,9 @@ describe('createRequireTlsRule', () => {
       // An argument to something that is not a driver handle.
       { code: `${IMPORT}log('mysql://u:p@h/db?sslmode=disable');` },
       // A property whose key is not connection-shaped.
-      { code: `${IMPORT}const doc = { example: 'mysql://u:p@h/db?sslmode=disable' };` },
+      {
+        code: `${IMPORT}const doc = { example: 'mysql://u:p@h/db?sslmode=disable' };`,
+      },
     ],
     invalid: [
       {
@@ -176,7 +180,9 @@ describe('createRequireTlsRule', () => {
 
   ruleTester.run('require-tls (nested driver)', nestedDriver, {
     valid: [
-      { code: `${SEQ}const config = { dialect: 'postgres', dialectOptions: { ssl: { ca } } };` },
+      {
+        code: `${SEQ}const config = { dialect: 'postgres', dialectOptions: { ssl: { ca } } };`,
+      },
       // No URL schemes configured — a connection string is not scanned at all.
       { code: `${SEQ}const dsn = 'postgres://h/db?sslmode=disable';` },
     ],
@@ -202,7 +208,9 @@ describe('createRequireTlsRule', () => {
         // If the import gate were dropped to "any object with ssl:false",
         // every https agent in the repo becomes a finding — and a duplicate
         // of node-security's, which the taxonomy contract forbids.
-        { code: "const agent = new https.Agent({ host: 'api', rejectUnauthorized: false });" },
+        {
+          code: "const agent = new https.Agent({ host: 'api', rejectUnauthorized: false });",
+        },
       ],
       invalid: [
         // If `looksLikeConnectionConfig` were widened to accept `ssl` itself as
@@ -227,7 +235,7 @@ describe('createRequireTlsRule', () => {
 
 describe('isLiteralBoolean', () => {
   const literal = (value: unknown): TSESTree.Node =>
-    ({ type: AST_NODE_TYPES.Literal, value } as TSESTree.Node);
+    ({ type: AST_NODE_TYPES.Literal, value }) as TSESTree.Node;
 
   it('matches the requested boolean', () => {
     expect(isLiteralBoolean(literal(false), false)).toBe(true);
@@ -247,7 +255,10 @@ describe('isLiteralBoolean', () => {
 
   it('never reads a non-literal', () => {
     expect(
-      isLiteralBoolean({ type: AST_NODE_TYPES.Identifier, name: 'flag' } as TSESTree.Node, false),
+      isLiteralBoolean(
+        { type: AST_NODE_TYPES.Identifier, name: 'flag' } as TSESTree.Node,
+        false,
+      ),
     ).toBe(false);
   });
 });
@@ -262,7 +273,7 @@ describe('looksLikeConnectionConfig', () => {
         key: { type: AST_NODE_TYPES.Identifier, name },
         value: { type: AST_NODE_TYPES.Literal, value: 1 },
       })),
-    } as unknown as TSESTree.ObjectExpression);
+    }) as unknown as TSESTree.ObjectExpression;
 
   it('requires at least one connection-identifying key', () => {
     expect(looksLikeConnectionConfig(obj(['host']), ['host'])).toBe(true);
@@ -291,7 +302,11 @@ describe('inConnectionPosition', () => {
   const KEYS = ['connection', 'uri', 'url'];
   const DRIVERS = new Set(['mysql']);
   const lit = (parent?: unknown): TSESTree.Literal =>
-    ({ type: AST_NODE_TYPES.Literal, value: 'mysql://h/db?sslmode=disable', parent } as unknown as TSESTree.Literal);
+    ({
+      type: AST_NODE_TYPES.Literal,
+      value: 'mysql://h/db?sslmode=disable',
+      parent,
+    }) as unknown as TSESTree.Literal;
 
   it('is false for a node with no parent', () => {
     expect(inConnectionPosition(lit(undefined), KEYS, DRIVERS)).toBe(false);
@@ -354,8 +369,12 @@ describe('inConnectionPosition', () => {
 
 describe('urlDisablesTls', () => {
   it('requires one of the driver schemes', () => {
-    expect(urlDisablesTls('mysql://h/db?sslmode=disable', ['mysql'])).toBe(true);
-    expect(urlDisablesTls('redis://h/db?sslmode=disable', ['mysql'])).toBe(false);
+    expect(urlDisablesTls('mysql://h/db?sslmode=disable', ['mysql'])).toBe(
+      true,
+    );
+    expect(urlDisablesTls('redis://h/db?sslmode=disable', ['mysql'])).toBe(
+      false,
+    );
     expect(urlDisablesTls('sslmode=disable', ['mysql'])).toBe(false);
     expect(urlDisablesTls('mysql://h/db?sslmode=disable', [])).toBe(false);
   });
@@ -363,28 +382,42 @@ describe('urlDisablesTls', () => {
   it('matches the parameter forms drivers actually accept', () => {
     expect(urlDisablesTls('mysql://h/db?ssl=false', ['mysql'])).toBe(true);
     expect(urlDisablesTls('mysql://h/db?ssl=0&x=1', ['mysql'])).toBe(true);
-    expect(urlDisablesTls('mysql://h/db?sslmode=require', ['mysql'])).toBe(false);
-    expect(urlDisablesTls('mysql://h/db?sslmode=disabled-for-now', ['mysql'])).toBe(false);
+    expect(urlDisablesTls('mysql://h/db?sslmode=require', ['mysql'])).toBe(
+      false,
+    );
+    expect(
+      urlDisablesTls('mysql://h/db?sslmode=disabled-for-now', ['mysql']),
+    ).toBe(false);
   });
 
   // Regression: the terminator was `(?:&|$)`, so a fragment made the finding
   // vanish. A `#` ends the query string exactly as `&` separates within it.
   it('a URL fragment does not hide the parameter', () => {
-    expect(urlDisablesTls('mysql://h/db?sslmode=disable#frag', ['mysql'])).toBe(true);
+    expect(urlDisablesTls('mysql://h/db?sslmode=disable#frag', ['mysql'])).toBe(
+      true,
+    );
     expect(urlDisablesTls('mysql://h/db?ssl=false#x', ['mysql'])).toBe(true);
-    expect(urlDisablesTls('mysql://h/db?x=1&sslmode=disable#frag', ['mysql'])).toBe(true);
+    expect(
+      urlDisablesTls('mysql://h/db?x=1&sslmode=disable#frag', ['mysql']),
+    ).toBe(true);
     // Still not a match when the value is not a real disable.
-    expect(urlDisablesTls('mysql://h/db?sslmode=require#frag', ['mysql'])).toBe(false);
+    expect(urlDisablesTls('mysql://h/db?sslmode=require#frag', ['mysql'])).toBe(
+      false,
+    );
   });
 
   // The other half of the same boundary: text *inside* the fragment is not a
   // connection option — no driver parses it — so it must not be a finding.
   // Accepting `#` as a leading separator made this a false positive.
   it('a parameter inside the fragment is not a finding', () => {
-    expect(urlDisablesTls('mysql://h/db#?sslmode=disable', ['mysql'])).toBe(false);
+    expect(urlDisablesTls('mysql://h/db#?sslmode=disable', ['mysql'])).toBe(
+      false,
+    );
     expect(urlDisablesTls('mysql://h/db#ssl=false', ['mysql'])).toBe(false);
     expect(urlDisablesTls('mysql://h/db#notes?ssl=0', ['mysql'])).toBe(false);
     // A real parameter before the fragment still reports.
-    expect(urlDisablesTls('mysql://h/db?ssl=false#?sslmode=require', ['mysql'])).toBe(true);
+    expect(
+      urlDisablesTls('mysql://h/db?ssl=false#?sslmode=require', ['mysql']),
+    ).toBe(true);
   });
 });

@@ -94,13 +94,21 @@ describe('identifierPosition', () => {
   });
 
   it('still sees the keyword through a long whitespace gap', () => {
-    expect(identifierPosition('SELECT * FROM' + ' '.repeat(2_000))).toBe('identifier');
-    expect(identifierPosition('SELECT * FROM' + '\t'.repeat(2_000) + '"')).toBe('identifier');
+    expect(identifierPosition('SELECT * FROM' + ' '.repeat(2_000))).toBe(
+      'identifier',
+    );
+    expect(identifierPosition('SELECT * FROM' + '\t'.repeat(2_000) + '"')).toBe(
+      'identifier',
+    );
   });
 
   it('classifies a hole still inside ORDER BY as a sort direction', () => {
-    expect(identifierPosition('SELECT * FROM t ORDER BY name ')).toBe('sortDirection');
-    expect(identifierPosition('SELECT * FROM t ORDER BY a, b ')).toBe('sortDirection');
+    expect(identifierPosition('SELECT * FROM t ORDER BY name ')).toBe(
+      'sortDirection',
+    );
+    expect(identifierPosition('SELECT * FROM t ORDER BY a, b ')).toBe(
+      'sortDirection',
+    );
   });
 
   it('stays silent on every value position', () => {
@@ -140,8 +148,10 @@ describe('stripIdentifierGap', () => {
 
 describe('calleeText', () => {
   const parse = (code: string): TSESTree.Node =>
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-      .expression as TSESTree.Node;
+    (
+      parser.parse(code, { range: true })
+        .body[0] as TSESTree.ExpressionStatement
+    ).expression as TSESTree.Node;
 
   it('flattens a dotted callee', () => {
     const call = parse('sql.identifier(x)') as TSESTree.CallExpression;
@@ -167,8 +177,10 @@ describe('calleeText', () => {
 describe('tagName', () => {
   const tagOf = (code: string): TSESTree.Node =>
     (
-      (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-        .expression as TSESTree.TaggedTemplateExpression
+      (
+        parser.parse(code, { range: true })
+          .body[0] as TSESTree.ExpressionStatement
+      ).expression as TSESTree.TaggedTemplateExpression
     ).tag;
 
   it('reads a bare tag', () => {
@@ -191,41 +203,63 @@ describe('tagName', () => {
 describe('isExemptExpression', () => {
   const exprOf = (code: string): TSESTree.Expression =>
     (
-      (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-        .expression as TSESTree.TaggedTemplateExpression
+      (
+        parser.parse(code, { range: true })
+          .body[0] as TSESTree.ExpressionStatement
+      ).expression as TSESTree.TaggedTemplateExpression
     ).quasi.expressions[0] as TSESTree.Expression;
 
   it('exempts a literal', () => {
-    expect(isExemptExpression(exprOf("sql`FROM ${'users'}`"), [], ['sql'])).toBe(true);
-    expect(isExemptExpression(exprOf('sql`LIMIT ${10}`'), [], ['sql'])).toBe(true);
+    expect(
+      isExemptExpression(exprOf("sql`FROM ${'users'}`"), [], ['sql']),
+    ).toBe(true);
+    expect(isExemptExpression(exprOf('sql`LIMIT ${10}`'), [], ['sql'])).toBe(
+      true,
+    );
   });
 
   it('exempts the configured identifier escaper — it is the remediation', () => {
     expect(
-      isExemptExpression(exprOf('sql`FROM ${sql.identifier(t)}`'), ['sql.identifier'], ['sql']),
+      isExemptExpression(
+        exprOf('sql`FROM ${sql.identifier(t)}`'),
+        ['sql.identifier'],
+        ['sql'],
+      ),
     ).toBe(true);
   });
 
   it('does not exempt an escaper that was not configured', () => {
-    expect(isExemptExpression(exprOf('sql`FROM ${sql.identifier(t)}`'), [], ['sql'])).toBe(false);
+    expect(
+      isExemptExpression(exprOf('sql`FROM ${sql.identifier(t)}`'), [], ['sql']),
+    ).toBe(false);
   });
 
   it('exempts a nested template with the same tag — composition is intended', () => {
-    expect(isExemptExpression(exprOf('sql`FROM ${sql`users`}`'), [], ['sql'])).toBe(true);
+    expect(
+      isExemptExpression(exprOf('sql`FROM ${sql`users`}`'), [], ['sql']),
+    ).toBe(true);
   });
 
   it('does not exempt a nested template with a different tag', () => {
-    expect(isExemptExpression(exprOf('sql`FROM ${other`users`}`'), [], ['sql'])).toBe(false);
+    expect(
+      isExemptExpression(exprOf('sql`FROM ${other`users`}`'), [], ['sql']),
+    ).toBe(false);
   });
 
   it('does not exempt a plain identifier — that is the finding', () => {
-    expect(isExemptExpression(exprOf('sql`FROM ${table}`'), [], ['sql'])).toBe(false);
+    expect(isExemptExpression(exprOf('sql`FROM ${table}`'), [], ['sql'])).toBe(
+      false,
+    );
   });
 
   it('does not exempt an arbitrary call', () => {
-    expect(isExemptExpression(exprOf('sql`FROM ${getTable()}`'), ['sql.identifier'], ['sql'])).toBe(
-      false,
-    );
+    expect(
+      isExemptExpression(
+        exprOf('sql`FROM ${getTable()}`'),
+        ['sql.identifier'],
+        ['sql'],
+      ),
+    ).toBe(false);
   });
 });
 
@@ -234,7 +268,10 @@ describe('isExemptExpression', () => {
  * paths need a rule-level exercise rather than only a helper-level one.
  */
 const ruleTester = new RuleTester({
-  languageOptions: { parser, parserOptions: { ecmaVersion: 2022, sourceType: 'module' } },
+  languageOptions: {
+    parser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
 });
 
 const bareTagRule = createRawIdentifierRule({
@@ -274,7 +311,7 @@ describe('createRawIdentifierRule — the bare-tag import gate', () => {
         // Regression: the gate used to apply only when the tag was a bare
         // Identifier, so a generic name reached through a member expression
         // skipped it entirely and reported in a file with no driver at all.
-        name: 'a member tag with a gated name is somebody else\'s builder',
+        name: "a member tag with a gated name is somebody else's builder",
         code:
           "import { createQueryBuilder } from 'some-internal-lib';\n" +
           'const q = createQueryBuilder();\n' +
@@ -300,8 +337,7 @@ describe('createRawIdentifierRule — the bare-tag import gate', () => {
       },
       {
         name: 'the identifier escaper in an identifier position',
-        code:
-          "import { sql } from 'test-orm';\nconst q = sql`SELECT * FROM ${sql.identifier(t)}`;",
+        code: "import { sql } from 'test-orm';\nconst q = sql`SELECT * FROM ${sql.identifier(t)}`;",
       },
       {
         name: 'a nested fragment in an identifier position',
@@ -372,16 +408,22 @@ describe('rule metadata', () => {
   it('carries both message ids with distinct remediations', () => {
     const messages = bareTagRule.meta.messages;
     expect(messages.identifierInterpolation).toContain('allowlist it');
-    expect(messages.sortDirectionInterpolation).toContain('resolve to a literal');
+    expect(messages.sortDirectionInterpolation).toContain(
+      'resolve to a literal',
+    );
   });
 
   it('emits the CWE it documents, so the two can never drift', () => {
-    expect(bareTagRule.meta.messages.identifierInterpolation).toContain('CWE-89');
+    expect(bareTagRule.meta.messages.identifierInterpolation).toContain(
+      'CWE-89',
+    );
     expect(bareTagRule.meta.docs?.cwe).toBe('CWE-89');
   });
 
   it('passes an optional cweJustification straight through', () => {
-    expect(memberTagRule.meta.docs?.cweJustification).toBe('covered by the identifier note');
+    expect(memberTagRule.meta.docs?.cweJustification).toBe(
+      'covered by the identifier note',
+    );
   });
 
   it('takes no options — SQL grammar is not a project preference', () => {
@@ -395,6 +437,8 @@ describe('AST_NODE_TYPES comes from the local shim', () => {
   // every published plugin throw on a clean install, because it is an optional
   // peer npm does not install.
   it('resolves TaggedTemplateExpression at runtime', () => {
-    expect(AST_NODE_TYPES.TaggedTemplateExpression).toBe('TaggedTemplateExpression');
+    expect(AST_NODE_TYPES.TaggedTemplateExpression).toBe(
+      'TaggedTemplateExpression',
+    );
   });
 });
