@@ -91,10 +91,16 @@ function parseChangelog(raw: string, packageName?: string): ChangelogEntry[] {
       ? RELEASE_FACTS.get(`${packageName}@${version}`)
       : undefined;
 
-    // Heading date first (legacy sections have one), then the git tag, then
-    // the honest admission. Only the middle case is new — it is what turns
-    // "Unknown" into a date for every changesets-era release.
-    const date = sections[i + 1] || facts?.date || 'Unknown';
+    // Git tag first, then the heading, then the honest admission.
+    //
+    // The tag is when the release actually published; a legacy heading date
+    // was hand-written and records when someone edited the changelog, which is
+    // not the same day. Where both exist and differ, the tag is right.
+    //
+    // This order also matches `sync-changelog.ts` (`tagged ?? headingDate`),
+    // which builds the data this route now reads — the reverse order had the
+    // two disagreeing about the same field.
+    const date = facts?.date || sections[i + 1] || 'Unknown';
 
     // Prefer the declared kind; fall back to the keyword guess. `other` is not
     // a `type` this endpoint has ever returned, so it falls through too.

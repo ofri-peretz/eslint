@@ -11,8 +11,10 @@ writes `## 1.4.1` with no date at all, so from the day this repo adopted
 changesets every entry the endpoint returned carried `"date": "Unknown"`.
 
 The real date is the release's git tag, which `sync-changelog.ts` already
-resolves for all 458 releases. The route now consults that data, falling back to
-the heading date and only then to `"Unknown"`. For
+resolves for all 458 releases. The route consults the tag first, falls back to the heading date, and only
+then admits `"Unknown"` — the same precedence `sync-changelog.ts` uses, since a
+hand-written heading date records when someone edited the changelog rather than
+when the release shipped. For
 `eslint-plugin-jwt-security`: 8 of 10 entries gain a date; the two that remain
 unknown have no tag.
 
