@@ -25,12 +25,12 @@ export const dynamic = 'force-static';
 export const metadata: Metadata = {
   title: 'Stats',
   description:
-    'Live numbers for the Interlace ESLint ecosystem. Engagement is the North Star Metric; code adoption (npm + GitHub) and per-plugin depth (rules, downloads, coverage) underpin it.',
+    'Live numbers for the Interlace ESLint ecosystem: code adoption across npm + GitHub, and per-plugin depth (rules, downloads, coverage).',
   alternates: { canonical: '/stats' },
   openGraph: {
     title: 'Stats | ESLint Interlace',
     description:
-      'Engagement, code adoption, and per-plugin depth for the Interlace ESLint ecosystem.',
+      'Code adoption and per-plugin depth for the Interlace ESLint ecosystem.',
     type: 'website',
     url: '/stats',
   },
@@ -93,9 +93,9 @@ export default async function StatsPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Stats</h1>
         <p className="mt-3 max-w-prose text-base text-fd-muted-foreground">
-          How the Interlace ESLint ecosystem is doing — engagement (the North
-          Star Metric), adoption across npm + GitHub, and the full plugin
-          catalog with per-plugin downloads, rule count, and test coverage.
+          How the Interlace ESLint ecosystem is doing — adoption across npm +
+          GitHub, and the full plugin catalog with per-plugin downloads, rule
+          count, and test coverage.
         </p>
         <p className="mt-2 text-sm font-medium text-fd-foreground">
           {totalRules.toLocaleString()} rules across {data.plugins.length}{' '}
@@ -117,12 +117,11 @@ export default async function StatsPage() {
           id="impact-heading"
           className="text-lg font-semibold tracking-tight"
         >
-          Impact
+          Adoption
         </h2>
         <p className="mt-2 text-sm text-fd-muted-foreground">
-          Engagement separates magnitude (Reach) from quality (Engagement rate).
-          Code-adoption metrics confirm whether the audience is shipping the
-          rules, not just reading the articles.
+          Code-adoption metrics — whether teams are shipping the rules, not
+          just reading about them.
         </p>
         <div className="mt-6">
           <ImpactCard stats={data.impact} />
@@ -130,7 +129,7 @@ export default async function StatsPage() {
         {(githubFollowers !== null || devtoFollowers !== null) && (
           <p className="mt-4 text-sm text-fd-muted-foreground">
             <span className="font-medium text-fd-foreground">Audience</span>{' '}
-            (reach, not part of any total):
+            (not part of any total):
             {githubFollowers !== null && (
               <> {fmtDownloads(githubFollowers)} GitHub followers</>
             )}
