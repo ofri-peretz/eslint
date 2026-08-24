@@ -3,7 +3,7 @@
 'eslint-plugin-node-security': patch
 ---
 
-Two false positives found by scanning real repositories.
+fix: three false positives found by scanning real repositories.
 
 `no-improper-sanitization` reported every string literal nested inside an
 array in a response payload. The safety walk already climbed through arrays,
@@ -33,3 +33,11 @@ shape test. `isSecretShaped` now rejects a URL or an absolute path — an
 endpoint is the address of a secret, not the secret. Connection strings are
 unaffected: `protocol://user:pass@host` is matched structurally before shape
 is consulted, and the new guard refuses any URL carrying userinfo.
+
+`no-math-random-crypto` reported `generateRequestId` — the log-correlation id
+factory in arangodb/arangojs, and the single finding in that whole repository.
+`/generate.*id/i` is the loosest entry in its function-name list and matches
+the most common identifier factory in Node. An id qualified by a correlation
+word (`request`, `trace`, `span`, `message`, `element`…) is now subtracted, in
+the shape the rule already uses for `code` and `key`. `generateSessionId` and
+`generateId` still report.

@@ -177,6 +177,51 @@ function isMathRandomProperty(node: TSESTree.Node): boolean {
 }
 
 // Function names that suggest cryptographic usage
+/**
+ * Words that make an `id` a CORRELATION id rather than a credential.
+ *
+ * `/generate.*id/i` is the loosest pattern in the list, and it matches the
+ * single most common identifier factory in Node: arangojs `src/lib/util.ts:77`
+ * defines
+ *
+ *   export function generateRequestId() {
+ *     return `${Date.now() % THIRTY_MINUTES}_${Math.random().toString(36).substring(2, 15)}`;
+ *   }
+ *
+ * documented `@internal Generate a unique request ID`. That is the value the
+ * driver puts in a log line to match a response to a request; predicting it
+ * grants nothing. It was the ONLY finding in the whole repository, reported at
+ * CWE-338 CRITICAL.
+ *
+ * Subtraction only, exact word membership, same shape as
+ * {@link NON_SECURITY_QUALIFIERS}: a name the pattern matched can be ruled
+ * out, never ruled in. `generateSessionId` and `generateUserId` keep
+ * reporting — a session id IS the credential — because neither `session` nor
+ * `user` appears here.
+ */
+const NON_SECURITY_ID_QUALIFIERS: ReadonlySet<string> = new Set([
+  'request', 'req', 'correlation', 'trace', 'span', 'transaction', 'txn',
+  'message', 'msg', 'event', 'job', 'run', 'task', 'batch', 'element',
+  'node', 'row', 'record', 'instance', 'component', 'widget', 'dom',
+  'operation', 'call', 'invocation', 'frame', 'render',
+]);
+
+/**
+ * Did the function name match only through the `id` pattern, on an id the
+ * qualifier list says is for correlation?
+ */
+function isCorrelationIdFactory(name: string): boolean {
+  const words = identifierWords(name);
+  if (words[words.length - 1] !== 'id') return false;
+  return words.some((word) => NON_SECURITY_ID_QUALIFIERS.has(word));
+}
+
+/** The name says this function builds a security value. */
+function functionNameSuggestsCrypto(name: string): boolean {
+  if (!CRYPTO_FUNCTION_PATTERNS.some((pattern) => pattern.test(name))) return false;
+  return !isCorrelationIdFactory(name);
+}
+
 const CRYPTO_FUNCTION_PATTERNS = [
   /generate.*token/i,
   /generate.*key/i,
@@ -465,7 +510,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         // Check function names
         if (current.type === AST_NODE_TYPES.FunctionDeclaration && current.id) {
           const funcName = current.id.name;
-          if (CRYPTO_FUNCTION_PATTERNS.some((p) => p.test(funcName))) {
+          if (functionNameSuggestsCrypto(funcName)) {
             return true;
           }
         }
@@ -526,7 +571,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             ) {
               const funcName = func.id.name;
               if (
-                CRYPTO_FUNCTION_PATTERNS.some((p) => p.test(funcName)) ||
+                functionNameSuggestsCrypto(funcName) ||
                 nameSuggestsCrypto(funcName)
               ) {
                 return true;
