@@ -850,11 +850,12 @@ ruleTester.run(
       },
     ],
     invalid: [
-      // `require("express")()` - the initialiser IS a CallExpression, but its
+      // `require("express")()` — the initialiser IS a CallExpression, but its
       // callee is another call, so no factory name can be read off it. The
-      // fallback is the binding NAME, and `gw` carries no router word: this is
-      // a documented CJS false negative on the router side, kept here only to
-      // pin the branch.
+      // fallback is the binding NAME, and `server` IS a router word, so the
+      // case reports. That is what makes it an `invalid` case: it pins that
+      // the name fallback carries the CJS factory form, which the initialiser
+      // walk alone cannot.
       {
         code: 'const server = require("express")(); server.get("/admin/a", (req, res) => {});',
         errors: [{ messageId: 'missingAuthentication' }],

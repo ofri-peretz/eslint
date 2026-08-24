@@ -48,6 +48,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 /**
@@ -521,6 +522,26 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
       // only for a MemberExpression callee. A runtime guard here would be
       // unreachable, and an unreachable guard reads as a check that runs.
       const callee = node.callee as TSESTree.MemberExpression;
+
+      // EVIDENCE FIRST. If the receiver resolves to something declared in this
+      // file, believe the declaration over the name — `const res =
+      // nunjucksEnv; res.render('index')` renders a string however it is
+      // spelled. Only when the identifier resolves to nothing local does the
+      // name decide, which is the case that matters: `(req, res) => …` binds
+      // `res` as a PARAMETER, and a parameter has no initialiser to inspect.
+      if (callee.object.type === AST_NODE_TYPES.Identifier) {
+        const initializer = resolveInitializer(
+          callee.object,
+          context.sourceCode,
+        );
+        if (initializer !== undefined) {
+          // Resolved. A response object is produced by a framework, never
+          // declared as a local alias of something else, so anything with a
+          // visible initialiser here is a renderer being given a short name.
+          return false;
+        }
+      }
+
       let object: TSESTree.Node = callee.object;
       // `this.res.render(…)` / `ctx.res.render(…)` — take the last segment.
       if (object.type === 'MemberExpression' && !object.computed) {

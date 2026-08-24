@@ -37,6 +37,17 @@ ruleTester.run(
       `function createRenderer(templatePath) {
          return (props, nunjucksEnv) => nunjucksEnv.render(templatePath, { params: props });
        }`,
+      // An alias resolves to what it was declared as, and the declaration
+      // outranks the name. Review's case: spelling a renderer `res` must not
+      // make it a response.
+      `const res = nunjucksEnv;
+       const html = res.render('index');`,
+      // skipTestFiles, isolated from receiver filtering: a real response
+      // object, in a file named like a test.
+      {
+        code: `app.get('/', (req, res) => { res.render('index'); });`,
+        filename: 'component.test.ts',
+      },
       // The other engines with the same method name.
       `const html = mustache.render(template, view);`,
       `const out = ejs.render(str, data);`,

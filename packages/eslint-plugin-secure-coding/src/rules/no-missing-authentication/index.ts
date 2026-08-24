@@ -720,15 +720,18 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
 
             // In `app.route('/admin').get(handler)` the path lives on the
             // `route()` call and this call's arguments are ALL handlers.
-            const pathArgument = chainedPath ?? node.arguments[0];
+            // Always present by this point: either `chainedPath` came from a
+            // preceding `route(path)`, or the arity check above established
+            // that this call has a path and a handler. The `'unknown'`
+            // fallback it used to carry was reachable only from `app.get()`
+            // with no arguments, which no longer gets this far.
+            const pathArgument = (chainedPath ??
+              node.arguments[0]) as TSESTree.Node;
 
-            // Extract route path if available
-            let routePath = 'unknown';
-            if (pathArgument !== undefined && pathArgument.type === 'Literal') {
-              routePath = String(pathArgument.value);
-            } else if (pathArgument !== undefined) {
-              routePath = sourceCode.getText(pathArgument);
-            }
+            const routePath =
+              pathArgument.type === 'Literal'
+                ? String(pathArgument.value)
+                : sourceCode.getText(pathArgument);
 
             const text = sourceCode.getText(node);
             // These were `console.log('DEBUG MSG: ...')` in shipped code. Any consumer who
