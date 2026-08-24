@@ -157,3 +157,19 @@ describe('docs seal: the two public counts reconcile by definition', () => {
     }
   });
 });
+
+describe('docs seal: discoverability', () => {
+  it('the sitemap derives from the docs source, never a hand list', () => {
+    const sitemap = readFileSync(join(APP, 'src/app/sitemap.ts'), 'utf8');
+    expect(sitemap).toMatch(/source\.getPages\(\)\.map/);
+    expect(sitemap).toMatch(/SITE_ORIGIN/);
+  });
+
+  it('robots.txt exists, allows crawling, and points at the sitemap', () => {
+    const robots = readFileSync(join(APP, 'src/app/robots.ts'), 'utf8');
+    expect(robots).toMatch(/allow: '\/'/);
+    expect(robots).toMatch(/sitemap\.xml/);
+    // The PostHog proxy is the one path crawlers must not walk.
+    expect(robots).toMatch(/disallow: \['\/ingest\/'\]/);
+  });
+});
