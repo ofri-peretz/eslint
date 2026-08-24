@@ -8,12 +8,15 @@
  * ESLint Rule: no-missing-authentication
  * Detects missing authentication checks in route handlers
  * CWE-287: Improper Authentication
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/287.html
  * @see https://owasp.org/www-community/vulnerabilities/Improper_Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
+import {
+  AST_NODE_TYPES,
+  formatLLMMessage,
+  MessageIcons,
   compileUserPattern,
   compileUserPatterns,
   matchesAnyUserPattern,
@@ -26,19 +29,19 @@ type MessageIds = 'missingAuthentication';
 export interface Options {
   /** Allow missing authentication in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /**
    * Override which filenames `allowInTests` applies to, as a regex string.
    * Unset, the shared structural predicate (`isTestFilePath`) decides.
    */
   testFilePattern?: string | null;
-  
+
   /** Authentication middleware patterns to recognize. Default: ['authenticate', 'auth', 'requireAuth', 'isAuthenticated'] */
   authMiddlewarePatterns?: string[];
-  
+
   /** Route handler patterns to check. Default: ['get', 'post', 'put', 'delete', 'patch', 'all'] */
   routeHandlerPatterns?: string[];
-  
+
   /**
    * Route paths that need no authentication. REPLACES the built-in list, and
    * supplying it also widens matching to the whole registration text.
@@ -74,7 +77,6 @@ const DEFAULT_AUTH_MIDDLEWARE_PATTERNS = [
   'jwt',
   'session',
 ];
-
 
 /**
  * Routes that are public *by definition*. Requiring authentication on a login or
@@ -173,7 +175,15 @@ const ROUTER_NAME_WORDS = [
  * an unauthenticated HTTP router. A house framework belongs in
  * `routerNameWords`, which is the supported knob.
  */
-const ROUTER_FACTORY_NAMES = new Set(['express', 'Router', 'fastify', 'polka', 'restify', 'connect', 'Koa']);
+const ROUTER_FACTORY_NAMES = new Set([
+  'express',
+  'Router',
+  'fastify',
+  'polka',
+  'restify',
+  'connect',
+  'Koa',
+]);
 
 /**
  * Members whose call returns an application, router or server.
@@ -187,7 +197,13 @@ const ROUTER_FACTORY_NAMES = new Set(['express', 'Router', 'fastify', 'polka', '
  * invisible to the rule, or add a member and have an unrelated builder's result
  * reported as an unauthenticated route.
  */
-const ROUTER_FACTORY_MEMBERS = new Set(['Router', 'router', 'Server', 'server', 'createServer']);
+const ROUTER_FACTORY_MEMBERS = new Set([
+  'Router',
+  'router',
+  'Server',
+  'server',
+  'createServer',
+]);
 
 /**
  * Express's `app.route(path).get(handler).post(handler)` chaining, straight out
@@ -205,7 +221,10 @@ function routeChainBase(node: TSESTree.Node): TSESTree.CallExpression | null {
     current.callee.type === AST_NODE_TYPES.MemberExpression
   ) {
     const property = current.callee.property;
-    if (property.type === AST_NODE_TYPES.Identifier && property.name === 'route') {
+    if (
+      property.type === AST_NODE_TYPES.Identifier &&
+      property.name === 'route'
+    ) {
       return current;
     }
     current = current.callee.object;
@@ -233,7 +252,10 @@ function isDefinitelyNotRouter(init: TSESTree.Node): boolean {
 
 /** `express()`, `express.Router()`, `new Koa()`, `Hapi.server()` — resolvable evidence. */
 function isRouterFactory(node: TSESTree.Node): boolean {
-  if (node.type !== AST_NODE_TYPES.CallExpression && node.type !== AST_NODE_TYPES.NewExpression) {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression &&
+    node.type !== AST_NODE_TYPES.NewExpression
+  ) {
     return false;
   }
 
@@ -260,7 +282,9 @@ function referencedName(node: TSESTree.Node): string | null {
     node.property.type === AST_NODE_TYPES.Identifier
   ) {
     const objectPart =
-      node.object.type === AST_NODE_TYPES.Identifier ? `${node.object.name}.` : '';
+      node.object.type === AST_NODE_TYPES.Identifier
+        ? `${node.object.name}.`
+        : '';
     return `${objectPart}${node.property.name}`;
   }
   return null;
@@ -276,7 +300,10 @@ function referencedName(node: TSESTree.Node): string | null {
  * ordinary domain nouns — a CMS author, a conference talk — that silenced the
  * rule on genuinely unauthenticated routes.
  */
-function isAuthMiddlewareArg(arg: TSESTree.Node, authPatterns: string[]): boolean {
+function isAuthMiddlewareArg(
+  arg: TSESTree.Node,
+  authPatterns: string[],
+): boolean {
   const target = arg.type === AST_NODE_TYPES.CallExpression ? arg.callee : arg;
   const name = referencedName(target);
   return name !== null && nameHasAnyWord(name, authPatterns);
@@ -287,17 +314,19 @@ function isAuthMiddlewareArg(arg: TSESTree.Node, authPatterns: string[]): boolea
  */
 function isInsideAuthMiddleware(
   node: TSESTree.Node,
-  authPatterns: string[]
+  authPatterns: string[],
 ): boolean {
   let current: TSESTree.Node | null = node;
-  
+
   while (current) {
     // Check if current is an argument to a CallExpression
     if (current.parent && current.parent.type === 'CallExpression') {
       const callExpr = current.parent as TSESTree.CallExpression;
-      
+
       // Verify that current is actually an argument of this call
-      const isArgument = callExpr.arguments.some((arg: TSESTree.CallExpressionArgument) => arg === current);
+      const isArgument = callExpr.arguments.some(
+        (arg: TSESTree.CallExpressionArgument) => arg === current,
+      );
       if (!isArgument) {
         // Not an argument (e.g. `current` is the callee of this call, as in
         // an IIFE) - continue traversing upward. `current.parent` is
@@ -306,9 +335,9 @@ function isInsideAuthMiddleware(
         current = current.parent as TSESTree.Node;
         continue;
       }
-      
+
       const callee = callExpr.callee;
-      
+
       // Check if it's an authentication middleware call
       if (callee.type === 'Identifier') {
         if (nameHasAnyWord(callee.name, authPatterns)) {
@@ -317,7 +346,10 @@ function isInsideAuthMiddleware(
       }
 
       // Check if it's a member expression like app.use(auth())
-      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier'
+      ) {
         const propertyName = callee.property.name.toLowerCase();
         if (propertyName === 'use' || propertyName === 'all') {
           // Check if any argument is an auth middleware
@@ -329,7 +361,7 @@ function isInsideAuthMiddleware(
         }
       }
     }
-    
+
     // Traverse up the AST
     if ('parent' in current && current.parent) {
       current = current.parent as TSESTree.Node;
@@ -337,7 +369,7 @@ function isInsideAuthMiddleware(
       break;
     }
   }
-  
+
   return false;
 }
 
@@ -372,10 +404,9 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-287',
         description: 'Route handler missing authentication check: {{route}}',
         severity: 'CRITICAL',
-        fix: 'Add authentication middleware: app.{{method}}(\'{{path}}\', authenticate(), handler)',
+        fix: "Add authentication middleware: app.{{method}}('{{path}}', authenticate(), handler)",
         documentationLink: 'https://cwe.mitre.org/data/definitions/287.html',
       }),
-
     },
     schema: [
       {
@@ -416,7 +447,8 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra router-object name words, on top of `routerNameWords`.',
+            description:
+              'Extra router-object name words, on top of `routerNameWords`.',
           },
           testFilePattern: {
             // `null` IS the default, and saying so in the schema is the point.
@@ -454,7 +486,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       allowInTests = false,
@@ -514,7 +546,9 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
      */
     function looksLikeRouter(object: TSESTree.Identifier): boolean {
       const scope = sourceCode.getScope(object);
-      const reference = scope.references.find((ref) => ref.identifier === object);
+      const reference = scope.references.find(
+        (ref) => ref.identifier === object,
+      );
       const resolved = reference?.resolved;
 
       for (const def of resolved?.defs ?? []) {
@@ -535,31 +569,41 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
     /**
      * Find variable declaration for an identifier
      */
-    function findVariableDeclaration(identifier: TSESTree.Identifier): TSESTree.VariableDeclarator | null {
+    function findVariableDeclaration(
+      identifier: TSESTree.Identifier,
+    ): TSESTree.VariableDeclarator | null {
       const varName = identifier.name;
       let current: TSESTree.Node | null = identifier;
-      
+
       while (current) {
         // Search in current scope
-        if (current.type === 'Program' || 
-            current.type === 'FunctionDeclaration' || 
-            current.type === 'FunctionExpression' || 
-            current.type === 'ArrowFunctionExpression') {
-          const scopeBody = current.type === 'Program' 
-            ? current.body 
-            : (current.body.type === 'BlockStatement' ? current.body.body : []);
-          
+        if (
+          current.type === 'Program' ||
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
+          const scopeBody =
+            current.type === 'Program'
+              ? current.body
+              : current.body.type === 'BlockStatement'
+                ? current.body.body
+                : [];
+
           for (const stmt of scopeBody) {
             if (stmt.type === 'VariableDeclaration') {
               for (const declarator of stmt.declarations) {
-                if (declarator.id.type === 'Identifier' && declarator.id.name === varName) {
+                if (
+                  declarator.id.type === 'Identifier' &&
+                  declarator.id.name === varName
+                ) {
                   return declarator;
                 }
               }
             }
           }
         }
-        
+
         // Traverse up
         if ('parent' in current && current.parent) {
           current = current.parent as TSESTree.Node;
@@ -567,24 +611,32 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
           break;
         }
       }
-      
+
       return null;
     }
 
     /**
      * Check if an identifier was assigned from an auth middleware call
      */
-    function isIdentifierFromAuthMiddleware(identifier: TSESTree.Identifier): boolean {
+    function isIdentifierFromAuthMiddleware(
+      identifier: TSESTree.Identifier,
+    ): boolean {
       const declarator = findVariableDeclaration(identifier);
       if (!declarator || !declarator.init) {
         return false;
       }
-      
+
       // Check if init is a CallExpression to auth middleware
-      if (declarator.init.type === 'CallExpression' && declarator.init.callee.type === 'Identifier') {
-        return nameHasAnyWord(declarator.init.callee.name, authMiddlewarePatterns);
+      if (
+        declarator.init.type === 'CallExpression' &&
+        declarator.init.callee.type === 'Identifier'
+      ) {
+        return nameHasAnyWord(
+          declarator.init.callee.name,
+          authMiddlewarePatterns,
+        );
       }
-      
+
       return false;
     }
 
@@ -600,7 +652,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       if (node.callee.type === 'MemberExpression') {
         const property = node.callee.property;
         const object = node.callee.object;
-        
+
         // Only check if the object looks like an Express app/router: either an
         // identifier like `app` / `router`, or the `app.route(path)` call that
         // Express's own chaining API puts there.
@@ -612,7 +664,10 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
           }
         } else {
           const base = routeChainBase(object);
-          const baseObject = base?.callee.type === 'MemberExpression' ? base.callee.object : undefined;
+          const baseObject =
+            base?.callee.type === 'MemberExpression'
+              ? base.callee.object
+              : undefined;
           if (
             !base ||
             baseObject?.type !== AST_NODE_TYPES.Identifier ||
@@ -625,7 +680,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
 
         if (property.type === 'Identifier') {
           const methodName = property.name.toLowerCase();
-          
+
           if (routeHandlerPatterns.includes(methodName)) {
             // `app.use(middleware)` with no path mounts GLOBAL middleware — it is not a
             // route handler, so "missing authentication" is meaningless there. Flagging it
@@ -633,6 +688,25 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             // `app.use(rateLimit(...))`, `app.use(express.json())`), the single largest
             // false-positive source in the plugin. Only a PATH-MOUNTED `use` —
             // `app.use('/api', handler)` — addresses a route and can be missing auth.
+            // `app.get('port')` READS A SETTING. Express overloads the same
+            // name: one argument is `app.set`'s getter, two or more registers
+            // a route. Treating the getter as a route made
+            // ministryofjustice/hmpps-arns-assessment-platform-ui report on
+            // `app.listen(app.get('port'), …)` and on the log line beside it —
+            // a port number judged as an unauthenticated endpoint.
+            //
+            // A route always has a handler after the path, so the arity test
+            // is exact rather than a heuristic. `use` has its own rule below;
+            // `all`/`post`/`put`/`patch`/`delete` are not overloaded this way,
+            // but a one-argument call to any of them registers nothing either.
+            if (
+              methodName !== 'use' &&
+              chainedPath === undefined &&
+              node.arguments.length < 2
+            ) {
+              return;
+            }
+
             if (methodName === 'use') {
               const first = node.arguments[0];
               const mountsAPath =
@@ -663,7 +737,10 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             if (matchesIgnorePattern(routePath, ignorePatterns)) {
               return;
             }
-            if (scansWholeCallText && matchesIgnorePattern(text, ignorePatterns)) {
+            if (
+              scansWholeCallText &&
+              matchesIgnorePattern(text, ignorePatterns)
+            ) {
               return;
             }
 
@@ -690,7 +767,10 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
               }
 
               // Check if argument is an identifier assigned from auth middleware
-              if (arg.type === 'Identifier' && isIdentifierFromAuthMiddleware(arg)) {
+              if (
+                arg.type === 'Identifier' &&
+                isIdentifierFromAuthMiddleware(arg)
+              ) {
                 hasAuth = true;
                 break;
               }
@@ -699,8 +779,10 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             // Check if the handler function itself is inside an auth middleware context
             if (!hasAuth && node.arguments.length > 0) {
               const lastArg = node.arguments[node.arguments.length - 1];
-              if (lastArg.type === 'ArrowFunctionExpression' || 
-                  lastArg.type === 'FunctionExpression') {
+              if (
+                lastArg.type === 'ArrowFunctionExpression' ||
+                lastArg.type === 'FunctionExpression'
+              ) {
                 // Check if the handler is inside an auth middleware call
                 if (isInsideAuthMiddleware(lastArg, authMiddlewarePatterns)) {
                   hasAuth = true;
@@ -729,4 +811,3 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-
