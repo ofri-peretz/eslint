@@ -82,7 +82,11 @@ export function PlaygroundDemo({ initialSlug }: { initialSlug: string }) {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col gap-2">
             <EditorToolbar isEdited={state.isEdited} onReset={state.resetSnippet} />
-            <PlaygroundEditor value={state.editorValue} onChange={state.setEditorValue} />
+            <PlaygroundEditor
+              value={state.editorValue}
+              onChange={state.setEditorValue}
+              findings={state.visibleFindings}
+            />
           </div>
           <FindingsList
             findings={state.visibleFindings}

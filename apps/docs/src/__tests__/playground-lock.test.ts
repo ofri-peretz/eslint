@@ -389,3 +389,32 @@ describe('usePlaygroundState', () => {
     expect(src).toContain('useEffect(() => {');
   });
 });
+
+describe('PlaygroundEditor: in-editor diagnostics', () => {
+  let editorSrc: string;
+  let demoSrc: string;
+  beforeAll(() => {
+    editorSrc = readPlayFile('PlaygroundEditor.tsx');
+    demoSrc = readPlayFile('PlaygroundDemo.tsx');
+  });
+
+  it('projects lint findings into Monaco markers (squiggles + hover)', () => {
+    // A findings panel alone is not enough — an editor whose code shows no
+    // in-place diagnostics reads as "the linter found nothing" (2026-08-24).
+    expect(editorSrc).toContain('setModelMarkers');
+    expect(editorSrc).toContain('MarkerSeverity');
+  });
+
+  it('PlaygroundDemo wires visibleFindings into the editor', () => {
+    expect(demoSrc).toMatch(
+      /<PlaygroundEditor[\s\S]*?findings=\{state\.visibleFindings\}/,
+    );
+  });
+
+  it('suppresses the TS semantic pass (no node_modules in the browser)', () => {
+    // Without this, every snippet import shows "Cannot find module" noise
+    // that competes with — and visually outranks — the real lint findings.
+    expect(editorSrc).toContain('noSemanticValidation: true');
+    expect(editorSrc).toContain('noSuggestionDiagnostics: true');
+  });
+});
