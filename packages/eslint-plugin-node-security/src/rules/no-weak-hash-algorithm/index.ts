@@ -532,6 +532,49 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a call expression uses a weak hash
      */
+    /**
+     * Is this `sha1(...)` call a local wrapper whose body is visible here?
+     *
+     * The bare-identifier branch exists for `crypto-hash`-style packages that
+     * export a digest function under the algorithm's own name. It has no way
+     * to tell those apart from a helper the file defines itself — and a
+     * locally-defined helper is a name, not an algorithm:
+     *
+     *   function sha1(data, secret) {
+     *     return crypto.createHmac("sha1", secret).update(data).digest("hex");
+     *   }
+     *
+     * That is vercel/example-marketplace-integration's webhook verifier. It
+     * computes an HMAC, and HMAC-SHA1 carries none of SHA-1's collision
+     * weakness — the CRITICAL CWE-327 report was wrong on the substance, and
+     * its suggestion rewrote the call to `sha256(...)`, renaming a function
+     * that does not exist under that name and changing no algorithm at all.
+     *
+     * Skipping the call site loses nothing: whatever the body really uses is
+     * reported where it is written, by the `createHash` branch above. An
+     * identifier that resolves to nothing local — an import, a global, a
+     * `crypto-hash` binding — still reports, so the branch keeps its job.
+     */
+    function isLocallyDefinedHelper(callee: TSESTree.Identifier): boolean {
+      const scope = context.sourceCode.getScope(callee);
+      for (
+        let current: TSESLint.Scope.Scope | null = scope;
+        current;
+        current = current.upper
+      ) {
+        const variable = current.variables.find((v) => v.name === callee.name);
+        if (!variable) continue;
+        return variable.defs.some(
+          (def) =>
+            def.type === 'FunctionName' ||
+            (def.type === 'Variable' &&
+              (def.node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+                def.node.init?.type === AST_NODE_TYPES.FunctionExpression)),
+        );
+      }
+      return false;
+    }
+
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
       if (isNonCryptographicUse(node)) return;
@@ -556,9 +599,20 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       }
 
       // Check for crypto-hash package: sha1(), md5()
+      //
+      // Gated on the identifier actually resolving to one of those packages.
+      // The name alone is not evidence: a local `function sha1(data, secret)`
+      // that wraps `createHmac('sha1', secret)` is an HMAC, not a bare digest,
+      // and HMAC-SHA1 carries none of SHA-1's collision weakness. Reported by
+      // name, the suggestion also rewrote the call to `sha256(...)` — renaming
+      // a local helper that does not exist under that name, changing no
+      // algorithm and breaking the build.
       if (node.callee.type === AST_NODE_TYPES.Identifier) {
         const funcName = node.callee.name.toLowerCase();
-        if (funcName === 'sha1' || funcName === 'md5' || funcName === 'md4') {
+        if (
+          (funcName === 'sha1' || funcName === 'md5' || funcName === 'md4') &&
+          !isLocallyDefinedHelper(node.callee)
+        ) {
           // funcName is one of sha1/md5/md4, each of which always matches a
           // WEAK_HASH_PATTERNS entry, so findWeakHash cannot return null here.
           const weakPattern = findWeakHash(

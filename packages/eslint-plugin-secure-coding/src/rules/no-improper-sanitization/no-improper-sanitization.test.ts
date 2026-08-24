@@ -26,6 +26,23 @@ describe('no-improper-sanitization', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - proper sanitization', noImproperSanitization, {
       valid: [
+        // A hardcoded English sentence with an apostrophe, inside a structured
+        // JSON payload. Reported on vercel/example-marketplace-integration
+        // three times: `'` is in `dangerousChars`, and every literal nested
+        // under a `.json()` call was measured against that character set.
+        // Nothing here is user input and nothing here is markup.
+        `Response.json([
+          {
+            type: "paragraph",
+            children: [
+              { type: "text", text: "You don't have permission to write to this resource" },
+            ],
+          },
+        ]);`,
+        // The same shape one level shallower, and with the apostrophe inside
+        // quotes rather than as a contraction.
+        `res.json({ error: { message: "Failed to validate metadata: metadata should have valid property 'region'" } });`,
+        // Markup in a nested payload still reports — see the invalid block.
         // Safe sanitization with trusted libraries
         'element.innerHTML = DOMPurify.sanitize(userInput);',
         'const safe = he.encode(userInput);',
@@ -122,6 +139,21 @@ describe('no-improper-sanitization', () => {
     ruleTester.run('invalid - incomplete HTML escaping', noImproperSanitization, {
       valid: [],
       invalid: [
+        // The array exemption must not become a false negative: markup nested
+        // in an array is still the vector, whoever typed it.
+        {
+          code: `res.json([{ children: [{ text: "<script>alert(1)</script>" }] }]);`,
+          errors: [{ messageId: 'unsafeReplaceSanitization' }],
+        },
+        // A non-literal element anywhere in the array taints the whole
+        // payload — the array is only safe text when every leaf is.
+        {
+          code: `res.json([{ text: "<b>" + req.query.name + "</b>" }]);`,
+          errors: [
+            { messageId: 'unsafeReplaceSanitization' },
+            { messageId: 'unsafeReplaceSanitization' },
+          ],
+        },
         // Incomplete escaping - only escapes < but not other dangerous chars
         {
           code: 'element.innerHTML = userInput.replace(/</g, "&lt;");',

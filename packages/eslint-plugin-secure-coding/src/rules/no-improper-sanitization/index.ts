@@ -81,13 +81,19 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         fix: 'Escape all HTML special characters: & < > " \'',
         documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
       }),
+      // Named for the check it was written against, but it is reported from
+      // exactly one place: a string reaching a response or `innerHTML`
+      // carrying unescaped markup. It never fires on a `replace()` call —
+      // `incompleteHtmlEscaping` is that check — so the old wording told
+      // people to fix a call their code does not make. The id is kept so
+      // existing suppressions keep working.
       unsafeReplaceSanitization: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Unsafe Replace Sanitization',
+        issueName: 'Unescaped Markup In Output',
         cwe: 'CWE-116',
-        description: 'Simple replace() calls are insufficient for sanitization',
+        description: 'A string reaching this sink carries unescaped markup',
         severity: 'MEDIUM',
-        fix: 'Use comprehensive sanitization libraries',
+        fix: 'Escape the value before it reaches the sink, or send it as text rather than markup',
         documentationLink: 'https://cwe.mitre.org/data/definitions/116.html',
       }),
     },
@@ -601,6 +607,19 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
               return expr.properties.every(
                 (property) =>
                   property.type === 'Property' && isSafeText(property.value),
+              );
+            }
+            // The climb above already walks through arrays, but the safety
+            // test did not, so a literal nested in one fell straight to the
+            // dangerous-character check. `Response.json([{ children: [{ text:
+            // "You don't have permission…" }] }])` — the Vercel marketplace
+            // example — was reported three times on the apostrophe alone.
+            //
+            // A hole in the element list means something non-literal is
+            // being spread or elided, so it is not safe text.
+            if (expr.type === 'ArrayExpression') {
+              return expr.elements.every(
+                (element) => element !== null && isSafeText(element),
               );
             }
             // `.length` is a number in every JavaScript engine, and a number

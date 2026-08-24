@@ -71,11 +71,76 @@ describe('no-weak-hash-algorithm', () => {
       // is where the value LANDS, not which API produced it. `sha1(lua)`
       // stored as `sha` is the ioredis pattern written with a wrapper.
       { code: 'const sha = sha1(lua);' },
+      // A local helper named `sha1` that computes an HMAC. Reported on
+      // vercel/example-marketplace-integration as a CRITICAL CWE-327 "use of
+      // weak hash algorithm", with a suggestion to call `sha256(...)` — a
+      // function that does not exist, wrapping an algorithm that never
+      // changes. HMAC-SHA1 does not inherit SHA-1's collision weakness, and
+      // the call site is not where the algorithm is chosen anyway.
+      {
+        code: `
+          function sha1(data, secret) {
+            return crypto.createHmac("sha1", secret).update(data).digest("hex");
+          }
+          const bodySignature = sha1(rawBody, env.INTEGRATION_CLIENT_SECRET);
+        `,
+      },
+      // Same exemption for the arrow-function spelling.
+      {
+        code: `
+          const md5 = (input) => crypto.createHmac("md5", key).update(input).digest("hex");
+          const tag = md5(payload);
+        `,
+      },
       // A quoted key names the same property as a bare one; the exemption
       // must not depend on quoting style.
       { code: `const meta = { 'cache-key': createHash("sha1").update(x).digest("hex") };` },
     ],
     invalid: [
+      // The exemption moves the report, it does not remove it: a local helper
+      // that really computes a bare digest is still reported where the
+      // algorithm is written.
+      {
+        code: `
+          function sha1(data) {
+            return crypto.createHash("sha1").update(data).digest("hex");
+          }
+          const sessionToken = sha1(secret);
+        `,
+        options: UNCLASSIFIED,
+        errors: [{
+          messageId: 'weakHashAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useSha256',
+              output: `
+          function sha1(data) {
+            return crypto.createHash("sha256").update(data).digest("hex");
+          }
+          const sessionToken = sha1(secret);
+        `,
+            },
+            {
+              messageId: 'useSha512',
+              output: `
+          function sha1(data) {
+            return crypto.createHash("sha512").update(data).digest("hex");
+          }
+          const sessionToken = sha1(secret);
+        `,
+            },
+            {
+              messageId: 'useSha3',
+              output: `
+          function sha1(data) {
+            return crypto.createHash("sha3-256").update(data).digest("hex");
+          }
+          const sessionToken = sha1(secret);
+        `,
+            },
+          ],
+        }],
+      },
       // Invalid: MD5
       {
         code: 'crypto.createHash("md5").update(data);',
