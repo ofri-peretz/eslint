@@ -75,6 +75,12 @@ const sharedCache: FileSystemCache = createFileSystemCache();
  */
 export function clearCircularDependencyCache(): void {
   clearCache(sharedCache);
+  // `exportKindCache` is module-level and separate from `sharedCache`, so
+  // clearing that alone leaves it stale. It caches whether each exported name
+  // is a type or a value, and that is exactly what an edit changes: turn a
+  // `class` into an `interface` in watch mode and a stale entry keeps calling
+  // the import a runtime cycle, or the reverse — which SILENCES a real one.
+  exportKindCache.clear();
 }
 
 type FixStrategy =

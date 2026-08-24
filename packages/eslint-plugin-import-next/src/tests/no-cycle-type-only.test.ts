@@ -23,7 +23,7 @@ import tsParser from '@typescript-eslint/parser';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { noCycle } from '../rules/no-cycle';
+import { noCycle, clearCircularDependencyCache } from '../rules/no-cycle';
 
 let dir: string;
 beforeAll(() => {
@@ -109,5 +109,51 @@ describe('no-cycle and erased imports', () => {
       const b = ["import { a } from './a';", "export { Shape } from './c';", 'export const keep = a;'].join('\n');
       expect(lint("import { Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", b)).toBeGreaterThan(0);
     });
+  });
+});
+
+/** Lints `a.ts` in a FIXED directory so the same path can be re-linted. */
+const lintAt = (sub: string, aSource: string, bSource: string): number => {
+  fs.mkdirSync(sub, { recursive: true });
+  fs.writeFileSync(path.join(sub, 'b.ts'), bSource);
+  const aPath = path.join(sub, 'a.ts');
+  fs.writeFileSync(aPath, aSource);
+  const linter = new Linter({ configType: 'flat', cwd: sub });
+  return linter
+    .verify(
+      aSource,
+      [
+        {
+          files: ['**/*.ts'],
+          languageOptions: { parser: tsParser as never, ecmaVersion: 2022, sourceType: 'module' },
+          plugins: { 'import-next': { rules: { 'no-cycle': noCycle as never } } },
+          rules: { 'import-next/no-cycle': 'error' },
+        },
+      ],
+      aPath,
+    )
+    .filter((m) => m.ruleId === 'import-next/no-cycle').length;
+};
+
+describe('clearCircularDependencyCache', () => {
+  /**
+   * `exportKindCache` is module-level and separate from `sharedCache`, so it
+   * survives a clear that only touches `sharedCache`. What it caches — whether
+   * an exported name is a type or a value — is exactly what an edit changes.
+   *
+   * The direction asserted here is the dangerous one: a name that BECOMES a
+   * value must stop being treated as a type, or a real runtime cycle is
+   * silently dropped in watch mode.
+   */
+  it('re-reads export kinds after a file changes', () => {
+    const sub = path.join(dir, 'watch-mode');
+    const A = "import { Thing } from './b';\nexport const a = () => Thing;\n";
+
+    const asType = ["import { a } from './a';", 'export interface Thing { n: number }', 'export const keep = a;'].join('\n');
+    expect(lintAt(sub, A, asType)).toBe(0);
+
+    const asValue = ["import { a } from './a';", 'export class Thing { use() { return a(); } }'].join('\n');
+    clearCircularDependencyCache();
+    expect(lintAt(sub, A, asValue)).toBeGreaterThan(0);
   });
 });
