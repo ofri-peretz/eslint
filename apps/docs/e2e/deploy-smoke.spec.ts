@@ -143,6 +143,14 @@ test.describe('Deploy smoke: wide viewport (1728px)', () => {
 
       expect(layout.horizontalScroll, 'page scrolls horizontally at 1728px').toBe(false);
       expect(layout.article, 'article missing from #main-content').not.toBeNull();
+      // Every WIDE_PAGES entry is a docs page with headings, so the TOC element
+      // must exist. Without this, a fumadocs upgrade that renames #nd-toc would
+      // skip the overlap assertion silently — a green gate guarding nothing,
+      // exactly the vacuous-lock failure mode this repo hunts.
+      expect(
+        layout.toc,
+        'TOC element not found — selector out of date, the #697 gate is void',
+      ).not.toBeNull();
 
       if (layout.toc?.visible && layout.article) {
         const tocOverlapsArticle =
