@@ -31,6 +31,7 @@
  *   npx tsx scripts/seal-audit.mts <plugin>/<rule> …   # just these
  *   npx tsx scripts/seal-audit.mts --skip-coverage     # the slow axis
  */
+import { Session } from 'node:inspector/promises';
 import { Linter } from 'eslint';
 import tsParser from '@typescript-eslint/parser';
 import { execFileSync } from 'node:child_process';
@@ -113,8 +114,8 @@ const run = (file: string, args: string[]): string => {
  */
 const LINTABLE = '**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}';
 
-const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
-  const [, ruleName] = ruleId.split('/');
+const throughputOf = async (ruleId: string, rule: unknown, dir: string): Promise<Axis> => {
+  const [prefix, ruleName] = ruleId.split('/');
   // Kept as SEPARATE files, not concatenated.
   //
   // Joining them into one source was the fourth defect in this measurement.
@@ -182,220 +183,204 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
   // whose own cost then falls under the instrument's error report NOT
   // ESTABLISHED, which is the honest answer and already the answer for most of
   // them.
-  const SIZE_MULTIPLES = [1, 4, 16];
-  const NOISE_FLOOR_MS = 0.2;
-  const PASSES = 3;
-  const best = (r: unknown, files: number): number => {
-    const config = configFor(r);
-    const run = (): void => {
-      for (let rep = 0; rep < files; rep += 1) {
-        fixtureFiles.forEach((f, i) => linter.verify(f.code, config, `perf${rep}-${i}${f.ext}`));
-      }
-    };
-    run();
-    let min = Infinity;
-    for (let pass = 0; pass < PASSES; pass += 1) {
-      const started = process.hrtime.bigint();
-      run();
-      min = Math.min(min, Number(process.hrtime.bigint() - started) / 1e6);
-    }
-    return min;
-  };
-
-  // Per size, the rule's marginal cost is a small difference between two large
-  // timings, so ONE difference is not a measurement — it is a sample of a noisy
-  // quantity. Take K paired trials, alternating rule and no-op so both see the
-  // same machine, and report the MEDIAN difference with the median absolute
-  // deviation as its error.
-  //
-  // Two weaker versions of this shipped first, both wrong in the flattering
-  // direction. A fixed 0.2ms floor let the SAME unchanged rule read
-  // "0.0x, linear, met" and "12.9x, SUPERLINEAR, unmet" on consecutive runs —
-  // the 2000-line point drifted across the constant, which moved the judged
-  // pair, which flipped the published verdict. Replacing the constant with a
-  // single no-op-vs-no-op control was no better: that control is itself one
-  // sample, and it read 0.20 / 1.53 / 8.57 ms for one rule at one size on three
-  // consecutive runs. An error bar estimated from one draw is not an error bar.
-  const TRIALS = 5;
-  const median = (xs: number[]): number => {
-    const sorted = [...xs].sort((a, b) => a - b);
-    return sorted[Math.floor(sorted.length / 2)];
-  };
-
-  // Scale the workload by adding FILES, not by growing one file.
-  //
-  // Three earlier shapes of this measurement were wrong, each in the flattering
-  // direction, and the third is the subtle one:
-  //
-  //  1. `lines.slice(0, target)` cut through the middle of a function or an
-  //     unterminated comment. A source that does not parse is a source the rule
-  //     never runs on, so it timed at ~0ms and PASSED. Of four sizes,
-  //     `detect-object-injection` parsed at exactly one; its "linear, met" came
-  //     from a pair whose larger half was "Parsing error: '*/' expected".
-  //
-  //  2. A fixed 0.2ms noise floor let the SAME unchanged rule read "linear, met"
-  //     and "SUPERLINEAR, unmet" on consecutive runs, and a floor estimated from
-  //     a single no-op-vs-no-op control was no better — that control itself read
-  //     0.20 / 1.53 / 8.57 ms for one rule at one size on three runs.
-  //
-  //  3. Repeating one fixture N times into ONE file does not make a workload N
-  //     times bigger for a scope-sensitive rule — it makes one module scope with
-  //     N copies of every top-level name, so each variable's reference list
-  //     grows with N and any per-variable scan turns quadratic. Real code never
-  //     has that shape. Measured on `detect-object-injection`, same total lines:
-  //
-  //         2008L   one file  2.8ms    4 files   2.6ms
-  //         8032L   one file  9.5ms   16 files   9.9ms
-  //        32128L   one file 76.2ms   64 files  39.3ms
-  //
-  //     One file reads 8x for 4x lines — SUPERLINEAR, and it is an artifact of
-  //     the harness. Across files the same rule is 4.0x for 4x lines: linear.
-  //     A control rule that reports at the same rate but does no analysis holds
-  //     flat at ~2-7µs per report either way, which is what proved the growth
-  //     belonged to the workload shape rather than to ESLint.
-  //
-  // Files are also what ESLint actually does, so this is the shape the number is
-  // meant to describe.
+  /**
+   * MEASURED BY ATTRIBUTION, NOT BY SUBTRACTION.
+   *
+   * The previous engine timed the corpus with the rule and again with a no-op
+   * and subtracted. That is sound in principle and unusable in practice here:
+   * the rule's cost is a small difference between two large, noisy numbers
+   * dominated by the parser. On the ledger it produced 64 rules reading
+   * "marginal over a no-op control — NOT ESTABLISHED" and 22 reading "NOT
+   * REPRODUCIBLE", so 86 of 95 throughput failures were the instrument's, not
+   * the rule's.
+   *
+   * The comment it replaced named its own successor: "a CPU profile
+   * attributing samples to the rule's own frames". That is this. V8's sampling
+   * profiler records which frame was executing, so the rule's cost is read
+   * DIRECTLY off the samples whose script URL is the rule's own bundle — a
+   * positive quantity, never a difference.
+   *
+   * Measured on `detect-object-injection`, the rule the old engine could not
+   * decide:
+   *
+   *   no-op control      0 samples   0.00ms   0.0%   ← attribution is clean
+   *   run 1            108 samples  15.55ms   2.9%
+   *   run 2            109 samples  15.68ms   3.0%
+   *   run 3            102 samples  14.73ms   2.9%
+   *
+   * where the old engine gave "0.0x, linear, met" and "12.9x, SUPERLINEAR,
+   * unmet" on consecutive runs of the same unchanged rule.
+   *
+   * THE NO-OP CONTROL IS KEPT, as an assertion rather than a subtrahend. A
+   * no-op must attribute exactly zero samples; anything else means attribution
+   * is leaking (a bundler inlining rule code into another URL would do it),
+   * and a leaking instrument reports parser time as rule time. The axis fails
+   * loudly in that case instead of publishing the number.
+   */
+  /** A source that does not parse is a source the rule never ran on. */
   const parses = (source: string, name: string): boolean =>
     !linter
-      .verify(source, [{ files: [LINTABLE], languageOptions: { parser: tsParser, ecmaVersion: 2022 as const, sourceType: 'module' as const, parserOptions: { ecmaFeatures: { jsx: true } } }, rules: {} }], name)
+      .verify(
+        source,
+        [
+          {
+            files: [LINTABLE],
+            languageOptions: {
+              parser: tsParser,
+              ecmaVersion: 2022 as const,
+              sourceType: 'module' as const,
+              parserOptions: { ecmaFeatures: { jsx: true } },
+            },
+            rules: {},
+          },
+        ],
+        name,
+      )
       .some((m) => m.fatal);
 
-  // A verdict that does not reproduce is not a verdict.
-  //
-  // Three revisions of this axis were tuned by widening the noise floor — a
-  // constant, then one MAD-derived estimate, then five MADs — and each time the
-  // same unchanged rule still read `linear, met` on one run and
-  // `NOT ESTABLISHED` on the next, because the estimate of the noise is itself
-  // noisy. No multiplier fixes that; it is the wrong knob.
-  //
-  // So the property is tested directly: measure twice, and publish a verdict
-  // only when both measurements agree on it. Disagreement is not a tie to be
-  // broken, it is the finding — this harness cannot resolve that rule's cost
-  // today, and NOT ESTABLISHED says so.
-  const measureOnce = (): Axis => {
-    const marginal: number[] = [];
-    const floors: number[] = [];
-    const timings: string[] = [];
-    const usable: boolean[] = [];
-    const actual: number[] = [];
-    for (const multiple of SIZE_MULTIPLES) {
-      const files = multiple;
-      actual.push(files * unit.length);
-      // A fixture that is never LINTED is worse than one that never parses: it
-      // costs nothing, so it times as fast and the axis passes on an empty run.
-      // Proven reachable — the previous revision's glob left every .jsx and .ts
-      // fixture unmatched, and the numbers it published were measuring nothing.
-      const unlinted = fixtureFiles.findIndex((f, i) => {
-        const seen = linter.verify(f.code, configFor(rule), `lintcheck${i}${f.ext}`);
-        return seen.some((m) => /No matching configuration/.test(m.message));
-      });
-      if (unlinted !== -1) {
-        throw new Error(
-          `fixture #${unlinted} (${fixtureFiles[unlinted].ext}) is not matched by the throughput config for ${ruleId} — ` +
-            `it would be timed as a zero-cost run. Add its extension to LINTABLE.`,
-        );
-      }
+  const WORK_MULTIPLES = [10, 20, 40, 80];
+  /**
+   * Microseconds. V8's default is 1000µs, which is far too coarse here — the
+   * rule is a thin slice of a parser-dominated run, and at 100µs a cheap rule
+   * still landed only 26-48 samples, where a ratio carries ±30% noise and the
+   * verdict flapped between runs. Resolution is the cheap axis to buy: 20µs
+   * multiplies the sample count fivefold at the same work, where forcing the
+   * same counts through more work costs five times the wall clock.
+   */
+  const SAMPLING_INTERVAL_US = 20;
+  /**
+   * Below this the sample count is too small for a ratio to mean anything —
+   * at 5 samples one scheduling hiccup moves the growth figure by 20%.
+   */
+  const MIN_SAMPLES = 60;
+  /** Bounded so a rule that genuinely costs nothing terminates rather than looping. */
+  const MAX_ESCALATIONS = 3;
 
-      const broken = fixtureFiles.findIndex((f, i) => !parses(f.code, `probe${i}${f.ext}`));
-      if (broken !== -1) {
-        usable.push(false);
-        marginal.push(0);
-        floors.push(Infinity);
-        timings.push(`${actual[actual.length - 1]}L VOID (fixture #${broken} does not parse)`);
-        continue;
-      }
-      usable.push(true);
-
-      // Per size the rule's marginal cost is a small difference between two large
-      // timings, so ONE difference is not a measurement — it is a sample of a
-      // noisy quantity. Take K paired trials, alternating rule and no-op so both
-      // see the same machine, and report the MEDIAN with the median absolute
-      // deviation as its error.
-      const differences: number[] = [];
-      for (let trial = 0; trial < TRIALS; trial += 1) {
-        differences.push(best(rule, files) - best(noop, files));
-      }
-      const centre = median(differences);
-      const cost = Math.max(0, centre);
-      const mad = median(differences.map((d) => Math.abs(d - centre))) * 1.4826;
-      // Five MADs, not three.
-      //
-      // At three, `detect-object-injection` read +8.10±2.39ms at one size on one
-      // run and +0.30±3.72ms on the next, landing just above the floor once and
-      // well below it the other time — so the axis said "linear, met" and then
-      // "NOT ESTABLISHED" for unchanged code. That is the moving ruler this
-      // instrument has already been fixed for twice.
-      //
-      // A wider floor costs some `met` verdicts on rules whose cost genuinely
-      // sits in the borderline band, and buys a verdict that does not depend on
-      // which run you looked at. NOT ESTABLISHED is the honest answer for a cost
-      // this harness cannot separate from its own noise, and it is never the
-      // flattering one.
-      const floor = Math.max(mad * 5, NOISE_FLOOR_MS);
-      marginal.push(cost);
-      floors.push(floor);
-      timings.push(`${actual[actual.length - 1]}L +${cost.toFixed(2)}±${mad.toFixed(2)}ms`);
+  const runWork = (r: unknown, multiple: number): void => {
+    const config = configFor(r);
+    for (let rep = 0; rep < multiple; rep += 1) {
+      fixtureFiles.forEach((f, i) => linter.verify(f.code, config, `perf${rep}-${i}${f.ext}`));
     }
-
-    // Judge the growth on the largest PAIR of sizes whose smaller member is above
-    // the noise floor, and compare it against that pair's own line ratio.
-    //
-    // Dividing the 8000-line cost by the 500-line one looks obvious and is wrong
-    // whenever the 500-line cost rounds to zero: the ratio is undefined, and the
-    // first version of this check silently substituted 1 and called it linear.
-    // `detect-object-injection` measures +0.00 / +0.30 / +18.41 ms — a 61x rise
-    // across a 4x rise in lines, reported as "1.0x, linear". Three checks in this
-    // session have now failed in the flattering direction; a comparison that
-    // cannot be made must be reported as such, never resolved to a pass.
-    let verdict: Axis;
-    let index = SIZE_MULTIPLES.length - 2;
-    while (index >= 0 && (!usable[index] || !usable[index + 1] || marginal[index] < floors[index])) index -= 1;
-
-    if (index < 0) {
-      // Fewer than two sizes are above the noise floor, so there is no curve to
-      // read. That is NOT a pass — it is an unmeasurable, and the difference
-      // matters: `detect-object-injection` measures +0.01 / +0.03 / +11.30 ms,
-      // where the first two are noise and the third is real, and an earlier
-      // version of this branch called that "below the noise floor at every size"
-      // and marked it met.
-      //
-      // The subtraction itself is sound; the sizes are wrong. Harness cost at
-      // 8000 lines is ~70 ms, so a sub-millisecond rule cost is below the
-      // resolution of a difference between two ~70 ms measurements — the same
-      // rule measured +1.50 ms and +0.00 ms at 500 lines on consecutive runs.
-      // Measuring this properly needs either sizes large enough to lift the rule
-      // cost above the floor at more than one point, or a CPU profile attributing
-      // samples to the rule's own frames. Until one of those is built, the axis
-      // reports what it is: not established.
-      verdict = {
-        state: 'unmet',
-        evidence:
-          `marginal over a no-op control: ${timings.join(' · ')} — NOT ESTABLISHED: ` +
-          `fewer than two sizes clear the instrument's own measured error, so no growth curve can be read`,
-        command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
-      };
-    } else {
-      const lineRatio = actual[index + 1] / actual[index];
-      const growth = marginal[index + 1] / marginal[index];
-      // 1.6x headroom over the line ratio absorbs measurement noise without
-      // absorbing an order of growth.
-      const linear = growth <= lineRatio * 1.6;
-      verdict = {
-        state: linear ? 'met' : 'unmet',
-        evidence:
-          `marginal over a no-op control: ${timings.join(' · ')} — ` +
-          `${growth.toFixed(1)}x time for ${lineRatio.toFixed(1)}x lines (${actual[index]}→${actual[index + 1]}), ` +
-          `${linear ? 'linear' : 'SUPERLINEAR'}`,
-        command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
-      };
-    }
-
-    return verdict;
   };
 
-  const first = measureOnce();
-  const second = measureOnce();
+  /** Samples attributed to the rule's own bundle, and the wall time they cover. */
+  const profile = async (r: unknown, multiple: number): Promise<{ samples: number; ms: number }> => {
+    const session = new Session();
+    session.connect();
+    try {
+      await session.post('Profiler.enable');
+      await session.post('Profiler.setSamplingInterval', { interval: SAMPLING_INTERVAL_US });
+      await session.post('Profiler.start');
+      runWork(r, multiple);
+      const { profile: prof } = (await session.post('Profiler.stop')) as {
+        profile: {
+          nodes: { id: number; callFrame: { url: string } }[];
+          samples?: number[];
+          startTime: number;
+          endTime: number;
+        };
+      };
+      const urlOf = new Map(prof.nodes.map((n) => [n.id, n.callFrame.url || '']));
+      const taken = prof.samples ?? [];
+      const usPerSample = (prof.endTime - prof.startTime) / Math.max(taken.length, 1);
+      const ownBundle = `eslint-plugin-${prefix}${path.sep}dist`;
+      let samples = 0;
+      for (const id of taken) if ((urlOf.get(id) ?? '').includes(ownBundle)) samples += 1;
+      return { samples, ms: (samples * usPerSample) / 1000 };
+    } finally {
+      session.disconnect();
+    }
+  };
+
+  const measureOnce = async (): Promise<Axis> => {
+    // A fixture that is never LINTED is worse than one that never parses: it
+    // costs nothing, so it times as fast and the axis passes on an empty run.
+    const unlinted = fixtureFiles.findIndex((f, i) => {
+      const seen = linter.verify(f.code, configFor(rule), `lintcheck${i}${f.ext}`);
+      return seen.some((m) => /No matching configuration/.test(m.message));
+    });
+    if (unlinted !== -1) {
+      throw new Error(
+        `fixture #${unlinted} (${fixtureFiles[unlinted].ext}) is not matched by the throughput config for ${ruleId} — ` +
+          `it would be timed as a zero-cost run. Add its extension to LINTABLE.`,
+      );
+    }
+    const broken = fixtureFiles.findIndex((f, i) => !parses(f.code, `probe${i}${f.ext}`));
+    if (broken !== -1) {
+      return {
+        state: 'unmet',
+        evidence: `fixture #${broken} (${fixtureFiles[broken].ext}) does not parse, so the rule never ran on it`,
+        command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+      };
+    }
+
+    // Warm the parser and the rule so first-call compilation is not attributed.
+    runWork(rule, 2);
+
+    const control = await profile(noop, WORK_MULTIPLES[WORK_MULTIPLES.length - 1]);
+    if (control.samples !== 0) {
+      return {
+        state: 'unmet',
+        evidence:
+          `INSTRUMENT LEAKING: a no-op rule attributed ${control.samples} sample(s) to the rule bundle, so ` +
+          `attribution cannot separate rule frames from harness frames. No throughput figure from this run is usable`,
+        command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+      };
+    }
+
+    // ESCALATE UNTIL THE RULE IS BIG ENOUGH TO SEE.
+    //
+    // A single fixed work size cannot serve both ends of the ecosystem. At
+    // 10x-80x, `detect-object-injection` yields 132 samples at the top and
+    // `no-eval` yields 9 — and a rule sitting near the threshold flips between
+    // "linear" and "not established" on consecutive runs, which is the
+    // non-reproducibility the old engine was retired for. Cheap rules are not
+    // unmeasurable; they need more work to sample.
+    //
+    // So scale the whole ladder by 4 until the top point has comfortably
+    // cleared MIN_SAMPLES, bounded so a genuinely free rule terminates.
+    let scale = 1;
+    let points: { multiple: number; samples: number; ms: number }[] = [];
+    for (let attempt = 0; attempt < MAX_ESCALATIONS; attempt += 1) {
+      points = [];
+      for (const multiple of WORK_MULTIPLES)
+        points.push({ multiple: multiple * scale, ...(await profile(rule, multiple * scale)) });
+      if (points[points.length - 1].samples >= MIN_SAMPLES * 2) break;
+      scale *= 4;
+    }
+    const readable = `attributed to the rule's own frames: ${points
+      .map((p) => `${p.multiple}x ${p.ms.toFixed(2)}ms (${p.samples} samples)`)
+      .join(' · ')}`;
+
+    // Read the slope over the LARGEST adjacent pair that clears MIN_SAMPLES.
+    // The small end carries fixed first-run costs the big end amortises, so a
+    // ratio taken there flatters the rule.
+    let i = points.length - 2;
+    while (i >= 0 && (points[i].samples < MIN_SAMPLES || points[i + 1].samples < MIN_SAMPLES)) i -= 1;
+    if (i < 0) {
+      return {
+        state: 'unmet',
+        evidence:
+          `${readable} — NOT ESTABLISHED: no adjacent pair reaches ${MIN_SAMPLES} samples after escalating work ` +
+          `${scale}x, so this rule's own cost stays under the profiler's resolution`,
+        command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+      };
+    }
+
+    const workRatio = points[i + 1].multiple / points[i].multiple;
+    const growth = points[i + 1].samples / points[i].samples;
+    const superlinear = growth > workRatio * 1.5;
+    return {
+      state: superlinear ? 'unmet' : 'met',
+      evidence:
+        `${readable} — ${growth.toFixed(2)}x cost for ${workRatio.toFixed(1)}x work ` +
+        `(${points[i].multiple}x→${points[i + 1].multiple}x), ${superlinear ? 'SUPERLINEAR' : 'linear or better'}`,
+      command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
+    };
+  };
+
+  const first = await measureOnce();
+  const second = await measureOnce();
   const classify = (axis: Axis): string =>
     /NOT ESTABLISHED/.test(axis.evidence) ? 'not-established' : /SUPERLINEAR/.test(axis.evidence) ? 'superlinear' : 'linear';
 
@@ -405,7 +390,7 @@ const throughputOf = (ruleId: string, rule: unknown, dir: string): Axis => {
       evidence:
         `NOT REPRODUCIBLE: two consecutive measurements disagreed — ` +
         `${classify(first)} then ${classify(second)}. ` +
-        `First: ${first.evidence.replace(/^marginal over a no-op control: /, '')}`,
+        `First: ${first.evidence.replace(/^attributed to the rule's own frames: /, '')}`,
       command: `npx tsx scripts/seal-audit.mts ${ruleId}`,
     };
   }
@@ -489,7 +474,7 @@ for (const dir of dirs) {
   }
   const mod = await import(path.join(pkg, 'dist/src/index.js'));
   const plugin = mod.default ?? mod;
-  const throughput = throughputOf(ruleId, plugin.rules[ruleName], path.join(CORPUS, dir));
+  const throughput = await throughputOf(ruleId, plugin.rules[ruleName], path.join(CORPUS, dir));
 
   // realSource, from the case ledger
   const casesFile = path.join(CORPUS, dir, 'CASES.json');
