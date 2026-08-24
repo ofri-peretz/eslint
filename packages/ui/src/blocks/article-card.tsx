@@ -31,7 +31,12 @@ export interface ArticleCardMeta {
   comments?: number;
   /** Reading time in minutes. */
   readingTimeMinutes?: number;
-  /** Page-view count. Rendered abbreviated (e.g., `1.2k`) when ≥ 1000. */
+  /**
+   * Page-view count. Rendered abbreviated (e.g., `1.2k`) when ≥ 1000.
+   * A zero renders NOTHING: sources that cannot report views (dev.to's
+   * public API) return 0, and a "👁 0" chip on every card reads as product
+   * failure, not as data. Absence is the honest presentation of absence.
+   */
   views?: number;
 }
 
@@ -308,7 +313,7 @@ function MetaChips({
           {meta.readingTimeMinutes} min
         </span>
       ) : null}
-      {meta.views !== undefined ? (
+      {meta.views ? (
         <span
           data-testid="article-card-meta-views"
           className={cn(

@@ -14,6 +14,25 @@ import {
   CheckCircle,
 } from 'lucide-react';
 
+## Install in 30 seconds
+
+The most-adopted starting point — general secure-coding rules that work in any
+JavaScript or TypeScript project:
+
+<InstallSnippet packages="eslint-plugin-secure-coding" dev />
+
+Then enable the recommended preset and lint:
+
+```js
+// eslint.config.js
+import secureCoding from 'eslint-plugin-secure-coding';
+
+export default [secureCoding.configs.recommended];
+```
+
+Framework-specific plugins (Express, React, MongoDB, AI SDKs, …) are one
+[catalog](/plugins) away — every plugin installs the same way.
+
 ## What is ESLint Interlace?
 
 ESLint Interlace is a comprehensive ecosystem of **security and quality ESLint plugins** designed to protect your JavaScript and TypeScript applications from vulnerabilities while enforcing best practices.

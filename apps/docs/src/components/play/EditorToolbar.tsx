@@ -1,13 +1,7 @@
 'use client';
 
-import { Play, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Button } from '@interlace/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@interlace/ui/tooltip';
-
 export interface EditorToolbarProps {
   /** True when the editor buffer differs from the canonical snippet. */
   isEdited: boolean;
@@ -18,13 +12,12 @@ export interface EditorToolbarProps {
  * EditorToolbar — the row above the Monaco editor.
  *
  * Holds the "Code · editable" label, the Reset button (only when the
- * buffer has drifted from the canonical snippet), and the disabled
- * "Run · Phase 2" placeholder wrapped in a Tooltip that names the
- * gated Phase 2 work (oxlint WASM + JS plugins).
- *
- * The disabled state is honest: the button sits in the layout slot
- * where the live affordance will be, but never lies about being
- * functional today.
+ * buffer has drifted from the canonical snippet), and the lints-as-you-type
+ * hint. There is deliberately NO Run button: linting is automatic (see
+ * useLiveLinting), and a button implying a manual step would misdescribe
+ * the product. Its predecessor — a disabled run-button placeholder gated on
+ * an internal roadmap milestone — outlived that milestone and shipped the
+ * roadmap's jargon to visitors.
  */
 export function EditorToolbar({ isEdited, onReset }: EditorToolbarProps) {
   return (
@@ -44,26 +37,9 @@ export function EditorToolbar({ isEdited, onReset }: EditorToolbarProps) {
             Reset
           </Button>
         )}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="xs"
-                disabled
-                className="font-mono uppercase tracking-wider"
-              >
-                <Play aria-hidden />
-                Run · Phase 2
-              </Button>
-            }
-          />
-          <TooltipContent>
-            Live linting arrives in Phase 2 (oxlint WASM + our rules as
-            JS plugins). For now the right pane shows the verified
-            static findings.
-          </TooltipContent>
-        </Tooltip>
+        <p className="font-mono text-[10px] uppercase tracking-wider text-fd-muted-foreground">
+          Lints as you type
+        </p>
       </div>
     </div>
   );
