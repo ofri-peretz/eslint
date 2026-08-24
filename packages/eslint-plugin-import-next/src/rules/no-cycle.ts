@@ -182,6 +182,25 @@ export type RuleOptions = [Options?];
 
 export const noCycle = createRule<RuleOptions, MessageIds>({
   name: 'no-cycle',
+  /**
+   * A cycle in generated code is real and unactionable.
+   *
+   * This rule is the second-largest source of findings on the pinned corpus —
+   * 1337 — and the triage ledger already says what they are: "Correct — real
+   * circular imports, concentrated in generated SDK class hierarchies (twilio
+   * Page/Version/AccountsBase, okta idx remediators)." Correct, and nobody
+   * will act on one: you do not refactor a file your codegen rewrites, and the
+   * remedy this rule suggests — split the module — is not available to the
+   * consumer at all.
+   *
+   * That is the distinction `require-https-only` and `no-exposed-debug-endpoints`
+   * drew for test files in #671: a rule opts out where its judgement cannot be
+   * acted on. It is NOT a blanket policy — a security rule finding a hardcoded
+   * secret in a generated file still reports, because that file ships and the
+   * fix belongs in the generator. The line is whether the finding is actionable
+   * where it is raised, not whether the file was typed by hand.
+   */
+  skipGeneratedFiles: true,
   meta: {
     type: 'problem',
     docs: {
