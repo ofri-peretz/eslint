@@ -1,0 +1,88 @@
+---
+title: no-user-controlled-redirect
+description: "Disallow res.redirect() with values directly from req.query / req.body / req.params"
+tags: ['security', 'express']
+category: security
+severity: high
+cwe: CWE-601
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Disallow `res.redirect()` with values taken directly from `req.query` / `req.body` / `req.params`
+
+**Severity:** 🔴 High
+**CWE:** [CWE-601](https://cwe.mitre.org/data/definitions/601.html)
+
+## Rule Details
+
+`res.redirect(req.query.url)` is an open redirect: the attacker chooses the
+destination, and the victim sees your trusted domain in the link they clicked.
+Open redirects are a standard phishing primitive and an OAuth token-leak vector.
+
+The rule flags a redirect whose argument comes from a user-controlled request
+object (`req.query`, `req.body`, `req.params`). Validation only counts when it
+guards **the same value being redirected** — checking `req.query.a` and then
+redirecting `req.query.b` is still flagged, because the checked value and the
+redirected value are different sources.
+
+## Examples
+
+### ❌ Incorrect
+
+```js
+app.get('/go', (req, res) => {
+  res.redirect(req.query.returnTo);
+});
+```
+
+```js
+// Validating one key and redirecting another is NOT validation.
+app.get('/go', (req, res) => {
+  if (new URL(req.query['a']).host !== 'example.com') return res.sendStatus(400);
+  res.redirect(req.query['b']);
+});
+```
+
+### ✅ Correct
+
+```js
+res.redirect('/dashboard');
+res.redirect(301, '/login');
+```
+
+```js
+// Allowlist the target, then redirect a value you constructed.
+const ALLOWED = new Map([['docs', '/docs'], ['home', '/']]);
+app.get('/go', (req, res) => {
+  res.redirect(ALLOWED.get(req.query.to) ?? '/');
+});
+```
+
+## Configuration Examples
+
+### Basic Usage
+
+```js
+// eslint.config.js
+{
+  rules: {
+    'express-security/no-user-controlled-redirect': 'error',
+  },
+}
+```
+
+## When Not To Use It
+
+An internal admin tool where every user already holds full trust in the
+redirect targets. Even then, prefer the allowlist — it costs three lines.
+
+## Related Rules
+
+- [`no-host-header-in-links`](./no-host-header-in-links) — the same trust
+  problem for URLs built from `req.headers.host`
