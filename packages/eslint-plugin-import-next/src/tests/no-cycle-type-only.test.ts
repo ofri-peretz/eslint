@@ -105,6 +105,23 @@ describe('no-cycle and erased imports', () => {
       expect(lint("import { Dual } from './b';\nexport const a = () => Dual;\n", b)).toBeGreaterThan(0);
     });
 
+    it('an interface merged with a namespace counts as a value', () => {
+      // `export interface Foo` beside `export namespace Foo` is the standard
+      // way to hang statics off a type. The namespace holds runtime entities,
+      // so it emits a real JS object and the cycle is real — matching only the
+      // interface would silence it.
+      const b = [
+        "import { a } from './a';",
+        'export interface Config { n: number }',
+        'export namespace Config {',
+        '  export const DEFAULT = { n: 1, a };',
+        '}',
+      ].join('\n');
+      expect(
+        lint("import { Config } from './b';\nexport const a = () => Config.DEFAULT;\n", b),
+      ).toBeGreaterThan(0);
+    });
+
     it('a re-exported name is not followed, so it counts as a value', () => {
       const b = ["import { a } from './a';", "export { Shape } from './c';", 'export const keep = a;'].join('\n');
       expect(lint("import { Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", b)).toBeGreaterThan(0);

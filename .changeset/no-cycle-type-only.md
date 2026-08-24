@@ -25,5 +25,16 @@ re-export, a default or namespace import, or a target that cannot be read.
 Measured against that sample: **8/8 runtime cycles still reported, 16/16
 type-only silenced.**
 
-Under `verbatimModuleSyntax` a plain named import of a type is already a
+### Compiler settings
+
+Under `verbatimModuleSyntax`, a plain named import of a type is already a
 compile error, so such projects write `import type` and are unaffected.
+
+**One exception, stated rather than handled.** With
+`importsNotUsedAsValues: "preserve"` (TypeScript 4.8–5.4) the import statement
+is kept, so the target module *is* executed and the runtime edge genuinely
+exists — this change will not report it. A lint rule cannot see that setting
+without reading `tsconfig.json`, which this one does not do. The exception is
+narrow and shrinking: the flag is deprecated in TypeScript 5.0 and removed in
+5.5, superseded by `verbatimModuleSyntax`. If you are on `preserve` and rely on
+this rule, pin to the previous minor until you migrate.

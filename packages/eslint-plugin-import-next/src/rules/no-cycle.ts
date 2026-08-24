@@ -215,10 +215,18 @@ export type RuleOptions = [Options?];
  *     kind is not visible at the import site. That is not a shortcut — all 6
  *     default imports in the sample were classes, i.e. genuine runtime cycles.
  *
- * A note on `verbatimModuleSyntax`: under it, a plain named import of a type is
- * a compile error, so such a codebase already writes `import type` and the
- * syntactic check above catches it. This path is for the default erasure that
- * the overwhelming majority of TypeScript projects still use.
+ * TWO COMPILER SETTINGS BOUND THIS, and only one of them is safe.
+ *
+ * `verbatimModuleSyntax` is fine: under it a plain named import of a type is a
+ * compile error, so the codebase already writes `import type` and the syntactic
+ * check above catches it.
+ *
+ * `importsNotUsedAsValues: "preserve"` is NOT. TypeScript 4.8-5.4 keeps the
+ * import statement, so the target module is still executed and the runtime edge
+ * genuinely exists — and this check silences it. A rule cannot see that setting
+ * without reading tsconfig, which it does not do, so the exception is stated
+ * rather than handled. It is narrow and shrinking: the flag is deprecated in
+ * TypeScript 5.0 and removed in 5.5, superseded by `verbatimModuleSyntax`.
  *
  * Regex over the target's source rather than a parse: this is a CROSS-FILE read
  * with no AST available, the same approach `getFileImports` already takes in
@@ -241,8 +249,13 @@ function exportKindsOf(target: string): Map<string, 'type' | 'value'> {
   }
 
   // Values first. A name that is both merges to 'value', which is the safe side.
+  // `namespace` and `module` belong on the VALUE side. A namespace holding any
+  // runtime entity emits a real JS object, and TypeScript lets it merge with an
+  // interface of the same name — `export interface Foo` beside
+  // `export namespace Foo`, the standard way to hang statics off a type. Match
+  // only the interface there and a genuine runtime cycle goes silent.
   for (const m of source.matchAll(
-    /export\s+(?:declare\s+)?(?:abstract\s+)?(?:const|let|var|function|class|enum)\s+([A-Za-z_$][\w$]*)/g,
+    /export\s+(?:declare\s+)?(?:abstract\s+)?(?:const|let|var|function|class|enum|namespace|module)\s+([A-Za-z_$][\w$]*)/g,
   )) {
     kinds.set(m[1], 'value');
   }
