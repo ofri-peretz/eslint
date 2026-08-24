@@ -128,6 +128,18 @@ function nearestStatement(node: TSESTree.Node): TSESTree.Statement | null {
 
 export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
   name: 'no-magic-numbers',
+  /**
+   * Not reported inside generated files.
+   *
+   * The remedy is "name this constant", which is not available in a file your codegen owns. This is also the single largest source of findings on the pinned corpus (1421) and the triage ledger already calls it "correct in contract, and a taste rule by nature".
+   *
+   * The line, from #671 and #686: a rule opts out where its judgement cannot
+   * be ACTED ON where it is raised. A security rule finding a hardcoded secret
+   * in generated output still reports, because that file ships and the fix
+   * belongs in the generator — this is not a blanket "generated code is
+   * exempt" policy.
+   */
+  skipGeneratedFiles: true,
   // 8 minified bundles carried 2,446 of this rule's 10,129 findings on the
   // pinned corpus — one of them, `assets/speedscope/import.bcbb2033.js`, was
   // 1,973 by itself. "Name this constant" is advice to whoever edits the file,
