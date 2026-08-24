@@ -123,6 +123,11 @@ jobs:
       # sources, and each runs in well under a second. A separate job would
       # spend more time on checkout and setup than on the check.
       - run: npm run lint:name-inference
+      # Third gate on the same question, one layer down: a rule's DETECTION
+      # TABLE is a list of claims, and this asks whether anything exercises
+      # each one. #659 added twelve credential spellings and three reached the
+      # PR with no test — removing them from the rule left the suite green.
+      - run: npm run lint:detection-list-coverage
       # The FULL rule-audit ratchet. The pre-commit hook runs a scoped version
       # that only sees rules whose own files changed; a shared-util edit can
       # move a rule's findings without touching it, so this run — every rule,

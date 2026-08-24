@@ -1,0 +1,568 @@
+{
+  "packages/eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/index.ts#DEFAULT_AUTH_KEYWORDS": [
+    "isAuthenticated"
+  ],
+  "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/index.ts#DEFAULT_SANITIZERS": [
+    "sanitizeHtml"
+  ],
+  "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/index.ts#DEFAULT_CSRF_MIDDLEWARE_PATTERNS": [
+    "checkCsrf",
+    "validateCsrf"
+  ],
+  "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/index.ts#CSRF_MODULES": [
+    "@dr.pogodin/csurf",
+    "csrf-csrf",
+    "edge-csrf",
+    "tiny-csrf"
+  ],
+  "packages/eslint-plugin-browser-security/src/rules/no-tracking-without-consent/index.ts#DEFAULT_CONSENT_IDENTIFIERS": [
+    "optin",
+    "trackingallowed"
+  ],
+  "packages/eslint-plugin-conventions/src/rules/conventions/analytics-event-naming.ts#ACTION_VERBS": [
+    "add",
+    "cancel",
+    "click",
+    "create",
+    "delete",
+    "end",
+    "fail",
+    "generate",
+    "invite",
+    "remove",
+    "send",
+    "start",
+    "submit",
+    "update",
+    "view"
+  ],
+  "packages/eslint-plugin-conventions/src/rules/conventions/filename-case.ts#DEFAULT_ALLOWED_UPPERCASE_FILES": [
+    "AUTHORS",
+    "CHANGELOG",
+    "CONTRIBUTING",
+    "COPYING",
+    "LICENSE",
+    "NOTICE",
+    "PATENTS",
+    "README",
+    "SECURITY",
+    "VERSION"
+  ],
+  "packages/eslint-plugin-express-security/src/rules/no-exposed-debug-endpoints/index.ts#DEFAULT_DEBUG_PATHS": [
+    "/__debug__",
+    "/_admin"
+  ],
+  "packages/eslint-plugin-express-security/src/rules/no-idor-resource-access/index.ts#DEFAULT_LOOKUP_METHODS": [
+    "deleteById",
+    "findByIdAndRemove",
+    "findByIdAndUpdate",
+    "findFirst",
+    "getById",
+    "replaceOne",
+    "updateOne"
+  ],
+  "packages/eslint-plugin-express-security/src/rules/no-missing-csrf-protection/index.ts#DEFAULT_CSRF_MIDDLEWARE_PATTERNS": [
+    "checkCsrf",
+    "csrfToken",
+    "csurf",
+    "validateCsrf",
+    "verifyCsrfToken"
+  ],
+  "packages/eslint-plugin-express-security/src/rules/require-express-body-parser-limits/index.ts#DEFAULT_EXCESSIVE_LIMITS": [
+    "500MB",
+    "500mb"
+  ],
+  "packages/eslint-plugin-express-security/src/rules/require-rate-limiting/index.ts#RATE_LIMIT_PACKAGES": [
+    "expressBrute",
+    "expressRateLimit",
+    "slowDown"
+  ],
+  "packages/eslint-plugin-express-security/src/rules/require-route-authentication/index.ts#DEFAULT_CRITICAL_PATHS": [
+    "2fa",
+    "api-key",
+    "apikey",
+    "backup",
+    "charge",
+    "deploy",
+    "export",
+    "mfa",
+    "migrate",
+    "private",
+    "refund",
+    "restore",
+    "role",
+    "withdraw"
+  ],
+  "packages/eslint-plugin-express-security/src/rules/require-route-authentication/index.ts#DEFAULT_PUBLIC_PATHS": [
+    "confirm",
+    "forgot",
+    "logout",
+    "sign-in",
+    "sign-up",
+    "signin",
+    "signup",
+    "verify"
+  ],
+  "packages/eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/index.ts#DEFAULT_DEBUG_PATHS": [
+    "/_admin",
+    "/health",
+    "/test"
+  ],
+  "packages/eslint-plugin-lambda-security/src/rules/no-hardcoded-credentials-sdk/index.ts#CREDENTIAL_PROPERTY_NAMES": [
+    "awsAccessKeyId",
+    "awsSecretAccessKey"
+  ],
+  "packages/eslint-plugin-lambda-security/src/rules/no-missing-authorization-check/index.ts#AUTHORIZATION_CHECK_PATTERNS": [
+    "principalId",
+    "requestContext.identity",
+    "scope"
+  ],
+  "packages/eslint-plugin-lambda-security/src/rules/no-unvalidated-event-body/index.ts#DANGEROUS_EVENT_PROPERTIES": [
+    "headers",
+    "multiValueHeaders",
+    "multiValueQueryStringParameters",
+    "rawPath",
+    "rawQueryString"
+  ],
+  "packages/eslint-plugin-modularity/src/rules/ddd-anemic-domain-model.ts#DEFAULT_DOMAIN_PATHS": [
+    "aggregate",
+    "aggregates",
+    "domain",
+    "domains",
+    "entities",
+    "entity",
+    "model",
+    "models"
+  ],
+  "packages/eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts#DEFAULT_HTTP_MODULES": [
+    "axios",
+    "got",
+    "http",
+    "http2",
+    "https",
+    "ky",
+    "needle",
+    "node-fetch",
+    "phin",
+    "request",
+    "superagent",
+    "undici"
+  ],
+  "packages/eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts#DEFAULT_NETWORK_METHODS": [
+    "all",
+    "delete",
+    "fetch",
+    "get",
+    "head",
+    "options",
+    "patch",
+    "post",
+    "put",
+    "request",
+    "stream"
+  ],
+  "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-populate/index.ts#USER_INPUT_PATTERNS": [
+    "ctx.params",
+    "ctx.query",
+    "ctx.request.body",
+    "req.params",
+    "request.body",
+    "request.params",
+    "request.query"
+  ],
+  "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-query/index.ts#QUERY_METHODS": [
+    "findByIdAndDelete",
+    "findByIdAndUpdate",
+    "findOneAndReplace",
+    "updateMany"
+  ],
+  "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-query/index.ts#USER_INPUT_PATTERNS": [
+    "ctx.params"
+  ],
+  "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-regex-query/index.ts#USER_INPUT_PATTERNS": [
+    "ctx.params",
+    "ctx.query",
+    "ctx.request.body",
+    "req.params",
+    "request.body",
+    "request.params",
+    "request.query"
+  ],
+  "packages/eslint-plugin-nestjs-security/src/rules/no-exposed-private-fields/index.ts#DEFAULT_SENSITIVE_TERMS": [
+    "accessKey",
+    "cardNumber",
+    "clientSecret",
+    "creditCard",
+    "cvc",
+    "cvv",
+    "mfaSecret",
+    "otp",
+    "passwd",
+    "pwd",
+    "sessionToken",
+    "ssn",
+    "totpSecret"
+  ],
+  "packages/eslint-plugin-nestjs-security/src/rules/require-guards/index.ts#DEFAULT_PUBLIC_ROUTES": [
+    ".well-known",
+    "confirm",
+    "forgot",
+    "forgot-password",
+    "healthz",
+    "logout",
+    "oauth",
+    "readiness",
+    "registration",
+    "reset-password",
+    "robots",
+    "robots.txt",
+    "sign-in",
+    "sign-out",
+    "sign-up",
+    "signin",
+    "signout",
+    "signup",
+    "sso",
+    "verify",
+    "verify-email"
+  ],
+  "packages/eslint-plugin-nestjs-security/src/rules/require-throttler/index.ts#SENSITIVE_ROUTE_TOKENS": [
+    "2fa",
+    "confirm",
+    "forgot",
+    "invitation",
+    "invite",
+    "logout",
+    "passwd",
+    "recover",
+    "refresh",
+    "registration",
+    "session",
+    "sign-in",
+    "sign-up",
+    "signin",
+    "signup",
+    "totp",
+    "verification"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts#DEFAULT_TAINT_SOURCES": [
+    "ctx",
+    "event"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/index.ts#SENSITIVE_SEGMENTS": [
+    ".aws/credentials",
+    ".git/config",
+    ".npmrc",
+    ".ssh/authorized_keys",
+    ".ssh/id_dsa",
+    "etc/hosts",
+    "etc/sudoers",
+    "proc/self",
+    "windows/system32/config/sam"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/index.ts#DEFAULT_BUFFER_METHODS": [
+    "readBigInt64BE",
+    "readBigInt64LE",
+    "readBigUInt64LE",
+    "readDoubleBE",
+    "readDoubleLE",
+    "readFloatBE",
+    "readFloatLE",
+    "readInt16BE",
+    "readInt16LE",
+    "readInt32BE",
+    "readInt32LE",
+    "readInt8",
+    "readIntBE",
+    "readIntLE",
+    "readUIntBE",
+    "readUIntLE",
+    "writeUInt32LE",
+    "writeUInt8"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/index.ts#CRYPTO_WORDS": [
+    "cipher",
+    "jwt",
+    "mnemonic",
+    "passphrase",
+    "passwd",
+    "salt",
+    "secrets",
+    "signature",
+    "tokens",
+    "verify"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts#USER_INPUT_SUBSTRINGS": [
+    "href",
+    "link"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts#DEFAULT_SECRET_PATTERNS": [
+    "auth_token",
+    "encryption-key",
+    "encryption_key",
+    "private-key",
+    "private_key",
+    "refresh-token",
+    "refresh_token",
+    "session-id",
+    "session_id",
+    "social-security",
+    "social_security"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts#DEFAULT_NON_SECRET_WORDS": [
+    "authored",
+    "authoring",
+    "authors",
+    "authorship",
+    "hashtag",
+    "hashtags"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts#DEFAULT_NON_SECRET_TAILS": [
+    "addresses",
+    "cost",
+    "endpoints",
+    "hostname",
+    "limits",
+    "origin",
+    "pathnames",
+    "paths",
+    "percent",
+    "price",
+    "quota",
+    "rank",
+    "total"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-weak-hash-algorithm/index.ts#DEFAULT_SECURITY_USE_NAMES": [
+    "apikey",
+    "authorization",
+    "certs",
+    "csrf",
+    "encryptionkey",
+    "hmac",
+    "integrity",
+    "jwt",
+    "nonce",
+    "passwd",
+    "privatekey",
+    "salt",
+    "secretkey",
+    "secrets",
+    "session",
+    "signingkey",
+    "tokens"
+  ],
+  "packages/eslint-plugin-node-security/src/rules/no-zip-slip/index.ts#DEFAULT_ARCHIVE_MODULES": [
+    "7zip-min",
+    "archiver",
+    "decompress",
+    "extract-zip",
+    "gunzip-maybe",
+    "jszip",
+    "node-7z",
+    "node-stream-zip",
+    "tar-fs",
+    "tar-stream",
+    "unzip-stream",
+    "yazl",
+    "zip-stream"
+  ],
+  "packages/eslint-plugin-react-a11y/src/rules/control-has-associated-label.ts#DEFAULT_IGNORE_ELEMENTS": [
+    "audio",
+    "canvas",
+    "embed",
+    "tr",
+    "video"
+  ],
+  "packages/eslint-plugin-react-a11y/src/rules/control-has-associated-label.ts#DEFAULT_IGNORE_ROLES": [
+    "grid",
+    "listbox",
+    "menu",
+    "menubar",
+    "radiogroup",
+    "row",
+    "tablist",
+    "toolbar",
+    "tree",
+    "treegrid"
+  ],
+  "packages/eslint-plugin-react-a11y/src/rules/no-noninteractive-element-interactions.ts#INTERACTIVE_HANDLERS": [
+    "onClick",
+    "onKeyDown",
+    "onKeyPress",
+    "onKeyUp",
+    "onMouseDown",
+    "onMouseUp"
+  ],
+  "packages/eslint-plugin-react-a11y/src/rules/no-static-element-interactions.ts#INTERACTIVE_HANDLERS": [
+    "onClick",
+    "onKeyDown",
+    "onKeyPress",
+    "onKeyUp",
+    "onMouseDown",
+    "onMouseUp"
+  ],
+  "packages/eslint-plugin-react-features/src/rules/react/sort-comp.ts#DEFAULT_ORDER": [
+    "everything-else",
+    "instance-variables",
+    "lifecycle",
+    "render",
+    "static-methods",
+    "static-variables"
+  ],
+  "packages/eslint-plugin-react-features/src/rules/react/static-property-placement.ts#DEFAULT_GROUPS": [
+    "childContextTypes",
+    "contextType",
+    "contextTypes",
+    "defaultProps",
+    "propTypes",
+    "propTypes"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/detect-weak-password-validation/index.ts#PASSWORD_WORDS": [
+    "passwd"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/index.ts#DEFAULT_USER_INPUT_ALIASES": [
+    "userparam",
+    "userparams",
+    "uservar"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/index.ts#GRAPHQL_SCHEMA_KEYWORDS": [
+    "scalar"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts#DEFAULT_PLACEHOLDER_WORDS": [
+    "dummy",
+    "notreal",
+    "redacted",
+    "replaceme",
+    "tbd",
+    "todo",
+    "yours"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts#PUBLISHABLE_VENDORS": [
+    "bugsnag-js",
+    "bugsnag-sourcemaps"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/index.ts#DEFAULT_LDAP_PACKAGES": [
+    "ldap-authentication",
+    "ldap-escape",
+    "ldap-filter",
+    "ldapauth-fork",
+    "node-ldap",
+    "passport-ldapauth"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/index.ts#DEFAULT_LDAP_FUNCTIONS": [
+    "compare",
+    "modifyDN",
+    "searchAsync",
+    "searchPaginated"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/index.ts#DEFAULT_ESCAPE_FUNCTIONS": [
+    "dnEscape",
+    "dnValue",
+    "escape.dnValue",
+    "filterEscape"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-log-injection/index.ts#DEFAULT_LOGGER_RECEIVERS": [
+    "bunyan",
+    "pino",
+    "winston"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-log-injection/index.ts#DEFAULT_REQUEST_PROPERTIES": [
+    "cookies"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts#DEFAULT_AUTH_MIDDLEWARE_PATTERNS": [
+    "checkAuth",
+    "ensureAuthenticated"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts#DEFAULT_PUBLIC_ROUTE_PATTERNS": [
+    "callback",
+    "favicon",
+    "forgot-password",
+    "logout",
+    "oauth",
+    "password-reset",
+    "reset-password",
+    "sign-in",
+    "sign-up",
+    "signin",
+    "signup",
+    "verify-email"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts#DEFAULT_ROUTE_HANDLER_PATTERNS": [
+    "patch"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts#ROUTER_NAME_WORDS": [
+    "fastify",
+    "hapi"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/index.ts#DESCRIPTOR_SEGMENTS": [
+    "hint",
+    "notice",
+    "placeholder",
+    "prompt",
+    "warning"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-sql-injection/index.ts#REQUEST_PROPERTIES": [
+    "cookies",
+    "url"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-template-injection/index.ts#DEFAULT_TEMPLATE_ENGINES": [
+    "Dust",
+    "consolidate",
+    "doT",
+    "dust",
+    "jade",
+    "swig"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-template-injection/index.ts#DEFAULT_REQUEST_ROOTS": [
+    "event"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-template-injection/index.ts#DEFAULT_REQUEST_PROPERTIES": [
+    "cookies",
+    "headers",
+    "params",
+    "url"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-template-injection/index.ts#DEFAULT_UNTRUSTED_NAME_WORDS": [
+    "client",
+    "external"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/index.ts#DEFAULT_NON_EXECUTING_PACKAGES": [
+    "@msgpack/msgpack",
+    "cbor",
+    "msgpackr",
+    "protobufjs"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-xpath-injection/index.ts#DEFAULT_XPATH_PACKAGES": [
+    "@xmldom/xmldom",
+    "libxmljs",
+    "libxmljs2",
+    "xmldom-xpath"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/index.ts#DEFAULT_XML_MODULES": [
+    "xml2json",
+    "xpath"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/index.ts#DEFAULT_XML_PARSE_METHODS": [
+    "parseStringPromise",
+    "parseXmlAsync"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/index.ts#DEFAULT_AUTH_PROPERTIES": [
+    "isAuthenticated",
+    "isAuthorized"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/index.ts#DEFAULT_BROWSER_GLOBALS": [
+    "navigator",
+    "sessionStorage"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/index.ts#DEFAULT_SERVER_MODULES": [
+    "@hapi/hapi",
+    "@nestjs/core",
+    "fastify",
+    "https",
+    "koa"
+  ],
+  "packages/eslint-plugin-secure-coding/src/rules/require-secure-defaults/index.ts#DEFAULT_COOKIE_ATTRIBUTES": [
+    "expires",
+    "path"
+  ]
+}
