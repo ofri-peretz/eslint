@@ -511,8 +511,12 @@ describe('Homepage: Accessibility Lock', () => {
     expect(heroSource).toContain('drop-shadow');
   });
 
-  it('uses white text on dark background for WCAG contrast', () => {
-    expect(heroSource).toContain('text-white');
+  it('twin-surface WCAG contrast: dark text on the light sky, white on the cosmic gradient', () => {
+    expect(heroSource).toContain('dark:text-white');
+    expect(heroSource).toContain('text-slate-900');
+    // A bare forced-white token (no dark: prefix) was invisible on the
+    // light-theme sky surface (2026-08-24) — it must not come back.
+    expect(heroSource).not.toMatch(/[" ]text-white!/);
   });
 });
 
