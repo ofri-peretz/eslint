@@ -29,6 +29,7 @@
     "rule-ledger": "tsx scripts/build-rule-ledger.ts",
     "rule-audit:gate": "tsx scripts/rule-audit-gate.ts",
     "probe-rule": "tsx scripts/probe-rule.mts",
+    "lint:detection-list-coverage": "tsx scripts/lint-detection-list-coverage.ts",
     "lint:name-inference": "tsx scripts/lint-name-inference.ts",
     "lint:severity-consistency": "tsx scripts/lint-severity-consistency.ts",
     "lint:seal": "tsx scripts/lint-seal.ts",
