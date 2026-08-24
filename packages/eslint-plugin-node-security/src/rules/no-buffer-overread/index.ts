@@ -133,7 +133,8 @@ type MessageIds =
   | 'missingBoundsCheck'
   | 'negativeBufferIndex'
   | 'userControlledBufferIndex'
-  | 'unsafeBufferSlice';
+  | 'unsafeBufferSlice'
+  | 'boundsCheckDisabled';
 
 export interface Options extends SecurityRuleOptions {
   /** Buffer methods to check for bounds safety */
@@ -204,6 +205,32 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-126',
     },
     messages: {
+
+      boundsCheckDisabled: formatLLMMessage({
+
+        icon: MessageIcons.SECURITY,
+
+        issueName: 'Buffer bounds check disabled',
+
+        cwe: 'CWE-125',
+
+        owasp: 'A06:2021',
+
+        cvss: 7.5,
+
+        description:
+
+          "The deprecated noAssert argument is true, which turns off the bounds check on this read. Past the end of the buffer it returns whatever memory follows instead of throwing.",
+
+        severity: 'HIGH',
+
+        compliance: ['SOC2', 'PCI-DSS', 'ISO27001'],
+
+        fix: 'Drop the noAssert argument and let the read throw on an out-of-range offset.',
+
+        documentationLink: 'https://cwe.mitre.org/data/definitions/125.html',
+
+      }),
       unsafeBufferAccess: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe Buffer Access',
@@ -764,6 +791,38 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      /**
+       * The deprecated `noAssert` argument on the numeric Buffer reads.
+       *
+       * Distinct from everything else in this rule, which is CWE-126 — an
+       * offset an attacker steers. This is CWE-125: the offset may be perfectly
+       * ordinary, and the caller has switched off the check that would catch it
+       * being wrong. Node deprecated the parameter in v8; where it is still
+       * honoured, an out-of-range read returns adjacent memory rather than
+       * throwing.
+       *
+       * Unconditional, because `noAssert: true` has no safe reading.
+       */
+      // The selector pins the property to a plain Identifier, so no runtime
+      // type guard is needed for it — one would be an uncoverable branch, and
+      // this package gates on 100%.
+      'CallExpression[callee.type="MemberExpression"][callee.computed=false][callee.property.type="Identifier"]'(
+        node: TSESTree.CallExpression,
+      ) {
+        const callee = node.callee as TSESTree.MemberExpression;
+        const method = (callee.property as TSESTree.Identifier).name;
+        if (!/^(?:read|write)[A-Z]/.test(method)) return;
+        // `readUIntBE(offset, byteLength, noAssert)` takes three; the rest two.
+        const flag = node.arguments.at(-1);
+        if (
+          node.arguments.length >= 2 &&
+          flag?.type === AST_NODE_TYPES.Literal &&
+          flag.value === true
+        ) {
+          context.report({ node: flag, messageId: 'boundsCheckDisabled' });
+        }
+      },
+
       // Track buffer variable declarations
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type === AST_NODE_TYPES.Identifier && node.init) {

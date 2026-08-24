@@ -31,6 +31,13 @@ type RuleOptions = [NoDecodeWithoutVerifyOptions?];
 
 export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
   name: 'no-decode-without-verify',
+  /**
+   * A test that decodes a token it just minted is asserting the shape of the payload, not skipping verification of an untrusted one.
+   *
+   * Found on alphagov/govuk-mobile-backend, which runs eslint-plugin-security
+   * and would have seen this as added noise rather than added coverage.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
