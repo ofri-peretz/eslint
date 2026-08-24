@@ -71,6 +71,11 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
       {
+        text: 'Plugins',
+        url: '/plugins',
+        active: 'nested-url',
+      },
+      {
         text: 'Playground',
         url: '/play',
         active: 'nested-url',
@@ -87,6 +92,10 @@ export function baseOptions(): BaseLayoutProps {
       {
         text: 'Stats',
         url: '/stats',
+      },
+      {
+        text: 'Changelog',
+        url: '/changelog',
       },
       {
         text: 'Articles',

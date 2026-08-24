@@ -1,3 +1,10 @@
+# eslint-plugin-secure-coding
+
+All notable changes to `eslint-plugin-secure-coding` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
+
 ## 5.1.1
 
 ### Patch Changes
@@ -1622,30 +1629,23 @@ form-encoded body are the same characters, so the exemption is positional — a
 
 - New `./oxlint` sub-export for use with [oxlint](https://oxc.rs/docs/guide/usage/linter)'s JS plugin API. Wire it via `{ "jsPlugins": ["eslint-plugin-secure-coding/oxlint"] }` in `.oxlintrc.json`. Exposes the same rule set as the main entry; rules degrade gracefully when type information is unavailable (oxlint's JS plugin context does not provide `parserServices`). The default ESLint entry (`./`) is unchanged.
 
-## 3.1.3 (2026-02-09)
+## 3.1.3 — 2026-02-09
 
 This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
 
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [3.1.1] - 2026-02-09
+## 3.1.1 — 2026-02-09
 
 This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
 
-## [3.1.0] - 2026-02-09
+## 3.1.0 — 2026-02-09
 
 This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
 
-## [3.0.3] - 2026-02-09
+## 3.0.3 — 2026-02-09
 
 This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
 
-## [3.0.2] - 2025-12-20
+## 3.0.2 — 2025-12-20
 
 ### Performance
 
@@ -1656,7 +1656,7 @@ This was a version bump only for eslint-plugin-secure-coding to align it with ot
 - **no-missing-csrf-protection**: Set-based O(1) lookups for protected HTTP methods
 - **detect-child-process**: Set-based O(1) lookups for dangerous child_process methods
 
-## [3.0.1] - 2025-12-20
+## 3.0.1 — 2025-12-20
 
 ### Fixed444
 
@@ -1677,7 +1677,7 @@ This was a version bump only for eslint-plugin-secure-coding to align it with ot
 - **no-unlimited-resource-allocation**: Allow safe static paths:
   - `fs.readFileSync(path.join(__dirname, ...literals))` patterns now recognized as safe
 
-## [3.0.0] - 2025-12-14
+## 3.0.0 — 2025-12-14
 
 ### Added
 
@@ -1693,7 +1693,7 @@ This was a version bump only for eslint-plugin-secure-coding to align it with ot
 - **Recommended Config**: Now includes critical mobile security rules for hybrid web/mobile apps.
 - **Rule Improvements**: Refined AST detection for `no-clickjacking` and `no-unvalidated-deeplinks` to reduce false positives.
 
-## [1.0.0] - 2025-01-01
+## 1.0.0 — 2025-01-01
 
 ### Added
 

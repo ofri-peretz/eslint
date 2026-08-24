@@ -470,8 +470,18 @@ jobs:
     needs: [detect, build, publish]
     if: always() && needs.detect.outputs.count != '0'
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
+    permissions:
+      contents: write # create the rollup GitHub Release + its tag
     steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+
       - name: Write rollup
         env:
           MATRIX: ${{ needs.detect.outputs.matrix }}
@@ -531,3 +541,140 @@ jobs:
               echo "If tags / npm / GH Releases drift, the weekly \`release-hygiene.yml\` workflow opens a tracking issue + can backfill."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # ───────────────────────────────────────────────────────────────────
+      # Cross-package rollup.
+      #
+      # The per-package Releases created in STAGE 3 answer "what changed in
+      # eslint-plugin-jwt-security@3.1.0?". Nothing answered "what shipped in
+      # this release?" — a 19-package release produced 19 disconnected pages.
+      # This creates the one page that bundles them, grouped by kind
+      # (breaking / features / fixes) rather than by package, and including
+      # the private packages and apps that never get an npm Release of their
+      # own. See scripts/release-notes.ts.
+      # ───────────────────────────────────────────────────────────────────
+      - name: Build rollup release notes
+        id: rollup
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          # On workflow_dispatch there is no `before`; fall back to the parent
+          # commit, which for a Version-PR merge is the pre-release state.
+          base="$BEFORE_SHA"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            base=$(git rev-parse HEAD~1)
+          fi
+          npx tsx scripts/release-notes.ts --since="$base" > rollup-notes.md
+          cat rollup-notes.md >> "$GITHUB_STEP_SUMMARY"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Build machine-readable rollup
+        # The GitHub Releases API and releases.atom already expose *that* a
+        # release happened. What they cannot express is this rollup's shape —
+        # entries grouped by kind, deduplicated across packages, with the
+        # workspace-version table. Attaching it as an asset makes the grouped
+        # view consumable by the docs site and by agents without re-parsing 20
+        # markdown changelogs.
+        run: npx tsx scripts/release-notes.ts --since="${{ steps.rollup.outputs.base }}" --json > rollup.json
+
+      - name: Publish rollup GitHub Release
+        # Only for real, successful releases. A dry-run must not create a tag,
+        # and a failed fan-out has nothing coherent to roll up.
+        if: ${{ !inputs.dry-run && needs.publish.result == 'success' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COUNT: ${{ needs.detect.outputs.count }}
+        run: |
+          set -euo pipefail
+          # Date-stamped tag, disambiguated by the short SHA so two releases on
+          # the same day don't collide. Distinct from the per-package
+          # `<name>@<version>` namespace that release-hygiene.yml reconciles.
+          tag="release-$(git log -1 --format=%cd --date=format:%Y-%m-%d)-$(git rev-parse --short HEAD)"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --notes-file rollup-notes.md
+            echo "↻ Updated rollup release $tag"
+          else
+            gh release create "$tag" \
+              --title "Release $tag · ${COUNT} package(s)" \
+              --notes-file rollup-notes.md
+            echo "🆕 Created rollup release $tag"
+          fi
+          # Idempotent: --clobber replaces the asset on a re-run.
+          gh release upload "$tag" rollup.json --clobber
+          echo "[$tag](https://github.com/${{ github.repository }}/releases/tag/$tag)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify the release notes that just published
+        # Everything upstream of the publish is unit-tested; nothing tested the
+        # artifact. Every defect found in this system so far was found by
+        # opening the published page and reading it — this is that reading,
+        # automated, against exactly the tags this run created (not the latest
+        # N, which would re-report pre-#660 releases forever).
+        #
+        # Advisory: the packages are on npm by now, so a red X here cannot
+        # un-publish anything and would only teach people to ignore red Xs.
+        if: ${{ !inputs.dry-run && needs.publish.result == 'success' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MATRIX: ${{ needs.detect.outputs.matrix }}
+        run: |
+          set -uo pipefail
+          tags=$(echo "$MATRIX" | jq -r '[.include[]? | "\(.name | sub("^@[^/]+/"; ""))@\(.version)"] | join(",")')
+          rollup="release-$(git log -1 --format=%cd --date=format:%Y-%m-%d)-$(git rev-parse --short HEAD)"
+
+          npx tsx scripts/verify-release-notes.ts --tags="${tags},${rollup}" 2>&1 | tee notes-check.txt
+          {
+            echo ""
+            echo "<details><summary>Release-note verification</summary>"
+            echo ""
+            echo '```'
+            cat notes-check.txt
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify tags / npm / Releases agree
+        # release-hygiene.yml runs this same reconciliation weekly, which means
+        # a partially-failed release could sit undetected for up to seven days.
+        # Running it here costs one job step and catches the drift while the
+        # run that caused it is still on screen. Report-only: the packages are
+        # already published, so the useful output is a diagnosis, not a red X.
+        if: ${{ !inputs.dry-run && needs.publish.result == 'success' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          npm run --silent release:reconcile 2>&1 | tee reconcile.txt
+          {
+            echo ""
+            echo "<details><summary>Tag / npm / Release reconciliation</summary>"
+            echo ""
+            echo '```'
+            cat reconcile.txt
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Annotate release in PostHog
+        # Advisory: the packages are already on npm by this point, so a
+        # missing analytics marker must never fail the run. The script exits 0
+        # on every error path; `continue-on-error` covers a crash before that.
+        if: ${{ !inputs.dry-run && needs.publish.result == 'success' }}
+        continue-on-error: true
+        env:
+          POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ vars.POSTHOG_PROJECT_ID }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+          COUNT: ${{ needs.detect.outputs.count }}
+          MATRIX: ${{ needs.detect.outputs.matrix }}
+        run: |
+          set -euo pipefail
+          names=$(echo "$MATRIX" | jq -r '[.include[]?| "\(.name)@\(.version)"] | join(", ")')
+          npx tsx scripts/posthog-annotate.ts \
+            --content="📦 npm release · ${COUNT} package(s): ${names}"

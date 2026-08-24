@@ -1,6 +1,9 @@
-# Changelog
+# @interlace/eslint-formatter
 
-All notable changes to `@interlace/eslint-formatter` will be documented here.
+All notable changes to `@interlace/eslint-formatter` are documented here.
+
+Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
+the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
@@ -35,7 +38,7 @@ Latest ILB-Formatter v1.1 numbers (240-cell suite, 6 shapes × 5 scales × 8 for
 
 All four modes score 4 / 4 on the FP/FN-attribution signal contract on every fixture in the suite.
 
-## [0.1.0] — 2026-05-03
+## 0.1.0 — 2026-05-03
 
 ### Added
 

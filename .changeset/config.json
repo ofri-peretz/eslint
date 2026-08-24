@@ -1,9 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
-  "changelog": [
-    "@changesets/changelog-github",
-    { "repo": "ofri-peretz/eslint" }
-  ],
+  "changelog": ["./changelog.cjs", { "repo": "ofri-peretz/eslint" }],
   "commit": false,
   "fixed": [],
   "linked": [],
@@ -12,7 +9,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [],
   "privatePackages": {
-    "version": false,
+    "version": true,
     "tag": false
   }
 }
