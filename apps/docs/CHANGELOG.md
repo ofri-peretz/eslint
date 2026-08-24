@@ -5,6 +5,65 @@ All notable changes to `docs` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.2.0
+
+### Minor Changes
+
+- **✨ Feature** — plugin changelogs render from build-time data, not a runtime fetch ([#679](https://github.com/ofri-peretz/eslint/pull/679))
+
+  Every plugin's docs page already had a changelog tab, and it showed the reader
+  the raw file. On the live site `plugin-jwt-security/changelog` opened each entry
+  with `#635 0d30b1c Thanks @ofri-peretz ! -` — roughly 120 characters of
+  `@changesets/changelog-github` plumbing before the first word of prose. The same
+  content on `/changelog` had none of it, so the higher-intent surface — someone
+  researching _that plugin_ — got the worse rendering.
+
+  `<PluginChangelog>` replaces `<RemoteChangelog>` on all 26 pages and reads
+  `src/data/changelog.json`, the source `/changelog` already uses. Both surfaces
+  now render identically, and three problems go with the old component:
+
+  - **No runtime network dependency.** GitHub being slow or rate-limiting turned a
+    docs page into an amber "unable to load" box.
+  - **No two-hour staleness.** It fetched from `main`, so the page could describe a
+    version the deployed docs don't, or lag one that just shipped.
+  - **No raw plumbing.** Entries render with the same badges, inline code and PR
+    links as the cross-package view.
+
+  Also collapses a legacy artifact worth 16% of the corpus: 248 of 1554 entries
+  were a `Updated dependencies [...]` wall of commit links, up to 622
+  characters whose entire information content is "internal
+  dependencies moved". They normalise to `Updated internal dependencies`under the
+  Dependencies badge — matching what the current formatter emits — in the shared
+  parser, so`/changelog` gets it too.
+
+  The now-orphaned `remote-changelog.tsx` is removed; `RemoteReadme` is untouched
+  and still used by 26 pages.
+
+### Patch Changes
+
+- **🐛 Fix** — the changelog API returned `"date": "Unknown"` for every modern release ([#682](https://github.com/ofri-peretz/eslint/pull/682))
+
+  `/api/changelog` is a documented public endpoint — `advanced/changelog.mdx`
+  publishes curl examples for it. Its parser reads the release date out of the
+  version heading, which works for the legacy keep-a-changelog format. Changesets
+  writes `## 1.4.1` with no date at all, so from the day this repo adopted
+  changesets every entry the endpoint returned carried `"date": "Unknown"`.
+
+  The real date is the release's git tag, which `sync-changelog.ts` already
+  resolves for all 458 releases. The route consults the tag first, falls back to the heading date, and only
+  then admits `"Unknown"` — the same precedence `sync-changelog.ts` uses, since a
+  hand-written heading date records when someone edited the changelog rather than
+  when the release shipped. For
+  `eslint-plugin-jwt-security`: 8 of 10 entries gain a date; the two that remain
+  unknown have no tag.
+
+  `type` gets the same treatment. It was a substring guess —
+  `content.includes('fix')` fires on any entry whose prose happens to contain the
+  word — where the changeset's own conventional-commit prefix says what the author
+  declared. The guess stays as the fallback for entries with no declared kind.
+
+  Response shape is unchanged; only the values improve.
+
 ## 1.1.0
 
 ### Minor Changes
