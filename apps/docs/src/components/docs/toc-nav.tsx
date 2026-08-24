@@ -27,7 +27,17 @@ import { TOC } from 'fumadocs-ui/layouts/docs/page/slots/toc';
 
 export function TocNav(props: ComponentProps<typeof TOC>) {
   return (
-    <nav aria-label="On this page">
+    // `contents` is load-bearing, not cosmetic. The docs page is a CSS grid
+    // and the stock `#nd-toc` places itself with `[grid-area:toc]` — but
+    // grid-area only works on DIRECT grid children. A plain <nav> wrapper
+    // becomes the grid child instead: unstyled, auto-placed into the first
+    // free cell, where it rendered as a full-height block overlapping the
+    // article on every xl+ viewport (the TOC is `max-xl:hidden`, which is
+    // why small screens never showed it). `display: contents` removes the
+    // nav's box so `#nd-toc` is the grid item again, while the navigation
+    // landmark and its accessible name stay exposed — verified with axe
+    // (0 violations, `region` included) at 1728×1117.
+    <nav className="contents" aria-label="On this page">
       <TOC {...props} />
     </nav>
   );
