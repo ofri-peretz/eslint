@@ -173,7 +173,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: 'eslint-plugin-import-next',
-    version: '2.4.0',
+    version: '2.5.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
