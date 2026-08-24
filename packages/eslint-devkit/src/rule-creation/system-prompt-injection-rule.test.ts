@@ -24,14 +24,17 @@ RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
 
 const exprOf = (code: string): TSESTree.Node =>
-  (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement).expression;
+  (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
+    .expression;
 
 const propOf = (code: string): TSESTree.Node =>
   (exprOf(code) as TSESTree.ObjectExpression).properties[0]!;
 
 describe('isStaticInstruction', () => {
   it('accepts a literal, an interpolation-free template, and concatenations of them', () => {
-    expect(isStaticInstruction(exprOf("'You are a helpful assistant.'"))).toBe(true);
+    expect(isStaticInstruction(exprOf("'You are a helpful assistant.'"))).toBe(
+      true,
+    );
     expect(isStaticInstruction(exprOf('`You are helpful.`'))).toBe(true);
     expect(isStaticInstruction(exprOf("'a' + 'b'"))).toBe(true);
     expect(isStaticInstruction(exprOf("'a' + `b`"))).toBe(true);
@@ -64,7 +67,7 @@ describe('isStaticInstruction', () => {
 
 describe('staticKey', () => {
   it('reads bare and quoted keys alike', () => {
-    expect(staticKey(propOf("({ system: 1 })"))).toBe('system');
+    expect(staticKey(propOf('({ system: 1 })'))).toBe('system');
     expect(staticKey(propOf("({ 'system': 1 })"))).toBe('system');
   });
 
@@ -81,11 +84,17 @@ describe('staticKey', () => {
 
 describe('isSystemMessage', () => {
   it('matches only a literal system role', () => {
-    expect(isSystemMessage(exprOf("({ role: 'system', content: 'x' })"))).toBe(true);
-    expect(isSystemMessage(exprOf("({ role: 'user', content: 'x' })"))).toBe(false);
+    expect(isSystemMessage(exprOf("({ role: 'system', content: 'x' })"))).toBe(
+      true,
+    );
+    expect(isSystemMessage(exprOf("({ role: 'user', content: 'x' })"))).toBe(
+      false,
+    );
     // A user turn is *supposed* to carry untrusted content; guessing at a
     // non-literal role would report it.
-    expect(isSystemMessage(exprOf("({ role: someRole, content: 'x' })"))).toBe(false);
+    expect(isSystemMessage(exprOf("({ role: someRole, content: 'x' })"))).toBe(
+      false,
+    );
     expect(isSystemMessage(exprOf("({ content: 'x' })"))).toBe(false);
   });
 
@@ -96,7 +105,9 @@ describe('isSystemMessage', () => {
 
 describe('messageContent', () => {
   it('finds the content value', () => {
-    const node = exprOf("({ role: 'system', content: 'hello' })") as TSESTree.ObjectExpression;
+    const node = exprOf(
+      "({ role: 'system', content: 'hello' })",
+    ) as TSESTree.ObjectExpression;
     expect(messageContent(node)?.type).toBe('Literal');
   });
 
@@ -106,17 +117,22 @@ describe('messageContent', () => {
   });
 });
 
-
 describe('calleePath', () => {
   const calleeOf = (code: string): TSESTree.Node =>
-    ((parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-      .expression as TSESTree.CallExpression).callee;
+    (
+      (
+        parser.parse(code, { range: true })
+          .body[0] as TSESTree.ExpressionStatement
+      ).expression as TSESTree.CallExpression
+    ).callee;
 
   it('joins the member path, excluding the root object', () => {
     expect(calleePath(calleeOf('client.chat.completions.create({})'))).toBe(
       'chat.completions.create',
     );
-    expect(calleePath(calleeOf('model.generateContent({})'))).toBe('generateContent');
+    expect(calleePath(calleeOf('model.generateContent({})'))).toBe(
+      'generateContent',
+    );
   });
 
   it('returns undefined for a bare call — the shape another plugin owns', () => {
@@ -128,12 +144,17 @@ describe('calleePath', () => {
   });
 
   it('handles a call as the root object', () => {
-    expect(calleePath(calleeOf('getClient().messages.create({})'))).toBe('messages.create');
+    expect(calleePath(calleeOf('getClient().messages.create({})'))).toBe(
+      'messages.create',
+    );
   });
 });
 
 const ruleTester = new RuleTester({
-  languageOptions: { parser, parserOptions: { ecmaVersion: 2022, sourceType: 'module' } },
+  languageOptions: {
+    parser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
 });
 
 const rule = createSystemPromptInjectionRule({
@@ -153,7 +174,7 @@ describe('createSystemPromptInjectionRule', () => {
     valid: [
       {
         name: 'no SDK import, no opinion',
-        code: "client.messages.create({ system: `You are ${role}.` });",
+        code: 'client.messages.create({ system: `You are ${role}.` });',
       },
       {
         name: 'a static system prompt',
@@ -178,15 +199,19 @@ describe('createSystemPromptInjectionRule', () => {
       {
         name: 'a non-system role is not this rule',
         code:
-          SDK + "client.messages.create({ messages: [{ role: 'assistant', content: `${x}` }] });",
+          SDK +
+          "client.messages.create({ messages: [{ role: 'assistant', content: `${x}` }] });",
       },
       {
         name: 'a role that is not statically known',
-        code: SDK + "client.messages.create({ messages: [{ role: r, content: `${x}` }] });",
+        code:
+          SDK +
+          'client.messages.create({ messages: [{ role: r, content: `${x}` }] });',
       },
       {
         name: 'a system message with no content key',
-        code: SDK + "client.messages.create({ messages: [{ role: 'system' }] });",
+        code:
+          SDK + "client.messages.create({ messages: [{ role: 'system' }] });",
       },
       {
         // The shape vercel-ai-security owns. A bare call is never a member
@@ -239,8 +264,7 @@ describe('createSystemPromptInjectionRule', () => {
       {
         // An import that is not this SDK must not open the gate.
         name: 'an unrelated import leaves the rule closed',
-        code:
-          "import { z } from 'zod';\nclient.messages.create({ system: `You are ${role}.` });",
+        code: "import { z } from 'zod';\nclient.messages.create({ system: `You are ${role}.` });",
       },
       {
         name: 'a parts value that is not an array',
@@ -273,13 +297,15 @@ describe('createSystemPromptInjectionRule', () => {
       },
       {
         name: 'the instructions option',
-        code: SDK + 'client.responses.create({ instructions: `Act as ${role}.` });',
+        code:
+          SDK + 'client.responses.create({ instructions: `Act as ${role}.` });',
         errors: [{ messageId: 'untrustedSystemPrompt' }],
       },
       {
         name: 'a system turn in the messages array',
         code:
-          SDK + "client.messages.create({ messages: [{ role: 'system', content: `${policy}` }] });",
+          SDK +
+          "client.messages.create({ messages: [{ role: 'system', content: `${policy}` }] });",
         errors: [{ messageId: 'untrustedSystemPrompt' }],
       },
       {
@@ -316,7 +342,10 @@ describe('createSystemPromptInjectionRule', () => {
         code:
           SDK +
           "client.messages.create({ messages: [{ role: 'system', content: `${a}` }, { role: 'system', content: `${b}` }] });",
-        errors: [{ messageId: 'untrustedSystemPrompt' }, { messageId: 'untrustedSystemPrompt' }],
+        errors: [
+          { messageId: 'untrustedSystemPrompt' },
+          { messageId: 'untrustedSystemPrompt' },
+        ],
       },
     ],
   });

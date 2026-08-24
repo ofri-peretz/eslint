@@ -100,8 +100,10 @@ export function isStaticInstruction(node: TSESTree.Node): boolean {
 
 /** Static text with no escape hatch for identifiers. */
 function isStaticText(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.Literal) return typeof node.value === 'string';
-  if (node.type === AST_NODE_TYPES.TemplateLiteral) return node.expressions.length === 0;
+  if (node.type === AST_NODE_TYPES.Literal)
+    return typeof node.value === 'string';
+  if (node.type === AST_NODE_TYPES.TemplateLiteral)
+    return node.expressions.length === 0;
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return isStaticText(node.left) && isStaticText(node.right);
   }
@@ -112,7 +114,10 @@ function isStaticText(node: TSESTree.Node): boolean {
 export function staticKey(prop: TSESTree.Node): string | undefined {
   if (prop.type !== AST_NODE_TYPES.Property || prop.computed) return undefined;
   if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
-  if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
+  if (
+    prop.key.type === AST_NODE_TYPES.Literal &&
+    typeof prop.key.value === 'string'
+  ) {
     return prop.key.value;
   }
   return undefined;
@@ -135,7 +140,9 @@ export function isSystemMessage(node: TSESTree.Node): boolean {
 }
 
 /** The `content` value of a message object, if it has a static `content` key. */
-export function messageContent(node: TSESTree.ObjectExpression): TSESTree.Node | undefined {
+export function messageContent(
+  node: TSESTree.ObjectExpression,
+): TSESTree.Node | undefined {
   for (const prop of node.properties) {
     if (staticKey(prop) === 'content') return (prop as TSESTree.Property).value;
   }
@@ -153,14 +160,17 @@ export function calleePath(callee: TSESTree.Node): string | undefined {
   const parts: string[] = [];
   let node: TSESTree.Node = callee;
   while (node.type === AST_NODE_TYPES.MemberExpression) {
-    if (node.computed || node.property.type !== AST_NODE_TYPES.Identifier) return undefined;
+    if (node.computed || node.property.type !== AST_NODE_TYPES.Identifier)
+      return undefined;
     parts.unshift(node.property.name);
     node = node.object;
   }
   return parts.length > 0 ? parts.join('.') : undefined;
 }
 
-export function createSystemPromptInjectionRule(config: SystemPromptInjectionRuleConfig) {
+export function createSystemPromptInjectionRule(
+  config: SystemPromptInjectionRuleConfig,
+) {
   const promptProps = new Set(config.systemPromptProps);
   const paths = config.requestPaths;
   // One probe per rule, not per file: it caches by `Program`, so the walk is
@@ -215,10 +225,15 @@ export function createSystemPromptInjectionRule(config: SystemPromptInjectionRul
           }
 
           // `messages: [{ role: 'system', content: … }, …]`
-          if (key === 'messages' && value.type === AST_NODE_TYPES.ArrayExpression) {
+          if (
+            key === 'messages' &&
+            value.type === AST_NODE_TYPES.ArrayExpression
+          ) {
             for (const element of value.elements) {
               if (element === null || !isSystemMessage(element)) continue;
-              const content = messageContent(element as TSESTree.ObjectExpression);
+              const content = messageContent(
+                element as TSESTree.ObjectExpression,
+              );
               if (content !== undefined) collect(content);
             }
           }
@@ -258,7 +273,8 @@ export function createSystemPromptInjectionRule(config: SystemPromptInjectionRul
           if (!paths.some((p) => path === p || path.endsWith(`.${p}`))) return;
 
           const request = node.arguments[0];
-          if (request?.type === AST_NODE_TYPES.ObjectExpression) inspectRequest(request);
+          if (request?.type === AST_NODE_TYPES.ObjectExpression)
+            inspectRequest(request);
         },
       };
     },

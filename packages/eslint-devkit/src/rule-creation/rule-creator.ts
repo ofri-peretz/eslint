@@ -249,10 +249,18 @@ const TEST_BASENAME =
  * repositories, recognising this suffix correctly exempts 243 further findings
  * — 37% of all findings between them — spanning ten rules in five plugins.
  *
- * A hyphen is required, so `latest` and `manifest` are not directories of
- * tests.
+ * A separator is required, so `latest` and `manifest` are not directories of
+ * tests — neither has one before its final `est`.
+ *
+ * Underscore counts as well as hyphen. `integration_tests/` is the HMPPS house
+ * layout across the UK Ministry of Justice estate, and requiring a hyphen made
+ * `detect-object-injection` report thirteen times inside
+ * `integration_tests/builders/` and `integration_tests/pages/` on
+ * hmpps-arns-assessment-platform-ui — test builders and page objects linted as
+ * production code. The disambiguation the hyphen was there to provide is
+ * unaffected: `latest` has no underscore either.
  */
-const TEST_DIR_SUFFIX = /-(tests?|specs?)$/;
+const TEST_DIR_SUFFIX = /[-_](tests?|specs?)$/;
 
 /**
  * Directories of scaffolding FOR tests, rather than of tests.
@@ -265,10 +273,12 @@ const TEST_DIR_SUFFIX = /-(tests?|specs?)$/;
  * Spelled out rather than matched as a prefix, because `test` is the start of
  * `testimonials`, which the existing cases already insist is production code.
  */
-const TEST_SUPPORT_DIR = /^test(?:[-_]?(?:utils?|helpers?|support|data|doubles?|factories|fixtures?|setup))$|^testing$/i;
+const TEST_SUPPORT_DIR =
+  /^test(?:[-_]?(?:utils?|helpers?|support|data|doubles?|factories|fixtures?|setup))$|^testing$/i;
 
 export function isTestFilePath(filename: string): boolean {
-  if (!filename || filename === '<input>' || filename === '<text>') return false;
+  if (!filename || filename === '<input>' || filename === '<text>')
+    return false;
   // Split at the last separator rather than `split(…).pop()`: `pop()` is typed
   // `string | undefined` while `split` always yields at least one element, so
   // the `?? ''` fallback it needs is unreachable — an uncoverable branch, which
@@ -413,6 +423,10 @@ export type { TSESLint };
  * at `packages/eslint-plugin/` — a package that does not exist.
  */
 const PLUGIN_DOCS_CATEGORY: Readonly<Record<string, 'security' | 'quality'>> = {
+  'plugin-anthropic-security': 'security',
+  'plugin-gemini-security': 'security',
+  'plugin-mcp-sdk-security': 'security',
+  'plugin-openai-security': 'security',
   'plugin-browser-security': 'security',
   'plugin-drizzle-security': 'security',
   'plugin-express-security': 'security',
@@ -441,7 +455,10 @@ const PLUGIN_DOCS_CATEGORY: Readonly<Record<string, 'security' | 'quality'>> = {
   'plugin-reliability': 'quality',
 };
 
-export const docsUrlFor = (pluginSlug: string, ruleName: string): string | null => {
+export const docsUrlFor = (
+  pluginSlug: string,
+  ruleName: string,
+): string | null => {
   const category = PLUGIN_DOCS_CATEGORY[pluginSlug];
   // A slug absent from the map has no docs pages, so there is no canonical URL to
   // build. Returning null makes the caller leave the rule alone rather than mint a
@@ -478,14 +495,20 @@ export function withCanonicalDocsUrls<
   for (const name of Object.keys(rules)) {
     // `Object.keys` yields own enumerable properties only, so a descriptor always
     // exists. The cast records that rather than adding a branch no input can reach.
-    const descriptor = Object.getOwnPropertyDescriptor(rules, name) as PropertyDescriptor;
+    const descriptor = Object.getOwnPropertyDescriptor(
+      rules,
+      name,
+    ) as PropertyDescriptor;
 
     const { get } = descriptor;
     if (get) {
       Object.defineProperty(rules, name, {
         ...descriptor,
         get(this: T) {
-          const rule = get.call(this) as TSESLint.RuleModule<string, readonly unknown[]>;
+          const rule = get.call(this) as TSESLint.RuleModule<
+            string,
+            readonly unknown[]
+          >;
           stampDocsUrl(pluginSlug, name, rule);
           return rule;
         },
@@ -496,7 +519,8 @@ export function withCanonicalDocsUrls<
     stampDocsUrl(
       pluginSlug,
       name,
-      descriptor.value as TSESLint.RuleModule<string, readonly unknown[]> | undefined,
+      descriptor.value as
+        TSESLint.RuleModule<string, readonly unknown[]> | undefined,
     );
   }
   return rules;

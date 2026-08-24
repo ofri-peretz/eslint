@@ -41,7 +41,8 @@ import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 
 /** Message ids every rule built by this factory reports. */
-export type UnscopedMutationMessageIds = 'unscopedMutation' | 'explicitTruncate';
+export type UnscopedMutationMessageIds =
+  'unscopedMutation' | 'explicitTruncate';
 
 export interface UnscopedMutationRuleConfig {
   /**
@@ -145,13 +146,18 @@ const DEFAULT_SCOPE_KEYS = ['where'] as const;
 const DEFAULT_SCOPE_METHODS = ['where'] as const;
 
 /** Property-key name of an object member, or `undefined` for one we cannot read. */
-export function propertyKeyName(prop: TSESTree.ObjectLiteralElement): string | undefined {
+export function propertyKeyName(
+  prop: TSESTree.ObjectLiteralElement,
+): string | undefined {
   if (prop.type !== AST_NODE_TYPES.Property) return undefined;
   // Computed keys (`{ [k]: v }`) are not statically known — a resolved name
   // is required, never the printed source text.
   if (prop.computed) return undefined;
   if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
-  if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
+  if (
+    prop.key.type === AST_NODE_TYPES.Literal &&
+    typeof prop.key.value === 'string'
+  ) {
     return prop.key.value;
   }
   return undefined;
@@ -163,7 +169,10 @@ export function propertyKeyName(prop: TSESTree.ObjectLiteralElement): string | u
  * `truncate: false` is not a truncate, so the value is checked rather than
  * the key's presence.
  */
-export function hasTruthyKey(obj: TSESTree.ObjectExpression, keys: readonly string[]): boolean {
+export function hasTruthyKey(
+  obj: TSESTree.ObjectExpression,
+  keys: readonly string[],
+): boolean {
   return obj.properties.some((prop) => {
     if (prop.type !== AST_NODE_TYPES.Property) return false;
     const name = propertyKeyName(prop);
@@ -230,11 +239,17 @@ export function chainMethodNames(node: TSESTree.CallExpression): Set<string> {
   for (;;) {
     const parent: TSESTree.Node | undefined = root.parent;
     if (!parent) break;
-    if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === root) {
+    if (
+      parent.type === AST_NODE_TYPES.MemberExpression &&
+      parent.object === root
+    ) {
       root = parent;
       continue;
     }
-    if (parent.type === AST_NODE_TYPES.CallExpression && parent.callee === root) {
+    if (
+      parent.type === AST_NODE_TYPES.CallExpression &&
+      parent.callee === root
+    ) {
       root = parent;
       continue;
     }
@@ -249,7 +264,10 @@ export function chainMethodNames(node: TSESTree.CallExpression): Set<string> {
       continue;
     }
     if (cursor.type === AST_NODE_TYPES.MemberExpression) {
-      if (!cursor.computed && cursor.property.type === AST_NODE_TYPES.Identifier) {
+      if (
+        !cursor.computed &&
+        cursor.property.type === AST_NODE_TYPES.Identifier
+      ) {
         names.add(cursor.property.name);
       }
       cursor = cursor.object;
@@ -284,7 +302,8 @@ export function driverBindings(
 
   for (const stmt of program.body) {
     if (stmt.type === AST_NODE_TYPES.ImportDeclaration) {
-      if (typeof stmt.source.value !== 'string' || !isDriver(stmt.source.value)) continue;
+      if (typeof stmt.source.value !== 'string' || !isDriver(stmt.source.value))
+        continue;
       for (const spec of stmt.specifiers) names.add(spec.local.name);
       continue;
     }
@@ -312,7 +331,10 @@ export function driverBindings(
       if (decl.id.type === AST_NODE_TYPES.Identifier) names.add(decl.id.name);
       if (decl.id.type === AST_NODE_TYPES.ObjectPattern) {
         for (const prop of decl.id.properties) {
-          if (prop.type === AST_NODE_TYPES.Property && prop.value.type === AST_NODE_TYPES.Identifier) {
+          if (
+            prop.type === AST_NODE_TYPES.Property &&
+            prop.value.type === AST_NODE_TYPES.Identifier
+          ) {
             names.add(prop.value.name);
           }
         }
@@ -329,7 +351,9 @@ export function driverBindings(
  * `db.delete(users)` → `db`; `prisma.user.deleteMany()` → `prisma`;
  * `this.db.delete(t)` → `db`, since `this` carries no name of its own.
  */
-export function receiverBaseName(node: TSESTree.MemberExpression): string | undefined {
+export function receiverBaseName(
+  node: TSESTree.MemberExpression,
+): string | undefined {
   let cursor: TSESTree.Node = node.object;
   for (;;) {
     if (cursor.type === AST_NODE_TYPES.MemberExpression) {
@@ -434,7 +458,8 @@ export function createUnscopedMutationRule(
           if (truncateKeys.length > 0) {
             const truncating = node.arguments.some(
               (arg) =>
-                arg.type === AST_NODE_TYPES.ObjectExpression && hasTruthyKey(arg, truncateKeys),
+                arg.type === AST_NODE_TYPES.ObjectExpression &&
+                hasTruthyKey(arg, truncateKeys),
             );
             if (truncating) {
               context.report({ node, messageId: 'explicitTruncate' });
@@ -447,7 +472,9 @@ export function createUnscopedMutationRule(
             // bulk form at all. See `requireOptionsObject`.
             if (
               config.requireOptionsObject === true &&
-              !node.arguments.some((arg) => arg.type === AST_NODE_TYPES.ObjectExpression)
+              !node.arguments.some(
+                (arg) => arg.type === AST_NODE_TYPES.ObjectExpression,
+              )
             ) {
               return;
             }

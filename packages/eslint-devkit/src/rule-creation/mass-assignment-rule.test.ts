@@ -70,9 +70,12 @@ describe('isUntrustedSource', () => {
   it('ignores a private field, which cannot be a request surface', () => {
     // `#body` is the one non-computed property that is not an Identifier, so
     // it is the only way to reach that guard.
-    const cls = parser.parse('class A { #body; m(req) { return req.#body; } }', {
-      range: true,
-    }).body[0] as TSESTree.ClassDeclaration;
+    const cls = parser.parse(
+      'class A { #body; m(req) { return req.#body; } }',
+      {
+        range: true,
+      },
+    ).body[0] as TSESTree.ClassDeclaration;
     const method = cls.body.body[1] as TSESTree.MethodDefinition;
     const ret = method.value.body!.body[0] as TSESTree.ReturnStatement;
     expect(isUntrustedSource(ret.argument as TSESTree.Node)).toBe(false);
@@ -88,15 +91,21 @@ describe('isUntrustedSource', () => {
 describe('classifyPayload', () => {
   it('reports the object itself and a spread of it, with distinct ids', () => {
     expect(classifyPayload(exprOf('req.body'))).toBe('untrustedPayload');
-    expect(classifyPayload(exprOf('({ ...req.body })'))).toBe('untrustedSpread');
-    expect(classifyPayload(exprOf('({ id, ...req.body })'))).toBe('untrustedSpread');
+    expect(classifyPayload(exprOf('({ ...req.body })'))).toBe(
+      'untrustedSpread',
+    );
+    expect(classifyPayload(exprOf('({ id, ...req.body })'))).toBe(
+      'untrustedSpread',
+    );
   });
 
   it('stays silent when the payload names its fields — that is the fix', () => {
     expect(classifyPayload(exprOf('({ name: req.body.name })'))).toBe(false);
-    expect(classifyPayload(exprOf('({ name: req.body.name, email: req.body.email })'))).toBe(
-      false,
-    );
+    expect(
+      classifyPayload(
+        exprOf('({ name: req.body.name, email: req.body.email })'),
+      ),
+    ).toBe(false);
   });
 
   it('stays silent for a spread of something trusted', () => {
@@ -130,7 +139,10 @@ const rule = createMassAssignmentRule({
 });
 
 const ruleTester = new RuleTester({
-  languageOptions: { parser, parserOptions: { ecmaVersion: 2022, sourceType: 'module' } },
+  languageOptions: {
+    parser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
 });
 
 const DRIVER = "import { orm } from 'test-orm';\n";
@@ -140,11 +152,15 @@ describe('createMassAssignmentRule', () => {
     valid: [
       {
         name: 'the fix — fields named explicitly',
-        code: DRIVER + 'await repo.create({ name: req.body.name, email: req.body.email });',
+        code:
+          DRIVER +
+          'await repo.create({ name: req.body.name, email: req.body.email });',
       },
       {
         name: 'named fields under a payload key',
-        code: DRIVER + 'await repo.update({ where: { id }, data: { name: req.body.name } });',
+        code:
+          DRIVER +
+          'await repo.update({ where: { id }, data: { name: req.body.name } });',
       },
       {
         name: 'a trusted object',
@@ -189,7 +205,8 @@ describe('createMassAssignmentRule', () => {
       },
       {
         name: 'a payload key that is not this driver’s',
-        code: DRIVER + 'await repo.update({ where: { id }, select: req.body });',
+        code:
+          DRIVER + 'await repo.update({ where: { id }, select: req.body });',
       },
     ],
     invalid: [
@@ -217,7 +234,9 @@ describe('createMassAssignmentRule', () => {
       },
       {
         name: 'spread nested under a payload key',
-        code: DRIVER + 'await repo.update({ where: { id }, data: { ...req.body } });',
+        code:
+          DRIVER +
+          'await repo.update({ where: { id }, data: { ...req.body } });',
         errors: [{ messageId: 'untrustedSpread' }],
       },
       {
@@ -227,7 +246,8 @@ describe('createMassAssignmentRule', () => {
       },
       {
         name: 'this.db reads through to the property name',
-        code: DRIVER + 'class S { m(req) { return this.db.create(req.body); } }',
+        code:
+          DRIVER + 'class S { m(req) { return this.db.create(req.body); } }',
         errors: [{ messageId: 'untrustedPayload' }],
       },
       {
@@ -252,8 +272,12 @@ describe('createMassAssignmentRule', () => {
       },
       {
         name: 'two payload keys report separately',
-        code: DRIVER + 'await repo.update({ data: req.body, values: req.query });',
-        errors: [{ messageId: 'untrustedPayload' }, { messageId: 'untrustedPayload' }],
+        code:
+          DRIVER + 'await repo.update({ data: req.body, values: req.query });',
+        errors: [
+          { messageId: 'untrustedPayload' },
+          { messageId: 'untrustedPayload' },
+        ],
       },
     ],
   });
@@ -271,7 +295,10 @@ describe('argument shapes the scanner has to walk past', () => {
         code: DRIVER + 'await repo.update({ [key]: req.body });',
       },
       { name: 'no arguments at all', code: DRIVER + 'await repo.create();' },
-      { name: 'a bare callee is not a member call', code: DRIVER + 'create(req.body);' },
+      {
+        name: 'a bare callee is not a member call',
+        code: DRIVER + 'create(req.body);',
+      },
     ],
     invalid: [
       {

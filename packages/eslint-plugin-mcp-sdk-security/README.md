@@ -31,6 +31,45 @@ Security rules for code built on [`@modelcontextprotocol/sdk`](https://www.npmjs
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+## Why these rules are quiet
+
+**Noise creates apathy, and apathy is not a security posture.** A linter that reports
+a thousand things a week gets switched off in a month, and the real finding goes with
+it. So every rule here is built to be worth reading: we would rather miss a finding
+than spend your attention on one that was never real.
+
+That is a trade, and it is made deliberately. It costs recall, and we measure what it
+costs rather than assuming it is free.
+
+## How the rules decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — not on an identifier that happens to contain
+`query`, a method called `setItem`, or a file whose path contains `key`. Every one of
+those was a real false positive in this ecosystem, found by reading our own output on
+open-source projects and fixed with a test that fails on the unfixed rule.
+
+Where a rule has known false-positive shapes, its page carries a **Not a finding**
+section: what it deliberately stays quiet on, and what to check first when it fires
+and you disagree.
+
+## What you get
+
+The rules below. Security rules carry a CWE mapping and, where one is assigned, a
+CVSS score; every rule carries a fix on its message — in prose for a human and as
+structured JSON for an agent. Install it, enable
+`recommended`, and read the findings. If one of them is wrong,
+[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
+bug here, not a tuning exercise for you.
+
+How that is measured, on which projects, and where it falls short:
+[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
+
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security). 📚
@@ -111,10 +150,14 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
 | 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [require-tool-input-schema](./docs/rules/require-tool-input-schema.md) | CWE-20 | A03:2021 | 7.5 | Require an input schema when registering an MCP tool | 🟢 | 💼 |  |  |  |  |
-
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-command-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-command-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-78 | A03:2021 |  | Disallow an MCP tool argument being used directly as the command in a child_process call. | 🟢 |  |  |  |  |  |
+| [no-tool-description-injection](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-tool-description-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-1427 | A03:2021 |  | Require MCP tool descriptions and titles to be static text, since they reach the model as instructions. | 🟢 |  |  |  |  |  |
+| [no-unvalidated-tool-args](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-unvalidated-tool-args?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Disallow a tool handler reading an argument its declared input schema does not include. | 🟢 |  |  |  |  |  |
+| [require-tool-input-schema](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/require-tool-input-schema?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Require an input schema when registering an MCP tool | 🟢 |  |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- INTERLACE:STAR_CTA:START -->
 ## ⭐ Support & follow
 

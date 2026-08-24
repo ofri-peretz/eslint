@@ -41,6 +41,7 @@ export default async function PlaygroundPage({
     <main>
       <Section spacing="comfortable" container="content">
         <SectionHeader
+          as="h1"
           eyebrow="Try it"
           title="Playground"
           tagline="Pick a flagship rule, edit the code, toggle the plugins, copy a real eslint.config.js. Live linting — edits trigger a real ESLint run in under 300 ms; plugin toggles drive the active rule set."

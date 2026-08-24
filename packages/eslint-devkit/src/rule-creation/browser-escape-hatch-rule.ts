@@ -65,7 +65,8 @@ function isFlagProperty(prop: TSESTree.ObjectLiteralElement): boolean {
   return (
     prop.type !== 'SpreadElement' &&
     !prop.computed &&
-    ((prop.key.type === 'Identifier' && prop.key.name === BROWSER_ESCAPE_FLAG) ||
+    ((prop.key.type === 'Identifier' &&
+      prop.key.name === BROWSER_ESCAPE_FLAG) ||
       (prop.key.type === 'Literal' && prop.key.value === BROWSER_ESCAPE_FLAG))
   );
 }
@@ -95,7 +96,9 @@ export function readFlag(options: TSESTree.ObjectExpression): FlagVerdict {
 
   if (index === -1) {
     // No explicit flag, but a spread anywhere could carry one.
-    return props.some((prop) => prop.type === 'SpreadElement') ? 'unreadable' : 'absent';
+    return props.some((prop) => prop.type === 'SpreadElement')
+      ? 'unreadable'
+      : 'absent';
   }
 
   // A spread after the flag can replace it wholesale.
@@ -109,7 +112,9 @@ export function readFlag(options: TSESTree.ObjectExpression): FlagVerdict {
   return 'unreadable';
 }
 
-export function createBrowserEscapeHatchRule(config: BrowserEscapeHatchRuleConfig) {
+export function createBrowserEscapeHatchRule(
+  config: BrowserEscapeHatchRuleConfig,
+) {
   // One probe per rule, not per file: it caches by `Program`, so the walk is
   // paid once however many rules in the plugin ask.
   const usesSdk = createModuleListEvidence(config.modules);
@@ -148,7 +153,10 @@ export function createBrowserEscapeHatchRule(config: BrowserEscapeHatchRuleConfi
       // what the old two-visitor gate needed a `Program:exit` pass to survive.
       if (!usesSdk(context.sourceCode.ast)) return {};
 
-      function inspect(node: TSESTree.Node, args: readonly TSESTree.Node[]): void {
+      function inspect(
+        node: TSESTree.Node,
+        args: readonly TSESTree.Node[],
+      ): void {
         const options = args[0];
         if (options?.type !== 'ObjectExpression') return;
         if (readFlag(options) === 'enabled') {

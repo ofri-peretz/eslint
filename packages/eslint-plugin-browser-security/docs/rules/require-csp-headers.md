@@ -1,6 +1,6 @@
 ---
 title: require-csp-headers
-description: "CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)"
+description: 'CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)'
 tags: ['security', 'browser']
 category: security
 severity: medium
@@ -12,8 +12,8 @@ autofix: false
 > **CWE:** [CWE-1021: Improper Restriction of Rendered-UI Layers or Frames](https://cwe.mitre.org/data/definitions/1021.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
-
 <!-- @rule-summary -->
+
 CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)
 <!-- @/rule-summary -->
 
@@ -25,7 +25,7 @@ ESLint Rule: require-csp-headers. This rule is part of [`eslint-plugin-browser-s
 | --------------- | ----------------------------------------------- |
 | **Severity**    | Medium (XSS Mitigation)                         |
 | **Auto-Fix**    | ❌ No (requires policy definition)              |
-| **Category**   | Security |
+| **Category**    | Security                                        |
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration         |
 | **Best For**    | Web servers serving HTML content                |
 | **Suggestions** | ✅ Advice on using Helmet for standard policies |
@@ -88,9 +88,34 @@ flowchart TD
 | 🚀 **Exfiltration** | Stealing data to external sites | Use `connect-src` to restrict outgoing requests |
 | 🤝 **Trust**        | Site used for phishing          | Use `frame-ancestors` to prevent clickjacking   |
 
-## Configuration
+## Options
 
-This rule has no configuration options in the current version.
+| Option              | Type       | Default                        | Description                                                                                                                                                           |
+| ------------------- | ---------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `responseReceivers` | `string[]` | `['res', 'response', 'reply']` | Identifiers that name a response object, so `<name>.render(view)` emits a response rather than returning a string. Anything unlisted is treated as a template engine. |
+
+`<name>.render(view)` is only a response emission when `<name>` is a response
+object. `nunjucksEnv.render(template, data)` returns a string, and so do
+mustache, ejs, handlebars and ReactDOMServer — none of them can set an HTTP
+header, so demanding a CSP at those call sites is a finding nobody can action.
+
+Setting this **replaces** the default list rather than extending it, so a
+codebase whose handlers name the response something else lists every name it
+uses:
+
+```json
+{
+  "rules": {
+    "browser-security/require-csp-headers": [
+      "error",
+      { "responseReceivers": ["res", "response", "reply", "httpRes"] }
+    ]
+  }
+}
+```
+
+The rule also skips test files: rendering a template to assert on its markup is
+not a route serving a document.
 
 ## Examples
 
@@ -111,7 +136,7 @@ app.get('/home', (req, res) => {
 ### ✅ Correct
 
 ```javascript
-res.send({ data: 'json' })
+res.send({ data: 'json' });
 ```
 
 ## Known False Negatives

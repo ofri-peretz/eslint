@@ -37,7 +37,10 @@ import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { driverBindings, propertyKeyName } from './unscoped-mutation-rule';
-import { looksLikeConnectionConfig, inConnectionPosition } from './require-tls-rule';
+import {
+  looksLikeConnectionConfig,
+  inConnectionPosition,
+} from './require-tls-rule';
 
 /**
  * Two ids because the fixes differ in shape.
@@ -45,7 +48,8 @@ import { looksLikeConnectionConfig, inConnectionPosition } from './require-tls-r
  * A `password` property is replaced in place with `process.env.…`. A URL has
  * to be rebuilt, or — better — split so the secret never sits in the string.
  */
-export type HardcodedCredentialsMessageIds = 'hardcodedPassword' | 'credentialsInUrl';
+export type HardcodedCredentialsMessageIds =
+  'hardcodedPassword' | 'credentialsInUrl';
 
 export interface HardcodedCredentialsRuleConfig {
   /**
@@ -86,7 +90,14 @@ export interface HardcodedCredentialsRuleConfig {
  * practice but it is not a credential, and reporting it doubles the noise for
  * no change in exploitability.
  */
-const CREDENTIAL_KEYS = ['password', 'pass', 'pwd', 'secret', 'passwd', 'auth'] as const;
+const CREDENTIAL_KEYS = [
+  'password',
+  'pass',
+  'pwd',
+  'secret',
+  'passwd',
+  'auth',
+] as const;
 
 /**
  * Connection-shape hints.
@@ -128,7 +139,10 @@ const DEFAULT_CONNECTION_KEYS = [
  * That URL is malformed for every driver here, so accepting the over-match is
  * cheaper than a parser — but it is a deliberate choice, not an oversight.
  */
-export function urlEmbedsCredentials(value: string, schemes: readonly string[]): boolean {
+export function urlEmbedsCredentials(
+  value: string,
+  schemes: readonly string[],
+): boolean {
   // `:` is excluded from the username class on purpose. With it in, the two
   // quantifiers around the delimiter are ambiguous — `a://` followed by many
   // colons gives the engine O(n) ways to split them, which CodeQL flags as
@@ -137,7 +151,9 @@ export function urlEmbedsCredentials(value: string, schemes: readonly string[]):
   // delimiter — so excluding it is both faster and more correct.
   const match = /^([a-z][a-z0-9+.-]*):\/\/([^/@\s:]*:[^/@\s]+)@/i.exec(value);
   if (match === null) return false;
-  return schemes.some((scheme) => scheme.toLowerCase() === match[1]!.toLowerCase());
+  return schemes.some(
+    (scheme) => scheme.toLowerCase() === match[1]!.toLowerCase(),
+  );
 }
 
 /**
@@ -155,7 +171,10 @@ export function staticStringValue(node: TSESTree.Node): string | undefined {
   if (node.type === AST_NODE_TYPES.Literal) {
     return typeof node.value === 'string' ? node.value : undefined;
   }
-  if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length === 0) {
+  if (
+    node.type === AST_NODE_TYPES.TemplateLiteral &&
+    node.expressions.length === 0
+  ) {
     // `quasis.length === expressions.length + 1`, so with no interpolations
     // there is exactly one quasi. No fallback branch, because there is no
     // input that reaches one.
@@ -181,7 +200,10 @@ export function isLiteralSecret(node: TSESTree.Node): boolean {
 export function createHardcodedCredentialsRule(
   config: HardcodedCredentialsRuleConfig,
 ): TSESLint.RuleModule<HardcodedCredentialsMessageIds, []> {
-  const connectionKeys = [...DEFAULT_CONNECTION_KEYS, ...(config.connectionKeys ?? [])];
+  const connectionKeys = [
+    ...DEFAULT_CONNECTION_KEYS,
+    ...(config.connectionKeys ?? []),
+  ];
 
   return {
     meta: {
@@ -257,14 +279,22 @@ export function createHardcodedCredentialsRule(
           const name = propertyKeyName(prop);
           if (name === undefined) continue;
 
-          if (CREDENTIAL_KEYS.includes(name.toLowerCase() as (typeof CREDENTIAL_KEYS)[number])) {
-            if (isLiteralSecret(prop.value)) report(prop.value, 'hardcodedPassword');
+          if (
+            CREDENTIAL_KEYS.includes(
+              name.toLowerCase() as (typeof CREDENTIAL_KEYS)[number],
+            )
+          ) {
+            if (isLiteralSecret(prop.value))
+              report(prop.value, 'hardcodedPassword');
             continue;
           }
           // A URL sitting on a connection key carries its own check, because
           // the credential is inside the string rather than beside it.
           const url = staticStringValue(prop.value);
-          if (url !== undefined && urlEmbedsCredentials(url, config.urlSchemes)) {
+          if (
+            url !== undefined &&
+            urlEmbedsCredentials(url, config.urlSchemes)
+          ) {
             report(prop.value, 'credentialsInUrl');
             continue;
           }
@@ -297,7 +327,9 @@ export function createHardcodedCredentialsRule(
           scanConfig(node);
         },
 
-        'Literal, TemplateLiteral'(node: TSESTree.Literal | TSESTree.TemplateLiteral) {
+        'Literal, TemplateLiteral'(
+          node: TSESTree.Literal | TSESTree.TemplateLiteral,
+        ) {
           if (bindings.size === 0) return;
           const value = staticStringValue(node);
           if (value === undefined) return;

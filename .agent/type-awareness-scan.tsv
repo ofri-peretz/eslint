@@ -467,3 +467,16 @@ express-security	no-missing-cors-check	unaware
 express-security	no-missing-csrf-protection	unaware	
 express-security	no-missing-security-headers	unaware	
 express-security	no-user-controlled-redirect	unaware	
+anthropic-security	no-browser-api-key-exposure	unaware	
+anthropic-security	no-hardcoded-api-key	unaware	
+anthropic-security	no-untrusted-content-in-prompt	unaware	
+gemini-security	no-disabled-safety-settings	unaware	
+gemini-security	no-hardcoded-api-key	unaware	
+gemini-security	no-untrusted-content-in-prompt	unaware	
+mcp-sdk-security	no-command-injection-in-tool	unaware	
+mcp-sdk-security	no-tool-description-injection	unaware	
+mcp-sdk-security	no-unvalidated-tool-args	unaware	
+mcp-sdk-security	require-tool-input-schema	unaware	
+openai-security	no-browser-api-key-exposure	unaware	
+openai-security	no-hardcoded-api-key	unaware	
+openai-security	no-untrusted-content-in-prompt	unaware	

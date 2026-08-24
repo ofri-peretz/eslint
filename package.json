@@ -25,6 +25,7 @@
   "scripts": {
     "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
+    "lint:triage-sampling": "tsx scripts/lint-triage-sampling.ts",
     "lint:taxonomy": "tsx scripts/lint-plugin-taxonomy.ts",
     "rule-ledger": "tsx scripts/build-rule-ledger.ts",
     "rule-audit:gate": "tsx scripts/rule-audit-gate.ts",

@@ -91,38 +91,7 @@ export default function ScorecardPage() {
     >
       <Header />
 
-      <section aria-labelledby="provenance-heading" className="mt-8">
-        <h2 id="provenance-heading" className="text-lg font-semibold">
-          Provenance
-        </h2>
-        <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <ProvenanceItem
-            label="Generated"
-            value={formatRunAt(snapshot.runAt)}
-          />
-          <ProvenanceItem
-            label="ESLint"
-            value={snapshot.eslintVersion || '—'}
-          />
-          <ProvenanceItem
-            label="oxlint"
-            value={snapshot.oxlintVersion || '—'}
-          />
-          <ProvenanceItem label="Node" value={snapshot.nodeVersion || '—'} />
-        </dl>
-        <p className="mt-4 text-sm text-fd-muted-foreground">
-          Source JSON:{' '}
-          <Link
-            href={`${GITHUB_RAW_BASE}/${snapshot.filename}`}
-            className="font-mono text-fd-primary underline hover:no-underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            benchmarks/results/ilb-flagship/{snapshot.filename}
-          </Link>{' '}
-          · Schema <code className="font-mono">{snapshot.schema}</code>.
-        </p>
-      </section>
+      <ScoreSummary rows={rows} runAt={snapshot.runAt} />
 
       <section aria-labelledby="latency-heading" className="mt-12">
         <h2 id="latency-heading" className="text-lg font-semibold">
@@ -135,8 +104,8 @@ export default function ScorecardPage() {
           <strong>Warm</strong> is the same command after a prior cold run with
           a stable cache location. <strong>oxlint</strong> caches implicitly via
           file mtime + content hash. A dash means the stack wasn&rsquo;t
-          exercised for that rule (green-field rules have no competitor; not
-          every rule has an oxlint port yet).
+          exercised for that rule (green-field rules have no peer
+          equivalent; not every rule has an oxlint port yet).
         </p>
         <div className="mt-4 overflow-x-auto rounded-lg border border-fd-border">
           <table className="w-full text-sm">
@@ -151,8 +120,8 @@ export default function ScorecardPage() {
                 <th className="px-3 py-2 text-right font-medium">
                   Ours findings
                 </th>
-                <th className="px-3 py-2 text-right font-medium">Comp cold</th>
-                <th className="px-3 py-2 text-right font-medium">Comp warm</th>
+                <th className="px-3 py-2 text-right font-medium">Peer cold</th>
+                <th className="px-3 py-2 text-right font-medium">Peer warm</th>
                 <th className="px-3 py-2 text-right font-medium">
                   oxlint cold
                 </th>
@@ -303,6 +272,39 @@ export default function ScorecardPage() {
         Re-run with <code className="font-mono">npm run ilb:flagship</code> at
         the repo root. Tracks {FLAGSHIP_RULES.length} rules per snapshot.
       </p>
+      <section aria-labelledby="provenance-heading" className="mt-8">
+        <h2 id="provenance-heading" className="text-lg font-semibold">
+          Provenance
+        </h2>
+        <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <ProvenanceItem
+            label="Generated"
+            value={formatRunAt(snapshot.runAt)}
+          />
+          <ProvenanceItem
+            label="ESLint"
+            value={snapshot.eslintVersion || '—'}
+          />
+          <ProvenanceItem
+            label="oxlint"
+            value={snapshot.oxlintVersion || '—'}
+          />
+          <ProvenanceItem label="Node" value={snapshot.nodeVersion || '—'} />
+        </dl>
+        <p className="mt-4 text-sm text-fd-muted-foreground">
+          Source JSON:{' '}
+          <Link
+            href={`${GITHUB_RAW_BASE}/${snapshot.filename}`}
+            className="font-mono text-fd-primary underline hover:no-underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            benchmarks/results/ilb-flagship/{snapshot.filename}
+          </Link>{' '}
+          · Schema <code className="font-mono">{snapshot.schema}</code>.
+        </p>
+      </section>
+
     </Container>
   );
 }
@@ -329,6 +331,58 @@ function Header() {
         <StarButton stars={0} surface="flagship" />
       </div>
     </div>
+  );
+}
+
+
+/**
+ * The read of the page in three numbers, before any table. Every figure is
+ * derived from the loaded snapshot on the server — never hand-typed — and the
+ * age chip keeps the staleness honest instead of hiding it in Provenance.
+ */
+function ScoreSummary({
+  rows,
+  runAt,
+}: {
+  rows: ReturnType<typeof orderResultsByFlagshipSpec>;
+  runAt: string;
+}) {
+  const headToHead = rows.filter(
+    (r) =>
+      typeof r.runs.oursEslint?.warm?.ms === 'number' &&
+      typeof r.runs.competitorEslint?.warm?.ms === 'number',
+  );
+  const warmWins = headToHead.filter(
+    (r) => r.runs.oursEslint!.warm!.ms <= r.runs.competitorEslint!.warm!.ms,
+  ).length;
+  const greenField = rows.filter((r) => !r.runs.competitorEslint).length;
+  const ageDays = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(runAt).getTime()) / 86_400_000),
+  );
+  const age =
+    ageDays < 45 ? `${ageDays} days ago` : `${Math.round(ageDays / 30)} months ago`;
+  return (
+    <section aria-label="Headline results" className="mt-6">
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-lg border border-fd-border bg-fd-card/50 p-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt className="text-fd-muted-foreground">Head-to-head (warm)</dt>
+          <dd className="mt-0.5 text-lg font-semibold">
+            {warmWins}/{headToHead.length} rules at or faster than the peer
+          </dd>
+        </div>
+        <div>
+          <dt className="text-fd-muted-foreground">Green-field rules</dt>
+          <dd className="mt-0.5 text-lg font-semibold">
+            {greenField}/{rows.length} with no peer equivalent
+          </dd>
+        </div>
+        <div>
+          <dt className="text-fd-muted-foreground">Snapshot age</dt>
+          <dd className="mt-0.5 text-lg font-semibold">{age}</dd>
+        </div>
+      </dl>
+    </section>
   );
 }
 

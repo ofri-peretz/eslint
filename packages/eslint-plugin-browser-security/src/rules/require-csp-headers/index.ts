@@ -42,8 +42,13 @@
  * Those are complementary defects on the same line, not duplicates.
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 /**
@@ -134,11 +139,14 @@ function staticString(
   }
   if (node.type === 'Identifier') {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined ? null : staticString(init, sourceCode, depth + 1);
+    return init === undefined
+      ? null
+      : staticString(init, sourceCode, depth + 1);
   }
   if (node.type === 'MemberExpression' && node.computed) {
     const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number') return null;
+    if (index.type !== 'Literal' || typeof index.value !== 'number')
+      return null;
     const array = foldToArray(node.object, sourceCode, depth + 1);
     const element = array?.elements[index.value];
     return element == null
@@ -169,7 +177,8 @@ function foldToArray(
   // A nested table — `PAGES[0][1]`, one row per locale.
   if (node.type === 'MemberExpression' && node.computed) {
     const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number') return null;
+    if (index.type !== 'Literal' || typeof index.value !== 'number')
+      return null;
     const outer = foldToArray(node.object, sourceCode, depth + 1);
     const element = outer?.elements[index.value];
     return element == null ? null : foldToArray(element, sourceCode, depth + 1);
@@ -328,19 +337,36 @@ function namesDocumentFile(
 
   return candidates.some((candidate) => {
     const dot = candidate.lastIndexOf('.');
-    return dot !== -1 && DOCUMENT_EXTENSIONS.has(candidate.slice(dot).toLowerCase());
+    return (
+      dot !== -1 && DOCUMENT_EXTENSIONS.has(candidate.slice(dot).toLowerCase())
+    );
   });
 }
 
 type MessageIds = 'violationDetected';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+export interface Options {
+  /**
+   * Identifiers that name a response object, so `<name>.render(view)` emits a
+   * response rather than returning a string.
+   *
+   * Default: `['res', 'response', 'reply']`. A house convention that calls it
+   * something else — `httpRes`, `koaResponse` — adds it here rather than
+   * losing the finding. Matched case-insensitively, as a whole identifier, and
+   * one member deep so `this.res` and `ctx.res` resolve.
+   */
+  responseReceivers?: string[];
+}
 
 type RuleOptions = [Options?];
 
 export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
   name: 'require-csp-headers',
+  // A test that renders a template to assert on its markup is not a route
+  // that serves a document. Twenty-nine of the findings on
+  // hmpps-arns-assessment-platform-ui were in `*.test.ts`.
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
@@ -358,12 +384,38 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
         severity: 'MEDIUM',
         fix: 'Use helmet.contentSecurityPolicy() or set CSP header manually',
         documentationLink: 'https://cwe.mitre.org/data/definitions/1021.html',
-      })
+      }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          responseReceivers: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['res', 'response', 'reply'],
+            description:
+              'Identifiers that name a response object, so `<name>.render(view)` emits a response rather than returning a string. Anything unlisted is treated as a template engine.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  // The default list lives HERE and nowhere else. As a module const it was a
+  // baked-in vocabulary the rule-audit ratchet reports (and rightly: a word
+  // list no option can reach); as a `??` fallback beside a named default it
+  // was an unreachable branch. One home, reachable and overridable.
+  defaultOptions: [{ responseReceivers: ['res', 'response', 'reply'] }],
+  create(context, [options]) {
+    // `defaultOptions` supplies this and ESLint merges before `create` runs,
+    // so there is nothing to fall back to.
+    const responseReceivers = new Set(
+      (options as Required<Options>).responseReceivers.map((name) =>
+        name.toLowerCase(),
+      ),
+    );
+
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
@@ -413,11 +465,26 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
 
         if (FILE_METHODS.has(method)) {
           const target = node.arguments[0];
-          if (target === undefined || !namesDocumentFile(target, context.sourceCode)) {
+          if (
+            target === undefined ||
+            !namesDocumentFile(target, context.sourceCode)
+          ) {
             return;
           }
         } else {
           if (!EMIT_METHODS.has(method)) return;
+
+          // WHOSE `render` is this? `res.render(view)` emits a response.
+          // `nunjucksEnv.render(template, data)` RETURNS A STRING, and so do
+          // marked, mustache, handlebars, ejs and ReactDOMServer.
+          //
+          // Matching the method name alone made the rule report 31 times on
+          // ministryofjustice/hmpps-arns-assessment-platform-ui — every
+          // Nunjucks component module and every component TEST — in a
+          // repository that sets a nonce-based CSP in middleware. Asking a
+          // template helper to set HTTP headers is asking for something it
+          // cannot do.
+          if (method === 'render' && !receiverLooksLikeResponse(node)) return;
 
           // `render` always emits a document — the markup lives in a template
           // file this rule will never see. The body methods need proof that
@@ -439,6 +506,53 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
     };
 
     /** The method this member call invokes, resolving a computed key. */
+    /**
+     * Names an Express-style response object carries in the wild.
+     *
+     * A name test, which this file otherwise avoids — but the alternative is
+     * type information the rule does not have, and the receiver of `.render`
+     * is the only thing that distinguishes emitting a response from building
+     * a string. Kept deliberately tight: `res`, `response`, and the `this.res`
+     * / `ctx.res` forms. Anything else is assumed to be a template engine,
+     * which is the safe direction — a missed `myResponse.render()` is one
+     * finding, while matching every `.render` is thirty-one.
+     */
+    function receiverLooksLikeResponse(node: TSESTree.CallExpression): boolean {
+      // Reached only after `calleeMethodOf` returned a name, which it does
+      // only for a MemberExpression callee. A runtime guard here would be
+      // unreachable, and an unreachable guard reads as a check that runs.
+      const callee = node.callee as TSESTree.MemberExpression;
+
+      // EVIDENCE FIRST. If the receiver resolves to something declared in this
+      // file, believe the declaration over the name — `const res =
+      // nunjucksEnv; res.render('index')` renders a string however it is
+      // spelled. Only when the identifier resolves to nothing local does the
+      // name decide, which is the case that matters: `(req, res) => …` binds
+      // `res` as a PARAMETER, and a parameter has no initialiser to inspect.
+      if (callee.object.type === AST_NODE_TYPES.Identifier) {
+        const initializer = resolveInitializer(
+          callee.object,
+          context.sourceCode,
+        );
+        if (initializer !== undefined) {
+          // Resolved. A response object is produced by a framework, never
+          // declared as a local alias of something else, so anything with a
+          // visible initialiser here is a renderer being given a short name.
+          return false;
+        }
+      }
+
+      let object: TSESTree.Node = callee.object;
+      // `this.res.render(…)` / `ctx.res.render(…)` — take the last segment.
+      if (object.type === 'MemberExpression' && !object.computed) {
+        object = object.property;
+      }
+      return (
+        object.type === 'Identifier' &&
+        responseReceivers.has(object.name.toLowerCase())
+      );
+    }
+
     function calleeMethodOf(node: TSESTree.CallExpression): string | null {
       if (node.callee.type !== 'MemberExpression') return null;
       const property = node.callee.property;
