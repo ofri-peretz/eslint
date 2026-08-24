@@ -12,7 +12,7 @@
  * @see https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-sequelize-security
  */
 
-import { TSESLint } from '@interlace/eslint-devkit';
+import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 import { noHardcodedCredentials } from './rules/no-hardcoded-credentials';
 import { noMassAssignment } from './rules/no-mass-assignment';
@@ -28,6 +28,17 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-unsafe-query': noUnsafeQuery,
   'require-tls': requireTls,
 };
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-sequelize-security', rules);
+
 
 /**
  * ESLint Plugin object

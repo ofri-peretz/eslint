@@ -20,6 +20,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
+import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
 // Anchor rules
 import { anchorAmbiguousText } from './rules/anchor-ambiguous-text';
@@ -143,6 +144,17 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   // Scope rule
   'scope': scope,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-react-a11y', rules);
+
 
 /**
  * ESLint Plugin object

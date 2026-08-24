@@ -205,7 +205,9 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-math-random-crypto.md',
       description: 'Disallow Math.random() for cryptographic purposes',
       cwe: 'CWE-338',
-      cvss: 5.3,
+      // 7.5 matches the primary emitted finding (pseudoRandomBytes, HIGH) —
+      // the CVSS docs/message consistency lock holds these two in lockstep.
+      cvss: 7.5,
       confidence: 'medium',
     },
     messages: {

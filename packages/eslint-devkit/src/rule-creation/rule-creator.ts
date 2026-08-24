@@ -406,9 +406,50 @@ export type { TSESLint };
  *
  * The docs slug MUST equal the package suffix — `eslint-plugin-node-security`
  * documents at `plugin-node-security`. Verified live: any other shape 404s.
+ *
+ * The category segment is NOT always `security`: the site splits plugins across
+ * `/docs/security/` and `/docs/quality/`. Hardcoding `security` is why this helper
+ * only ever reached the three security plugins, leaving 319 of 478 rules pointing
+ * at `packages/eslint-plugin/` — a package that does not exist.
  */
-export const docsUrlFor = (pluginSlug: string, ruleName: string): string =>
-  `https://eslint.interlace.tools/docs/security/${pluginSlug}/rules/${ruleName}`;
+const PLUGIN_DOCS_CATEGORY: Readonly<Record<string, 'security' | 'quality'>> = {
+  'plugin-browser-security': 'security',
+  'plugin-drizzle-security': 'security',
+  'plugin-express-security': 'security',
+  'plugin-jwt-security': 'security',
+  'plugin-knex-security': 'security',
+  'plugin-lambda-security': 'security',
+  'plugin-mongodb-security': 'security',
+  'plugin-mysql-security': 'security',
+  'plugin-nestjs-security': 'security',
+  'plugin-node-security': 'security',
+  'plugin-postgresql-security': 'security',
+  'plugin-prisma-security': 'security',
+  'plugin-secure-coding': 'security',
+  'plugin-sequelize-security': 'security',
+  'plugin-sqlite-security': 'security',
+  'plugin-typeorm-security': 'security',
+  'plugin-vercel-ai-security': 'security',
+  'plugin-conventions': 'quality',
+  'plugin-import-next': 'quality',
+  'plugin-maintainability': 'quality',
+  'plugin-modernization': 'quality',
+  'plugin-modularity': 'quality',
+  'plugin-operability': 'quality',
+  'plugin-react-a11y': 'quality',
+  'plugin-react-features': 'quality',
+  'plugin-reliability': 'quality',
+};
+
+export const docsUrlFor = (pluginSlug: string, ruleName: string): string | null => {
+  const category = PLUGIN_DOCS_CATEGORY[pluginSlug];
+  // A slug absent from the map has no docs pages, so there is no canonical URL to
+  // build. Returning null makes the caller leave the rule alone rather than mint a
+  // link that 404s — the exact failure this helper exists to prevent.
+  return category
+    ? `https://eslint.interlace.tools/docs/${category}/${pluginSlug}/rules/${ruleName}`
+    : null;
+};
 
 /**
  * Stamp the canonical docs URL onto every rule in a plugin's export map.
@@ -467,5 +508,9 @@ function stampDocsUrl(
   rule: TSESLint.RuleModule<string, readonly unknown[]> | undefined,
 ): void {
   const docs = rule?.meta?.docs as { url?: string } | undefined;
-  if (docs) docs.url = docsUrlFor(pluginSlug, name);
+  if (!docs) return;
+  const url = docsUrlFor(pluginSlug, name);
+  // Leave the existing URL untouched for a plugin with no docs pages; overwriting it
+  // with a guess would swap one dead link for another.
+  if (url) docs.url = url;
 }

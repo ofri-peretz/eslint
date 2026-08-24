@@ -261,6 +261,20 @@ export function convertMdToMdx(
     .replace(/^>\s+\*\*OWASP[^:]*:\*\*.*$\n?/gm, '');
 
   finalContent = finalContent.replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '');
+  // `related-rule-md-links`: rule .md sources link sibling rules as
+  // `./other-rule.md` — correct when browsed on GitHub, a guaranteed 404 once
+  // copied onto the site, which serves extensionless routes. 447 such links
+  // across 228 published pages made every "Related Rules" section — the natural
+  // next click for an engaged reader — a dead end, which is exactly what the
+  // analytics show (sessions ≈ pageviews; almost nobody reaches a second page).
+  // Rewrite at sync time so the source keeps working on GitHub and the site
+  // keeps working here. Only relative same-directory links are touched;
+  // absolute URLs (https://…/foo.md) are left alone.
+  finalContent = finalContent.replace(
+    /\]\(\s*(?:\.\/)?([a-z0-9][a-z0-9-]*)\.md\s*\)/g,
+    '](./$1)',
+  );
+
 
   // `body-boilerplate-lead`: metadata-as-prose opening the page. Loop, because
   // removing one boilerplate lead can expose another behind it (several rule

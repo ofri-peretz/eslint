@@ -174,5 +174,5 @@ app.get('/invoices/:id', (req, res) => loadInvoice(req.params.id).then(send));
 
 - [CWE-639: Authorization Bypass Through User-Controlled Key](https://cwe.mitre.org/data/definitions/639.html)
 - [OWASP A01:2021 – Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
-- [`require-route-authentication`](./require-route-authentication.md) — no check at all (CWE-306)
-- [`no-client-controlled-authorization`](./no-client-controlled-authorization.md) — the check exists but trusts the caller (CWE-863)
+- [`require-route-authentication`](./require-route-authentication) — no check at all (CWE-306)
+- [`no-client-controlled-authorization`](./no-client-controlled-authorization) — the check exists but trusts the caller (CWE-863)

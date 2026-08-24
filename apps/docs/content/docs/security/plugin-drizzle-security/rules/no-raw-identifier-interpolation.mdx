@@ -121,7 +121,7 @@ The two rules divide by *what* is wrong, not by which API you used:
 
 | | reports |
 |---|---|
-| [`no-unsafe-query`](./no-unsafe-query.md) | **string construction** — concatenation or interpolation used to *build* the SQL text passed to `sql.raw(...)` |
+| [`no-unsafe-query`](./no-unsafe-query) | **string construction** — concatenation or interpolation used to *build* the SQL text passed to `sql.raw(...)` |
 | this rule | **position** — a hole where an identifier belongs, inside the tagged template |
 
 So `` sql`SELECT * FROM ${sql.raw(table)}` `` is a finding *here*: the hole is

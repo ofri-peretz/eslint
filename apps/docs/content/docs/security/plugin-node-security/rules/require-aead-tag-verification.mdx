@@ -52,7 +52,7 @@ It deliberately says nothing when it cannot see the whole picture:
 
 - the decipher is driven as a **stream** (`pipe`, `write`, `end`, `setEncoding`) — Node's `_flush` runs the tag check and emits `'error'`, so there is no explicit `final()` to demand;
 - the decipher **escapes** — passed to `pipeline()`, returned, stored on an object, reached through a computed key;
-- the algorithm is **computed** — that is [`no-dynamic-algorithm-selection`](./no-dynamic-algorithm-selection.md)'s finding, not this one's.
+- the algorithm is **computed** — that is [`no-dynamic-algorithm-selection`](./no-dynamic-algorithm-selection)'s finding, not this one's.
 
 ## Examples
 
@@ -110,9 +110,9 @@ input.pipe(stream).pipe(output);
 
 ## Related Rules
 
-- [`no-ecb-mode`](./no-ecb-mode.md) — Detect ECB mode
-- [`no-static-iv`](./no-static-iv.md) — Detect hardcoded initialization vectors
-- [`no-weak-cipher-algorithm`](./no-weak-cipher-algorithm.md) — Detect weak encryption algorithms
+- [`no-ecb-mode`](./no-ecb-mode) — Detect ECB mode
+- [`no-static-iv`](./no-static-iv) — Detect hardcoded initialization vectors
+- [`no-weak-cipher-algorithm`](./no-weak-cipher-algorithm) — Detect weak encryption algorithms
 
 <WhenNotToUse />
 
