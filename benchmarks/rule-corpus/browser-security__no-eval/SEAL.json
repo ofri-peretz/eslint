@@ -6,7 +6,7 @@
     "ecmaVersion": 2022,
     "typescript": "6.0.3",
     "eslint": "10.8.1",
-    "plugin": "eslint-plugin-browser-security@2.0.1",
+    "plugin": "eslint-plugin-browser-security@2.0.5",
     "node": "24"
   },
   "axes": {
@@ -61,8 +61,8 @@
       "command": "npx vitest run --coverage src/rules/no-eval"
     },
     "throughput": {
-      "state": "unmet",
-      "evidence": "marginal over a no-op control: 257L +0.62±0.34ms · 1028L +2.29±1.28ms · 4112L +6.02±2.54ms — NOT ESTABLISHED: fewer than two sizes clear the instrument's own measured error, so no growth curve can be read",
+      "state": "met",
+      "evidence": "attributed to the rule's own frames: 10x 5.15ms (67 samples) · 20x 4.66ms (106 samples) · 40x 7.32ms (171 samples) · 80x 12.91ms (284 samples) — 1.66x cost for 2.0x work (40x→80x), linear or better",
       "command": "npx tsx scripts/seal-audit.mts browser-security/no-eval"
     },
     "recorded": {
