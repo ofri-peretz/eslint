@@ -123,6 +123,22 @@ range by hand:
 npm run release:verify-notes -- --latest=10
 ```
 
+## GitHub Release conventions
+
+- **The rollup holds the "Latest" badge**, explicitly. Every per-package release
+  passes `--latest=false`; before this was set, GitHub awarded the badge to
+  whichever release happened to be created last, so the repo's front page
+  pointed at an arbitrary single package.
+- **Release discussions are opt-in.** Set the repo variable
+  `RELEASE_DISCUSSION_CATEGORY` to a Discussions category name (e.g. `Releases`)
+  and every rollup opens a feedback thread. Requires Discussions enabled on the
+  repository. If the variable is unset, or the category is missing, the release
+  is created exactly as before — the flag errors outright when Discussions is
+  off, and a feedback thread is not worth failing a release whose packages are
+  already on npm.
+
+Both are locked by `scripts/__tests__/release-workflow-lock.test.ts`.
+
 ## Prereleases and snapshots
 
 ```bash
