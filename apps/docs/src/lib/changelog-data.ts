@@ -119,6 +119,26 @@ export function getChangelogPage(query: ChangelogQuery = {}): ChangelogPage {
   };
 }
 
+/**
+ * Releases for one package, newest first.
+ *
+ * Accepts the slug the docs MDX uses (`jwt-security`) as well as the full
+ * package name (`eslint-plugin-jwt-security`) — the content tree names plugins
+ * without the `eslint-plugin-` prefix, and rather than rewrite 26 MDX files to
+ * match the data, the lookup absorbs both spellings.
+ *
+ * `limit` of 0 means every release. The plugin pages show a window because a
+ * docs page is a reference for the *current* version; the full history is one
+ * click away at `/changelog?pkg=…`.
+ */
+export function getPluginReleases(slug: string, limit = 0): ChangelogRelease[] {
+  const wanted = new Set([slug, `eslint-plugin-${slug}`, `@interlace/${slug}`]);
+  const matches = ALL.filter(
+    (r) => wanted.has(r.short) || wanted.has(r.package),
+  );
+  return limit > 0 ? matches.slice(0, limit) : matches;
+}
+
 /** `2026-08-23T15:44:41-05:00` → `23 Aug 2026`. Null dates render as "unreleased". */
 export function formatReleaseDate(iso: string | null): string {
   if (!iso) return 'Unreleased';
