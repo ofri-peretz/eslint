@@ -162,7 +162,7 @@ However, **always sanitize postMessage data** before rendering as HTML.
 This rule fires **only when the receiver is positively identified** as `window` / `self` / `globalThis` / `parent` / `top` in
 the same file. `X.onmessage = …` on a receiver this file cannot resolve is not
 evidence of postMessage — it is unknown, and unknown belongs to
-[`no-innerhtml`](./no-innerhtml.md) / [`no-eval`](./no-eval.md), which report it
+[`no-innerhtml`](./no-innerhtml) / [`no-eval`](./no-eval), which report it
 without claiming a provenance they cannot prove.
 
 The two tests are complements, so exactly one rule reports any given value.
@@ -173,9 +173,9 @@ the generic rule. That is deliberate: the alternative is guessing.
 
 ## Related Rules
 
-- [`browser-security/require-postmessage-origin-check`](./require-postmessage-origin-check.md) - Require origin validation
-- [`browser-security/no-postmessage-wildcard-origin`](./no-postmessage-wildcard-origin.md) - Prevent wildcard targetOrigin
-- [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
+- [`browser-security/require-postmessage-origin-check`](./require-postmessage-origin-check) - Require origin validation
+- [`browser-security/no-postmessage-wildcard-origin`](./no-postmessage-wildcard-origin) - Prevent wildcard targetOrigin
+- [`browser-security/no-innerhtml`](./no-innerhtml) - General innerHTML prevention
 
 <WhenNotToUse />
 

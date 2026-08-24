@@ -51,7 +51,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule flags `writeFile`/`writeFileSync`/`appendFile`/`appendFileSync` calls that put a credential on disk without an encryption wrapper around the value. Client storage (`localStorage`, `sessionStorage`, `AsyncStorage`) belongs to [`require-secure-credential-storage`](./require-secure-credential-storage.md); the two rules used to share both receivers and reported every match twice.
+This rule flags `writeFile`/`writeFileSync`/`appendFile`/`appendFileSync` calls that put a credential on disk without an encryption wrapper around the value. Client storage (`localStorage`, `sessionStorage`, `AsyncStorage`) belongs to [`require-secure-credential-storage`](./require-secure-credential-storage); the two rules used to share both receivers and reported every match twice.
 
 ```mermaid
 %%{init: {
@@ -135,7 +135,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 This rule owns the **filesystem**. Client storage — `localStorage`, `sessionStorage`,
 `AsyncStorage` — belongs to
-[`require-secure-credential-storage`](./require-secure-credential-storage.md). Both
+[`require-secure-credential-storage`](./require-secure-credential-storage). Both
 require evidence that what is being stored is a credential:
 
 | Code | Why it is silent |
