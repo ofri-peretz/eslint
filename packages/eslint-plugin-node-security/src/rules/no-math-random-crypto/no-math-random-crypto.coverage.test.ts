@@ -28,6 +28,10 @@ const ruleTester = new RuleTester({
 describe('no-math-random-crypto coverage gaps', () => {
   ruleTester.run('no-math-random-crypto', noMathRandomCrypto, {
     valid: [
+    // The secure sibling stays silent.
+    'import crypto from "crypto"; export const t = () => crypto.randomBytes(16);',
+    'import { randomBytes } from "crypto"; export const t = () => randomBytes(16);',
+
       // Assignment with a plain identifier LHS → member check false
       { code: 'result = Math.random();' },
       // Assignment to a computed (Literal) property → property-type operand false
@@ -46,6 +50,16 @@ describe('no-math-random-crypto coverage gaps', () => {
       { code: 'const v = function plain() { return Math.random(); };' },
     ],
     invalid: [
+    // crypto.pseudoRandomBytes — eslint-plugin-security has detected this since
+    // 2016 and nothing here did. Unconditional: unlike Math.random, which has
+    // legitimate uses and so gates on surrounding names, this API has exactly
+    // one meaning and was deprecated in Node 4 for being mistaken for the
+    // secure one.
+    {
+      code: 'import crypto from "crypto"; export const t = () => crypto.pseudoRandomBytes(16);',
+      errors: [{ messageId: 'pseudoRandomBytes' }],
+    },
+
       // Crypto-named FunctionDeclaration ancestor → reported
       {
         code: 'function generateToken() { const x = Math.random(); }',
