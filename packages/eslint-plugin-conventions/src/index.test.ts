@@ -52,6 +52,21 @@ describe('eslint-plugin-conventions plugin interface', () => {
       expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
     });
 
+    it('keeps no-magic-numbers OUT of recommended while still exporting it', () => {
+      // 1421 findings on the pinned corpus — the largest single source in the
+      // whole ecosystem — and the triage ledger calls it "correct in contract,
+      // and a taste rule by nature". A taste rule on by default is what makes a
+      // consumer stop reading the output. ESLint core reaches the same verdict:
+      // its own `no-magic-numbers` is absent from `eslint:recommended`.
+      //
+      // The rule is NOT removed. This locks both halves, because dropping the
+      // rule entirely would be a different and worse change.
+      expect(Object.keys(rules)).toContain('no-magic-numbers');
+      expect(Object.keys(configs['recommended'].rules ?? {})).not.toContain(
+        'conventions/no-magic-numbers',
+      );
+    });
+
     it('should have all recommended rules reference existing rules', () => {
       const recommendedRules = Object.keys(configs['recommended'].rules || {});
       const pluginRules = Object.keys(plugin.rules || {});

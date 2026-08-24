@@ -73,7 +73,6 @@ export const configs = {
       'conventions/utm-taxonomy': 'error',
       'conventions/no-raw-cross-property-href': 'error',
       'conventions/analytics-event-naming': 'error',
-      'conventions/no-magic-numbers': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;
