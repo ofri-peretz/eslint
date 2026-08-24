@@ -446,13 +446,16 @@ export function enrichWithGitHub(
     onProgress?: (done: number, total: number, slug: string) => void;
   } = {},
 ): { fetched: number; cached: number; failed: number } {
+  // Read and let it throw rather than asking whether the file exists first.
+  // The `existsSync` was a check-then-use on a path this function then writes
+  // (CodeQL `js/file-system-race`), and it bought nothing: the `catch` already
+  // has to handle unreadable and unparseable, and a missing file is just one
+  // more way to be unreadable. One syscall, one branch, no window.
   let cache: Record<string, GitHubFacts> = {};
-  if (existsSync(cachePath)) {
-    try {
-      cache = JSON.parse(readFileSync(cachePath, 'utf8'));
-    } catch {
-      cache = {};
-    }
+  try {
+    cache = JSON.parse(readFileSync(cachePath, 'utf8'));
+  } catch {
+    cache = {};
   }
 
   let fetched = 0,
