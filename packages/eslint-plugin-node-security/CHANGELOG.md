@@ -9,7 +9,7 @@ the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Patch Changes
 
-- **🐛 Fix** — Two detections eslint-plugin-security has and we did not, plus three false-positive fixes found on the same repository. ([#685](https://github.com/ofri-peretz/eslint/pull/685))
+- **🐛 Fix** — Two detections `eslint-plugin-security` has and we did not, plus a false positive in test files. ([#685](https://github.com/ofri-peretz/eslint/pull/685))
 
   `crypto.pseudoRandomBytes()` is now reported by `no-math-random-crypto`
   (CWE-338). Unconditional, unlike the `Math.random()` path in the same rule:
@@ -23,10 +23,8 @@ the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   being wrong. Covers `readX(offset, true)`, `readUIntBE(offset, len, true)` and
   the `writeX` forms.
 
-  `no-decode-without-verify`, `require-expiration` and `no-shell-injection` now
-  skip test files. On alphagov/govuk-mobile-backend they reported a fixture named
-  `fakeJwt` signed with `'fake-signing-key'`, and a test invoking its own build
-  script through `execSync`.
+  `no-shell-injection` now skips test files — on alphagov/govuk-mobile-backend it
+  reported a test invoking its own build script through `execSync`.
 
 - **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`
 

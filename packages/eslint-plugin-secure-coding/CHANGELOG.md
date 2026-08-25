@@ -26,7 +26,7 @@ the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   rule's subject.
 
   Storybook stories are recognised as development material, so a
-  `password: "TestPassword123!"` on a story for a user called John Doe is no
+  `password: "<test password>"` on a story for a user called John Doe is no
   longer a hardcoded credential. A story never enters the application bundle.
 
   Verified against the repositories that produced them: bcgov/sso-requests drops
