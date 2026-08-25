@@ -225,6 +225,10 @@
     "./patterns/timeline-map": {
       "types": "./dist/patterns/timeline-map.d.ts",
       "default": "./dist/patterns/timeline-map.js"
+    },
+    "./effects/decode-text": {
+      "types": "./dist/effects/decode-text.d.ts",
+      "default": "./dist/effects/decode-text.js"
     }
   },
   "files": [
