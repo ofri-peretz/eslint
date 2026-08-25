@@ -18,7 +18,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - 'packages/ui/**/*.tsx'
+      # `**` (not `**/*.tsx`): the lint step covers src/**/*.{ts,tsx}, so
+      # plain .ts edits must trigger the gate too.
+      - 'packages/ui/**'
       - 'packages/eslint-plugin-react-features/**'
       # The lint step resolves plugins through the root flat config — a bad
       # edit can crash every lint run (e.g. the duplicate react-features
@@ -67,10 +69,13 @@ jobs:
 
       - name: Lint packages/ui with componentApi preset
         id: lint
-        # The componentApi preset is wired into the root eslint.config.mjs
-        # (see "@interlace/ui — componentApi floor" block) and scoped to
-        # `packages/ui/src/primitives/**/*.tsx`. Invoking eslint with the
-        # target glob is sufficient — no `--rule` overrides needed. The
+        # The root eslint.config.mjs applies react-features + react-a11y
+        # recommended to ALL of `packages/ui/src/**/*.{ts,tsx}` and layers
+        # the componentApi preset on `src/primitives/**/*.tsx`. The glob
+        # below must match the wider scope — it was `src/primitives/**`
+        # until 2026-08-24, which left `src/blocks/` unlinted in CI and let
+        # 8 errors sit in article-card.tsx unreported. Invoking eslint with
+        # the target glob is sufficient — no `--rule` overrides needed. The
         # legacy `--resolve-plugins-relative-to` flag was removed in ESLint
         # 10 flat config and triggered a config-error exit + empty JSON
         # report on the first CI run of this workflow.
@@ -87,7 +92,7 @@ jobs:
           set +e
           npx eslint \
             --format json \
-            'packages/ui/src/primitives/**/*.tsx' > /tmp/eslint-report.json
+            'packages/ui/src/**/*.{ts,tsx}' > /tmp/eslint-report.json
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           # Compute total messages (errors + warnings) so the comment step
           # can fire on warnings-only state, even though `exit_code` is 0.
@@ -131,7 +136,9 @@ jobs:
                 rows.push(`| ${id} | \`${rule}\` | \`${path}:${m.line}\` | ${m.message.split('\\n')[0]} |`);
               }
             }
+            const MARKER = '<!-- component-api-lint-report -->';
             const body = [
+              MARKER,
               '## Component API floor — violations',
               '',
               `Found **${rows.length}** violation(s) against the [interlace-component skill](https://github.com/ofri-peretz/agents/blob/main/skills/interlace-component/SKILL.md) (R1–R26).`,
@@ -145,12 +152,31 @@ jobs:
               '',
               'See [`docs/rules/component-api/`](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-react-features/docs/rules/component-api) for per-rule docs.',
             ].join('\n');
-            await github.rest.issues.createComment({
+            // Update the existing report instead of stacking a new comment
+            // per push — the widened glob reports warnings too, so repeat
+            // pushes would otherwise accumulate 40-row tables.
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body,
+              per_page: 100,
             });
+            const existing = comments.find((c) => c.body && c.body.startsWith(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
       - name: Fail if violations found
         if: steps.lint.outputs.exit_code != '0'
