@@ -40,6 +40,17 @@ const ROLE_TO_TAG_MAPPING: Record<string, string> = {
   searchbox: 'input[type="search"]',
 };
 
+/**
+ * Is this a DOM element rather than a React component?
+ *
+ * JSX's own convention is the only signal available without type information:
+ * lowercase is a host element, uppercase or dotted (`<Foo.Bar>`) is a
+ * component. Anything with a dot is a member expression and never a tag.
+ */
+function isHostElement(name: string): boolean {
+  return name.length > 0 && name[0] === name[0].toLowerCase() && !name.includes('.');
+}
+
 export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
   name: 'prefer-tag-over-role',
   meta: {
@@ -91,6 +102,32 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
         // (`input[type="checkbox"]` etc.) on an <input> element, so no separate
         // type-attribute matching is needed here.
         if (elementName === preferredTag.split('[')[0]) return;
+
+        // A CUSTOM COMPONENT is not a DOM element, and this rule cannot know
+        // what one renders.
+        //
+        // JSX spells the difference: a lowercase name is a host element, an
+        // uppercase or dotted one is a component. `<Box role="img">` renders
+        // whatever Box decides — in MUI you would write `component="img"`, and
+        // nothing here can see that. Telling the author to write `<img>`
+        // instead of their component is advice about a name, not about the DOM
+        // that ships.
+        //
+        // 8 of this rule's 31 corpus findings were this: MUI `<Box>`,
+        // `<MuiLink>` and `<LinkMui>`.
+        if (!isHostElement(elementName)) return;
+
+        // `<svg role="img">` IS THE RECOMMENDED PATTERN, not a violation.
+        //
+        // An inline SVG needs an explicit `role="img"` with an accessible name
+        // for assistive technology to treat it as a single graphic rather than
+        // walking its shapes. It cannot be rewritten as `<img>` without moving
+        // to an external file and giving up everything inline SVG is for —
+        // `currentColor`, styling, animation.
+        //
+        // This was the largest false-positive class in the rule: 23 of 31
+        // corpus findings, every one an icon component doing the right thing.
+        if (elementName === 'svg' && roleValue === 'img') return;
 
         // Report the issue
         context.report({
