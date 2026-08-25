@@ -55,11 +55,27 @@ type RuleOptions = [Options?];
 /**
  * Check if a class is likely a DTO
  */
-function isDto(
-  className: string,
-  dtoPatterns: string[]
-): boolean {
-  return dtoPatterns.some(pattern => className.includes(pattern));
+/**
+ * Is this class a DTO, and therefore allowed to be anemic?
+ *
+ * MATCHED AS A SUFFIX, not a substring. The convention these patterns describe
+ * — `DTO`, `Dto`, `Data`, `Request`, `Response`, `Payload` — is a suffix:
+ * `OrderDto`, `CreateUserRequest`, `LoginPayload`. Nothing about it is
+ * positional in the middle of a word.
+ *
+ * `.includes()` made every one of them a substring, and this is a SUPPRESSION,
+ * so each collision costs a real finding rather than adding noise. Verified
+ * against a live positive control — an anemic class in `domain/` reports as
+ * `Person` and goes silent as `Requestor`, because `Requestor` contains
+ * `Request`. A requestor is an actor, not a data carrier; its anemia is exactly
+ * what this rule exists to find, and it disappeared on the spelling.
+ *
+ * `Updater` contains `Update` but not `Data`, so it survived by luck rather
+ * than by design — which is the other half of why a substring test here is
+ * unsafe.
+ */
+function isDto(className: string, dtoPatterns: string[]): boolean {
+  return dtoPatterns.some((pattern) => className.endsWith(pattern));
 }
 
 /**
