@@ -136,7 +136,9 @@ jobs:
                 rows.push(`| ${id} | \`${rule}\` | \`${path}:${m.line}\` | ${m.message.split('\\n')[0]} |`);
               }
             }
+            const MARKER = '<!-- component-api-lint-report -->';
             const body = [
+              MARKER,
               '## Component API floor — violations',
               '',
               `Found **${rows.length}** violation(s) against the [interlace-component skill](https://github.com/ofri-peretz/agents/blob/main/skills/interlace-component/SKILL.md) (R1–R26).`,
@@ -150,12 +152,31 @@ jobs:
               '',
               'See [`docs/rules/component-api/`](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-react-features/docs/rules/component-api) for per-rule docs.',
             ].join('\n');
-            await github.rest.issues.createComment({
+            // Update the existing report instead of stacking a new comment
+            // per push — the widened glob reports warnings too, so repeat
+            // pushes would otherwise accumulate 40-row tables.
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body,
+              per_page: 100,
             });
+            const existing = comments.find((c) => c.body && c.body.startsWith(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
       - name: Fail if violations found
         if: steps.lint.outputs.exit_code != '0'
