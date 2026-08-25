@@ -10,6 +10,5 @@
   "react-a11y/prefer-tag-over-role",
   "react-features/hooks-exhaustive-deps",
   "react-features/jsx-key",
-  "react-features/no-unknown-property",
   "reliability/no-missing-null-checks"
 ]
