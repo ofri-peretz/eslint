@@ -74,8 +74,15 @@ export const DEBT_MARKER = 'UNSAMPLED-DEBT.';
 export const citesSample = (note: string): boolean =>
   /\bn\s*=\s*\d+|\bstratified\b|\bsampled?\b|\bcensus\b/i.test(note);
 
-/** Is this note carrying the debt marker? */
-export const carriesDebtMarker = (note: string): boolean => note.includes(DEBT_MARKER);
+/**
+ * Is this note carrying the debt marker?
+ *
+ * The marker must PREFIX the note, not merely appear in it. Anywhere else and
+ * the note still reads as a settled claim to anyone skimming the ledger, which
+ * is the whole failure being gated — and `--update`'s removal would strip an
+ * unrelated mention of the word rather than the marker it was aiming at.
+ */
+export const carriesDebtMarker = (note: string): boolean => note.startsWith(DEBT_MARKER);
 
 /**
  * Does the note actually assert something about correctness?
@@ -139,9 +146,21 @@ function main(): void {
 
   if (update) {
     const lines = raw.split('\n');
+    // Everything from `"triage": {` onward. Scoping matters: a budget written
+    // in object form — `"a/b": { "max": 200 }` — carries four quotes on its
+    // line, so a whole-file search matched the BUDGET first. `--update` would
+    // then overwrite the budget with note text, `findingCount` would read 0,
+    // and the rule would drop under the census ceiling and be exempt forever.
+    // Silent, permanent, and in the direction that hides work.
+    const triageStart = lines.findIndex((l) => l.trimStart().startsWith('"triage"'));
+
     const rewrite = (rule: string, next: string) => {
-      const idx = lines.findIndex((l) => l.includes(`"${rule}":`) && (l.match(/"/g) ?? []).length > 3);
-      if (idx === -1) return;
+      if (triageStart === -1) return;
+      const offset = lines
+        .slice(triageStart)
+        .findIndex((l) => l.trimStart().startsWith(`${JSON.stringify(rule)}:`));
+      if (offset === -1) return;
+      const idx = triageStart + offset;
       const comma = lines[idx].trimEnd().endsWith(',') ? ',' : '';
       lines[idx] = `    ${JSON.stringify(rule)}: ${JSON.stringify(next)}${comma}`;
     };

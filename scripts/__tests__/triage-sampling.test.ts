@@ -122,8 +122,58 @@ describe('the debt marker lives on the note', () => {
     expect(staleMarkers({ 'a/b': 200 }, { 'a/b': `${DEBT_MARKER} ${VERDICT}` })).toEqual([]);
   });
 
+  it('rejects a marker buried after the verdict', () => {
+    // `includes` would accept this. The note still reads as a settled claim to
+    // anyone skimming the ledger, which is the whole failure being gated — and
+    // update mode's removal would strip an unrelated mention of the phrase.
+    const buried = `Correct — these are real. ${DEBT_MARKER} maybe later.`;
+    expect(carriesDebtMarker(buried)).toBe(false);
+    expect(unmarkedVerdicts({ 'a/b': 200 }, { 'a/b': buried })).toEqual([
+      { rule: 'a/b', findings: 200 },
+    ]);
+  });
+
   it('recognises the marker', () => {
     expect(carriesDebtMarker(`${DEBT_MARKER} anything`)).toBe(true);
     expect(carriesDebtMarker('anything')).toBe(false);
+  });
+});
+
+
+describe('update mode rewrites the triage note, never the budget', () => {
+  /**
+   * A budget written in object form — `"a/b": { "max": 200 }` — carries four
+   * quotes on its line, which a whole-file "find the line with this rule and
+   * several quotes" search matched BEFORE the triage entry. Update mode then
+   * replaced the BUDGET with note text: `findingCount` would read 0, the rule
+   * would fall under the census ceiling, and it would be exempt from this gate
+   * forever. Silent, permanent, and in the direction that hides work.
+   *
+   * No budget is in object form today, so the bug was latent — which is the
+   * reason to pin it rather than to shrug at it.
+   */
+  it('finds the triage line and not an object-form budget line', () => {
+    const file = [
+      '{',
+      '  "budgets": {',
+      '    "a/b": { "max": 200 }',
+      '  },',
+      '  "triage": {',
+      '    "a/b": "Correct — these are real."',
+      '  }',
+      '}',
+    ].join('\n');
+    const lines = file.split('\n');
+
+    // The production lookup: scope to the triage object, then match the line
+    // whose trimmed start is the quoted rule key.
+    const triageStart = lines.findIndex((l) => l.trimStart().startsWith('"triage"'));
+    const offset = lines
+      .slice(triageStart)
+      .findIndex((l) => l.trimStart().startsWith(`${JSON.stringify('a/b')}:`));
+
+    expect(triageStart).toBeGreaterThan(-1);
+    expect(lines[triageStart + offset]).toContain('Correct');
+    expect(lines[triageStart + offset]).not.toContain('max');
   });
 });
