@@ -27,6 +27,24 @@ import {
 
 type MessageIds = 'mathRandomCrypto' | 'pseudoRandomBytes';
 
+/**
+ * The APIs a developer reaches for when they want real randomness.
+ *
+ * Names of platform functions, not a vocabulary of guesses — `getRandomValues`
+ * means one thing in every JavaScript runtime that has it.
+ *
+ * @protocol-constant
+ */
+const CSPRNG_CALLS = new Set([
+  'getRandomValues',
+  'randomBytes',
+  'randomUUID',
+  'randomFillSync',
+  'randomFill',
+  'generateKey',
+  'subtle',
+]);
+
 export interface Options {
   /** Allow Math.random() in test files. Default: false */
   allowInTests?: boolean;
@@ -507,6 +525,79 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
      * const rng = { next: Math.random };  // the "pluggable RNG" with one impl
      * ```
      */
+    /**
+     * The call is the fallback arm of a function that reaches for a CSPRNG first.
+     *
+     * IGNF/cartes.gouv.fr-entree-carto — the French national geoportal, and one
+     * of our own adopters — writes this:
+     *
+     *   if (window.crypto && window.crypto.getRandomValues) {
+     *     const bytes = new Uint8Array(16);
+     *     window.crypto.getRandomValues(bytes);
+     *     return …;
+     *   }
+     *   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+     *
+     * The author already knows. Reporting the `else` arm of code that does the
+     * right thing whenever it can tells them nothing they have not written down,
+     * and it is the kind of finding that makes a stranger close a pull request.
+     *
+     * The trade is stated rather than hidden: a function that draws a key from
+     * `crypto` and a token from `Math.random()` goes unreported, because the
+     * two are indistinguishable from here without following the values. Between
+     * missing that and crying wolf on every documented fallback, the fallback
+     * is the far more common shape in real code.
+     */
+    function isCsprngFallback(node: TSESTree.CallExpression): boolean {
+      let scope: TSESTree.Node | undefined = node.parent;
+      while (
+        scope !== undefined &&
+        scope.type !== AST_NODE_TYPES.FunctionDeclaration &&
+        scope.type !== AST_NODE_TYPES.FunctionExpression &&
+        scope.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        scope.type !== AST_NODE_TYPES.Program
+      ) {
+        scope = scope.parent;
+      }
+      // The walk always terminates: every node sits under a Program, and an
+      // unreachable guard here reads as a check that runs.
+      let found = false;
+      const stack: TSESTree.Node[] = [scope as TSESTree.Node];
+      while (stack.length > 0 && !found) {
+        const current = stack.pop() as TSESTree.Node;
+        if (
+          current.type === AST_NODE_TYPES.CallExpression &&
+          // Only a call that RUNS BEFORE this one is a fallback for it.
+          current.range[1] <= node.range[0]
+        ) {
+          const callee = current.callee;
+          const name =
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            !callee.computed &&
+            callee.property.type === AST_NODE_TYPES.Identifier
+              ? callee.property.name
+              : callee.type === AST_NODE_TYPES.Identifier
+                ? callee.name
+                : '';
+          if (CSPRNG_CALLS.has(name)) found = true;
+        }
+        for (const key of Object.keys(current)) {
+          if (key === 'parent') continue;
+          const value = (current as unknown as Record<string, unknown>)[key];
+          for (const child of Array.isArray(value) ? value : [value]) {
+            if (
+              child !== null &&
+              typeof child === 'object' &&
+              typeof (child as TSESTree.Node).type === 'string'
+            ) {
+              stack.push(child as TSESTree.Node);
+            }
+          }
+        }
+      }
+      return found;
+    }
+
     function isMathRandomCallee(callee: TSESTree.Node): boolean {
       if (isMathRandomProperty(callee)) return true;
 
@@ -807,7 +898,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         // Check for Math.random(), in any of its bindings
         if (isMathRandomCallee(node.callee)) {
           // Check if used in cryptographic context
-          if (isCryptoContext(node)) {
+          if (isCryptoContext(node) && !isCsprngFallback(node)) {
             context.report({
               node,
               messageId: 'mathRandomCrypto',

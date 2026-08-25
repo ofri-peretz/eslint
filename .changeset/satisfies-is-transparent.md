@@ -111,3 +111,21 @@ enabled entity-expansion option still reports on any of them, and
 `libxmljs`, `libxmljs2`, `node-expat` and `xml2json` are unchanged. Thirty-one
 findings on nasa/earthdata-search, nine on refactoringhq/tolaria, five on
 aws/aws-toolkit-vscode.
+
+`no-math-random-crypto` reported the fallback arm of a function that reaches
+for a CSPRNG first:
+
+```js
+if (window.crypto && window.crypto.getRandomValues) { … return … }
+return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+```
+
+That is IGNF/cartes.gouv.fr-entree-carto — the French national geoportal, and
+one of our own adopters. The author already knows; reporting the `else` arm of
+code that does the right thing whenever it can tells them nothing they have not
+written down. A `getRandomValues`, `randomBytes`, `randomUUID`, `randomFillSync`
+or `generateKey` call earlier in the same function now exempts the fallback. The
+trade is stated rather than hidden: a function that draws a key from `crypto`
+and a token from `Math.random()` goes unreported, because the two are
+indistinguishable without following the values.
+
