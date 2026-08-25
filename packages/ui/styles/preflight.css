@@ -126,9 +126,17 @@ button {
 
 /* ─────────────────────────────────────────────────────────────────
  * 4. Image + media defaults
- *    Responsive by default (max-width: 100%). aspect-ratio preserved via
- *    height: auto. vertical-align: middle prevents the descender gap
- *    under inline images.
+ *    Responsive by default (max-width: 100%). vertical-align: middle
+ *    prevents the descender gap under inline images.
+ *
+ *    `height: auto` applies to PHOTOGRAPHIC media only (img/picture/
+ *    video) — matching Tailwind's own preflight, which deliberately
+ *    excludes svg + canvas. A blanket `svg { height: auto }` defeats
+ *    `h-full` on drawn surfaces: with a viewBox the element snaps to
+ *    its intrinsic ratio, and without one it falls to the 300×150
+ *    replaced-element default — InterlaceWeave's overlay covering only
+ *    the top band of production article cards is how this was found.
+ *    (Same fix as the canonical DS preflight in the interlace repo.)
  * ──────────────────────────────────────────────────────────────── */
 img,
 picture,
@@ -137,8 +145,13 @@ canvas,
 svg {
   display: block;
   max-width: 100%;
-  height: auto;
   vertical-align: middle;
+}
+
+img,
+picture,
+video {
+  height: auto;
 }
 
 /* ─────────────────────────────────────────────────────────────────

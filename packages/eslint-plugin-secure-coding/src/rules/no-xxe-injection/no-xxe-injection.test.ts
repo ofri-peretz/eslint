@@ -39,6 +39,23 @@ describe('no-xxe-injection', () => {
   describe('Valid Code - Secure XML Parsing', () => {
     ruleTester.run('valid - secure XML parsing', noXxeInjection, {
       valid: [
+        // HTML has no DOCTYPE entity subset, so `text/html` cannot carry an XXE at
+        // any configuration. passbolt/passbolt_styleguide parses a progress
+        // message this way to strip markup out of it — a sanitisation idiom that
+        // was reported as CWE-611.
+        {
+          code: [
+            "const doc = new DOMParser().parseFromString(text, 'text/html');",
+            'export const plain = doc.documentElement.textContent;',
+          ].join('\n'),
+        },
+        // The XML modes are unchanged.
+        {
+          code: [
+            "import { DOMParser } from '@xmldom/xmldom';",
+            "export const doc = new DOMParser().parseFromString(input, 'text/html');",
+          ].join('\n'),
+        },
         // `parse` is not an XML-only method name. Ungated, this rule reported
         // CWE-611 on JSON — measured across this monorepo, on lines like
         // `JSON.parse(fs.readFileSync(file, 'utf-8'))`.
