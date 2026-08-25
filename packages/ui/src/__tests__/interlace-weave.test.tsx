@@ -21,7 +21,8 @@ describe('InterlaceWeave static markup', () => {
   });
 
   it('strand B starts at the opposite corner (the weave crossing)', () => {
-    expect(html).toContain('rotate(180 50 50)');
+    expect(html).toContain('rotate-180');
+    expect(html).toContain('origin-center');
   });
 
   it('reveals on hover AND focus-within, and respects reduced motion', () => {
@@ -30,15 +31,24 @@ describe('InterlaceWeave static markup', () => {
     expect(html).toContain('motion-reduce:transition-none');
   });
 
-  it('rest state is truly hidden — gap exceeds pathLength + dash', () => {
-    // A 100-period pattern is modular (offset 100 ≡ 0): the first cut of
-    // this effect shipped fully drawn at rest, caught by the visual pass.
+  it('rest state is truly hidden — parking offset sits inside the gap', () => {
+    // Pattern position is (s + offset); with dash 55 / gap 155 the
+    // blank-at-rest offsets are [55, 110], POSITIVE. −155 wrapped the
+    // 210 period and production drew stray strands at rest — caught by
+    // rendering the live /articles page, never by reading the math.
     expect(html).toContain('[stroke-dasharray:55_155]');
-    expect(html).toContain('[stroke-dashoffset:-155]');
+    expect(html).toContain('[stroke-dashoffset:55]');
+    expect(html).not.toContain('[stroke-dashoffset:-');
   });
 
-  it('stroke width survives non-uniform scaling', () => {
-    expect(html.match(/vector-effect="non-scaling-stroke"/g)?.length).toBe(2);
+  it('geometry is unscaled px — pathLength stays honored for dashes', () => {
+    // No viewBox → no intrinsic 1:1 ratio (production svgs snapped to
+    // 597×597 squares inside 420px cards under an svg{height:auto}
+    // preflight) and no vector-effect (it makes Chromium compute dashes
+    // in screen space, discarding pathLength normalization).
+    expect(html).not.toContain('viewBox');
+    expect(html).not.toContain('non-scaling-stroke');
+    expect(html).toContain('[width:calc(100%_-_2px)]');
   });
 
   it('normalizes path units so the dash math is size-independent', () => {
