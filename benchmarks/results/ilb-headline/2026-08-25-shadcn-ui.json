@@ -1,0 +1,1080 @@
+{
+  "schema": "ilb-headline/v1",
+  "generatedAt": "2026-08-25T13:10:19.605Z",
+  "repo": "shadcn-ui",
+  "glob": "apps/**/*.{js,jsx,ts,tsx,mjs,cjs}",
+  "repeat": 5,
+  "versions": {
+    "eslint": "v9.39.4",
+    "oxlint": "1.63.0",
+    "node": "v24.19.0"
+  },
+  "fileSet": {
+    "ours": 3409,
+    "competitor": 3409,
+    "oxlint": 3415,
+    "eslintParity": true,
+    "oxlintParity": true,
+    "comparable": true
+  },
+  "stacks": {
+    "ours": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 2050.0896070000003,
+        "median": 1981.2341960000003,
+        "min": 1956.7385720000002,
+        "max": 2016.4994470000001,
+        "samples": [
+          2009.1471729999994,
+          1981.2341960000003,
+          2016.4994470000001,
+          1964.4089089999998,
+          1956.7385720000002
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 702
+      },
+      "warm": {
+        "ok": true,
+        "warmupMs": 1024.0083539999978,
+        "median": 1006.7875950000016,
+        "min": 999.0903920000055,
+        "max": 1019.590483,
+        "samples": [
+          1019.590483,
+          999.0903920000055,
+          1011.2527919999993,
+          999.771679999998,
+          1006.7875950000016
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 702
+      }
+    },
+    "oursOxlint": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 463.0867479999997,
+        "median": 476.9163520000002,
+        "min": 471.4908970000015,
+        "max": 482.97385000000213,
+        "samples": [
+          471.4908970000015,
+          482.97385000000213,
+          476.9163520000002,
+          478.9337169999999,
+          472.02813999999853
+        ],
+        "exitCode": 0,
+        "filesProcessed": 3415,
+        "findings": 221
+      },
+      "warm": {
+        "ok": true,
+        "warmupMs": 480.41263799999433,
+        "median": 474.07097700000304,
+        "min": 469.3925390000004,
+        "max": 486.4413330000025,
+        "samples": [
+          486.4413330000025,
+          480.3723519999985,
+          472.3108680000005,
+          474.07097700000304,
+          469.3925390000004
+        ],
+        "exitCode": 0,
+        "filesProcessed": 3415,
+        "findings": 221
+      }
+    },
+    "competitor": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 3714.8377629999995,
+        "median": 3726.835437000005,
+        "min": 3697.297845000001,
+        "max": 3806.2945739999996,
+        "samples": [
+          3697.297845000001,
+          3784.975678999999,
+          3726.835437000005,
+          3806.2945739999996,
+          3721.0041589999964
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 16
+      },
+      "warm": {
+        "ok": true,
+        "warmupMs": 1137.2924549999952,
+        "median": 1137.5267620000086,
+        "min": 1133.6848759999993,
+        "max": 1139.6660649999976,
+        "samples": [
+          1134.6650500000032,
+          1133.6848759999993,
+          1137.5267620000086,
+          1138.2319459999999,
+          1139.6660649999976
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 16
+      }
+    },
+    "oxlintNative": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 1143.815257999995,
+        "median": 1160.253432999998,
+        "min": 1147.7792069999996,
+        "max": 1171.8173519999982,
+        "samples": [
+          1160.253432999998,
+          1171.8173519999982,
+          1162.3616000000038,
+          1155.214605000001,
+          1147.7792069999996
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3415,
+        "findings": 43737
+      },
+      "warm": {
+        "ok": true,
+        "warmupMs": 1151.8782080000092,
+        "median": 1156.7094609999913,
+        "min": 1144.7773050000105,
+        "max": 1177.733801999988,
+        "samples": [
+          1144.7773050000105,
+          1155.4558069999912,
+          1164.6764069999917,
+          1177.733801999988,
+          1156.7094609999913
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3415,
+        "findings": 43737
+      }
+    }
+  },
+  "coverage": {
+    "plugins": [
+      {
+        "plugin": "secure-coding",
+        "npm": "eslint-plugin-secure-coding",
+        "side": "ours",
+        "total": 33,
+        "enabled": 18
+      },
+      {
+        "plugin": "node-security",
+        "npm": "eslint-plugin-node-security",
+        "side": "ours",
+        "total": 42,
+        "enabled": 30
+      },
+      {
+        "plugin": "browser-security",
+        "npm": "eslint-plugin-browser-security",
+        "side": "ours",
+        "total": 46,
+        "enabled": 33
+      },
+      {
+        "plugin": "import-next",
+        "npm": "eslint-plugin-import-next",
+        "side": "ours",
+        "total": 56,
+        "enabled": 13
+      },
+      {
+        "plugin": "no-secrets",
+        "npm": "eslint-plugin-no-secrets",
+        "side": "competitor",
+        "total": 1,
+        "enabled": 0
+      },
+      {
+        "plugin": "security",
+        "npm": "eslint-plugin-security",
+        "side": "competitor",
+        "total": 14,
+        "enabled": 14
+      },
+      {
+        "plugin": "no-unsanitized",
+        "npm": "eslint-plugin-no-unsanitized",
+        "side": "competitor",
+        "total": 2,
+        "enabled": 2
+      },
+      {
+        "plugin": "regexp",
+        "npm": "eslint-plugin-regexp",
+        "side": "competitor",
+        "total": 82,
+        "enabled": 67
+      },
+      {
+        "plugin": "import",
+        "npm": "eslint-plugin-import",
+        "side": "competitor",
+        "total": 46,
+        "enabled": 8
+      }
+    ],
+    "profile": {
+      "ours": null,
+      "competitor": null
+    }
+  },
+  "competitors": {
+    "no-secrets": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 1533.7858509999933,
+        "median": 1556.7839130000066,
+        "min": 1550.6594409999961,
+        "max": 1570.776629,
+        "samples": [
+          1556.7839130000066,
+          1561.0637520000018,
+          1552.0281160000013,
+          1570.776629,
+          1550.6594409999961
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 10
+      },
+      "npm": "eslint-plugin-no-secrets"
+    },
+    "security": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 1498.0819689999917,
+        "median": 1540.8500510000013,
+        "min": 1509.232535999996,
+        "max": 1579.5280930000008,
+        "samples": [
+          1579.5280930000008,
+          1515.132770000011,
+          1545.4449599999934,
+          1509.232535999996,
+          1540.8500510000013
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 6
+      },
+      "npm": "eslint-plugin-security"
+    },
+    "no-unsanitized": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 1478.3879739999975,
+        "median": 1461.8699419999903,
+        "min": 1454.1984749999974,
+        "max": 1482.8066919999983,
+        "samples": [
+          1482.8066919999983,
+          1467.395286999992,
+          1461.8699419999903,
+          1458.8022950000013,
+          1454.1984749999974
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 0
+      },
+      "npm": "eslint-plugin-no-unsanitized"
+    },
+    "regexp": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 1684.5655310000002,
+        "median": 1641.3668340000004,
+        "min": 1636.63483000001,
+        "max": 1662.6711429999996,
+        "samples": [
+          1662.6711429999996,
+          1636.63483000001,
+          1640.1396260000038,
+          1649.4135139999999,
+          1641.3668340000004
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 0
+      },
+      "npm": "eslint-plugin-regexp"
+    },
+    "import": {
+      "cold": {
+        "ok": true,
+        "warmupMs": 3475.3229310000024,
+        "median": 3460.701549999998,
+        "min": 3422.879463999998,
+        "max": 3529.281526999999,
+        "samples": [
+          3529.281526999999,
+          3465.828118999998,
+          3460.701549999998,
+          3422.879463999998,
+          3456.3073330000043
+        ],
+        "exitCode": 1,
+        "filesProcessed": 3409,
+        "findings": 0
+      },
+      "npm": "eslint-plugin-import"
+    }
+  },
+  "matchups": [
+    {
+      "job": "Hardcoded secrets & credentials",
+      "category": "security",
+      "ours": [
+        "secure-coding/no-hardcoded-credentials",
+        "secure-coding/no-hardcoded-session-tokens"
+      ],
+      "theirs": [
+        "eslint-plugin-no-secrets:no-secrets",
+        "eslint-plugin-sonarjs:no-hardcoded-passwords",
+        "eslint-plugin-sonarjs:no-hardcoded-secrets"
+      ],
+      "note": "no-secrets uses entropy scanning, catching high-entropy strings our AST approach misses — at a high false-positive cost (379 findings on vercel-ai, none actionable)."
+    },
+    {
+      "job": "Command / shell injection",
+      "category": "security",
+      "ours": [
+        "node-security/detect-child-process",
+        "node-security/no-shell-injection"
+      ],
+      "theirs": [
+        "eslint-plugin-security:detect-child-process",
+        "eslint-plugin-security-node:detect-child-process",
+        "eslint-plugin-sonarjs:os-command"
+      ]
+    },
+    {
+      "job": "Code injection (eval, dynamic require, vm)",
+      "category": "security",
+      "ours": [
+        "node-security/detect-eval-with-expression",
+        "node-security/no-unsafe-dynamic-require",
+        "browser-security/no-eval"
+      ],
+      "theirs": [
+        "eslint-plugin-security:detect-eval-with-expression",
+        "eslint-plugin-security:detect-non-literal-require",
+        "eslint-plugin-security-node:detect-runinthiscontext-method-in-nodes-vm",
+        "eslint-plugin-sonarjs:code-eval"
+      ]
+    },
+    {
+      "job": "SQL / NoSQL injection",
+      "category": "security",
+      "ours": [
+        "secure-coding/no-graphql-injection",
+        "secure-coding/no-ldap-injection"
+      ],
+      "theirs": [
+        "eslint-plugin-security-node:detect-sql-injection",
+        "eslint-plugin-security-node:detect-nosql-injection",
+        "eslint-plugin-sonarjs:sql-queries"
+      ],
+      "note": "security-node covers raw SQL/NoSQL string building, which our SQL story handles in the driver-specific plugins (pg, mongodb-security) excluded from this SDK-agnostic comparison."
+    },
+    {
+      "job": "Path traversal / non-literal fs access",
+      "category": "security",
+      "ours": [
+        "node-security/detect-non-literal-fs-filename",
+        "node-security/no-arbitrary-file-access",
+        "node-security/no-zip-slip"
+      ],
+      "theirs": [
+        "eslint-plugin-security:detect-non-literal-fs-filename"
+      ],
+      "note": "eslint-plugin-security flags any non-literal fs path — higher recall, far more false positives on legitimate dynamic paths."
+    },
+    {
+      "job": "Object injection / prototype pollution",
+      "category": "security",
+      "ours": [
+        "secure-coding/detect-object-injection"
+      ],
+      "theirs": [
+        "eslint-plugin-security:detect-object-injection",
+        "eslint-plugin-sonarjs:no-angular-bypass-sanitization"
+      ],
+      "note": "Both flag bracket-notation writes; eslint-plugin-security is notoriously noisy on this rule and most teams disable it."
+    },
+    {
+      "job": "DOM XSS sinks (innerHTML and friends)",
+      "category": "security",
+      "ours": [
+        "browser-security/no-innerhtml",
+        "browser-security/no-websocket-innerhtml",
+        "browser-security/no-filereader-innerhtml"
+      ],
+      "theirs": [
+        "eslint-plugin-no-unsanitized:method",
+        "eslint-plugin-no-unsanitized:property",
+        "@microsoft/eslint-plugin-sdl:no-inner-html",
+        "@microsoft/eslint-plugin-sdl:no-document-write"
+      ],
+      "note": "Mozilla's no-unsanitized is only 2 rules but is the most precise DOM sink detector available — the reference implementation for this job."
+    },
+    {
+      "job": "postMessage origin validation",
+      "category": "security",
+      "ours": [
+        "browser-security/no-postmessage-wildcard-origin",
+        "browser-security/require-postmessage-origin-check",
+        "browser-security/no-postmessage-innerhtml"
+      ],
+      "theirs": [
+        "@microsoft/eslint-plugin-sdl:no-postmessage-star-origin"
+      ]
+    },
+    {
+      "job": "Cookie security & token storage",
+      "category": "security",
+      "ours": [
+        "browser-security/require-cookie-secure-attrs",
+        "browser-security/no-cookie-auth-tokens",
+        "browser-security/no-jwt-in-storage"
+      ],
+      "theirs": [
+        "@microsoft/eslint-plugin-sdl:no-cookies",
+        "eslint-plugin-sonarjs:insecure-cookie",
+        "eslint-plugin-sonarjs:cookie-no-httponly",
+        "eslint-plugin-security-node:detect-security-missconfiguration-cookie"
+      ]
+    },
+    {
+      "job": "CSP / mixed content / clickjacking",
+      "category": "security",
+      "ours": [
+        "browser-security/no-unsafe-inline-csp",
+        "browser-security/no-unsafe-eval-csp",
+        "browser-security/detect-mixed-content",
+        "browser-security/no-clickjacking"
+      ],
+      "theirs": [
+        "eslint-plugin-sonarjs:no-referrer-policy",
+        "@microsoft/eslint-plugin-sdl:no-insecure-url"
+      ],
+      "note": "Closest available; no community plugin implements CSP directive linting."
+    },
+    {
+      "job": "Weak crypto: ciphers, hashing, key derivation",
+      "category": "security",
+      "ours": [
+        "node-security/no-weak-cipher-algorithm",
+        "node-security/no-weak-hash-algorithm",
+        "node-security/no-sha1-hash",
+        "node-security/no-ecb-mode",
+        "node-security/no-insecure-key-derivation",
+        "node-security/no-static-iv"
+      ],
+      "theirs": [
+        "eslint-plugin-sonarjs:no-weak-cipher",
+        "eslint-plugin-sonarjs:hashing",
+        "eslint-plugin-sonarjs:encryption-secure-mode"
+      ]
+    },
+    {
+      "job": "Insecure randomness",
+      "category": "security",
+      "ours": [
+        "node-security/no-math-random-crypto",
+        "node-security/no-cryptojs-weak-random"
+      ],
+      "theirs": [
+        "eslint-plugin-security:detect-pseudoRandomBytes",
+        "eslint-plugin-sonarjs:pseudo-random",
+        "eslint-plugin-security-node:detect-insecure-randomness",
+        "@microsoft/eslint-plugin-sdl:no-insecure-random"
+      ]
+    },
+    {
+      "job": "Timing-attack-unsafe comparison",
+      "category": "security",
+      "ours": [
+        "node-security/no-timing-unsafe-compare",
+        "secure-coding/no-insecure-comparison"
+      ],
+      "theirs": [
+        "eslint-plugin-security:detect-possible-timing-attacks",
+        "eslint-plugin-security-node:detect-possible-timing-attacks"
+      ]
+    },
+    {
+      "job": "TLS / certificate validation",
+      "category": "security",
+      "ours": [
+        "node-security/no-self-signed-certs",
+        "node-security/no-insecure-rsa-padding"
+      ],
+      "theirs": [
+        "eslint-plugin-security-node:detect-option-rejectunauthorized-in-nodejs-httpsrequest",
+        "eslint-plugin-security-node:disable-ssl-across-node-server",
+        "eslint-plugin-sonarjs:unverified-certificate",
+        "eslint-plugin-sonarjs:weak-ssl"
+      ]
+    },
+    {
+      "job": "ReDoS / catastrophic backtracking",
+      "category": "security",
+      "ours": [
+        "secure-coding/no-redos-vulnerable-regex",
+        "secure-coding/detect-non-literal-regexp",
+        "secure-coding/no-unsafe-regex-construction"
+      ],
+      "theirs": [
+        "eslint-plugin-security:detect-unsafe-regex",
+        "eslint-plugin-security:detect-non-literal-regexp",
+        "eslint-plugin-sonarjs:slow-regex",
+        "eslint-plugin-regexp:no-super-linear-backtracking"
+      ],
+      "note": "eslint-plugin-regexp is the strongest here — full automaton analysis across 82 regex rules. We target the ReDoS subset only."
+    },
+    {
+      "job": "Circular dependencies",
+      "category": "modules",
+      "ours": [
+        "import-next/no-cycle"
+      ],
+      "theirs": [
+        "eslint-plugin-import:no-cycle"
+      ],
+      "note": "Same job; the incumbent has ~30M weekly downloads and far more battle-testing across exotic resolver setups."
+    },
+    {
+      "job": "Unresolved / invalid imports",
+      "category": "modules",
+      "ours": [
+        "import-next/no-unresolved",
+        "import-next/named"
+      ],
+      "theirs": [
+        "eslint-plugin-import:no-unresolved",
+        "eslint-plugin-import:named"
+      ]
+    },
+    {
+      "job": "Dependency integrity & supply chain",
+      "category": "modules",
+      "ours": [
+        "node-security/detect-suspicious-dependencies",
+        "node-security/require-dependency-integrity",
+        "node-security/lock-file"
+      ],
+      "theirs": [],
+      "note": "No community ESLint plugin lints lockfile integrity or dependency provenance; this is genuinely uncontested rather than a win."
+    }
+  ],
+  "uncontested": [
+    {
+      "job": "CSP directive linting",
+      "ours": [
+        "browser-security/no-unsafe-inline-csp",
+        "browser-security/no-unsafe-eval-csp"
+      ],
+      "why": "No community ESLint plugin parses CSP directives."
+    },
+    {
+      "job": "Browser storage hygiene for secrets",
+      "ours": [
+        "browser-security/no-jwt-in-storage",
+        "browser-security/no-sensitive-localstorage",
+        "browser-security/no-sensitive-indexeddb"
+      ],
+      "why": "Microsoft SDL has no-cookies but nothing for localStorage/IndexedDB tokens."
+    }
+  ],
+  "jobResults": [
+    {
+      "job": "Hardcoded secrets & credentials",
+      "category": "security",
+      "note": "no-secrets uses entropy scanning, catching high-entropy strings our AST approach misses — at a high false-positive cost (379 findings on vercel-ai, none actionable).",
+      "ours": {
+        "rules": [
+          "secure-coding/no-hardcoded-credentials",
+          "secure-coding/no-hardcoded-session-tokens"
+        ],
+        "ruleCount": 2,
+        "ms": 1461.4199770000123,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-no-secrets:no-secrets",
+          "eslint-plugin-sonarjs:no-hardcoded-passwords",
+          "eslint-plugin-sonarjs:no-hardcoded-secrets"
+        ],
+        "ruleCount": 3,
+        "ms": 1861.1366410000192,
+        "findings": 10,
+        "ok": true
+      }
+    },
+    {
+      "job": "Command / shell injection",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "node-security/detect-child-process",
+          "node-security/no-shell-injection"
+        ],
+        "ruleCount": 2,
+        "ms": 1464.9489130000002,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security:detect-child-process",
+          "eslint-plugin-security-node:detect-child-process",
+          "eslint-plugin-sonarjs:os-command"
+        ],
+        "ruleCount": 3,
+        "ms": 1799.8645540000289,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Code injection (eval, dynamic require, vm)",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "node-security/detect-eval-with-expression",
+          "node-security/no-unsafe-dynamic-require",
+          "browser-security/no-eval"
+        ],
+        "ruleCount": 3,
+        "ms": 1499.3944820000033,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security:detect-eval-with-expression",
+          "eslint-plugin-security:detect-non-literal-require",
+          "eslint-plugin-security-node:detect-runinthiscontext-method-in-nodes-vm",
+          "eslint-plugin-sonarjs:code-eval"
+        ],
+        "ruleCount": 4,
+        "ms": 1784.5185320000164,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "SQL / NoSQL injection",
+      "category": "security",
+      "note": "security-node covers raw SQL/NoSQL string building, which our SQL story handles in the driver-specific plugins (pg, mongodb-security) excluded from this SDK-agnostic comparison.",
+      "ours": {
+        "rules": [
+          "secure-coding/no-graphql-injection",
+          "secure-coding/no-ldap-injection"
+        ],
+        "ruleCount": 2,
+        "ms": 1508.4866690000053,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security-node:detect-sql-injection",
+          "eslint-plugin-security-node:detect-nosql-injection",
+          "eslint-plugin-sonarjs:sql-queries"
+        ],
+        "ruleCount": 3,
+        "ms": 1751.2018450000032,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Path traversal / non-literal fs access",
+      "category": "security",
+      "note": "eslint-plugin-security flags any non-literal fs path — higher recall, far more false positives on legitimate dynamic paths.",
+      "ours": {
+        "rules": [
+          "node-security/detect-non-literal-fs-filename",
+          "node-security/no-arbitrary-file-access",
+          "node-security/no-zip-slip"
+        ],
+        "ruleCount": 3,
+        "ms": 1432.422688999999,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security:detect-non-literal-fs-filename"
+        ],
+        "ruleCount": 1,
+        "ms": 1419.213917999994,
+        "findings": 6,
+        "ok": true
+      }
+    },
+    {
+      "job": "Object injection / prototype pollution",
+      "category": "security",
+      "note": "Both flag bracket-notation writes; eslint-plugin-security is notoriously noisy on this rule and most teams disable it.",
+      "ours": {
+        "rules": [
+          "secure-coding/detect-object-injection"
+        ],
+        "ruleCount": 1,
+        "ms": 1490.0217480000283,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security:detect-object-injection",
+          "eslint-plugin-sonarjs:no-angular-bypass-sanitization"
+        ],
+        "ruleCount": 2,
+        "ms": 1784.9889169999806,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "DOM XSS sinks (innerHTML and friends)",
+      "category": "security",
+      "note": "Mozilla's no-unsanitized is only 2 rules but is the most precise DOM sink detector available — the reference implementation for this job.",
+      "ours": {
+        "rules": [
+          "browser-security/no-innerhtml",
+          "browser-security/no-websocket-innerhtml",
+          "browser-security/no-filereader-innerhtml"
+        ],
+        "ruleCount": 3,
+        "ms": 1474.730041999981,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-no-unsanitized:method",
+          "eslint-plugin-no-unsanitized:property",
+          "@microsoft/eslint-plugin-sdl:no-inner-html",
+          "@microsoft/eslint-plugin-sdl:no-document-write"
+        ],
+        "ruleCount": 4,
+        "ms": 1715.6323800000246,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "postMessage origin validation",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "browser-security/no-postmessage-wildcard-origin",
+          "browser-security/require-postmessage-origin-check",
+          "browser-security/no-postmessage-innerhtml"
+        ],
+        "ruleCount": 3,
+        "ms": 1491.4827299999888,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "@microsoft/eslint-plugin-sdl:no-postmessage-star-origin"
+        ],
+        "ruleCount": 1,
+        "ms": 1712.8788050000148,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Cookie security & token storage",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "browser-security/require-cookie-secure-attrs",
+          "browser-security/no-cookie-auth-tokens",
+          "browser-security/no-jwt-in-storage"
+        ],
+        "ruleCount": 3,
+        "ms": 1486.0893599999836,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "@microsoft/eslint-plugin-sdl:no-cookies",
+          "eslint-plugin-sonarjs:insecure-cookie",
+          "eslint-plugin-sonarjs:cookie-no-httponly",
+          "eslint-plugin-security-node:detect-security-missconfiguration-cookie"
+        ],
+        "ruleCount": 4,
+        "ms": 1934.0392739999807,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "CSP / mixed content / clickjacking",
+      "category": "security",
+      "note": "Closest available; no community plugin implements CSP directive linting.",
+      "ours": {
+        "rules": [
+          "browser-security/no-unsafe-inline-csp",
+          "browser-security/no-unsafe-eval-csp",
+          "browser-security/detect-mixed-content",
+          "browser-security/no-clickjacking"
+        ],
+        "ruleCount": 4,
+        "ms": 1484.8708800000022,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-sonarjs:no-referrer-policy",
+          "@microsoft/eslint-plugin-sdl:no-insecure-url"
+        ],
+        "ruleCount": 2,
+        "ms": 1955.3841639999882,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Weak crypto: ciphers, hashing, key derivation",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "node-security/no-weak-cipher-algorithm",
+          "node-security/no-weak-hash-algorithm",
+          "node-security/no-sha1-hash",
+          "node-security/no-ecb-mode",
+          "node-security/no-insecure-key-derivation",
+          "node-security/no-static-iv"
+        ],
+        "ruleCount": 6,
+        "ms": 1546.226932999998,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-sonarjs:no-weak-cipher",
+          "eslint-plugin-sonarjs:hashing",
+          "eslint-plugin-sonarjs:encryption-secure-mode"
+        ],
+        "ruleCount": 3,
+        "ms": 1778.4594510000024,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Insecure randomness",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "node-security/no-math-random-crypto",
+          "node-security/no-cryptojs-weak-random"
+        ],
+        "ruleCount": 2,
+        "ms": 1493.1836439999752,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security:detect-pseudoRandomBytes",
+          "eslint-plugin-sonarjs:pseudo-random",
+          "eslint-plugin-security-node:detect-insecure-randomness",
+          "@microsoft/eslint-plugin-sdl:no-insecure-random"
+        ],
+        "ruleCount": 4,
+        "ms": 1991.7992340000055,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Timing-attack-unsafe comparison",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "node-security/no-timing-unsafe-compare",
+          "secure-coding/no-insecure-comparison"
+        ],
+        "ruleCount": 2,
+        "ms": 1487.3683269999747,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security:detect-possible-timing-attacks",
+          "eslint-plugin-security-node:detect-possible-timing-attacks"
+        ],
+        "ruleCount": 2,
+        "ms": 1455.9917449999775,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "TLS / certificate validation",
+      "category": "security",
+      "ours": {
+        "rules": [
+          "node-security/no-self-signed-certs",
+          "node-security/no-insecure-rsa-padding"
+        ],
+        "ruleCount": 2,
+        "ms": 1463.8160079999943,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security-node:detect-option-rejectunauthorized-in-nodejs-httpsrequest",
+          "eslint-plugin-security-node:disable-ssl-across-node-server",
+          "eslint-plugin-sonarjs:unverified-certificate",
+          "eslint-plugin-sonarjs:weak-ssl"
+        ],
+        "ruleCount": 4,
+        "ms": 1770.1805590000004,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "ReDoS / catastrophic backtracking",
+      "category": "security",
+      "note": "eslint-plugin-regexp is the strongest here — full automaton analysis across 82 regex rules. We target the ReDoS subset only.",
+      "ours": {
+        "rules": [
+          "secure-coding/no-redos-vulnerable-regex",
+          "secure-coding/detect-non-literal-regexp",
+          "secure-coding/no-unsafe-regex-construction"
+        ],
+        "ruleCount": 3,
+        "ms": 1521.9025269999984,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-security:detect-unsafe-regex",
+          "eslint-plugin-security:detect-non-literal-regexp",
+          "eslint-plugin-sonarjs:slow-regex",
+          "eslint-plugin-regexp:no-super-linear-backtracking"
+        ],
+        "ruleCount": 4,
+        "ms": 1821.168154999992,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Circular dependencies",
+      "category": "modules",
+      "note": "Same job; the incumbent has ~30M weekly downloads and far more battle-testing across exotic resolver setups.",
+      "ours": {
+        "rules": [
+          "import-next/no-cycle"
+        ],
+        "ruleCount": 1,
+        "ms": 1515.2421699999832,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-import:no-cycle"
+        ],
+        "ruleCount": 1,
+        "ms": 3337.5518030000094,
+        "findings": 0,
+        "ok": true
+      }
+    },
+    {
+      "job": "Unresolved / invalid imports",
+      "category": "modules",
+      "ours": {
+        "rules": [
+          "import-next/no-unresolved",
+          "import-next/named"
+        ],
+        "ruleCount": 2,
+        "ms": 1487.8780079999997,
+        "findings": 689,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [
+          "eslint-plugin-import:no-unresolved",
+          "eslint-plugin-import:named"
+        ],
+        "ruleCount": 2,
+        "ms": 2258.1223480000044,
+        "findings": 718,
+        "ok": true
+      }
+    },
+    {
+      "job": "Dependency integrity & supply chain",
+      "category": "modules",
+      "note": "No community ESLint plugin lints lockfile integrity or dependency provenance; this is genuinely uncontested rather than a win.",
+      "ours": {
+        "rules": [
+          "node-security/detect-suspicious-dependencies",
+          "node-security/require-dependency-integrity",
+          "node-security/lock-file"
+        ],
+        "ruleCount": 3,
+        "ms": 1520.1837959999975,
+        "findings": 0,
+        "ok": true
+      },
+      "theirs": {
+        "rules": [],
+        "ruleCount": 0,
+        "ms": null,
+        "findings": null,
+        "ok": null,
+        "note": "no comparable community rule"
+      }
+    }
+  ],
+  "scope": {
+    "plugins": [
+      "secure-coding",
+      "node-security",
+      "browser-security",
+      "import-next"
+    ],
+    "rationale": "Only SDK-agnostic plugins are benchmarked. Framework-bound plugins (pg, jwt, nestjs-security, mongodb-security, lambda-security, vercel-ai-security, express-security) have no comparable competitor — benchmarking them would be an uncontested win worth nothing to a reader."
+  }
+}
