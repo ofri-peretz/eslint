@@ -7,6 +7,5 @@
   "modernization/prefer-template-literal",
   "react-features/hooks-exhaustive-deps",
   "react-features/jsx-key",
-  "react-features/no-unknown-property",
   "reliability/no-missing-null-checks"
 ]
