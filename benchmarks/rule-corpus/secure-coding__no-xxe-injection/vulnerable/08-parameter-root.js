@@ -2,16 +2,22 @@
  * VULNERABLE - The tainted root is a function parameter. The route handler
  * passes the raw body into a service method that owns the parser, which is how
  * the taint and the sink end up in different functions in every real codebase.
+ *
+ * On libxmljs2 since 2026-08-24: the shape under test is the parameter root,
+ * and @xmldom/xmldom - which this used to import - cannot resolve an external
+ * entity, so it could not carry the vulnerability the shape is meant to show.
  */
-import { DOMParser } from '@xmldom/xmldom';
+const libxmljs = require('libxmljs2');
 
-export class ManifestService {
+class ManifestService {
   parseManifest(manifestXml) {
-    return new DOMParser().parseFromString(manifestXml, 'application/xml');
+    return libxmljs.parseXml(manifestXml);
   }
 }
 
-export function uploadManifest(req, res) {
+function uploadManifest(req, res) {
   const service = new ManifestService();
-  res.json(service.parseManifest(req.body.manifest));
+  res.json({ root: service.parseManifest(req.body.manifest).root().name() });
 }
+
+module.exports = { ManifestService, uploadManifest };
