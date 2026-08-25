@@ -114,4 +114,20 @@ ruleTester.run('no-disabled-certificate-validation', noDisabledCertificateValida
       errors: [{ messageId: 'noopHostnameVerification' }],
     },
   ],
+
+
+});
+
+// A certificate check relaxed in a TEST file.
+//
+// An integration test that points at a local server with a self-signed
+// certificate has no other way to talk to it. Verified on
+// mariadb-corporation/mariadb-connector-nodejs: 41 findings between this rule
+// and its sibling, every single one under `test/`.
+ruleTester.run('no-disabled-certificate-validation - test files', noDisabledCertificateValidation, {
+  valid: [{ code: `const opts = { ssl: { rejectUnauthorized: false } };`, filename: 'test/integration/auth-plugin.test.js' }],
+  invalid: [
+    // Production code is untouched.
+    { code: `const opts = { ssl: { rejectUnauthorized: false } };`, filename: 'lib/connection.js', errors: 1 },
+  ],
 });

@@ -64,6 +64,19 @@ export function isLoopbackUrl(value: string): boolean {
   return host !== null && LOOPBACK_HOSTS.has(host);
 }
 
+/**
+ * Is this URL's host a loopback address, on ANY scheme?
+ *
+ * Separate from {@link isLoopbackUrl}, which is web-scheme-gated on purpose —
+ * see the note above. This is for callers with their own reason to trust a
+ * non-web loopback, such as a test-file carve-out, and it deliberately does not
+ * decide by itself whether that reason is good enough.
+ */
+export function isLoopbackHost(value: string): boolean {
+  const host = hostOf(value);
+  return host !== null && LOOPBACK_HOSTS.has(host);
+}
+
 /** Is this a domain reserved for documentation and examples? */
 export function isReservedExampleUrl(value: string): boolean {
   const host = hostOf(value);

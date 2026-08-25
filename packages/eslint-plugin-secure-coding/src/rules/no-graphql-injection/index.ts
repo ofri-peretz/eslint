@@ -24,6 +24,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { resolvedReference } from '../../utils/resolve-reference';
 import {
   createSafetyChecker,
   type SecurityRuleOptions,
@@ -115,8 +116,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Validate all user inputs before GraphQL execution',
         documentationLink: 'https://graphql.org/learn/validation/',
       }),
-
-
     },
     schema: [
       {
@@ -124,40 +123,53 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         properties: {
           allowIntrospection: {
             type: 'boolean',
-            default: false, description: 'Allow introspection queries'
+            default: false,
+            description: 'Allow introspection queries',
           },
           maxQueryDepth: {
             type: 'number',
             minimum: 1,
-            default: 10, description: 'Maximum query nesting depth before reporting a DoS risk'
+            default: 10,
+            description:
+              'Maximum query nesting depth before reporting a DoS risk',
           },
           trustedGraphqlLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'], description: 'GraphQL libraries recognised as query builders'
+            default: [
+              'graphql',
+              'apollo-server',
+              'graphql-tools',
+              'graphql-tag',
+            ],
+            description: 'GraphQL libraries recognised as query builders',
           },
           validationFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validate', 'sanitize', 'isValid', 'assertValid'], description: 'Function names that count as query validation'
+            default: ['validate', 'sanitize', 'isValid', 'assertValid'],
+            description: 'Function names that count as query validation',
           },
           safeTemplateLiteralCallers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional callers where template literals are never GraphQL. Format: object.method or ClassName.',
+            description:
+              'Additional callers where template literals are never GraphQL. Format: object.method or ClassName.',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as GraphQL sanitizers',
+            description:
+              'Additional function names to consider as GraphQL sanitizers',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -173,7 +185,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     {
       allowIntrospection: false,
       maxQueryDepth: 10,
-      trustedGraphqlLibraries: ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'],
+      trustedGraphqlLibraries: [
+        'graphql',
+        'apollo-server',
+        'graphql-tools',
+        'graphql-tag',
+      ],
       validationFunctions: ['validate', 'sanitize', 'isValid', 'assertValid'],
       safeTemplateLiteralCallers: [],
       trustedSanitizers: [],
@@ -186,7 +203,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     const {
       allowIntrospection = false,
       maxQueryDepth = 10,
-      trustedGraphqlLibraries = ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'],
+      trustedGraphqlLibraries = [
+        'graphql',
+        'apollo-server',
+        'graphql-tools',
+        'graphql-tag',
+      ],
       validationFunctions = ['validate', 'sanitize', 'isValid', 'assertValid'],
       safeTemplateLiteralCallers = [],
       trustedSanitizers = [],
@@ -195,6 +217,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     }: Options = options;
 
     const filename = context.filename;
+    const sourceCode = context.sourceCode;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -212,14 +235,19 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
       // Check for GraphQL library calls
       if (callee.type === 'Identifier') {
-        return trustedGraphqlLibraries.some(lib => callee.name.toLowerCase().includes(lib.toLowerCase()));
+        return trustedGraphqlLibraries.some((lib) =>
+          callee.name.toLowerCase().includes(lib.toLowerCase()),
+        );
       }
 
       // Check for member expressions like graphql.parse, apollo.executeQuery
-      if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier'
+      ) {
         const objectName = callee.object.name;
-        return trustedGraphqlLibraries.some(lib =>
-          objectName.toLowerCase().includes(lib.toLowerCase())
+        return trustedGraphqlLibraries.some((lib) =>
+          objectName.toLowerCase().includes(lib.toLowerCase()),
         );
       }
 
@@ -230,11 +258,24 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     // Hard-coded safe callers that should NEVER contain GraphQL queries.
     // Users can extend via safeTemplateLiteralCallers option.
     const BUILTIN_SAFE_MEMBER_CALLERS = new Set([
-      'console.log', 'console.warn', 'console.error', 'console.info', 'console.debug',
-      'console.trace', 'logger.log', 'logger.info', 'logger.warn', 'logger.error',
+      'console.log',
+      'console.warn',
+      'console.error',
+      'console.info',
+      'console.debug',
+      'console.trace',
+      'logger.log',
+      'logger.info',
+      'logger.warn',
+      'logger.error',
       'logger.debug',
     ]);
-    const BUILTIN_SAFE_CONSTRUCTORS = new Set(['URL', 'Error', 'TypeError', 'RangeError']);
+    const BUILTIN_SAFE_CONSTRUCTORS = new Set([
+      'URL',
+      'Error',
+      'TypeError',
+      'RangeError',
+    ]);
 
     // Merge user-provided callers
     const safeMemberCallers = new Set(BUILTIN_SAFE_MEMBER_CALLERS);
@@ -259,9 +300,11 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         if (current.type === 'CallExpression') {
           const callee = current.callee;
           // object.method() pattern
-          if (callee.type === 'MemberExpression' &&
-              callee.object.type === 'Identifier' &&
-              callee.property.type === 'Identifier') {
+          if (
+            callee.type === 'MemberExpression' &&
+            callee.object.type === 'Identifier' &&
+            callee.property.type === 'Identifier'
+          ) {
             const key = `${callee.object.name}.${callee.property.name}`;
             if (safeMemberCallers.has(key)) return true;
           }
@@ -270,17 +313,21 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
         // new URL(`...`), new Error(`...`)
         if (current.type === AST_NODE_TYPES.NewExpression) {
-          if (current.callee.type === AST_NODE_TYPES.Identifier &&
-              safeConstructors.has(current.callee.name)) {
+          if (
+            current.callee.type === AST_NODE_TYPES.Identifier &&
+            safeConstructors.has(current.callee.name)
+          ) {
             return true;
           }
           break;
         }
 
         // Don't walk past function boundaries
-        if (current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            current.type === AST_NODE_TYPES.FunctionExpression ||
-            current.type === AST_NODE_TYPES.FunctionDeclaration) {
+        if (
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          current.type === AST_NODE_TYPES.FunctionExpression ||
+          current.type === AST_NODE_TYPES.FunctionDeclaration
+        ) {
           break;
         }
 
@@ -294,10 +341,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     const isWordChar = (ch: string): boolean => {
       const code = ch.charCodeAt(0);
-      return (code >= 65 && code <= 90) ||   // A-Z
-             (code >= 97 && code <= 122) ||  // a-z
-             (code >= 48 && code <= 57) ||   // 0-9
-             code === 95;                     // _
+      return (
+        (code >= 65 && code <= 90) || // A-Z
+        (code >= 97 && code <= 122) || // a-z
+        (code >= 48 && code <= 57) || // 0-9
+        code === 95
+      ); // _
     };
 
     // oxlint-disable-next-line consistent-function-scoping
@@ -307,7 +356,13 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     /** Operation keywords that must be followed by optional name + { or ( */
     const GRAPHQL_OP_KEYWORDS = ['query', 'mutation', 'subscription'];
     /** Schema keywords that must be followed by a type name */
-    const GRAPHQL_SCHEMA_KEYWORDS = ['type', 'interface', 'enum', 'scalar', 'input'];
+    const GRAPHQL_SCHEMA_KEYWORDS = [
+      'type',
+      'interface',
+      'enum',
+      'scalar',
+      'input',
+    ];
 
     /**
      * A GraphQL document declares its operations and type definitions at the
@@ -379,7 +434,11 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     // loop is written with `while (true)` + internal returns instead of a
     // trailing `return -1` that static analysis (and coverage) would flag as
     // dead code.
-    const findKeywordAtBoundary = (text: string, keyword: string, startFrom = 0): number => {
+    const findKeywordAtBoundary = (
+      text: string,
+      keyword: string,
+      startFrom = 0,
+    ): number => {
       let pos = startFrom;
       // oxlint-disable-next-line no-constant-condition
       while (true) {
@@ -459,7 +518,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     const isGraphqlTemplate = (node: TSESTree.TemplateLiteral): boolean => {
       // Build combined static text from quasis for keyword scanning
       const staticText = node.quasis
-        .map(q => (q.value.cooked ?? q.value.raw).toLowerCase())
+        .map((q) => (q.value.cooked ?? q.value.raw).toLowerCase())
         .join('');
 
       // 1. Check for GraphQL operation keywords (query, mutation, subscription)
@@ -474,9 +533,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
           // Scan past keyword, skip whitespace, skip optional name, skip whitespace, expect { or (
           let scan = idx + keyword.length;
-          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
-          while (scan < staticText.length && isWordChar(staticText[scan])) scan++;
-          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
+          while (scan < staticText.length && isWhitespace(staticText[scan]))
+            scan++;
+          while (scan < staticText.length && isWordChar(staticText[scan]))
+            scan++;
+          while (scan < staticText.length && isWhitespace(staticText[scan]))
+            scan++;
           if (scan < staticText.length && staticText[scan] === '(') {
             return true;
           }
@@ -488,7 +550,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
             // `` `Query { ${this.op} }` `` -> `Query {  }`, which was reported as a
             // GraphQL injection in a file that has never seen GraphQL.
             let probe = scan + 1;
-            while (probe < staticText.length && isWhitespace(staticText[probe])) probe++;
+            while (probe < staticText.length && isWhitespace(staticText[probe]))
+              probe++;
             if (probe < staticText.length && isWordChar(staticText[probe])) {
               return true;
             }
@@ -507,12 +570,18 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           if (!isAtLineStart(staticText, idx)) continue;
 
           let scan = idx + 8; // 'fragment'.length
-          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
+          while (scan < staticText.length && isWhitespace(staticText[scan]))
+            scan++;
           const nameStart = scan;
-          while (scan < staticText.length && isWordChar(staticText[scan])) scan++;
+          while (scan < staticText.length && isWordChar(staticText[scan]))
+            scan++;
           if (scan === nameStart) continue; // no name
-          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
-          if (staticText.slice(scan, scan + 2) === 'on' && (scan + 2 >= staticText.length || !isWordChar(staticText[scan + 2]))) {
+          while (scan < staticText.length && isWhitespace(staticText[scan]))
+            scan++;
+          if (
+            staticText.slice(scan, scan + 2) === 'on' &&
+            (scan + 2 >= staticText.length || !isWordChar(staticText[scan + 2]))
+          ) {
             return true;
           }
         }
@@ -525,26 +594,66 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       // definition named `value`.
       // …and the string must be attributed to GraphQL — see
       // hasGraphqlAttribution. `interface Name {` is TypeScript too.
-      if (hasGraphqlAttribution(node) && staticText.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
-        let pos = 0;
-        while (pos < staticText.length) {
-          const idx = findKeywordAtBoundary(staticText, keyword, pos);
-          if (idx === -1) break;
-          pos = idx + 1;
-          if (!isAtLineStart(staticText, idx)) continue;
+      if (hasGraphqlAttribution(node) && staticText.includes('{'))
+        for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+          let pos = 0;
+          while (pos < staticText.length) {
+            const idx = findKeywordAtBoundary(staticText, keyword, pos);
+            if (idx === -1) break;
+            pos = idx + 1;
+            if (!isAtLineStart(staticText, idx)) continue;
 
-          let scan = idx + keyword.length;
-          // Must have whitespace then a word (type name)
-          if (scan >= staticText.length || !isWhitespace(staticText[scan])) continue;
-          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
-          if (scan < staticText.length && isWordChar(staticText[scan])) {
-            return true;
+            let scan = idx + keyword.length;
+            // Must have whitespace then a word (type name)
+            if (scan >= staticText.length || !isWhitespace(staticText[scan]))
+              continue;
+            while (scan < staticText.length && isWhitespace(staticText[scan]))
+              scan++;
+            if (scan < staticText.length && isWordChar(staticText[scan])) {
+              return true;
+            }
           }
         }
-      }
 
       // 3. Check for selection sets (nested braces): { users { name } }
       return isStandaloneSelectionSet(staticText);
+    };
+
+    /**
+     * The interpolation is another GraphQL document — composition, not input.
+     *
+     * Building a query out of fragments is the idiom every GraphQL client
+     * teaches. Shopify's hydrogen writes `${MENU_FRAGMENT}` under a selection
+     * set and `${CART_QUERY_FRAGMENT}` at the end of a mutation; the scan
+     * reported 53 findings across the repository, and the ones that resolve
+     * this way carry no caller input at all.
+     *
+     * Resolution is the whole safety argument, so it is deliberately strict:
+     * a single `const` definition, never written again, whose initialiser is
+     * itself a template this rule recognises as GraphQL. A parameter, an
+     * import or a re-assigned binding resolves to nothing knowable and keeps
+     * reporting — `cartFragment: string` is a hole a caller fills.
+     */
+    const isGraphqlComposition = (expr: TSESTree.Expression): boolean => {
+      if (expr.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = resolvedReference(sourceCode.getScope(expr), expr);
+      if (variable === null || variable.defs.length !== 1) return false;
+      // `defs.length === 1` above, so index 0 exists.
+      const def = variable.defs[0] as TSESLint.Scope.Definition;
+      if (def.type !== 'Variable') return false;
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1) {
+        return false;
+      }
+      // `let frag;` declares a binding with nothing in it.
+      const init = def.node.init;
+      if (init === null) return false;
+      // `as const` is how a typed client pins a document literal.
+      const literal =
+        init.type === AST_NODE_TYPES.TSAsExpression ? init.expression : init;
+      return (
+        literal.type === AST_NODE_TYPES.TemplateLiteral &&
+        isGraphqlTemplate(literal)
+      );
     };
 
     /**
@@ -560,7 +669,9 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       );
     };
 
-    const templateHasIntrospection = (node: TSESTree.TemplateLiteral): boolean => {
+    const templateHasIntrospection = (
+      node: TSESTree.TemplateLiteral,
+    ): boolean => {
       return node.quasis.some((q) =>
         hasIntrospectionField(q.value.cooked ?? q.value.raw),
       );
@@ -576,8 +687,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       for (const q of node.quasis) {
         const text = q.value.cooked ?? q.value.raw;
         for (const char of text) {
-          if (char === '{') { braceCount++; depth = Math.max(depth, braceCount); }
-          else if (char === '}') { braceCount--; }
+          if (char === '{') {
+            braceCount++;
+            depth = Math.max(depth, braceCount);
+          } else if (char === '}') {
+            braceCount--;
+          }
         }
       }
       return depth;
@@ -587,7 +702,10 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      * Text-based GraphQL detection for string Literals and BinaryExpressions.
      * Uses simple string methods — only regex is for fragment pattern.
      */
-    const containsGraphqlText = (text: string, attributed: boolean): boolean => {
+    const containsGraphqlText = (
+      text: string,
+      attributed: boolean,
+    ): boolean => {
       const lower = text.toLowerCase();
 
       // Check operation keywords
@@ -623,21 +741,26 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         while (scan < lower.length && isWordChar(lower[scan])) scan++;
         if (scan > nameStart) {
           while (scan < lower.length && isWhitespace(lower[scan])) scan++;
-          if (lower.slice(scan, scan + 2) === 'on' && (scan + 2 >= lower.length || !isWordChar(lower[scan + 2]))) return true;
+          if (
+            lower.slice(scan, scan + 2) === 'on' &&
+            (scan + 2 >= lower.length || !isWordChar(lower[scan + 2]))
+          )
+            return true;
         }
       }
 
       // Check schema keywords — a schema definition always has a body, and
       // the string must be attributed to GraphQL (see hasGraphqlAttribution).
-      if (attributed && lower.includes('{')) for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
-        const idx = findKeywordAtBoundary(lower, keyword);
-        if (idx === -1) continue;
-        if (!isAtLineStart(lower, idx)) continue;
-        let scan = idx + keyword.length;
-        if (scan >= lower.length || !isWhitespace(lower[scan])) continue;
-        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
-        if (scan < lower.length && isWordChar(lower[scan])) return true;
-      }
+      if (attributed && lower.includes('{'))
+        for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+          const idx = findKeywordAtBoundary(lower, keyword);
+          if (idx === -1) continue;
+          if (!isAtLineStart(lower, idx)) continue;
+          let scan = idx + keyword.length;
+          if (scan >= lower.length || !isWhitespace(lower[scan])) continue;
+          while (scan < lower.length && isWhitespace(lower[scan])) scan++;
+          if (scan < lower.length && isWordChar(lower[scan])) return true;
+        }
 
       // Check nested braces — only as a standalone selection set.
       return isStandaloneSelectionSet(text);
@@ -649,11 +772,16 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      */
     const concatenatedStaticText = (node: TSESTree.Node): string => {
       if (node.type === 'BinaryExpression' && node.operator === '+') {
-        return concatenatedStaticText(node.left) + concatenatedStaticText(node.right);
+        return (
+          concatenatedStaticText(node.left) + concatenatedStaticText(node.right)
+        );
       }
-      if (node.type === 'Literal' && typeof node.value === 'string') return node.value;
+      if (node.type === 'Literal' && typeof node.value === 'string')
+        return node.value;
       if (node.type === 'TemplateLiteral') {
-        return node.quasis.map((q: TSESTree.TemplateElement) => q.value.cooked ?? q.value.raw).join('');
+        return node.quasis
+          .map((q: TSESTree.TemplateElement) => q.value.cooked ?? q.value.raw)
+          .join('');
       }
       return '';
     };
@@ -667,9 +795,11 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
       // Walk up the AST to find validation calls
       while (current) {
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'Identifier' &&
-            validationFunctions.includes(current.callee.name)) {
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'Identifier' &&
+          validationFunctions.includes(current.callee.name)
+        ) {
           return true;
         }
         current = current.parent as TSESTree.Node;
@@ -712,8 +842,11 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         // Check for unsafe interpolation (AST-based: just check expressions array)
         if (node.expressions.length > 0) {
           // FALSE POSITIVE REDUCTION: Skip if all expressions are validated
-          const allExpressionsSafe = node.expressions.every((expr: TSESTree.Expression) =>
-            isInputValidated(expr) || safetyChecker.isSafe(expr, context)
+          const allExpressionsSafe = node.expressions.every(
+            (expr: TSESTree.Expression) =>
+              isGraphqlComposition(expr) ||
+              isInputValidated(expr) ||
+              safetyChecker.isSafe(expr, context),
           );
 
           if (!allExpressionsSafe) {
@@ -774,8 +907,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         let depth = 0;
         let bc = 0;
         for (const ch of queryText) {
-          if (ch === '{') { bc++; depth = Math.max(depth, bc); }
-          else if (ch === '}') { bc--; }
+          if (ch === '{') {
+            bc++;
+            depth = Math.max(depth, bc);
+          } else if (ch === '}') {
+            bc--;
+          }
         }
         if (depth > maxQueryDepth) {
           context.report({
@@ -818,7 +955,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
             filePath: filename,
             line: String(node.loc?.start.line ?? 0),
             severity: 'HIGH',
-            safeAlternative: 'Use GraphQL variables or query builders instead of string concatenation',
+            safeAlternative:
+              'Use GraphQL variables or query builders instead of string concatenation',
           },
         });
       },
@@ -832,10 +970,13 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
 
         // Check for execute/query methods
-        if (callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier' &&
-            ['execute', 'executeQuery', 'query', 'mutate', 'subscribe'].includes(callee.property.name)) {
-
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier' &&
+          ['execute', 'executeQuery', 'query', 'mutate', 'subscribe'].includes(
+            callee.property.name,
+          )
+        ) {
           // Check arguments for unvalidated inputs
           for (const arg of node.arguments) {
             if (arg.type === 'Identifier' && !isInputValidated(arg)) {
@@ -855,7 +996,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-      }
+      },
     };
   },
 });
