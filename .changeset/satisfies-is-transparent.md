@@ -1,5 +1,7 @@
 ---
 'eslint-plugin-secure-coding': patch
+'eslint-plugin-node-security': patch
+'eslint-plugin-browser-security': patch
 ---
 
 fix: `no-improper-sanitization` reported through a `satisfies` wrapper.
@@ -76,3 +78,36 @@ granting. Verified on nightscout/cgm-remote-monitor. The corpus case that must
 stay reported has the same opening and then runs the privileged work with
 nothing branching on the variable — the difference is a guard that reads it and
 leaves, which is now what the rule looks for.
+
+`no-unsafe-buffer-alloc` read only the `const buf = Buffer.allocUnsafe(n)`
+spelling when deciding whether a buffer is covered before it is read. The
+assignment form — `buf = Buffer.allocUnsafe(n)` onto a binding declared above —
+resolved to nothing, so a fill that covers the whole buffer was invisible and
+the allocation reported anyway. A write at a computed index inside a loop now
+counts as covering, on the same evidence the rule already accepts for
+`writeInt32LE(value, position)`.
+
+`no-disabled-certificate-validation` had no test-file handling at all, unlike
+its sibling `no-self-signed-certs`, which owns the decision through
+`allowInTests`. It now skips test files.
+
+`no-graphql-injection` counted every `${…}` in a GraphQL template as unsafe
+interpolation, including the composition idiom every client teaches:
+`${MENU_FRAGMENT}` under a selection set, `${CART_QUERY_FRAGMENT}` at the end
+of a mutation. Fifty-three findings on Shopify/hydrogen, more than any other
+rule on any target scanned. An interpolated identifier is exempt when it
+resolves to a single never-rewritten `const` whose initialiser is itself a
+GraphQL template — `as const` included. A parameter, an import, a reassigned
+binding and an uninitialised one all still report, because none of them
+resolves to anything knowable. Measured on hydrogen: 53 findings to 30.
+
+`no-xxe-injection` treated `@xmldom/xmldom`, `fast-xml-parser` and `xml2js` as
+parsers that can reach an external entity. A probe says otherwise — the same
+document with a `SYSTEM` entity pointed at a local file returns `&xxe;`
+unresolved, `External entities are not supported`, and a parse error
+respectively. `xpath` was on the list too, and it parses nothing at all. Those
+four no longer raise the untrusted-input finding on their own; a deliberately
+enabled entity-expansion option still reports on any of them, and
+`libxmljs`, `libxmljs2`, `node-expat` and `xml2json` are unchanged. Thirty-one
+findings on nasa/earthdata-search, nine on refactoringhq/tolaria, five on
+aws/aws-toolkit-vscode.
