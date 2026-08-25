@@ -112,9 +112,12 @@ pure SVG/CSS — no WebGL) are themselves brand material.
 ## 5. Enforcement
 
 - **Scope.** The doctrine governs the website(s) and the DS — there the
-  mandate is to be creative within the gate. Article **cover images are
-  exempt**: they stay as they are, by decision (cheap to maintain wins —
-  maintenance is the enemy of innovation, including our own).
+  mandate is to be creative within the gate. **Articles are exempt**:
+  they live on other platforms too (Dev.to and beyond), their covers and
+  format are a working cross-platform system, and the article queue is
+  performing. We do not replace what is working for us — by decision
+  (maintenance is the enemy of innovation, including our own; so is
+  redesigning a system that's winning).
 - **DS-first.** Every brand element is built in `packages/ui` at full
   quality (R1–R26, locked tests, reduced-motion, SSR-honesty), then
   downloaded by apps. App-local authoring needs a written reason.
