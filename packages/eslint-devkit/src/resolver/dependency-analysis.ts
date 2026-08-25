@@ -108,10 +108,29 @@ const KNOWN_EXTERNAL_PACKAGES = new Set([
 // =============================================================================
 
 /**
- * Pre-compiled regex for ES6 static imports
- * Matches: import { x } from 'y', import x from 'y', import 'y'
+ * Pre-compiled regex for ES6 static imports.
+ *
+ * Matches: `import { x } from 'y'`, `import x from 'y'`, `import 'y'`, and
+ * `import { "arbitrary-name" as x } from 'y'`.
+ *
+ * That last form is ES2022 arbitrary module namespace names, and the previous
+ * pattern MISSED IT ENTIRELY — not a wrong path, no match at all, so the edge
+ * vanished from the dependency graph. Every rule built on `getFileImports`
+ * inherited that blind spot: `no-cycle` cannot report a cycle through an edge
+ * it never sees, which is a false negative on a rule that is `error` in
+ * `recommended`.
+ *
+ * The cause was the specifier character class `[\w*{}\s,]`, which has no
+ * quotes in it, so the clause could not span `{ "arbitrary-name" as x }`. The
+ * fix alternates the class with whole quoted segments rather than simply adding
+ * `'` and `"` to it — a bare quote in the class would let the clause run
+ * through the module path's own quotes and capture the wrong string.
+ *
+ * The quoted alternatives exclude newlines so an unbalanced quote cannot
+ * swallow the following lines and drop several imports at once.
  */
-const IMPORT_REGEX = /import\s+(?:[\w*{}\s,]+\s+from\s+)?['"]([^'"]+)['"]/g;
+const IMPORT_REGEX =
+  /import\s+(?:(?:[\w*{}\s,]|'[^'\n]*'|"[^"\n]*")+\s+from\s+)?['"]([^'"]+)['"]/g;
 
 /**
  * Pre-compiled regex for dynamic imports

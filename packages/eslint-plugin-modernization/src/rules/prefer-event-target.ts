@@ -30,7 +30,27 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
       description:
         'Prefer EventTarget over EventEmitter for cross-platform compatibility',
     },
-    fixable: 'code',
+    /**
+     * NOT fixable, and it must not claim to be.
+     *
+     * The removed fixers rewrote the BINDING NAME and nothing else:
+     * `import { EventEmitter }` became `import { EventTarget }`, and the
+     * require form the same. Two things were wrong with that.
+     *
+     * `events` does not export `EventTarget` — it is a global in Node 15+, so
+     * the rewritten import resolves to `undefined`. And the fixer never
+     * touched the USE, so `class Bus extends EventEmitter` was left behind
+     * with nothing bound to that name. Running `--fix` over working code
+     * produced a file that cannot run:
+     *
+     *     import { EventTarget } from "events";      // undefined
+     *     export class Bus extends EventEmitter {}   // unbound identifier
+     *
+     * EventEmitter to EventTarget is a semantic migration — `.on()`/`.emit()`
+     * against `.addEventListener()`/`.dispatchEvent()`, different error
+     * semantics, and a breaking change for any exported class. No mechanical
+     * rewrite is correct, so the rule reports and leaves the decision alone.
+     */
     messages: {
       preferEventTarget: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -113,10 +133,6 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
                 importedName: 'EventEmitter',
                 suggestion: 'Use EventTarget instead for cross-platform compatibility',
               },
-              fix(fixer: TSESLint.RuleFixer) {
-                // Replace EventEmitter with EventTarget in the import
-                return fixer.replaceText((eventEmitterImport as TSESTree.ImportSpecifier).imported, 'EventTarget');
-              },
             });
           }
         }
@@ -149,9 +165,6 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
                     data: {
                       usage: 'EventEmitter from require',
                       suggestion: 'Use EventTarget for cross-platform compatibility',
-                    },
-                    fix(fixer: TSESLint.RuleFixer) {
-                      return fixer.replaceText((eventEmitterProp as TSESTree.Property).key, 'EventTarget');
                     },
                   });
                 }
