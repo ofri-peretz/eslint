@@ -1294,6 +1294,32 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
         name: 'an unattributed enum template is not SDL',
         code: 'const t = `enum Color { ${values} }`;',
       },
+      // Composition — Shopify/hydrogen, 53 findings on one scan. A query
+      // built from a fragment constant carries no caller input.
+      {
+        name: 'a fragment constant interpolated into a query',
+        code: [
+          'const MENU_FRAGMENT = `#graphql',
+          '  fragment Menu on Menu { id items { id title } }',
+          '`;',
+          'const HEADER_QUERY = `#graphql',
+          '  query Header { shop { id } }',
+          '  ${MENU_FRAGMENT}',
+          '`;',
+        ].join('\n'),
+      },
+      {
+        name: 'the same, pinned with `as const`',
+        code: [
+          'const CART_FRAGMENT = `#graphql',
+          '  fragment Cart on Cart { id }',
+          '` as const;',
+          'const CART_QUERY = `#graphql',
+          '  query Cart { cart { id } }',
+          '  ${CART_FRAGMENT}',
+          '` as const;',
+        ].join('\n'),
+      },
     ],
     invalid: [
       // The one REAL finding: Shopify CLI app-management-client/graphql/
@@ -1311,6 +1337,45 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
           '      }',
           '    }`',
           '}',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // A parameter resolves to nothing knowable — the caller fills it, so
+      // the composition exemption must not cover it.
+      {
+        name: 'a fragment PARAMETER is still reported',
+        code: [
+          'export const CartLineAdd = (cartFragment) => `',
+          '  mutation CartLineAdd($cartId: ID!) { cartLinesAdd(cartId: $cartId) { cart { id } } }',
+          '  ${cartFragment}',
+          '`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // A re-assigned binding is not a document constant either.
+      {
+        name: 'a reassigned binding is still reported',
+        code: [
+          'let frag = `#graphql',
+          '  fragment Menu on Menu { id }',
+          '`;',
+          'frag = untrusted;',
+          'const q = `#graphql',
+          '  query Header { shop { id } }',
+          '  ${frag}',
+          '`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // A binding declared with nothing in it holds nothing knowable.
+      {
+        name: 'an uninitialised binding is still reported',
+        code: [
+          'let frag;',
+          'const q = `#graphql',
+          '  query Header { shop { id } }',
+          '  ${frag}',
+          '`;',
         ].join('\n'),
         errors: [{ messageId: 'unsafeVariableInterpolation' }],
       },

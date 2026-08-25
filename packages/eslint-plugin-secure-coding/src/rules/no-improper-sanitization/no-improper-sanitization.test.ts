@@ -42,6 +42,19 @@ describe('no-improper-sanitization', () => {
         // The same shape one level shallower, and with the apostrophe inside
         // quotes rather than as a contraction.
         `res.json({ error: { message: "Failed to validate metadata: metadata should have valid property 'region'" } });`,
+        // `satisfies` is transparent. The ArrayExpression fix shipped with a
+        // unit test using a BARE array, which passed while the real file — the
+        // same payload with `satisfies Block[]` on it — still reported twice.
+        // The wrapper stopped the climb. Verified against
+        // vercel/example-marketplace-integration, not against a simplification
+        // of it.
+        `Response.json(
+          [
+            { type: "text", text: "You don't have permission to write to this resource" },
+          ] satisfies Block[],
+          { status: 200 },
+        );`,
+        `Response.json([{ text: "Invalid command 'error'" }] as Block[]);`,
         // A JSON primitive beside the string must not poison the payload.
         // Reported by review on the first pass of this fix: an `id` field is
         // the most common thing to sit next to a message, and a numeric
@@ -166,6 +179,15 @@ describe('no-improper-sanitization', () => {
           {
             code: `res.json([/<script>/, { text: "it's here" }]);`,
             errors: 1,
+          },
+          // Seeing through the wrapper must not lose the finding underneath it.
+          {
+            code: `res.json([{ text: "<script>alert(1)</script>" }] satisfies Block[]);`,
+            errors: 1,
+          },
+          {
+            code: `res.json([{ text: "<b>" + req.query.name + "</b>" }] as Block[]);`,
+            errors: 2,
           },
           // A non-literal element anywhere in the array taints the whole
           // payload — the array is only safe text when every leaf is.

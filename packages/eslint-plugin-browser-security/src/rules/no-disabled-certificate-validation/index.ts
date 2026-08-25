@@ -45,6 +45,11 @@ type RuleOptions = [Options?];
 
 export const noDisabledCertificateValidation = createRule<RuleOptions, MessageIds>({
   name: 'no-disabled-certificate-validation',
+  // An integration test that points at a local server with a self-signed
+  // certificate sets `rejectUnauthorized: false` because that is the only way
+  // to talk to it. All 21 findings on mariadb-connector-nodejs were in
+  // `test/`, alongside 20 more from no-self-signed-certs in the same files.
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
