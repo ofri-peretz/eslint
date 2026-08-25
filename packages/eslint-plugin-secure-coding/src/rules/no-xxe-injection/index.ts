@@ -420,6 +420,23 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     const filename = context.filename;
     const sourceCode = context.sourceCode;
 
+    /**
+     * Is this `parseFromString(…, 'text/html')`?
+     *
+     * The MIME type is the whole question: the same method parses XML and HTML,
+     * and only the XML modes have a DOCTYPE that can declare an entity. A
+     * non-literal second argument decides nothing, so it stays reportable.
+     */
+    const isHtmlParse = (node: TSESTree.CallExpression): boolean => {
+      const mime = node.arguments[1];
+      return (
+        mime !== undefined &&
+        mime.type === AST_NODE_TYPES.Literal &&
+        typeof mime.value === 'string' &&
+        mime.value.toLowerCase().startsWith('text/html')
+      );
+    };
+
     const reportData = (node: TSESTree.Node) => ({
       filePath: filename,
       line: String(node.loc.start.line),
@@ -567,6 +584,17 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
 
         const xmlInput = node.arguments[0];
         if (!xmlInput) return;
+
+        // `parseFromString(text, 'text/html')` parses HTML, and HTML has no
+        // DOCTYPE entity subset to expand — there is no XXE in it at any
+        // configuration. passbolt/passbolt_styleguide uses exactly this to
+        // strip markup out of a progress message:
+        //
+        //   const doc = new DOMParser().parseFromString(text, 'text/html');
+        //   return doc.documentElement.textContent;
+        //
+        // which is a sanitisation idiom, reported as CWE-611.
+        if (isHtmlParse(node)) return;
 
         const callOptions = node.arguments[1];
         const construction = constructionSite(node.callee);
