@@ -79,7 +79,7 @@ export interface ArticleCardProps {
   variant?: ArticleCardVariant;
   /**
    * Hint the cover image is the LCP element on this route. Eager-loads it
-   * with `fetchpriority="high"`. Set on the single featured/overlay card
+   * with `fetchPriority="high"`. Set on the single featured/overlay card
    * above the fold; leave default (`false`) on every grid tile.
    */
   priority?: boolean;
