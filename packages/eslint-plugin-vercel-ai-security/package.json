@@ -92,7 +92,7 @@
     "@ai-sdk/openai": "^4.0.45",
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "ai": "^7.0.71"
+    "ai": "^7.0.73"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",

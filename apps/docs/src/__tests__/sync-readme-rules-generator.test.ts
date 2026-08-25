@@ -179,9 +179,9 @@ describe('spliceTable', () => {
 });
 
 describe('loadPluginRegistry', () => {
-  it('parses the canonical 26-plugin registry from apps/docs/src/lib/plugins.ts', () => {
+  it('parses the canonical 30-plugin registry from apps/docs/src/lib/plugins.ts', () => {
     const registry = loadPluginRegistry(resolve(ROOT, 'apps', 'docs', 'src', 'lib', 'plugins.ts'));
-    expect(registry.length).toBe(26);
+    expect(registry.length).toBe(30);
     const slugs = registry.map((p) => p.slug);
     expect(slugs).toContain('reliability');
     expect(slugs).toContain('browser-security');

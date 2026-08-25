@@ -71,14 +71,16 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
   return (
     <HeroCosmic
       eyebrow={
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
+        <span className="inline-flex items-center gap-2 rounded-full border border-slate-900/15 bg-white/50 px-3 py-1 text-xs font-medium text-slate-800 backdrop-blur-sm dark:border-white/20 dark:bg-white/5 dark:text-white/90">
           <span aria-hidden>🔒</span>
           Enterprise-Grade Security for JavaScript
         </span>
       }
       headline={
         <>
-          <span className="text-white drop-shadow-lg">Secure your code,</span>
+          <span className="text-slate-900 dark:text-white dark:drop-shadow-lg">
+            Secure your code,
+          </span>
           <br />
           <span className="bg-linear-to-r from-orange-300 via-amber-300 to-orange-400 bg-clip-text text-transparent">
             your style.
@@ -88,7 +90,9 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
       tagline={
         <>
           ESLint Interlace is a comprehensive{' '}
-          <span className="font-semibold text-white">security & quality</span>{' '}
+          <span className="font-semibold text-slate-900 dark:text-white">
+            security & quality
+          </span>{' '}
           plugin ecosystem. Built for modern JavaScript, designed for teams who
           care about code integrity.
         </>
@@ -106,15 +110,15 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
           </ShimmerButton>
         ),
         href: '/docs/getting-started',
-        // White focus-ring forced on both CTAs so WCAG 1.4.11 (3:1 non-text
-        // contrast) holds against the *locked* dark cosmic gradient — the
-        // hero is intentionally theme-agnostic (no `dark:` prefix in
-        // hero-cosmic.tsx), but the global `--color-fd-ring` resolves to a
-        // light-theme value that fails contrast on this surface.
+        // Theme-matched focus ring on both CTAs so WCAG 1.4.11 (3:1
+        // non-text contrast) holds on each of HeroCosmic's twin surfaces:
+        // dark ring on the light sky, white ring on the cosmic gradient.
+        // The global `--color-fd-ring` fails contrast on both, so the
+        // ring is forced explicitly.
         render: (
           <Link
             href="/docs/getting-started"
-            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/90"
+            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900/90 dark:focus-visible:outline-white/90"
           />
         ),
       }}
@@ -125,21 +129,14 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
             shimmer={false}
             highlight={false}
             background="var(--cta-secondary-bg)"
-            // a11y on BOTH themes: the cosmic hero is hardcoded dark, but a
-            // light-theme page can still flash through during hydration and
-            // the docs theme can override descendant text-color via cascade
-            // (e.g. `text-fd-foreground`). We force every contrast-relevant
-            // surface explicitly:
-            //  - text-white !important via the bracket prefix wins any
-            //    cascade so the GitHub label + icon stay legible regardless
-            //    of the parent theme;
-            //  - border-white/50 gives ≥ 3:1 boundary contrast (WCAG 1.4.11)
-            //    against the cosmic dark surface AND remains visible on a
-            //    light flash during hydration;
-            //  - bg at 12% opacity lifts perceptually above the
-            //    orange-950→black gradient AND reads as a light translucent
-            //    pill if it briefly sits on a light page background.
-            className="text-white! border-white/50 hover:border-white/70 [&_svg]:text-white!"
+            // a11y on BOTH themes. HeroCosmic is twin-surface (light: sky
+            // gradient, dark: cosmic gradient), so every contrast-relevant
+            // color must carry both variants — a forced `text-white!` was
+            // invisible on the light sky (WCAG 1.4.3 failure). The `!`
+            // (important) still wins the docs-theme descendant cascade
+            // (e.g. `text-fd-foreground`); borders keep ≥ 3:1 boundary
+            // contrast (WCAG 1.4.11) against their own theme's surface.
+            className="text-slate-900! border-slate-900/50 hover:border-slate-900/70 [&_svg]:text-slate-900! dark:text-white! dark:border-white/50 dark:hover:border-white/70 dark:[&_svg]:text-white!"
           >
             <svg
               fill="currentColor"
@@ -167,7 +164,7 @@ export function HeroSection({ githubStars }: { githubStars?: number | null }) {
             onClick={() =>
               track('homepage:star_click', { stars: githubStars ?? null })
             }
-            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/90"
+            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900/90 dark:focus-visible:outline-white/90"
           />
         ),
       }}

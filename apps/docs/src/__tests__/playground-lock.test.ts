@@ -339,10 +339,13 @@ describe('EditorToolbar', () => {
     expect(src).toContain('Reset');
   });
 
-  it('renders the disabled Run · Phase 2 placeholder wrapped in a Tooltip', () => {
-    expect(src).toContain('disabled');
-    expect(src).toContain('Run · Phase 2');
-    expect(src).toContain('oxlint WASM');
+  it('has no Run button and no roadmap jargon — linting is automatic', () => {
+    // The old disabled "Run · Phase 2" placeholder outlived the phase it was
+    // gating: live linting shipped (useLiveLinting), so a disabled Run button
+    // and internal phase names misdescribed the product to visitors.
+    expect(src).toContain('Lints as you type');
+    expect(src).not.toContain('Run · Phase 2');
+    expect(src).not.toMatch(/Phase \d/);
   });
 });
 
@@ -384,5 +387,34 @@ describe('usePlaygroundState', () => {
     expect(src).toContain('copyTimerRef');
     expect(src).toContain('clearTimeout');
     expect(src).toContain('useEffect(() => {');
+  });
+});
+
+describe('PlaygroundEditor: in-editor diagnostics', () => {
+  let editorSrc: string;
+  let demoSrc: string;
+  beforeAll(() => {
+    editorSrc = readPlayFile('PlaygroundEditor.tsx');
+    demoSrc = readPlayFile('PlaygroundDemo.tsx');
+  });
+
+  it('projects lint findings into Monaco markers (squiggles + hover)', () => {
+    // A findings panel alone is not enough — an editor whose code shows no
+    // in-place diagnostics reads as "the linter found nothing" (2026-08-24).
+    expect(editorSrc).toContain('setModelMarkers');
+    expect(editorSrc).toContain('MarkerSeverity');
+  });
+
+  it('PlaygroundDemo wires visibleFindings into the editor', () => {
+    expect(demoSrc).toMatch(
+      /<PlaygroundEditor[\s\S]*?findings=\{state\.visibleFindings\}/,
+    );
+  });
+
+  it('suppresses the TS semantic pass (no node_modules in the browser)', () => {
+    // Without this, every snippet import shows "Cannot find module" noise
+    // that competes with — and visually outranks — the real lint findings.
+    expect(editorSrc).toContain('noSemanticValidation: true');
+    expect(editorSrc).toContain('noSuggestionDiagnostics: true');
   });
 });

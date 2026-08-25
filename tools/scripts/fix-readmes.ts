@@ -68,6 +68,14 @@ const DESCRIPTIONS: Record<string, string> = {
     'eslint-plugin-prisma-security': 'Security rules for @prisma/client (SQL injection prevention in raw queries).',
     'eslint-plugin-drizzle-security': 'Security rules for drizzle-orm (SQL injection prevention in raw queries).',
     'eslint-plugin-knex-security': 'Security rules for knex (SQL injection prevention in raw queries).',
+    'eslint-plugin-anthropic-security':
+      'Security rules for [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk).',
+    'eslint-plugin-gemini-security':
+      'Security rules for [`@google/genai`](https://www.npmjs.com/package/@google/genai).',
+    'eslint-plugin-mcp-sdk-security':
+      'Security rules for code built on [`@modelcontextprotocol/sdk`](https://www.npmjs.com/package/@modelcontextprotocol/sdk).',
+    'eslint-plugin-openai-security':
+      'Security rules for [`openai`](https://www.npmjs.com/package/openai).',
     'eslint-plugin-sqlite-security': 'Security rules for better-sqlite3 / sqlite3 (SQL injection prevention in raw queries).',
     'eslint-plugin-typeorm-security': 'Security rules for typeorm (SQL injection prevention in raw queries).',
     'eslint-plugin-browser-security': 'Browser-specific security rules to prevent XSS and other client-side attacks.',

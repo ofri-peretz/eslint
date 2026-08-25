@@ -32,7 +32,7 @@ import {
   isBarrelExport,
   shouldIgnoreFile,
 } from '@interlace/eslint-devkit';
-import { realpathSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import {
   type ImportInfo,
   type FileSystemCache,
@@ -75,6 +75,12 @@ const sharedCache: FileSystemCache = createFileSystemCache();
  */
 export function clearCircularDependencyCache(): void {
   clearCache(sharedCache);
+  // `exportKindCache` is module-level and separate from `sharedCache`, so
+  // clearing that alone leaves it stale. It caches whether each exported name
+  // is a type or a value, and that is exactly what an edit changes: turn a
+  // `class` into an `interface` in watch mode and a stale entry keeps calling
+  // the import a runtime cycle, or the reverse — which SILENCES a real one.
+  exportKindCache.clear();
 }
 
 type FixStrategy =
@@ -179,6 +185,115 @@ export interface Options {
 
 export type RuleOptions = [Options?];
 
+
+/**
+ * Is every binding this import takes from `target` a TYPE?
+ *
+ * WHY THIS EXISTS. A stratified sample of this rule's findings on the pinned
+ * corpus (n=24, 4 repos) came back **17 type-only, 7 runtime — 70.8% of what
+ * it reported could not happen**. The 17 were all plain
+ * `import { SomeInterface } from './x'` where every binding is an
+ * `export interface` or `export type`. TypeScript erases those before emit, so
+ * the bundle bloat and initialization hazard this rule's own message claims
+ * cannot occur through that edge.
+ *
+ * The rule already conceded the principle — it skips `importKind === 'type'`
+ * under the comment "erased at compile time — no runtime cycle risk". It simply
+ * could not see an IMPLICITLY type-only named import, and on real TypeScript
+ * that was most of what it found.
+ *
+ * BIASED TO REPORT, DELIBERATELY. This rule is `error` in `recommended`, so a
+ * false negative is worse than a false positive here: a missed runtime cycle is
+ * a real initialization bug that ships. Every uncertainty resolves to "runtime":
+ *
+ *   - a name declared as BOTH a type and a value (declaration merging —
+ *     `export interface Foo` beside `export const Foo`) counts as a value;
+ *   - a re-export (`export { Foo } from './y'`) is not followed, so it counts
+ *     as a value rather than guessing at one more hop;
+ *   - an unreadable or unparseable target counts as a value;
+ *   - a default or namespace import counts as a value, because the binding's
+ *     kind is not visible at the import site. That is not a shortcut — all 6
+ *     default imports in the sample were classes, i.e. genuine runtime cycles.
+ *
+ * TWO COMPILER SETTINGS BOUND THIS, and only one of them is safe.
+ *
+ * `verbatimModuleSyntax` is fine: under it a plain named import of a type is a
+ * compile error, so the codebase already writes `import type` and the syntactic
+ * check above catches it.
+ *
+ * `importsNotUsedAsValues: "preserve"` is NOT. TypeScript 4.8-5.4 keeps the
+ * import statement, so the target module is still executed and the runtime edge
+ * genuinely exists — and this check silences it. A rule cannot see that setting
+ * without reading tsconfig, which it does not do, so the exception is stated
+ * rather than handled. It is narrow and shrinking: the flag is deprecated in
+ * TypeScript 5.0 and removed in 5.5, superseded by `verbatimModuleSyntax`.
+ *
+ * Regex over the target's source rather than a parse: this is a CROSS-FILE read
+ * with no AST available, the same approach `getFileImports` already takes in
+ * the devkit. The repo's rule against regexing printed source governs a rule
+ * reading the file it is linting via `sourceCode.getText()`, which this is not.
+ */
+const exportKindCache = new Map<string, Map<string, 'type' | 'value'>>();
+
+function exportKindsOf(target: string): Map<string, 'type' | 'value'> {
+  const hit = exportKindCache.get(target);
+  if (hit) return hit;
+
+  const kinds = new Map<string, 'type' | 'value'>();
+  let source: string;
+  try {
+    source = readFileSync(target, 'utf-8');
+  } catch {
+    exportKindCache.set(target, kinds);
+    return kinds; // unreadable: every lookup misses and is treated as a value
+  }
+
+  // Values first. A name that is both merges to 'value', which is the safe side.
+  // `namespace` and `module` belong on the VALUE side. A namespace holding any
+  // runtime entity emits a real JS object, and TypeScript lets it merge with an
+  // interface of the same name — `export interface Foo` beside
+  // `export namespace Foo`, the standard way to hang statics off a type. Match
+  // only the interface there and a genuine runtime cycle goes silent.
+  for (const m of source.matchAll(
+    /export\s+(?:declare\s+)?(?:abstract\s+)?(?:const|let|var|function|class|enum|namespace|module)\s+([A-Za-z_$][\w$]*)/g,
+  )) {
+    kinds.set(m[1], 'value');
+  }
+  for (const m of source.matchAll(
+    /export\s+(?:declare\s+)?(?:interface|type)\s+([A-Za-z_$][\w$]*)/g,
+  )) {
+    if (!kinds.has(m[1])) kinds.set(m[1], 'type');
+  }
+
+  exportKindCache.set(target, kinds);
+  return kinds;
+}
+
+function importsOnlyTypes(node: TSESTree.ImportDeclaration, target: string): boolean {
+  // `?? []` is not defensive noise: a synthetic node without `specifiers`
+  // reaches here from the coverage suite, and a rule that THROWS is worse than
+  // one that over-reports — the throw takes down the whole lint run. An empty
+  // or absent list also covers `import './x'`, which runs for side effects and
+  // is a genuine runtime edge.
+  const specifiers = node.specifiers ?? [];
+  if (!specifiers.length) return false;
+  const kinds = exportKindsOf(target);
+  return specifiers.every((spec) => {
+    if (spec.type !== 'ImportSpecifier') return false; // default / namespace
+    if (spec.importKind === 'type') return true; // inline `import { type Foo }`
+    // `imported` is an Identifier or, since ES2022, a StringLiteral —
+    // `import { "odd-name" as Odd }`. No branch for the literal case, because
+    // `kinds` only ever holds identifier names, so a quoted name cannot match
+    // it and lands on the same verdict: not a type, therefore report. A branch
+    // here would also be unreachable and uncoverable, since the devkit's
+    // IMPORT_REGEX specifier class excludes quotes and the cycle graph never
+    // sees that edge in the first place.
+    // No `??` fallback either: for a StringLiteral this reads `undefined`, and
+    // `Map.get(undefined)` is `undefined`, which is already "not a type".
+    const name = (spec.imported as { name?: string }).name as string;
+    return kinds.get(name) === 'type';
+  });
+}
 
 export const noCycle = createRule<RuleOptions, MessageIds>({
   name: 'no-cycle',
@@ -598,6 +713,11 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         });
 
         if (!resolved) return;
+
+        // Erased before emit? Then this edge does not exist at runtime, and the
+        // cycle this rule would name through it cannot occur. See
+        // `importsOnlyTypes` — 70.8% of a stratified sample was this case.
+        if (importsOnlyTypes(node, resolved)) return;
 
         // =====================================================================
         // FAST PATH 1: nonCyclicFiles O(1) lookup

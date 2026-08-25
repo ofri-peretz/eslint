@@ -46,10 +46,12 @@ const inlinePath = join(
 );
 const dataLibPath = join(APP_ROOT, 'src/lib/changelog-data.ts');
 const dataPath = join(APP_ROOT, 'src/data/changelog.json');
+const layoutPath = join(APP_ROOT, 'src/app/changelog/layout.tsx');
 
 describe('Changelog page: files exist', () => {
   it.each([
     ['page', pagePath],
+    ['layout', layoutPath],
     ['release list', listPath],
     ['filters', filtersPath],
     ['pagination', paginationPath],
@@ -58,6 +60,15 @@ describe('Changelog page: files exist', () => {
     ['generated data', dataPath],
   ])('%s', (_label, path) => {
     expect(existsSync(path)).toBe(true);
+  });
+});
+
+describe('Changelog page: site nav', () => {
+  it('wraps in fumadocs HomeLayout — without it the page has no nav and no way back (2026-08-24)', () => {
+    const layout = readFileSync(layoutPath, 'utf-8');
+    expect(layout).toContain("from 'fumadocs-ui/layouts/home'");
+    expect(layout).toContain('<HomeLayout');
+    expect(layout).toContain('baseOptions');
   });
 });
 
@@ -104,11 +115,19 @@ describe('Changelog page: structure', () => {
     expect(list).not.toMatch(/>\{entry\.title\}</);
   });
 
-  it('keeps the package filter to one row on mobile', () => {
-    // Wrapped, 32 chips are ~900px of filter before the first release at
-    // 375px wide. `md:flex-wrap` means the mobile default is a scroll strip.
-    expect(filters).toContain('overflow-x-auto');
-    expect(filters).toContain('md:flex-wrap');
+  it('collapses the chip cloud so releases stay on the first screen', () => {
+    // 34 wrapped chips are ~5 rows of filter before the first release — on
+    // desktop as well as mobile. The cloud lives inside a native <details>
+    // (zero JS, links stay in the DOM for crawlers), and the always-visible
+    // row carries only the reset chip and the active filter.
+    // JSX-shaped anchors (className present) so a docstring mentioning the
+    // elements can never satisfy this — the comment-trap lock-integrity hunts.
+    expect(filters).toContain('<details className=');
+    expect(filters).toContain('<summary className=');
+    // The reset + active-filter row must exist outside the disclosure.
+    expect(filters.indexOf('>All packages</Badge>')).toBeLessThan(
+      filters.indexOf('<details className='),
+    );
   });
 
   it('announces the active filter', () => {

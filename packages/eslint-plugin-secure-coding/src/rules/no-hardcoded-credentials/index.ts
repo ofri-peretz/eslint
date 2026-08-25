@@ -8,15 +8,21 @@
  * ESLint Rule: no-hardcoded-credentials
  * Detects hardcoded passwords, API keys, tokens, and other sensitive credentials
  * CWE-798: Use of Hard-coded Credentials
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/798.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons,
+import {
+  formatLLMMessage,
+  MessageIcons,
   compileUserPatterns,
   type PatternTest,
 } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createModuleEvidence,
+  createRule,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'useEnvironmentVariable' | 'useSecretManager';
 
@@ -90,23 +96,25 @@ type RuleOptions = [Options?];
  */
 const CREDENTIAL_PATTERNS = {
   // API Keys (typically 32+ character alphanumeric strings)
-  apiKey: /^(?:[A-Za-z0-9_-]{32,}|sk_[A-Za-z0-9_-]{32,}|pk_[A-Za-z0-9_-]{32,}|AKIA[0-9A-Z]{16})$/,
-  
+  apiKey:
+    /^(?:[A-Za-z0-9_-]{32,}|sk_[A-Za-z0-9_-]{32,}|pk_[A-Za-z0-9_-]{32,}|AKIA[0-9A-Z]{16})$/,
+
   // JWT Tokens (three base64 parts separated by dots)
   jwtToken: /^eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/,
-  
+
   // OAuth tokens
   oauthToken: /^(?:ghp_|gho_|ghu_|ghs_|ghr_)[A-Za-z0-9]{36,}$/,
-  
+
   // AWS Access Keys
   awsAccessKey: /^AKIA[0-9A-Z]{16}$/,
-  
+
   // Database connection strings with credentials
   databaseString: /^(?:mysql|postgres|mongodb|redis):\/\/[^:]+:[^@]+@/,
-  
+
   // Generic password patterns (common weak passwords) - no length requirement
-  commonPassword: /^(?:password|admin|123456|qwerty|letmein|welcome|monkey|1234567890|12345678|password123|root|test|guest)$/i,
-  
+  commonPassword:
+    /^(?:password|admin|123456|qwerty|letmein|welcome|monkey|1234567890|12345678|password123|root|test|guest)$/i,
+
   // Secret keys (base64-like or hex strings)
   secretKey: /^(?:[A-Za-z0-9+/]{32,}={0,2}|[A-Fa-f0-9]{32,})$/,
 };
@@ -121,16 +129,51 @@ const CREDENTIAL_PATTERNS = {
  * `'test'`).
  */
 const CREDENTIAL_VARIABLE_NAMES = new Set<string>([
-  'apikey', 'api_key', 'apiKey',
-  'secret', 'secretkey', 'secret_key', 'secretKey', 'clientsecret', 'client_secret', 'clientSecret',
-  'token', 'authtoken', 'auth_token', 'authToken', 'accesstoken', 'access_token', 'accessToken',
-  'refreshtoken', 'refresh_token', 'refreshToken', 'idtoken', 'id_token', 'idToken',
-  'password', 'passwd', 'pass', 'pwd',
-  'privatekey', 'private_key', 'privateKey',
-  'credentials', 'creds',
-  'authorization', 'auth',
-  'connectionstring', 'connection_string', 'connectionString', 'connectionuri', 'connectionURI',
-  'dburl', 'db_url', 'dbUrl', 'databaseurl', 'database_url', 'databaseUrl',
+  'apikey',
+  'api_key',
+  'apiKey',
+  'secret',
+  'secretkey',
+  'secret_key',
+  'secretKey',
+  'clientsecret',
+  'client_secret',
+  'clientSecret',
+  'token',
+  'authtoken',
+  'auth_token',
+  'authToken',
+  'accesstoken',
+  'access_token',
+  'accessToken',
+  'refreshtoken',
+  'refresh_token',
+  'refreshToken',
+  'idtoken',
+  'id_token',
+  'idToken',
+  'password',
+  'passwd',
+  'pass',
+  'pwd',
+  'privatekey',
+  'private_key',
+  'privateKey',
+  'credentials',
+  'creds',
+  'authorization',
+  'auth',
+  'connectionstring',
+  'connection_string',
+  'connectionString',
+  'connectionuri',
+  'connectionURI',
+  'dburl',
+  'db_url',
+  'dbUrl',
+  'databaseurl',
+  'database_url',
+  'databaseUrl',
 ]);
 
 /**
@@ -180,7 +223,12 @@ interface CharClasses {
  * whitespace class is tracked.
  */
 function charClasses(value: string): CharClasses {
-  const classes: CharClasses = { lower: false, upper: false, digit: false, symbol: false };
+  const classes: CharClasses = {
+    lower: false,
+    upper: false,
+    digit: false,
+    symbol: false,
+  };
   for (const ch of value) {
     if (WORD_SEPARATORS.has(ch)) continue;
     if (ch >= 'a' && ch <= 'z') classes.lower = true;
@@ -192,7 +240,12 @@ function charClasses(value: string): CharClasses {
 }
 
 function classCount(classes: CharClasses): number {
-  return Number(classes.lower) + Number(classes.upper) + Number(classes.digit) + Number(classes.symbol);
+  return (
+    Number(classes.lower) +
+    Number(classes.upper) +
+    Number(classes.digit) +
+    Number(classes.symbol)
+  );
 }
 
 /** A token is "pronounceable" if it has a vowel and no long consonant run. */
@@ -230,12 +283,13 @@ export function isNaturalWordString(value: string): boolean {
   if (!/^[A-Za-z][A-Za-z0-9_\-. ]*$/.test(value)) return false;
   const digits = value.replace(/[^0-9]/g, '').length;
   // Sparse: an ordinal or a well-known numeric suffix, not encoded entropy.
-  if (digits > 0 && (digits / value.length > 0.2 || /[0-9]{4,}/.test(value))) return false;
+  if (digits > 0 && (digits / value.length > 0.2 || /[0-9]{4,}/.test(value)))
+    return false;
   const tokens = value
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .split(/[^A-Za-z]+/)
     .filter(Boolean);
-  const meaningful = tokens.filter(t => t.length >= 3);
+  const meaningful = tokens.filter((t) => t.length >= 3);
   if (meaningful.length === 0) return false;
   return meaningful.every(isPronounceable);
 }
@@ -299,10 +353,73 @@ const CONTEXT_FREE_RANDOM_LENGTH = 32;
  * says *what the slot is for*; this says *whether the value is plausibly a
  * secret rather than a message, label, or identifier*.
  */
+/**
+ * A URL, or an absolute path — the address of a thing rather than the secret
+ * that opens it.
+ *
+ * Deliberately narrow. A single leading slash is a path; `scheme://` is a URL.
+ * A value with an embedded `user:pass@` is neither, so connection strings never
+ * take this exit even if they reach it.
+ *
+ * Whitespace is not re-tested here. The only caller is {@link isSecretShaped},
+ * which rejects anything containing whitespace two lines earlier — a guard
+ * repeated here would be unreachable, and an unreachable guard reads as a
+ * check that runs.
+ */
+function isUrlOrPath(value: string): boolean {
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
+    return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
+  }
+  if (!value.startsWith('/') || value.startsWith('//')) return false;
+
+  // A leading slash alone is not enough. `/` is in the base64 alphabet, so a
+  // real secret can start with one, and the first version of this guard would
+  // have suppressed `const clientSecret = '/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug'`
+  // outright — its test only passed because the value also matches the
+  // structural base64 pattern, which returns before shape is ever consulted.
+  //
+  // A route is made of route-shaped segments. One opaque high-entropy segment
+  // is a credential that happens to start with a slash.
+  const path = value.split(/[?#]/)[0] as string;
+  const segments = path.slice(1).split('/');
+  if (!segments.every((segment) => /^[A-Za-z0-9._~%:@-]*$/.test(segment))) {
+    return false;
+  }
+  // A lone segment is the ambiguous case: `/token` is a route, `/aB3xK9mQ2vL8`
+  // is a secret. Route segments are written to be read — they do not mix case
+  // AND digits the way a generated key does. Anything with a second slash is
+  // unambiguous and keeps the permissive rule.
+  if (segments.length === 1) {
+    const segment = segments[0] as string;
+    return !(
+      /[a-z]/.test(segment) &&
+      /[A-Z]/.test(segment) &&
+      /[0-9]/.test(segment)
+    );
+  }
+  return true;
+}
+
 export function isSecretShaped(value: string, minLength: number): boolean {
   if (value.length < minLength) return false;
   // Sentences and phrases are messages, never credentials.
   if (/\s/.test(value)) return false;
+  // An endpoint is not a secret. Every OAuth client names its route constants
+  // after the thing they reach —
+  //
+  //   const authPaths = { handoverToken: '/oauth2/token', hmppsToken: '/oauth/token' }
+  //
+  // — and the name ends in `token`, which opens the credential-context gate.
+  // The value then clears the two-character-class test on its slashes and
+  // digits, and a route path is reported as a CRITICAL CVSS 9.8 hard-coded
+  // credential tagged SOC2 / PCI-DSS / HIPAA / GDPR. Both findings in
+  // ministryofjustice/hmpps-arns-assessment-platform-ui's authentication
+  // middleware were paths.
+  //
+  // Connection strings keep reporting: `postgres://user:pass@host` is matched
+  // structurally by `looksLikeCredential` and returns before shape is ever
+  // consulted, and `isUrlOrPath` rejects a URL carrying userinfo regardless.
+  if (isUrlOrPath(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset
@@ -323,9 +440,21 @@ export function isSecretShaped(value: string, minLength: number): boolean {
  * `placeholderWords`. Neither changes that the comparison is whole-token.
  */
 const DEFAULT_PLACEHOLDER_WORDS = [
-  'changeme', 'change', 'replaceme', 'replace', 'yours', 'your',
-  'placeholder', 'example', 'sample', 'dummy', 'todo', 'tbd',
-  'redacted', 'notreal', 'xxx',
+  'changeme',
+  'change',
+  'replaceme',
+  'replace',
+  'yours',
+  'your',
+  'placeholder',
+  'example',
+  'sample',
+  'dummy',
+  'todo',
+  'tbd',
+  'redacted',
+  'notreal',
+  'xxx',
 ];
 
 /**
@@ -363,7 +492,7 @@ export function isPlaceholderValue(
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
-  return tokens.some(token => words.has(token));
+  return tokens.some((token) => words.has(token));
 }
 
 /**
@@ -576,22 +705,40 @@ type CredentialConfidence = 'structural' | 'ambiguous';
  */
 function looksLikeCredential(
   value: string,
-  options: Required<Pick<Options, 'minLength' | 'detectApiKeys' | 'detectPasswords' | 'detectTokens' | 'detectDatabaseStrings' | 'customPatterns'>>,
-  ignorePatterns: readonly PatternTest[]
+  options: Required<
+    Pick<
+      Options,
+      | 'minLength'
+      | 'detectApiKeys'
+      | 'detectPasswords'
+      | 'detectTokens'
+      | 'detectDatabaseStrings'
+      | 'customPatterns'
+    >
+  >,
+  ignorePatterns: readonly PatternTest[],
 ): { isCredential: boolean; type: string; confidence: CredentialConfidence } {
-  const NONE = { isCredential: false, type: '', confidence: 'ambiguous' as const };
+  const NONE = {
+    isCredential: false,
+    type: '',
+    confidence: 'ambiguous' as const,
+  };
 
   // Check ignore patterns first
-  if (ignorePatterns.some(pattern => pattern.test(value))) return NONE;
+  if (ignorePatterns.some((pattern) => pattern.test(value))) return NONE;
 
   // Custom patterns are user-defined → trust them, treat as structural
   for (const customPattern of options.customPatterns) {
     try {
       const regex = new RegExp(customPattern.pattern);
       if (regex.test(value)) {
-        return { isCredential: true, type: customPattern.type, confidence: 'structural' };
+        return {
+          isCredential: true,
+          type: customPattern.type,
+          confidence: 'structural',
+        };
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       continue;
     }
@@ -600,14 +747,28 @@ function looksLikeCredential(
   // Common-password keyword match — AMBIGUOUS. Strings like "test", "admin",
   // "guest" appear in test fixtures, error messages, and identifiers all the
   // time. The caller must verify a credential-named context.
-  if (options.detectPasswords && CREDENTIAL_PATTERNS.commonPassword.test(value)) {
-    return { isCredential: true, type: 'Common password', confidence: 'ambiguous' };
+  if (
+    options.detectPasswords &&
+    CREDENTIAL_PATTERNS.commonPassword.test(value)
+  ) {
+    return {
+      isCredential: true,
+      type: 'Common password',
+      confidence: 'ambiguous',
+    };
   }
 
   // Structural: DB connection strings have unambiguous shape
   // `protocol://user:pass@host` — no FP risk.
-  if (options.detectDatabaseStrings && CREDENTIAL_PATTERNS.databaseString.test(value)) {
-    return { isCredential: true, type: 'Database connection string', confidence: 'structural' };
+  if (
+    options.detectDatabaseStrings &&
+    CREDENTIAL_PATTERNS.databaseString.test(value)
+  ) {
+    return {
+      isCredential: true,
+      type: 'Database connection string',
+      confidence: 'structural',
+    };
   }
 
   if (value.length < options.minLength) return NONE;
@@ -618,7 +779,11 @@ function looksLikeCredential(
   }
   // Structural: OAuth tokens have provider prefixes (ghp_, gho_, ...)
   if (options.detectTokens && CREDENTIAL_PATTERNS.oauthToken.test(value)) {
-    return { isCredential: true, type: 'OAuth token', confidence: 'structural' };
+    return {
+      isCredential: true,
+      type: 'OAuth token',
+      confidence: 'structural',
+    };
   }
 
   // Secret keys (base64/hex 32+) — context-required. Long base64 / hex
@@ -628,7 +793,11 @@ function looksLikeCredential(
   // and matches the charset, but it is an identifier, not a key.
   // Structural: AWS access key has a fixed prefix
   if (options.detectApiKeys && CREDENTIAL_PATTERNS.awsAccessKey.test(value)) {
-    return { isCredential: true, type: 'AWS access key', confidence: 'structural' };
+    return {
+      isCredential: true,
+      type: 'AWS access key',
+      confidence: 'structural',
+    };
   }
 
   // Structural: Stripe-style keys (sk_live_, sk_test_, pk_live_, pk_test_,
@@ -653,18 +822,27 @@ function looksLikeCredential(
     return {
       isCredential: true,
       type: 'Secret key',
-      confidence: value.length >= CONTEXT_FREE_RANDOM_LENGTH ? 'structural' : 'ambiguous',
+      confidence:
+        value.length >= CONTEXT_FREE_RANDOM_LENGTH ? 'structural' : 'ambiguous',
     };
   }
 
-  if (value.length >= 32 && CREDENTIAL_PATTERNS.secretKey.test(value) && !isNaturalWordString(value)) {
+  if (
+    value.length >= 32 &&
+    CREDENTIAL_PATTERNS.secretKey.test(value) &&
+    !isNaturalWordString(value)
+  ) {
     return { isCredential: true, type: 'Secret key', confidence: 'ambiguous' };
   }
 
   // Generic 32+-char alphanumeric — AMBIGUOUS. This is the FP source on
   // vercel/ai's TS union types and error class names. Caller must verify
   // a credential-named context, and the value must not be word-shaped.
-  if (options.detectApiKeys && /^[A-Za-z0-9_-]{32,}$/.test(value) && !isNaturalWordString(value)) {
+  if (
+    options.detectApiKeys &&
+    /^[A-Za-z0-9_-]{32,}$/.test(value) &&
+    !isNaturalWordString(value)
+  ) {
     return { isCredential: true, type: 'API key', confidence: 'ambiguous' };
   }
 
@@ -681,7 +859,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-hardcoded-credentials.md',
-      description: 'Detects hardcoded passwords, API keys, tokens, and other sensitive credentials',
+      description:
+        'Detects hardcoded passwords, API keys, tokens, and other sensitive credentials',
       cwe: 'CWE-798',
       cvss: 9.8,
       confidence: 'medium',
@@ -755,7 +934,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
               properties: {
                 type: {
                   type: 'string',
-                  description: 'The type of credential (e.g., "API key", "token")',
+                  description:
+                    'The type of credential (e.g., "API key", "token")',
                 },
                 pattern: {
                   type: 'string',
@@ -785,7 +965,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra placeholder words, on top of `placeholderWords`.',
+            description:
+              'Extra placeholder words, on top of `placeholderWords`.',
           },
         },
         additionalProperties: false,
@@ -837,7 +1018,9 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     // "Invalid regular expression" out of create(), killing the whole lint
     // run rather than just this rule. compileUserPattern degrades both to a
     // substring match.
-    const compiledIgnorePatterns = compileUserPatterns(ignorePatterns as string[]);
+    const compiledIgnorePatterns = compileUserPatterns(
+      ignorePatterns as string[],
+    );
 
     const detectionOptions = {
       minLength,
@@ -856,19 +1039,38 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
      */
     const LABEL_CONTEXT_NAMES = new Set<string>([
       // HTML form attributes
-      'type', 'name', 'id', 'placeholder', 'label', 'title', 'role',
-      'autocomplete', 'autoFocus', 'autocapitalize', 'inputmode',
+      'type',
+      'name',
+      'id',
+      'placeholder',
+      'label',
+      'title',
+      'role',
+      'autocomplete',
+      'autoFocus',
+      'autocapitalize',
+      'inputmode',
       // ARIA
-      'aria-label', 'aria-labelledby', 'aria-describedby',
+      'aria-label',
+      'aria-labelledby',
+      'aria-describedby',
       // Common semantic UI fields
-      'fieldName', 'fieldType', 'fieldLabel', 'inputType', 'inputName',
-      'displayName', 'columnName', 'paramName',
+      'fieldName',
+      'fieldType',
+      'fieldLabel',
+      'inputType',
+      'inputName',
+      'displayName',
+      'columnName',
+      'paramName',
       // i18n keys / translation lookup. NOTE: bare `'key'` is intentionally
       // omitted — `const key = '...'` is the canonical name for actual API
       // keys (e.g. AWS, Stripe), so exempting it would mask real secrets.
       // The specific i18n names below cover translation lookups without
       // that false-negative.
-      'i18nKey', 'translationKey', 'messageKey',
+      'i18nKey',
+      'translationKey',
+      'messageKey',
     ]);
 
     /**
@@ -881,7 +1083,10 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
      *   { type: 'password', name: 'pw' }                  // object literal property
      *   setAttribute('placeholder', 'Enter password')     // setAttribute call
      */
-    function isLabelContext(node: TSESTree.Literal | TSESTree.TemplateLiteral, parent?: TSESTree.Node): boolean {
+    function isLabelContext(
+      node: TSESTree.Literal | TSESTree.TemplateLiteral,
+      parent?: TSESTree.Node,
+    ): boolean {
       if (!parent) return false;
 
       // Object-literal entries: walk up through the ObjectExpression →
@@ -891,7 +1096,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // CREDENTIAL_VARIABLE_NAMES even though the surrounding `labels`
       // var indicates the whole object is UI text.
       if (parent.type === 'ObjectExpression') {
-        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node })
+          .parent;
         if (grand) return isLabelContext(node, grand);
         return false;
       }
@@ -899,28 +1105,52 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // Array elements: walk up so `const labels = ['Enter password']`
       // is treated as label context if `labels` is label-named.
       if (parent.type === 'ArrayExpression') {
-        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node })
+          .parent;
         if (grand) return isLabelContext(node, grand);
         return false;
       }
 
       // const label = 'password' / let label = 'password' / `labels` /
       // any var ending in `label`/`name`/`placeholder`.
-      if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+      if (
+        parent.type === 'VariableDeclarator' &&
+        parent.id.type === 'Identifier'
+      ) {
         const n = (parent.id as TSESTree.Identifier).name.toLowerCase();
-        if (LABEL_CONTEXT_NAMES.has(n) || n === 'labels' || n.endsWith('label') || n.endsWith('labels') || n.endsWith('name') || n.endsWith('placeholder')) return true;
+        if (
+          LABEL_CONTEXT_NAMES.has(n) ||
+          n === 'labels' ||
+          n.endsWith('label') ||
+          n.endsWith('labels') ||
+          n.endsWith('name') ||
+          n.endsWith('placeholder')
+        )
+          return true;
       }
 
       // input.type = 'password' / input.name = 'userPassword'
-      if (parent.type === 'AssignmentExpression' && (parent as TSESTree.AssignmentExpression).right === node) {
+      if (
+        parent.type === 'AssignmentExpression' &&
+        (parent as TSESTree.AssignmentExpression).right === node
+      ) {
         const left = (parent as TSESTree.AssignmentExpression).left;
-        if (left.type === 'MemberExpression' && left.property.type === 'Identifier') {
-          if (LABEL_CONTEXT_NAMES.has((left.property as TSESTree.Identifier).name)) return true;
+        if (
+          left.type === 'MemberExpression' &&
+          left.property.type === 'Identifier'
+        ) {
+          if (
+            LABEL_CONTEXT_NAMES.has((left.property as TSESTree.Identifier).name)
+          )
+            return true;
         }
       }
 
       // { type: 'password', name: 'foo' } — direct property key is label-typed
-      if (parent.type === 'Property' && (parent as TSESTree.Property).value === node) {
+      if (
+        parent.type === 'Property' &&
+        (parent as TSESTree.Property).value === node
+      ) {
         const key = (parent as TSESTree.Property).key;
         // `RECOVERY_TYPE_PASSWORD: 'PASSWORD'` — an enum whose value restates a
         // word of its own key is a label for a kind of thing, not an instance
@@ -931,7 +1161,11 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             : key.type === 'Literal' && typeof key.value === 'string'
               ? key.value
               : null;
-        if (keyText !== null && node.type === 'Literal' && typeof node.value === 'string') {
+        if (
+          keyText !== null &&
+          node.type === 'Literal' &&
+          typeof node.value === 'string'
+        ) {
           const keyTokens = keyText
             .replace(/([a-z])([A-Z])/g, '$1_$2')
             .toUpperCase()
@@ -939,9 +1173,19 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             .filter(Boolean);
           if (keyTokens.includes(node.value.toUpperCase())) return true;
         }
-        if (key.type === 'Identifier' && LABEL_CONTEXT_NAMES.has((key as TSESTree.Identifier).name)) return true;
-        if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
-          if (LABEL_CONTEXT_NAMES.has((key as TSESTree.Literal).value as string)) return true;
+        if (
+          key.type === 'Identifier' &&
+          LABEL_CONTEXT_NAMES.has((key as TSESTree.Identifier).name)
+        )
+          return true;
+        if (
+          key.type === 'Literal' &&
+          typeof (key as TSESTree.Literal).value === 'string'
+        ) {
+          if (
+            LABEL_CONTEXT_NAMES.has((key as TSESTree.Literal).value as string)
+          )
+            return true;
         }
         // Otherwise, walk up: the property may not have a label-typed
         // key but the enclosing variable might be `labels` /
@@ -949,9 +1193,11 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         // whole object is UI text. Closes the FP regression where
         // `const labels = { password: 'Enter password' }` fired
         // because `password` is in CREDENTIAL_VARIABLE_NAMES.
-        const obj = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        const obj = (parent as TSESTree.Node & { parent?: TSESTree.Node })
+          .parent;
         if (obj?.type === 'ObjectExpression') {
-          const grand = (obj as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+          const grand = (obj as TSESTree.Node & { parent?: TSESTree.Node })
+            .parent;
           if (grand) return isLabelContext(node, grand);
         }
       }
@@ -959,10 +1205,15 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // setAttribute('type', 'password') — second arg is the value
       if (
         parent.type === 'CallExpression' &&
-        (parent as TSESTree.CallExpression).callee.type === 'MemberExpression' &&
-        ((parent as TSESTree.CallExpression).callee as TSESTree.MemberExpression).property.type === 'Identifier'
+        (parent as TSESTree.CallExpression).callee.type ===
+          'MemberExpression' &&
+        (
+          (parent as TSESTree.CallExpression)
+            .callee as TSESTree.MemberExpression
+        ).property.type === 'Identifier'
       ) {
-        const callee = (parent as TSESTree.CallExpression).callee as TSESTree.MemberExpression;
+        const callee = (parent as TSESTree.CallExpression)
+          .callee as TSESTree.MemberExpression;
         const methodName = (callee.property as TSESTree.Identifier).name;
         if (methodName === 'setAttribute' || methodName === 'getAttribute') {
           const args = (parent as TSESTree.CallExpression).arguments;
@@ -971,7 +1222,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       }
 
       // JSX: <input type="password" />
-      if (parent.type === 'JSXAttribute' as unknown as string) return true;
+      if (parent.type === ('JSXAttribute' as unknown as string)) return true;
 
       return false;
     }
@@ -992,9 +1243,24 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     ): 'password' | 'token' | 'database' | 'apikey' | 'other' {
       const name = slotNameOf(parent);
       if (/(?:^|[_-])(password|passwd|pass|pwd)$/.test(name)) return 'password';
-      if (/(?:^|[_-])(token|authtoken|auth_token|accesstoken|access_token|refreshtoken|refresh_token|idtoken|id_token)$/.test(name)) return 'token';
-      if (/(?:^|[_-])(dburl|db_url|databaseurl|database_url|connectionstring|connection_string|connectionuri)$/.test(name)) return 'database';
-      if (/(?:^|[_-])(apikey|api_key|secretkey|secret_key|privatekey|private_key|secret|key|clientsecret|client_secret)$/.test(name)) return 'apikey';
+      if (
+        /(?:^|[_-])(token|authtoken|auth_token|accesstoken|access_token|refreshtoken|refresh_token|idtoken|id_token)$/.test(
+          name,
+        )
+      )
+        return 'token';
+      if (
+        /(?:^|[_-])(dburl|db_url|databaseurl|database_url|connectionstring|connection_string|connectionuri)$/.test(
+          name,
+        )
+      )
+        return 'database';
+      if (
+        /(?:^|[_-])(apikey|api_key|secretkey|secret_key|privatekey|private_key|secret|key|clientsecret|client_secret)$/.test(
+          name,
+        )
+      )
+        return 'apikey';
       return 'other';
     }
 
@@ -1006,7 +1272,10 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
      * keywords) which would otherwise fire on identifier-shaped literals
      * (TS union types, error class names, test prompts).
      */
-    function isCredentialContext(node: TSESTree.Literal | TSESTree.TemplateLiteral, parent?: TSESTree.Node): boolean {
+    function isCredentialContext(
+      node: TSESTree.Literal | TSESTree.TemplateLiteral,
+      parent?: TSESTree.Node,
+    ): boolean {
       if (!parent) return false;
 
       const matches = (name: string): boolean => {
@@ -1019,7 +1288,11 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         // shape — which is what makes `{ key: 'fyFGb7ywyM37TqDY8nuhAmGW5' }`
         // (ack-nestjs-boilerplate's seeded API key) reportable.
         if (lower === 'key' || lower === 'keys') {
-          return node.type === 'Literal' && typeof node.value === 'string' && looksRandom(node.value);
+          return (
+            node.type === 'Literal' &&
+            typeof node.value === 'string' &&
+            looksRandom(node.value)
+          );
         }
 
         // Try the literal name AND its singular form (drop trailing 's')
@@ -1028,13 +1301,24 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         // `const tokens = ['Bearer sk_live_...']` bypassed credential
         // detection because `tokens` (plural) wasn't in the allowlist.
         const singular = lower.endsWith('s') ? lower.slice(0, -1) : lower;
-        if (CREDENTIAL_VARIABLE_NAMES.has(lower) || CREDENTIAL_VARIABLE_NAMES.has(singular)) return true;
-        return lower.endsWith('apikey') || lower.endsWith('apikeys') ||
-               lower.endsWith('secret') || lower.endsWith('secrets') ||
-               lower.endsWith('token') || lower.endsWith('tokens') ||
-               lower.endsWith('password') || lower.endsWith('passwords') ||
-               lower.endsWith('passwd') || lower.endsWith('credential') ||
-               lower.endsWith('credentials');
+        if (
+          CREDENTIAL_VARIABLE_NAMES.has(lower) ||
+          CREDENTIAL_VARIABLE_NAMES.has(singular)
+        )
+          return true;
+        return (
+          lower.endsWith('apikey') ||
+          lower.endsWith('apikeys') ||
+          lower.endsWith('secret') ||
+          lower.endsWith('secrets') ||
+          lower.endsWith('token') ||
+          lower.endsWith('tokens') ||
+          lower.endsWith('password') ||
+          lower.endsWith('passwords') ||
+          lower.endsWith('passwd') ||
+          lower.endsWith('credential') ||
+          lower.endsWith('credentials')
+        );
       };
 
       // Array elements: walk up through the ArrayExpression to its
@@ -1043,21 +1327,30 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // credential-name check because the literal's immediate parent is
       // the ArrayExpression rather than the VariableDeclarator.
       if (parent.type === 'ArrayExpression') {
-        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        const grand = (parent as TSESTree.Node & { parent?: TSESTree.Node })
+          .parent;
         if (grand) return isCredentialContext(node, grand);
         return false;
       }
 
       // const apiKey = '...' / let secret = '...'
-      if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+      if (
+        parent.type === 'VariableDeclarator' &&
+        parent.id.type === 'Identifier'
+      ) {
         if (matches((parent.id as TSESTree.Identifier).name)) return true;
       }
 
       // obj.apiKey = '...' / this.password = '...'
-      if (parent.type === 'AssignmentExpression' &&
-          (parent as TSESTree.AssignmentExpression).right === node) {
+      if (
+        parent.type === 'AssignmentExpression' &&
+        (parent as TSESTree.AssignmentExpression).right === node
+      ) {
         const left = (parent as TSESTree.AssignmentExpression).left;
-        if (left.type === 'MemberExpression' && left.property.type === 'Identifier') {
+        if (
+          left.type === 'MemberExpression' &&
+          left.property.type === 'Identifier'
+        ) {
           if (matches((left.property as TSESTree.Identifier).name)) return true;
         }
         if (left.type === 'Identifier') {
@@ -1066,10 +1359,20 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       }
 
       // { apiKey: '...', secret: '...' }
-      if (parent.type === 'Property' && (parent as TSESTree.Property).value === node) {
+      if (
+        parent.type === 'Property' &&
+        (parent as TSESTree.Property).value === node
+      ) {
         const key = (parent as TSESTree.Property).key;
-        if (key.type === 'Identifier' && matches((key as TSESTree.Identifier).name)) return true;
-        if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
+        if (
+          key.type === 'Identifier' &&
+          matches((key as TSESTree.Identifier).name)
+        )
+          return true;
+        if (
+          key.type === 'Literal' &&
+          typeof (key as TSESTree.Literal).value === 'string'
+        ) {
           if (matches((key as TSESTree.Literal).value as string)) return true;
         }
       }
@@ -1125,7 +1428,10 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     /**
      * Check a string literal node
      */
-    function checkStringLiteral(node: TSESTree.Literal, parent?: TSESTree.Node): void {
+    function checkStringLiteral(
+      node: TSESTree.Literal,
+      parent?: TSESTree.Node,
+    ): void {
       if (typeof node.value !== 'string') {
         return;
       }
@@ -1168,7 +1474,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       const { isCredential, type, confidence } = looksLikeCredential(
         value,
         detectionOptions,
-        compiledIgnorePatterns
+        compiledIgnorePatterns,
       );
 
       // Ambiguous matches require a credential-named context to fire.
@@ -1177,14 +1483,19 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // FPs before the gate landed).
       let finalIsCredential = isCredential;
       let finalType = type;
-      if (isCredential && confidence === 'ambiguous' && !isCredentialContext(node, parent)) {
+      if (
+        isCredential &&
+        confidence === 'ambiguous' &&
+        !isCredentialContext(node, parent)
+      ) {
         finalIsCredential = false;
       }
 
       // Self-evident placeholders are not secrets. Gated to non-structural
       // findings only: a JWT, an `sk_live_` key, or a DB connection string
       // keeps its shape whatever words it contains, so those still report.
-      const isPlaceholder = allowPlaceholders && isPlaceholderValue(value, placeholderWordSet);
+      const isPlaceholder =
+        allowPlaceholders && isPlaceholderValue(value, placeholderWordSet);
       if (isPlaceholder && confidence !== 'structural') {
         finalIsCredential = false;
       }
@@ -1207,11 +1518,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // `const password = "..."` because the var-name match alone
       // bypasses the option. Map the var name back to its category and
       // honour the option.
-      if (!finalIsCredential &&
-          !isPlaceholder &&
-          !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
-          isSecretShaped(value, detectionOptions.minLength) &&
-          isCredentialContext(node, parent)) {
+      if (
+        !finalIsCredential &&
+        !isPlaceholder &&
+        !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
+        isSecretShaped(value, detectionOptions.minLength) &&
+        isCredentialContext(node, parent)
+      ) {
         // isCredentialContext(node, parent) just returned true, which
         // requires a truthy parent.
         const ctxType = inferCredentialTypeFromContext(parent!);
@@ -1245,13 +1558,21 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
       // Generate environment variable name suggestion
       let envVarName = 'API_KEY';
-      if (parent && parent.type === 'Property' && parent.key.type === 'Identifier') {
+      if (
+        parent &&
+        parent.type === 'Property' &&
+        parent.key.type === 'Identifier'
+      ) {
         const keyName = parent.key.name;
         envVarName = keyName
           .replace(/([a-z])([A-Z])/g, '$1_$2')
           .toUpperCase()
           .replace(/[^A-Z0-9_]/g, '_');
-      } else if (parent && parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+      } else if (
+        parent &&
+        parent.type === 'VariableDeclarator' &&
+        parent.id.type === 'Identifier'
+      ) {
         const varName = parent.id.name;
         envVarName = varName
           .replace(/([a-z])([A-Z])/g, '$1_$2')
@@ -1271,14 +1592,20 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             messageId: 'useEnvironmentVariable',
             data: { envVarName, credentialType: finalType },
             fix: (fixer: TSESLint.RuleFixer) => {
-              return fixer.replaceText(node, `process.env.${envVarName} || '${value}'`);
+              return fixer.replaceText(
+                node,
+                `process.env.${envVarName} || '${value}'`,
+              );
             },
           },
           {
             messageId: 'useSecretManager',
             data: { credentialType: finalType },
             fix: (fixer: TSESLint.RuleFixer) => {
-              return fixer.replaceText(node, `await getSecret('${envVarName.toLowerCase()}')`);
+              return fixer.replaceText(
+                node,
+                `await getSecret('${envVarName.toLowerCase()}')`,
+              );
             },
           },
         ],
@@ -1289,16 +1616,18 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       Literal(node: TSESTree.Literal) {
         checkStringLiteral(node, node.parent);
       },
-      
+
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         // Check template literal parts for credentials
         // Only check if there are no interpolations (static template literal)
         if (node.expressions.length === 0) {
-          const fullText = node.quasis.map((q: TSESTree.TemplateElement) => q.value.raw).join('');
+          const fullText = node.quasis
+            .map((q: TSESTree.TemplateElement) => q.value.raw)
+            .join('');
           const { isCredential, type, confidence } = looksLikeCredential(
             fullText,
             detectionOptions,
-            compiledIgnorePatterns
+            compiledIgnorePatterns,
           );
 
           // For template literals we don't have a Literal node to pass to
@@ -1318,14 +1647,20 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY', credentialType: type },
                   fix: (fixer: TSESLint.RuleFixer) => {
-                    return fixer.replaceText(node, `process.env.API_KEY || \`${fullText}\``);
+                    return fixer.replaceText(
+                      node,
+                      `process.env.API_KEY || \`${fullText}\``,
+                    );
                   },
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: type },
                   fix: (fixer: TSESLint.RuleFixer) => {
-                    return fixer.replaceText(node, `await getSecret('api_key')`);
+                    return fixer.replaceText(
+                      node,
+                      `await getSecret('api_key')`,
+                    );
                   },
                 },
               ],
@@ -1338,7 +1673,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
               const { isCredential, type, confidence } = looksLikeCredential(
                 quasi.value.raw,
                 detectionOptions,
-                compiledIgnorePatterns
+                compiledIgnorePatterns,
               );
 
               if (isCredential && !isTestFile && confidence === 'structural') {
@@ -1360,4 +1695,3 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

@@ -128,6 +128,11 @@ jobs:
       # each one. #659 added twelve credential spellings and three reached the
       # PR with no test — removing them from the rule left the suite green.
       - run: npm run lint:detection-list-coverage
+      # And the same question one layer out, on the LEDGER rather than the
+      # rule: a triage verdict above a handful of findings has to say how
+      # much of it was actually looked at. no-cycle carried "the DETECTION
+      # is right" until the first sample read 66.7% wrong (#702, #705).
+      - run: npm run lint:triage-sampling
       # The FULL rule-audit ratchet. The pre-commit hook runs a scoped version
       # that only sees rules whose own files changed; a shared-util edit can
       # move a rule's findings without touching it, so this run — every rule,

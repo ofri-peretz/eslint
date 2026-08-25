@@ -25,6 +25,7 @@
   "scripts": {
     "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
+    "lint:triage-sampling": "tsx scripts/lint-triage-sampling.ts",
     "lint:taxonomy": "tsx scripts/lint-plugin-taxonomy.ts",
     "rule-ledger": "tsx scripts/build-rule-ledger.ts",
     "rule-audit:gate": "tsx scripts/rule-audit-gate.ts",
@@ -269,8 +270,8 @@
   "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^3.0.1",
-    "@changesets/get-github-info": "^0.6.0",
-    "@changesets/parse": "^0.4.1",
+    "@changesets/get-github-info": "^1.0.0",
+    "@changesets/parse": "^1.0.0",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
@@ -301,7 +302,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "^4.1.10",
     "add": "^2.0.9",
-    "ai": "^7.0.71",
+    "ai": "^7.0.73",
     "baseline-browser-mapping": "^2.11.16",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",

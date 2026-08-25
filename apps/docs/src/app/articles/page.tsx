@@ -14,7 +14,7 @@ import type { Metadata } from 'next';
 import articlesData from '@/data/articles.json';
 
 export const metadata: Metadata = {
-  title: 'Technical Articles',
+  title: 'Articles',
   description:
     'Deep dives into ESLint internals, security patterns, and high-performance JavaScript engineering by the Interlace team.',
   // Canonical pinned per SEO_PHILOSOPHY §1 — the page is URL-state-driven
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   // form rather than the cartesian product of facets (PAGINATION_PHILOSOPHY).
   alternates: { canonical: '/articles' },
   openGraph: {
-    title: 'Technical Articles | ESLint Interlace',
+    title: 'Articles | ESLint Interlace',
     description:
       'Deep dives into ESLint internals, security patterns, and high-performance JavaScript engineering.',
     type: 'website',

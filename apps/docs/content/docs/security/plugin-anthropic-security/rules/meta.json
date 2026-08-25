@@ -1,0 +1,9 @@
+{
+  "title": "Rules",
+  "defaultOpen": false,
+  "pages": [
+    "no-browser-api-key-exposure",
+    "no-hardcoded-api-key",
+    "no-untrusted-content-in-prompt"
+  ]
+}
