@@ -153,6 +153,51 @@
       "href": "/docs/express-security/rules/no-insecure-cookie-options"
     },
     {
+      "name": "no-missing-cors-check",
+      "cwe": "CWE-346",
+      "owasp": "",
+      "cvss": "",
+      "description": "Detects missing CORS validation (wildcard CORS, missing origin check)",
+      "typeStatus": "unaware",
+      "recommended": false,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/express-security/rules/no-missing-cors-check"
+    },
+    {
+      "name": "no-missing-csrf-protection",
+      "cwe": "CWE-352",
+      "owasp": "",
+      "cvss": "",
+      "description": "Detects missing CSRF token validation in POST/PUT/DELETE requests",
+      "typeStatus": "unaware",
+      "recommended": false,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/express-security/rules/no-missing-csrf-protection"
+    },
+    {
+      "name": "no-missing-security-headers",
+      "cwe": "CWE-693",
+      "owasp": "",
+      "cvss": "",
+      "description": "Detects missing security headers in HTTP responses",
+      "typeStatus": "unaware",
+      "recommended": false,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/express-security/rules/no-missing-security-headers"
+    },
+    {
       "name": "no-permissive-cors",
       "cwe": "CWE-942",
       "owasp": "",
@@ -226,6 +271,21 @@
       "deprecated": false,
       "category": "General",
       "href": "/docs/express-security/rules/no-unsafe-csp-directives"
+    },
+    {
+      "name": "no-user-controlled-redirect",
+      "cwe": "CWE-601",
+      "owasp": "",
+      "cvss": "",
+      "description": "Disallow res.redirect() with values directly from req.query / req.body / req.params",
+      "typeStatus": "unaware",
+      "recommended": true,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/express-security/rules/no-user-controlled-redirect"
     },
     {
       "name": "no-user-controlled-render-locals",
@@ -363,6 +423,6 @@
       "href": "/docs/express-security/rules/require-strict-transport-security"
     }
   ],
-  "totalRules": 24,
-  "lastSynced": "2026-08-15T18:33:15.702Z"
+  "totalRules": 28,
+  "lastSynced": "2026-08-25T01:38:02.203Z"
 }
