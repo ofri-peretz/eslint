@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/vulnerabilities/Insecure_Transport
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { isNonTransmittingUrl } from '../../utils/loopback-hosts';
+import { isLoopbackHost, isNonTransmittingUrl } from '../../utils/loopback-hosts';
 import {
   AST_NODE_TYPES,
   formatLLMMessage,
@@ -371,6 +371,21 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       // domain (guaranteed never to resolve to a real service). Shared with no-http-urls
       // and no-insecure-websocket so the three cannot disagree about what "local" means.
       if (isNonTransmittingUrl(value)) {
+        return;
+      }
+
+      // `allowInTests` means "localhost in tests" — the docs say so, and the
+      // Options-coverage suite pins that `http://staging.example.com` still
+      // reports under it. On non-web schemes that promise was not kept:
+      // `isNonTransmittingUrl` is scheme-gated on purpose (a `mongodb://`
+      // string carries credentials that survive a host swap), so
+      // `"redis://localhost:6379"` in a spec file was reachable by neither
+      // exemption. Twenty-one findings on moleculerjs/moleculer, almost all
+      // `test/unit/**` fixtures naming a loopback broker.
+      //
+      // Loopback only, and only when the consumer has opted in, so a real host
+      // in a test file still reports and production code is untouched.
+      if (isTestFile && isLoopbackHost(value)) {
         return;
       }
 

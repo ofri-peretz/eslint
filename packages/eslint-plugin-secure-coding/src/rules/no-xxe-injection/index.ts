@@ -94,6 +94,13 @@ export interface Options {
 
   /** Extra entity-expansion option keys, ON TOP of the built-ins. Default: [] */
   additionalDangerousParserOptions?: string[];
+
+  /**
+   * Packages proven unable to resolve an external entity, which therefore
+   * cannot perform XXE however they are called. Replaces the built-in list.
+   * Default: PROVEN_NO_EXTERNAL_ENTITIES
+   */
+  entityIncapableModules?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -134,7 +141,47 @@ const DEFAULT_XML_MODULES = [
   '@xmldom/xmldom',
   'xmldom',
   'node-expat',
-  'xpath',
+];
+
+/**
+ * Of those, the ones proven UNABLE to reach outside the document.
+ *
+ * XXE is a file read, and a parser that cannot fetch an external entity cannot
+ * perform one however it is called. Measured 2026-08-24 against a document
+ * declaring `<!ENTITY xxe SYSTEM "file:///…">` with a canary in the target:
+ *
+ * ```
+ *   @xmldom/xmldom   no leak, "&xxe;" left unresolved ("entity not found")
+ *   fast-xml-parser  threw "External entities are not supported"
+ *   xml2js           threw "Invalid character entity"
+ * ```
+ *
+ * Three of the seven packages above cannot do the thing this rule reports, and
+ * the rule reported them anyway: 31 findings on nasa/earthdata-search, 9 on
+ * refactoringhq/tolaria, 5 on aws/aws-toolkit-vscode, every one of them a
+ * parser being handed a document it is structurally unable to leak with.
+ * `xpath` was in the list too, and it parses nothing at all — it queries a DOM
+ * somebody else built.
+ *
+ * libxml2 is the exception the rule exists for: `noent` substitutes entities
+ * and libxml2 loads external ones, which is why the fix text names it.
+ * node-expat and xml2json stay because expat exposes an external-entity
+ * handler; that pair is not probe-backed and is deliberately left reporting.
+ *
+ * Those three still report when a caller switches entity expansion ON
+ * explicitly — `processEntities: true` is a decision with consequences, even
+ * where the consequence is expansion rather than exfiltration.
+ *
+ * Named as the incapable side rather than the capable one, so the list only
+ * ever speaks for packages that were actually tested. An in-house wrapper, a
+ * package added through `additionalXmlModules`, an unresolvable receiver —
+ * none of them are on this list, so none of them lose the check.
+ */
+const PROVEN_NO_EXTERNAL_ENTITIES = [
+  'xml2js',
+  'fast-xml-parser',
+  '@xmldom/xmldom',
+  'xmldom',
 ];
 
 /**
@@ -283,7 +330,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: DEFAULT_XML_MODULES,
             description:
-              'Module specifiers whose parsers can resolve an external entity, matched against a resolved import binding. Replaces the built-in list.',
+              'Module specifiers this rule treats as XML parsers, matched against a resolved import binding. Replaces the built-in list.',
           },
           additionalXmlModules: {
             type: 'array',
@@ -311,6 +358,13 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
             description:
               'Parser option keys whose `true` value turns entity expansion ON. Replaces the built-in list.',
           },
+          entityIncapableModules: {
+            type: 'array',
+            items: { type: 'string' },
+            default: PROVEN_NO_EXTERNAL_ENTITIES,
+            description:
+              'Packages proven unable to resolve an external entity, and therefore never reported for parsing untrusted input. Replaces the built-in list.',
+          },
           additionalDangerousParserOptions: {
             type: 'array',
             items: { type: 'string' },
@@ -333,6 +387,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       additionalXmlParseMethods: [],
       dangerousParserOptions: DEFAULT_DANGEROUS_PARSER_OPTIONS,
       additionalDangerousParserOptions: [],
+      entityIncapableModules: PROVEN_NO_EXTERNAL_ENTITIES,
     },
   ],
   create(
@@ -351,9 +406,11 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       additionalXmlParseMethods = [],
       dangerousParserOptions = DEFAULT_DANGEROUS_PARSER_OPTIONS,
       additionalDangerousParserOptions = [],
+      entityIncapableModules = PROVEN_NO_EXTERNAL_ENTITIES,
     } = options!;
 
     const xmlPackages = new Set([...xmlModules, ...additionalXmlModules]);
+    const incapablePackages = new Set(entityIncapableModules);
     const parseMethods = new Set([...xmlParseMethods, ...additionalXmlParseMethods]);
     const dangerousKeys = new Set([
       ...dangerousParserOptions,
@@ -372,6 +429,20 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     const resolvesToXmlModule = (node: TSESTree.Node): boolean => {
       const binding = resolveModuleBinding(node, sourceCode.getScope(node));
       return binding !== undefined && xmlPackages.has(binding.module);
+    };
+
+    /**
+     * Does this resolve to a package PROVEN unable to reach an external entity?
+     *
+     * Deliberately not the inverse of `resolvesToXmlModule`. An unresolvable
+     * receiver — `getParser().parseString(req.body)` — is not evidence of
+     * safety, and silencing it would trade a measured false positive for an
+     * unmeasured false negative. Only a name that resolves to a package on the
+     * known-incapable side of the split exits here.
+     */
+    const resolvesToEntityIncapableModule = (node: TSESTree.Node): boolean => {
+      const binding = resolveModuleBinding(node, sourceCode.getScope(node));
+      return binding !== undefined && incapablePackages.has(binding.module);
     };
 
     /**
@@ -526,6 +597,16 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         }
 
         if (isTrustedXmlSource(xmlInput) || isXmlInputValidated(xmlInput)) return;
+
+        // Untrusted input is only half of it. The other half is a parser that
+        // can reach the filesystem — see DEFAULT_EXTERNAL_ENTITY_MODULES.
+        if (
+          resolvesToEntityIncapableModule(node.callee) ||
+          (construction !== undefined &&
+            resolvesToEntityIncapableModule(construction.callee))
+        ) {
+          return;
+        }
 
         context.report({
           node: xmlInput,

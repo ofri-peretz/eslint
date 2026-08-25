@@ -450,4 +450,54 @@ describe('no-unencrypted-transmission', () => {
       },
     );
   });
+
+// A loopback broker in a spec file, on a non-web scheme.
+//
+// `allowInTests` promises "localhost in tests" — the docs say so, and the
+// Options-coverage suite pins that a real host still reports under it. On
+// non-web schemes that promise was not kept: `isNonTransmittingUrl` is
+// scheme-gated on purpose, so `"redis://localhost:6379"` in `test/unit/**` was
+// reachable by neither exemption. Twenty-one findings on moleculerjs/moleculer.
+ruleTester.run(
+  'no-unencrypted-transmission - loopback in tests, any scheme',
+  noUnencryptedTransmission,
+  {
+    valid: [
+      {
+        code: 'let opts = "redis://localhost:6379";',
+        filename: 'test/unit/cachers/redis.spec.js',
+        options: [{ allowInTests: true }],
+      },
+      {
+        code: 'var mockEnv = { storageURI: "mongodb://localhost:27017/nightscout" };',
+        filename: 'tests/production-safety.test.js',
+        options: [{ allowInTests: true }],
+      },
+    ],
+    invalid: [
+      // A REAL host in a test file still reports — the line the option was
+      // always meant to hold.
+      {
+        code: 'let opts = "redis://cache.internal:6379";',
+        filename: 'test/unit/cachers/redis.spec.js',
+        options: [{ allowInTests: true }],
+        errors: 1,
+      },
+      // Loopback on a non-web scheme still reports in PRODUCTION code, which is
+      // the documented reason the scheme gate exists.
+      {
+        code: 'let opts = "redis://localhost:6379";',
+        filename: 'src/cachers/redis.js',
+        options: [{ allowInTests: true }],
+        errors: 1,
+      },
+      // And without the opt-in, nothing changes.
+      {
+        code: 'let opts = "redis://localhost:6379";',
+        filename: 'test/unit/cachers/redis.spec.js',
+        errors: 1,
+      },
+    ],
+  },
+);
 });

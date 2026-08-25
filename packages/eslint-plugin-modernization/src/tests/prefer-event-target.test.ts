@@ -38,13 +38,21 @@ describe('prefer-event-target', () => {
         // Import from events module
         {
           code: 'import { EventEmitter } from "events";',
-          output: 'import { EventTarget } from "events";',
+          // No fix. This previously asserted the rewritten binding as CORRECT
+          // output, which pinned the bug in place: `events` exports no
+          // `EventTarget` (it is a global), so the rewrite imported `undefined`,
+          // and the use site was left referring to a name no longer bound.
+          output: null,
           errors: [{ messageId: 'preferEventTarget' }],
         },
         // Import from node:events
         {
           code: 'import { EventEmitter } from "node:events";',
-          output: 'import { EventTarget } from "node:events";',
+          // No fix. This previously asserted the rewritten binding as CORRECT
+          // output, which pinned the bug in place: `events` exports no
+          // `EventTarget` (it is a global), so the rewrite imported `undefined`,
+          // and the use site was left referring to a name no longer bound.
+          output: null,
           errors: [{ messageId: 'preferEventTarget' }],
         },
       ],
@@ -82,7 +90,11 @@ describe('prefer-event-target', () => {
         // Destructuring require
         {
           code: 'const { EventEmitter } = require("events");',
-          output: 'const { EventTarget } = require("events");',
+          // No fix. This previously asserted the rewritten binding as CORRECT
+          // output, which pinned the bug in place: `events` exports no
+          // `EventTarget` (it is a global), so the rewrite imported `undefined`,
+          // and the use site was left referring to a name no longer bound.
+          output: null,
           errors: [{ messageId: 'preferEventTarget' }],
         },
       ],
@@ -149,7 +161,11 @@ describe('prefer-event-target', () => {
         // Destructuring require from node:events
         {
           code: 'const { EventEmitter } = require("node:events");',
-          output: 'const { EventTarget } = require("node:events");',
+          // No fix. This previously asserted the rewritten binding as CORRECT
+          // output, which pinned the bug in place: `events` exports no
+          // `EventTarget` (it is a global), so the rewrite imported `undefined`,
+          // and the use site was left referring to a name no longer bound.
+          output: null,
           errors: [{ messageId: 'preferEventTarget' }],
         },
       ],
