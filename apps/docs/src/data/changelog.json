@@ -1,9 +1,559 @@
 {
-  "releaseCount": 460,
+  "releaseCount": 486,
   "packageCount": 34,
-  "entryCount": 1557,
+  "entryCount": 1615,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "2.0.1",
+      "date": "2026-08-25T03:15:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "eslint-plugin-sqlite-security",
+      "version": "0.1.7",
+      "date": "2026-08-25T03:15:01Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "0.3.4",
+      "date": "2026-08-25T03:14:56Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "0.3.4",
+      "date": "2026-08-25T03:14:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.1.3",
+      "date": "2026-08-25T03:14:50Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Three false positives found by reviewing findings on real repositories.",
+          "pr": 678
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.3.1",
+      "date": "2026-08-25T03:14:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.0.2",
+      "date": "2026-08-25T03:14:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "2.3.1",
+      "date": "2026-08-25T03:14:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "0.3.4",
+      "date": "2026-08-25T03:13:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.2.1",
+      "date": "2026-08-25T03:13:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "3.1.1",
+      "date": "2026-08-25T03:13:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "3.0.1",
+      "date": "2026-08-25T03:12:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.2.2",
+      "date": "2026-08-25T03:12:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Two detections `eslint-plugin-security` has and we did not, plus a false positive in test files.",
+          "pr": 685
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "eslint-plugin-mysql-security",
+      "version": "0.3.4",
+      "date": "2026-08-25T03:12:04Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "2.2.1",
+      "date": "2026-08-25T03:11:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.0.2",
+      "date": "2026-08-25T03:11:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "2.2.0",
+      "date": "2026-08-25T03:10:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "Three rules no longer report inside generated files: `conventions/no-magic-numbers`, `conventions/no-commented-code` and `modernization/prefer-template-literal`.",
+          "pr": 691
+        },
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.1.1",
+      "date": "2026-08-25T03:09:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.5.1",
+      "date": "2026-08-25T03:09:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.0.3",
+      "date": "2026-08-25T03:09:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "fix",
+          "title": "`no-decode-without-verify` and `require-expiration` no longer report inside test files.",
+          "pr": 685
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "2.0.1",
+      "date": "2026-08-25T03:09:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "5.0.0",
+      "date": "2026-08-25T03:09:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "`recommended` no longer enables `no-magic-numbers`",
+          "pr": 694
+        },
+        {
+          "kind": "feature",
+          "title": "Three rules no longer report inside generated files: `conventions/no-magic-numbers`, `conventions/no-commented-code` and `modernization/prefer-template-literal`.",
+          "pr": 691
+        },
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "docs",
+          "title": "eight published rules finally have documentation",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "0.3.4",
+      "date": "2026-08-25T03:09:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "0.4.4",
+      "date": "2026-08-25T03:09:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.17.2",
+      "date": "2026-08-25T03:08:59Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "fix",
+          "title": "Three false positives found by reviewing findings on real repositories.",
+          "pr": 678
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "3.1.3",
+      "date": "2026-08-25T03:08:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "point `meta.docs.url` at documentation that exists",
+          "pr": 683
+        },
+        {
+          "kind": "docs",
+          "title": "eight published rules finally have documentation",
+          "pr": 683
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "docs",
       "short": "docs",
