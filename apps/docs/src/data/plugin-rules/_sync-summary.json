@@ -1,12 +1,12 @@
 {
-  "lastSynced": "2026-08-15T18:33:15.709Z",
+  "lastSynced": "2026-08-25T01:38:02.208Z",
   "plugins": 9,
   "success": 9,
   "errors": 0,
   "details": {
     "success": [
       "browser-security: 46 rules",
-      "express-security: 24 rules",
+      "express-security: 28 rules",
       "jwt-security: 13 rules",
       "lambda-security: 14 rules",
       "mongodb-security: 16 rules",
