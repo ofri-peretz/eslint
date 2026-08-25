@@ -392,4 +392,21 @@ jobs:
           # staged path list (2026-08-25: pull refused on them AFTER the
           # commit, killing an otherwise-perfect run at the last step).
           git pull --rebase --autostash origin main
-          git push origin HEAD:main
+          # main is protected — a direct push is declined by the branch hook
+          # (GH006, 2026-08-25 run 32799673806). Land the refresh through the
+          # front door instead: a well-known branch + a PR. Force is correct:
+          # each week's numbers supersede an unmerged previous refresh, and
+          # an already-open PR simply updates in place.
+          git push --force origin HEAD:bench/weekly-refresh
+          if gh pr create --base main --head bench/weekly-refresh \
+               --title "chore(bench): weekly benchmark refresh $(date -u +%Y-%m-%d)" \
+               --body-file /tmp/bench-commit-msg.txt 2>/tmp/pr-err.txt; then
+            echo "Opened the refresh PR."
+          elif grep -qi "already exists" /tmp/pr-err.txt; then
+            echo "Refresh PR already open — branch updated in place."
+          else
+            cat /tmp/pr-err.txt
+            echo "::warning title=Refresh PR not created::Numbers are committed on 'bench/weekly-refresh' but PR creation failed (likely the 'Allow GitHub Actions to create and approve pull requests' repo setting). Open it manually: https://github.com/${GITHUB_REPOSITORY}/compare/main...bench/weekly-refresh"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
