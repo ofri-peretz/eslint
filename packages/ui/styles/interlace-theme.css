@@ -72,6 +72,18 @@
   --interlace-secondary: #f5f3f0;
   --interlace-secondary-foreground: #1f1a15;
 
+  /* Strands — the woven brand gesture (BRAND_PHILOSOPHY.md).
+   *
+   * strand-a is the mark's burnt orange (oklch hue 41, same profile as
+   * chart-1). strand-b is its temperature complement, a cool steel blue
+   * (hue 230) — NOT chart-2's emerald (hue 162), which is the success
+   * status hue; status colors are never decorative. These two are the
+   * only colors permitted in woven gestures (InterlaceWeave, HeroStrand,
+   * TimelineMap marks), and woven gestures are the only place strand-b
+   * may appear. Decorative strokes: ≥3:1 on background in both modes. */
+  --interlace-strand-a: oklch(0.55 0.16 41);
+  --interlace-strand-b: oklch(0.55 0.12 230);
+
   /* Destructive (Tailwind red-800 — text-destructive on white ≈ 8.0:1, AAA) */
   --interlace-destructive: #991b1b;
   --interlace-destructive-foreground: #ffffff;
@@ -128,6 +140,10 @@
   --interlace-secondary: #201c17;
   --interlace-secondary-foreground: #f0ede9;
 
+  /* Strands — lighter tints of the same pair (chart dark profile) */
+  --interlace-strand-a: oklch(0.78 0.14 41);
+  --interlace-strand-b: oklch(0.78 0.1 230);
+
   /* Destructive (red-300 — text-destructive on near-black ≈ 9:1, AAA) */
   --interlace-destructive: #fca5a5;
   --interlace-destructive-foreground: #0a0a0a;
@@ -168,6 +184,8 @@
   --ring: var(--interlace-ring);
   --destructive: var(--interlace-destructive);
   --destructive-foreground: var(--interlace-destructive-foreground);
+  --strand-a: var(--interlace-strand-a);
+  --strand-b: var(--interlace-strand-b);
 
   /* Override fumadocs-prefixed tokens for AA contrast.
    *
@@ -209,4 +227,6 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-strand-a: var(--strand-a);
+  --color-strand-b: var(--strand-b);
 }

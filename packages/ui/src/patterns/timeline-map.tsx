@@ -51,7 +51,7 @@ import { cn } from '../lib/cn.js';
  *
  * x = date (left → right), row = category, dot diameter = optional
  * `weight` (0..1 → 10–16px; the Detail strip must spell the value out —
- * size is never the only carrier). Marks are single-hue `chart-1` (R19
+ * size is never the only carrier). Marks are single-hue `strand-a` (R19
  * token): identity is carried spatially by labeled lanes, so no
  * multi-hue palette is needed and none is offered.
  *
@@ -385,7 +385,7 @@ function TimelineMapFilter({ className, ...rest }: TimelineMapFilterProps) {
           className={cn(
             'rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
             active.has(name)
-              ? 'border-chart-1/50 bg-chart-1/10 text-foreground'
+              ? 'border-strand-a/50 bg-strand-a/10 text-foreground'
               : 'border-border text-muted-foreground hover:text-foreground',
           )}
         >
@@ -524,7 +524,7 @@ function TimelineMapChart({ className, ...rest }: TimelineMapChartProps) {
                   />
                 ))}
               </g>
-              <g className="text-chart-1">
+              <g className="text-strand-a">
                 {lane.dots.filter((d) => visible(d.item)).map((d) => (
                   <LinkComponent
                     key={d.item.id}

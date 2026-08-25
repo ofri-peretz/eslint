@@ -83,8 +83,8 @@ describe('static markup (SSR honesty)', () => {
     expect(html).toContain('Hover a dot.');
   });
 
-  it('marks use the chart-1 token, never raw color', () => {
-    expect(html).toContain('text-chart-1');
+  it('marks use the strand-a token, never raw color', () => {
+    expect(html).toContain('text-strand-a');
     expect(html).not.toMatch(/#[0-9a-fA-F]{3,8}/);
   });
 

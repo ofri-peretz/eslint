@@ -15,8 +15,11 @@ describe('InterlaceWeave static markup', () => {
   });
 
   it('draws two strands in the brand token pair, never raw color', () => {
-    expect(html).toContain('stroke-chart-1');
-    expect(html).toContain('stroke-chart-2');
+    expect(html).toContain('stroke-strand-a');
+    expect(html).toContain('stroke-strand-b');
+    // strand-b exists so the weave never strokes chart-2 (emerald = the
+    // success status hue; status colors are never decorative)
+    expect(html).not.toContain('chart-2');
     expect(html).not.toMatch(/#[0-9a-fA-F]{3,8}/);
   });
 

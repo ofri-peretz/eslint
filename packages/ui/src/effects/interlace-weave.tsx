@@ -6,7 +6,7 @@ import { cn } from '../lib/cn.js';
  *
  * ## RFC (R3)
  *
- * Two thin strands — brand orange (`chart-1`) and brand green (`chart-2`),
+ * Two thin strands — brand orange (`strand-a`) and its cool complement (`strand-b`),
  * the mark's own pair — draw along a surface's border from OPPOSITE
  * corners on hover/focus and overshoot past each other where they meet:
  * the name, enacted. Decorative overlay only; the host surface keeps its
@@ -103,7 +103,7 @@ export function InterlaceWeave({
         rx={radius}
         pathLength={100}
         vectorEffect="non-scaling-stroke"
-        className={cn(strand, 'stroke-chart-1')}
+        className={cn(strand, 'stroke-strand-a')}
       />
       {/* Strand B — brand green, from the bottom-right corner: the same
           rect rotated 180° around the center starts its dash at the
@@ -117,7 +117,7 @@ export function InterlaceWeave({
         pathLength={100}
         vectorEffect="non-scaling-stroke"
         transform="rotate(180 50 50)"
-        className={cn(strand, 'stroke-chart-2')}
+        className={cn(strand, 'stroke-strand-b')}
       />
     </svg>
   );
