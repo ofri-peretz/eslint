@@ -311,7 +311,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.79.0', maxKnown: '1.79.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.79.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -323,19 +323,25 @@ const VERIFIED_OXLINT_RANGE = { min: '1.79.0', maxKnown: '1.79.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
-  // Re-verified at 1.79.0 (2026-08-25) by `verify-oxlint-runtime.ts`, which
+  // Re-verified at 1.79.0 (2026-08-23) by `verify-oxlint-runtime.ts`, which
   // probes the API surfaces the blocker patterns depend on rather than reading
   // the bundles by eye: all 33 probes pass — sourceCode with its token and
   // comment accessors, getScope, every fixer method, and parserServices.
   //
-  // The previous hashes were recorded against an older bundle and every push
-  // in the repo had been failing this gate on drift alone. Nothing about the
-  // support matrix moved: the probe set is unchanged and still green, so the
-  // audit's blocker assumptions hold exactly as before.
-  'plugins.js': '3caddca8054c7d91c6e0b5bacaba2a5c6f05fb2e9fa7b8c7226550f1d0c8061c',
-  'plugins-dev.js': 'f5525cd82f61651f6209c5ee6620b2ad498b72f56594fa63c2194b47520cc702',
-  'lint.js':   '2a2f0a0f6bb20445865c3567b272a911b7a6b20f455e9a4762e5c6eb303f0e88',
-  'bindings.js': 'bce66d56c4f3201469280f9df4e3b420b43c9198f4536f0bd520db0b18a14acd',
+  // Kept from the earlier reviews, because `min` records the OLDEST version
+  // still verified and `--update` narrows it to the newest:
+  //
+  //   1.77.0 (2026-08-09) — all five APIs present in the same runtime files as
+  //   at 1.74. The public plugin type surface differed by exactly 4 lines:
+  //   `MetaProperty` moved within the `Expression` union (ordering only) and
+  //   `justification` became required rather than optional. Neither is
+  //   referenced by this audit or by any rule — our only `justification` hit is
+  //   a word inside an error string, and `MetaProperty` is used as a node-type
+  //   string, not positionally.
+  'plugins.js': '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
+  'plugins-dev.js': '69a98c6cc2e63369980ba2b42f8c66935ba76fc177469872d4f5236626f3742a',
+  'lint.js':   'beae3473c99f7de9421be82938ef5c350d09798746c343ba9dc4663cc29901af',
+  'bindings.js': 'eca0ade39d41ec024c4398df7b688c642d44a908e42c1fcd0af9cf4fa64d2bcb',
 };
 
 async function checkOxlintRuntimeHashes() {
