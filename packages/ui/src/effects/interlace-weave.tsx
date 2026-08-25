@@ -4,9 +4,14 @@ import { cn } from '../lib/cn.js';
 /**
  * InterlaceWeave — the brand gesture as an interaction signature.
  *
+ * DOWNSTREAM COPY: the canonical component lives in the interlace repo's
+ * `packages/ui` (with the strand tokens from BRAND_PHILOSOPHY.md there).
+ * This copy strokes this repo's `chart-1`/`chart-2` until the consumption
+ * pass replaces it from the registry. Fix bugs upstream first.
+ *
  * ## RFC (R3)
  *
- * Two thin strands — brand orange (`chart-1`) and brand green (`chart-2`),
+ * Two thin strands — brand orange (`strand-a`) and its cool complement (`strand-b`),
  * the mark's own pair — draw along a surface's border from OPPOSITE
  * corners on hover/focus and overshoot past each other where they meet:
  * the name, enacted. Decorative overlay only; the host surface keeps its
@@ -24,6 +29,15 @@ import { cn } from '../lib/cn.js';
  * hover/focus variants. Strand B's path starts at the opposite corner,
  * so the two tips cross at both meeting points (the 5-unit overshoot is
  * the "weave" moment).
+ *
+ * The svg deliberately has NO viewBox: rect geometry is in real pixels
+ * (`calc(100% − inset)`), so there is no scale transform. Two earlier
+ * shapes failed in rendering: a viewBox + `preserveAspectRatio="none"`
+ * needs `vector-effect: non-scaling-stroke` for uniform strokes, and
+ * that makes Chromium compute dash patterns in SCREEN space — silently
+ * discarding the `pathLength` normalization all the dash math rests on.
+ * Unscaled geometry keeps `pathLength` honored, strokes uniform, and the
+ * corner radius identical to the host's at every size.
  *
  * ## States
  *
@@ -54,8 +68,8 @@ export interface InterlaceWeaveProps
   /** Stable selector for E2E tests; consumer provides — no default (R5). */
   'data-testid': string;
   /**
-   * Corner radius of the traced border, in viewBox units (the host's
-   * rounded-xl ≈ 12).
+   * Corner radius of the traced border, in px — match the host's radius
+   * (`rounded-xl` = 12).
    * @default 12
    */
   radius?: number;
@@ -73,11 +87,16 @@ export function InterlaceWeave({
   ...rest
 }: InterlaceWeaveProps) {
   const strand = cn(
-    // dasharray gap (155) exceeds pathLength (100) + dash (55): offset
-    // -155 parks the dash entirely outside the visible path (a 100-period
-    // pattern would be modular — offset 100 ≡ 0 and the rest state drew
-    // fully, caught by the visual pass). Offset 0 draws 55 units.
-    'fill-none stroke-2 [stroke-dasharray:55_155] [stroke-dashoffset:-155]',
+    // Dash 55, gap 155 → period 210. Rendering at path point s samples
+    // pattern position (s + offset) — ground-truthed in the browser, the
+    // sign trips everyone — so blank-at-rest requires [offset, offset+100]
+    // ⊆ the gap [55, 210): offset ∈ [55, 110]. 55 is the zero-dead-time
+    // end: the dash tip sits exactly at the path start, so the draw
+    // begins the instant the hover transition does, and offset 0 shows
+    // the full 55-unit strand. (Three prior cuts shipped visibly drawn
+    // at rest — a modular 100-period pattern, then two sign-flipped
+    // parks. Every one read plausibly and failed only in rendering.)
+    'fill-none stroke-2 [stroke-dasharray:55_155] [stroke-dashoffset:55]',
     'transition-[stroke-dashoffset] duration-500 ease-out motion-reduce:transition-none',
     DRAWN,
   );
@@ -90,34 +109,34 @@ export function InterlaceWeave({
         'pointer-events-none absolute inset-0 h-full w-full',
         className,
       )}
-      preserveAspectRatio="none"
-      viewBox="0 0 100 100"
       {...rest}
     >
-      {/* Strand A — brand orange, from the top-left corner. */}
+      {/* Strand A — the mark's orange, from the top-left corner. */}
       <rect
         x="1"
         y="1"
-        width="98"
-        height="98"
         rx={radius}
         pathLength={100}
-        vectorEffect="non-scaling-stroke"
-        className={cn(strand, 'stroke-chart-1')}
+        className={cn(
+          strand,
+          'stroke-chart-1',
+          '[width:calc(100%_-_2px)] [height:calc(100%_-_2px)]',
+        )}
       />
-      {/* Strand B — brand green, from the bottom-right corner: the same
-          rect rotated 180° around the center starts its dash at the
-          opposite corner, so the tips cross where the strands meet. */}
+      {/* Strand B — the cool counter, from the bottom-right corner: the
+          same rect rotated 180° about the svg center starts its dash at
+          the opposite corner, so the tips cross where the strands meet. */}
       <rect
         x="4"
         y="4"
-        width="92"
-        height="92"
         rx={Math.max(radius - 3, 2)}
         pathLength={100}
-        vectorEffect="non-scaling-stroke"
-        transform="rotate(180 50 50)"
-        className={cn(strand, 'stroke-chart-2')}
+        className={cn(
+          strand,
+          'stroke-chart-2',
+          '[width:calc(100%_-_8px)] [height:calc(100%_-_8px)]',
+          'origin-center rotate-180',
+        )}
       />
     </svg>
   );
