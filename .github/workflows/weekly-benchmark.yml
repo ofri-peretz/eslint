@@ -388,5 +388,8 @@ jobs:
             cat oos/COMMITS.txt
           } > /tmp/bench-commit-msg.txt
           git commit -F /tmp/bench-commit-msg.txt
-          git pull --rebase origin main
+          # --autostash: the hour-long run dirties tracked files outside the
+          # staged path list (2026-08-25: pull refused on them AFTER the
+          # commit, killing an otherwise-perfect run at the last step).
+          git pull --rebase --autostash origin main
           git push origin HEAD:main
