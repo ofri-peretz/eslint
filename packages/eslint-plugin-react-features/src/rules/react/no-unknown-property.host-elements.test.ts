@@ -90,6 +90,14 @@ describe('React accepts the XML namespace attributes', () => {
     ).toBe(0);
   });
 
+  it('reports xmlnsXml, which React does not define', () => {
+    // Verified against react-dom's property table: xmlns, xmlnsXlink, xmlLang,
+    // xmlBase and xmlSpace are there; xmlnsXml is not. It was in an earlier
+    // revision of the allow-list purely by pattern-matching the others, and a
+    // made-up entry in an allow-list costs recall without ever announcing it.
+    expect(count('const a = <svg xmlnsXml="x" />;')).toBe(1);
+  });
+
   it('does not report the ordinary svg attributes beside them', () => {
     expect(
       count(
@@ -103,10 +111,6 @@ describe('React accepts the XML namespace attributes', () => {
   // entry is dropped from the table, because the other attributes keep the
   // count at zero — it would report the removal as covered when it is not.
   it.each([
-    [
-      'xmlnsXml',
-      'const a = <svg xmlnsXml="http://www.w3.org/XML/1998/namespace" />;',
-    ],
     ['xmlLang', 'const a = <svg xmlLang="en" />;'],
     ['xmlBase', 'const a = <svg xmlBase="/base" />;'],
     ['xmlSpace', 'const a = <svg xmlSpace="preserve" />;'],

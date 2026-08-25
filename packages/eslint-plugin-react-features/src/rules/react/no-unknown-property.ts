@@ -17,7 +17,11 @@ type MessageIds = 'noUnknownProperty';
 // React accepts the XML namespace attributes on SVG and they are spelled
 // exactly like this. Their absence made every inline `<svg xmlns=…>` — the
 // standard output of every icon exporter — report as unknown.
-const XML_ATTRIBUTES = ['xmlns', 'xmlnsXlink', 'xmlnsXml', 'xmlLang', 'xmlBase', 'xmlSpace'];
+// Each of these is verified present in react-dom's property table. An
+// earlier revision also listed `xmlnsXml`, which is NOT there — it was
+// pattern-matched from the others rather than checked, and a made-up
+// attribute in an allow-list costs recall silently.
+const XML_ATTRIBUTES = ['xmlns', 'xmlnsXlink', 'xmlLang', 'xmlBase', 'xmlSpace'];
 
 const VALID_DOM_PROPERTIES = new Set([
   ...XML_ATTRIBUTES,
