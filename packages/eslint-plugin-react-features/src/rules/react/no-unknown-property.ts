@@ -14,17 +14,27 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noUnknownProperty';
 
+// React accepts the XML namespace attributes on SVG and they are spelled
+// exactly like this. Their absence made every inline `<svg xmlns=…>` — the
+// standard output of every icon exporter — report as unknown.
+// Each of these is verified present in react-dom's property table. An
+// earlier revision also listed `xmlnsXml`, which is NOT there — it was
+// pattern-matched from the others rather than checked, and a made-up
+// attribute in an allow-list costs recall silently.
+const XML_ATTRIBUTES = ['xmlns', 'xmlnsXlink', 'xmlLang', 'xmlBase', 'xmlSpace'];
+
 const VALID_DOM_PROPERTIES = new Set([
+  ...XML_ATTRIBUTES,
   // HTML attributes
   'accept', 'acceptCharset', 'accessKey', 'action', 'allowFullScreen', 'allowTransparency',
   'alt', 'async', 'autoComplete', 'autoFocus', 'autoPlay', 'capture', 'cellPadding',
   'cellSpacing', 'challenge', 'charSet', 'checked', 'cite', 'classID', 'className',
   'colSpan', 'cols', 'content', 'contentEditable', 'contextMenu', 'controls', 'coords',
-  'crossOrigin', 'data', 'dateTime', 'default', 'defer', 'dir', 'disabled', 'download',
-  'draggable', 'encType', 'form', 'formAction', 'formEncType', 'formMethod', 'formNoValidate',
+  'crossOrigin', 'data', 'dateTime', 'decoding', 'default', 'defer', 'dir', 'disabled', 'download',
+  'draggable', 'encType', 'fetchPriority', 'form', 'formAction', 'formEncType', 'formMethod', 'formNoValidate',
   'formTarget', 'frameBorder', 'headers', 'height', 'hidden', 'high', 'href', 'hrefLang',
   'htmlFor', 'httpEquiv', 'icon', 'id', 'inputMode', 'integrity', 'is', 'keyParams',
-  'keyType', 'kind', 'label', 'lang', 'list', 'loop', 'low', 'manifest', 'marginHeight',
+  'keyType', 'kind', 'label', 'lang', 'list', 'loading', 'loop', 'low', 'manifest', 'marginHeight',
   'marginWidth', 'max', 'maxLength', 'media', 'mediaGroup', 'method', 'min', 'minLength',
   'multiple', 'muted', 'name', 'noValidate', 'nonce', 'open', 'optimum', 'pattern',
   'placeholder', 'poster', 'preload', 'profile', 'radioGroup', 'readOnly', 'rel',
@@ -111,7 +121,7 @@ export const noUnknownProperty = createRule<[], MessageIds>({
       noUnknownProperty: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Unknown DOM Property',
-        description: 'Unknown DOM property detected',
+        description: '`{{propName}}` is not a DOM property of `<{{elementName}}>`',
         severity: 'MEDIUM',
         fix: 'Use standard DOM properties or data attributes (data-*)',
         documentationLink: 'https://react.dev/learn/writing-markup-with-jsx#html-attributes',
@@ -129,6 +139,22 @@ export const noUnknownProperty = createRule<[], MessageIds>({
           return;
         }
 
+        // A CUSTOM ELEMENT defines its own attributes, and React passes them
+        // through verbatim rather than checking them against the DOM.
+        //
+        // The check above catches custom COMPONENTS by their capital letter,
+        // but a web component is lowercase — `<altcha-widget>` — and looked
+        // like a host element. The HTML spec requires a hyphen in every custom
+        // element name, which is exactly the signal needed.
+        //
+        // This was the second false-positive class on the corpus: every
+        // attribute of okta-signin-widget's `<altcha-widget>` — `floating`,
+        // `hidefooter`, `challengeurl`, `onverified`, `customfetch`,
+        // `strings` — reported as an unknown DOM property.
+        if (elementName.name.includes('-')) {
+          return;
+        }
+
         if (node.name.type === 'JSXIdentifier') {
           const propName = node.name.name;
 
@@ -142,6 +168,10 @@ export const noUnknownProperty = createRule<[], MessageIds>({
             context.report({
               node: node.name,
               messageId: 'noUnknownProperty',
+              // Naming it is the difference between a finding someone can act
+              // on and one they have to go hunting for: the message read
+              // "Unknown DOM property detected" with no indication of which.
+              data: { propName, elementName: elementName.name },
             });
           }
         }

@@ -21,6 +21,39 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Is this member expression being WRITTEN to rather than read?
+ *
+ * `.at()` returns a value, not a reference, so none of these positions can use
+ * it — `arr.at(-1) = 5` is a syntax error, and so are the compound, update and
+ * delete forms.
+ *
+ * Only the shapes with a test behind them are listed. An earlier draft also
+ * enumerated ObjectPattern, AssignmentPattern, Property and RestElement, and
+ * the 100% branch gate rejected it: every one was unreachable here, because a
+ * computed member expression in those positions is reached through
+ * `AssignmentExpression.left` or `ArrayPattern` instead. Guessing at parent
+ * types is how a guard grows branches nobody can trigger.
+ */
+function isWriteTarget(node: TSESTree.MemberExpression): boolean {
+  const parent = node.parent as TSESTree.Node;
+  switch (parent.type) {
+    case 'AssignmentExpression':
+      return parent.left === node;
+    case 'UpdateExpression':
+      return parent.argument === node;
+    case 'UnaryExpression':
+      return parent.operator === 'delete';
+    case 'ForOfStatement':
+    case 'ForInStatement':
+      return parent.left === node;
+    case 'ArrayPattern':
+      return true;
+    default:
+      return false;
+  }
+}
+
 export const preferAt = createRule<RuleOptions, MessageIds>({
   name: 'prefer-at',
   meta: {
@@ -76,6 +109,20 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
     return {
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!node.computed || node.object.type !== 'Identifier') {
+          return;
+        }
+
+        // `.at()` RETURNS a value; it is not a reference, so it cannot appear
+        // where the element is being written. `arr.at(-1) = 5` is a syntax
+        // error, and so are the compound, update and delete forms. Reporting
+        // here does not merely add noise — it hands the reader a fix that does
+        // not compile.
+        //
+        // Found by a census of this rule's corpus findings: Shopify's
+        // `durationStack[durationStack.length - 1] = (durationStack[...] ?? 0) + d`
+        // produced TWO findings on one line, one for the read and one for the
+        // assignment target. The read is right; the target never was.
+        if (isWriteTarget(node)) {
           return;
         }
 

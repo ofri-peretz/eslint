@@ -72,6 +72,31 @@ describe('no-unknown-property', () => {
     });
   });
 
+  describe('Modern image attributes (regression lock)', () => {
+    // Lock for the article-card.tsx false positives: `loading`, `decoding`
+    // and `fetchPriority` are standard React DOM props on <img> (React 19
+    // camelCases fetchPriority) and must never be reported.
+    ruleTester.run('modern image attributes', noUnknownProperty, {
+      valid: [
+        {
+          code: '<img src="a.jpg" alt="" loading="lazy" decoding="async" fetchPriority="high" />',
+        },
+        {
+          code: '<img src="a.jpg" alt="" loading="eager" fetchPriority="auto" />',
+        },
+      ],
+      invalid: [
+        // Positive control: lowercase `fetchpriority` is the HTML attr, not
+        // the React prop — the rule must still fire on it, proving the
+        // valid cases above are quiet for the right reason.
+        {
+          code: '<img src="a.jpg" alt="" fetchpriority="high" />',
+          errors: [{ messageId: 'noUnknownProperty' }],
+        },
+      ],
+    });
+  });
+
   describe('Custom Components', () => {
     ruleTester.run(
       'custom components accept arbitrary props',
