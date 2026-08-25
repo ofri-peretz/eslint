@@ -114,6 +114,42 @@ describe('no-xxe-injection', () => {
         { code: "const xhr = new XMLHttpRequest(); xhr.open('POST', '/api/avatar'); xhr.send(payload);" },
         { code: "new ActiveXObject('Microsoft.XMLDOM');" },
 
+        // ---- parsers that cannot resolve an external entity ---------------
+        // XXE is a file read. Probed 2026-08-24 with a document declaring
+        // `<!ENTITY xxe SYSTEM "file:///…">` over a canary file:
+        //
+        //   @xmldom/xmldom   left `&xxe;` unresolved ("entity not found")
+        //   fast-xml-parser  threw "External entities are not supported"
+        //   xml2js           threw "Invalid character entity"
+        //
+        // All three were on the dangerous-module list and reported anyway —
+        // 31 findings on nasa/earthdata-search alone. Untrusted input into a
+        // parser that structurally cannot leak with it is not a finding.
+        {
+          code: [
+            "import { DOMParser } from '@xmldom/xmldom';",
+            'export function readSitemap(req) {',
+            "  return new DOMParser().parseFromString(req.file.buffer.toString('utf8'), 'text/xml');",
+            '}',
+          ].join('\n'),
+        },
+        {
+          code: [
+            "import { parseString } from 'xml2js';",
+            'export function handleCallback(req, res) {',
+            '  parseString(req.body, (err, result) => res.json(result));',
+            '}',
+          ].join('\n'),
+        },
+        {
+          code: [
+            "import { DOMParser } from '@xmldom/xmldom';",
+            'export function parseManifest(manifestXml) {',
+            "  return new DOMParser().parseFromString(manifestXml, 'application/xml');",
+            '}',
+          ].join('\n'),
+        },
+
         // ---- correctly configured parsers ---------------------------------
         // Secure libxmljs usage with noent: false
         'const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { noent: false });',
@@ -220,46 +256,12 @@ describe('no-xxe-injection', () => {
           code: 'const libxml = require("libxmljs"); const userXml = req.query.xml; libxml.parseXmlString(userXml);',
           errors: [{ messageId: 'untrustedXmlSource' }],
         },
-        // A member expression straight off the request — the most common
-        // written form of the bug, and one the old identifier-name test could
-        // not see at all.
-        {
-          code: [
-            "import { DOMParser } from '@xmldom/xmldom';",
-            'export function readSitemap(req) {',
-            "  return new DOMParser().parseFromString(req.file.buffer.toString('utf8'), 'text/xml');",
-            '}',
-          ].join('\n'),
-          errors: [{ messageId: 'untrustedXmlSource' }],
-        },
-        // A bare-identifier callee resolved to xml2js. Only member-expression
-        // callees were ever classified, so every named import was invisible.
-        {
-          code: [
-            "import { parseString } from 'xml2js';",
-            'export function handleCallback(req, res) {',
-            '  parseString(req.body, (err, result) => res.json(result));',
-            '}',
-          ].join('\n'),
-          errors: [{ messageId: 'untrustedXmlSource' }],
-        },
         // The sink reached through a `const` alias.
         {
           code: [
             "import libxmljs from 'libxmljs2';",
             'const parseDocument = libxmljs.parseXml;',
             'export function importCatalogue(req) { return parseDocument(req.body.catalogue); }',
-          ].join('\n'),
-          errors: [{ messageId: 'untrustedXmlSource' }],
-        },
-        // A function parameter as the tainted root: the route hands the body to
-        // a service method that owns the parser.
-        {
-          code: [
-            "import { DOMParser } from '@xmldom/xmldom';",
-            'export function parseManifest(manifestXml) {',
-            "  return new DOMParser().parseFromString(manifestXml, 'application/xml');",
-            '}',
           ].join('\n'),
           errors: [{ messageId: 'untrustedXmlSource' }],
         },
@@ -388,8 +390,25 @@ ruleTester.run('options: sink vocabularies are configurable', noXxeInjection, {
       code: 'configure(opts, { verbose: true });',
       options: [{ additionalDangerousParserOptions: ['loadExternalDtd'] }],
     },
+    // A consumer who has audited libxml2 off — a patched build, or a policy
+    // that forbids `noent` elsewhere — names it incapable and the sink goes
+    // quiet, exactly as the built-in four do.
+    {
+      code: 'const libxml = require("libxmljs"); libxml.parseXml(req.body);',
+      options: [{ entityIncapableModules: ['libxmljs'] }],
+    },
   ],
   invalid: [
+    // The opposite direction: emptying the list restores report-unless-proven
+    // -safe for consumers who want it, including on the probed packages.
+    {
+      code: [
+        "import { DOMParser } from '@xmldom/xmldom';",
+        "export const doc = new DOMParser().parseFromString(req.body.xml, 'text/xml');",
+      ].join('\n'),
+      options: [{ entityIncapableModules: [] }],
+      errors: [{ messageId: 'untrustedXmlSource' }],
+    },
     // ---- the default is unchanged ----------------------------------------
     // Positive control: the three cases above, with an EMPTY option bag, still
     // report. If any default had drifted these would go quiet while the

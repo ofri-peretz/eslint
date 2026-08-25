@@ -878,11 +878,29 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
       ) {
         if (parent.computed) {
           // `buf[i] = x` writes one byte at one index; `x = buf[i]` reads one.
+          //
+          // At a NON-LITERAL index inside a loop it is the same walk that
+          // `writeUInt8(v, pos)` performs, and the rule already calls that
+          // covering — the only difference is the spelling. The XOR loop in
+          // mariadb-connector-nodejs's native and sha256 password auth is
+          //
+          //   let returnBytes = Buffer.allocUnsafe(digest.length);
+          //   for (let i = 0; i < digest.length; i++) {
+          //     returnBytes[i] = stage1[i] ^ digest[i];
+          //   }
+          //
+          // — every byte of the allocation written before it is returned, and
+          // reported because index assignment was classified partial whatever
+          // it was inside.
           const grandparent = parent.parent;
-          return grandparent.type === AST_NODE_TYPES.AssignmentExpression &&
-            grandparent.left === parent
-            ? 'partial'
-            : 'read';
+          const isWrite =
+            grandparent.type === AST_NODE_TYPES.AssignmentExpression &&
+            grandparent.left === parent;
+          if (!isWrite) return 'read';
+          return parent.property.type !== AST_NODE_TYPES.Literal &&
+            isInsideLoop(parent)
+            ? 'covering'
+            : 'partial';
         }
         if (parent.property.type !== AST_NODE_TYPES.Identifier) return 'read';
         const name = parent.property.name;
@@ -971,24 +989,58 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
      * would be judged on where the text sits, not on when it runs.
      */
     function isCoveredBeforeRead(call: TSESTree.CallExpression): boolean {
-      const declarator = call.parent;
+      // Two ways a binding receives the allocation, and only one of them used
+      // to count:
+      //
+      //   const buf = Buffer.allocUnsafe(n);   // VariableDeclarator
+      //   let buf;  buf = Buffer.allocUnsafe(n);   // AssignmentExpression
+      //
+      // The second is what protocol code writes when the allocation happens
+      // inside a branch — `mariadb-connector-nodejs`
+      // `lib/cmd/encoder/binary-encoder.js` declares `geoBuff` once and assigns
+      // it in each geometry arm. Thirty-eight findings there, every one of
+      // them a buffer this analysis would have cleared had the binding been a
+      // declarator.
+      const parent = call.parent;
+      let target: TSESTree.Identifier | undefined;
+      let variable: TSESLint.Scope.Variable | undefined;
+
       if (
-        declarator.type !== AST_NODE_TYPES.VariableDeclarator ||
-        declarator.init !== call ||
-        declarator.id.type !== AST_NODE_TYPES.Identifier
+        parent.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.init === call &&
+        parent.id.type === AST_NODE_TYPES.Identifier
       ) {
+        target = parent.id;
+        // A declarator binding a plain identifier declares exactly one
+        // variable, so the lookup cannot come back empty.
+        variable = context.sourceCode.getDeclaredVariables(
+          parent,
+        )[0] as TSESLint.Scope.Variable;
+      } else if (
+        parent.type === AST_NODE_TYPES.AssignmentExpression &&
+        parent.operator === '=' &&
+        parent.right === call &&
+        parent.left.type === AST_NODE_TYPES.Identifier
+      ) {
+        target = parent.left;
+        variable = findVariable(context.sourceCode, target) ?? undefined;
+      }
+
+      if (target === undefined || variable === undefined) {
         return false;
       }
-      // A declarator binding a plain identifier declares exactly one variable,
-      // so the lookup cannot come back empty. Casting rather than branching
-      // keeps an impossible case out of the coverage numbers, where an
-      // unreachable guard is indistinguishable from an untested one.
-      const variable = context.sourceCode.getDeclaredVariables(
-        declarator,
-      )[0] as TSESLint.Scope.Variable;
 
+      // Only uses AFTER the allocation. A declarator's other references are
+      // all later by construction; an assignment's are not — the `let buf;`
+      // declaration and any earlier use sit before it, and counting those as
+      // writes to THIS allocation would clear a buffer the previous value
+      // filled.
       const uses = variable.references
-        .filter((reference) => reference.identifier !== declarator.id)
+        .filter(
+          (reference) =>
+            reference.identifier !== target &&
+            reference.identifier.range[0] > call.range[1],
+        )
         .sort((a, b) => a.identifier.range[0] - b.identifier.range[0]);
 
       // Byte map for the fixed-offset case. A header stamped field by field at

@@ -58,4 +58,38 @@ describe('no-self-signed-certs', () => {
       },
     ],
   });
+
+// A certificate check relaxed in a TEST file.
+//
+// An integration test that points at a local server with a self-signed
+// certificate has no other way to talk to it. Verified on
+// mariadb-corporation/mariadb-connector-nodejs: 41 findings between this rule
+// and its sibling, every single one under `test/`.
+ruleTester.run('no-self-signed-certs - test files', noSelfSignedCerts, {
+  valid: [
+    {
+      code: `const agent = new https.Agent({ rejectUnauthorized: false });`,
+      filename: 'test/conf.js',
+      options: [{ allowInTests: true }],
+    },
+  ],
+  invalid: [
+    // Production code is untouched.
+    {
+      code: `const agent = new https.Agent({ rejectUnauthorized: false });`,
+      filename: 'lib/client.js',
+      options: [{ allowInTests: true }],
+      errors: 1,
+    },
+    // Without the opt-in, a test file is unchanged — this rule owns the
+    // decision through `allowInTests`, so it must NOT also take the devkit's
+    // `skipTestFiles`, which runs before `create()` and would make the option
+    // dead. That trap is documented and I walked into it once here.
+    {
+      code: `const agent = new https.Agent({ rejectUnauthorized: false });`,
+      filename: 'test/conf.js',
+      errors: 1,
+    },
+  ],
+});
 });

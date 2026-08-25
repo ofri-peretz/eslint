@@ -304,6 +304,211 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /**
+     * Does swallowing here leave the caller DENIED?
+     *
+     * A `try` whose only writes land on bindings declared falsy just above it
+     * cannot fail open by being silent — the variable is still falsy when the
+     * catch is done, so every gate reading it takes the deny branch:
+     *
+     *   let token = null;
+     *   try {
+     *     token = env.enclave.verifyJWT(data.token).accessToken;
+     *   } catch (err) {}
+     *   if (token) { …grant… }
+     *   addFailedRequest(data.ip);   // ← where an unverified token lands
+     *
+     * That is nightscout/cgm-remote-monitor `lib/authorization/index.js:192`,
+     * reported as CWE-703 fail-open. The empty catch is a real code smell —
+     * it swallows programming errors too — but the authentication decision it
+     * governs is closed, and this rule is about the decision.
+     *
+     * Deliberately narrow: EVERY assignment in the try must target such a
+     * binding. One write to anything else and the shape is not provable, so
+     * the finding stands.
+     */
+    function preservesDenyState(tryStatement: TSESTree.TryStatement): boolean {
+      const assignments: TSESTree.AssignmentExpression[] = [];
+      const stack: TSESTree.Node[] = [tryStatement.block];
+      while (stack.length > 0) {
+        const current = stack.pop() as TSESTree.Node;
+        if (current.type === AST_NODE_TYPES.AssignmentExpression) {
+          assignments.push(current);
+        }
+        for (const key of Object.keys(current)) {
+          if (key === 'parent') continue;
+          const value = (current as unknown as Record<string, unknown>)[key];
+          for (const child of Array.isArray(value) ? value : [value]) {
+            if (
+              child !== null &&
+              typeof child === 'object' &&
+              typeof (child as TSESTree.Node).type === 'string'
+            ) {
+              stack.push(child as TSESTree.Node);
+            }
+          }
+        }
+      }
+      if (assignments.length === 0) return false;
+
+      const targets = assignments.every((assignment) => {
+        if (assignment.left.type !== AST_NODE_TYPES.Identifier) return false;
+        const target = assignment.left;
+        let variable: TSESLint.Scope.Variable | undefined;
+        for (
+          let scope: TSESLint.Scope.Scope | null =
+            context.sourceCode.getScope(target);
+          scope !== null && variable === undefined;
+          scope = scope.upper
+        ) {
+          variable = scope.variables.find((v) => v.name === target.name);
+        }
+        const definition = variable?.defs[0];
+        if (definition?.type !== 'Variable') return false;
+        const init = definition.node.init;
+        // Declared with a falsy literal, and declared BEFORE the try — a
+        // binding written first inside the try has no prior deny state.
+        return (
+          init !== null &&
+          init !== undefined &&
+          init.type === AST_NODE_TYPES.Literal &&
+          !init.value &&
+          definition.node.range[1] < tryStatement.range[0]
+        );
+      });
+      if (!targets) return false;
+
+      // …AND something downstream must actually GATE on it.
+      //
+      // A falsy variable only fails closed if a branch reads it and stops.
+      // The corpus case `benchmarks/corpus/CWE-636/vulnerable/empty-catch-continues.js`
+      // is the counter-example that keeps this honest:
+      //
+      //   let actor = null;
+      //   try { actor = await assertAdmin(req.headers.authorization); } catch (err) {}
+      //   await purgeTable(req.body.table);       // runs whatever `actor` is
+      //
+      // `actor` is left null and nothing branches on it before the privileged
+      // work, so that IS fail-open. Nightscout's shape differs in exactly one
+      // way — `if (token) { …; return results; }` — and that is the difference
+      // this looks for: a test on the variable whose consequent leaves.
+      const names = new Set(
+        assignments
+          .map((assignment) => assignment.left)
+          .filter(
+            (left): left is TSESTree.Identifier =>
+              left.type === AST_NODE_TYPES.Identifier,
+          )
+          .map((left) => left.name),
+      );
+      return hasExitingGuard(tryStatement, names);
+    }
+
+    /** An `if` after the try that reads one of `names` and leaves the function. */
+    function hasExitingGuard(
+      tryStatement: TSESTree.TryStatement,
+      names: ReadonlySet<string>,
+    ): boolean {
+      // Reached only after `hasWorkAfter(tryStatement)` returned true, which
+      // requires the try to sit in a statement list — so a runtime guard here
+      // would be unreachable, and an unreachable guard reads as a check that
+      // runs. A braceless `try` as an `if` body has no work after it and never
+      // gets this far.
+      const enclosing = tryStatement.parent as TSESTree.Node & {
+        body: TSESTree.Node[];
+      };
+
+      const readsAName = (node: TSESTree.Node): boolean => {
+        const stack: TSESTree.Node[] = [node];
+        while (stack.length > 0) {
+          const current = stack.pop() as TSESTree.Node;
+          if (
+            current.type === AST_NODE_TYPES.Identifier &&
+            names.has(current.name)
+          ) {
+            return true;
+          }
+          for (const key of Object.keys(current)) {
+            if (key === 'parent') continue;
+            const value = (current as unknown as Record<string, unknown>)[key];
+            for (const child of Array.isArray(value) ? value : [value]) {
+              if (
+                child !== null &&
+                typeof child === 'object' &&
+                typeof (child as TSESTree.Node).type === 'string'
+              ) {
+                stack.push(child as TSESTree.Node);
+              }
+            }
+          }
+        }
+        return false;
+      };
+
+      const exits = (node: TSESTree.Node): boolean => {
+        const stack: TSESTree.Node[] = [node];
+        while (stack.length > 0) {
+          const current = stack.pop() as TSESTree.Node;
+          if (
+            current.type === AST_NODE_TYPES.ReturnStatement ||
+            current.type === AST_NODE_TYPES.ThrowStatement
+          ) {
+            return true;
+          }
+          // A `return` inside a nested function leaves that callback, not this
+          // function — `if (token) { xs.forEach(() => { return x; }); }` falls
+          // straight through to the privileged work. The rule stops at
+          // function boundaries everywhere else (see `enclosingHandler`).
+          if (
+            current !== node &&
+            (current.type === AST_NODE_TYPES.FunctionDeclaration ||
+              current.type === AST_NODE_TYPES.FunctionExpression ||
+              current.type === AST_NODE_TYPES.ArrowFunctionExpression)
+          ) {
+            continue;
+          }
+          for (const key of Object.keys(current)) {
+            if (key === 'parent') continue;
+            const value = (current as unknown as Record<string, unknown>)[key];
+            for (const child of Array.isArray(value) ? value : [value]) {
+              if (
+                child !== null &&
+                typeof child === 'object' &&
+                typeof (child as TSESTree.Node).type === 'string'
+              ) {
+                stack.push(child as TSESTree.Node);
+              }
+            }
+          }
+        }
+        return false;
+      };
+
+      // Order matters as much as existence. A guard that reads the variable
+      // but sits AFTER the privileged call gates nothing:
+      //
+      //   try { actor = await assertAdmin(req); } catch (err) {}
+      //   await purgeTable(req.body.table);   // runs with actor === null
+      //   if (actor) { return res.json({ ok: true }); }
+      //
+      // So the scan walks forward and stops at the first statement that can
+      // do work. Guards that leave are stepped over — an unrelated
+      // `if (req.method === 'OPTIONS') return preflight()` between the try and
+      // the real guard runs no privileged code on the path that continues.
+      for (const statement of enclosing.body) {
+        if (statement.range[0] < tryStatement.range[1]) continue;
+        if (
+          statement.type === AST_NODE_TYPES.IfStatement &&
+          exits(statement.consequent)
+        ) {
+          if (readsAName(statement.test)) return true;
+          continue;
+        }
+        return false;
+      }
+      return false;
+    }
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const name = calleeName(node);
@@ -359,6 +564,7 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
 
         if (handledScopes.has(handler) || handledScopes.has(node)) return;
         if (!hasWorkAfter(node)) return;
+        if (preservesDenyState(node)) return;
 
         context.report({ node: handler, messageId: 'failOpenSwallow' });
       },
