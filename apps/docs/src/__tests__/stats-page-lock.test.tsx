@@ -269,3 +269,17 @@ describe('download loader honesty (2026-08-24: all-zero /stats incident)', () =>
     expect(impactSource).not.toContain("['package-downloads-alltime']");
   });
 });
+
+describe('download outage degrades to em dash, never fake zeros', () => {
+  it('helper returns null (not {}) when the loader fails', () => {
+    const helper = readFileSync(join(APP_ROOT, 'src/lib/stats-page.ts'), 'utf-8');
+    expect(helper).not.toMatch(/return \{\} as Record<string, number>/);
+    expect(helper).toContain('downloads: number | null');
+  });
+
+  it('the table renders an aria-labelled em dash for null downloads', () => {
+    const page = readFileSync(join(APP_ROOT, 'src/app/stats/page.tsx'), 'utf-8');
+    expect(page).toContain('aria-label="No download data"');
+    expect(page).toMatch(/p\.downloads === null/);
+  });
+});
