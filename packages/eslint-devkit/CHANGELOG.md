@@ -5,6 +5,46 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.17.2
+
+### Patch Changes
+
+- **🐛 Fix** — point `meta.docs.url` at documentation that exists ([#683](https://github.com/ofri-peretz/eslint/pull/683))
+
+  `meta.docs.url` is what ESLint hands to editors, CLI output and SARIF, so a wrong
+  value is a dead "see docs" link in every consumer's IDE. It was wrong for 319 of
+  478 rules, all pointing at `packages/eslint-plugin/` — a package that does not
+  exist in this repo.
+
+  `withCanonicalDocsUrls` already existed to fix this, but `docsUrlFor` hardcoded
+  the `/docs/security/` path segment, so it could not express the nine quality
+  plugins and rollout had stalled at three of twenty-six. The category is now
+  derived per plugin, and every documented plugin stamps its rules on export.
+
+- **🐛 Fix** — Three false positives found by reviewing findings on real repositories. ([#678](https://github.com/ofri-peretz/eslint/pull/678))
+
+  `no-sql-injection` no longer reports an identifier narrowed by an allowlist.
+  No driver binds a table or column name, so an allowlist plus a guard clause is
+  the correct fix for that case and is what the standard advice prescribes.
+  bcgov/sso-requests wrote exactly that — `if (!ALLOWED_TABLES.has(table)) throw`
+  above the query, with a comment explaining why — and the rule reported the
+  defence as the vulnerability. The check is deliberately narrow: the guard must
+  `throw` or `return`, and the allowlist must be a fixed list of literals, so a
+  membership test that falls through or an allowlist passed in by the caller still
+  reports.
+
+  `no-fail-open-auth` now skips test files. It had no test handling at all, and
+  reported a mock component inside `__tests__` written to exercise exactly this
+  rule's subject.
+
+  Storybook stories are recognised as development material, so a
+  `password: "TestPassword123!"` on a story for a user called John Doe is no
+  longer a hardcoded credential. A story never enters the application bundle.
+
+  Verified against the repositories that produced them: bcgov/sso-requests drops
+  from 4 SQL findings to 1, cds-snc/canadalogin-user-selfservice-webapp from 11 to
+  6, and a genuine unparameterised request header in a query still reports.
+
 ## 1.17.1
 
 ### Patch Changes

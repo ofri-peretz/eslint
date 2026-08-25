@@ -64,7 +64,7 @@ withCanonicalDocsUrls('plugin-postgresql-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-postgresql-security',
-    version: '2.2.0',
+    version: '2.2.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

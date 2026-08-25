@@ -5,6 +5,33 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.3
+
+### Patch Changes
+
+- **🐛 Fix** — point `meta.docs.url` at documentation that exists ([#683](https://github.com/ofri-peretz/eslint/pull/683))
+
+  `meta.docs.url` is what ESLint hands to editors, CLI output and SARIF, so a wrong
+  value is a dead "see docs" link in every consumer's IDE. It was wrong for 319 of
+  478 rules, all pointing at `packages/eslint-plugin/` — a package that does not
+  exist in this repo.
+
+  `withCanonicalDocsUrls` already existed to fix this, but `docsUrlFor` hardcoded
+  the `/docs/security/` path segment, so it could not express the nine quality
+  plugins and rollout had stalled at three of twenty-six. The category is now
+  derived per plugin, and every documented plugin stamps its rules on export.
+
+- **📚 Docs** — eight published rules finally have documentation ([#683](https://github.com/ofri-peretz/eslint/pull/683))
+
+  `analytics-event-naming`, `no-magic-numbers`, `no-raw-cross-property-href` and
+  `utm-taxonomy` (conventions), plus `no-user-controlled-redirect` and deprecation
+  notices for `no-missing-cors-check` / `no-missing-csrf-protection` /
+  `no-missing-security-headers` (express-security) had implementations, README
+  rows and exported ids — but no rule docs. Examples are lifted from each rule's
+  own test fixtures. README rules tables regenerated.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`
+
 ## 3.1.2
 
 ### Patch Changes

@@ -5,6 +5,24 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — point `meta.docs.url` at documentation that exists ([#683](https://github.com/ofri-peretz/eslint/pull/683))
+
+  `meta.docs.url` is what ESLint hands to editors, CLI output and SARIF, so a wrong
+  value is a dead "see docs" link in every consumer's IDE. It was wrong for 319 of
+  478 rules, all pointing at `packages/eslint-plugin/` — a package that does not
+  exist in this repo.
+
+  `withCanonicalDocsUrls` already existed to fix this, but `docsUrlFor` hardcoded
+  the `/docs/security/` path segment, so it could not express the nine quality
+  plugins and rollout had stalled at three of twenty-six. The category is now
+  derived per plugin, and every documented plugin stamps its rules on export.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.2`
+
 ## 1.3.0
 
 ### Minor Changes

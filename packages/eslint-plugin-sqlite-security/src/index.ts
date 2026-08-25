@@ -40,7 +40,7 @@ withCanonicalDocsUrls('plugin-sqlite-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-sqlite-security',
-    version: '0.1.6',
+    version: '0.1.7',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
