@@ -73,7 +73,11 @@ jobs:
     name: Refresh published benchmark numbers
     runs-on: ubuntu-latest
     permissions:
-      contents: write # pushes the refreshed numbers to main (see the commit step)
+      contents: write # pushes the refresh branch (see the commit step)
+      pull-requests: write # gh pr create for the refresh PR — an explicit
+      # permissions map defaults everything unlisted to NONE, so without
+      # this the PR path fails every week and the fallback warning becomes
+      # the normal path (caught in review)
       pages: write # deploy-pages
       id-token: write # OIDC for deploy-pages
     # Cold multi-repo lint runs are slow by nature; the whole point is that
