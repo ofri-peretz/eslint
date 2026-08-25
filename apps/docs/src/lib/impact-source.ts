@@ -117,8 +117,22 @@ export const loadPackageDownloads = unstable_cache(
       const rel = Array.isArray(row.plugins) ? row.plugins[0] : row.plugins;
       if (rel?.name) out[rel.name] = Number(row.alltime_total ?? 0);
     }
+    // Close the empty-success hole: rows whose embedded names all resolve
+    // null (e.g. an RLS window on `plugins`) used to RETURN {} — a success
+    // unstable_cache happily stored, which the throw-on-error protection
+    // above never sees. An empty map here is always a fault, never a fact:
+    // the table has 36 rows in production. 2026-08-24: every /stats
+    // download rendered 0 from exactly this cached {}.
+    if (Object.keys(out).length === 0) {
+      throw new Error(
+        '[impact-source] npm_alltime_downloads returned rows but zero usable names — refusing to cache an empty map',
+      );
+    }
     return out;
   },
-  ['package-downloads-alltime'],
+  // -v2: cache KEY bump. The Data Cache outlives deployments and there is
+  // no revalidate endpoint, so the poisoned {} under the old key can only
+  // be abandoned, not purged.
+  ['package-downloads-alltime-v2'],
   { revalidate: REVALIDATE, tags: ['stats', 'npm', 'ratchet'] },
 );

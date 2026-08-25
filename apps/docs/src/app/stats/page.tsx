@@ -78,7 +78,9 @@ function CoverageCell({ value }: CoverageCellProps) {
 export default async function StatsPage() {
   const data = await getStatsPageData();
   const packages = data.plugins
-    .filter((p) => p.downloads > 0)
+    .filter((p): p is PluginRow & { downloads: number } =>
+      (p.downloads ?? 0) > 0,
+    )
     .map((p) => ({ name: p.name, downloads: p.downloads }));
   const totalRules = data.plugins.reduce((sum, p) => sum + p.rules, 0);
   const { devtoFollowers, githubFollowers } = data.impact.audience;
@@ -211,7 +213,16 @@ export default async function StatsPage() {
                     {p.rules}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmtDownloads(p.downloads)}
+                    {p.downloads === null ? (
+                      <span
+                        aria-label="No download data"
+                        className="text-fd-muted-foreground"
+                      >
+                        —
+                      </span>
+                    ) : (
+                      fmtDownloads(p.downloads)
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <CoverageCell value={p.coverage} />
