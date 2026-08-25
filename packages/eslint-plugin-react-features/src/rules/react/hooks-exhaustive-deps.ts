@@ -387,27 +387,102 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       return deps;
     }
 
+        /**
+     * Is this identifier a stable React value — one whose identity never
+     * changes, so it need not be a dependency?
+     *
+     * DECIDED BY RESOLVING THE BINDING, NOT BY ITS SPELLING. The previous
+     * version matched three name patterns:
+     *
+     *     /^set[A-Z]/     /dispatch/i     /Ref$/
+     *
+     * which is the defect class CLAUDE.md puts first, and it failed in both
+     * directions at once.
+     *
+     * It reported real refs whose names did not fit — `savedCallback`,
+     * `nextJwtToken`, `frame`, `timeout` were all `useRef` bindings required as
+     * dependencies across the corpus, where React's own `exhaustive-deps`
+     * reports none of them.
+     *
+     * And it silently EXEMPTED reactive values whose names happened to fit:
+     * `setUpValue` matches `/^set[A-Z]/`, `dispatchTime` and `lastDispatch`
+     * match `/dispatch/i`. A genuinely missing dependency named any of those
+     * was dropped without a word, which is the expensive direction — a stale
+     * closure that ships.
+     *
+     * Now the binding is resolved through scope and its initialiser read: a
+     * `useRef(...)` call, or the second element of a `useState`/`useReducer`
+     * destructuring. That is the same evidence React's rule uses, and it does
+     * not care what anything is called.
+     */
+    function isStableReference(name: string, scope: TSESLint.Scope.Scope | null): boolean {
+      for (let current = scope; current; current = current.upper) {
+        const variable = current.variables.find((v) => v.name === name);
+        if (!variable) continue;
+
+        // Declared OUTSIDE the component — a module-scope constant, an import,
+        // a global. Its identity is fixed for the lifetime of the module, so a
+        // re-render cannot change it and it is not a dependency. React's own
+        // rule treats these the same way; the check is the scope it lives in,
+        // not what it is called.
+        const owner = variable.scope.type;
+        if (owner === 'module' || owner === 'global') return true;
+
+        return variable.defs.some((def) => isStableDefinition(def, name));
+      }
+
+      // Resolved to nothing at all: an undeclared global such as `fetch` or
+      // `setTimeout`. Not reactive either, and React agrees.
+      return true;
+    }
+
     /**
-     * Check if an identifier is a stable React reference
+     * Does this definition come from useRef, or a useState/useReducer setter?
+     *
+     * `name` is threaded in rather than closed over. It was closed over at
+     * first, and because this helper is a sibling function the identifier
+     * resolved to the GLOBAL `name` — the comparison would have been against
+     * `globalThis.name`, silently false for every binding. The compiler caught
+     * it as string-versus-void; nothing at runtime would have.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    function isStableReference(name: string): boolean {
-      // setState functions from useState are stable
-      // dispatch from useReducer is stable
-      // refs from useRef are stable
-      const stablePatterns = [
-        /^set[A-Z]/, // setState patterns
-        /dispatch/i,
-        /Ref$/,
-      ];
-      
-      return stablePatterns.some((pattern) => pattern.test(name));
+    function isStableDefinition(def: TSESLint.Scope.Definition, name: string): boolean {
+      if (def.type !== 'Variable') return false;
+      const declarator = def.node;
+      const init = declarator.init;
+      if (!init || init.type !== 'CallExpression') return false;
+
+      const callee = init.callee;
+      const hookName =
+        callee.type === 'Identifier'
+          ? callee.name
+          : callee.type === 'MemberExpression' && callee.property.type === 'Identifier'
+            ? callee.property.name
+            : '';
+
+      // `const ref = useRef(...)` — the ref OBJECT is stable. (Its `.current`
+      // is not, which is exactly why React tells you not to list it.)
+      if (hookName === 'useRef') return declarator.id.type === 'Identifier';
+
+      // `const [value, setValue] = useState(...)` — only the SETTER is stable.
+      // `value` is reactive and must stay a dependency, so the position in the
+      // pattern is what decides, not the call.
+      if (hookName === 'useState' || hookName === 'useReducer') {
+        if (declarator.id.type !== 'ArrayPattern') return false;
+        const second = declarator.id.elements[1];
+        return second?.type === 'Identifier' && second.name === name;
+      }
+
+      return false;
     }
 
     /**
      * Filter out stable references and non-reactive values
      */
-    function filterReactiveDeps(used: Set<string>): Set<string> {
+    function filterReactiveDeps(
+      used: Set<string>,
+      scope: TSESLint.Scope.Scope | null,
+    ): Set<string> {
       const reactive = new Set<string>();
       
       // Common non-reactive values
@@ -450,7 +525,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       ]);
       
       for (const name of used) {
-        if (!nonReactive.has(name) && !isStableReference(name)) {
+        if (!nonReactive.has(name) && !isStableReference(name, scope)) {
           reactive.add(name);
         }
       }
@@ -524,7 +599,10 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           }
         }
         
-        const reactiveDeps = filterReactiveDeps(externalUsed);
+        const reactiveDeps = filterReactiveDeps(
+          externalUsed,
+          context.sourceCode.getScope(callback),
+        );
         
         // Extract declared dependencies
         const declaredDeps = extractDependencies(depsArrayNode);
