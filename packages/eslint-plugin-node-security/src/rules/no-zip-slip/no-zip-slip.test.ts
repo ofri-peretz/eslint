@@ -201,14 +201,23 @@ describe('no-zip-slip', () => {
     ruleTester.run('config - custom safe libraries', noZipSlip, {
       valid: [
         {
-          code: 'mySafeLib.extract(file, dest);',
-          options: [{ safeLibraries: ['mySafeLib'] }],
+          code: 'mySafeZipLib.extract(file, dest);',
+          options: [{ safeLibraries: ['mySafeZipLib'] }],
         },
+        // A bare `.extract()` on a receiver that names no archive is not an
+        // extraction at all. `this.extract("id")` on an entity collection and
+        // `propagator.extract(ctx, headers, getter)` in OpenTelemetry both
+        // matched the old name-only test — 25 findings across two repositories,
+        // every one of them wrong.
+        'this.extract("id");',
+        'propagator.extract(context.active(), msg.req.headers, getter);',
       ],
       invalid: [
         {
-          code: 'unsafeLib.extract(file, dest);',
-          options: [{ safeLibraries: ['mySafeLib'] }],
+          // Named for an archive, so the verb means what it says, and the
+          // receiver is outside the configured safe list.
+          code: 'unsafeZipLib.extract(file, dest);',
+          options: [{ safeLibraries: ['mySafeZipLib'] }],
           errors: [
             {
               messageId: 'unsafeArchiveExtraction',

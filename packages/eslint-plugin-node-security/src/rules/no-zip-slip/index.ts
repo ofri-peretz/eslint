@@ -89,6 +89,26 @@ type RuleOptions = [Options?];
  * path the author wrote. Requiring an archive in the file is what separates
  * the mechanism from its silhouette.
  */
+/**
+ * Extraction verbs that also mean something else in plain English.
+ *
+ * @protocol-constant The subset of `archiveFunctions` whose names are ordinary
+ * English verbs rather than archive APIs. `extractAllTo` and `extractArchive`
+ * name one thing and match on sight; `extract`, `extractAll`, `unzip` and
+ * `untar` do not. A collection extracts a field, an OpenTelemetry propagator
+ * extracts a trace context, a parser extracts a match — 25 findings across
+ * passbolt/passbolt_styleguide and nioc/node-red-contrib-opentelemetry were
+ * exactly those. This is a fact about English, not a tunable vocabulary:
+ * letting a consumer shorten it would restore the false positives, and
+ * `archiveFunctions` is already the option for adding a real extractor.
+ */
+const AMBIGUOUS_EXTRACTORS: ReadonlySet<string> = new Set([
+  'extract',
+  'extractAll',
+  'unzip',
+  'untar',
+]);
+
 const DEFAULT_ARCHIVE_MODULES = [
   'adm-zip', 'unzipper', 'yauzl', 'yazl', 'tar', 'tar-fs', 'tar-stream',
   'extract-zip', 'node-stream-zip', 'jszip', 'archiver', 'decompress',
@@ -283,7 +303,13 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       if (callee.type === 'MemberExpression' &&
           callee.property.type === 'Identifier' &&
           archiveFunctions.includes(callee.property.name)) {
-        return true;
+        // `extractAllTo` and `extractArchive` belong to adm-zip and collide
+        // with nothing. `extract`, `extractAll`, `unzip` and `untar` are
+        // ordinary English: a collection extracts a field, a propagator
+        // extracts a trace context, a parser extracts a match. Those need a
+        // receiver that names an archive before the name means anything.
+        if (!AMBIGUOUS_EXTRACTORS.has(callee.property.name)) return true;
+        return namesArchive(callee.object);
       }
 
       // Check for standalone archive functions (e.g., extractArchive)
@@ -406,7 +432,19 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         ) {
           hasArchiveContext = true;
         }
-        if (isArchiveExtraction(node) || namesArchive(node.callee)) hasArchiveContext = true;
+        // `namesArchive` only — NOT `isArchiveExtraction`. The latter matches a
+        // bare `.extract()` on any receiver, so letting it establish context
+        // made the rule circular: the call being judged was its own evidence
+        // that the file handles archives.
+        //
+        // Measured 2026-08-25: 22 of 28 findings on passbolt/passbolt_styleguide
+        // were `this.extract("id")` in entity-collection models, and all three
+        // on nioc/node-red-contrib-opentelemetry were
+        // `propagator.extract(context.active(), headers, getter)` — OpenTelemetry
+        // trace-context propagation. Neither file contains the substring `zip`,
+        // `tar` or `archive` anywhere. A password manager would have received a
+        // pull request whose entire content was that mistake.
+        if (namesArchive(node.callee)) hasArchiveContext = true;
         if (isArchiveExtraction(node) && !isSafeLibrary(node)) {
           // Check for @safe annotations in the source
           const sourceCode = context.sourceCode;
