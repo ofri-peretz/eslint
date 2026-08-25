@@ -36,13 +36,30 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Check if a class name suggests a value object
+ * Does this class name follow the value-object naming convention?
+ *
+ * SUFFIX, NOT SUBSTRING. `patterns.some((p) => className.includes(p))` is the
+ * shape CLAUDE.md bans, and it was not theoretical here: a census of this
+ * rule's 11 findings on the pinned corpus found `CountyCarrierValueCarriers`
+ * and `CreateConfigurationRequestChannelSettingsValueCaptureRules` — classes
+ * that merely CONTAIN "Value" and are not value objects by anyone's reading.
+ * The `VO` pattern is worse under substring matching, since `VO` sits inside
+ * `CONVOY` and `PIVOT` once casing lines up.
+ *
+ * A DDD value object convention names the type `MoneyValue`, `EmailVO` — the
+ * marker ENDS the name. Anchoring there keeps every legitimate match and drops
+ * the ones that were only ever a spelling accident.
+ *
+ * This rule is allowed to read the name at all because a naming CONVENTION is
+ * its entire subject and a consumer opts into it by enabling a DDD rule. What
+ * it is not allowed to do is match loosely and then assert a design defect the
+ * evidence does not support — which is what "contains" did.
  */
 function isValueObject(
   className: string,
   patterns: string[]
 ): boolean {
-  return patterns.some(pattern => className.includes(pattern));
+  return patterns.some(pattern => className.endsWith(pattern));
 }
 
 /**
@@ -90,6 +107,14 @@ function usesObjectFreeze(
 
 export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
   name: 'ddd-value-object-immutability',
+  /**
+   * Not reported in generated files. All 11 findings on the pinned corpus were
+   * in twilio's auto-generated OpenAPI SDK, whose header reads "Do not edit the
+   * class manually" — and the remedy here is to add `readonly` to the class,
+   * which the next generator run erases. Same line as #671, #686 and #691: a
+   * rule opts out where its judgement cannot be acted on where it is raised.
+   */
+  skipGeneratedFiles: true,
   meta: {
     type: 'suggestion',
     docs: {
