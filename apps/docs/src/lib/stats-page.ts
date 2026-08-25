@@ -68,7 +68,7 @@ export interface PluginRow {
   version: string;
   /** Cumulative npm downloads for this package, from the same source as the
    * ecosystem total above — so the rows always sum to the headline. */
-  downloads: number;
+  downloads: number | null;
   /** Line coverage 0–100, null if the plugin isn't in the coverage report. */
   coverage: number | null;
 }
@@ -279,7 +279,10 @@ export async function getStatsPageData(): Promise<StatsPageData> {
     }),
     loadPackageDownloads().catch((err: unknown) => {
       console.error('[stats-page] per-package downloads unavailable:', err);
-      return {} as Record<string, number>;
+      // null, never {}: an empty map renders as a 0 in every row — a data
+      // gap displayed as a fact. null lets each cell render an honest em
+      // dash instead (same contract as the coverage column).
+      return null;
     }),
   ]);
   const coverageMap = buildCoverageMap(coverage);
@@ -290,10 +293,10 @@ export async function getStatsPageData(): Promise<StatsPageData> {
       category: p.category,
       rules: p.rules,
       version: p.version,
-      downloads: downloads[p.name] ?? 0,
+      downloads: downloads ? (downloads[p.name] ?? 0) : null,
       coverage: coverageMap.get(p.name) ?? null,
     }))
-    .sort((a, b) => b.downloads - a.downloads);
+    .sort((a, b) => (b.downloads ?? -1) - (a.downloads ?? -1));
 
   // The headline is the ecosystem figure as published, NOT a sum of the rows
   // above: the rows are the plugins this site documents, while the counted
