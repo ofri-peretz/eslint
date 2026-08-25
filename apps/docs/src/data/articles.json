@@ -11,8 +11,8 @@
       "readable_publish_date": "Aug 20",
       "reading_time_minutes": 3,
       "page_views_count": 0,
-      "public_reactions_count": 1,
-      "positive_reactions_count": 1,
+      "public_reactions_count": 3,
+      "positive_reactions_count": 3,
       "comments_count": 0,
       "tag_list": [
         "react",
@@ -1685,6 +1685,6 @@
     }
   ],
   "total": 82,
-  "lastUpdated": "2026-08-23T05:33:13.585Z",
+  "lastUpdated": "2026-08-25T01:38:03.000Z",
   "source": "public"
 }
