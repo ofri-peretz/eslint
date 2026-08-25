@@ -5,7 +5,6 @@
   "maintainability/max-parameters",
   "modernization/prefer-at",
   "modernization/prefer-template-literal",
-  "react-a11y/prefer-tag-over-role",
   "react-features/hooks-exhaustive-deps",
   "react-features/jsx-key",
   "reliability/no-missing-null-checks"
