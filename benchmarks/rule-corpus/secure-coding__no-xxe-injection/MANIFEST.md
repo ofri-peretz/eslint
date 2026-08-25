@@ -12,11 +12,11 @@ Descriptor, and the sink names appearing only inside strings.
 
 ## Score
 
-| | TP | FP | FN | Precision | Recall | F1 |
-|---|---:|---:|---:|---:|---:|---:|
-| before (as found) | 4 | 0 | 5 | 100.0% | 44.4% | 61.5% |
-| after adversarial wave | 4 | 3 | 8 | 57.1% | 33.3% | **42.1%** |
-| after fixes | 12 | 0 | 0 | 100.0% | 100.0% | **100.0%** |
+|                        |  TP |  FP |  FN | Precision | Recall |         F1 |
+| ---------------------- | --: | --: | --: | --------: | -----: | ---------: |
+| before (as found)      |   4 |   0 |   5 |    100.0% |  44.4% |      61.5% |
+| after adversarial wave |   4 |   3 |   8 |     57.1% |  33.3% |  **42.1%** |
+| after fixes            |  11 |   0 |   0 |    100.0% | 100.0% | **100.0%** |
 
 No competitor is registered for this sink in the duel harness: neither
 `eslint-plugin-security` nor `sonarjs` ships an XXE rule, so the second and
@@ -54,7 +54,7 @@ Four further defects the corpus surfaced:
   were; `parseXml`, libxmljs2's real entry point and the API the rule's own fix
   text names, was not. `vulnerable/01`, `vulnerable/10`.
 - **Bare-identifier callees were never classified.** `import { parseXml } from
-  'libxmljs2'` and `const parseDocument = libxmljs.parseXml` were both
+'libxmljs2'` and `const parseDocument = libxmljs.parseXml` were both
   invisible. `vulnerable/02`, `vulnerable/12`.
 - **`new XMLHttpRequest()` was reported as an unsafe XML parser on sight.**
   XHR parses nothing; it has carried those letters since 1999 and is used to
@@ -113,5 +113,6 @@ negative.
   or a parser injected as a constructor argument) is not a sink. The old name
   heuristic covered some of these, at the cost of `safe/04`. Resolving it wants
   cross-file analysis, not a regex.
-- `xpath` is in the module list but evaluating an XPath is not entity
-  expansion; it is there because `xpath` re-exports parsed documents.
+- `xpath` is no longer in the module list. Evaluating an XPath is not entity
+  expansion — it queries a document another parser already produced — so the
+  sink belongs to that parser, not to `xpath`.
