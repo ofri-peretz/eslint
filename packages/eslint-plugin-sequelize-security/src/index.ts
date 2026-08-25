@@ -46,7 +46,7 @@ withCanonicalDocsUrls('plugin-sequelize-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-sequelize-security',
-    version: '0.3.3',
+    version: '0.3.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
