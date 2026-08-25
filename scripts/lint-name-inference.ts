@@ -110,6 +110,29 @@ const INLINE_NAME_SUBSTRING = new RegExp(
   `\\.name(?:\\.toLowerCase\\(\\)|\\.toUpperCase\\(\\))?\\.(?:${SUBSTRING_METHODS})\\(`,
 );
 
+/**
+ * A LIST OF REGEXES tested against a name — the same defect wearing a
+ * different syntax.
+ *
+ * `const P = [/^set[A-Z]/, /dispatch/i, /Ref$/]` followed by
+ * `P.some((p) => p.test(name))` is a dictionary lookup on a spelling exactly as
+ * much as `WORDS.some((w) => name.includes(w))` is. Only the matcher changed.
+ *
+ * This gate did not see it, and three rules shipped the defect through the
+ * hole: `hooks-exhaustive-deps` decided which React values were "stable" from
+ * `/^set[A-Z]/`, `/dispatch/i` and `/Ref$/`, which both reported real refs
+ * whose names did not fit AND silently exempted reactive values whose names
+ * did — a missing dependency named `setUpValue` was dropped without a word.
+ *
+ * Two occurrences of `/…/` in a bracketed list are enough: a pair of regexes
+ * fed to `.test()` is already a vocabulary, and requiring three would have let
+ * the `hooks-exhaustive-deps` list through at its original size.
+ */
+const REGEX_LIST = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*\[\s*(?:\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\s*,\s*){1,}/g;
+
+/** `/…/.test(x.name)` — a literal regex tested directly against a spelling. */
+const INLINE_NAME_REGEX = /\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\.test\(\s*[A-Za-z_$][\w$.]*\.name\b/;
+
 export interface Site {
   line: number;
   text: string;
@@ -169,6 +192,43 @@ export function findNameSubstringSites(source: string): Site[] {
       )
     : null;
 
+  // The same vocabulary idea, matched by regex instead of substring.
+  const regexLists = new Set<string>();
+  REGEX_LIST.lastIndex = 0;
+  let rlist: RegExpExecArray | null;
+  while ((rlist = REGEX_LIST.exec(source)) !== null) regexLists.add(rlist[1]);
+
+  // `[^;\n]*?` rather than `[^)]*`: the callback is usually written
+  // `(pattern) => pattern.test(name)`, and a class excluding `)` stops dead at
+  // the arrow's own parameter parens. That is not hypothetical — the first
+  // version of this detector missed the exact `hooks-exhaustive-deps` shape it
+  // was written for, and only a control that reintroduced that code into a real
+  // rule file showed it.
+  // The HAYSTACK must be a name, unlike the substring detector which matches
+  // the list alone.
+  //
+  // Matching any `.test(` gave 8 false alarms for every true one: regex lists
+  // are the normal way to analyse string CONTENT — a SQL statement, a JWT
+  // header, a postMessage origin — and `PATTERNS.some(p => p.test(text))` on a
+  // resolved literal is not this defect class at all. A gate that is 8:1 noise
+  // gets switched off, and then it protects nothing.
+  //
+  // So the operand must be a binding known to hold a `.name`, or be spelled
+  // `name` / `…Name` — which is what a parameter carrying a spelling is called
+  // when it arrives from another function, the interprocedural shape the header
+  // describes.
+  const nameLike = `(?:${[...nameBindings, 'name'].join('|')}|[A-Za-z_$][\\w$]*Name)`;
+  const vocabularyRegex = regexLists.size
+    ? new RegExp(
+        `\\b(?:${[...regexLists].join('|')})\\.(?:some|find|filter|every)\\([^;\\n]*?\\.test\\(\\s*${nameLike}\\s*\\)`,
+      )
+    : null;
+
+  // And the two-step form: `const n = node.name` then `/…/.test(n)`.
+  const boundRegex = nameBindings.size
+    ? new RegExp(`\\/[^/\\n]+\\/[gimsuy]*\\.test\\(\\s*(?:${[...nameBindings].join('|')})\\b`)
+    : null;
+
   const sites: Site[] = [];
   lines.forEach((raw, index) => {
     const text = raw.trim();
@@ -178,7 +238,10 @@ export function findNameSubstringSites(source: string): Site[] {
     if (
       INLINE_NAME_SUBSTRING.test(raw) ||
       boundSubstring?.test(raw) ||
-      vocabularySubstring?.test(raw)
+      vocabularySubstring?.test(raw) ||
+      INLINE_NAME_REGEX.test(raw) ||
+      boundRegex?.test(raw) ||
+      vocabularyRegex?.test(raw)
     ) {
       sites.push({ line: index + 1, text: text.slice(0, 120) });
     }
@@ -201,6 +264,159 @@ interface RegistryEntry {
  * about it.
  */
 const REGISTERED: RegistryEntry[] = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // Surfaced 2026-08-25 when the scanner stopped reading only
+  // `<rule>/index.ts`. 207 rule files had never been opened — nearly half the
+  // ecosystem — so every rule under a category directory was invisible to this
+  // gate for its whole existence.
+  //
+  // Several below are the JSX/React CONVENTION, not this defect class:
+  // `/^[A-Z]/.test(name)` to tell a component from a host element is the
+  // language's own rule, and `elementName.name.includes('-')` is the HTML spec's
+  // definition of a custom element. They are registered because the detector
+  // cannot tell a convention from a vocabulary, and pretending otherwise would
+  // mean special-casing the gate around them.
+  //
+  // `ddd-anemic-domain-model` is the opposite and the worst in the set: eight
+  // `.includes()` calls against `repository`, `service`, `api`, `client`, `dao`
+  // to decide what a class IS.
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    file: 'eslint-plugin-conventions/src/rules/conventions/prefer-dom-node-text-content.ts',
+    direction: 'report',
+    reason: 'Element-ness from a vocabulary of names (element|el|div|span|node|ref|dom|elem) and a suffix list. Needs the binding.',
+  },
+  {
+    file: 'eslint-plugin-conventions/src/rules/conventions/require-data-testid.ts',
+    direction: 'suppress',
+    reason: 'JSX handler props identified by /^on[A-Z]/. The React convention, but still a spelling test.',
+  },
+  {
+    file: 'eslint-plugin-maintainability/src/rules/maintainability/max-parameters.ts',
+    direction: 'suppress',
+    reason: 'Component-vs-function told by /^[A-Z]/ on the declaration name. The JSX convention.',
+  },
+  {
+    file: 'eslint-plugin-modularity/src/rules/ddd-anemic-domain-model.ts',
+    direction: 'report',
+    reason: 'Eight .includes() calls against repository|service|api|client|dao to decide what a class is. The heaviest name inference in the ecosystem and the first to fix.',
+  },
+  {
+    file: 'eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts',
+    direction: 'report',
+    reason: 'Method list filtered by .includes(".") to split bare names from member paths. Shape, not vocabulary, but the detector cannot tell.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/performance/no-unnecessary-rerenders.ts',
+    direction: 'suppress',
+    reason: 'Component-ness from /^[A-Z]/. The JSX convention.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/react/hooks-exhaustive-deps.ts',
+    direction: 'suppress',
+    reason: 'Stability decided by /^set[A-Z]/, /dispatch/i, /Ref$/ — reports real refs and silently exempts reactive values. Being fixed in #733; delete this entry when that lands.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/react/no-unknown-property.ts',
+    direction: 'suppress',
+    reason: 'Host-vs-component by /^[a-z]/ and custom elements by a hyphen. Both are the language and HTML specs, not a vocabulary.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/react/require-optimization.ts',
+    direction: 'suppress',
+    reason: 'Component-ness from /^[A-Z]/. The JSX convention.',
+  },
+  // ═══════════════════════════════════════════════════════════════════════
+  // Surfaced 2026-08-25 when the REGEX detector landed. A list of patterns
+  // tested against a name — `P.some((p) => p.test(name))` — is a dictionary
+  // lookup on a spelling exactly as much as `WORDS.some((w) => name.includes(w))`
+  // is; only the matcher differs, and this gate could not see the difference.
+  //
+  // Three React rules shipped the defect through that hole before it closed.
+  // `hooks-exhaustive-deps` decided which values were "stable" from
+  // `/^set[A-Z]/`, `/dispatch/i` and `/Ref$/`, which reported real refs whose
+  // names did not fit AND silently exempted reactive values whose names did.
+  //
+  // Registered so the list is tracked, not so it is accepted. Two below are
+  // worth reading twice:
+  //
+  //   `/error|err|e|exception/i` — the `e` alternative matches ANY identifier
+  //   containing the letter, so the test is very close to always true.
+  //
+  //   `/^(safe|sanitized|validated|clean)/i` — SUPPRESSES on a prefix. Name a
+  //   tainted variable `cleanPath` and the finding disappears. CLAUDE.md
+  //   schedules `report` entries first, but this one costs a real detection.
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    file: 'eslint-plugin-browser-security/src/rules/no-innerhtml/index.ts',
+    direction: 'report',
+    reason: 'Document-ness matched by regex on the object name. Needs scope resolution to the DOM global.',
+  },
+  {
+    file: 'eslint-plugin-browser-security/src/rules/no-unsafe-inline-csp/index.ts',
+    direction: 'report',
+    reason: 'JSX attribute name matched by regex. Exact membership would do — the attribute set is closed.',
+  },
+  {
+    file: 'eslint-plugin-lambda-security/src/rules/no-env-logging/index.ts',
+    direction: 'report',
+    reason: 'Logger-ness matched by /log(ger)?/i on an identifier. Needs the import or call target as evidence.',
+  },
+  {
+    file: 'eslint-plugin-lambda-security/src/rules/no-error-swallowing/index.ts',
+    direction: 'report',
+    reason: 'Response-shape keys matched by regex. Closed set — exact membership is available.',
+  },
+  {
+    file: 'eslint-plugin-lambda-security/src/rules/no-exposed-error-details/index.ts',
+    direction: 'report',
+    reason: 'Error-ness matched by /error|err|e|exception/i — the `e` branch matches any identifier containing the letter. Needs the catch binding.',
+  },
+  {
+    file: 'eslint-plugin-lambda-security/src/rules/no-secrets-in-env/index.ts',
+    direction: 'report',
+    reason: 'Config-ness matched by /env|config|settings/i on a declaration name.',
+  },
+  {
+    file: 'eslint-plugin-nestjs-security/src/rules/no-exposed-private-fields/index.ts',
+    direction: 'report',
+    reason: 'Class role inferred from a name suffix (Entity|Model|Schema|…). Needs the decorator as evidence.',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-arbitrary-file-access/index.ts',
+    direction: 'suppress',
+    reason: 'Withholds on /^(safe|sanitized|validated|clean)/i. Naming a tainted variable cleanPath hides the finding — this one costs recall.',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-buffer-overread/index.ts',
+    direction: 'report',
+    reason: 'Buffer methods matched by /^(?:read|write)[A-Z]/. The API surface is closed and the rule already has DEFAULT_BUFFER_METHODS — exact membership is right there.',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/index.ts',
+    direction: 'suppress',
+    reason: 'Withholds on /^(read|len|size|count|decode|parse)/i against a name. Costs recall the same way the file-access one does.',
+  },
+  {
+    file: 'eslint-plugin-secure-coding/src/rules/detect-object-injection/index.ts',
+    direction: 'suppress',
+    reason: 'A suffix vocabulary (Code|Status|Version|Kind|Mode|Type|…) withholds on the property name. The CONSTANT_CASE shape test beside it is a shape, not a vocabulary, and is the lesser half.',
+  },
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-math-random-crypto/index.ts',
+    direction: 'report',
+    reason: 'functionNameSuggestsCrypto tests CRYPTO_FUNCTION_PATTERNS against a function name — its own doc comment says "the name says this function builds a security value". Reports on a spelling; needs the call target.',
+  },
+  {
+    // OVER-INCLUSION from the pre-existing name-binding heuristic, not the
+    // regex detector: `const text = node.properties.find(p => p.key.name === 'text')`
+    // mentions `.name` in its initializer, so `text` is treated as holding a
+    // spelling when it holds a Property node. The patterns then test SQL
+    // statement content, which is not this defect class.
+    file: 'eslint-plugin-postgresql-security/src/rules/no-transaction-on-pool/index.ts',
+    direction: 'report',
+    reason: 'NOT name inference — the patterns test SQL text, and `text` is a Property node. Registered as a known over-inclusion.',
+  },
   // ═══════════════════════════════════════════════════════════════════════
   // Surfaced 2026-08-16 when the vocabulary detector closed the helper blind
   // spot. These were ALWAYS here — the gate could not see them because the
@@ -444,13 +660,36 @@ function ruleSources(): { file: string; source: string }[] {
     });
   };
 
+  // EVERY .ts under src/rules, at any depth — not just `<rule>/index.ts`.
+  //
+  // The previous version added exactly that one path per top-level entry, so a
+  // rule laid out as a flat file was never read. That was not a rare shape:
+  // 207 rule files against 272 scanned, nearly half the ecosystem, including
+  // every rule under a category directory —
+  // `rules/react/hooks-exhaustive-deps.ts`,
+  // `rules/conventions/analytics-event-naming.ts`, and 205 more.
+  //
+  // It is why `hooks-exhaustive-deps` shipped `/^set[A-Z]/`, `/dispatch/i` and
+  // `/Ref$/` deciding which React values were "stable". The gate did not miss
+  // the pattern; it never opened the file. A gate reporting 272 rules clean
+  // while 207 go unread is worse than no gate, because the green tick is read
+  // as coverage.
+  const walkRules = (dir: string): void => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walkRules(full);
+        continue;
+      }
+      if (!entry.name.endsWith('.ts')) continue;
+      if (/\.(test|spec|d)\.ts$/.test(entry.name)) continue;
+      add(full);
+    }
+  };
+
   for (const plugin of fs.readdirSync(PACKAGES_DIR)) {
     const rulesDir = path.join(PACKAGES_DIR, plugin, 'src', 'rules');
-    if (fs.existsSync(rulesDir)) {
-      for (const rule of fs.readdirSync(rulesDir)) {
-        add(path.join(rulesDir, rule, 'index.ts'));
-      }
-    }
+    if (fs.existsSync(rulesDir)) walkRules(rulesDir);
 
     const utilsDir = path.join(PACKAGES_DIR, plugin, 'src', 'utils');
     if (!fs.existsSync(utilsDir)) continue;
