@@ -79,7 +79,7 @@ export interface ArticleCardProps {
   variant?: ArticleCardVariant;
   /**
    * Hint the cover image is the LCP element on this route. Eager-loads it
-   * with `fetchpriority="high"`. Set on the single featured/overlay card
+   * with `fetchPriority="high"`. Set on the single featured/overlay card
    * above the fold; leave default (`false`) on every grid tile.
    */
   priority?: boolean;
@@ -129,7 +129,10 @@ export function ArticleCard({
     <a
       href={href}
       target={external ? '_blank' : undefined}
-      rel={external ? 'noopener noreferrer' : undefined}
+      // Unconditional: harmless on internal links, and statically provable
+      // safe for jsx-no-target-blank (a conditional expression is opaque
+      // to the rule's Literal check).
+      rel="noopener noreferrer"
       data-slot="article-card"
       data-variant={variant}
       className={cn(
@@ -252,9 +255,6 @@ function CoverImage({
         width={1000}
         height={420}
         loading={priority ? 'eager' : 'lazy'}
-        // `fetchpriority` is the lowercase DOM attr name; React 19 normalizes
-        // either casing, but lowercase is the canonical HTML form and avoids
-        // hydration mismatches across SSR/CSR.
         fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
         className={cn(
