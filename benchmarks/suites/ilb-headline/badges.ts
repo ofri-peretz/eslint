@@ -55,6 +55,57 @@ const localSnapshot = JSON.parse(
   readFileSync(join(RESULTS_DIR, files[files.length - 1]), 'utf8'),
 );
 
+/**
+ * Latest stored headline rows for HEADLINE_REPO, reshaped for the badge
+ * renderer, or null on ANY failure (missing env, network, empty table) —
+ * the call site then falls back to the local snapshot, which is the
+ * designed degradation ("a Supabase outage degrades to badges-still-
+ * correct"). Timing rows come from the store; aux sections the store
+ * doesn't hold (coverage, jobResults) stay local.
+ *
+ * This function was CALLED from day one but never defined — the weekly
+ * job crashed with a ReferenceError for two consecutive runs before
+ * anyone read past the Supabase 404 above it in the logs.
+ */
+async function loadFromSupabase(): Promise<any | null> {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  try {
+    const endpoint =
+      `${url.replace(/\/$/, '')}/rest/v1/benchmark_runs` +
+      `?suite=eq.ilb-headline&repo=eq.${encodeURIComponent(HEADLINE_REPO)}` +
+      `&order=measured_at.desc&limit=32`;
+    const res = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const stored = (await res.json()) as any[];
+    if (!stored.length) return null;
+    const latest = stored[0].measured_at;
+    const runRows = stored.filter((r) => r.measured_at === latest);
+    return {
+      ...localSnapshot,
+      generatedAt: latest,
+      repo: runRows[0].repo,
+      rows: runRows.map((r) => ({
+        key: r.stack,
+        label: r.stack_label ?? r.stack,
+        coldMs: r.cold_ms,
+        warmMs: r.warm_ms,
+        findings: r.findings,
+        files: r.files_processed,
+        ok: !!r.ok,
+      })),
+    };
+  } catch (err) {
+    console.warn(
+      `loadFromSupabase failed (${String(err).slice(0, 200)}) — falling back to local snapshot.`,
+    );
+    return null;
+  }
+}
+
 const useSupabase = process.argv.includes('--from-supabase');
 const data = useSupabase ? ((await loadFromSupabase()) ?? localSnapshot) : localSnapshot;
 if (useSupabase) {
