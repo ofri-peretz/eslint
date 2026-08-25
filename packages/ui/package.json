@@ -226,6 +226,10 @@
       "types": "./dist/patterns/timeline-map.d.ts",
       "default": "./dist/patterns/timeline-map.js"
     },
+    "./effects/interlace-weave": {
+      "types": "./dist/effects/interlace-weave.d.ts",
+      "default": "./dist/effects/interlace-weave.js"
+    },
     "./effects/decode-text": {
       "types": "./dist/effects/decode-text.d.ts",
       "default": "./dist/effects/decode-text.js"
