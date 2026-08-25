@@ -8,6 +8,7 @@ function formatViews(count: number): string {
   return String(count);
 }
 
+import { InterlaceWeave } from '../effects/interlace-weave.js';
 import { cn } from '../lib/cn.js';
 import {
   Card,
@@ -132,10 +133,16 @@ export function ArticleCard({
       data-slot="article-card"
       data-variant={variant}
       className={cn(
-        'group focus-visible:ring-ring block h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+        'group group/weave relative focus-visible:ring-ring block h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+        // Pressed settle — the weave completes while the card gives 1%.
+        'active:scale-[0.99] transition-transform duration-150 motion-reduce:transition-none',
         className,
       )}
     >
+      {/* The brand gesture: two strands draw and cross on hover/focus.
+          Decorative only — the ring above stays the a11y affordance,
+          the weave doubles it visually. */}
+      <InterlaceWeave data-testid="article-card-weave" className="z-10 rounded-xl" />
       {/* `py-0 gap-0` overrides Card's default `py-6 gap-6`. */}
       <Card
         className={cn(
