@@ -340,6 +340,13 @@ const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
   'path', 'paths', 'pathname', 'pathnames',
   'endpoint', 'endpoints', 'route', 'routes',
   'hostname', 'host', 'port', 'origin',
+  // Shape, not content. `node.operatorToken.kind === SyntaxKind.EqualsToken`
+  // is a TypeScript AST comparison inside a lint rule — flint-fyi/flint,
+  // `packages/ts/src/rules/errorSubclassProperties.ts:56` — and it reported
+  // because the identifier carries `token`. A `.kind`, `.type` or `.flags`
+  // read is a discriminant an enum assigns, never a value an attacker guesses
+  // a byte at a time.
+  'kind', 'kinds', 'type', 'types', 'flag', 'flags', 'category',
 ];
 
 /**

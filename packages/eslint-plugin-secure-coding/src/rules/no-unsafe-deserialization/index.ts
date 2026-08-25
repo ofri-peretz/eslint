@@ -23,6 +23,9 @@
  * - JSDoc annotations (@safe, @validated)
  * - Trusted deserialization libraries
  */
+import { readFileSync } from 'node:fs';
+import { dirname, join as pathJoin } from 'node:path';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   createRule,
@@ -188,6 +191,55 @@ const ALWAYS_UNSAFE_MODULES: ReadonlySet<string> = new Set([
  * disable comment. Set `additionalSafeYamlSchemas: ['DEFAULT_SCHEMA']` on a
  * v4-pinned repo instead.
  */
+/**
+ * The major version a package is declared at in the nearest manifest.
+ *
+ * dwp/govuk-casa — the UK Department for Work and Pensions' service framework —
+ * pins js-yaml 4.1.0 and calls `load()` on its own translation files. That was
+ * the single finding on 156 files, and it was wrong: v4's `load` is what v3
+ * called `safeLoad`.
+ *
+ * Walks up from the linted file rather than trusting `cwd`, so a package inside
+ * a monorepo reads its own manifest. Cached per directory: a lint run asks this
+ * once per file and the answer cannot change mid-run.
+ *
+ * Returns 0 when nothing declares the package, which keeps the old behaviour
+ * for a file that is not part of a project at all.
+ */
+const majorCache = new Map<string, number>();
+
+function declaredMajorFrom(startDir: string, pkg: string): number {
+  const cacheKey = `${startDir}\u0000${pkg}`;
+  const cached = majorCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  let dir = startDir;
+  let found = 0;
+  for (let depth = 0; depth < 12; depth++) {
+    try {
+      const manifest = JSON.parse(
+        readFileSync(pathJoin(dir, 'package.json'), 'utf8'),
+      ) as Record<string, Record<string, string> | undefined>;
+      const range =
+        manifest.dependencies?.[pkg] ??
+        manifest.devDependencies?.[pkg] ??
+        manifest.peerDependencies?.[pkg];
+      if (typeof range === 'string') {
+        const digits = /(\d+)/.exec(range);
+        if (digits !== null) found = Number(digits[1]);
+        break;
+      }
+    } catch {
+      // No manifest here, or unreadable — keep walking up.
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  majorCache.set(cacheKey, found);
+  return found;
+}
+
 const DEFAULT_SAFE_YAML_SCHEMAS = [
   'JSON_SCHEMA',
   'CORE_SCHEMA',
@@ -498,6 +550,16 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         // `pkg.load`.
         const sinks = MODULE_SINKS[binding.module];
         if (sinks && binding.path.some((segment) => sinks.has(segment))) {
+          // js-yaml v4 made `load` inert by default: DEFAULT_SCHEMA carries no
+          // `!!js/function` tag, and the unsafe v3 `load` is gone. The comment
+          // on DEFAULT_SAFE_YAML_SCHEMAS used to say the rule "cannot see which
+          // major is installed" — it can. The manifest declares it.
+          if (
+            binding.module === 'js-yaml' &&
+            declaredMajorFrom(dirname(context.filename), 'js-yaml') >= 4
+          ) {
+            return false;
+          }
           return !pinsSafeYamlSchema(node);
         }
         if (inertPackages.has(binding.module)) return false;

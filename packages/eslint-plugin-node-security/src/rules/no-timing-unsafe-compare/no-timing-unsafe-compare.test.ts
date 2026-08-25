@@ -41,6 +41,21 @@ describe('no-timing-unsafe-compare', () => {
   describe('Valid Code - Non-Secret Comparisons', () => {
     ruleTester.run('valid - false positive prevention', noTimingUnsafeCompare, {
       valid: [
+        // An AST discriminant is not a credential. flint-fyi/flint compares
+        // `operatorToken.kind` against a SyntaxKind inside its own lint rule; the
+        // identifier carries `token`, the value is an enum member.
+        'if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }',
+        'if (node.type === expectedType) { return; }',
+        'if (symbol.flags === SymbolFlags.Property) { return; }',
+        // The plural tail is a separate entry: only the LAST word is tested, so
+        // `kind` does not cover `tokenKinds`. Removing `kinds` from
+        // DEFAULT_NON_SECRET_TAILS makes this report, because the identifier
+        // still carries `token`.
+        'if (tokenKinds === allowedKinds) { return; }',
+        // Same for `category` — `secretCategory` is a classification label the
+        // program assigns, not a value an attacker guesses a byte at a time.
+        // Removing `category` makes this report on the `secret` pattern.
+        "if (secretCategory === 'rotating') { return; }",
         // An existence check is not a secret comparison — there is no
         // attacker-supplied operand, so there is nothing to time. Measured: the
         // rule fired on `if (firstKey !== undefined)` in a plain object walk.
