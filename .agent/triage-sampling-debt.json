@@ -4,7 +4,6 @@
   "maintainability/identical-functions",
   "maintainability/max-parameters",
   "modernization/prefer-at",
-  "modernization/prefer-event-target",
   "modernization/prefer-template-literal",
   "react-a11y/prefer-tag-over-role",
   "react-features/hooks-exhaustive-deps",
