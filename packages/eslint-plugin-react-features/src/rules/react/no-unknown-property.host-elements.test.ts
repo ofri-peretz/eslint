@@ -40,7 +40,9 @@ const messages = (code: string) =>
             sourceType: 'module',
             parserOptions: { ecmaFeatures: { jsx: true } },
           },
-          plugins: { r: { rules: { 'no-unknown-property': noUnknownProperty as never } } },
+          plugins: {
+            r: { rules: { 'no-unknown-property': noUnknownProperty as never } },
+          },
           rules: { 'r/no-unknown-property': 'error' },
         },
       ],
@@ -67,7 +69,11 @@ describe('still reports — the rule keeps its job', () => {
 
 describe('custom elements define their own attributes', () => {
   it('does not report on a hyphenated tag', () => {
-    expect(count('const a = <altcha-widget floating challengeurl="/x" onverified={f} />;')).toBe(0);
+    expect(
+      count(
+        'const a = <altcha-widget floating challengeurl="/x" onverified={f} />;',
+      ),
+    ).toBe(0);
   });
 
   it('does not report on any custom element', () => {
@@ -77,13 +83,35 @@ describe('custom elements define their own attributes', () => {
 
 describe('React accepts the XML namespace attributes', () => {
   it('does not report xmlns or xmlnsXlink on svg', () => {
-    expect(count('const a = <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="x" />;')).toBe(0);
+    expect(
+      count(
+        'const a = <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="x" />;',
+      ),
+    ).toBe(0);
   });
 
   it('does not report the ordinary svg attributes beside them', () => {
     expect(
-      count('const a = <svg width="1" height="2" viewBox="0 0 1 2" fill="none" xmlns="x" />;'),
+      count(
+        'const a = <svg width="1" height="2" viewBox="0 0 1 2" fill="none" xmlns="x" />;',
+      ),
     ).toBe(0);
+  });
+
+  // One case per remaining XML_ATTRIBUTES entry. Asserted individually rather
+  // than in one JSX element: a single combined case still passes when only one
+  // entry is dropped from the table, because the other attributes keep the
+  // count at zero — it would report the removal as covered when it is not.
+  it.each([
+    [
+      'xmlnsXml',
+      'const a = <svg xmlnsXml="http://www.w3.org/XML/1998/namespace" />;',
+    ],
+    ['xmlLang', 'const a = <svg xmlLang="en" />;'],
+    ['xmlBase', 'const a = <svg xmlBase="/base" />;'],
+    ['xmlSpace', 'const a = <svg xmlSpace="preserve" />;'],
+  ])('does not report %s on svg', (_name, source) => {
+    expect(count(source)).toBe(0);
   });
 });
 
