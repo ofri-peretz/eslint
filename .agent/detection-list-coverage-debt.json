@@ -535,8 +535,7 @@
     "xmldom-xpath"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/index.ts#DEFAULT_XML_MODULES": [
-    "xml2json",
-    "xpath"
+    "xml2json"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/index.ts#DEFAULT_XML_PARSE_METHODS": [
     "parseStringPromise",

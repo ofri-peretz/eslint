@@ -53,6 +53,12 @@ ruleTester.run(
       // An absolute URL in a credential-named slot is still an address.
       `const tokenUrl = 'https://auth.example.gov.uk/oauth2/token';`,
       `const apiKeyEndpoint = 'https://api.example.com/v1/api-keys';`,
+      // A dunder sentinel is a slot a code generator substitutes later, not a
+      // secret — postmanlabs/postman-code-generators declares `trueToken`,
+      // `falseToken` and `nullToken` this way across three `parseBody.js`
+      // files. Seven findings; the name ends in `token`, the value is a marker.
+      `const trueToken = '__PYTHON#%0True__', falseToken = '__PYTHON#%0False__';`,
+      `const nullToken = '__RUBY#%0NULL__';`,
       // A path with a query string, which adds a third character class.
       `const secretPath = '/internal/secrets?scope=all';`,
     ],
@@ -80,6 +86,23 @@ ruleTester.run(
       // check. A single leading slash must not be enough to call it a route.
       {
         code: `const clientSecret = '/aB3xK9mQ2vL8';`,
+        errors: 1,
+      },
+      // A real secret is not a sentinel just because something wraps it.
+      //
+      // Deliberately a short password shape rather than a long key shape: a
+      // vendor prefix trips GitHub push protection (documentation key or not)
+      // and a 40-char blob trips the repo's secret scanner. A fixture that
+      // cannot be committed is a fixture nobody runs.
+      {
+        code: `const dbPassword = 'aaAA@123';`,
+        errors: 1,
+      },
+      // The wrapped form of the same value. `looksRandom` needs 20 characters
+      // before it consults entropy, so the dunder exemption used to accept
+      // this — a password suppressed by the punctuation around it.
+      {
+        code: `const dbPassword = '__aaAA@123__';`,
         errors: 1,
       },
       // A segment carrying characters no route segment carries.
