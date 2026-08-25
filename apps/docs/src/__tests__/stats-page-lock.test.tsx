@@ -247,3 +247,25 @@ describe('Stats page: structure lock', () => {
     });
   });
 });
+
+describe('download loader honesty (2026-08-24: all-zero /stats incident)', () => {
+  const impactSource = readFileSync(
+    join(APP_ROOT, 'src/lib/impact-source.ts'),
+    'utf-8',
+  );
+
+  it('per-package loader refuses to cache an empty map', () => {
+    // The empty-success hole: rows with null embedded names returned {}
+    // successfully, unstable_cache stored it, and the Data Cache served
+    // zeros for every plugin until the key changed. Both loaders must
+    // throw on empty — a rejected promise is never cached.
+    expect(impactSource).toMatch(
+      /Object\.keys\(out\)\.length === 0[\s\S]{0,400}throw new Error/,
+    );
+  });
+
+  it('the cache key stays versioned (the only purge mechanism that exists)', () => {
+    expect(impactSource).toContain("['package-downloads-alltime-v2']");
+    expect(impactSource).not.toContain("['package-downloads-alltime']");
+  });
+});
