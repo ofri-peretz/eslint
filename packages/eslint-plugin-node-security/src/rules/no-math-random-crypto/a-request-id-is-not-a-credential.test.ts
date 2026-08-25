@@ -47,8 +47,74 @@ ruleTester.run(
       `function generateTraceId() { return Math.random().toString(36).slice(2); }`,
       `function generateMessageId() { return Math.random().toString(36).slice(2); }`,
       `function generateElementId() { return Math.random().toString(36).slice(2); }`,
+      // IGNF/cartes.gouv.fr-entree-carto — the French national geoportal, and
+      // one of our adopters. The author reaches for the CSPRNG first and falls
+      // back only where it is absent; reporting the fallback tells them
+      // nothing they have not already written down.
+      `function generateToken() {
+         if (window.crypto && window.crypto.getRandomValues) {
+           const bytes = new Uint8Array(16);
+           window.crypto.getRandomValues(bytes);
+           return Array.from(bytes, (b) => b.toString(16)).join('');
+         }
+         return \`\${Date.now()}-\${Math.random().toString(16).slice(2)}\`;
+       }`,
+      // Destructured, so the CSPRNG call is a bare identifier rather than a
+      // member expression — the same fallback, spelled the way Node code
+      // usually imports it.
+      `const { randomBytes } = require('crypto');
+       function generateApiKey() {
+         try {
+           return randomBytes(24).toString('hex');
+         } catch (e) {
+           return Math.random().toString(36).slice(2);
+         }
+       }`,
+      // Node's spelling of the same shape.
+      `function makeSecret() {
+         try {
+           return require('crypto').randomBytes(16).toString('hex');
+         } catch (e) {
+           return String(Math.random());
+         }
+       }`,
     ],
+
     invalid: [
+
+      // A computed callee names nothing the rule can read, so the call ahead of
+
+      // the token is not evidence of a CSPRNG and the finding stands.
+
+      {
+
+        code: `function generateToken(helpers, key) {
+
+           helpers[key]();
+
+           return Math.random().toString(36).slice(2);
+
+         }`,
+
+        errors: [{ messageId: 'mathRandomCrypto' as const }],
+
+      },
+
+      // Neither is an immediately-invoked function expression.
+
+      {
+
+        code: `function generateSecret() {
+
+           (function warmUp() {})();
+
+           return Math.random().toString(36).slice(2);
+
+         }`,
+
+        errors: [{ messageId: 'mathRandomCrypto' as const }],
+
+      },
       // A session id IS the credential — `session` is not a correlation word,
       // and this is the false negative the subtraction must not open.
       {
