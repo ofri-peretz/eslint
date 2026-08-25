@@ -17,10 +17,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   CENSUS_CEILING,
+  DEBT_MARKER,
   assertsVerdict,
+  carriesDebtMarker,
   citesSample,
   findingCount,
-  unsupportedVerdicts,
+  staleMarkers,
+  unmarkedVerdicts,
 } from '../lint-triage-sampling';
 
 describe('citesSample', () => {
@@ -59,30 +62,68 @@ describe('findingCount', () => {
   });
 });
 
-describe('unsupportedVerdicts', () => {
+describe('unmarkedVerdicts', () => {
   const VERDICT = 'Correct — these are real.';
 
   it('flags a verdict on a high-volume rule with no stated basis', () => {
-    expect(unsupportedVerdicts({ 'a/b': 200 }, { 'a/b': VERDICT })).toEqual([
+    expect(unmarkedVerdicts({ 'a/b': 200 }, { 'a/b': VERDICT })).toEqual([
       { rule: 'a/b', findings: 200 },
     ]);
   });
 
   it('exempts a low-volume rule, where the note can list every finding', () => {
-    expect(unsupportedVerdicts({ 'a/b': CENSUS_CEILING }, { 'a/b': VERDICT })).toEqual([]);
+    expect(unmarkedVerdicts({ 'a/b': CENSUS_CEILING }, { 'a/b': VERDICT })).toEqual([]);
   });
 
   it('accepts a high-volume verdict that states its basis', () => {
     expect(
-      unsupportedVerdicts({ 'a/b': 200 }, { 'a/b': `${VERDICT} Stratified n=24 across 4 repos.` }),
+      unmarkedVerdicts({ 'a/b': 200 }, { 'a/b': `${VERDICT} Stratified n=24 across 4 repos.` }),
     ).toEqual([]);
   });
 
   it('orders by findings, so the biggest unsupported claim reads first', () => {
-    const out = unsupportedVerdicts(
+    const out = unmarkedVerdicts(
       { 'a/b': 50, 'c/d': 500 },
       { 'a/b': VERDICT, 'c/d': VERDICT },
     );
     expect(out.map((u) => u.rule)).toEqual(['c/d', 'a/b']);
+  });
+});
+
+
+describe('the debt marker lives on the note', () => {
+  /**
+   * This replaced a shared `.agent/triage-sampling-debt.json` array. That array
+   * made every adjudication PR edit the same lines to delete its own entry, so
+   * two in flight conflicted — three manual resolutions in one afternoon, in a
+   * file that is entirely derived. Marking inline means two PRs adjudicating
+   * different rules touch different lines.
+   */
+  const VERDICT = 'Correct — these are real.';
+
+  it('accepts a marked verdict without a sample', () => {
+    expect(unmarkedVerdicts({ 'a/b': 200 }, { 'a/b': `${DEBT_MARKER} ${VERDICT}` })).toEqual([]);
+  });
+
+  it('flags an unmarked verdict without a sample', () => {
+    expect(unmarkedVerdicts({ 'a/b': 200 }, { 'a/b': VERDICT })).toEqual([
+      { rule: 'a/b', findings: 200 },
+    ]);
+  });
+
+  it('flags a marker left behind after the note gained a basis', () => {
+    // The other direction: a ledger nobody prunes stops describing the repo.
+    expect(
+      staleMarkers({ 'a/b': 200 }, { 'a/b': `${DEBT_MARKER} ${VERDICT} Stratified n=24.` }),
+    ).toEqual([{ rule: 'a/b', findings: 200 }]);
+  });
+
+  it('does not flag a marked note that still lacks a basis', () => {
+    expect(staleMarkers({ 'a/b': 200 }, { 'a/b': `${DEBT_MARKER} ${VERDICT}` })).toEqual([]);
+  });
+
+  it('recognises the marker', () => {
+    expect(carriesDebtMarker(`${DEBT_MARKER} anything`)).toBe(true);
+    expect(carriesDebtMarker('anything')).toBe(false);
   });
 });
