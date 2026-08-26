@@ -226,16 +226,35 @@ if (SHARD === null) {
         child.stdout?.on('data', (chunk: Buffer) => {
           out += chunk.toString();
         });
-        child.on('exit', (code) => {
+        /**
+         * `close`, not `exit`. `exit` fires when the process ends, which can be
+         * before its stdout has drained — and these payloads are megabytes, so
+         * the parse got a truncated object and threw. `close` fires once every
+         * stdio stream has ended.
+         */
+        child.on('close', (code) => {
           if (code !== 0) {
             reject(new Error(`shard ${index} exited ${code}`));
             return;
           }
-          const payload = JSON.parse(out) as {
+          let payload: {
             linted: number;
             failed: number;
             rules: Record<string, { count: number; repos: string[]; samples: string[] }>;
           };
+          try {
+            payload = JSON.parse(out) as typeof payload;
+          } catch (error) {
+            // Say WHICH shard and what it actually sent. The first version let
+            // the raw payload land in the stack trace, which is how a 60KB
+            // JSON blob ended up being the error message.
+            reject(
+              new Error(
+                `shard ${index} sent ${out.length} bytes that did not parse: ${String(error).slice(0, 120)}`,
+              ),
+            );
+            return;
+          }
           linted += payload.linted;
           failed += payload.failed;
           for (const [id, hit] of Object.entries(payload.rules)) {
