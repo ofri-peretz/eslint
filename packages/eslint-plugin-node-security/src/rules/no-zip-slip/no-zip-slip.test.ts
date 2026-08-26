@@ -26,6 +26,14 @@ describe('no-zip-slip', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe archive operations', noZipSlip, {
       valid: [
+        {
+          name: 'FP: OpenTelemetry context propagation is not an archive — 6 findings in the wild',
+          code: 'const ctx = propagation.extract(context.active(), metadata, getter);',
+        },
+        {
+          name: 'FP: an OAuth claims extractor is not an archive',
+          code: 'const claims = extractClaims(token);',
+        },
         // Safe archive extraction with validation
         {
           code: 'const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);',

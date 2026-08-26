@@ -28,6 +28,7 @@ describe('no-unsafe-type-narrowing', () => {
       valid: [
         // Simple type assertion
         {
+          name: 'a single assertion the compiler still checks',
           code: 'const value = data as string;',
         },
         // Type guard usage
@@ -50,6 +51,7 @@ describe('no-unsafe-type-narrowing', () => {
       valid: [],
       invalid: [
         {
+          name: 'a double assertion through unknown erases every check',
           code: 'const value = data as unknown as string;',
           errors: [{ messageId: 'unsafeTypeNarrowing' }],
         },

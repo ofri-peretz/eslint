@@ -25,7 +25,7 @@ describe('prefer-at', () => {
     ruleTester.run('prefer .at() for last element', preferAt, {
       valid: [
         // Already using .at()
-        { code: 'const last = array.at(-1);' },
+        { name: '.at(-1) already', code: 'const last = array.at(-1);' },
         { code: 'const second = array.at(-2);' },
         // Normal array access is fine
         { code: 'const first = array[0];' },
@@ -36,6 +36,7 @@ describe('prefer-at', () => {
       invalid: [
         // array[array.length - 1] -> array.at(-1)
         {
+          name: 'indexing the last element through .length',
           code: 'const last = array[array.length - 1];',
           output: 'const last = array.at(-1);',
           errors: [{ messageId: 'useAtForLastElement' }],

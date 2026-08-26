@@ -32,6 +32,7 @@ describe('no-unhandled-promise', () => {
       valid: [
         // Promise with .catch()
         {
+          name: 'the chain ends in .catch',
           code: 'fetch(url).then(r => r.json()).catch(e => console.error(e));',
         },
         {
@@ -100,6 +101,7 @@ describe('no-unhandled-promise', () => {
       invalid: [
         // Basic unhandled fetch
         {
+          name: 'a floating fetch — rejection goes nowhere',
           code: 'fetch(url);',
           errors: [{ messageId: 'unhandledPromise' }],
         },

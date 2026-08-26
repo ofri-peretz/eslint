@@ -142,6 +142,15 @@ jobs:
       # than paying for its own checkout.
       - run: npm run rule-audit:gate
 
+      # Every rule must say, in its own tests, what it means to catch and what
+      # it means to leave alone — one described `invalid` case and one described
+      # `valid` case. A rule that has neither still passes its suite while
+      # nobody can tell what position it takes.
+      #
+      # A static read of the test sources, so no build: it belongs here rather
+      # than in the corpus job. Shrink-only baseline, 342 rules when added.
+      - run: npm run check:rule-cases
+
   recall:
     name: Detection Recall (CWE corpus)
     runs-on: ubuntu-latest

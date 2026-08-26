@@ -237,7 +237,9 @@
     "ilb:corpus-truth:baseline": "tsx benchmarks/suites/ilb-corpus-truth/run.ts --update-baseline",
     "ilb:preset-budget": "tsx benchmarks/suites/ilb-preset-budget/run.ts",
     "ilb:preset-budget:baseline": "tsx benchmarks/suites/ilb-preset-budget/run.ts --update-baseline",
-    "check:corpus-coverage": "tsx scripts/check-corpus-coverage.ts"
+    "check:corpus-coverage": "tsx scripts/check-corpus-coverage.ts",
+    "check:rule-cases": "tsx scripts/rule-case-ledger.ts --check",
+    "rule-cases": "tsx scripts/rule-case-ledger.ts"
   },
   "keywords": [
     "eslint",

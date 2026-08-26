@@ -26,6 +26,7 @@ describe('no-await-in-loop', () => {
       valid: [
         // No await in loop
         {
+          name: 'a loop with no await in it',
           code: `
             for (const item of items) {
               process(item);
@@ -81,6 +82,7 @@ describe('no-await-in-loop', () => {
       invalid: [
         // for-of with await
         {
+          name: 'awaiting inside a loop serialises work that could run together',
           code: `
             for (const item of items) {
               await process(item);

@@ -37,13 +37,13 @@ describe('no-insecure-comparison — reportLooseEquality', () => {
     valid: [
       {
         // 69 findings across the scanned corpus were this exact shape.
-        name: 'an error code is not a credential',
+        name: 'FP: an error code is not a credential — 69 findings in the wild',
         code: `if (e.code == 'MODULE_NOT_FOUND') { retry(); }`,
         options: OFF,
       },
       {
         // 71 findings, the largest single shape for this rule.
-        name: 'a filename is not a credential',
+        name: 'FP: a filename is not a credential — 71 findings, the largest shape',
         code: `if (key == filename) { use(key); }`,
         options: OFF,
       },

@@ -31,7 +31,7 @@ describe('require-secure-credential-storage — configuration is not a credentia
   ruleTester.run('config-tails', requireSecureCredentialStorage, {
     valid: [
       {
-        name: 'an algorithm name — 110 findings in the wild came from this shape',
+        name: 'FP: an algorithm name — 110 findings in the wild came from this shape',
         code: `process.env.TOKEN_SIGNING_ALG = 'RS256';`,
       },
       { name: 'a lifetime', code: `process.env.TOKEN_EXPIRY = '3600';` },

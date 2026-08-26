@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('require-code-minification', requireCodeMinification, {
   valid: [
     // Minification enabled
-    { code: 'const config = { minimize: true }' },
+    { name: 'minimize turned on', code: 'const config = { minimize: true }' },
     { code: 'module.exports = { optimization: { minimize: true } }' },
     // Non-minification config
     { code: 'const x = 1' },
@@ -25,6 +25,7 @@ ruleTester.run('require-code-minification', requireCodeMinification, {
   invalid: [
     // Minification disabled
     {
+      name: 'minimize turned off ships readable source',
       code: 'const config = { minimize: false }',
       errors: [{ messageId: 'violationDetected' }],
     },

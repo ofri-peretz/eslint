@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('require-data-minimization', requireDataMinimization, {
   valid: [
     // Small objects are fine
-    { code: "const user = { name: 'John', email: 'john@example.com' }" },
+    { name: 'two fields is within the threshold', code: "const user = { name: 'John', email: 'john@example.com' }" },
     { code: 'const data = { a: 1, b: 2, c: 3 }' },
     // Large objects without PII
     {
@@ -26,6 +26,7 @@ ruleTester.run('require-data-minimization', requireDataMinimization, {
   invalid: [
     // Large object with user data fields (>10 properties with PII)
     {
+      name: 'eleven personal fields in one object is more than the call needs',
       code: 'const userData = { email: e, name: n, age: a, city: c, zip: z, phone: p, address: addr, country: co, state: s, company: comp, job: j }',
       errors: [{ messageId: 'violationDetected' }],
     },
