@@ -77,6 +77,58 @@ const ARTIFACTS: Artifact[] = [
     ttlDays: 180,
     refreshCmd: 'npm run ilb:resource-profile',
   },
+  /*
+   * The published comparison and coverage reports. These were outside the
+   * check until 2026-08-26 and every one of them was ~3.5 months old, which is
+   * the failure this file exists to prevent: a number does not stop being
+   * quoted just because nothing regenerated it.
+   *
+   * TTLs are set by how fast the underlying truth moves. The peer leaderboard
+   * and stock-corpus overlap track other people's releases, so they rot fastest;
+   * the compliance and ISO crosswalks track standards text, which barely moves.
+   */
+  {
+    label: 'Peer leaderboard',
+    path: 'benchmark-results/leaderboard.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 30,
+    refreshCmd: 'npm run ilb:leaderboard-publish',
+  },
+  {
+    label: 'CWE coverage report',
+    path: 'benchmark-results/cwe-coverage.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 60,
+    refreshCmd: 'npm run docs:cwe-coverage',
+  },
+  {
+    label: 'Federated wild-corpus aggregate',
+    path: 'benchmark-results/federated-wild.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 60,
+    refreshCmd: 'npm run ilb:federated-aggregate',
+  },
+  {
+    label: 'Stock-corpus overlap',
+    path: 'benchmark-results/stock-corpus-overlap.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 30,
+    refreshCmd: 'npm run audit:stock-overlap',
+  },
+  {
+    label: 'Compliance crosswalk',
+    path: 'benchmark-results/compliance-crosswalk.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 180,
+    refreshCmd: 'npm run ilb:mappings-report',
+  },
+  {
+    label: 'ISO 25010 crosswalk',
+    path: 'benchmark-results/iso25010-crosswalk.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 180,
+    refreshCmd: 'npm run ilb:iso25010-report',
+  },
 ];
 
 interface FreshnessRow {
