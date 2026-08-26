@@ -1,8 +1,8 @@
 {
   "bench": "ILB-Juliet",
   "benchVersion": "1.0",
-  "timestamp": "2026-08-26T03:31:20.799Z",
-  "methodologyCommit": "cfbf6f9f4d724376b81caf30a5f5235cc787fa43",
+  "timestamp": "2026-08-26T04:27:42.971Z",
+  "methodologyCommit": "27d18e06969ab3ac5a60364c2f9da55450752890",
   "methodologyHash": "sha256:a81176710e7622fd28c6db6152abebfb5f72a80a18e66048eb29c2f54cc3d077",
   "methodologyPaths": [
     "benchmarks/score.ts",
@@ -22,7 +22,7 @@
     "platform": "darwin-arm64"
   },
   "preregistration": {
-    "methodologyCommit": "cfbf6f9f4d724376b81caf30a5f5235cc787fa43",
+    "methodologyCommit": "27d18e06969ab3ac5a60364c2f9da55450752890",
     "methodologyHash": "sha256:a81176710e7622fd28c6db6152abebfb5f72a80a18e66048eb29c2f54cc3d077",
     "methodologyPaths": [
       "benchmarks/score.ts",
@@ -34,9 +34,9 @@
       "benchmarks/lib/toolchain.ts"
     ],
     "dirtyPaths": [
-      "benchmarks/corpus/by-rule/"
+      "benchmarks/corpus/CWE-526/"
     ],
-    "capturedAt": "2026-08-26T03:31:20.799Z",
+    "capturedAt": "2026-08-26T04:27:42.971Z",
     "paths": [
       "benchmarks/corpus",
       "benchmarks/suites",
@@ -48,16 +48,16 @@
   },
   "cost": {},
   "effectiveness": {
-    "f1": 0.9928057553956835,
-    "precision": 0.9857142857142858,
+    "f1": 0.9929078014184397,
+    "precision": 0.9859154929577465,
     "recall": 1,
-    "ciLow": 0.9790209790209791,
+    "ciLow": 0.9791666666666666,
     "ciHigh": 1,
     "ciMethod": "bootstrap"
   },
   "latency": {},
-  "weightedF1": 0.9932432432432432,
-  "weightedPrecision": 0.9865771812080537,
+  "weightedF1": 0.9933333333333334,
+  "weightedPrecision": 0.9867549668874173,
   "weightedRecall": 1,
   "cwes": [
     {
@@ -688,6 +688,31 @@
       "f1": 1
     },
     {
+      "cwe": "CWE-526",
+      "owasp": "A04:2021",
+      "tp": 1,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 1,
+      "details": {
+        "truePositives": [
+          "env-holds-the-credential.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "env-config-about-a-credential.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": [
+          "env-config-about-a-credential.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
       "cwe": "CWE-548",
       "owasp": "A01:2021",
       "tp": 2,
@@ -938,9 +963,9 @@
     }
   ],
   "aggregate": {
-    "tp": 69,
+    "tp": 70,
     "fn": 0,
-    "tn": 61,
+    "tn": 62,
     "fp": 1,
     "precision": 0.99,
     "recall": 1,

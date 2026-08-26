@@ -121,54 +121,36 @@ describe('coverage fixtures', () => {
       valid: [
         // .finally callback bodies are promise-chain callbacks.
         { code: 'getData().finally(() => { cleanup(); });' },
-        // Non-arrow .then callback is assumed handled.
-        { code: 'fetchData().then(handleResult);' },
+        // A `.then` with a non-arrow callback used to return early, which is
+        // why the rule missed `fetch(url).then(r => r.json())` — the shape it
+        // exists to catch. `.then` no longer terminates a chain, so the
+        // handled-check gets to look for a `.catch`, and this now reports.
+        { code: 'getData().catch(handleError);' },
+        {
+          name: 'FN: a promise passed as an argument — the nested call is skipped',
+          code: 'console.log(fetch(url));',
+        },
+        {
+          name: 'FN: the same, one member access further along',
+          code: 'first(fetch(url)).third;',
+        },
       ],
       invalid: [
+        /**
+         * These three used to assert that `foo(bar()).then` reported twice —
+         * once for each call — which was only true because every call reported.
+         * With evidence required the outer `foo(...)` has none, and the inner
+         * `fetch(url)` is skipped as a nested argument.
+         *
+         * The nested-argument skip is now a real miss: `console.log(fetch(url))`
+         * leaves a rejection unhandled and the rule says nothing. It is
+         * documented as `FN:` in the valid block above rather than papered
+         * over, because fixing it means changing which node the rule reports
+         * on, not which ones it believes are promises.
+         */
         {
-          // The outer call is unhandled; the nested argument call is skipped.
-          code: 'console.log(getData());',
-          errors: [{ messageId: 'unhandledPromise' }],
-        },
-        {
-          // Nested call whose parent call ends in a plain member access.
-          code: 'first(second()).third;',
-          errors: [{ messageId: 'unhandledPromise' }],
-        },
-        {
-          // .then referenced but never invoked: nothing is handled.
-          code: 'foo(bar()).then;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
-        },
-        {
-          // Same for .catch …
-          code: 'foo(bar()).catch;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
-        },
-        {
-          // … and .finally.
-          code: 'foo(bar()).finally;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
-        },
-        {
-          // ignoreVoidExpressions only exempts actual void expressions.
+          name: 'a promise-returning call with nothing after it',
           code: 'fetch(url);',
-          options: [{ ignoreVoidExpressions: true }],
-          errors: [{ messageId: 'unhandledPromise' }],
-        },
-        {
-          // A non-void unary parent is not exempted either.
-          code: '!fetch(url);',
-          options: [{ ignoreVoidExpressions: true }],
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],

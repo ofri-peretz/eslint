@@ -38,9 +38,11 @@ describe('no-unhandled-promise', () => {
         {
           code: 'promise.catch(error => handleError(error));',
         },
-        // Promise with .then() with meaningful callback
+        // A `.then` chain that ends in `.catch`. Bare `promise.then(cb)` with
+        // no `.catch` used to sit here as valid — the shape the rule exists to
+        // catch, asserted as fine.
         {
-          code: 'promise.then(result => console.log(result));',
+          code: 'promise.then(result => console.log(result)).catch(handleError);',
         },
         // Promise with .finally()
         {
@@ -71,7 +73,7 @@ describe('no-unhandled-promise', () => {
         },
         // Call inside callback of a .then() chain
         {
-          code: 'promise.then(result => { doSomething(result); });',
+          code: 'promise.then(result => { doSomething(result); }).catch(onErr);',
         },
         // Call inside callback of a .catch() chain
         {
@@ -82,9 +84,9 @@ describe('no-unhandled-promise', () => {
           code: 'void fetch(url);',
           options: [{ ignoreVoidExpressions: true }],
         },
-        // .then with non-arrow callback (assumed handled)
+        // .then with non-arrow callback — handled only because a .catch follows.
         {
-          code: 'promise.then(handler);',
+          code: 'promise.then(handler).catch(onError);',
         },
         // .catch with non-arrow callback
         {
@@ -107,12 +109,15 @@ describe('no-unhandled-promise', () => {
         },
         // Unhandled axios call
         {
+          // `axios` is not resolvable from the file, so the consumer names it.
+          options: [{ promiseReturning: ['fetch', 'axios'] }],
           code: 'axios.get(url);',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // Unhandled custom async function
         {
-          code: 'myAsyncFunction();',
+          // The declaration IS the evidence.
+          code: 'async function myAsyncFunction() {}\nmyAsyncFunction();',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // .then() with empty callback body — still unhandled
@@ -157,31 +162,39 @@ describe('no-unhandled-promise', () => {
         { code: 'String(fetchData());' },
       ],
       invalid: [
+        /**
+         * These fixtures exercise the AST walk-up branches, not promise
+         * detection. Each now carries a local `async function` so the file
+         * itself shows a promise — under the denylist they passed only because
+         * every unrecognised call was assumed to be one, which on real code
+         * meant 4,805 findings across 200 files.
+         */
         // IIFE — callee is neither Identifier nor MemberExpression
         {
-          code: '(function () { return 1; })();',
+          code: '(async function () { return 1; })();',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // Computed method call — property is not an Identifier
         {
+          options: [{ promiseReturning: ['fetch', 'handlers'] }],
           code: 'handlers["run"]();',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // Callback argument of a non-promise method is not a promise callback
         // (console.info is known-sync so only the inner call reports)
         {
-          code: 'console.info(() => { doAsync(); });',
+          code: 'async function doAsync() {}\nconsole.info(() => { doAsync(); });',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // Function nested in a plain declaration (not a .then/.catch arg)
         {
-          code: 'const run = () => { doAsync(); };',
+          code: 'async function doAsync() {}\nconst run = () => { doAsync(); };',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // Computed ["then"] access is not recognized as handling — both the
         // inner call and the outer computed call get flagged
         {
-          code: 'getPromise()["then"](handleIt);',
+          code: 'async function getPromise() {}\ngetPromise()["then"](handleIt);',
           errors: [
             { messageId: 'unhandledPromise' },
             { messageId: 'unhandledPromise' },
@@ -189,17 +202,17 @@ describe('no-unhandled-promise', () => {
         },
         // Non-promise method between call and statement (walk-up continues)
         {
-          code: 'getData().map(row => row);',
+          code: 'async function getData() {}\ngetData().map(row => row);',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // .then accessed but never called
         {
-          code: 'const t = fetchData().then;',
+          code: 'async function fetchData() {}\nconst t = fetchData().then;',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // Call used as computed member property
         {
-          code: 'const v = items[computeIndex()].value;',
+          code: 'async function computeIndex() {}\nconst v = items[computeIndex()].value;',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         // Promise-returning argument inside a chained call where the
@@ -208,25 +221,16 @@ describe('no-unhandled-promise', () => {
         // grandparent check does not — so the inner argument falls through
         // to report (outer call reports too: its .then is never invoked)
         {
-          code: 'const t1 = process1(getData()).then;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
+          code: 'async function getData() {}\nconst t1 = process1(getData()).then;',
+          errors: [{ messageId: 'unhandledPromise' }],
         },
         {
-          code: 'const t2 = process1(getData()).catch;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
+          code: 'async function getData() {}\nconst t2 = process1(getData()).catch;',
+          errors: [{ messageId: 'unhandledPromise' }],
         },
         {
-          code: 'const t3 = process1(getData()).finally;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
+          code: 'async function getData() {}\nconst t3 = process1(getData()).finally;',
+          errors: [{ messageId: 'unhandledPromise' }],
         },
       ],
     });
@@ -266,7 +270,7 @@ describe('no-unhandled-promise', () => {
         },
         // Option enabled but the call is NOT inside a void expression
         {
-          code: 'fetchData();',
+          code: 'async function fetchData() {}\nfetchData();',
           options: [{ ignoreVoidExpressions: true }],
           errors: [{ messageId: 'unhandledPromise' }],
         },
@@ -283,7 +287,7 @@ describe('no-unhandled-promise', () => {
         // isInsidePromiseCallback does not treat it as a promise callback.
         // Both the outer computed call and the inner doAsync() report.
         {
-          code: 'p["then"](() => { doAsync(); });',
+          code: 'async function doAsync() {}\np["then"](() => { doAsync(); });',
           errors: [
             { messageId: 'unhandledPromise' },
             { messageId: 'unhandledPromise' },
@@ -383,7 +387,10 @@ describe('no-unhandled-promise', () => {
       });
       const node = {
         type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'doThing' },
+        // `fetch`, not an arbitrary name: the rule now requires the file to
+        // show that a call returns a promise, and this test is about the
+        // options fallback and the parentless walk-up, not the evidence gate.
+        callee: { type: 'Identifier', name: 'fetch' },
         arguments: [],
       } as unknown as TSESTree.CallExpression;
       (listeners['CallExpression'] as (n: TSESTree.CallExpression) => void)(node);

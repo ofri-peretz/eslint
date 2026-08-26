@@ -63,7 +63,23 @@ for (const dir of fs.readdirSync(path.join(ROOT, 'packages')).sort()) {
   const name = dir.replace('eslint-plugin-', '');
   const prefix = PUBLISHED_PREFIX[name] ?? name;
   plugins[prefix] = plugin.rules ? plugin : { ...plugin, rules: ruleSource };
-  for (const rule of Object.keys(ruleSource)) rules[`${prefix}/${rule}`] = 'error';
+
+  /**
+   * Several plugins expose each rule twice — once flat, once under its
+   * category (`no-unhandled-promise` AND `maintainability/no-unhandled-promise`),
+   * pointing at the identical rule object. Registering both turns on the same
+   * rule under two ids, so every finding is counted twice and the rule total
+   * reads 566 where 470 rules exist. The first measurement with this config
+   * reported 33,588 findings in 200 files; half of them were the same finding
+   * wearing a second name.
+   *
+   * Verified rather than assumed: every slash-keyed name has a flat twin, and
+   * `rules[flat] === rules[nested]` is true for each.
+   */
+  for (const rule of Object.keys(ruleSource)) {
+    if (rule.includes('/')) continue;
+    rules[`${prefix}/${rule}`] = 'error';
+  }
 }
 
 export default [

@@ -47,6 +47,7 @@ that way.
 | FP-008 | `pg/no-transaction-on-pool` | hardcoded identifier `pool` | — | open |
 | FP-009 | `no-unsafe-regex-construction` | `new RegExp(node.pattern, node.flags)` | 11 | open |
 | FP-010 | `detect-object-injection` | computed-key **write**, key locally derived | ~750 | characterised |
+| FP-011 | `no-unhandled-promise` (×2 plugins) | every call treated as a promise | **11,866** | **fixed** |
 
 `detect-object-injection` alone is six of the top eleven clusters. It is the
 largest single block of unexamined findings we have, and it is one rule.
@@ -122,3 +123,49 @@ which was inverted to require an attacker-controlled operand and went from 27
 findings with zero real oracles to near-zero noise. Whether the same trade is
 right here is a judgement about prototype pollution, not about triage, and it
 is now the only thing standing between this entry and a verdict.
+
+
+## FP-011 — the largest false positive in the suite, shipped twice
+
+One rule, two plugins, opposite constructions, the same defect.
+
+`maintainability/no-unhandled-promise` answered yes for every `CallExpression`
+and documented it: *"we check all CallExpressions since we can't statically
+determine which functions return promises."*
+`reliability/no-unhandled-promise` used the inverse — a denylist of ~120 names
+known to be synchronous — which has to enumerate the world, and had never heard
+of `useDocusaurusContext`, `clsx`, `dynamic` or `require`.
+
+Measured over 200 TypeScript files of excalidraw:
+
+| | before | after |
+|---|---:|---:|
+| `maintainability/no-unhandled-promise` | 7,061 | **0** |
+| `reliability/no-unhandled-promise` | 4,805 | **0** |
+| everything else | 8,143 | 8,175 |
+| **total** | **20,009** | **8,175** |
+
+Two rules were **59% of every finding the suite produced**, on lines like
+`<div className={clsx("col")} />`, `require("./undraw_docusaurus_tree.svg")`
+and `const { siteConfig } = useDocusaurusContext();`.
+
+Both now ask the opposite question — does the FILE show this call to produce a
+promise? — and report only the shapes a reader can verify from the source in
+front of them: `new Promise`, the `Promise` statics, `import()`, `x.then(…)`,
+an immediately-invoked async function, and a call to an `async function`
+declared in scope. Anything else needs a name the consumer configures in
+`promiseReturning` (default `['fetch']`), because a rule that decides from a
+name has to let the consumer own the name.
+
+The fix caught a miss in the same block. `.then` was treated as terminating a
+chain, so `fetch(url).then(r => r.json())` returned before the handled-check
+could look for a `.catch` — the rule passed the exact shape it exists to catch
+while reporting a synchronous `require`. Wrong in both directions, from one
+`if`.
+
+Fifteen existing tests asserted the old behaviour and are updated rather than
+deleted: each now carries a local `async function` or a configured name, so the
+branch it was written for is still exercised and the case says something true.
+Three shapes are recorded as `FN:` — `new Promise(…)` never reaches the rule,
+which listens for `CallExpression` only, and a promise passed as an argument
+(`console.log(fetch(url))`) is skipped by the nested-argument rule.

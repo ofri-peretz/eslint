@@ -1,7 +1,7 @@
 {
   "bench": "ILB-CWE-Corpus",
   "benchVersion": "1.0",
-  "timestamp": "2026-08-26T03:31:27.524Z",
+  "timestamp": "2026-08-26T04:27:47.614Z",
   "methodologyHash": "sha256:ef8ea3b0b761f29a4b92403985a71a1e7cf7e55682aecc72f8c100c310c554b0",
   "methodologyPaths": [
     "benchmarks/suites/ilb-cwe-corpus/run.ts",
@@ -311,6 +311,19 @@
       "counts": {
         "vulnerable": 2,
         "safe": 2
+      }
+    },
+    {
+      "cwe": "CWE-526",
+      "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+      "owasp": "A04:2021",
+      "severity": "HIGH",
+      "expectedPlugins": [
+        "eslint-plugin-node-security"
+      ],
+      "counts": {
+        "vulnerable": 1,
+        "safe": 1
       }
     },
     {
@@ -1426,6 +1439,34 @@
             }
           ]
         },
+        "CWE-526": {
+          "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+          "owasp": "A04:2021",
+          "TP": 1,
+          "FP": 0,
+          "FN": 0,
+          "TN": 1,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "env-holds-the-credential.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "secure-coding/no-hardcoded-credentials": 1
+              }
+            },
+            {
+              "file": "env-config-about-a-credential.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
         "CWE-548": {
           "name": "Exposure of Information Through Directory Listing",
           "owasp": "A01:2021",
@@ -1819,10 +1860,10 @@
         }
       },
       "aggregate": {
-        "TP": 69,
+        "TP": 70,
         "FP": 0,
         "FN": 0,
-        "TN": 62,
+        "TN": 63,
         "precision": 100,
         "recall": 100,
         "f1": 100,
@@ -2744,6 +2785,32 @@
             }
           ]
         },
+        "CWE-526": {
+          "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+          "owasp": "A04:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 1,
+          "TN": 1,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "env-holds-the-credential.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-config-about-a-credential.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
         "CWE-548": {
           "name": "Exposure of Information Through Directory Listing",
           "owasp": "A01:2021",
@@ -3090,11 +3157,11 @@
       "aggregate": {
         "TP": 10,
         "FP": 7,
-        "FN": 59,
-        "TN": 55,
+        "FN": 60,
+        "TN": 56,
         "precision": 58.8,
-        "recall": 14.5,
-        "f1": 23.3,
+        "recall": 14.3,
+        "f1": 23,
         "bas": 3.2
       }
     },
@@ -3991,6 +4058,32 @@
             }
           ]
         },
+        "CWE-526": {
+          "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+          "owasp": "A04:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 1,
+          "TN": 1,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "env-holds-the-credential.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-config-about-a-credential.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
         "CWE-548": {
           "name": "Exposure of Information Through Directory Listing",
           "owasp": "A01:2021",
@@ -4339,11 +4432,11 @@
       "aggregate": {
         "TP": 4,
         "FP": 3,
-        "FN": 65,
-        "TN": 59,
+        "FN": 66,
+        "TN": 60,
         "precision": 57.1,
-        "recall": 5.8,
-        "f1": 10.5,
+        "recall": 5.7,
+        "f1": 10.4,
         "bas": 1
       }
     },
@@ -5279,6 +5372,32 @@
             }
           ]
         },
+        "CWE-526": {
+          "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+          "owasp": "A04:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 1,
+          "TN": 1,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "env-holds-the-credential.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-config-about-a-credential.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
         "CWE-548": {
           "name": "Exposure of Information Through Directory Listing",
           "owasp": "A01:2021",
@@ -5654,12 +5773,12 @@
       "aggregate": {
         "TP": 27,
         "FP": 9,
-        "FN": 42,
-        "TN": 53,
+        "FN": 43,
+        "TN": 54,
         "precision": 75,
-        "recall": 39.1,
-        "f1": 51.4,
-        "bas": 24.6
+        "recall": 38.6,
+        "f1": 50.9,
+        "bas": 24.3
       }
     },
     "microsoft-sdl": {
@@ -6559,6 +6678,32 @@
             }
           ]
         },
+        "CWE-526": {
+          "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+          "owasp": "A04:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 1,
+          "TN": 1,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "env-holds-the-credential.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-config-about-a-credential.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
         "CWE-548": {
           "name": "Exposure of Information Through Directory Listing",
           "owasp": "A01:2021",
@@ -6905,12 +7050,12 @@
       "aggregate": {
         "TP": 6,
         "FP": 2,
-        "FN": 63,
-        "TN": 60,
+        "FN": 64,
+        "TN": 61,
         "precision": 75,
-        "recall": 8.7,
-        "f1": 15.6,
-        "bas": 5.5
+        "recall": 8.6,
+        "f1": 15.4,
+        "bas": 5.4
       }
     },
     "no-unsanitized": {
@@ -7804,6 +7949,32 @@
             }
           ]
         },
+        "CWE-526": {
+          "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
+          "owasp": "A04:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 1,
+          "TN": 1,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "env-holds-the-credential.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-config-about-a-credential.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
         "CWE-548": {
           "name": "Exposure of Information Through Directory Listing",
           "owasp": "A01:2021",
@@ -8150,12 +8321,12 @@
       "aggregate": {
         "TP": 4,
         "FP": 1,
-        "FN": 65,
-        "TN": 61,
+        "FN": 66,
+        "TN": 62,
         "precision": 80,
-        "recall": 5.8,
-        "f1": 10.8,
-        "bas": 4.2
+        "recall": 5.7,
+        "f1": 10.7,
+        "bas": 4.1
       }
     }
   }

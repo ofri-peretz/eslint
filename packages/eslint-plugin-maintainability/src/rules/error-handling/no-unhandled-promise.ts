@@ -24,6 +24,29 @@ export interface Options {
 
   /** Ignore promises in void expressions. Default: false */
   ignoreVoidExpressions?: boolean;
+
+  /**
+   * Report only calls the file itself shows to be promise-producing. Default: true.
+   *
+   * Set `false` to restore the pre-2026-08 behaviour, in which every
+   * `CallExpression` was treated as a promise. That is what the rule did, and
+   * it is not a conservative default — measured over 200 TypeScript files of
+   * excalidraw it produced 7,061 findings, 35 per file, on lines like
+   * `<div className={clsx("col")} />` and `require("./tree.svg")`.
+   */
+  requirePromiseEvidence?: boolean;
+
+  /**
+   * Names that return a promise and cannot be resolved from the file — platform
+   * APIs and the project's own conventions. Default: `['fetch']`.
+   *
+   * A list rather than a built-in vocabulary, because a rule that decides from
+   * a name has to let the consumer own that name. `fetch` is the default
+   * because it is the one promise-returning global that appears in every
+   * runtime this suite targets; `axios`, `got`, `prisma` and the rest belong to
+   * whoever uses them.
+   */
+  promiseReturning?: readonly string[];
 }
 
 type RuleOptions = [Options?];
@@ -43,6 +66,97 @@ export function isPromiseExpression(node: TSESTree.Node): boolean {
   // Await expressions (already handled)
   if (node.type === 'AwaitExpression') {
     return false; // Already handled
+  }
+
+  return false;
+}
+
+/**
+ * Does the FILE show this call to produce a promise?
+ *
+ * Without type information the honest answer for most calls is "unknown", and
+ * the rule used to resolve unknown as yes. This resolves it as no, and reports
+ * only the four shapes a reader can verify from the source in front of them:
+ *
+ *   new Promise(…)              the constructor
+ *   Promise.all / resolve / …   the statics
+ *   import("…")                 always a promise
+ *   f() where `async function f` or `const f = async () => …` is in scope
+ *
+ * A `.then()` chain is handled separately by the caller, which already knows
+ * whether a `.catch` follows.
+ *
+ * The cost is real and is the point of `requirePromiseEvidence`: a promise
+ * returned by an imported function is invisible here, so this misses it. A
+ * miss the rule can explain is worth more than 35 findings a file that nobody
+ * reads.
+ */
+const PROMISE_STATICS: ReadonlySet<string> = new Set([
+  'all', 'allSettled', 'any', 'race', 'resolve', 'reject',
+]);
+
+function isAsyncFunctionNode(node: TSESTree.Node | undefined | null): boolean {
+  if (!node) return false;
+  return (
+    (node.type === 'FunctionDeclaration' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'ArrowFunctionExpression') &&
+    node.async === true
+  );
+}
+
+export function hasPromiseEvidence(
+  node: TSESTree.CallExpression,
+  promiseReturning: ReadonlySet<string>,
+  resolveBinding: (name: string) => TSESTree.Node | null,
+): boolean {
+  // No `NewExpression` branch: the rule listens for `CallExpression` only, so
+  // this function is never called with one. A branch that cannot be reached is
+  // not caution, it is a claim the tests cannot check — the miss is recorded as
+  // an `FN:` case instead.
+
+  // `import("…")` — the only call form that is a promise by grammar.
+  // No `Import` branch: `import(x)` parses as an `ImportExpression`, not a
+  // `CallExpression`, so this function is never called with one. A branch that
+  // cannot be reached is not caution, it is a claim the tests cannot check —
+  // the miss is recorded as an `FN:` case instead.
+
+  // An immediately-invoked async function. The callee is the declaration, so
+  // the evidence is right there with no scope lookup at all.
+  if (isAsyncFunctionNode(node.callee)) return true;
+
+  if (node.callee.type === 'MemberExpression') {
+    const { object, property } = node.callee;
+    if (
+      object.type === 'Identifier' &&
+      object.name === 'Promise' &&
+      property.type === 'Identifier' &&
+      PROMISE_STATICS.has(property.name)
+    ) {
+      return true;
+    }
+    /**
+     * `.then` is the thenable protocol. A receiver that answers to it is a
+     * promise as far as any caller is concerned, and this is the one member
+     * call where the name IS the evidence rather than a guess about it.
+     */
+    // `x.then(…)` and `x["then"](…)` are the same protocol; the second form
+    // appears in minified and generated code, and reading only the Identifier
+    // spelling meant the rule saw a promise in one and not the other.
+    const propertyName =
+      property.type === 'Identifier'
+        ? property.name
+        : property.type === 'Literal' && typeof property.value === 'string'
+          ? property.value
+          : null;
+    if (propertyName === 'then') return true;
+    // `axios.get(url)` — the RECEIVER is the configured name, not the method.
+    return object.type === 'Identifier' && promiseReturning.has(object.name);
+  }
+
+  if (node.callee.type === 'Identifier') {
+    if (promiseReturning.has(node.callee.name)) return true;
+    return isAsyncFunctionNode(resolveBinding(node.callee.name));
   }
 
   return false;
@@ -253,6 +367,19 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
             default: false,
             description: 'Ignore promises in void expressions',
           },
+          requirePromiseEvidence: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Report only calls the file itself shows to be promise-producing. False restores the pre-2026-08 behaviour of treating every call as a promise.',
+          },
+          promiseReturning: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['fetch'],
+            description:
+              'Names that return a promise and cannot be resolved from the file — platform APIs and project conventions.',
+          },
         },
         additionalProperties: false,
       },
@@ -262,14 +389,45 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     {
       ignoreInTests: true,
       ignoreVoidExpressions: false,
+      requirePromiseEvidence: true,
+      promiseReturning: ['fetch'],
     },
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { ignoreInTests = true, ignoreVoidExpressions = false }: Options =
-      options || {};
+    const {
+      ignoreInTests = true,
+      ignoreVoidExpressions = false,
+      requirePromiseEvidence = true,
+      promiseReturning = ['fetch'],
+    }: Options = options || {};
+    const promiseNames = new Set(promiseReturning);
+
+    /**
+     * Resolve an identifier to the function it is bound to, through the scope
+     * chain. Only a binding whose initialiser is visible in this file can
+     * count as evidence — an imported name resolves to an ImportSpecifier,
+     * which says nothing about what it returns, and is correctly not evidence.
+     */
+    function resolveBinding(name: string, from: TSESTree.Node): TSESTree.Node | null {
+      let scope = context.sourceCode.getScope(from);
+      while (scope) {
+        const variable = scope.variables.find((v) => v.name === name);
+        if (variable) {
+          const def = variable.defs[0];
+          if (!def) return null;
+          if (def.node.type === 'FunctionDeclaration') return def.node;
+          if (def.node.type === 'VariableDeclarator') {
+            return (def.node as TSESTree.VariableDeclarator).init ?? null;
+          }
+          return null;
+        }
+        scope = scope.upper as never;
+      }
+      return null;
+    }
 
     const filename = context.filename;
     const isTestFile =
@@ -297,11 +455,16 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         node.callee.property.type === 'Identifier'
       ) {
         const methodName = node.callee.property.name;
-        if (
-          methodName === 'then' ||
-          methodName === 'catch' ||
-          methodName === 'finally'
-        ) {
+        /**
+         * `.catch` and `.finally` terminate a chain; `.then` does not.
+         *
+         * This used to include `then`, which meant `fetch(url).then(r => r.json())`
+         * returned here before `isPromiseHandled` could look for a `.catch`
+         * further along — so the rule missed the exact shape it exists to
+         * catch, while reporting `require("./tree.svg")`. Both directions
+         * wrong, from the same block.
+         */
+        if (methodName === 'catch' || methodName === 'finally') {
           // Check if the callback is empty or meaningless
           if (
             node.arguments.length > 0 &&
@@ -324,6 +487,19 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
 
       // Check if it's a promise-returning function
       if (!isPromiseExpression(node)) {
+        return;
+      }
+
+      /**
+       * The gate. `isPromiseExpression` answers yes for every call — it says so
+       * in its own comment — so without this the rule reports every unhandled
+       * function call in the file. On excalidraw that was 35 findings per file,
+       * on lines like `<div className={clsx("col")} />`.
+       */
+      if (
+        requirePromiseEvidence &&
+        !hasPromiseEvidence(node, promiseNames, (name) => resolveBinding(name, node))
+      ) {
         return;
       }
 

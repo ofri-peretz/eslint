@@ -1,9 +1,9 @@
 {
   "counts": {
-    "TP": 7320,
-    "TN": 10869,
+    "TP": 7330,
+    "TN": 10908,
     "FP": 6,
-    "FN": 2
+    "FN": 12
   },
   "rules": [
     {
@@ -33960,48 +33960,203 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
-          "kind": "TP",
-          "description": "",
+          "kind": "FN",
+          "description": "a promise passed as an argument — the nested call is skipped",
+          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "the same, one member access further along",
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a promise-returning call with nothing after it",
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
-          "kind": "TP",
-          "description": "",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "kind": "TN",
+          "description": "a synchronous require",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a plain synchronous call",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a call whose result is destructured",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a method call on an object",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an empty catch callback still counts as handling",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an optional call",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a call inside JSX",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a synchronous array method",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a computed member call that is not then",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a computed member call with a numeric key",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a member call on a non-identifier receiver",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a Promise static that does not exist",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a binding declared with no initialiser",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a binding whose initialiser is not a function",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a name with no declaration anywhere",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a name resolved from an enclosing scope",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a non-async immediately-invoked function",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an imported name, whose body is in another file",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "a promise passed as an argument to another call",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a wrapped promise whose chain ends in catch",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a wrapped promise whose chain ends in finally",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "a promise wrapped twice",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a wrapped promise in a fully handled chain",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "a wrapped promise used as a computed key",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a void expression, when the option allows it",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "a dynamic import nobody awaits",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "new Promise never reaches the rule — it listens for CallExpression only",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
           "kind": "TP",
-          "description": "",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "description": "a locally declared async function called and forgotten",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
           "kind": "TP",
-          "description": "",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "description": "a then chain with no catch",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
           "kind": "TP",
-          "description": "",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "description": "a computed then access is the same protocol",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
           "kind": "TP",
-          "description": "",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "description": "a wrapper chained through a computed then",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a wrapped promise whose then is read but never called",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a Promise static",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "an immediately-invoked async function",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "an async arrow bound to a const",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a promise wrapped by a call that is then chained",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
           "kind": "TN",
           "description": "the chain ends in .catch",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise.test.ts"
-        },
-        {
-          "kind": "TN",
-          "description": "",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise.test.ts"
         },
         {
@@ -34036,7 +34191,12 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a configured promise-returning receiver",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a locally declared async function, called and forgotten",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise.test.ts"
         },
         {
@@ -34046,7 +34206,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a then chain with no catch",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise.test.ts"
         },
         {
@@ -74304,6 +74464,141 @@
     {
       "rule": "reliability/no-unhandled-promise",
       "cases": [
+        {
+          "kind": "TN",
+          "description": "a synchronous require",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a plain synchronous call",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a call whose result is destructured",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a method call on an object",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an empty catch callback still counts as handling",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an optional call",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a call inside JSX",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a synchronous array method",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "a dynamic import nobody awaits",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a computed member call that is not then",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a computed member call with a numeric key",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a name with no declaration anywhere",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a member call on a non-identifier receiver",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a Promise static that does not exist",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a binding declared with no initialiser",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a binding whose initialiser is not a function",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a name resolved from an enclosing scope",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a non-async immediately-invoked function",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "a promise passed as an argument to another call",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an imported name, whose body is in another file",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "FN",
+          "description": "new Promise never reaches the rule — it listens for CallExpression only",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a locally declared async function called and forgotten",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a then chain with no catch",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a computed then access is the same protocol",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a Promise static",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "an immediately-invoked async function",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "an async arrow bound to a const",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
         {
           "kind": "TN",
           "description": "the chain ends in .catch",

@@ -250,6 +250,21 @@
       "why": "req.ip becomes attacker-controlled, bypassing authorizeIPAddress. Disclosure drafted, not sent.",
       "fixture": null,
       "fixed_in": null
+    },
+    {
+      "id": "FP-011",
+      "rule": "maintainability/no-unhandled-promise + reliability/no-unhandled-promise",
+      "verdict": "FP",
+      "status": "fixed",
+      "shape": "every CallExpression treated as a promise",
+      "wild": 11866,
+      "repos": [
+        "excalidraw/excalidraw"
+      ],
+      "source": "excalidraw/excalidraw, 200 TypeScript files",
+      "why": "One rule shipped twice by opposite constructions and the same defect. maintainability returned true for every CallExpression and said so in its own comment. reliability used a denylist of ~120 synchronous names, so everything it had not heard of was a promise. Together 11,866 of 20,009 findings — 59% — on lines like <div className={clsx(\"col\")} />, require(\"./tree.svg\") and const { siteConfig } = useDocusaurusContext(). Both now require evidence from the file itself; both went to 0 on the same 200 files.",
+      "fixture": "packages/eslint-plugin-{maintainability,reliability}/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+      "fixed_in": "this branch"
     }
   ]
 }
