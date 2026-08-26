@@ -1,9 +1,9 @@
 {
   "counts": {
-    "TP": 7370,
-    "TN": 10935,
+    "TP": 7376,
+    "TN": 10948,
     "FP": 14,
-    "FN": 17
+    "FN": 12
   },
   "rules": [
     {
@@ -47337,6 +47337,48 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
+          "id": "maintainability/no-unhandled-promise#TN-6b6d7e",
+          "kind": "TN",
+          "code": "async function f() { await import(\"./m\"); }",
+          "description": "a dynamic import that is awaited",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-721bf1",
+          "kind": "TN",
+          "code": "const m = import(\"./m\");",
+          "description": "a dynamic import whose result is bound",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-05bfa1",
+          "kind": "TN",
+          "code": "const p = new Promise((r) => r(1));",
+          "description": "new Promise whose result is bound",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-ae76ba",
+          "kind": "TN",
+          "code": "function f() { return new Promise((r) => r(1)); }",
+          "description": "new Promise that is returned",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-4a0bbc",
+          "kind": "TN",
+          "code": "new Map();",
+          "description": "a constructor that is not Promise",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-f4d368",
+          "kind": "TN",
+          "code": "new lib.Thing();",
+          "description": "a member constructor",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
           "id": "maintainability/no-unhandled-promise#TN-87d994",
           "kind": "TN",
           "code": "require(\"./styles.css\");",
@@ -47516,17 +47558,17 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#FN-462bfe",
-          "kind": "FN",
+          "id": "maintainability/no-unhandled-promise#TP-52e229",
+          "kind": "TP",
           "code": "import(\"./heavy-module\");",
           "description": "a dynamic import nobody awaits",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#FN-1af1f1",
-          "kind": "FN",
+          "id": "maintainability/no-unhandled-promise#TP-b53438",
+          "kind": "TP",
           "code": "new Promise((resolve) => resolve(1));",
-          "description": "new Promise never reaches the rule — it listens for CallExpression only",
+          "description": "new Promise as a whole statement",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
@@ -77694,10 +77736,10 @@
       "rule": "operability/require-code-minification",
       "cases": [
         {
-          "id": "operability/require-code-minification#FN-7459c3",
-          "kind": "FN",
-          "code": "export default { build: { minify: false } }",
-          "description": "minify — the Vite and esbuild spelling of the same setting",
+          "id": "operability/require-code-minification#TN-ffa3c9",
+          "kind": "TN",
+          "code": "const config = { minimize: false }",
+          "description": "a spelling the consumer removed stops reporting",
           "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
         },
         {
@@ -77726,6 +77768,20 @@
           "kind": "TN",
           "code": "const config = { debug: false }",
           "description": "",
+          "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
+        },
+        {
+          "id": "operability/require-code-minification#TP-dd1e15",
+          "kind": "TP",
+          "code": "export default { build: { minify: false } }",
+          "description": "minify — the Vite, Rollup and esbuild spelling of the same setting",
+          "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
+        },
+        {
+          "id": "operability/require-code-minification#TP-3349c9",
+          "kind": "TP",
+          "code": "export default { compress: false }",
+          "description": "a spelling the consumer named themselves",
           "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
         },
         {
@@ -103703,6 +103759,48 @@
       "rule": "reliability/no-unhandled-promise",
       "cases": [
         {
+          "id": "reliability/no-unhandled-promise#TN-12dec5",
+          "kind": "TN",
+          "code": "async function f() { await import(\"./m\"); }",
+          "description": "a dynamic import that is awaited",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-e00e41",
+          "kind": "TN",
+          "code": "const m = import(\"./m\");",
+          "description": "a dynamic import whose result is bound",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-959a95",
+          "kind": "TN",
+          "code": "const p = new Promise((r) => r(1));",
+          "description": "new Promise whose result is bound",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-cca391",
+          "kind": "TN",
+          "code": "function f() { return new Promise((r) => r(1)); }",
+          "description": "new Promise that is returned",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-ac6df6",
+          "kind": "TN",
+          "code": "new Map();",
+          "description": "a constructor that is not Promise",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-53950e",
+          "kind": "TN",
+          "code": "new lib.Thing();",
+          "description": "a member constructor",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
           "id": "reliability/no-unhandled-promise#TN-952346",
           "kind": "TN",
           "code": "require(\"./styles.css\");",
@@ -103760,13 +103858,6 @@
           "kind": "TN",
           "code": "items.forEach((i) => render(i));",
           "description": "a synchronous array method",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
-        },
-        {
-          "id": "reliability/no-unhandled-promise#FN-dda11b",
-          "kind": "FN",
-          "code": "import(\"./heavy-module\");",
-          "description": "a dynamic import nobody awaits",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
@@ -103847,10 +103938,17 @@
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#FN-a8e86d",
-          "kind": "FN",
+          "id": "reliability/no-unhandled-promise#TP-11510d",
+          "kind": "TP",
+          "code": "import(\"./heavy-module\");",
+          "description": "a dynamic import nobody awaits",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TP-0ec8a9",
+          "kind": "TP",
           "code": "new Promise((resolve) => resolve(1));",
-          "description": "new Promise never reaches the rule — it listens for CallExpression only",
+          "description": "new Promise as a whole statement",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {

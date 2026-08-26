@@ -46,6 +46,15 @@ const ruleTester = new RuleTester({
 describe('no-unhandled-promise — a call is not a promise', () => {
   ruleTester.run('evidence', noUnhandledPromise, {
     valid: [
+      // The statement form is the only one reported. A promise whose result
+      // is used may be handled somewhere this rule cannot see.
+      { name: 'a dynamic import that is awaited', code: 'async function f() { await import("./m"); }' },
+      { name: 'a dynamic import whose result is bound', code: 'const m = import("./m");' },
+      { name: 'new Promise whose result is bound', code: 'const p = new Promise((r) => r(1));' },
+      { name: 'new Promise that is returned', code: 'function f() { return new Promise((r) => r(1)); }' },
+      // Constructing anything else is not a promise, whatever its position.
+      { name: 'a constructor that is not Promise', code: 'new Map();' },
+      { name: 'a member constructor', code: 'new lib.Thing();' },
       {
         // @source excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:25
         name: 'a synchronous require', code: 'require("./styles.css");'
@@ -106,30 +115,18 @@ describe('no-unhandled-promise — a call is not a promise', () => {
         code: 'void fetch(url);',
         options: [{ ignoreVoidExpressions: true }],
       },
-      {
-        // `import(x)` parses as an `ImportExpression`, not a `CallExpression`,
-        // so the listener never sees it. The evidence check recognises an
-        // `Import` callee and is never asked — the same shape of miss as
-        // `new Promise`, and for the same reason.
-        name: 'FN: a dynamic import nobody awaits',
-        code: 'import("./heavy-module");',
-      },
-      {
-        /**
-         * A real miss, not a decision. The rule listens for `CallExpression`
-         * only, so a `NewExpression` never reaches any of its checks — the
-         * evidence gate above recognises `new Promise` and is never asked.
-         *
-         * Left as a miss rather than fixed here because the handled-check
-         * (`.catch` further along, enclosing try/catch, assignment to a
-         * variable that is later awaited) is written against CallExpression
-         * throughout, and half-wiring it would report the handled case too.
-         */
-        name: 'FN: new Promise never reaches the rule — it listens for CallExpression only',
-        code: 'new Promise((resolve) => resolve(1));',
-      },
     ],
     invalid: [
+      {
+        name: 'a dynamic import nobody awaits',
+        code: 'import("./heavy-module");',
+        errors: 1,
+      },
+      {
+        name: 'new Promise as a whole statement',
+        code: 'new Promise((resolve) => resolve(1));',
+        errors: 1,
+      },
       {
         name: 'a locally declared async function called and forgotten',
         code: 'async function save() {}\nsave();',

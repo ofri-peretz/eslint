@@ -616,8 +616,35 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     }
     */
 
+    /**
+     * `new Promise(…)` and `import(…)` never reached this rule.
+     *
+     * It listens for `CallExpression`, and neither of those is one: `new X()`
+     * parses as a `NewExpression` and `import(x)` as an `ImportExpression`.
+     * Both produce a promise by grammar — there is nothing to infer — and both
+     * were recorded as `FN:` cases rather than caught.
+     *
+     * The check is deliberately narrower than the CallExpression path. It
+     * reports only when the promise is the whole statement, which is the one
+     * arrangement where nobody can be using the result: not awaited, not
+     * returned, not assigned, not chained. Anything else may be handled
+     * somewhere this rule cannot see, and the CallExpression path already owns
+     * the chains.
+     */
+    function checkStatementPromise(node: TSESTree.Node): void {
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      if (parent?.type !== 'ExpressionStatement') return;
+      context.report({ node, messageId: 'unhandledPromise' });
+    }
+
     return {
       CallExpression: checkCallExpression,
+      ImportExpression: checkStatementPromise,
+      NewExpression(node: TSESTree.NewExpression) {
+        if (node.callee.type === 'Identifier' && node.callee.name === 'Promise') {
+          checkStatementPromise(node);
+        }
+      },
     };
   },
 });
