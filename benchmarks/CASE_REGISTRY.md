@@ -9,7 +9,7 @@ say, and a rule cannot be missing a case it never claimed. This register is
 case-first, so a gap is visible as an entry with no coverage rather than as
 an absence nobody can see.
 
-**98 cases · 96 verified · 2 uncovered · 0 regressed**
+**117 cases · 115 verified · 2 uncovered · 0 regressed**
 
 Every `status` below was computed on this run by executing the case code
 through the rule that claims it. A stored "covered: yes" would be a
@@ -35,6 +35,8 @@ zero — "they miss it" and "we did not ask" are different claims.
 | `eslint-plugin-security/detect-object-injection` | 35 | 17 | 18 |
 | `eslint-plugin-no-unsanitized/property` | 9 | 4 | 5 |
 | `eslint-plugin-promise/catch-or-return` | 4 | 4 | 0 |
+| `eslint-plugin-security/detect-possible-timing-attacks` | 10 | 3 | 7 |
+| `eslint-plugin-security/detect-child-process` | 9 | 2 | 7 |
 | `eslint-plugin-import/no-internal-modules` | 1 | 1 | 0 |
 | `eslint-plugin-import/no-nodejs-modules` | 1 | 1 | 0 |
 | `eslint-plugin-import/no-unassigned-import` | 1 | 1 | 0 |
@@ -158,6 +160,25 @@ configuration as their miss.
 | `ILB-0096` | textContent, which does not parse markup | decoy | — | `browser-security/no-innerhtml` (silent) | property: level | ✅ |
 | `ILB-0097` | reading innerHTML | decoy | — | `browser-security/no-innerhtml` (silent) | property: level | ✅ |
 | `ILB-0098` | sanitised before assignment | remedy | — | `browser-security/no-innerhtml` (silent) | property: **we are ahead** | ✅ |
+| `ILB-0099` | a bearer token compared with === | defect | — | `node-security/no-timing-unsafe-compare` (report) | detect-possible-timing-attacks: level | ✅ |
+| `ILB-0100` | the same through a computed key | defect | — | `node-security/no-timing-unsafe-compare` (report) | detect-possible-timing-attacks: level | ✅ |
+| `ILB-0101` | a password compared with == | defect | — | `node-security/no-timing-unsafe-compare` (report) | detect-possible-timing-attacks: level | ✅ |
+| `ILB-0102` | a comparison written the other way round | defect | — | `node-security/no-timing-unsafe-compare` (report) | detect-possible-timing-attacks: level | ✅ |
+| `ILB-0103` | an error code | decoy | — | `node-security/no-timing-unsafe-compare` (silent) | detect-possible-timing-attacks: level | ✅ |
+| `ILB-0104` | a bearer comparison in a file that imports no crypto | defect | — | `node-security/no-timing-unsafe-compare` (report) | detect-possible-timing-attacks: level | ✅ |
+| `ILB-0105` | the documented fix | remedy | — | `node-security/no-timing-unsafe-compare` (silent) | detect-possible-timing-attacks: level | ✅ |
+| `ILB-0106` | a bare password comparison | decoy | — | `node-security/no-timing-unsafe-compare` (silent) | detect-possible-timing-attacks: **we are ahead** | ✅ |
+| `ILB-0107` | a bare secret comparison | decoy | — | `node-security/no-timing-unsafe-compare` (silent) | detect-possible-timing-attacks: **we are ahead** | ✅ |
+| `ILB-0108` | a bare apiKey comparison | decoy | — | `node-security/no-timing-unsafe-compare` (silent) | detect-possible-timing-attacks: **we are ahead** | ✅ |
+| `ILB-0109` | request value concatenated into exec | defect | — | `node-security/detect-child-process` (report) | detect-child-process: level | ✅ |
+| `ILB-0110` | the same via a template literal | defect | — | `node-security/detect-child-process` (report) | detect-child-process: level | ✅ |
+| `ILB-0111` | ESM import spelling | defect | — | `node-security/detect-child-process` (report) | detect-child-process: level | ✅ |
+| `ILB-0112` | destructured exec | defect | — | `node-security/detect-child-process` (report) | detect-child-process: level | ✅ |
+| `ILB-0113` | a fully literal command | decoy | — | `node-security/detect-child-process` (silent) | detect-child-process: level | ✅ |
+| `ILB-0114` | execFile with a caller-chosen argument | defect | — | `node-security/detect-child-process` (report) | detect-child-process: **we are ahead** | ✅ |
+| `ILB-0115` | spawn with a caller-chosen argument | defect | — | `node-security/detect-child-process` (report) | detect-child-process: **we are ahead** | ✅ |
+| `ILB-0116` | a call to something else named exec | decoy | — | `node-security/detect-child-process` (silent) | detect-child-process: level | ✅ |
+| `ILB-0117` | the documented fix | remedy | — | `node-security/detect-child-process` (silent) | detect-child-process: level | ✅ |
 
 ## Each case in full
 
@@ -2008,4 +2029,378 @@ function f(el, req) { el.innerHTML = DOMPurify.sanitize(req.query.q); }
 | `browser-security/no-innerhtml` | silent | 0 report(s) | ✅ |
 
 Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0099 — a bearer token compared with ===
+
+=== short-circuits at the first differing byte, so response time leaks the shared prefix.
+
+```js
+import crypto from 'node:crypto';
+function f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0100 — the same through a computed key
+
+The same comparison, spelled with brackets.
+
+```js
+import crypto from 'node:crypto';
+function f(req, apiKey) { if (req.headers['authorization'] === apiKey) { grant(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0101 — a password compared with ==
+
+Loose equality short-circuits identically.
+
+```js
+import crypto from 'node:crypto';
+function f(req, password) { if (req.body.password == password) { grant(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0102 — a comparison written the other way round
+
+Operand order does not change the timing.
+
+```js
+import crypto from 'node:crypto';
+function f(req, secret) { if (secret !== req.headers['x-secret']) { deny(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0103 — an error code
+
+An error code is public.
+
+```js
+function f(e) { if (e.code === 'MODULE_NOT_FOUND') { retry(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0104 — a bearer comparison in a file that imports no crypto
+
+Written as a decoy on the assumption a module-evidence gate applied. It does not, and should not: a `===` on a secret leaks its prefix whether or not the file imports crypto. The rule was right and the case was wrong.
+
+```js
+function f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0105 — the documented fix
+
+Reporting the fix leaves the user nothing to do.
+
+```js
+import crypto from 'node:crypto';
+function f(a, b) { return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0106 — a bare password comparison
+
+Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.
+
+```js
+function f(password, input) { if (password === input) { grant(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0107 — a bare secret comparison
+
+Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.
+
+```js
+function f(secret, given) { if (secret === given) { grant(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0108 — a bare apiKey comparison
+
+Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.
+
+```js
+function f(apiKey, given) { if (apiKey === given) { grant(); } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json`.
+
+### ILB-0109 — request value concatenated into exec
+
+A shell metacharacter in the query string runs a second command.
+
+```js
+const cp = require('child_process');
+function f(req) { cp.exec('ls ' + req.query.dir); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0110 — the same via a template literal
+
+Interpolation does not escape anything.
+
+```js
+const cp = require('child_process');
+function f(req) { cp.exec(`ls ${req.query.dir}`); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0111 — ESM import spelling
+
+The module spelling does not change the defect.
+
+```js
+import cp from 'node:child_process';
+function f(req) { cp.exec('ls ' + req.body.dir); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0112 — destructured exec
+
+Destructuring hides the receiver, not the sink.
+
+```js
+const { exec } = require('child_process');
+function f(req) { exec('ls ' + req.query.dir); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0113 — a fully literal command
+
+The command is written in the file.
+
+```js
+const cp = require('child_process');
+cp.exec('ls -la');
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0114 — execFile with a caller-chosen argument
+
+Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.
+
+```js
+const cp = require('child_process');
+function f(req) { cp.execFile('ls', [req.query.dir]); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0115 — spawn with a caller-chosen argument
+
+Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.
+
+```js
+const cp = require('child_process');
+function f(req) { cp.spawn('ls', [req.query.dir]); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0116 — a call to something else named exec
+
+RegExp.prototype.exec is not a shell.
+
+```js
+function f(re, s) { return re.exec(s); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
+
+### ILB-0117 — the documented fix
+
+Reporting the fix leaves the user nothing to do.
+
+```js
+const cp = require('child_process');
+function f(req) { cp.execFile('ls', ['--', req.query.dir]); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-child-process` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/node-security__detect-child-process.json`.
 

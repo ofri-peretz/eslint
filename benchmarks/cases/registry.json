@@ -2919,6 +2919,595 @@
         }
       ],
       "batteryId": "R01"
+    },
+    {
+      "id": "ILB-0099",
+      "added": "2026-08-26",
+      "title": "a bearer token compared with ===",
+      "rationale": "=== short-circuits at the first differing byte, so response time leaks the shared prefix.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D01"
+    },
+    {
+      "id": "ILB-0100",
+      "added": "2026-08-26",
+      "title": "the same through a computed key",
+      "rationale": "The same comparison, spelled with brackets.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, apiKey) { if (req.headers['authorization'] === apiKey) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0101",
+      "added": "2026-08-26",
+      "title": "a password compared with ==",
+      "rationale": "Loose equality short-circuits identically.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, password) { if (req.body.password == password) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0102",
+      "added": "2026-08-26",
+      "title": "a comparison written the other way round",
+      "rationale": "Operand order does not change the timing.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, secret) { if (secret !== req.headers['x-secret']) { deny(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0103",
+      "added": "2026-08-26",
+      "title": "an error code",
+      "rationale": "An error code is public.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(e) { if (e.code === 'MODULE_NOT_FOUND') { retry(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0104",
+      "added": "2026-08-26",
+      "title": "a bearer comparison in a file that imports no crypto",
+      "rationale": "Written as a decoy on the assumption a module-evidence gate applied. It does not, and should not: a `===` on a secret leaks its prefix whether or not the file imports crypto. The rule was right and the case was wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0105",
+      "added": "2026-08-26",
+      "title": "the documented fix",
+      "rationale": "Reporting the fix leaves the user nothing to do.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(a, b) { return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)); }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "R01"
+    },
+    {
+      "id": "ILB-0106",
+      "added": "2026-08-26",
+      "title": "a bare password comparison",
+      "rationale": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(password, input) { if (password === input) { grant(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N04"
+    },
+    {
+      "id": "ILB-0107",
+      "added": "2026-08-26",
+      "title": "a bare secret comparison",
+      "rationale": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(secret, given) { if (secret === given) { grant(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N05"
+    },
+    {
+      "id": "ILB-0108",
+      "added": "2026-08-26",
+      "title": "a bare apiKey comparison",
+      "rationale": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(apiKey, given) { if (apiKey === given) { grant(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N06"
+    },
+    {
+      "id": "ILB-0109",
+      "added": "2026-08-26",
+      "title": "request value concatenated into exec",
+      "rationale": "A shell metacharacter in the query string runs a second command.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.exec('ls ' + req.query.dir); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D01"
+    },
+    {
+      "id": "ILB-0110",
+      "added": "2026-08-26",
+      "title": "the same via a template literal",
+      "rationale": "Interpolation does not escape anything.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.exec(`ls ${req.query.dir}`); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0111",
+      "added": "2026-08-26",
+      "title": "ESM import spelling",
+      "rationale": "The module spelling does not change the defect.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import cp from 'node:child_process';\nfunction f(req) { cp.exec('ls ' + req.body.dir); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0112",
+      "added": "2026-08-26",
+      "title": "destructured exec",
+      "rationale": "Destructuring hides the receiver, not the sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const { exec } = require('child_process');\nfunction f(req) { exec('ls ' + req.query.dir); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0113",
+      "added": "2026-08-26",
+      "title": "a fully literal command",
+      "rationale": "The command is written in the file.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\ncp.exec('ls -la');",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N01"
+    },
+    {
+      "id": "ILB-0114",
+      "added": "2026-08-26",
+      "title": "execFile with a caller-chosen argument",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.execFile('ls', [req.query.dir]); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0115",
+      "added": "2026-08-26",
+      "title": "spawn with a caller-chosen argument",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.spawn('ls', [req.query.dir]); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0116",
+      "added": "2026-08-26",
+      "title": "a call to something else named exec",
+      "rationale": "RegExp.prototype.exec is not a shell.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(re, s) { return re.exec(s); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N04"
+    },
+    {
+      "id": "ILB-0117",
+      "added": "2026-08-26",
+      "title": "the documented fix",
+      "rationale": "Reporting the fix leaves the user nothing to do.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.execFile('ls', ['--', req.query.dir]); }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "R01"
     }
   ]
 }
