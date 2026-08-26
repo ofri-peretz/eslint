@@ -40,6 +40,11 @@ describe('aria-unsupported-elements', () => {
     ruleTester.run('invalid - aria on unsupported elements', ariaUnsupportedElements, {
       valid: [],
       invalid: [
+      {
+        name: 'base carries no accessibility semantics either',
+        code: '<base href="/" aria-describedby="x" />',
+        errors: [{ messageId: 'unsupportedAria' }],
+      },
         { name: 'an aria attribute on an element that has no accessibility semantics', code: '<meta aria-label="Label" />', errors: [{ messageId: 'unsupportedAria' }] },
         { code: '<html aria-hidden="true"></html>', errors: [{ messageId: 'unsupportedAria' }] },
       ],

@@ -31,6 +31,10 @@ describe('no-hardcoded-credentials', () => {
   ruleTester.run('no-hardcoded-credentials', noHardcodedCredentials, {
     valid: [
       {
+        name: 'a value read from a config object, whose contents this file cannot see',
+        code: DRIVER + `knex({ client: 'pg', connection: { host, database, password: config.dbPassword } })`,
+      },
+      {
         name: 'the fix — the password comes from the environment',
         code: DRIVER + `knex({ client: 'pg', connection: { host, database, password: process.env.DB_PASSWORD } })`,
       },
@@ -41,6 +45,11 @@ describe('no-hardcoded-credentials', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a template literal with no interpolation is still a literal',
+        code: DRIVER + `knex({ client: 'pg', connection: { host, database, user: 'admin', password: \`hunter2\` } })`,
+        errors: [{ messageId: 'hardcodedPassword' }],
+      },
       {
         name: 'a literal password in the connection config',
         code: DRIVER + `knex({ client: 'pg', connection: { host, database, password: 'hunter2' } })`,

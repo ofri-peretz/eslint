@@ -25,6 +25,10 @@ describe('autocomplete-valid', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid autocomplete values', autocompleteValid, {
       valid: [
+      {
+        name: 'FN: two autocomplete tokens that cannot be combined — the rule checks each token, not the pairing',
+        code: '<input autocomplete="name email" />',
+      },
         { name: 'a valid token', code: '<input autocomplete="name" />' },
         { code: '<input autocomplete="email" />' },
         { code: '<input autocomplete="username" />' },

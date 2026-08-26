@@ -41,6 +41,22 @@ describe('role-has-required-aria-props', () => {
       valid: [],
       invalid: [
         { name: "role='checkbox' with no aria-checked — state is unannounced", code: '<div role="checkbox"></div>', errors: [{ messageId: 'missingRequiredProp' }] },
+        {
+          // One report per missing prop, so the count is the shape of the
+          // role's contract rather than a single "incomplete" verdict.
+          name: 'combobox requires more than one prop, and reports for each',
+          code: '<div role="combobox"></div>',
+          errors: [{ messageId: 'missingRequiredProp' }, { messageId: 'missingRequiredProp' }],
+        },
+        {
+          name: 'slider requires its value props, and reports for each',
+          code: '<div role="slider"></div>',
+          errors: [
+            { messageId: 'missingRequiredProp' },
+            { messageId: 'missingRequiredProp' },
+            { messageId: 'missingRequiredProp' },
+          ],
+        },
       ],
     });
   });

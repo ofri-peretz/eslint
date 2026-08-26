@@ -25,6 +25,10 @@ describe('no-redundant-roles', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no redundant roles', noRedundantRoles, {
       valid: [
+      {
+        name: 'FN: the implicit role of nav is not in the rule map, so this redundancy is missed',
+        code: '<nav role="navigation"></nav>',
+      },
         { name: 'no explicit role', code: '<button>Click</button>' },
         { code: '<a href="#">Link</a>' },
         { code: '<nav></nav>' },

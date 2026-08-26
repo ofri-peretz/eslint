@@ -53,6 +53,13 @@ describe('no-mass-assignment', () => {
     ],
     invalid: [
       {
+        // A third shape rather than a second spelling of the first: the rule's
+        // position is 'the request object', and `req.body` is only one door into it.
+        name: 'the query string is the request too, not just the body',
+        code: DRIVER + `await model.create(req.query);`,
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
         name: 'the request object written straight through',
         code: DRIVER + `await model.create(req.body);`,
         errors: [{ messageId: 'untrustedPayload' }],

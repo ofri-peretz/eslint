@@ -1,0 +1,16 @@
+{
+  "note": "Rules holding fewer than 3 classified cases on a side. Shrink-only.",
+  "rules": [
+    "import-next/newline-after-import",
+    "import-next/no-cycle",
+    "import-next/no-named-as-default",
+    "import-next/no-named-as-default-member",
+    "import-next/no-unused-modules",
+    "jwt-security/no-timestamp-manipulation",
+    "operability/require-code-minification",
+    "operability/require-data-minimization",
+    "react-features/require-data-slot",
+    "react-features/static-property-placement",
+    "reliability/no-jsdoc-terminator-in-example"
+  ]
+}

@@ -39,6 +39,11 @@ describe('mouse-events-have-key-events', () => {
     ruleTester.run('invalid - mouse without key events', mouseEventsHaveKeyEvents, {
       valid: [],
       invalid: [
+      {
+        name: 'the same omission on a different element',
+        code: '<span onMouseOver={handler}></span>',
+        errors: [{ messageId: 'missingOnFocus' }],
+      },
         { name: 'onMouseOver with no onFocus', code: '<div onMouseOver={handler}></div>', errors: [{ messageId: 'missingOnFocus' }] },
         { code: '<div onMouseOut={handler}></div>', errors: [{ messageId: 'missingOnBlur' }] },
       ],

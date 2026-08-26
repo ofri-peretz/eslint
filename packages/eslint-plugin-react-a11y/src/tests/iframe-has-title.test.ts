@@ -25,6 +25,10 @@ describe('iframe-has-title', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - iframe with title', iframeHasTitle, {
       valid: [
+      {
+        name: 'FN: an empty title — present, so the rule is satisfied, but it announces nothing',
+        code: '<iframe src="a.html" title=""></iframe>',
+      },
         { name: 'a titled iframe', code: '<iframe src="page.html" title="Page content"></iframe>' },
         { code: '<iframe src="video.html" title="Video player"></iframe>' },
         { code: '<div></div>' },
@@ -37,6 +41,11 @@ describe('iframe-has-title', () => {
     ruleTester.run('invalid - iframe without title', iframeHasTitle, {
       valid: [],
       invalid: [
+      {
+        name: 'no src and no title',
+        code: '<iframe />',
+        errors: [{ messageId: 'missingTitle' }],
+      },
         { name: 'an iframe with no title to announce', code: '<iframe src="page.html"></iframe>', errors: [{ messageId: 'missingTitle' }] },
       ],
     });

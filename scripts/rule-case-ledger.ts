@@ -58,7 +58,7 @@ const CHECK = process.argv.includes('--check');
 const UPDATE = process.argv.includes('--update');
 
 type Kind = 'TP' | 'TN' | 'FP' | 'FN';
-type Case = { kind: Kind; description: string; file: string; source?: string };
+type Case = { kind: Kind; code: string; description: string; file: string; source?: string };
 type RuleEntry = { rule: string; cases: Case[]; wild?: { count: number; repos: number } };
 
 /**
@@ -169,6 +169,30 @@ const stringOf = (node: ts.Node): string | null => {
   return null;
 };
 
+/**
+ * The case's own `code`, normalised to one line.
+ *
+ * The database records what the rule was shown, not only what somebody called
+ * it. A description restates the code when the code is short and adds the
+ * *reason* when it is not; both are worth having, but only one of them can be
+ * checked against the rule, and it is this one.
+ */
+function codeOf(element: ts.Expression): string {
+  const squash = (text: string): string => text.replace(/\s+/g, ' ').trim().slice(0, 200);
+  if (ts.isStringLiteralLike(element)) return squash(element.text);
+  if (!ts.isObjectLiteralExpression(element)) return '';
+  for (const prop of element.properties) {
+    if (!ts.isPropertyAssignment(prop)) continue;
+    const key = ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name) ? prop.name.text : '';
+    if (key !== 'code') continue;
+    if (ts.isStringLiteralLike(prop.initializer)) return squash(prop.initializer.text);
+    // A template with interpolation, or a concatenation: keep the source text,
+    // which still shows the shape even though the value is assembled at runtime.
+    return squash(prop.initializer.getText());
+  }
+  return '';
+}
+
 /** Pull `name:` off a RuleTester case, whatever shape the case takes. */
 function describeCase(element: ts.Expression): string {
   if (!ts.isObjectLiteralExpression(element)) return '';
@@ -277,7 +301,13 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
         const { kind, description } = classify(raw, key);
         const source = provenanceOf(element, source_text, raw);
         const list = out.get(rule) ?? [];
-        list.push({ kind, description: description.replace(SOURCE, '').trim(), file: rel, ...(source ? { source } : {}) });
+        list.push({
+          kind,
+          code: codeOf(element),
+          description: description.replace(SOURCE, '').trim(),
+          file: rel,
+          ...(source ? { source } : {}),
+        });
         out.set(rule, list);
       }
     }
@@ -363,6 +393,28 @@ const documented = (entry: RuleEntry, kinds: Kind[]): boolean =>
 // opposite of a caught defect. An FP does satisfy the TN requirement — it is a
 // TN that arrived with provenance.
 const missing = entries.filter((e) => !documented(e, ['TP']) || !documented(e, ['TN', 'FP']));
+
+/**
+ * How many classified cases a rule needs on each side before its position is
+ * pinned rather than merely asserted.
+ *
+ * THREE. One case proves the rule matches one string. Two is a pair and can
+ * still be two spellings of the same thought. Three forces a shape: the
+ * canonical form, a variation, and a near-miss that must stay quiet — and it is
+ * the smallest number at which deleting any single case leaves the position
+ * still legible.
+ *
+ * Counted on CODE, not on descriptions. A case the rule was actually shown is
+ * checkable against the rule; a description is not. 440 of 470 rules already
+ * meet it, so the floor records a standard the suite mostly reached by
+ * accident and now has to keep.
+ */
+const CASE_FLOOR = 3;
+const classified = (entry: RuleEntry, kinds: Kind[]): number =>
+  entry.cases.filter((c) => kinds.includes(c.kind) && c.code !== '').length;
+const belowFloor = entries.filter(
+  (e) => classified(e, ['TP', 'FN']) < CASE_FLOOR || classified(e, ['TN', 'FP']) < CASE_FLOOR,
+);
 /**
  * A rule with an EMPTY `invalid` array claims nothing. It is not
  * under-documented — it asserts no defect exists that it catches, and its
@@ -380,6 +432,7 @@ console.log(`  TP ${counts.TP}   TN ${counts.TN}   FP ${counts.FP}   FN ${counts
 console.log(`  undescribed cases                       ${undescribed}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
 console.log(`  rules that claim no defect at all       ${claimsNothing.length}`);
+console.log(`  rules under ${CASE_FLOOR} classified cases a side     ${belowFloor.length}`);
 const cited = entries.flatMap((e) => e.cases.filter((c) => c.source !== undefined)).length;
 console.log(`  cases citing real code (@source)        ${cited}`);
 console.log(`  rules with a TP taken from real code    ${grounded.length}`);
@@ -404,7 +457,26 @@ if (inventory !== null) {
   console.log(`  never scanned                           ${unscanned.length}`);
 }
 
+const FLOOR_BASELINE = path.join(ROOT, 'benchmarks', 'budgets', 'rule-case-floor-baseline.json');
+
 if (CHECK) {
+  const floorBaseline: string[] = fs.existsSync(FLOOR_BASELINE)
+    ? (JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as { rules: string[] }).rules
+    : [];
+  const knownThin = new Set(floorBaseline);
+  const thinned = belowFloor.map((e) => e.rule).filter((r) => !knownThin.has(r));
+  if (thinned.length > 0) {
+    console.error(
+      `\n  ⛔ ${thinned.length} rule(s) hold fewer than ${CASE_FLOOR} classified cases a side:`,
+    );
+    for (const rule of thinned) console.error(`     ${rule}`);
+    console.error(
+      `\n  A rule needs ${CASE_FLOOR} things it must catch and ${CASE_FLOOR} it must leave alone.` +
+        '\n  One case proves it matches one string.',
+    );
+    process.exit(1);
+  }
+
   const baseline: string[] = fs.existsSync(BASELINE)
     ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] }).rules
     : [];
@@ -439,6 +511,25 @@ if (UPDATE) {
     )}\n`,
   );
   console.log(`  baseline written: ${previous.length} → ${now.length}`);
+
+  const previousThin: string[] = fs.existsSync(FLOOR_BASELINE)
+    ? (JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as { rules: string[] }).rules
+    : [];
+  const nowThin = belowFloor.map((e) => e.rule).sort();
+  const grewThin = nowThin.filter((r) => !previousThin.includes(r));
+  if (previousThin.length > 0 && grewThin.length > 0) {
+    console.error(`\n  ⛔ refusing to grow the case-floor baseline by ${grewThin.length}: ${grewThin.join(', ')}`);
+    process.exit(1);
+  }
+  fs.writeFileSync(
+    FLOOR_BASELINE,
+    `${JSON.stringify(
+      { note: `Rules holding fewer than ${CASE_FLOOR} classified cases on a side. Shrink-only.`, rules: nowThin },
+      null,
+      2,
+    )}\n`,
+  );
+  console.log(`  case-floor baseline: ${previousThin.length} → ${nowThin.length}`);
 }
 
 if (!CHECK) {

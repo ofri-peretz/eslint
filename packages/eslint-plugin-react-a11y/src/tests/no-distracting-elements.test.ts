@@ -38,6 +38,11 @@ describe('no-distracting-elements', () => {
     ruleTester.run('invalid - distracting elements', noDistractingElements, {
       valid: [],
       invalid: [
+      {
+        name: 'attributes do not make it less distracting',
+        code: '<marquee behavior="alternate">Text</marquee>',
+        errors: [{ messageId: 'noDistractingElements' }],
+      },
         { name: 'a blink element', code: '<blink>Blinking text</blink>', errors: [{ messageId: 'noDistractingElements' }] },
         { code: '<marquee>Scrolling text</marquee>', errors: [{ messageId: 'noDistractingElements' }] },
       ],

@@ -40,6 +40,11 @@ describe('scope', () => {
     ruleTester.run('invalid - scope on non-th', scope, {
       valid: [],
       invalid: [
+      {
+        name: 'scope means nothing outside a table header',
+        code: '<span scope="col">Header</span>',
+        errors: [{ messageId: 'invalidScope' }],
+      },
         { name: 'scope on a td, where it means nothing', code: '<td scope="col">Data</td>', errors: [{ messageId: 'invalidScope' }] },
         { code: '<div scope="row">Content</div>', errors: [{ messageId: 'invalidScope' }] },
       ],
