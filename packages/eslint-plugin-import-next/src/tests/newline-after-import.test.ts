@@ -29,6 +29,12 @@ describe('newline-after-import', () => {
     ],
     invalid: [
       {
+        name: 'a require call on the line straight after the imports',
+        code: "import foo from 'foo';\nconst bar = require('bar');",
+        output: "import foo from 'foo';\n\nconst bar = require('bar');",
+        errors: 1,
+      },
+      {
         name: 'code on the line straight after the imports',
         code: "import foo from 'foo';\nconst a = 1;",
         output: "import foo from 'foo';\n\nconst a = 1;",

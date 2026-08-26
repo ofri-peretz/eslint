@@ -43,6 +43,11 @@ ruleTester.run('no-unused-modules', noUnusedModules, {
   ],
   
   invalid: [
+    {
+      name: 'a second name the target never exports',
+      code: `import { alsoMissing } from './bar';`,
+      errors: 1,
+    },
     // No exports, only imports
     {
       name: 'an import of something the target never exports',

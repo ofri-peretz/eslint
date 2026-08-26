@@ -110,6 +110,11 @@ beforeAll(() => {
 ruleTester.run('no-cycle', noCycle as any, { // eslint-disable-line @typescript-eslint/no-explicit-any
   valid: [
     {
+      name: 'a scoped package, which cannot cycle back into this file',
+      code: `import a from '@scope/pkg';`,
+      filename: '/path/to/no-cycle.ts',
+    },
+    {
         name: 'an import that leads nowhere back',
         code: `import foo from './foo';`,
         filename: '/path/to/no-cycle.ts' 

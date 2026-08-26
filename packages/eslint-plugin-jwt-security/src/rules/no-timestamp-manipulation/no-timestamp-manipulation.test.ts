@@ -56,6 +56,11 @@ jwt.verify(token, secret);`,
     ruleTester.run('invalid - noTimestamp true', noTimestampManipulation, {
       valid: [],
       invalid: [
+      {
+        name: 'the flag set alongside an expiry, which does not excuse it',
+        code: `import jwt from 'jsonwebtoken'; jwt.sign(payload, secret, { expiresIn: '1h', noTimestamp: true });`,
+        errors: 1,
+      },
         {
           name: 'noTimestamp strips the iat the receiver ages the token by',
           code: `import jwt from 'jsonwebtoken';

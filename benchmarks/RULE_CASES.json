@@ -1,9 +1,9 @@
 {
   "counts": {
-    "TP": 7361,
-    "TN": 10933,
+    "TP": 7368,
+    "TN": 10935,
     "FP": 14,
-    "FN": 16
+    "FN": 19
   },
   "rules": [
     {
@@ -27907,6 +27907,12 @@
         },
         {
           "kind": "TP",
+          "code": "import foo from 'foo'; const bar = require('bar');",
+          "description": "a require call on the line straight after the imports",
+          "file": "packages/eslint-plugin-import-next/src/tests/newline-after-import.test.ts"
+        },
+        {
+          "kind": "TP",
           "code": "import foo from 'foo'; const a = 1;",
           "description": "code on the line straight after the imports",
           "file": "packages/eslint-plugin-import-next/src/tests/newline-after-import.test.ts"
@@ -29017,6 +29023,12 @@
     {
       "rule": "import-next/no-cycle",
       "cases": [
+        {
+          "kind": "TN",
+          "code": "import a from '@scope/pkg';",
+          "description": "a scoped package, which cannot cycle back into this file",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-cycle.test.ts"
+        },
         {
           "kind": "TN",
           "code": "import foo from './foo';",
@@ -30858,6 +30870,12 @@
           "file": "packages/eslint-plugin-import-next/src/tests/coverage-batch-c.test.ts"
         },
         {
+          "kind": "FN",
+          "code": "import { default as foo, foo } from './module';",
+          "description": "the same collision written through an aliased default specifier",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
+        },
+        {
           "kind": "TN",
           "code": "import MyComponent from './MyComponent';",
           "description": "a default import with its own name",
@@ -30952,6 +30970,18 @@
     {
       "rule": "import-next/no-named-as-default-member",
       "cases": [
+        {
+          "kind": "FN",
+          "code": "import foo, { bar } from './foo'; const baz = foo['bar'];",
+          "description": "the same access written through a computed literal key",
+          "file": "packages/eslint-plugin-import-next/src/tests/coverage-batch-c.test.ts"
+        },
+        {
+          "kind": "TN",
+          "code": "import foo, { bar } from './foo'; const baz = foo.other;",
+          "description": "a property that is not a named export of the module",
+          "file": "packages/eslint-plugin-import-next/src/tests/coverage-batch-c.test.ts"
+        },
         {
           "kind": "TN",
           "code": "import * as ns from 'm'; ns.x;",
@@ -32797,6 +32827,12 @@
           "kind": "TN",
           "code": "import './side-effects';",
           "description": "",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-unused-modules.test.ts"
+        },
+        {
+          "kind": "TP",
+          "code": "import { alsoMissing } from './bar';",
+          "description": "a second name the target never exports",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unused-modules.test.ts"
         },
         {
@@ -35362,6 +35398,12 @@
           "kind": "TN",
           "code": "import jwt from 'jsonwebtoken'; jwt.verify(token, secret);",
           "description": "",
+          "file": "packages/eslint-plugin-jwt-security/src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts"
+        },
+        {
+          "kind": "TP",
+          "code": "import jwt from 'jsonwebtoken'; jwt.sign(payload, secret, { expiresIn: '1h', noTimestamp: true });",
+          "description": "the flag set alongside an expiry, which does not excuse it",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts"
         },
         {
@@ -66851,6 +66893,12 @@
       "rule": "operability/require-code-minification",
       "cases": [
         {
+          "kind": "FN",
+          "code": "export default { build: { minify: false } }",
+          "description": "minify — the Vite and esbuild spelling of the same setting",
+          "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
+        },
+        {
           "kind": "TN",
           "code": "const config = { minimize: true }",
           "description": "minimize turned on",
@@ -66872,6 +66920,12 @@
           "kind": "TN",
           "code": "const config = { debug: false }",
           "description": "",
+          "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
+        },
+        {
+          "kind": "TP",
+          "code": "module.exports = { optimization: { minimize: false, usedExports: true } }",
+          "description": "minimize turned off inside a webpack optimization block",
           "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
         },
         {
@@ -66907,6 +66961,18 @@
           "kind": "TN",
           "code": "const config = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7, h: 8, i: 9, j: 10, k: 11 }",
           "description": "",
+          "file": "packages/eslint-plugin-operability/src/tests/operability/require-data-minimization.test.ts"
+        },
+        {
+          "kind": "TP",
+          "code": "const profile = { email, name, age, city, zip, phone, address, country, state, company, job }",
+          "description": "the same breadth assembled with shorthand properties",
+          "file": "packages/eslint-plugin-operability/src/tests/operability/require-data-minimization.test.ts"
+        },
+        {
+          "kind": "TP",
+          "code": "function toDto(u) { return { email: u.e, name: u.n, age: u.a, city: u.c, zip: u.z, phone: u.p, address: u.ad, country: u.co, state: u.s, company: u.cp, job: u.j }; }",
+          "description": "the same breadth returned directly from a handler",
           "file": "packages/eslint-plugin-operability/src/tests/operability/require-data-minimization.test.ts"
         },
         {
@@ -86522,6 +86588,12 @@
           "kind": "TN",
           "code": "<div data-slot=\"card-header\" />",
           "description": "",
+          "file": "packages/eslint-plugin-react-features/src/tests/component-api/require-data-slot.test.ts"
+        },
+        {
+          "kind": "TP",
+          "code": "const El = () => <section data-testid=\"card-footer\"><span /></section>;",
+          "description": "a test id on a nested element with no slot beside it",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/require-data-slot.test.ts"
         },
         {

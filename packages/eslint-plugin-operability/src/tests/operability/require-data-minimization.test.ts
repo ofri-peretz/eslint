@@ -24,6 +24,16 @@ ruleTester.run('require-data-minimization', requireDataMinimization, {
   ],
 
   invalid: [
+    {
+      name: 'the same breadth assembled with shorthand properties',
+      code: 'const profile = { email, name, age, city, zip, phone, address, country, state, company, job }',
+      errors: 1,
+    },
+    {
+      name: 'the same breadth returned directly from a handler',
+      code: 'function toDto(u) { return { email: u.e, name: u.n, age: u.a, city: u.c, zip: u.z, phone: u.p, address: u.ad, country: u.co, state: u.s, company: u.cp, job: u.j }; }',
+      errors: 1,
+    },
     // Large object with user data fields (>10 properties with PII)
     {
       name: 'eleven personal fields in one object is more than the call needs',

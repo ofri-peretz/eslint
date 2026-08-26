@@ -14,6 +14,13 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-code-minification', requireCodeMinification, {
   valid: [
+    {
+      // The rule knows webpack's `minimize`. Vite, esbuild and Rollup spell the
+      // same setting `minify`, and a build that ships unminified through that
+      // spelling is not reported.
+      name: 'FN: minify — the Vite and esbuild spelling of the same setting',
+      code: 'export default { build: { minify: false } }',
+    },
     // Minification enabled
     { name: 'minimize turned on', code: 'const config = { minimize: true }' },
     { code: 'module.exports = { optimization: { minimize: true } }' },
@@ -23,6 +30,11 @@ ruleTester.run('require-code-minification', requireCodeMinification, {
   ],
 
   invalid: [
+    {
+      name: 'minimize turned off inside a webpack optimization block',
+      code: 'module.exports = { optimization: { minimize: false, usedExports: true } }',
+      errors: 1,
+    },
     // Minification disabled
     {
       name: 'minimize turned off ships readable source',

@@ -22,6 +22,13 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-named-as-default', noNamedAsDefault, {
   valid: [
+    {
+      // The rule reads `ImportDefaultSpecifier`. `{ default as foo }` is an
+      // `ImportSpecifier` whose imported name is `default`, so the identical
+      // collision goes unseen.
+      name: 'FN: the same collision written through an aliased default specifier',
+      code: `import { default as foo, foo } from './module';`,
+    },
     // Regular default import
     { name: 'a default import with its own name', code: `import MyComponent from './MyComponent';` },
     
