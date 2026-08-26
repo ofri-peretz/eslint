@@ -1,9 +1,9 @@
 {
   "counts": {
-    "TP": 7307,
+    "TP": 7313,
     "TN": 10865,
     "FP": 6,
-    "FN": 1
+    "FN": 2
   },
   "rules": [
     {
@@ -1509,7 +1509,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-clickjacking/no-clickjacking.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 26,
+        "repos": 8
+      }
     },
     {
       "rule": "browser-security/no-client-side-auth-logic",
@@ -1774,7 +1778,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/no-client-side-auth-logic.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/no-cookie-auth-tokens",
@@ -2184,7 +2192,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-credentials-in-query-params/no-credentials-in-query-params.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 92,
+        "repos": 12
+      }
     },
     {
       "rule": "browser-security/no-disabled-certificate-validation",
@@ -2354,7 +2366,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-disabled-certificate-validation/no-disabled-certificate-validation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/no-dynamic-service-worker-url",
@@ -2819,7 +2835,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-eval/no-eval.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 83,
+        "repos": 15
+      }
     },
     {
       "rule": "browser-security/no-filereader-innerhtml",
@@ -3459,7 +3479,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-http-urls/no-http-urls.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 92,
+        "repos": 16
+      }
     },
     {
       "rule": "browser-security/no-incomplete-url-sanitization",
@@ -3849,7 +3873,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-incomplete-url-sanitization/no-incomplete-url-sanitization.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 2
+      }
     },
     {
       "rule": "browser-security/no-innerhtml",
@@ -4309,7 +4337,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/no-innerhtml.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 445,
+        "repos": 22
+      }
     },
     {
       "rule": "browser-security/no-insecure-redirects",
@@ -4924,7 +4956,11 @@
           "description": "a query parameter destination still reports",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-insecure-redirects/self-reload.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/no-insecure-websocket",
@@ -5629,7 +5665,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-jwt-in-storage/no-jwt-in-storage.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/no-missing-cors-check",
@@ -5939,7 +5979,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-cors-check/no-missing-cors-check.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/no-missing-csrf-protection",
@@ -6299,7 +6343,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/no-missing-csrf-protection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 111,
+        "repos": 13
+      }
     },
     {
       "rule": "browser-security/no-missing-security-headers",
@@ -6899,7 +6947,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 26,
+        "repos": 13
+      }
     },
     {
       "rule": "browser-security/no-password-in-url",
@@ -7094,7 +7146,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-password-in-url/no-password-in-url.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 11,
+        "repos": 4
+      }
     },
     {
       "rule": "browser-security/no-permissive-cors",
@@ -7444,7 +7500,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 94,
+        "repos": 4
+      }
     },
     {
       "rule": "browser-security/no-postmessage-innerhtml",
@@ -7639,7 +7699,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-wildcard-origin/no-postmessage-wildcard-origin.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 2
+      }
     },
     {
       "rule": "browser-security/no-sensitive-cookie-js",
@@ -9294,7 +9358,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-tracking-without-consent/no-tracking-without-consent.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 10,
+        "repos": 2
+      }
     },
     {
       "rule": "browser-security/no-unencrypted-transmission",
@@ -9589,7 +9657,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unencrypted-transmission/no-unencrypted-transmission.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 102,
+        "repos": 9
+      }
     },
     {
       "rule": "browser-security/no-unescaped-url-parameter",
@@ -10259,7 +10331,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/no-unescaped-url-parameter.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 46,
+        "repos": 5
+      }
     },
     {
       "rule": "browser-security/no-unsafe-eval-csp",
@@ -10654,7 +10730,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unsafe-inline-csp/no-unsafe-inline-csp.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 2
+      }
     },
     {
       "rule": "browser-security/no-unvalidated-deeplinks",
@@ -11459,7 +11539,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-blob-url-revocation/require-blob-url-revocation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 5
+      }
     },
     {
       "rule": "browser-security/require-cookie-secure-attrs",
@@ -12184,7 +12268,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-csp-headers/require-csp-headers.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 21,
+        "repos": 7
+      }
     },
     {
       "rule": "browser-security/require-https-only",
@@ -12739,7 +12827,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-mime-type-validation/require-mime-type-validation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 5,
+        "repos": 2
+      }
     },
     {
       "rule": "browser-security/require-postmessage-origin-check",
@@ -12954,7 +13046,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-postmessage-origin-check/require-postmessage-origin-check.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 5,
+        "repos": 3
+      }
     },
     {
       "rule": "browser-security/require-url-validation",
@@ -16164,7 +16260,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-client-controlled-authorization/no-client-controlled-authorization.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/no-cors-credentials-wildcard",
@@ -16264,7 +16364,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-cors-credentials-wildcard/no-cors-credentials-wildcard.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/no-disabled-helmet-protections",
@@ -16409,7 +16513,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-disabled-helmet-protections/no-disabled-helmet-protections.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 2
+      }
     },
     {
       "rule": "express-security/no-error-details-in-response",
@@ -16649,7 +16757,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-error-details-in-response/no-error-details-in-response.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 3
+      }
     },
     {
       "rule": "express-security/no-exposed-debug-endpoints",
@@ -16829,7 +16941,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 4
+      }
     },
     {
       "rule": "express-security/no-express-unsafe-regex-route",
@@ -17349,7 +17465,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-host-header-in-links/no-host-header-in-links.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 3
+      }
     },
     {
       "rule": "express-security/no-idor-resource-access",
@@ -17634,7 +17754,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-insecure-cookie-options/no-insecure-cookie-options.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 2
+      }
     },
     {
       "rule": "express-security/no-missing-cors-check",
@@ -18049,7 +18173,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-csrf-protection/no-missing-csrf-protection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 204,
+        "repos": 15
+      }
     },
     {
       "rule": "express-security/no-missing-security-headers",
@@ -18209,7 +18337,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 40,
+        "repos": 12
+      }
     },
     {
       "rule": "express-security/no-permissive-cors",
@@ -18334,11 +18466,21 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/no-permissive-trust-proxy",
       "cases": [
+        {
+          "kind": "TP",
+          "description": "trust proxy enabled in front of an IP allowlist",
+          "file": "packages/eslint-plugin-express-security/src/rules/no-permissive-trust-proxy/found-in-the-wild.test.ts",
+          "source": "cncjs/cncjs app.js:77"
+        },
         {
           "kind": "TN",
           "description": "",
@@ -18449,7 +18591,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-permissive-trust-proxy/no-permissive-trust-proxy.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 3
+      }
     },
     {
       "rule": "express-security/no-sensitive-data-in-query",
@@ -18699,7 +18845,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-sensitive-data-in-query/no-sensitive-data-in-query.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 14,
+        "repos": 4
+      }
     },
     {
       "rule": "express-security/no-static-root-exposure",
@@ -19089,7 +19239,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-static-root-exposure/no-static-root-exposure.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/no-unsafe-csp-directives",
@@ -20509,7 +20663,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/require-csrf-protection/require-csrf-protection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 30,
+        "repos": 2
+      }
     },
     {
       "rule": "express-security/require-express-body-parser-limits",
@@ -20934,7 +21092,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/require-helmet/require-helmet.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/require-query-type-guard",
@@ -21459,7 +21621,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/require-rate-limiting/require-rate-limiting.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 2
+      }
     },
     {
       "rule": "express-security/require-route-authentication",
@@ -21824,7 +21990,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/require-route-authentication/require-route-authentication.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 4
+      }
     },
     {
       "rule": "express-security/require-strict-transport-security",
@@ -28774,7 +28944,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/tests/coverage-dual-layer.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "jwt-security/no-hardcoded-secret",
@@ -28924,7 +29098,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/tests/coverage-dual-layer.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 16,
+        "repos": 1
+      }
     },
     {
       "rule": "jwt-security/no-sensitive-payload",
@@ -29144,7 +29322,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/tests/coverage-dual-layer.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 2
+      }
     },
     {
       "rule": "jwt-security/no-timestamp-manipulation",
@@ -29299,7 +29481,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/tests/coverage-dual-layer.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 16,
+        "repos": 1
+      }
     },
     {
       "rule": "jwt-security/require-algorithm-whitelist",
@@ -29439,7 +29625,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 24,
+        "repos": 7
+      }
     },
     {
       "rule": "jwt-security/require-audience-validation",
@@ -29499,7 +29689,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-audience-validation/require-audience-validation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 25,
+        "repos": 8
+      }
     },
     {
       "rule": "jwt-security/require-expiration",
@@ -29664,7 +29858,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-expiration/require-expiration.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 3
+      }
     },
     {
       "rule": "jwt-security/require-issued-at",
@@ -29774,7 +29972,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-issuer-validation/require-issuer-validation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 24,
+        "repos": 7
+      }
     },
     {
       "rule": "jwt-security/require-max-age",
@@ -29834,7 +30036,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-max-age/require-max-age.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 26,
+        "repos": 9
+      }
     },
     {
       "rule": "knex-security/no-hardcoded-credentials",
@@ -30444,7 +30650,11 @@
           "description": "",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-error-swallowing/no-error-swallowing.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 44,
+        "repos": 3
+      }
     },
     {
       "rule": "lambda-security/no-exposed-debug-endpoints",
@@ -30619,7 +30829,11 @@
           "description": "",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-exposed-error-details/no-exposed-error-details.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 1
+      }
     },
     {
       "rule": "lambda-security/no-hardcoded-credentials-sdk",
@@ -30949,7 +31163,11 @@
           "description": "",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-missing-authorization-check/no-missing-authorization-check.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 37,
+        "repos": 6
+      }
     },
     {
       "rule": "lambda-security/no-overly-permissive-iam-policy",
@@ -31659,7 +31877,11 @@
           "description": "@aws-cdk/aws-lambda arm (gate satisfied separately)",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-unvalidated-event-body/no-unvalidated-event-body.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "lambda-security/no-user-controlled-requests",
@@ -31944,7 +32166,11 @@
           "description": "",
           "file": "packages/eslint-plugin-lambda-security/src/rules/require-timeout-handling/require-timeout-handling.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 8,
+        "repos": 1
+      }
     },
     {
       "rule": "maintainability/cognitive-complexity",
@@ -35554,7 +35780,11 @@
           "description": "updateMany goes straight to the collection, past every mongoose hook",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-bypass-middleware/no-bypass-middleware.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 10,
+        "repos": 2
+      }
     },
     {
       "rule": "mongodb-security/no-debug-mode-production",
@@ -36179,7 +36409,11 @@
           "description": "a query with no projection returns the password field the schema declares",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-select-sensitive-fields/no-select-sensitive-fields.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 12,
+        "repos": 2
+      }
     },
     {
       "rule": "mongodb-security/no-unbounded-find",
@@ -36349,7 +36583,11 @@
           "description": "",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unbounded-find/no-unbounded-find.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 8,
+        "repos": 2
+      }
     },
     {
       "rule": "mongodb-security/no-unsafe-populate",
@@ -36799,7 +37037,11 @@
           "description": "a template-literal $where reaches a native-driver cursor",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-query/no-unsafe-query.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 18,
+        "repos": 2
+      }
     },
     {
       "rule": "mongodb-security/no-unsafe-regex-query",
@@ -37199,7 +37441,11 @@
           "description": "connect with empty options names no auth mechanism",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-auth-mechanism/require-auth-mechanism.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "mongodb-security/require-lean-queries",
@@ -37339,7 +37585,11 @@
           "description": "",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-lean-queries/require-lean-queries.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 14,
+        "repos": 2
+      }
     },
     {
       "rule": "mongodb-security/require-projection",
@@ -37459,7 +37709,11 @@
           "description": "a find with no projection ships every field",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-projection/require-projection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 14,
+        "repos": 2
+      }
     },
     {
       "rule": "mongodb-security/require-schema-validation",
@@ -37594,7 +37848,11 @@
           "description": "a schema field with a type and no constraint on the value",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-schema-validation/require-schema-validation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 25,
+        "repos": 1
+      }
     },
     {
       "rule": "mongodb-security/require-tls-connection",
@@ -37769,7 +38027,11 @@
           "description": "",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-tls-connection/require-tls-connection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "mysql-security/no-hardcoded-credentials",
@@ -40944,7 +41206,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-child-process/static-analysis.lock.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 35,
+        "repos": 6
+      }
     },
     {
       "rule": "node-security/detect-eval-with-expression",
@@ -41669,7 +41935,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-eval-with-expression/detect-eval-with-expression.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 77,
+        "repos": 17
+      }
     },
     {
       "rule": "node-security/detect-non-literal-fs-filename",
@@ -42704,7 +42974,11 @@
           "description": "CONTROL: an argv base with a REQUEST segment still reports",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/taint-evidence.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 13,
+        "repos": 4
+      }
     },
     {
       "rule": "node-security/detect-suspicious-dependencies",
@@ -42989,7 +43263,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/lock-file/lock-file.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 51,
+        "repos": 16
+      }
     },
     {
       "rule": "node-security/no-arbitrary-file-access",
@@ -43354,7 +43632,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-arbitrary-file-access/no-arbitrary-file-access.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-buffer-overread",
@@ -44944,7 +45226,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-data-in-temp-storage/no-data-in-temp-storage.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 35,
+        "repos": 5
+      }
     },
     {
       "rule": "node-security/no-deprecated-buffer",
@@ -45134,7 +45420,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-deprecated-buffer/no-deprecated-buffer.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 2
+      }
     },
     {
       "rule": "node-security/no-deprecated-cipher-method",
@@ -45359,7 +45649,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-algorithm-selection/no-dynamic-algorithm-selection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 7,
+        "repos": 5
+      }
     },
     {
       "rule": "node-security/no-dynamic-command-string",
@@ -46004,7 +46298,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-dependency-loading/no-dynamic-dependency-loading.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 106,
+        "repos": 29
+      }
     },
     {
       "rule": "node-security/no-dynamic-require",
@@ -46184,7 +46482,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-require/no-dynamic-require.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 67,
+        "repos": 20
+      }
     },
     {
       "rule": "node-security/no-ecb-mode",
@@ -47110,6 +47412,12 @@
           "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/a-request-id-is-not-a-credential.test.ts"
         },
         {
+          "kind": "TP",
+          "description": "a device pairing code built from Math.random()",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/found-in-the-wild.test.ts",
+          "source": "telepat-io/otto packages/relay/src/auth/helpers.ts:6"
+        },
+        {
           "kind": "TN",
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/no-math-random-crypto.coverage.test.ts"
@@ -47539,7 +47847,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/no-math-random-crypto.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 41,
+        "repos": 12
+      }
     },
     {
       "rule": "node-security/no-self-signed-certs",
@@ -47639,7 +47951,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-self-signed-certs/no-self-signed-certs.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 48,
+        "repos": 5
+      }
     },
     {
       "rule": "node-security/no-sha1-hash",
@@ -48054,7 +48370,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-shell-injection/no-shell-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 52,
+        "repos": 11
+      }
     },
     {
       "rule": "node-security/no-ssrf",
@@ -48760,6 +49080,29 @@
       "rule": "node-security/no-timing-unsafe-compare",
       "cases": [
         {
+          "kind": "FN",
+          "description": "a secret arriving as a parameter has no visible taint source",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/found-in-the-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a bearer token compared to a session secret gates five endpoints",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/found-in-the-wild.test.ts",
+          "source": "eclipse-theia/theia-cloud node/monitor/src/util/util.ts:10"
+        },
+        {
+          "kind": "TP",
+          "description": "a registration secret header compared to the configured secret",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/found-in-the-wild.test.ts",
+          "source": "telepat-io/otto packages/relay/src/controller-client-utils.ts:130"
+        },
+        {
+          "kind": "TP",
+          "description": "an HMAC signature compared with !== in a webhook guard",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/found-in-the-wild.test.ts",
+          "source": "humanprotocol/human-protocol packages/apps/reputation-oracle/server/src/modules/kyc/kyc-webhook-auth.guard.ts:39"
+        },
+        {
           "kind": "TN",
           "description": "routing an attacker-supplied pathname against a route constant",
           "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/location-tails.test.ts"
@@ -48797,7 +49140,8 @@
         {
           "kind": "FP",
           "description": "an AST discriminant is not a credential — 11 findings in the wild",
-          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts"
+          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts",
+          "source": "flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56"
         },
         {
           "kind": "FN",
@@ -49759,7 +50103,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/utils/provenance.coverage.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 16,
+        "repos": 5
+      }
     },
     {
       "rule": "node-security/no-toctou-vulnerability",
@@ -50219,7 +50567,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-toctou-vulnerability/no-toctou-vulnerability.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 91,
+        "repos": 19
+      }
     },
     {
       "rule": "node-security/no-unbounded-decompression",
@@ -50489,7 +50841,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unbounded-decompression/no-unbounded-decompression.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 2
+      }
     },
     {
       "rule": "node-security/no-unsafe-buffer-alloc",
@@ -51254,7 +51610,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/no-unsafe-buffer-alloc.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 72,
+        "repos": 8
+      }
     },
     {
       "rule": "node-security/no-unsafe-dynamic-require",
@@ -51614,7 +51974,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/utils/provenance.coverage.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 15,
+        "repos": 6
+      }
     },
     {
       "rule": "node-security/no-weak-cipher-algorithm",
@@ -52195,6 +52559,12 @@
       "rule": "node-security/no-zip-slip",
       "cases": [
         {
+          "kind": "TP",
+          "description": "a symlink whose target comes from the archive bytes",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/found-in-the-wild.test.ts",
+          "source": "nwutils/getter src/decompress.js:100"
+        },
+        {
           "kind": "TN",
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.coverage.test.ts"
@@ -52302,7 +52672,8 @@
         {
           "kind": "FP",
           "description": "OpenTelemetry context propagation is not an archive — 6 findings in the wild",
-          "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts"
+          "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts",
+          "source": "diia-open-source/be-diia-app src/grpc/grpcService.ts:280"
         },
         {
           "kind": "FP",
@@ -52504,7 +52875,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 14,
+        "repos": 4
+      }
     },
     {
       "rule": "node-security/prefer-native-crypto",
@@ -52754,7 +53129,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/prefer-native-crypto/prefer-native-crypto.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 7,
+        "repos": 3
+      }
     },
     {
       "rule": "node-security/require-aead-tag-verification",
@@ -53644,7 +54023,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/utils/credential-evidence.coverage.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 117,
+        "repos": 8
+      }
     },
     {
       "rule": "node-security/require-secure-deletion",
@@ -53924,7 +54307,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/require-secure-deletion.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 68,
+        "repos": 4
+      }
     },
     {
       "rule": "node-security/require-storage-encryption",
@@ -54084,7 +54471,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/utils/credential-evidence.coverage.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 2
+      }
     },
     {
       "rule": "node-security/require-stream-error-handler",
@@ -54219,7 +54610,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/require-stream-error-handler/require-stream-error-handler.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 17,
+        "repos": 10
+      }
     },
     {
       "rule": "openai-security/no-browser-api-key-exposure",
@@ -74589,7 +74984,11 @@
           "description": "CONTROL: escaped then REASSIGNED to the raw value",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-non-literal-regexp/neutralised-pattern.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 369,
+        "repos": 44
+      }
     },
     {
       "rule": "secure-coding/detect-object-injection",
@@ -76194,7 +76593,11 @@
           "description": "CONTROL: string concatenation with request data still reports",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/write-path-branches.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 7145,
+        "repos": 73
+      }
     },
     {
       "rule": "secure-coding/detect-weak-password-validation",
@@ -76484,7 +76887,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-bidi-characters/no-bidi-characters.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 122,
+        "repos": 3
+      }
     },
     {
       "rule": "secure-coding/no-directive-injection",
@@ -77009,7 +77416,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-directive-injection/no-directive-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 17,
+        "repos": 6
+      }
     },
     {
       "rule": "secure-coding/no-electron-security-issues",
@@ -77424,7 +77835,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-electron-security-issues/no-electron-security-issues.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "secure-coding/no-fail-open-auth",
@@ -77734,7 +78149,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-fail-open-auth/no-fail-open-auth.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 2
+      }
     },
     {
       "rule": "secure-coding/no-format-string-injection",
@@ -78289,7 +78708,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/no-format-string-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 52,
+        "repos": 17
+      }
     },
     {
       "rule": "secure-coding/no-graphql-injection",
@@ -79054,7 +79477,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/no-graphql-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 52,
+        "repos": 6
+      }
     },
     {
       "rule": "secure-coding/no-hardcoded-credentials",
@@ -79889,7 +80316,11 @@
           "description": "DEFAULT: `fillmein` is not a built-in placeholder word",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 59,
+        "repos": 12
+      }
     },
     {
       "rule": "secure-coding/no-hardcoded-session-tokens",
@@ -79954,7 +80385,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-session-tokens/no-hardcoded-session-tokens.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 69,
+        "repos": 10
+      }
     },
     {
       "rule": "secure-coding/no-homoglyph-identifiers",
@@ -80074,7 +80509,11 @@
           "description": "a template chunk that ends with an invisible character",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-homoglyph-identifiers/no-homoglyph-identifiers.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 12,
+        "repos": 4
+      }
     },
     {
       "rule": "secure-coding/no-improper-sanitization",
@@ -80629,7 +81068,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-sanitization/no-improper-sanitization.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 36,
+        "repos": 11
+      }
     },
     {
       "rule": "secure-coding/no-improper-type-validation",
@@ -81264,7 +81707,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/no-improper-type-validation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1468,
+        "repos": 47
+      }
     },
     {
       "rule": "secure-coding/no-insecure-comparison",
@@ -81727,7 +82174,8 @@
         {
           "kind": "FP",
           "description": "a filename is not a credential — 71 findings, the largest shape",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts",
+          "source": "IGNF/cartes.gouv.fr-entree-carto"
         },
         {
           "kind": "TP",
@@ -81744,7 +82192,11 @@
           "description": "the default is unchanged — plain loose equality still reports",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 12303,
+        "repos": 51
+      }
     },
     {
       "rule": "secure-coding/no-ldap-injection",
@@ -82479,7 +82931,11 @@
           "description": "additionalRequestProperties adds hapi's request.payload",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-log-injection/no-log-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 6
+      }
     },
     {
       "rule": "secure-coding/no-missing-authentication",
@@ -82974,7 +83430,11 @@
           "description": "a supplied ignorePatterns REPLACES the built-in list, so /login reports",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/no-missing-authentication.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 483,
+        "repos": 18
+      }
     },
     {
       "rule": "secure-coding/no-pii-in-logs",
@@ -83229,7 +83689,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-pii-in-logs/no-pii-in-logs.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "secure-coding/no-privilege-escalation",
@@ -84274,7 +84738,11 @@
           "description": "(a{1,3})+$ — 2,008 ms, bounded INNER quantifier does NOT save it",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-redos-vulnerable-regex/timed-corrections.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 142,
+        "repos": 31
+      }
     },
     {
       "rule": "secure-coding/no-sensitive-data-exposure",
@@ -85064,7 +85532,11 @@
           "description": "FN GUARD: a computed read names nothing, so it is not assumed diagnostic",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/no-sensitive-data-exposure.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 21,
+        "repos": 10
+      }
     },
     {
       "rule": "secure-coding/no-sql-injection",
@@ -85949,7 +86421,11 @@
           "description": "strict mode handles a non-identifier part under substitution",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-sql-injection/no-sql-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 2
+      }
     },
     {
       "rule": "secure-coding/no-template-injection",
@@ -86889,7 +87365,11 @@
           "description": "logical OR with the tainted operand on the right",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unchecked-loop-condition/no-unchecked-loop-condition.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 339,
+        "repos": 36
+      }
     },
     {
       "rule": "secure-coding/no-unlimited-resource-allocation",
@@ -87809,7 +88289,11 @@
           "description": "do-while bounded by the request",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/no-unlimited-resource-allocation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 7,
+        "repos": 4
+      }
     },
     {
       "rule": "secure-coding/no-unsafe-deserialization",
@@ -88394,7 +88878,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/redis-eval-is-not-js-eval.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 34,
+        "repos": 11
+      }
     },
     {
       "rule": "secure-coding/no-unsafe-regex-construction",
@@ -88704,7 +89192,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 22,
+        "repos": 15
+      }
     },
     {
       "rule": "secure-coding/no-weak-password-recovery",
@@ -89804,7 +90296,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-xpath-injection/no-xpath-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 17,
+        "repos": 8
+      }
     },
     {
       "rule": "secure-coding/no-xxe-injection",
@@ -90199,7 +90695,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/no-xxe-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 15,
+        "repos": 7
+      }
     },
     {
       "rule": "secure-coding/require-backend-authorization",
@@ -90414,7 +90914,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/require-backend-authorization.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 38,
+        "repos": 7
+      }
     },
     {
       "rule": "secure-coding/require-secure-defaults",
@@ -90749,7 +91253,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/require-secure-defaults/require-secure-defaults.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 22,
+        "repos": 8
+      }
     },
     {
       "rule": "sequelize-security/no-hardcoded-credentials",
@@ -92019,7 +92527,11 @@
           "description": "",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-abort-signal/require-abort-signal.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "vercel-ai-security/require-audit-logging",
@@ -92124,7 +92636,11 @@
           "description": "",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-audit-logging/require-audit-logging.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "vercel-ai-security/require-embedding-validation",
@@ -92274,7 +92790,11 @@
           "description": "",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-error-handling/require-error-handling.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "vercel-ai-security/require-max-steps",
@@ -92544,7 +93064,11 @@
           "description": "",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-max-tokens/require-max-tokens.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "vercel-ai-security/require-output-filtering",
@@ -92869,7 +93393,11 @@
           "description": "",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-request-timeout/require-request-timeout.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "vercel-ai-security/require-tool-confirmation",
@@ -93249,7 +93777,11 @@
           "description": "",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-validated-prompt/require-validated-prompt.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     }
   ]
 }

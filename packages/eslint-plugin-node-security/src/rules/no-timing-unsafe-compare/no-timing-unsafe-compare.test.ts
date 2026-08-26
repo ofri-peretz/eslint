@@ -45,6 +45,7 @@ describe('no-timing-unsafe-compare', () => {
         // `operatorToken.kind` against a SyntaxKind inside its own lint rule; the
         // identifier carries `token`, the value is an enum member.
         {
+          // @source flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56
           name: 'FP: an AST discriminant is not a credential — 11 findings in the wild',
           code: 'if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }',
         },

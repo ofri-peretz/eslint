@@ -58,8 +58,47 @@ const CHECK = process.argv.includes('--check');
 const UPDATE = process.argv.includes('--update');
 
 type Kind = 'TP' | 'TN' | 'FP' | 'FN';
-type Case = { kind: Kind; description: string; file: string };
-type RuleEntry = { rule: string; cases: Case[] };
+type Case = { kind: Kind; description: string; file: string; source?: string };
+type RuleEntry = { rule: string; cases: Case[]; wild?: { count: number; repos: number } };
+
+/**
+ * Two plugins publish under a prefix that differs from their directory, so an
+ * inventory keyed by published rule id will not match the directory-derived
+ * name without this.
+ */
+const PREFIX_ALIASES: Record<string, string> = {
+  'jwt-security/': 'jwt/',
+  'postgresql-security/': 'pg/',
+};
+const published = (rule: string): string => {
+  for (const [dir, id] of Object.entries(PREFIX_ALIASES)) {
+    if (rule.startsWith(dir)) return id + rule.slice(dir.length);
+  }
+  return rule;
+};
+
+/**
+ * How often each rule fired across 158 cloned repositories (13,146 files).
+ *
+ * Firing is not catching — `no-insecure-comparison` accounts for 12,303 of
+ * those findings and most are `===` on two config values. But NOT firing is
+ * conclusive in the other direction: a rule that produced nothing across 13k
+ * files of other people's code has never been shown a candidate, and whatever
+ * its unit tests prove, it is not yet doing anything in the world.
+ */
+type Inventory = {
+  rules: Record<string, { count: number; repos: number }>;
+  withoutMaterial: string[];
+  filesLinted: number;
+  reposScanned: number;
+};
+const INVENTORY_FILE = path.join(ROOT, 'benchmarks', 'budgets', 'real-world-rule-inventory.json');
+let inventory: Inventory | null = null;
+try {
+  inventory = JSON.parse(fs.readFileSync(INVENTORY_FILE, 'utf8')) as Inventory;
+} catch {
+  inventory = null;
+}
 
 /**
  * Every rule the suite ships. `src/rules` nests in several plugins
@@ -142,6 +181,28 @@ function describeCase(element: ts.Expression): string {
   return '';
 }
 
+/**
+ * Provenance. `@source <owner>/<repo> <path>:<line>` in the case's leading
+ * comment (or in its name) says this case came out of code somebody actually
+ * shipped, rather than out of our heads.
+ *
+ * The distinction is the whole question of whether a rule does something real.
+ * A rule can pass a suite of fixtures its own author wrote and still never have
+ * fired on a line of production code — the fixtures prove the rule matches the
+ * author's idea of the defect, and nothing more. A cited case proves the shape
+ * exists in the wild.
+ */
+const SOURCE = /@source\s+([^\n*]+?)\s*(?:\*\/|\n|$)/;
+function provenanceOf(element: ts.Node, text: string, description: string): string | undefined {
+  const inName = SOURCE.exec(description);
+  if (inName !== null) return inName[1].trim();
+  // The whole case, comments included. A `@source` note sits wherever it reads
+  // best — above the object, or inside it next to the `filename` it explains —
+  // and looking only at leading comments found none of them.
+  const found = SOURCE.exec(text.slice(element.getFullStart(), element.getEnd()));
+  return found === null ? undefined : found[1].trim();
+}
+
 /** `FP:` / `FN:` on the name overrides the array the case sits in. */
 function classify(description: string, array: 'valid' | 'invalid'): { kind: Kind; description: string } {
   const marker = /^\s*(FP|FN)\s*:\s*/i.exec(description);
@@ -183,7 +244,8 @@ function arrayIn(node: ts.Expression): ts.ArrayLiteralExpression | null {
  * the rule its second argument was imported from.
  */
 function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
-  const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+  const source_text = fs.readFileSync(file, 'utf8');
+  const source = ts.createSourceFile(file, source_text, ts.ScriptTarget.Latest, true);
   const rel = path.relative(ROOT, file);
   const byBinding = new Map<string, string>();
   const out = new Map<string, Case[]>();
@@ -211,9 +273,11 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
       for (const element of array.elements) {
         // `...SHARED_CASES` contributes cases this file does not describe.
         if (ts.isSpreadElement(element)) continue;
-        const { kind, description } = classify(describeCase(element), key);
+        const raw = describeCase(element);
+        const { kind, description } = classify(raw, key);
+        const source = provenanceOf(element, source_text, raw);
         const list = out.get(rule) ?? [];
-        list.push({ kind, description, file: rel });
+        list.push({ kind, description: description.replace(SOURCE, '').trim(), file: rel, ...(source ? { source } : {}) });
         out.set(rule, list);
       }
     }
@@ -261,11 +325,32 @@ for (const file of testFiles) {
   for (const [rule, cases] of casesIn(file, known)) collected.get(rule)?.push(...cases);
 }
 
-const entries: RuleEntry[] = rules.map((r) => ({ rule: r.rule, cases: collected.get(r.rule) ?? [] }));
+const entries: RuleEntry[] = rules.map((r) => {
+  const wild = inventory?.rules[published(r.rule)];
+  return {
+    rule: r.rule,
+    cases: collected.get(r.rule) ?? [],
+    ...(wild ? { wild: { count: wild.count, repos: wild.repos } } : {}),
+  };
+});
 
 const tally = (kind: Kind): number => entries.reduce((n, e) => n + e.cases.filter((c) => c.kind === kind).length, 0);
 const counts = { TP: tally('TP'), TN: tally('TN'), FP: tally('FP'), FN: tally('FN') };
 const undescribed = entries.reduce((n, e) => n + e.cases.filter((c) => !c.description).length, 0);
+/**
+ * The question this answers is not "is the rule tested" but "has this rule
+ * ever been shown a defect somebody else wrote". A suite of self-authored
+ * fixtures cannot distinguish a rule that catches a real bug from one that
+ * catches only the author's idea of it.
+ */
+const grounded = entries.filter((e) => e.cases.some((c) => c.kind === 'TP' && c.source !== undefined));
+/**
+ * The weaker claim, and the more common one: the rule has been run over real
+ * code and something was decided about what it did there — usually that a
+ * report was wrong and the rule was narrowed. That is evidence of contact with
+ * the world; it is not evidence the rule catches anything.
+ */
+const touched = entries.filter((e) => e.cases.some((c) => c.source !== undefined));
 /**
  * A case with no `name` proves behaviour without saying what behaviour. It
  * counts as a test and not as documentation, so the gate asks for a DESCRIBED
@@ -283,6 +368,27 @@ console.log(`  ${entries.length} rules`);
 console.log(`  TP ${counts.TP}   TN ${counts.TN}   FP ${counts.FP}   FN ${counts.FN}`);
 console.log(`  undescribed cases                       ${undescribed}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
+console.log(`  rules with a TP taken from real code    ${grounded.length}`);
+console.log(`  rules with ANY case from real code      ${touched.length}`);
+/**
+ * The scan covered the rule list as it was enumerated at the time, which was a
+ * flat read of `src/rules` and so missed every rule in a nested directory. The
+ * uncovered rules are not silent — they were never asked.
+ */
+const scanned =
+  inventory === null
+    ? new Set<string>()
+    : new Set([...Object.keys(inventory.rules), ...inventory.withoutMaterial]);
+const fires = entries.filter((e) => e.wild !== undefined);
+const silent = entries.filter((e) => e.wild === undefined && scanned.has(published(e.rule)));
+const unscanned = entries.filter((e) => !scanned.has(published(e.rule)));
+if (inventory !== null) {
+  console.log(
+    `  fires on real code                      ${fires.length}   (${inventory.reposScanned} repos, ${inventory.filesLinted} files)`,
+  );
+  console.log(`  scanned and never fired                 ${silent.length}`);
+  console.log(`  never scanned                           ${unscanned.length}`);
+}
 
 if (CHECK) {
   const baseline: string[] = fs.existsSync(BASELINE)
@@ -342,6 +448,32 @@ if (!CHECK) {
     `${missing.length} of ${entries.length} rules do not yet carry both a described TP and a described TN.`,
     `${undescribed} cases run without a \`name\`: they prove behaviour without saying what behaviour.`,
     '',
+    `**${grounded.length} of ${entries.length} rules have a TP taken from code somebody else shipped.**`,
+    `${touched.length} have any case at all drawn from real code — usually a false positive we`,
+    'narrowed the rule to stop making, which is contact with the world but not',
+    'evidence the rule catches anything. The rest are proved only by fixtures we',
+    'wrote, and a fixture cannot tell a rule that catches a real defect from one',
+    "that catches its author's idea of the defect.",
+    '',
+    ...(inventory === null
+      ? []
+      : [
+          `Separately, linting ${inventory.reposScanned} cloned repositories (${inventory.filesLinted} files):`,
+          '',
+          '| | rules |',
+          '|---|---|',
+          `| fired at least once | **${fires.length}** |`,
+          `| scanned, never fired | ${silent.length} |`,
+          `| never scanned | ${unscanned.length} |`,
+          '',
+          'Firing is not catching — `secure-coding/no-insecure-comparison` accounts for',
+          '12,303 of those findings and most are `===` on two config values. But not',
+          'firing is conclusive the other way: a rule that produced no candidate across',
+          "13k files of other people's code has not yet been given the chance to be",
+          'right. The unscanned rules were missed by the enumeration the scan used, not',
+          'found silent. Each rule below carries its own count.',
+        ]),
+    '',
   ];
   for (const entry of entries) {
     const n = (k: Kind): number => entry.cases.filter((c) => c.kind === k).length;
@@ -350,7 +482,13 @@ if (!CHECK) {
       md.push('*No RuleTester cases found.*', '');
       continue;
     }
-    md.push(`TP ${n('TP')} · TN ${n('TN')} · FP ${n('FP')} · FN ${n('FN')}`, '');
+    const wild =
+      entry.wild !== undefined
+        ? `fired ${entry.wild.count} times across ${entry.wild.repos} of ${inventory?.reposScanned ?? 0} scanned repositories`
+        : scanned.has(published(entry.rule))
+          ? 'never fired across the scanned repositories'
+          : 'not covered by the real-code scan';
+    md.push(`TP ${n('TP')} · TN ${n('TN')} · FP ${n('FP')} · FN ${n('FN')} — ${wild}`, '');
     md.push('| | case |', '|---|---|');
     for (const kind of ['TP', 'TN', 'FP', 'FN'] as Kind[]) {
       for (const c of entry.cases.filter((x) => x.kind === kind)) {
@@ -362,7 +500,8 @@ if (!CHECK) {
           c.description === ''
             ? '*(undescribed)*'
             : c.description.replaceAll('|', '\\|').replaceAll('_', '\\_');
-        md.push(`| ${kind} | ${cell} |`);
+        const cited = c.source === undefined ? '' : ` <br>↳ \`${c.source.replaceAll('|', '\\|')}\``;
+        md.push(`| ${kind} | ${cell}${cited} |`);
       }
     }
     md.push('');

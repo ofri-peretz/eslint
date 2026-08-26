@@ -43,6 +43,7 @@ describe('no-insecure-comparison — reportLooseEquality', () => {
       },
       {
         // 71 findings, the largest single shape for this rule.
+        // @source IGNF/cartes.gouv.fr-entree-carto
         name: 'FP: a filename is not a credential — 71 findings, the largest shape',
         code: `if (key == filename) { use(key); }`,
         options: OFF,

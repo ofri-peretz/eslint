@@ -129,7 +129,6 @@
     "node-security/no-unsafe-dynamic-require",
     "node-security/no-weak-cipher-algorithm",
     "node-security/no-weak-hash-algorithm",
-    "node-security/no-zip-slip",
     "node-security/prefer-native-crypto",
     "node-security/require-aead-tag-verification",
     "node-security/require-dependency-integrity",

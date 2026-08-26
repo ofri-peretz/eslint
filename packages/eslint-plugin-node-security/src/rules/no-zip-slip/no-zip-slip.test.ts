@@ -27,6 +27,7 @@ describe('no-zip-slip', () => {
     ruleTester.run('valid - safe archive operations', noZipSlip, {
       valid: [
         {
+          // @source diia-open-source/be-diia-app src/grpc/grpcService.ts:280
           name: 'FP: OpenTelemetry context propagation is not an archive — 6 findings in the wild',
           code: 'const ctx = propagation.extract(context.active(), metadata, getter);',
         },
