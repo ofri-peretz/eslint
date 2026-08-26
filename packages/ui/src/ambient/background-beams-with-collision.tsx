@@ -10,9 +10,6 @@ import React, { useRef, useState, useEffect } from "react";
  * A dynamic background effect featuring animated beams that fall from the top
  * and create particle explosions when colliding with a surface at the bottom.
  *
- * Adapted from Aceternity UI:
- * https://ui.aceternity.com/components/background-beams-with-collision
- *
  * Theme Support:
  * - Light mode: Purple/indigo beams on a light gradient background
  * - Dark mode: Brighter purple/cyan beams on a dark gradient background

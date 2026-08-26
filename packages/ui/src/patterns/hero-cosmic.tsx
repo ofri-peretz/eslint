@@ -7,8 +7,8 @@ import {
   StarsBackground,
   ShootingStars,
   Meteors,
-} from '../aceternity/stars-background.js';
-import { DaylightBackground } from '../aceternity/daylight-background.js';
+} from '../ambient/stars-background.js';
+import { DaylightBackground } from '../ambient/daylight-background.js';
 
 export interface HeroCosmicCTA {
   label: React.ReactNode;

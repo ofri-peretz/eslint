@@ -3,7 +3,7 @@
 /**
  * @interlace/ui — Meteors (decorative animation primitive)
  *
- * Aceternity-style falling-meteor effect with per-meteor variety: viewport-
+ * Falling-meteor effect with per-meteor variety: viewport-
  * distributed origins (some above the fold), trail lengths randomized
  * between 50–140px, opacities 0.45–1.0, durations 3–9s. The variety is the
  * difference between "meteors" and "looks like a CSS animation" — a flat

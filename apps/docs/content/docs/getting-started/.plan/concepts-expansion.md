@@ -550,4 +550,4 @@ All interactive components MUST follow:
 - Heavy use of Lucide icons (already in project)
 - Framer Motion for animations (may need to add)
 - React Query for data fetching (may need to add)
-- MagicUI components referenced (shimmer buttons, etc.)
+- Decorative motion components referenced (shimmer buttons, etc.)

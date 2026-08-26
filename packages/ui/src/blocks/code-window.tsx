@@ -20,10 +20,9 @@ import { cn } from '../lib/cn.js';
  * window controls (`#FF5F57` / `#FEBC2E` / `#28C840`) so the chrome reads
  * as "code window" at a glance.
  *
- * Modeled on MagicUI's `Terminal` chrome (the dots + bar layout convention)
- * but reduced to the visual primitive — no animation, no terminal-specific
- * line emitter. Use this when you want a window-shaped container; reach
- * for `Terminal` from MagicUI when you want a terminal-prompt animation.
+ * This is the visual primitive only — the dots-and-bar chrome, no animation
+ * and no terminal-specific line emitter. Use it when you want a
+ * window-shaped container around static content.
  *
  * Example:
  *

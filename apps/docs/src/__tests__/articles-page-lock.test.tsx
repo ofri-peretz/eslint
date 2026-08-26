@@ -138,7 +138,7 @@ describe('ArticlesClient: Background Beams Integration', () => {
   });
 
   it('imports from background-beams-with-collision module', () => {
-    expect(articlesSource).toContain("from '@interlace/ui/aceternity/background-beams-with-collision'");
+    expect(articlesSource).toContain("from '@interlace/ui/ambient/background-beams-with-collision'");
   });
 
   it('renders BackgroundBeamsWithCollision component', () => {
