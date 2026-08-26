@@ -856,12 +856,6 @@ ruleTester.run(
   {
     valid: [
       {
-        // The rule reads a static `.bar`. The identical access written as
-        // `foo['bar']` is a computed member and goes unseen.
-        name: 'FN: the same access written through a computed literal key',
-        code: `import foo, { bar } from './foo'; const baz = foo['bar'];`,
-      },
-      {
         name: 'a property that is not a named export of the module',
         code: `import foo, { bar } from './foo'; const baz = foo.other;`,
       },

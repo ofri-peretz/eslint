@@ -93,7 +93,8 @@ describe('no-unhandled-promise — a call is not a promise', () => {
         code: 'import { load } from "./loader";\nload();',
       },
       {
-        name: 'FN: a promise passed as an argument to another call',
+        // @found nested arguments are skipped so console.log(fetch(url)) does not report twice
+        name: 'GAP: a promise passed as an argument to another call',
         code: 'console.log(fetch(url));',
       },
       // The wrapper call is a chain, not an argument, so the inner promise is
@@ -103,12 +104,14 @@ describe('no-unhandled-promise — a call is not a promise', () => {
       // The remaining arms of the nested-argument skip: a grandparent that is
       // not a member expression, one whose object is not the wrapper, and a
       // computed `["then"]` the skip does not recognise.
-      { name: 'FN: a promise wrapped twice', code: 'outer(wrap(fetch(url)));' },
+      // @found same skip, through two layers
+      { name: 'GAP: a promise wrapped twice', code: 'outer(wrap(fetch(url)));' },
       {
         name: 'a wrapped promise in a fully handled chain',
         code: 'wrap(fetch(url)).then(handle).catch(onError);',
       },
-      { name: 'FN: a wrapped promise used as a computed key', code: 'const v = a[wrap(fetch(url))].then;' },
+      // @found same skip, in computed-key position
+      { name: 'GAP: a wrapped promise used as a computed key', code: 'const v = a[wrap(fetch(url))].then;' },
 
       {
         name: 'a void expression, when the option allows it',
@@ -118,12 +121,14 @@ describe('no-unhandled-promise — a call is not a promise', () => {
     ],
     invalid: [
       {
-        name: 'a dynamic import nobody awaits',
+        // @found grammar review
+        name: 'FN: a dynamic import nobody awaits',
         code: 'import("./heavy-module");',
         errors: 1,
       },
       {
-        name: 'new Promise as a whole statement',
+        // @found grammar review
+        name: 'FN: new Promise as a whole statement',
         code: 'new Promise((resolve) => resolve(1));',
         errors: 1,
       },

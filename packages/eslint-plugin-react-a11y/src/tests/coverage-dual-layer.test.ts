@@ -468,7 +468,8 @@ describe('autocomplete-valid — guards and section- prefix (Layer 1)', () => {
          * turned `section-email` into `email` and passed a value that names a
          * section and no field at all.
          */
-        name: 'a section label with no field name after it',
+        // @found spec diff
+        name: 'FN: a section label with no field name after it',
         code: '<input autocomplete="section-email" />',
         errors: [{ messageId: 'invalidAutocomplete' }],
       },

@@ -46,6 +46,7 @@ describe('no-timing-unsafe-compare', () => {
         // identifier carries `token`, the value is an enum member.
         {
           // @source flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56
+          // @found real-source scan
           name: 'FP: an AST discriminant is not a credential — 11 findings in the wild',
           code: 'if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }',
         },
@@ -56,7 +57,8 @@ describe('no-timing-unsafe-compare', () => {
           // `a`/`b` and asking whether the rule still fires. It does not, and
           // widening the word list does not fix the general case. A `valid`
           // case is the honest place to say so: this is what ships today.
-          name: 'FN: a secret compared through an anonymous name is not detected',
+          // @found no word list fixes the general case; the consumer vocabulary option is the escape hatch
+          name: 'GAP: a secret compared through an anonymous name is not detected',
           code: 'if (a === b) { grant(); }',
         },
         'if (node.type === expectedType) { return; }',

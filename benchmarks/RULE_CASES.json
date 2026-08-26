@@ -1,9 +1,10 @@
 {
   "counts": {
-    "TP": 7384,
+    "TP": 7376,
     "TN": 10951,
     "FP": 18,
-    "FN": 10
+    "FN": 13,
+    "GAP": 8
   },
   "rules": [
     {
@@ -20560,28 +20561,31 @@
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/coverage-completion.test.ts"
         },
         {
-          "id": "conventions/no-magic-numbers#FP-cbf988",
+          "id": "conventions/no-magic-numbers#FP-c6b112",
           "kind": "FP",
           "code": "const DARK_MODE_FILTER_HUE_ROTATE_DEGREES = 180 as Degrees;",
           "description": "a named const through a type assertion — 33% of findings, with the arithmetic case",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
-          "source": "excalidraw/excalidraw packages/excalidraw/colors.ts:17"
+          "source": "excalidraw/excalidraw packages/excalidraw/colors.ts:17",
+          "found": "real-source scan"
         },
         {
-          "id": "conventions/no-magic-numbers#FP-f7b582",
+          "id": "conventions/no-magic-numbers#FP-9dcea3",
           "kind": "FP",
           "code": "export const FOCUS_POINT_SIZE = 10 / 1.5;",
           "description": "a named const computed from two literals",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
-          "source": "excalidraw/excalidraw packages/element/binding.ts:119"
+          "source": "excalidraw/excalidraw packages/element/binding.ts:119",
+          "found": "real-source scan"
         },
         {
-          "id": "conventions/no-magic-numbers#FP-a99ea7",
+          "id": "conventions/no-magic-numbers#FP-64057e",
           "kind": "FP",
           "code": "const points = [[-92.28090097254909, 7.105427357601002e-15], [-154.72, 19.19]];",
           "description": "a coordinate pair — 39% of findings, the largest class",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
-          "source": "excalidraw/excalidraw examples/.../initialData.tsx:64"
+          "source": "excalidraw/excalidraw examples/.../initialData.tsx:64",
+          "found": "real-source scan"
         },
         {
           "id": "conventions/no-magic-numbers#TN-cd20f3",
@@ -35858,14 +35862,7 @@
           "file": "packages/eslint-plugin-import-next/src/tests/coverage-batch-c.test.ts"
         },
         {
-          "id": "import-next/no-named-as-default#FN-eb3492",
-          "kind": "FN",
-          "code": "import { default as foo, foo } from './module';",
-          "description": "the same collision written through an aliased default specifier",
-          "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
-        },
-        {
-          "id": "import-next/no-named-as-default#TN-8d5ec3",
+          "id": "import-next/no-named-as-default#TN-06b64c",
           "kind": "TN",
           "code": "import MyComponent from './MyComponent';",
           "description": "a default import with its own name",
@@ -35956,17 +35953,32 @@
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
         },
         {
-          "id": "import-next/no-named-as-default#TP-596596",
+          "id": "import-next/no-named-as-default#TP-a2754c",
           "kind": "TP",
           "code": "import foo, { foo } from './module';",
           "description": "a default import with the same name as a named export of that module",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
         },
         {
-          "id": "import-next/no-named-as-default#TP-8af5cd",
+          "id": "import-next/no-named-as-default#TP-61f2cb",
           "kind": "TP",
           "code": "import foo, { foo as bar, foo } from './module';",
-          "description": "",
+          "description": "the same collision alongside a rename of the same export",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
+        },
+        {
+          "id": "import-next/no-named-as-default#FN-105b0c",
+          "kind": "FN",
+          "code": "import { default as foo, foo } from './module';",
+          "description": "the same collision written through an aliased default specifier",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts",
+          "found": "grammar review"
+        },
+        {
+          "id": "import-next/no-named-as-default#TP-22203a",
+          "kind": "TP",
+          "code": "import { default as widget, widget as w, widget } from './module';",
+          "description": "an aliased default colliding with a renamed named export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
         }
       ]
@@ -35974,13 +35986,6 @@
     {
       "rule": "import-next/no-named-as-default-member",
       "cases": [
-        {
-          "id": "import-next/no-named-as-default-member#FN-4221f0",
-          "kind": "FN",
-          "code": "import foo, { bar } from './foo'; const baz = foo['bar'];",
-          "description": "the same access written through a computed literal key",
-          "file": "packages/eslint-plugin-import-next/src/tests/coverage-batch-c.test.ts"
-        },
         {
           "id": "import-next/no-named-as-default-member#TN-0a09cd",
           "kind": "TN",
@@ -36052,10 +36057,32 @@
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts"
         },
         {
-          "id": "import-next/no-named-as-default-member#TP-bf0b8d",
+          "id": "import-next/no-named-as-default-member#TP-fd2c9d",
           "kind": "TP",
-          "code": "import foo, { bar } from './foo'; const baz = foo.bar; // Accessing 'bar' on default 'foo' when 'bar' is a named export",
-          "description": "a property read off the default that is actually a named export",
+          "code": "import foo, { bar } from './foo'; const baz = foo.bar;",
+          "description": "a property read off the default that is also a named export of the same module",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts"
+        },
+        {
+          "id": "import-next/no-named-as-default-member#FN-e08f8b",
+          "kind": "FN",
+          "code": "import foo, { bar } from './foo'; const baz = foo['bar'];",
+          "description": "the same access written through a computed literal key",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts",
+          "found": "grammar review"
+        },
+        {
+          "id": "import-next/no-named-as-default-member#TP-83127e",
+          "kind": "TP",
+          "code": "import foo, { \"kebab-name\" as k } from './foo'; const baz = foo['kebab-name'];",
+          "description": "a named export whose name is not a valid identifier, so only the computed form exists",
+          "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts"
+        },
+        {
+          "id": "import-next/no-named-as-default-member#TP-2f06b8",
+          "kind": "TP",
+          "code": "import foo, { run } from './foo'; foo.run();",
+          "description": "the same access as a call",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts"
         }
       ],
@@ -45327,20 +45354,22 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
-          "id": "maintainability/consistent-function-scoping#FP-69dcbe",
+          "id": "maintainability/consistent-function-scoping#FP-4c2df9",
           "kind": "FP",
           "code": "describe(\"request test suite\", function () { const x = 1; });",
           "description": "a describe block — 1,415 findings in the wild",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
-          "source": "nwutils/getter tests/specs/request.test.js:10"
+          "source": "nwutils/getter tests/specs/request.test.js:10",
+          "found": "real-source scan"
         },
         {
-          "id": "maintainability/consistent-function-scoping#FP-ad38e8",
+          "id": "maintainability/consistent-function-scoping#FP-751d42",
           "kind": "FP",
           "code": "test(\"createEmitUpdate sends messages\", async () => { const y = 2; });",
           "description": "a test block",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
-          "source": "telepat-io/otto extension/test/network-intercept-emission.test.ts:5"
+          "source": "telepat-io/otto extension/test/network-intercept-emission.test.ts:5",
+          "found": "real-source scan"
         },
         {
           "id": "maintainability/consistent-function-scoping#TN-f8091b",
@@ -45392,28 +45421,31 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
         },
         {
-          "id": "maintainability/consistent-function-scoping#FP-d6931e",
+          "id": "maintainability/consistent-function-scoping#FP-cac9cb",
           "kind": "FP",
           "code": "chrome.storage.onChanged.addListener((changes, area) => { sync(changes); });",
           "description": "addListener — `addEventListener` was on the old host list and this was not",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
-          "source": "telepat-io/otto extension/src/background.ts:217"
+          "source": "telepat-io/otto extension/src/background.ts:217",
+          "found": "real-source scan"
         },
         {
-          "id": "maintainability/consistent-function-scoping#FP-25e980",
+          "id": "maintainability/consistent-function-scoping#FP-d2d009",
           "kind": "FP",
           "code": "export default defineBackground(() => { start(); });",
           "description": "a framework entry point no allowlist would contain",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
-          "source": "telepat-io/otto extension/src/background.ts:101"
+          "source": "telepat-io/otto extension/src/background.ts:101",
+          "found": "real-source scan"
         },
         {
-          "id": "maintainability/consistent-function-scoping#FP-02d1a0",
+          "id": "maintainability/consistent-function-scoping#FP-1bb3a3",
           "kind": "FP",
           "code": "const cmd = { name: \"check\", async execute(ctx) { return ctx.ok(); } };",
           "description": "an object-literal method is the object, not a nested helper",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
-          "source": "telepat-io/otto extension/src/commands/check-login.ts:13"
+          "source": "telepat-io/otto extension/src/commands/check-login.ts:13",
+          "found": "real-source scan"
         },
         {
           "id": "maintainability/consistent-function-scoping#TP-2bdec2",
@@ -45423,18 +45455,20 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
         },
         {
-          "id": "maintainability/consistent-function-scoping#TP-980b2e",
-          "kind": "TP",
+          "id": "maintainability/consistent-function-scoping#FN-ce9cdf",
+          "kind": "FN",
           "code": "function outer() { const helper = () => 42; return helper(); }",
           "description": "the same helper as an arrow",
-          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+          "found": "real-source scan"
         },
         {
-          "id": "maintainability/consistent-function-scoping#TP-64063e",
-          "kind": "TP",
+          "id": "maintainability/consistent-function-scoping#FN-edcc33",
+          "kind": "FN",
           "code": "function outer() { const helper = function () { return 42; }; return helper(); }",
           "description": "the same helper as a function expression",
-          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+          "found": "real-source scan"
         },
         {
           "id": "maintainability/consistent-function-scoping#TP-683e86",
@@ -47316,18 +47350,20 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#FN-cef626",
-          "kind": "FN",
+          "id": "maintainability/no-unhandled-promise#GAP-175b7b",
+          "kind": "GAP",
           "code": "console.log(fetch(url));",
           "description": "a promise passed as an argument — the nested call is skipped",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts",
+          "found": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
         },
         {
-          "id": "maintainability/no-unhandled-promise#FN-647740",
-          "kind": "FN",
+          "id": "maintainability/no-unhandled-promise#GAP-b749bb",
+          "kind": "GAP",
           "code": "first(fetch(url)).third;",
           "description": "the same, one member access further along",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts",
+          "found": "same skip, one member access further along"
         },
         {
           "id": "maintainability/no-unhandled-promise#TP-6b545c",
@@ -47509,11 +47545,12 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#FN-06c219",
-          "kind": "FN",
+          "id": "maintainability/no-unhandled-promise#GAP-0f9ad0",
+          "kind": "GAP",
           "code": "console.log(fetch(url));",
           "description": "a promise passed as an argument to another call",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
         },
         {
           "id": "maintainability/no-unhandled-promise#TN-9e97c9",
@@ -47530,11 +47567,12 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#FN-cac6c7",
-          "kind": "FN",
+          "id": "maintainability/no-unhandled-promise#GAP-441394",
+          "kind": "GAP",
           "code": "outer(wrap(fetch(url)));",
           "description": "a promise wrapped twice",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "same skip, through two layers"
         },
         {
           "id": "maintainability/no-unhandled-promise#TN-835333",
@@ -47544,11 +47582,12 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#FN-930869",
-          "kind": "FN",
+          "id": "maintainability/no-unhandled-promise#GAP-fc1f8e",
+          "kind": "GAP",
           "code": "const v = a[wrap(fetch(url))].then;",
           "description": "a wrapped promise used as a computed key",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "same skip, in computed-key position"
         },
         {
           "id": "maintainability/no-unhandled-promise#TN-1b0a67",
@@ -47558,18 +47597,20 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TP-52e229",
-          "kind": "TP",
+          "id": "maintainability/no-unhandled-promise#FN-491640",
+          "kind": "FN",
           "code": "import(\"./heavy-module\");",
           "description": "a dynamic import nobody awaits",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "grammar review"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TP-b53438",
-          "kind": "TP",
+          "id": "maintainability/no-unhandled-promise#FN-3acabc",
+          "kind": "FN",
           "code": "new Promise((resolve) => resolve(1));",
           "description": "new Promise as a whole statement",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "grammar review"
         },
         {
           "id": "maintainability/no-unhandled-promise#TP-6fc649",
@@ -68981,11 +69022,12 @@
       "rule": "node-security/no-timing-unsafe-compare",
       "cases": [
         {
-          "id": "node-security/no-timing-unsafe-compare#FN-e93464",
-          "kind": "FN",
+          "id": "node-security/no-timing-unsafe-compare#GAP-61fee2",
+          "kind": "GAP",
           "code": "export function isAuthorized(bearerToken: string, sessionSecret: string): boolean { return bearerToken === sessionSecret; }",
           "description": "a secret arriving as a parameter has no visible taint source",
-          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/found-in-the-wild.test.ts"
+          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/found-in-the-wild.test.ts",
+          "found": "no name to read, and the rule is deliberately name-based not taint-based"
         },
         {
           "id": "node-security/no-timing-unsafe-compare#TP-ef0d40",
@@ -69061,19 +69103,21 @@
           "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/location-tails.test.ts"
         },
         {
-          "id": "node-security/no-timing-unsafe-compare#FP-5db65c",
+          "id": "node-security/no-timing-unsafe-compare#FP-3cb6e3",
           "kind": "FP",
           "code": "if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }",
           "description": "an AST discriminant is not a credential — 11 findings in the wild",
           "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts",
-          "source": "flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56"
+          "source": "flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56",
+          "found": "real-source scan"
         },
         {
-          "id": "node-security/no-timing-unsafe-compare#FN-ef9583",
-          "kind": "FN",
+          "id": "node-security/no-timing-unsafe-compare#GAP-f9dc8d",
+          "kind": "GAP",
           "code": "if (a === b) { grant(); }",
           "description": "a secret compared through an anonymous name is not detected",
-          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts"
+          "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts",
+          "found": "no word list fixes the general case; the consumer vocabulary option is the escape hatch"
         },
         {
           "id": "node-security/no-timing-unsafe-compare#TN-4d4eda",
@@ -73991,19 +74035,21 @@
           "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.coverage.test.ts"
         },
         {
-          "id": "node-security/no-zip-slip#FP-3fcf89",
+          "id": "node-security/no-zip-slip#FP-e1cc5d",
           "kind": "FP",
           "code": "const ctx = propagation.extract(context.active(), metadata, getter);",
           "description": "OpenTelemetry context propagation is not an archive — 6 findings in the wild",
           "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts",
-          "source": "diia-open-source/be-diia-app src/grpc/grpcService.ts:280"
+          "source": "diia-open-source/be-diia-app src/grpc/grpcService.ts:280",
+          "found": "real-source scan"
         },
         {
-          "id": "node-security/no-zip-slip#FP-f2912b",
+          "id": "node-security/no-zip-slip#FP-ae4bc4",
           "kind": "FP",
           "code": "const claims = extractClaims(token);",
           "description": "an OAuth claims extractor is not an archive",
-          "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts"
+          "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts",
+          "found": "real-source scan"
         },
         {
           "id": "node-security/no-zip-slip#TN-5b573d",
@@ -75137,12 +75183,13 @@
       "rule": "node-security/require-secure-credential-storage",
       "cases": [
         {
-          "id": "node-security/require-secure-credential-storage#FP-f325cc",
+          "id": "node-security/require-secure-credential-storage#FP-09c58b",
           "kind": "FP",
           "code": "process.env.TOKEN_SIGNING_ALG = 'RS256';",
           "description": "an algorithm name — 110 findings in the wild came from this shape",
           "file": "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/config-is-not-a-credential.test.ts",
-          "source": "auth0/express-openid-connect api.js:2"
+          "source": "auth0/express-openid-connect api.js:2",
+          "found": "real-source scan"
         },
         {
           "id": "node-security/require-secure-credential-storage#TN-a49570",
@@ -77771,11 +77818,12 @@
           "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
         },
         {
-          "id": "operability/require-code-minification#TP-dd1e15",
-          "kind": "TP",
+          "id": "operability/require-code-minification#FN-501add",
+          "kind": "FN",
           "code": "export default { build: { minify: false } }",
           "description": "minify — the Vite, Rollup and esbuild spelling of the same setting",
-          "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
+          "file": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts",
+          "found": "ecosystem fact"
         },
         {
           "id": "operability/require-code-minification#TP-3349c9",
@@ -87162,28 +87210,32 @@
           "kind": "FP",
           "code": "<input autocomplete=\"shipping street-address\" />",
           "description": "a shipping address modifier",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts",
+          "found": "spec diff"
         },
         {
           "id": "react-a11y/autocomplete-valid#FP-6eaab1",
           "kind": "FP",
           "code": "<input autocomplete=\"billing cc-number\" />",
           "description": "a billing address modifier",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts",
+          "found": "spec diff"
         },
         {
           "id": "react-a11y/autocomplete-valid#FP-2e795e",
           "kind": "FP",
           "code": "<input autocomplete=\"home tel\" />",
           "description": "a contact-channel modifier",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts",
+          "found": "spec diff"
         },
         {
           "id": "react-a11y/autocomplete-valid#FP-3747c9",
           "kind": "FP",
           "code": "<input autocomplete=\"username webauthn\" />",
           "description": "the webauthn credential suffix",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts",
+          "found": "spec diff"
         },
         {
           "id": "react-a11y/autocomplete-valid#TN-953549",
@@ -87270,11 +87322,12 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
         },
         {
-          "id": "react-a11y/autocomplete-valid#TP-155a30",
-          "kind": "TP",
+          "id": "react-a11y/autocomplete-valid#FN-880686",
+          "kind": "FN",
           "code": "<input autocomplete=\"name email\" />",
           "description": "two field names, where the grammar allows one",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts",
+          "found": "spec diff"
         },
         {
           "id": "react-a11y/autocomplete-valid#TP-0c8969",
@@ -87347,11 +87400,12 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
         },
         {
-          "id": "react-a11y/autocomplete-valid#TP-4e68db",
-          "kind": "TP",
+          "id": "react-a11y/autocomplete-valid#FN-9f3d7c",
+          "kind": "FN",
           "code": "<input autocomplete=\"section-email\" />",
           "description": "a section label with no field name after it",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts",
+          "found": "spec diff"
         }
       ]
     },
@@ -87948,11 +88002,12 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/html-has-lang.test.ts"
         },
         {
-          "id": "react-a11y/html-has-lang#TP-82cf0d",
-          "kind": "TP",
+          "id": "react-a11y/html-has-lang#FN-6f5894",
+          "kind": "FN",
           "code": "<html lang=\"\"></html>",
           "description": "an empty lang names no language",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/html-has-lang.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/html-has-lang.test.ts",
+          "found": "rule review"
         },
         {
           "id": "react-a11y/html-has-lang#TP-e2435e",
@@ -87995,11 +88050,12 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/iframe-has-title.test.ts"
         },
         {
-          "id": "react-a11y/iframe-has-title#TP-18df69",
-          "kind": "TP",
+          "id": "react-a11y/iframe-has-title#FN-3ed053",
+          "kind": "FN",
           "code": "<iframe src=\"a.html\" title=\"\"></iframe>",
           "description": "an empty title announces nothing",
-          "file": "packages/eslint-plugin-react-a11y/src/tests/iframe-has-title.test.ts"
+          "file": "packages/eslint-plugin-react-a11y/src/tests/iframe-has-title.test.ts",
+          "found": "rule review"
         },
         {
           "id": "react-a11y/iframe-has-title#TP-d591be",
@@ -104015,11 +104071,12 @@
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#FN-e591a2",
-          "kind": "FN",
+          "id": "reliability/no-unhandled-promise#GAP-1611db",
+          "kind": "GAP",
           "code": "console.log(fetch(url));",
           "description": "a promise passed as an argument to another call",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
         },
         {
           "id": "reliability/no-unhandled-promise#TN-6bf88a",
@@ -104029,18 +104086,20 @@
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TP-11510d",
-          "kind": "TP",
+          "id": "reliability/no-unhandled-promise#FN-5353dc",
+          "kind": "FN",
           "code": "import(\"./heavy-module\");",
           "description": "a dynamic import nobody awaits",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "grammar review"
         },
         {
-          "id": "reliability/no-unhandled-promise#TP-0ec8a9",
-          "kind": "TP",
+          "id": "reliability/no-unhandled-promise#FN-e5d6de",
+          "kind": "FN",
           "code": "new Promise((resolve) => resolve(1));",
           "description": "new Promise as a whole statement",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "grammar review"
         },
         {
           "id": "reliability/no-unhandled-promise#TP-8c0cf1",
@@ -115542,20 +115601,22 @@
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/no-insecure-comparison.test.ts"
         },
         {
-          "id": "secure-coding/no-insecure-comparison#FP-a61cc5",
+          "id": "secure-coding/no-insecure-comparison#FP-91ee4b",
           "kind": "FP",
           "code": "if (e.code == 'MODULE_NOT_FOUND') { retry(); }",
           "description": "an error code is not a credential — 69 findings in the wild",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts",
-          "source": "moleculerjs/moleculer utils.js:289"
+          "source": "moleculerjs/moleculer utils.js:289",
+          "found": "real-source scan"
         },
         {
-          "id": "secure-coding/no-insecure-comparison#FP-3385c8",
+          "id": "secure-coding/no-insecure-comparison#FP-20481d",
           "kind": "FP",
           "code": "if (key == filename) { use(key); }",
           "description": "a filename is not a credential — 71 findings, the largest shape",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts",
-          "source": "IGNF/cartes.gouv.fr-entree-carto"
+          "source": "IGNF/cartes.gouv.fr-entree-carto",
+          "found": "real-source scan"
         },
         {
           "id": "secure-coding/no-insecure-comparison#TP-08a6b5",

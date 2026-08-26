@@ -51,16 +51,19 @@ describe('no-magic-numbers — the shapes real code produces', () => {
     valid: [
       {
         // @source excalidraw/excalidraw packages/excalidraw/colors.ts:17
+        // @found real-source scan
         name: 'FP: a named const through a type assertion — 33% of findings, with the arithmetic case',
         code: 'const DARK_MODE_FILTER_HUE_ROTATE_DEGREES = 180 as Degrees;',
       },
       {
         // @source excalidraw/excalidraw packages/element/binding.ts:119
+        // @found real-source scan
         name: 'FP: a named const computed from two literals',
         code: 'export const FOCUS_POINT_SIZE = 10 / 1.5;',
       },
       {
         // @source excalidraw/excalidraw examples/.../initialData.tsx:64
+        // @found real-source scan
         name: 'FP: a coordinate pair — 39% of findings, the largest class',
         code: 'const points = [[-92.28090097254909, 7.105427357601002e-15], [-154.72, 19.19]];',
       },

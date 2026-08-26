@@ -12,9 +12,16 @@ Machine-readable in `VERDICT_LEDGER.json`. Definitions are the ordinary ones:
 | **FP** | we reported something that was not a defect |
 | **TN** | code we correctly stayed silent on — pinned as a `safe/` fixture |
 | **FN** | a defect we missed |
+| **GAP** | a defect we still miss, with nothing holding it shut |
 
-**Current: 6 TP · 10 FP · 0 FN identified.** The false positives represent
-**1,069 findings** in the wild.
+**Current: 6 TP · 13 FP · 7 FN.** The false positives represent **1,069
+findings** in the wild.
+
+Those are *clusters* — one row per mistake, however many findings or spellings
+it produced. `RULE_CASES.md` counts the same history in *cases*, which is the
+unit that does the protecting, and reports **18 FP · 13 FN · 8 GAP**. One
+cluster commonly needs several cases: FP-013 took five, because five distinct
+shapes had to be shown to stay quiet before the fix could be called done.
 
 That ratio is not a scandal, it is the first honest count. Before 2026-08-26 the
 scored corpus contained exactly one false positive, because nobody had looked
@@ -22,16 +29,39 @@ at real code — and the benchmark that would have told us could not run at all
 (see the two commits that repaired `benchmarks/score.ts`). A corpus with no
 false positives is an unexamined one.
 
-## FN is empty, and that is a gap not an achievement
+## What an FP or an FN entry is, and what it is not
 
-Nothing here records a defect we missed, because our method cannot find one. We
-scan code, look at what we reported, and judge it. A vulnerability no rule fires
-on produces no finding to review, so it never enters this table.
+**It is a receipt, not a bug report.** An entry appears in this table only
+after the mistake is fixed and a case exists that fails on the rule as it was.
+The row and the lock are the same object: the row is generated out of the case,
+so an entry cannot outlive the protection it describes, and protection cannot
+be quietly removed while the claim stays on the page.
+
+The distinction is worth stating because the database lost it once. A seal is
+applied by editing a case that already exists — an `FN:` case moves from
+`valid` to `invalid` the moment the fix lands — and on the first two occasions
+that happened, the `FN:` marker was dropped in the move. The record of the
+mistake vanished at exactly the point it became worth keeping, so the ledger
+read `FN 0` while eleven found-and-fixed misses sat in the suite unlabelled.
+`benchmarks/__tests__/sealed-vs-open-lock.test.ts` now refuses a marker that
+contradicts the array it sits in, which is the shape that error takes.
+
+**A mistake still open is a `GAP`, and is counted apart.** There are 8. They
+are listed in `RULE_CASES.md` with the reason each is still open, so a weakness
+we have admitted can never be read as one we have defended against — which is
+the failure mode that makes a precision table worth less than no table.
+
+## Recall still rests on fixtures we wrote
+
+The FN entries here were found three ways: reading real scan output, diffing a
+rule against the published standard it enforces, and reading the rule's own
+node handling against the grammar. All three find misses. None of them is
+independent ground truth — a vulnerability no rule fires on and no reviewer
+thinks to look for still produces nothing to review.
 
 Closing that needs a different instrument: a corpus with independently-known
 ground truth (a CVE set, or code another scanner flags and we do not). Until
-then, recall numbers rest on fixtures we wrote ourselves, and should be read
-that way.
+then, recall numbers should be read as a floor, not a measurement.
 
 ## False positives
 
@@ -50,10 +80,30 @@ that way.
 | FP-011 | `no-unhandled-promise` (×2 plugins) | every call treated as a promise | **11,866** | **fixed** |
 | FP-012 | `no-magic-numbers` | a number already named, and a number that is data | 536 | **fixed** |
 | FP-013 | `consistent-function-scoping` | a function passed as an argument | 1,270 | **fixed** |
-| FN-001 | `consistent-function-scoping` | every arrow and function-expression helper | — | **fixed** |
 
 `detect-object-injection` alone is six of the top eleven clusters. It is the
 largest single block of unexamined findings we have, and it is one rule.
+
+## False negatives
+
+Defects we walked past, each now held by an `invalid` case that reports. The
+per-case rows, with the stable id of the case that holds each one, are in
+`RULE_CASES.md` under *Every sealed case*.
+
+| id | rule | what we missed | found by |
+| :--- | :--- | :--- | :--- |
+| FN-001 | `consistent-function-scoping` | every arrow and function-expression helper — a `parent` link made every one look like it captured a binding | real-source scan |
+| FN-002 | `no-unhandled-promise` ×2 plugins | `new Promise(…)` and `import(…)` as whole statements: neither is a `CallExpression`, so neither reached the rule | grammar review |
+| FN-003 | `html-has-lang` / `iframe-has-title` | `lang=""` and `title=""` — presence was checked, content was not | rule review |
+| FN-004 | `require-code-minification` | `minify`, the Vite/Rollup/esbuild spelling; only webpack's `minimize` was known | ecosystem fact |
+| FN-005 | `autocomplete-valid` | two field names where the grammar allows one, and `section-` read as a strippable prefix rather than a label needing a field after it | spec diff |
+| FN-006 | `no-named-as-default` | `import { default as foo, foo }` — the same collision, through the spelling TypeScript emits under `esModuleInterop: false` | grammar review |
+| FN-007 | `no-named-as-default-member` | `foo['bar']` — every computed access was skipped, including the only spelling available for a name that is not an identifier | grammar review |
+
+FN-006 and FN-007 are the pair worth reading together: both rules handled one
+node shape for a construct the language spells two ways, and in both cases the
+unhandled spelling is the one a compiler or minifier produces. A rule that
+reads grammar has to read all of it.
 
 ## True positives
 

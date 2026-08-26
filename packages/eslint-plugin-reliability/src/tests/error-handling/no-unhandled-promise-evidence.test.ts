@@ -91,7 +91,8 @@ describe('no-unhandled-promise — a call is not a promise', () => {
         // handed to another call is skipped so that `console.log(fetch(url))`
         // does not report the inner call twice — but nothing reports it once
         // either, and the rejection is unhandled.
-        name: 'FN: a promise passed as an argument to another call',
+        // @found nested arguments are skipped so console.log(fetch(url)) does not report twice
+        name: 'GAP: a promise passed as an argument to another call',
         code: 'console.log(fetch(url));',
       },
       {
@@ -104,12 +105,14 @@ describe('no-unhandled-promise — a call is not a promise', () => {
     ],
     invalid: [
       {
-        name: 'a dynamic import nobody awaits',
+        // @found grammar review
+        name: 'FN: a dynamic import nobody awaits',
         code: 'import("./heavy-module");',
         errors: 1,
       },
       {
-        name: 'new Promise as a whole statement',
+        // @found grammar review
+        name: 'FN: new Promise as a whole statement',
         code: 'new Promise((resolve) => resolve(1));',
         errors: 1,
       },

@@ -38,6 +38,7 @@ describe('no-insecure-comparison — reportLooseEquality', () => {
       {
         // 69 findings across the scanned corpus were this exact shape.
         // @source moleculerjs/moleculer utils.js:289
+        // @found real-source scan
         name: 'FP: an error code is not a credential — 69 findings in the wild',
         code: `if (e.code == 'MODULE_NOT_FOUND') { retry(); }`,
         options: OFF,
@@ -45,6 +46,7 @@ describe('no-insecure-comparison — reportLooseEquality', () => {
       {
         // 71 findings, the largest single shape for this rule.
         // @source IGNF/cartes.gouv.fr-entree-carto
+        // @found real-source scan
         name: 'FP: a filename is not a credential — 71 findings, the largest shape',
         code: `if (key == filename) { use(key); }`,
         options: OFF,

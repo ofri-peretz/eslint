@@ -38,7 +38,8 @@ describe('iframe-has-title', () => {
       valid: [],
       invalid: [
       {
-        name: 'an empty title announces nothing',
+        // @found rule review
+        name: 'FN: an empty title announces nothing',
         code: '<iframe src="a.html" title=""></iframe>',
         errors: [{ messageId: 'missingTitle' }],
       },

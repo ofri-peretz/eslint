@@ -42,11 +42,13 @@ suite('consistent-function-scoping — the shapes real code produces', () => {
     valid: [
       {
         // @source nwutils/getter tests/specs/request.test.js:10
+        // @found real-source scan
         name: 'FP: a describe block — 1,415 findings in the wild',
         code: 'describe("request test suite", function () { const x = 1; });',
       },
       {
         // @source telepat-io/otto extension/test/network-intercept-emission.test.ts:5
+        // @found real-source scan
         name: 'FP: a test block',
         code: 'test("createEmitUpdate sends messages", async () => { const y = 2; });',
       },
@@ -64,16 +66,19 @@ suite('consistent-function-scoping — the shapes real code produces', () => {
       { name: 'a benchmark DSL nobody has heard of', code: 'bench("throughput", () => { work(); });' },
       {
         // @source telepat-io/otto extension/src/background.ts:217
+        // @found real-source scan
         name: 'FP: addListener — `addEventListener` was on the old host list and this was not',
         code: 'chrome.storage.onChanged.addListener((changes, area) => { sync(changes); });',
       },
       {
         // @source telepat-io/otto extension/src/background.ts:101
+        // @found real-source scan
         name: 'FP: a framework entry point no allowlist would contain',
         code: 'export default defineBackground(() => { start(); });',
       },
       {
         // @source telepat-io/otto extension/src/commands/check-login.ts:13
+        // @found real-source scan
         name: 'FP: an object-literal method is the object, not a nested helper',
         code: 'const cmd = { name: "check", async execute(ctx) { return ctx.ok(); } };',
       },
@@ -99,12 +104,14 @@ suite('consistent-function-scoping — the shapes real code produces', () => {
          * Arrows are the dominant modern form, so the rule was missing most of
          * what it exists to find.
          */
-        name: 'the same helper as an arrow',
+        // @found real-source scan
+        name: 'FN: the same helper as an arrow',
         code: 'function outer() { const helper = () => 42; return helper(); }',
         errors: 1,
       },
       {
-        name: 'the same helper as a function expression',
+        // @found real-source scan
+        name: 'FN: the same helper as a function expression',
         code: 'function outer() { const helper = function () { return 42; }; return helper(); }',
         errors: 1,
       },

@@ -60,7 +60,8 @@ describe('no-timing-unsafe-compare — found in the wild', () => {
          * live CWE-208 in a project with 3k stars. That is the trade, written
          * down rather than argued away.
          */
-        name: 'FN: a secret arriving as a parameter has no visible taint source',
+        // @found no name to read, and the rule is deliberately name-based not taint-based
+        name: 'GAP: a secret arriving as a parameter has no visible taint source',
         filename: 'node/monitor/src/util/util.ts',
         code: `
           export function isAuthorized(bearerToken: string, sessionSecret: string): boolean {

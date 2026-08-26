@@ -29,7 +29,8 @@ ruleTester.run('require-code-minification', requireCodeMinification, {
 
   invalid: [
     {
-      name: 'minify — the Vite, Rollup and esbuild spelling of the same setting',
+      // @found ecosystem fact
+      name: 'FN: minify — the Vite, Rollup and esbuild spelling of the same setting',
       code: 'export default { build: { minify: false } }',
       errors: 1,
     },

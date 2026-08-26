@@ -39,7 +39,8 @@ describe('html-has-lang', () => {
       valid: [],
       invalid: [
       {
-        name: 'an empty lang names no language',
+        // @found rule review
+        name: 'FN: an empty lang names no language',
         code: '<html lang=""></html>',
         errors: [{ messageId: 'missingLang' }],
       },

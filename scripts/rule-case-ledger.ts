@@ -28,11 +28,24 @@
  *   TN  valid case    — code we intend to leave alone
  *   FP  valid case    — a report we made in the WILD and have since sealed.
  *                       A TN with provenance: it fired on someone's repo.
- *   FN  either        — a defect we know we miss. Documented, not caught.
+ *   FN  invalid case  — a defect we MISSED in the wild and have since sealed.
+ *                       A TP with provenance: it slipped past us on real code.
+ *   GAP valid case    — a defect we know we still miss. Documented, not caught,
+ *                       and deliberately NOT counted as protection.
  *
  * TP/TN follow from which array the case sits in, so they need no annotation.
- * FP and FN are claims about history that the array cannot carry, so they are
- * marked with a `FP:` or `FN:` prefix on the case `name`.
+ * FP/FN/GAP are claims about history that the array cannot carry, so they are
+ * marked with a `FP:`, `FN:` or `GAP:` prefix on the case `name`.
+ *
+ * FP and FN are the two halves of the same asset: a mistake we made against
+ * real third-party code, now held shut by a case that fails on the rule as it
+ * was. Both are *protection*. GAP is the honest opposite — an admission with
+ * no lock behind it — so it is tallied apart and never satisfies a floor.
+ *
+ * The array a marker sits in is therefore not free. `FN:` in `valid` would be
+ * claiming a sealed miss that still passes silently, which is a contradiction;
+ * `GAP:` in `invalid` would be claiming an open miss the rule already catches.
+ * Both are rejected rather than silently reinterpreted.
  *
  * A case with no `name` still counts, but lands in the ledger as `(undescribed)`
  * — it proves behaviour without saying what behaviour, which is why `--check`
@@ -53,13 +66,26 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const OUT_JSON = path.join(ROOT, 'benchmarks', 'RULE_CASES.json');
 const OUT_MD = path.join(ROOT, 'benchmarks', 'RULE_CASES.md');
-const BASELINE = path.join(ROOT, 'benchmarks', 'budgets', 'rule-case-baseline.json');
+const BASELINE = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'rule-case-baseline.json',
+);
 
 const CHECK = process.argv.includes('--check');
 const UPDATE = process.argv.includes('--update');
 
-type Kind = 'TP' | 'TN' | 'FP' | 'FN';
-type Case = { id: string; kind: Kind; code: string; description: string; file: string; source?: string };
+type Kind = 'TP' | 'TN' | 'FP' | 'FN' | 'GAP';
+type Case = {
+  id: string;
+  kind: Kind;
+  code: string;
+  description: string;
+  file: string;
+  source?: string;
+  found?: string;
+};
 
 /**
  * A stable name for one row of the matrix — `secure-coding/no-magic-numbers#TP-a3f1c2`.
@@ -83,10 +109,17 @@ type Case = { id: string; kind: Kind; code: string; description: string; file: s
  * than the same row with a different label.
  */
 function caseId(rule: string, kind: Kind, text: string): string {
-  const digest = crypto.createHash('sha256').update(`${rule}\u0000${text}`).digest('hex');
+  const digest = crypto
+    .createHash('sha256')
+    .update(`${rule}\u0000${text}`)
+    .digest('hex');
   return `${rule}#${kind}-${digest.slice(0, 6)}`;
 }
-type RuleEntry = { rule: string; cases: Case[]; wild?: { count: number; repos: number } };
+type RuleEntry = {
+  rule: string;
+  cases: Case[];
+  wild?: { count: number; repos: number };
+};
 
 /**
  * Two plugins publish under a prefix that differs from their directory, so an
@@ -119,7 +152,12 @@ type Inventory = {
   filesLinted: number;
   reposScanned: number;
 };
-const INVENTORY_FILE = path.join(ROOT, 'benchmarks', 'budgets', 'real-world-rule-inventory.json');
+const INVENTORY_FILE = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'real-world-rule-inventory.json',
+);
 let inventory: Inventory | null = null;
 try {
   inventory = JSON.parse(fs.readFileSync(INVENTORY_FILE, 'utf8')) as Inventory;
@@ -135,7 +173,9 @@ try {
 function allRules(): { rule: string; module: string }[] {
   const out: { rule: string; module: string }[] = [];
   const pkgDir = path.join(ROOT, 'packages');
-  for (const pkg of fs.readdirSync(pkgDir).filter((d) => d.startsWith('eslint-plugin-'))) {
+  for (const pkg of fs
+    .readdirSync(pkgDir)
+    .filter((d) => d.startsWith('eslint-plugin-'))) {
     const rulesDir = path.join(pkgDir, pkg, 'src', 'rules');
     if (!fs.existsSync(rulesDir)) continue;
     const plugin = pkg.replace('eslint-plugin-', '');
@@ -144,11 +184,21 @@ function allRules(): { rule: string; module: string }[] {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           if (fs.existsSync(path.join(full, 'index.ts'))) {
-            out.push({ rule: `${plugin}/${entry.name}`, module: path.join(full, 'index.ts') });
+            out.push({
+              rule: `${plugin}/${entry.name}`,
+              module: path.join(full, 'index.ts'),
+            });
           }
           walk(full);
-        } else if (entry.name.endsWith('.ts') && !/\.(test|spec)\./.test(entry.name) && entry.name !== 'index.ts') {
-          out.push({ rule: `${plugin}/${entry.name.replace(/\.ts$/, '')}`, module: full });
+        } else if (
+          entry.name.endsWith('.ts') &&
+          !/\.(test|spec)\./.test(entry.name) &&
+          entry.name !== 'index.ts'
+        ) {
+          out.push({
+            rule: `${plugin}/${entry.name.replace(/\.ts$/, '')}`,
+            module: full,
+          });
         }
       }
     };
@@ -157,18 +207,23 @@ function allRules(): { rule: string; module: string }[] {
   // A rule directory also holds helpers, and a helper is not a rule. The
   // generated manifest is the list of rules each plugin actually exports, so
   // the walk is intersected with it rather than guessed at by filename.
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, '.agent', 'plugin-rule-manifest.json'), 'utf8')) as Record<
-    string,
-    Record<string, unknown>
-  >;
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
+      'utf8',
+    ),
+  ) as Record<string, Record<string, unknown>>;
   const exported = new Set<string>();
   for (const [pkg, rules] of Object.entries(manifest)) {
     if (!fs.existsSync(path.join(pkgDir, pkg))) continue; // renamed packages linger in the manifest
-    for (const name of Object.keys(rules)) exported.add(`${pkg.replace('eslint-plugin-', '')}/${name}`);
+    for (const name of Object.keys(rules))
+      exported.add(`${pkg.replace('eslint-plugin-', '')}/${name}`);
   }
   const seen = new Set<string>();
   return out
-    .filter((r) => exported.has(r.rule) && !seen.has(r.rule) && seen.add(r.rule))
+    .filter(
+      (r) => exported.has(r.rule) && !seen.has(r.rule) && seen.add(r.rule),
+    )
     .sort((a, b) => a.rule.localeCompare(b.rule));
 }
 
@@ -183,7 +238,9 @@ function ruleOfImport(from: string, specifier: string): string | null {
   const marker = `${path.sep}src${path.sep}rules${path.sep}`;
   const at = resolved.indexOf(marker);
   if (at === -1) return null;
-  const pkg = path.basename(resolved.slice(0, resolved.indexOf(`${path.sep}src${path.sep}`)));
+  const pkg = path.basename(
+    resolved.slice(0, resolved.indexOf(`${path.sep}src${path.sep}`)),
+  );
   if (!pkg.startsWith('eslint-plugin-')) return null;
   const tail = resolved.slice(at + marker.length).replace(/\/index$/, '');
   const name = path.basename(tail);
@@ -205,14 +262,19 @@ const stringOf = (node: ts.Node): string | null => {
  * checked against the rule, and it is this one.
  */
 function codeOf(element: ts.Expression): string {
-  const squash = (text: string): string => text.replace(/\s+/g, ' ').trim().slice(0, 200);
+  const squash = (text: string): string =>
+    text.replace(/\s+/g, ' ').trim().slice(0, 200);
   if (ts.isStringLiteralLike(element)) return squash(element.text);
   if (!ts.isObjectLiteralExpression(element)) return '';
   for (const prop of element.properties) {
     if (!ts.isPropertyAssignment(prop)) continue;
-    const key = ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name) ? prop.name.text : '';
+    const key =
+      ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)
+        ? prop.name.text
+        : '';
     if (key !== 'code') continue;
-    if (ts.isStringLiteralLike(prop.initializer)) return squash(prop.initializer.text);
+    if (ts.isStringLiteralLike(prop.initializer))
+      return squash(prop.initializer.text);
     // A template with interpolation, or a concatenation: keep the source text,
     // which still shows the shape even though the value is assembled at runtime.
     return squash(prop.initializer.getText());
@@ -225,7 +287,10 @@ function describeCase(element: ts.Expression): string {
   if (!ts.isObjectLiteralExpression(element)) return '';
   for (const prop of element.properties) {
     if (!ts.isPropertyAssignment(prop)) continue;
-    const key = ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name) ? prop.name.text : '';
+    const key =
+      ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)
+        ? prop.name.text
+        : '';
     if (key !== 'name') continue;
     return stringOf(prop.initializer) ?? '';
   }
@@ -244,24 +309,68 @@ function describeCase(element: ts.Expression): string {
  * exists in the wild.
  */
 const SOURCE = /@source\s+([^\n*]+?)\s*(?:\*\/|\n|$)/;
-function provenanceOf(element: ts.Node, text: string, description: string): string | undefined {
-  const inName = SOURCE.exec(description);
+/**
+ * `@found` is a different claim from `@source` and must not be folded into it.
+ *
+ * `@source` says: this code exists, here is the repository and line. `@found`
+ * says: here is how we came to know we were wrong about it. A seal can have
+ * both (we scanned real code and read the finding), or only the second (we
+ * read the rule against a published standard and saw the gap before anybody
+ * shipped it into a bug report).
+ *
+ * Keeping them apart is the whole point. Folding a spec citation into
+ * `@source` would inflate "rules with a case drawn from real code", which is
+ * the one number here that is not about our own imagination.
+ */
+const FOUND = /@found\s+([^\n*]+?)\s*(?:\*\/|\n|$)/;
+function tagOf(
+  re: RegExp,
+  element: ts.Node,
+  text: string,
+  description: string,
+): string | undefined {
+  const inName = re.exec(description);
   if (inName !== null) return inName[1].trim();
   // The whole case, comments included. A `@source` note sits wherever it reads
   // best — above the object, or inside it next to the `filename` it explains —
   // and looking only at leading comments found none of them.
-  const found = SOURCE.exec(text.slice(element.getFullStart(), element.getEnd()));
+  const found = re.exec(text.slice(element.getFullStart(), element.getEnd()));
   return found === null ? undefined : found[1].trim();
 }
 
-/** `FP:` / `FN:` on the name overrides the array the case sits in. */
-function classify(description: string, array: 'valid' | 'invalid'): { kind: Kind; description: string } {
-  const marker = /^\s*(FP|FN)\s*:\s*/i.exec(description);
+/**
+ * `FP:` / `FN:` / `GAP:` on the name overrides the array the case sits in —
+ * but only in the one direction that is coherent. Each marker asserts a fact
+ * about the rule's behaviour on this code, and the array already asserts one;
+ * a marker that contradicts its array is a typo, not a subtler claim.
+ */
+const REQUIRED_ARRAY: Record<'FP' | 'FN' | 'GAP', 'valid' | 'invalid'> = {
+  FP: 'valid', // sealed over-report: it must now stay quiet
+  FN: 'invalid', // sealed miss: it must now report
+  GAP: 'valid', // open miss: it still stays quiet, and we are saying so
+};
+
+function classify(
+  description: string,
+  array: 'valid' | 'invalid',
+  where: string,
+): { kind: Kind; description: string } {
+  const marker = /^\s*(FP|FN|GAP)\s*:\s*/i.exec(description);
   if (marker) {
-    return {
-      kind: marker[1].toUpperCase() as Kind,
-      description: description.slice(marker[0].length).trim(),
-    };
+    const kind = marker[1].toUpperCase() as 'FP' | 'FN' | 'GAP';
+    const wanted = REQUIRED_ARRAY[kind];
+    if (array !== wanted) {
+      throw new Error(
+        `${where}: "${description}" is marked ${kind}, which belongs in the ` +
+          `\`${wanted}\` array, but it sits in \`${array}\`. ` +
+          (kind === 'FN'
+            ? 'A sealed miss must be a case the rule now reports — otherwise nothing is sealed. Use `GAP:` for a miss that is still open.'
+            : kind === 'GAP'
+              ? 'An open miss must be a case that still passes silently. Use `FN:` once a fix makes it report.'
+              : 'A sealed over-report must be a case the rule now stays quiet on.'),
+      );
+    }
+    return { kind, description: description.slice(marker[0].length).trim() };
   }
   const stripped = description.replace(/^\s*(TP|TN)\s*:\s*/i, '').trim();
   return { kind: array === 'invalid' ? 'TP' : 'TN', description: stripped };
@@ -296,7 +405,12 @@ function arrayIn(node: ts.Expression): ts.ArrayLiteralExpression | null {
  */
 function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
   const source_text = fs.readFileSync(file, 'utf8');
-  const source = ts.createSourceFile(file, source_text, ts.ScriptTarget.Latest, true);
+  const source = ts.createSourceFile(
+    file,
+    source_text,
+    ts.ScriptTarget.Latest,
+    true,
+  );
   const rel = path.relative(ROOT, file);
   const byBinding = new Map<string, string>();
   const out = new Map<string, Case[]>();
@@ -309,15 +423,20 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
     if (rule === null || !known.has(rule)) continue;
     const bindings = statement.importClause.namedBindings;
     if (bindings && ts.isNamedImports(bindings)) {
-      for (const element of bindings.elements) byBinding.set(element.name.text, rule);
+      for (const element of bindings.elements)
+        byBinding.set(element.name.text, rule);
     }
-    if (statement.importClause.name) byBinding.set(statement.importClause.name.text, rule);
+    if (statement.importClause.name)
+      byBinding.set(statement.importClause.name.text, rule);
   }
 
   const collect = (literal: ts.ObjectLiteralExpression, rule: string): void => {
     for (const prop of literal.properties) {
       if (!ts.isPropertyAssignment(prop)) continue;
-      const key = ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name) ? prop.name.text : '';
+      const key =
+        ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)
+          ? prop.name.text
+          : '';
       if (key !== 'valid' && key !== 'invalid') continue;
       const array = arrayIn(prop.initializer);
       if (array === null) continue;
@@ -325,17 +444,22 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
         // `...SHARED_CASES` contributes cases this file does not describe.
         if (ts.isSpreadElement(element)) continue;
         const raw = describeCase(element);
-        const { kind, description } = classify(raw, key);
-        const source = provenanceOf(element, source_text, raw);
+        const { kind, description } = classify(raw, key, rel);
+        const source = tagOf(SOURCE, element, source_text, raw);
+        const found = tagOf(FOUND, element, source_text, raw);
         const list = out.get(rule) ?? [];
         const caseCode = codeOf(element);
         list.push({
           id: caseId(rule, kind, element.getText()),
           kind,
           code: caseCode,
-          description: description.replace(SOURCE, '').trim(),
+          description: description
+            .replace(SOURCE, '')
+            .replace(FOUND, '')
+            .trim(),
           file: rel,
           ...(source ? { source } : {}),
+          ...(found ? { found } : {}),
         });
         out.set(rule, list);
       }
@@ -350,12 +474,16 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
       node.arguments.length >= 3
     ) {
       const target = node.arguments[1];
-      const binding = ts.isIdentifier(target) ? byBinding.get(target.text) : undefined;
+      const binding = ts.isIdentifier(target)
+        ? byBinding.get(target.text)
+        : undefined;
       const named = stringOf(node.arguments[0]);
       const rule =
-        binding ?? [...known].find((r) => named !== null && r.endsWith(`/${named}`));
+        binding ??
+        [...known].find((r) => named !== null && r.endsWith(`/${named}`));
       const config = node.arguments[2];
-      if (rule !== undefined && ts.isObjectLiteralExpression(config)) collect(config, rule);
+      if (rule !== undefined && ts.isObjectLiteralExpression(config))
+        collect(config, rule);
     }
     ts.forEachChild(node, visit);
   };
@@ -370,18 +498,26 @@ const collected = new Map<string, Case[]>(rules.map((r) => [r.rule, []]));
 const testFiles: string[] = [];
 const walkTests = (dir: string): void => {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.')) continue;
+    if (
+      entry.name === 'node_modules' ||
+      entry.name === 'dist' ||
+      entry.name.startsWith('.')
+    )
+      continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walkTests(full);
     else if (/\.(test|spec)\.tsx?$/.test(entry.name)) testFiles.push(full);
   }
 };
-for (const pkg of fs.readdirSync(path.join(ROOT, 'packages')).filter((d) => d.startsWith('eslint-plugin-'))) {
+for (const pkg of fs
+  .readdirSync(path.join(ROOT, 'packages'))
+  .filter((d) => d.startsWith('eslint-plugin-'))) {
   const src = path.join(ROOT, 'packages', pkg, 'src');
   if (fs.existsSync(src)) walkTests(src);
 }
 for (const file of testFiles) {
-  for (const [rule, cases] of casesIn(file, known)) collected.get(rule)?.push(...cases);
+  for (const [rule, cases] of casesIn(file, known))
+    collected.get(rule)?.push(...cases);
 }
 
 /**
@@ -410,23 +546,47 @@ const entries: RuleEntry[] = rules.map((r) => {
   };
 });
 
-const tally = (kind: Kind): number => entries.reduce((n, e) => n + e.cases.filter((c) => c.kind === kind).length, 0);
-const counts = { TP: tally('TP'), TN: tally('TN'), FP: tally('FP'), FN: tally('FN') };
-const undescribed = entries.reduce((n, e) => n + e.cases.filter((c) => !c.description).length, 0);
+const tally = (kind: Kind): number =>
+  entries.reduce(
+    (n, e) => n + e.cases.filter((c) => c.kind === kind).length,
+    0,
+  );
+const counts = {
+  TP: tally('TP'),
+  TN: tally('TN'),
+  FP: tally('FP'),
+  FN: tally('FN'),
+  GAP: tally('GAP'),
+};
+/**
+ * The headline number, and the only one that is a claim about US rather than
+ * about the fixtures we wrote. FP + FN are the mistakes we made against real
+ * third-party code and then nailed shut; every other case is a position we
+ * asserted from the armchair and then satisfied.
+ */
+const sealed = counts.FP + counts.FN;
+const undescribed = entries.reduce(
+  (n, e) => n + e.cases.filter((c) => !c.description).length,
+  0,
+);
 /**
  * The question this answers is not "is the rule tested" but "has this rule
  * ever been shown a defect somebody else wrote". A suite of self-authored
  * fixtures cannot distinguish a rule that catches a real bug from one that
  * catches only the author's idea of it.
  */
-const grounded = entries.filter((e) => e.cases.some((c) => c.kind === 'TP' && c.source !== undefined));
+const grounded = entries.filter((e) =>
+  e.cases.some((c) => c.kind === 'TP' && c.source !== undefined),
+);
 /**
  * The weaker claim, and the more common one: the rule has been run over real
  * code and something was decided about what it did there — usually that a
  * report was wrong and the rule was narrowed. That is evidence of contact with
  * the world; it is not evidence the rule catches anything.
  */
-const touched = entries.filter((e) => e.cases.some((c) => c.source !== undefined));
+const touched = entries.filter((e) =>
+  e.cases.some((c) => c.source !== undefined),
+);
 /**
  * A case with no `name` proves behaviour without saying what behaviour. It
  * counts as a test and not as documentation, so the gate asks for a DESCRIBED
@@ -435,10 +595,13 @@ const touched = entries.filter((e) => e.cases.some((c) => c.source !== undefined
  */
 const documented = (entry: RuleEntry, kinds: Kind[]): boolean =>
   entry.cases.some((c) => kinds.includes(c.kind) && c.description !== '');
-// An FN does NOT satisfy the TP requirement: it is a documented miss, the
-// opposite of a caught defect. An FP does satisfy the TN requirement — it is a
-// TN that arrived with provenance.
-const missing = entries.filter((e) => !documented(e, ['TP']) || !documented(e, ['TN', 'FP']));
+// FN satisfies the TP requirement and FP satisfies the TN requirement: each is
+// its plain counterpart plus provenance. GAP satisfies NEITHER — it is a
+// documented miss, the opposite of a caught defect, and counting it as one
+// would let a rule discharge its obligation by admitting it does not work.
+const missing = entries.filter(
+  (e) => !documented(e, ['TP', 'FN']) || !documented(e, ['TN', 'FP']),
+);
 
 /**
  * How many classified cases a rule needs on each side before its position is
@@ -459,7 +622,9 @@ const CASE_FLOOR = 3;
 const classified = (entry: RuleEntry, kinds: Kind[]): number =>
   entry.cases.filter((c) => kinds.includes(c.kind) && c.code !== '').length;
 const belowFloor = entries.filter(
-  (e) => classified(e, ['TP', 'FN']) < CASE_FLOOR || classified(e, ['TN', 'FP']) < CASE_FLOOR,
+  (e) =>
+    classified(e, ['TP', 'FN']) < CASE_FLOOR ||
+    classified(e, ['TN', 'FP', 'GAP']) < CASE_FLOOR,
 );
 /**
  * A rule with an EMPTY `invalid` array claims nothing. It is not
@@ -471,16 +636,28 @@ const belowFloor = entries.filter(
  *
  * They are listed separately because "add a description" is not the fix.
  */
-const claimsNothing = entries.filter((e) => e.cases.length > 0 && !e.cases.some((c) => c.kind === 'TP'));
+const claimsNothing = entries.filter(
+  (e) => e.cases.length > 0 && !e.cases.some((c) => c.kind === 'TP'),
+);
 
 console.log(`  ${entries.length} rules`);
-console.log(`  TP ${counts.TP}   TN ${counts.TN}   FP ${counts.FP}   FN ${counts.FN}`);
+console.log(
+  `  TP ${counts.TP}   TN ${counts.TN}   FP ${counts.FP}   FN ${counts.FN}`,
+);
+console.log(`  sealed against real code (FP+FN)        ${sealed}`);
+console.log(`  open misses, documented not sealed      ${counts.GAP}`);
 console.log(`  undescribed cases                       ${undescribed}`);
 console.log(`  byte-identical duplicate cases          ${duplicates}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
-console.log(`  rules that claim no defect at all       ${claimsNothing.length}`);
-console.log(`  rules under ${CASE_FLOOR} classified cases a side     ${belowFloor.length}`);
-const cited = entries.flatMap((e) => e.cases.filter((c) => c.source !== undefined)).length;
+console.log(
+  `  rules that claim no defect at all       ${claimsNothing.length}`,
+);
+console.log(
+  `  rules under ${CASE_FLOOR} classified cases a side     ${belowFloor.length}`,
+);
+const cited = entries.flatMap((e) =>
+  e.cases.filter((c) => c.source !== undefined),
+).length;
 console.log(`  cases citing real code (@source)        ${cited}`);
 console.log(`  rules with a TP taken from real code    ${grounded.length}`);
 console.log(`  rules with ANY case from real code      ${touched.length}`);
@@ -494,7 +671,9 @@ const scanned =
     ? new Set<string>()
     : new Set([...Object.keys(inventory.rules), ...inventory.withoutMaterial]);
 const fires = entries.filter((e) => e.wild !== undefined);
-const silent = entries.filter((e) => e.wild === undefined && scanned.has(published(e.rule)));
+const silent = entries.filter(
+  (e) => e.wild === undefined && scanned.has(published(e.rule)),
+);
 const unscanned = entries.filter((e) => !scanned.has(published(e.rule)));
 if (inventory !== null) {
   console.log(
@@ -504,14 +683,25 @@ if (inventory !== null) {
   console.log(`  never scanned                           ${unscanned.length}`);
 }
 
-const FLOOR_BASELINE = path.join(ROOT, 'benchmarks', 'budgets', 'rule-case-floor-baseline.json');
+const FLOOR_BASELINE = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'rule-case-floor-baseline.json',
+);
 
 if (CHECK) {
   const floorBaseline: string[] = fs.existsSync(FLOOR_BASELINE)
-    ? (JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as { rules: string[] }).rules
+    ? (
+        JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as {
+          rules: string[];
+        }
+      ).rules
     : [];
   const knownThin = new Set(floorBaseline);
-  const thinned = belowFloor.map((e) => e.rule).filter((r) => !knownThin.has(r));
+  const thinned = belowFloor
+    .map((e) => e.rule)
+    .filter((r) => !knownThin.has(r));
   if (thinned.length > 0) {
     console.error(
       `\n  ⛔ ${thinned.length} rule(s) hold fewer than ${CASE_FLOOR} classified cases a side:`,
@@ -525,14 +715,19 @@ if (CHECK) {
   }
 
   const baseline: string[] = fs.existsSync(BASELINE)
-    ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] }).rules
+    ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] })
+        .rules
     : [];
   const known = new Set(baseline);
   const regressed = missing.map((e) => e.rule).filter((r) => !known.has(r));
   if (regressed.length > 0) {
-    console.error(`\n  ⛔ ${regressed.length} rule(s) lack a described TP or TN and are not in the baseline:`);
+    console.error(
+      `\n  ⛔ ${regressed.length} rule(s) lack a described TP or TN and are not in the baseline:`,
+    );
     for (const rule of regressed) console.error(`     ${rule}`);
-    console.error(`\n  Add the missing case, or run with --update if the baseline should shrink.`);
+    console.error(
+      `\n  Add the missing case, or run with --update if the baseline should shrink.`,
+    );
     process.exit(1);
   }
   console.log(`  baseline ${baseline.length} — no regression`);
@@ -540,19 +735,25 @@ if (CHECK) {
 
 if (UPDATE) {
   const previous: string[] = fs.existsSync(BASELINE)
-    ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] }).rules
+    ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] })
+        .rules
     : [];
   const now = missing.map((e) => e.rule).sort();
   const grew = now.filter((r) => !previous.includes(r));
   if (previous.length > 0 && grew.length > 0) {
-    console.error(`\n  ⛔ refusing to grow the baseline by ${grew.length}: ${grew.join(', ')}`);
+    console.error(
+      `\n  ⛔ refusing to grow the baseline by ${grew.length}: ${grew.join(', ')}`,
+    );
     process.exit(1);
   }
   fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
   fs.writeFileSync(
     BASELINE,
     `${JSON.stringify(
-      { note: 'Rules with no described TP case, or no described TN/FP case. Shrink-only.', rules: now },
+      {
+        note: 'Rules with no described TP case, or no described TN/FP case. Shrink-only.',
+        rules: now,
+      },
       null,
       2,
     )}\n`,
@@ -560,27 +761,58 @@ if (UPDATE) {
   console.log(`  baseline written: ${previous.length} → ${now.length}`);
 
   const previousThin: string[] = fs.existsSync(FLOOR_BASELINE)
-    ? (JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as { rules: string[] }).rules
+    ? (
+        JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as {
+          rules: string[];
+        }
+      ).rules
     : [];
   const nowThin = belowFloor.map((e) => e.rule).sort();
   const grewThin = nowThin.filter((r) => !previousThin.includes(r));
   if (previousThin.length > 0 && grewThin.length > 0) {
-    console.error(`\n  ⛔ refusing to grow the case-floor baseline by ${grewThin.length}: ${grewThin.join(', ')}`);
+    console.error(
+      `\n  ⛔ refusing to grow the case-floor baseline by ${grewThin.length}: ${grewThin.join(', ')}`,
+    );
     process.exit(1);
   }
   fs.writeFileSync(
     FLOOR_BASELINE,
     `${JSON.stringify(
-      { note: `Rules holding fewer than ${CASE_FLOOR} classified cases on a side. Shrink-only.`, rules: nowThin },
+      {
+        note: `Rules holding fewer than ${CASE_FLOOR} classified cases on a side. Shrink-only.`,
+        rules: nowThin,
+      },
       null,
       2,
     )}\n`,
   );
-  console.log(`  case-floor baseline: ${previousThin.length} → ${nowThin.length}`);
+  console.log(
+    `  case-floor baseline: ${previousThin.length} → ${nowThin.length}`,
+  );
+}
+
+/** Flattened views of the two history-bearing kinds, for the ledger's own tables. */
+const withRule = (kinds: Kind[]): { rule: string; c: Case }[] =>
+  entries.flatMap((e) =>
+    e.cases
+      .filter((c) => kinds.includes(c.kind))
+      .map((c) => ({ rule: e.rule, c })),
+  );
+const sealedCases = withRule(['FP', 'FN']).sort(
+  (a, b) => a.rule.localeCompare(b.rule) || a.c.kind.localeCompare(b.c.kind),
+);
+const gapCases = withRule(['GAP']).sort((a, b) => a.rule.localeCompare(b.rule));
+const foundBy = new Map<string, number>();
+for (const { c } of sealedCases) {
+  const how = c.found ?? 'unrecorded';
+  foundBy.set(how, (foundBy.get(how) ?? 0) + 1);
 }
 
 if (!CHECK) {
-  fs.writeFileSync(OUT_JSON, `${JSON.stringify({ counts, rules: entries }, null, 2)}\n`);
+  fs.writeFileSync(
+    OUT_JSON,
+    `${JSON.stringify({ counts, rules: entries }, null, 2)}\n`,
+  );
 
   const md: string[] = [
     '# Rule case ledger',
@@ -593,16 +825,62 @@ if (!CHECK) {
     '| **TP** | an `invalid` case: a defect we intend to catch |',
     '| **TN** | a `valid` case: code we intend to leave alone |',
     '| **FP** | a `valid` case named `FP: …` — we reported this in the wild, and sealed it |',
-    '| **FN** | a case named `FN: …` — a defect we know we miss |',
+    '| **FN** | an `invalid` case named `FN: …` — we MISSED this in the wild, and sealed it |',
+    '| **GAP** | a `valid` case named `GAP: …` — a miss that is still open, and not protection |',
     '',
-    `**${entries.length} rules · TP ${counts.TP} · TN ${counts.TN} · FP ${counts.FP} · FN ${counts.FN}**`,
+    `**${entries.length} rules · TP ${counts.TP} · TN ${counts.TN} · FP ${counts.FP} · FN ${counts.FN} · GAP ${counts.GAP}**`,
+    '',
+    '## What FP and FN actually count',
+    '',
+    `**${sealed} cases are sealed against real third-party code** — ${counts.FP} over-reports we`,
+    `made and ${counts.FN} defects we walked past, each now held by a case that fails on`,
+    'the rule as it was written and passes on the rule as it is. That is the only',
+    'number here earned outside our own imagination: every TP and TN is a position',
+    'we asserted and then satisfied, which proves consistency and not correctness.',
+    '',
+    'These are deliberately not a bug list. An entry arrives here **after** it is',
+    'fixed; the case is the receipt. A mistake still open does not get an FP or an',
+    `FN — it gets a \`GAP:\`, of which there are ${counts.GAP}, counted apart precisely so`,
+    'that admitting a weakness can never be mistaken for defending against one.',
+    '',
+    'How each one was found, from the `@found` note on its case:',
+    '',
+    '| found by | sealed |',
+    '|---|---:|',
+    ...[...foundBy.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([how, n]) => `| ${how} | ${n} |`),
+    '',
+    '## Every sealed case',
+    '',
+    'The full list, so the protection can be audited without opening a test file.',
+    'Each row fails on the rule as it was and passes on the rule as it is.',
+    '',
+    '| id | what we got wrong | found by | in real code |',
+    '|---|---|---|---|',
+    ...sealedCases.map(
+      ({ c }) =>
+        `| \`${c.id}\` | ${c.description || '(undescribed)'} | ${c.found ?? '—'} | ${c.source === undefined ? '—' : `\`${c.source}\``} |`,
+    ),
+    '',
+    `## The ${counts.GAP} misses still open`,
+    '',
+    'Each is a `valid` case: the code passes, and it should not. They are here so',
+    'that the gap is citable and closable one at a time, not so that it counts.',
+    '',
+    '| id | what we miss | why it is still open |',
+    '|---|---|---|',
+    ...gapCases.map(
+      ({ c }) =>
+        `| \`${c.id}\` | ${c.description || '(undescribed)'} | ${c.found ?? '—'} |`,
+    ),
     '',
     `${missing.length} of ${entries.length} rules do not yet carry both a described TP and a described TN.`,
     `${undescribed} cases run without a \`name\`: they prove behaviour without saying what behaviour.`,
     '',
     `${claimsNothing.length} rules have an EMPTY \`invalid\` array: they claim no defect at all, and`,
     'their suites pass by proving they stay quiet. Adding a description is not the',
-    'fix for those — see each one\'s own comment for why it has nothing to catch.',
+    "fix for those — see each one's own comment for why it has nothing to catch.",
     '',
     `**${grounded.length} of ${entries.length} rules have a TP taken from code somebody else shipped.**`,
     `${touched.length} have any case at all drawn from real code — usually a false positive we`,
@@ -632,7 +910,8 @@ if (!CHECK) {
     '',
   ];
   for (const entry of entries) {
-    const n = (k: Kind): number => entry.cases.filter((c) => c.kind === k).length;
+    const n = (k: Kind): number =>
+      entry.cases.filter((c) => c.kind === k).length;
     md.push(`## \`${entry.rule}\``, '');
     if (entry.cases.length === 0) {
       md.push('*No RuleTester cases found.*', '');
@@ -644,9 +923,13 @@ if (!CHECK) {
         : scanned.has(published(entry.rule))
           ? 'never fired across the scanned repositories'
           : 'not covered by the real-code scan';
-    md.push(`TP ${n('TP')} · TN ${n('TN')} · FP ${n('FP')} · FN ${n('FN')} — ${wild}`, '');
+    const gap = n('GAP') === 0 ? '' : ` · GAP ${n('GAP')}`;
+    md.push(
+      `TP ${n('TP')} · TN ${n('TN')} · FP ${n('FP')} · FN ${n('FN')}${gap} — ${wild}`,
+      '',
+    );
     md.push('| id | case |', '|---|---|');
-    for (const kind of ['TP', 'TN', 'FP', 'FN'] as Kind[]) {
+    for (const kind of ['TP', 'TN', 'FP', 'FN', 'GAP'] as Kind[]) {
       for (const c of entry.cases.filter((x) => x.kind === kind)) {
         // A pipe ends the cell early and takes the rest of the row with it;
         // a pair of underscores (`__proto__`, and this is a security suite, so
@@ -656,12 +939,17 @@ if (!CHECK) {
           c.description === ''
             ? '*(undescribed)*'
             : c.description.replaceAll('|', '\\|').replaceAll('_', '\\_');
-        const cited = c.source === undefined ? '' : ` <br>↳ \`${c.source.replaceAll('|', '\\|')}\``;
+        const cited =
+          c.source === undefined
+            ? ''
+            : ` <br>↳ \`${c.source.replaceAll('|', '\\|')}\``;
         md.push(`| \`${c.id.split('#')[1]}\` | ${cell}${cited} |`);
       }
     }
     md.push('');
   }
   fs.writeFileSync(OUT_MD, `${md.join('\n')}\n`);
-  console.log(`\n  wrote ${path.relative(ROOT, OUT_MD)} and ${path.relative(ROOT, OUT_JSON)}`);
+  console.log(
+    `\n  wrote ${path.relative(ROOT, OUT_MD)} and ${path.relative(ROOT, OUT_JSON)}`,
+  );
 }

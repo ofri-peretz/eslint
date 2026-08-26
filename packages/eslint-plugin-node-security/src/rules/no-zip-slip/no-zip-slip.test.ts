@@ -28,10 +28,12 @@ describe('no-zip-slip', () => {
       valid: [
         {
           // @source diia-open-source/be-diia-app src/grpc/grpcService.ts:280
+          // @found real-source scan
           name: 'FP: OpenTelemetry context propagation is not an archive — 6 findings in the wild',
           code: 'const ctx = propagation.extract(context.active(), metadata, getter);',
         },
         {
+          // @found real-source scan
           name: 'FP: an OAuth claims extractor is not an archive',
           code: 'const claims = extractClaims(token);',
         },

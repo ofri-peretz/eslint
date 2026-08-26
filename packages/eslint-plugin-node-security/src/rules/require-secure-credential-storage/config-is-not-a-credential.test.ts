@@ -32,6 +32,7 @@ describe('require-secure-credential-storage — configuration is not a credentia
     valid: [
       {
         // @source auth0/express-openid-connect api.js:2
+        // @found real-source scan
         name: 'FP: an algorithm name — 110 findings in the wild came from this shape',
         code: `process.env.TOKEN_SIGNING_ALG = 'RS256';`,
       },

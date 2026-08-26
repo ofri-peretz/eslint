@@ -33,9 +33,13 @@ describe('autocomplete-valid', () => {
        * — and the rule checked every token against the FIELD-NAME set alone.
        * A modifier is not a field name, so all four reported.
        */
+      // @found spec diff
       { name: 'FP: a shipping address modifier', code: '<input autocomplete="shipping street-address" />' },
+      // @found spec diff
       { name: 'FP: a billing address modifier', code: '<input autocomplete="billing cc-number" />' },
+      // @found spec diff
       { name: 'FP: a contact-channel modifier', code: '<input autocomplete="home tel" />' },
+      // @found spec diff
       { name: 'FP: the webauthn credential suffix', code: '<input autocomplete="username webauthn" />' },
       { name: 'a section label with a modifier and a field', code: '<input autocomplete="section-a billing home tel" />' },
       { name: 'off stands alone', code: '<input autocomplete="off" />' },
@@ -61,7 +65,8 @@ describe('autocomplete-valid', () => {
       {
         // Both tokens are legal field names, and exactly one field name is
         // allowed. Checking tokens singly could never see this.
-        name: 'two field names, where the grammar allows one',
+        // @found spec diff
+        name: 'FN: two field names, where the grammar allows one',
         code: '<input autocomplete="name email" />',
         errors: [{ messageId: 'invalidAutocomplete' }],
       },
