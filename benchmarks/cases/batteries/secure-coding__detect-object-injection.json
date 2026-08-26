@@ -1,0 +1,315 @@
+{
+  "rule": "secure-coding/detect-object-injection",
+  "title": "Prototype pollution through a computed key",
+  "control": "function f(o, req) { o[req.body.k] = 1; }",
+  "peers": [
+    {
+      "plugin": "eslint-plugin-security",
+      "rule": "detect-object-injection",
+      "control": "o[key] = v;",
+      "contract": "flags any expression in the form of `object[expression]` no matter where it occurs",
+      "contractUrl": "https://github.com/eslint-community/eslint-plugin-security/blob/main/docs/rules/detect-object-injection.md",
+      "contractForms": [
+        {
+          "label": "identifier key (their own doc example)",
+          "code": "o[key] = v;"
+        },
+        {
+          "label": "member key",
+          "code": "o[req.query.p] = v;"
+        },
+        {
+          "label": "nested index",
+          "code": "o[parts[i]] = v;"
+        },
+        {
+          "label": "call result",
+          "code": "o[f()] = v;"
+        },
+        {
+          "label": "template literal",
+          "code": "o[`${a}`] = v;"
+        },
+        {
+          "label": "concatenation",
+          "code": "o[a + b] = v;"
+        },
+        {
+          "label": "conditional",
+          "code": "o[c ? a : b] = v;"
+        },
+        {
+          "label": "await",
+          "code": "async function g(){ o[await k()] = v; }"
+        },
+        {
+          "label": "assignment in key position",
+          "code": "o[(k = x)] = v;"
+        },
+        {
+          "label": "comma expression",
+          "code": "o[(a, b)] = v;"
+        },
+        {
+          "label": "optional call",
+          "code": "o[f?.()] = v;"
+        }
+      ]
+    }
+  ],
+  "knownLimits": [
+    "A TS enum used as a key reports. A closed set, but deciding that needs the type, and these rules are type-unaware by policy.",
+    "A bare parameter used as an index reports. Deliberate: the name-based version of this cleared `function put(o, k) { o[k] = 1 }`, which is the defect itself.",
+    "`o[String(i)] = 1` reports. `String()` of an arbitrary parameter can produce any string."
+  ],
+  "discarded": [
+    "`o?.[k] = 1` — invalid JavaScript, you cannot assign through an optional chain. It read as a miss until it was run."
+  ],
+  "cases": [
+    {
+      "id": "ILB-0004",
+      "kind": "decoy",
+      "label": "Array append written as a self-indexed length",
+      "code": "function push(arr, x) { arr[arr.length] = x; }",
+      "why": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists — a case that cannot fail is not evidence."
+    },
+    {
+      "id": "ILB-0005",
+      "kind": "decoy",
+      "label": "A key iterated from a const array of string literals",
+      "code": "const KEYS = [\"alpha\", \"beta\"]; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+      "why": "NOT a defect. Every value the key can take is written out in the same file and none is a dangerous property, so the question is decidable rather than assumed. An author who lists `__proto__` themselves still gets the report."
+    },
+    {
+      "id": "ILB-0006",
+      "kind": "decoy",
+      "label": "A copy loop over an object the module itself owns",
+      "code": "const cfg = { a: 1 }; const out = {}; for (const k in cfg) { out[k] = cfg[k]; }",
+      "why": "NOT a defect. Nothing an attacker supplies reaches the loop. eslint-plugin-security reports this twice, once per side of the assignment; the noise is by their design, not a disagreement about the facts."
+    },
+    {
+      "id": "ILB-0007",
+      "kind": "decoy",
+      "label": "A merge helper guarded by Object.hasOwn",
+      "code": "function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }",
+      "why": "NOT a defect — it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it."
+    },
+    {
+      "id": "ILB-0059",
+      "kind": "decoy",
+      "label": "an array append written as a self-indexed length",
+      "code": "const arr = []; arr[arr.length] = x;",
+      "why": "Looks like a secure-coding/detect-object-injection finding and is not. We reported it and have since sealed it."
+    },
+    {
+      "id": "ILB-0060",
+      "kind": "decoy",
+      "label": "the same allowlist behind Object.freeze",
+      "code": "const KEYS = Object.freeze([\"alpha\", \"beta\"]); const o = {}; for (const k of KEYS) { o[k] = 1; }",
+      "why": "Looks like a secure-coding/detect-object-injection finding and is not. We reported it and have since sealed it."
+    },
+    {
+      "id": "N01",
+      "kind": "decoy",
+      "label": "read by loop counter",
+      "code": "function f(paths, i) { return paths[i]; }",
+      "why": "A read. [[Get]] returns the prototype, it does not replace it."
+    },
+    {
+      "id": "N02",
+      "kind": "decoy",
+      "label": "read by a sibling key",
+      "code": "function f(current, app) { return current[app.name]; }",
+      "why": "A read."
+    },
+    {
+      "id": "N03",
+      "kind": "decoy",
+      "label": "read in a call argument",
+      "code": "function f(config, name) { send(config[name]); }",
+      "why": "A read."
+    },
+    {
+      "id": "N05",
+      "kind": "decoy",
+      "label": "index write in a counted loop",
+      "code": "function f(a, out) { for (let i = 0; i < a.length; i++) { out[i] = a[i]; } }",
+      "why": "The key is provably numeric from its declaration."
+    },
+    {
+      "id": "N06",
+      "kind": "decoy",
+      "label": "index arithmetic",
+      "code": "function f(out, i, v) { out[i + 1] = v; }",
+      "why": "Numeric by construction."
+    },
+    {
+      "id": "N07",
+      "kind": "decoy",
+      "label": "typed-array element write",
+      "code": "const buf = new Uint8Array(8); buf[0] = 1;",
+      "why": "A typed array has no string keys to pollute."
+    },
+    {
+      "id": "N11",
+      "kind": "decoy",
+      "label": "literal string key",
+      "code": "function f(o) { return o[\"name\"]; }",
+      "why": "The key is written in the source."
+    },
+    {
+      "id": "N12",
+      "kind": "decoy",
+      "label": "numeric literal key",
+      "code": "function f(o) { o[0] = 1; }",
+      "why": "A number."
+    },
+    {
+      "id": "N13",
+      "kind": "decoy",
+      "label": "write to a null-prototype bag",
+      "code": "function f(k, v) { const bag = Object.create(null); bag[k] = v; return bag; }",
+      "why": "No prototype to pollute."
+    },
+    {
+      "id": "N14",
+      "kind": "decoy",
+      "label": "Map, which has no prototype chain for keys",
+      "code": "function f(m, k, v) { m.set(k, v); }",
+      "why": "Not a computed property access at all."
+    },
+    {
+      "id": "N15",
+      "kind": "decoy",
+      "label": "read from a module-local lookup table",
+      "code": "const e = {}; function f(k) { return e[k] ?? null; }",
+      "why": "A read."
+    },
+    {
+      "id": "N16",
+      "kind": "decoy",
+      "label": "symbol key",
+      "code": "function f(o, g) { o[Symbol.iterator] = g; }",
+      "why": "A symbol cannot name `__proto__`."
+    },
+    {
+      "id": "D02",
+      "kind": "defect",
+      "label": "request value bound one line earlier",
+      "code": "function f(o, req) { const k = req.body.key; o[k] = req.body.value; }",
+      "why": "Same defect, one binding of indirection."
+    },
+    {
+      "id": "D03",
+      "kind": "defect",
+      "label": "destructured from the body",
+      "code": "function f(o, req) { const { key } = req.body; o[key] = 1; }",
+      "why": "Same defect, destructured."
+    },
+    {
+      "id": "D04",
+      "kind": "defect",
+      "label": "route parameter as a key",
+      "code": "function f(o, req) { o[req.params.id] = 1; }",
+      "why": "A path segment is caller-chosen."
+    },
+    {
+      "id": "D05",
+      "kind": "defect",
+      "label": "key from parsed JSON",
+      "code": "function f(o, s) { const d = JSON.parse(s); o[d.k] = d.v; }",
+      "why": "Parsed input is caller-controlled by definition."
+    },
+    {
+      "id": "D07",
+      "kind": "defect",
+      "label": "merge iterating the request body",
+      "code": "function f(dst, req) { for (const k in req.body) { dst[k] = req.body[k]; } }",
+      "why": "Same loop, attacker at the root, no parameter to hide behind."
+    },
+    {
+      "id": "D10",
+      "kind": "defect",
+      "label": "key reached through a template",
+      "code": "function f(o, req) { o[`${req.query.p}`] = 1; }",
+      "why": "Interpolation does not launder the value."
+    },
+    {
+      "id": "D11",
+      "kind": "defect",
+      "label": "header value as key",
+      "code": "function f(o, req) { o[req.headers[\"x-key\"]] = 1; }",
+      "why": "A header is caller-chosen."
+    },
+    {
+      "id": "D12",
+      "kind": "defect",
+      "label": "nested destructure from the body",
+      "code": "function f(o, req) { const { a: { b } } = req.body; o[b] = 1; }",
+      "why": "Two levels of destructuring do not launder it."
+    },
+    {
+      "id": "D13",
+      "kind": "defect",
+      "label": "two attacker-chosen keys in one chain",
+      "code": "function f(o, req) { o[req.body.a][req.body.b] = 1; }",
+      "why": "Both segments are caller-chosen."
+    },
+    {
+      "id": "D14",
+      "kind": "defect",
+      "label": "merge over Object.keys of the body",
+      "code": "function f(o, req) { for (const k of Object.keys(req.body)) o[k] = req.body[k]; }",
+      "why": "The for-of spelling of D07."
+    },
+    {
+      "id": "D15",
+      "kind": "defect",
+      "label": "key assigned after declaration",
+      "code": "function f(o, req) { let k; k = req.query.p; o[k] = 1; }",
+      "why": "A late write to the binding is still a caller-chosen key."
+    },
+    {
+      "id": "D16",
+      "kind": "defect",
+      "label": "write straight onto Object.prototype",
+      "code": "function f(req) { const k = req.query.k; ({}).constructor.prototype[k] = 1; }",
+      "why": "Pollution without an intermediate object at all."
+    },
+    {
+      "id": "ILB-0001",
+      "kind": "defect",
+      "label": "Prototype pollution through a request-supplied key",
+      "code": "function f(o, req) { o[req.query.p] = 1; }",
+      "why": "A value the caller controls is used directly as a computed key on a write. Setting `__proto__` re-parents the object, which is the whole of CWE-1321. This is the shortest form the bug takes in real code."
+    },
+    {
+      "id": "ILB-0002",
+      "kind": "defect",
+      "label": "Prototype pollution through an unguarded merge helper",
+      "code": "function merge(dst, src) { for (const k in src) { dst[k] = src[k]; } return dst; }",
+      "why": "`for (const k in src) dst[k] = src[k]` over a caller-supplied source is the shape behind the published prototype-pollution advisories in the deep-merge family. The key is never named in the source, so no allowlist can be read off the file."
+    },
+    {
+      "id": "ILB-0003",
+      "kind": "defect",
+      "label": "A computed write onto `this` inside a class method",
+      "code": "class Bag { set(k, v) { this[k] = v; } }",
+      "why": "Reads like noise and is not. Verified by execution: calling the method with `__proto__` re-parents the instance. Registered so the finding cannot be dismissed as an FP a second time."
+    },
+    {
+      "id": "R02",
+      "kind": "remedy",
+      "label": "write guarded by an explicit __proto__ check",
+      "code": "function f(dst, src) { for (const k in src) { if (k === \"__proto__\") continue; dst[k] = src[k]; } }",
+      "why": "The other documented fix."
+    },
+    {
+      "id": "R03",
+      "kind": "remedy",
+      "label": "read guarded by hasOwnProperty",
+      "code": "function f(map, k) { if (Object.hasOwn(map, k)) { return map[k]; } return undefined; }",
+      "why": "Guarded, and a read besides."
+    }
+  ]
+}

@@ -299,3 +299,97 @@ vanishes from a table looks like it was never compared.
 
 A peer that is not installed says so. "They miss it" and "we did not ask" are
 different claims, and a scoreboard that merges them is marketing.
+
+---
+
+## 11. The procedure, end to end
+
+This is the loop. It is written down because it was invented twice before
+anybody wrote it down, and both times the second invention found something the
+first had missed — which is a good argument for the method and a bad one for
+keeping it in someone's head.
+
+Everything below is data plus one runner. Nothing is a script written for one
+rule.
+
+### Step 1 — Point a NEW instrument at the rule
+
+Not a new pass of an old one. Each of these found real defects the others could
+not, in `detect-object-injection` alone:
+
+| instrument | what it can see |
+| :--- | :--- |
+| real-source scan | shapes that occur, weighted by how often |
+| spelling probe | a rule blind to one spelling of a construct |
+| spec / doc diff | a rule that disagrees with the standard it enforces |
+| head-to-head | a rule that disagrees with a neighbour, either way |
+| adversarial pass | what the author did not think of, written to fail |
+
+A pass that finds nothing is a result. A pass that finds the same thing again
+means the instrument, not the rule, is what is exhausted.
+
+### Step 2 — Write the battery as DATA
+
+`benchmarks/cases/batteries/<plugin>__<rule>.json`:
+
+```
+rule          the rule under test
+control       code it certainly reports on
+peers[]       { plugin, rule, control, contract?, contractForms? }
+cases[]       { id, kind: defect|decoy|remedy, label, code, why }
+knownLimits[] what we get wrong, stated
+discarded[]   what was thrown out and why
+```
+
+`kind` carries the whole judgement. A `defect` must fire; a `decoy` (looks like
+the rule and is not) and a `remedy` (the documented fix) must not.
+
+### Step 3 — Run the adversarial pass against YOURSELF
+
+Write cases designed to make our own rule fail, before running anything.
+
+This is the step that makes the number mean something, and it is the one that
+is easiest to skip because it is unpleasant. Six of the sixteen
+`detect-object-injection` defects came from this pass.
+
+**It also catches bad cases.** `o?.[k] = 1` read as a miss until it was run: it
+is invalid JavaScript. Anything the adversarial pass turns up gets executed
+before it is believed.
+
+### Step 4 — Control, then compare
+
+```bash
+npx tsx scripts/rule-head-to-head.mts <plugin>/<rule> --md
+```
+
+Ours and every peer must answer a positive control first. **A peer that fails
+its control is excluded and named, never scored as behind** — otherwise our
+configuration is reported as their defect, which is how
+`eslint-plugin-import/no-named-as-default` read as a win until this existed.
+
+Where a peer publishes a contract, `contractForms` measures the peer against
+its own documentation. That is the only fair way to judge a promise we did not
+write.
+
+### Step 5 — Fix what is ours, seal it, register it
+
+A disagreement is a question, not a score. When the answer is that we were
+wrong: fix it, seal it per §4 (**it must fail on the unfixed rule**), and add
+it to the registry.
+
+```bash
+npx tsx scripts/rule-head-to-head.mts <plugin>/<rule> --registry
+npx tsx scripts/case-registry.mts --update
+```
+
+### Step 6 — The ratchet holds it
+
+`npx tsx scripts/case-registry.mts --check` re-executes every claim and fails
+by name if a case that was verified no longer is. It runs in `lefthook.yml`
+against rule source and the registry.
+
+### The invariant
+
+**Every number is produced by the run that prints it.** Nothing is stored,
+nothing is quoted from memory, and a run that could not be performed reports as
+unscoreable rather than as a zero.

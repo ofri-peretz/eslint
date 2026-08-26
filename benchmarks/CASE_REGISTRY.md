@@ -9,7 +9,7 @@ say, and a rule cannot be missing a case it never claimed. This register is
 case-first, so a gap is visible as an entry with no coverage rather than as
 an absence nobody can see.
 
-**90 cases · 81 verified · 9 uncovered · 0 regressed**
+**98 cases · 89 verified · 9 uncovered · 0 regressed**
 
 Every `status` below was computed on this run by executing the case code
 through the rule that claims it. A stored "covered: yes" would be a
@@ -33,13 +33,13 @@ zero — "they miss it" and "we did not ask" are different claims.
 | peer rule | cases compared | we are ahead | level |
 |---|---:|---:|---:|
 | `eslint-plugin-security/detect-object-injection` | 35 | 17 | 18 |
+| `eslint-plugin-no-unsanitized/property` | 9 | 4 | 5 |
 | `eslint-plugin-promise/catch-or-return` | 4 | 4 | 0 |
 | `eslint-plugin-import/no-internal-modules` | 1 | 1 | 0 |
 | `eslint-plugin-import/no-nodejs-modules` | 1 | 1 | 0 |
 | `eslint-plugin-import/no-unassigned-import` | 1 | 1 | 0 |
 | `eslint-plugin-import/no-unresolved` | 1 | 1 | 0 |
 | `eslint-plugin-n/prefer-node-protocol` | 1 | 1 | 0 |
-| `eslint-plugin-no-unsanitized/property` | 1 | 1 | 0 |
 | `eslint-plugin-security/detect-non-literal-fs-filename` | 1 | 1 | 0 |
 | `eslint-plugin-jsx-a11y/autocomplete-valid` | 6 | 0 | 6 |
 | `eslint-plugin-jsx-a11y/html-has-lang` | 1 | 0 | 1 |
@@ -150,6 +150,14 @@ configuration as their miss.
 | `ILB-0088` | symbol key | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
 | `ILB-0089` | write guarded by an explicit `__proto__` check | remedy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
 | `ILB-0090` | read guarded by hasOwnProperty | remedy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0091` | request value into innerHTML | defect | — | `browser-security/no-innerhtml` (report) | property: level | ✅ |
+| `ILB-0092` | the same through a computed key | defect | — | `browser-security/no-innerhtml` (report) | property: **we are ahead** | ✅ |
+| `ILB-0093` | the same through a template-literal key | defect | — | `browser-security/no-innerhtml` (report) | property: **we are ahead** | ✅ |
+| `ILB-0094` | outerHTML | defect | — | `browser-security/no-innerhtml` (report) | property: level | ✅ |
+| `ILB-0095` | a string constant written in the source | decoy | — | `browser-security/no-innerhtml` (silent) | property: level | ✅ |
+| `ILB-0096` | textContent, which does not parse markup | decoy | — | `browser-security/no-innerhtml` (silent) | property: level | ✅ |
+| `ILB-0097` | reading innerHTML | decoy | — | `browser-security/no-innerhtml` (silent) | property: level | ✅ |
+| `ILB-0098` | sanitised before assignment | remedy | — | `browser-security/no-innerhtml` (silent) | property: **we are ahead** | ✅ |
 
 ## Each case in full
 
@@ -1826,4 +1834,157 @@ function f(map, k) { if (Object.hasOwn(map, k)) { return map[k]; } return undefi
 | `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
 
 Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0091 — request value into innerHTML
+
+Attacker-supplied markup reaches an HTML sink.
+
+```js
+function f(el, req) { el.innerHTML = req.query.q; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0092 — the same through a computed key
+
+The same sink, spelled with brackets.
+
+```js
+function f(el, req) { el["innerHTML"] = req.query.q; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0093 — the same through a template-literal key
+
+The same sink again; a no-substitution template IS a string.
+
+```js
+function f(el, req) { el[`innerHTML`] = req.query.q; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0094 — outerHTML
+
+outerHTML is the same sink.
+
+```js
+function f(el, req) { el.outerHTML = req.body.html; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | report | 1 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0095 — a string constant written in the source
+
+The markup is in the file; nobody outside chose it.
+
+```js
+function f(el) { el.innerHTML = '<b>hi</b>'; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0096 — textContent, which does not parse markup
+
+textContent is the documented safe sink.
+
+```js
+function f(el, req) { el.textContent = req.query.q; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0097 — reading innerHTML
+
+A read cannot inject anything.
+
+```js
+function f(el) { return el.innerHTML; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
+
+### ILB-0098 — sanitised before assignment
+
+The documented fix. Reporting it leaves the user nothing to do.
+
+```js
+import DOMPurify from 'dompurify';
+function f(el, req) { el.innerHTML = DOMPurify.sanitize(req.query.q); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | silent | 0 report(s) | ✅ |
+
+Pinned in `benchmarks/cases/batteries/browser-security__no-innerhtml.json`.
 

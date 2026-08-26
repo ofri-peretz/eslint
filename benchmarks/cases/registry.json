@@ -2636,6 +2636,254 @@
         }
       ],
       "batteryId": "R03"
+    },
+    {
+      "id": "ILB-0091",
+      "added": "2026-08-26",
+      "title": "request value into innerHTML",
+      "rationale": "Attacker-supplied markup reaches an HTML sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el.innerHTML = req.query.q; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D01"
+    },
+    {
+      "id": "ILB-0092",
+      "added": "2026-08-26",
+      "title": "the same through a computed key",
+      "rationale": "The same sink, spelled with brackets.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el[\"innerHTML\"] = req.query.q; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0093",
+      "added": "2026-08-26",
+      "title": "the same through a template-literal key",
+      "rationale": "The same sink again; a no-substitution template IS a string.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el[`innerHTML`] = req.query.q; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0094",
+      "added": "2026-08-26",
+      "title": "outerHTML",
+      "rationale": "outerHTML is the same sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el.outerHTML = req.body.html; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0095",
+      "added": "2026-08-26",
+      "title": "a string constant written in the source",
+      "rationale": "The markup is in the file; nobody outside chose it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el) { el.innerHTML = '<b>hi</b>'; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "N01"
+    },
+    {
+      "id": "ILB-0096",
+      "added": "2026-08-26",
+      "title": "textContent, which does not parse markup",
+      "rationale": "textContent is the documented safe sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el.textContent = req.query.q; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0097",
+      "added": "2026-08-26",
+      "title": "reading innerHTML",
+      "rationale": "A read cannot inject anything.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el) { return el.innerHTML; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0098",
+      "added": "2026-08-26",
+      "title": "sanitised before assignment",
+      "rationale": "The documented fix. Reporting it leaves the user nothing to do.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import DOMPurify from 'dompurify';\nfunction f(el, req) { el.innerHTML = DOMPurify.sanitize(req.query.q); }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "R01"
     }
   ]
 }
