@@ -133,11 +133,6 @@ jobs:
       # much of it was actually looked at. no-cycle carried "the DETECTION
       # is right" until the first sample read 66.7% wrong (#702, #705).
       - run: npm run lint:triage-sampling
-      # And the same question at the level of MEASUREMENT: a rule with no
-      # corpus fixture has no precision number at all, so it can be wrong
-      # about real code indefinitely and nothing moves. 62 of 374 rules had
-      # evidence when this gate was added; the baseline may only shrink.
-      - run: npm run check:corpus-coverage
       # The FULL rule-audit ratchet. The pre-commit hook runs a scoped version
       # that only sees rules whose own files changed; a shared-util edit can
       # move a rule's findings without touching it, so this run — every rule,
@@ -172,6 +167,18 @@ jobs:
 
       - name: Every CWE must still detect what it used to
         run: npx tsx scripts/recall-gate.ts
+
+      # The precision counterpart. recall-gate asks whether the rules still
+      # catch what they used to; this asks whether a rule is measured at all.
+      # A rule with no corpus fixture has no precision number, so it can be
+      # wrong about real code indefinitely and nothing moves. 62 of 374 had
+      # evidence when this was added; the baseline may only shrink.
+      #
+      # It belongs in THIS job rather than Plugin Taxonomy: the other coverage
+      # gates are static reads of rule sources, while this one actually loads
+      # the plugins, so it needs the build above.
+      - name: No rule may ship without corpus evidence
+        run: npm run check:corpus-coverage
 
   lockfile:
     name: Lockfile Sync
