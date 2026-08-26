@@ -32,6 +32,7 @@ describe('anchor-ambiguous-text', () => {
       valid: [
         // Descriptive anchor text
         {
+          name: 'link text that names the destination',
           code: '<a href="#section">Read the tutorial</a>',
         },
         {
@@ -72,6 +73,7 @@ describe('anchor-ambiguous-text', () => {
       valid: [],
       invalid: [
         {
+          name: 'link text that says "here" and nothing else',
           code: '<a href="#">here</a>',
           errors: [
             {

@@ -25,12 +25,13 @@ ruleTester.run(
       'const items = [];',
       'const obj = {};',
       'class Foo {}',
-      { code: 'await Keychain.setPassword(service, password)' },
+      { name: 'the platform keychain', code: 'await Keychain.setPassword(service, password)' },
       { code: "SecureStore.setItemAsync('key', value)" },
     ],
 
     invalid: [
       {
+        name: 'an API key in AsyncStorage, which is plain text on disk',
         code: "AsyncStorage.setItem('apiKey', key)",
         errors: [{ messageId: 'violationDetected' }],
       },

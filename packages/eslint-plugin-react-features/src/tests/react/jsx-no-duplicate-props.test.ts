@@ -26,7 +26,7 @@ describe('jsx-no-duplicate-props', () => {
   ruleTester.run('jsx-no-duplicate-props', jsxNoDuplicateProps, {
     valid: [
       // No duplicates
-      '<div id="a" className="b" />',
+      { name: 'distinct props', code: '<div id="a" className="b" />' },
       '<div id="a" />',
       '<MyComponent prop1="a" prop2="b" />',
       // Empty element
@@ -38,6 +38,7 @@ describe('jsx-no-duplicate-props', () => {
     ],
     invalid: [
       {
+        name: 'the same prop twice — the second silently wins',
         code: '<div id="a" id="b" />',
         errors: [{ messageId: 'duplicateProp' }],
       },

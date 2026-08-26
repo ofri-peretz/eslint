@@ -24,7 +24,7 @@ ruleTester.run('no-pii-in-logs', noPiiInLogs, {
         'const flag = true;',
         'function noop() {}',
         'const items = [];',
-    { code: "console.log('Status:', status)" },
+    { name: 'a status value', code: "console.log('Status:', status)" },
     { code: "console.info('Count:', count)" },
     // Callee is not a MemberExpression at all — fails the first condition
     // of the console.log/error/warn/info type-guard chain.
@@ -39,7 +39,7 @@ ruleTester.run('no-pii-in-logs', noPiiInLogs, {
   ],
 
   invalid: [
-    { code: "console.log(user.email)", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'an email address written to the log', code: "console.log(user.email)", errors: [{ messageId: 'violationDetected' }] },
     { code: "console.log('email:', value)", errors: [{ messageId: 'violationDetected' }] },
     { code: "console.log(data.ssn)", errors: [{ messageId: 'violationDetected' }] }
   ],

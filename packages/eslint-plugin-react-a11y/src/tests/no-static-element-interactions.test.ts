@@ -25,7 +25,7 @@ describe('no-static-element-interactions', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - proper interactive elements', noStaticElementInteractions, {
       valid: [
-        { code: '<button onClick={handler}>Click</button>' },
+        { name: 'the same handler on a button', code: '<button onClick={handler}>Click</button>' },
         { code: '<a href="#" onClick={handler}>Link</a>' },
         // Interactive ARIA role — element is semantically interactive, not static
         { code: '<div role="button" onClick={handler}></div>' },
@@ -40,7 +40,7 @@ describe('no-static-element-interactions', () => {
     ruleTester.run('invalid - static element with handlers', noStaticElementInteractions, {
       valid: [],
       invalid: [
-        { code: '<div onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },
+        { name: 'a click handler on a div', code: '<div onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },
         { code: '<span onClick={handler}></span>', errors: [{ messageId: 'noStaticInteraction' }] },
         // Non-interactive roles don't make the element interactive
         { code: '<div role="presentation" onClick={handler}></div>', errors: [{ messageId: 'noStaticInteraction' }] },

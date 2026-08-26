@@ -214,6 +214,7 @@ db.query('SELECT * FROM users WHERE id = ' + f);`,
     // constrains nothing. The guard has to LEAVE for the values after it to be
     // a subset of the allowlist.
     {
+      name: 'an allowlist that logs on a miss instead of stopping, then interpolates anyway',
       code: `const ALLOWED = new Set(['a']);
      export const q = async (table) => {
        if (!ALLOWED.has(table)) { log('bad'); }
@@ -549,6 +550,7 @@ ruleTester.run('no-sql-injection-corpus-locks', noSqlInjection, {
     // strict mode excludes call results: an escaper and a builder look the same
     // from the call site.
     {
+      name: 'the identifier is escaped',
       code: "db.query('SELECT * FROM users ORDER BY ' + escapeIdentifier(req.query.sort));",
       options: [{ reportUnattributedInterpolation: true }],
     },

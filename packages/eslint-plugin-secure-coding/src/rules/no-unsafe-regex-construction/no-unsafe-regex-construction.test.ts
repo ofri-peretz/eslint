@@ -52,6 +52,7 @@ describe('no-unsafe-regex-construction', () => {
         // Template literal with expressions
         // Member expression (e.g., req.query.pattern)
         {
+          name: 'a RegExp built from a query parameter',
           code: 'const regex = new RegExp(req.query.pattern);',
           errors: [
             {
@@ -75,6 +76,7 @@ describe('no-unsafe-regex-construction', () => {
       valid: [
         // Short pattern under limit
         {
+          name: 'a RegExp built from a short literal',
           code: 'const regex = new RegExp("^short$");',
           options: [{ maxPatternLength: 100 }],
         },

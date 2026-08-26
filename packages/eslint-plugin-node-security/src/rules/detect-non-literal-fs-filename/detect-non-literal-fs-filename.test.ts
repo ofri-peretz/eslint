@@ -28,6 +28,7 @@ describe('detect-non-literal-fs-filename', () => {
       valid: [
         // Literal file paths
         {
+          name: 'a literal path inside the project',
           code: 'fs.readFile("/path/to/file.txt", callback);',
         },
         {
@@ -99,7 +100,7 @@ describe('detect-non-literal-fs-filename', () => {
         // Constant does NOT mean harmless: this one is fixed at build time and
         // is still a traversal. "Not attacker-steerable" and "safe" are
         // different claims.
-        { options: [{ reportUnresolvedPaths: true }],           code: "const ESCAPE = path.join(__dirname, '../../etc/passwd');\nfs.readFileSync(ESCAPE);",
+        { name: 'a constant path that climbs out of the project with ../..', options: [{ reportUnresolvedPaths: true }],           code: "const ESCAPE = path.join(__dirname, '../../etc/passwd');\nfs.readFileSync(ESCAPE);",
           errors: [{ messageId: 'fsPathTraversal' }],
         },
         { options: [{ reportUnresolvedPaths: true }],           code: "const DIR = path.join(__dirname, 'x');\nfs.readFileSync(`${DIR}/../../../etc/passwd`);",

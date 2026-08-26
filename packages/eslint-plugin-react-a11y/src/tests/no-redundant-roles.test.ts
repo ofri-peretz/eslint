@@ -25,7 +25,7 @@ describe('no-redundant-roles', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no redundant roles', noRedundantRoles, {
       valid: [
-        { code: '<button>Click</button>' },
+        { name: 'no explicit role', code: '<button>Click</button>' },
         { code: '<a href="#">Link</a>' },
         { code: '<nav></nav>' },
         { code: '<main></main>' },
@@ -40,7 +40,7 @@ describe('no-redundant-roles', () => {
     ruleTester.run('invalid - redundant roles', noRedundantRoles, {
       valid: [],
       invalid: [
-        { code: '<main role="main"></main>', errors: [{ messageId: 'redundantRole' }] },
+        { name: "role='main' on a main element", code: '<main role="main"></main>', errors: [{ messageId: 'redundantRole' }] },
         { code: '<article role="article"></article>', errors: [{ messageId: 'redundantRole' }] },
       ],
     });

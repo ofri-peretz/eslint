@@ -33,7 +33,7 @@ describe('no-ssrf', () => {
     ruleTester.run('valid - safe requests', noSsrf, {
       valid: [
         // Literal URLs — always safe
-        { code: 'fetch("https://api.example.com/data");' },
+        { name: 'a fixed host', code: 'fetch("https://api.example.com/data");' },
         { code: 'axios.get("https://api.stripe.com/charges");' },
         { code: 'needle.get("https://api.example.com/data");' },
         // Template literal without expressions — safe
@@ -60,6 +60,7 @@ describe('no-ssrf', () => {
       invalid: [
         // fetch with user-controlled URL
         {
+          name: 'a fetch to a URL the caller controls',
           code: 'fetch(userUrl);',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],

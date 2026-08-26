@@ -41,7 +41,7 @@ describe('detect-object-injection', () => {
         // MOVED from `invalid` 2026-08-19: a READ cannot pollute a prototype.
         // Executed proof in the corpus at POLLUTION-FACTS.md; this file's
         // sibling reads-cannot-pollute.test.ts locks the behaviour.
-        { code: 'const val = obj[userKey];' },
+        { name: 'a read through a computed key is not a write', code: 'const val = obj[userKey];' },
         { code: 'const val = a[b][c];' },
         { code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }' },
         { code: 'const x = arr[a + b];' },
@@ -220,6 +220,7 @@ describe('detect-object-injection', () => {
         // `+` between two identifiers proves nothing — either side could be a
         // string, so the result could still be '__proto__'.
         {
+          name: 'a computed key WRITE built from user input',
           code: 'obj[prefix + userInput] = value;',
           errors: 1,
         },

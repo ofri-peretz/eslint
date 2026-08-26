@@ -28,6 +28,7 @@ describe('detect-non-literal-regexp', () => {
       valid: [
         // Not RegExp - these are safe
         {
+          name: 'an ordinary call that happens to take a pattern',
           code: 'const result = myFunction(pattern);',
         },
         {
@@ -53,6 +54,7 @@ describe('detect-non-literal-regexp', () => {
       valid: [],
       invalid: [
         {
+          name: 'a RegExp built from user input',
           code: 'const pattern = new RegExp(userInput);',
           errors: [{ messageId: 'runtimeDecidedPattern' }],
         },

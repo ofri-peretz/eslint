@@ -21,7 +21,10 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
   valid: [
     // Modern secure algorithms
-    `const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);`,
+    {
+      name: 'a modern cipher',
+      code: `const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);`,
+    },
     `const cipher = crypto.createCipheriv('aes-128-gcm', key, iv);`,
     `const cipher = crypto.createCipheriv('chacha20-poly1305', key, iv);`,
     `const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);`,
@@ -38,6 +41,7 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
   invalid: [
     // DES
     {
+      name: 'DES',
       code: `const cipher = crypto.createCipheriv('des', key, iv);`,
       errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
         { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },

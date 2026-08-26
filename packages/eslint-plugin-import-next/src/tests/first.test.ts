@@ -19,12 +19,16 @@ const ruleTester = new RuleTester({
 describe('first', () => {
   ruleTester.run('first', first, {
     valid: [
-      "import foo from 'foo'; import bar from 'bar'; const a = 1;",
+      {
+        name: 'imports first',
+        code: "import foo from 'foo'; import bar from 'bar'; const a = 1;",
+      },
       "import foo from 'foo'; \n import bar from 'bar'; \n const a = 1;",
       "'use strict'; import foo from 'foo';",
     ],
     invalid: [
       {
+        name: 'an import after a statement',
         code: "import foo from 'foo'; const a = 1; import bar from 'bar';",
         errors: [{ messageId: 'first' }],
       },

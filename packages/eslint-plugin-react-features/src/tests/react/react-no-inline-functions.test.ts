@@ -33,6 +33,7 @@ describe('react-no-inline-functions', () => {
       valid: [
         // No inline functions
         {
+          name: 'no JSX prop at all',
           code: 'function MyComponent() { return <div>Hello</div>; }',
         },
         // Event handlers (if allowed)
@@ -52,6 +53,7 @@ describe('react-no-inline-functions', () => {
         // Note: Rule may not detect inline functions in map() callbacks
         // This is a rule limitation - map callbacks are often acceptable
         {
+          name: 'an inline arrow in a prop',
           code: '<button onClick={() => handleClick()}>Click</button>',
           errors: [{ messageId: 'inlineFunction' }],
         },

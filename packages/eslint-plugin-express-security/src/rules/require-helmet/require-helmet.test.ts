@@ -76,6 +76,7 @@ ruleTester.run('require-helmet', requireHelmet, {
     // 2026-08-12.
     // -----------------------------------------------------------------
     {
+      name: 'an app that only serves static files',
       code: `
         import express from 'express';
         const app = express();
@@ -274,6 +275,7 @@ ruleTester.run('require-helmet', requireHelmet, {
   ]),
   invalid: xp([
     {
+      name: 'an app that renders views with no helmet',
       // `express()` with no binding at all — there is nothing to follow, so the
       // escape hatch must not engage and the missing middleware is still a
       // finding. Guards the abstain path against over-reaching.

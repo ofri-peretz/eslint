@@ -33,6 +33,7 @@ describe('state-in-constructor', () => {
       valid: [
         // State initialized in constructor
         {
+          name: 'state assigned in the constructor',
           code: `
             class MyComponent extends Component {
               constructor(props) {
@@ -132,6 +133,7 @@ describe('state-in-constructor', () => {
       invalid: [
         // State as class property in Component
         {
+          name: 'a class field where the configuration wants the constructor',
           code: `
             class MyComponent extends Component {
               state = { count: 0 };

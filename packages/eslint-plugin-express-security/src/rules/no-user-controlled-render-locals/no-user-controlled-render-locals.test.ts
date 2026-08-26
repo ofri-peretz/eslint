@@ -65,7 +65,7 @@ describe('no-user-controlled-render-locals', () => {
     {
       valid: xp([
         // Static locals — always safe
-        { code: `res.render('home');` },
+        { name: 'render with no locals', code: `res.render('home');` },
         { code: `res.render('home', { title: 'Welcome' });` },
         // Field-picking is THE safe pattern (corpus FP-lock: render-explicit-locals.js)
         {
@@ -138,6 +138,7 @@ describe('no-user-controlled-render-locals', () => {
       invalid: xp([
         // Corpus fixture (verbatim): CWE-073/vulnerable/render-body-spread.js
         {
+          name: 'request data passed as template locals',
           code: `
           const express = require('express');
 

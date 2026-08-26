@@ -87,6 +87,7 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
     // block reported `missingCsrf` before 2026-08-12.
     // ============================================
     {
+      name: 'a router whose handler carries the check',
       code: `
         const express = require('express');
         const router = express.Router();
@@ -329,6 +330,7 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
     // no token: the shape the rule exists for.
     // ============================================
     {
+      name: 'a session-bearing POST with authentication but no CSRF token',
       code: `${SESSION}app.post('/login', requireAuth, handler);`,
       errors: [{ messageId: 'missingCsrf' }],
     },

@@ -28,6 +28,7 @@ describe('no-nodejs-modules', () => {
       valid: [
         // Valid non-Node.js imports
         {
+          name: 'a relative import',
           code: 'import helper from "./helper";',
           filename: '/src/utils/helpers.js',
         },
@@ -54,6 +55,7 @@ describe('no-nodejs-modules', () => {
       invalid: [
         // Invalid Node.js builtin imports
         {
+          name: 'a Node builtin in code that must also run in a browser',
           code: 'import fs from "fs";',
           filename: '/src/utils/helpers.js',
           errors: [

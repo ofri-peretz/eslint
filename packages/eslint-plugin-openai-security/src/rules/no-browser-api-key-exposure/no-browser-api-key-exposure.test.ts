@@ -13,7 +13,7 @@ const IMPORT = `import OpenAI from 'openai';`;
 
 ruleTester.run('no-browser-api-key-exposure', noBrowserApiKeyExposure, {
   valid: [
-    { code: `${IMPORT}\nconst client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });` },
+    { name: 'a server client reading the key from the environment', code: `${IMPORT}\nconst client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });` },
     // Explicitly off
     { code: `${IMPORT}\nconst client = new OpenAI({ dangerouslyAllowBrowser: false });` },
     // Non-boolean literal
@@ -40,6 +40,7 @@ ruleTester.run('no-browser-api-key-exposure', noBrowserApiKeyExposure, {
   ],
   invalid: [
     {
+      name: 'dangerouslyAllowBrowser ships the key to every visitor',
       code: `${IMPORT}\nconst client = new OpenAI({ dangerouslyAllowBrowser: true });`,
       errors: [{ messageId: 'browserKeyExposure' }],
     },

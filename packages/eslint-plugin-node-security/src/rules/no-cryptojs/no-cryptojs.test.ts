@@ -26,7 +26,7 @@ describe('no-cryptojs', () => {
         'const x = 42;',
         'const flag = true;',
       // Valid: Native crypto
-      { code: 'import crypto from "node:crypto";' },
+      { name: 'node:crypto', code: 'import crypto from "node:crypto";' },
       { code: 'const crypto = require("crypto");' },
       // Valid: Other packages
       { code: 'import hash from "crypto-hash";' },
@@ -34,6 +34,7 @@ describe('no-cryptojs', () => {
     invalid: [
       // Invalid: crypto-js import
       {
+        name: 'crypto-js where node:crypto is available',
         code: 'import CryptoJS from "crypto-js";',
         errors: [{ messageId: 'deprecatedCryptojs' }],
       },

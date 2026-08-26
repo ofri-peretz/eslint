@@ -63,6 +63,7 @@ describe('no-env-injection', () => {
       // A declared global written exactly once resolves to a variable with no
       // definition at all — nothing to trace, so nothing is proven either way.
       {
+        name: 'a constant key',
         code: `KEY = 'A'; process.env[KEY] = '1';`,
         languageOptions: { globals: { KEY: 'writable' } },
       },
@@ -92,6 +93,7 @@ describe('no-env-injection', () => {
       // corpus/CWE-099/vulnerable/env-key-from-user.js — both key and value
       // come from req.body; the key is what makes it a finding.
       {
+        name: 'a request key and value written into process.env',
         code: `function setConfig(req, res) {
                  const { key, value } = req.body;
                  process.env[key] = value;

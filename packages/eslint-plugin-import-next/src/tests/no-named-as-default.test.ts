@@ -23,7 +23,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-named-as-default', noNamedAsDefault, {
   valid: [
     // Regular default import
-    { code: `import MyComponent from './MyComponent';` },
+    { name: 'a default import with its own name', code: `import MyComponent from './MyComponent';` },
     
     // Named import
     { code: `import { foo } from './module';` },
@@ -52,6 +52,7 @@ ruleTester.run('no-named-as-default', noNamedAsDefault, {
   
   invalid: [
     {
+        name: 'a default import with the same name as a named export of that module',
         // Same declaration conflict (heuristic)
         code: `import foo, { foo } from './module';`,
         errors: [{ messageId: 'namedAsDefault', data: { name: 'foo' } }]

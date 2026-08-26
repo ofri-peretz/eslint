@@ -37,6 +37,7 @@ describe('no-zip-slip', () => {
         },
         // Safe archive extraction with validation
         {
+          name: 'an extraction library that validates for you',
           code: 'const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);',
         },
         // Validated paths
@@ -65,6 +66,7 @@ describe('no-zip-slip', () => {
       valid: [],
       invalid: [
         {
+          name: 'archive extraction with no path validation',
           code: 'archive.unzip(dest);',
           errors: [
             {

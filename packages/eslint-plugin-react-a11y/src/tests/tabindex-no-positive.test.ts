@@ -25,7 +25,7 @@ describe('tabindex-no-positive', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - non-positive tabindex', tabindexNoPositive, {
       valid: [
-        { code: '<div tabIndex={0}></div>' },
+        { name: 'tabIndex zero', code: '<div tabIndex={0}></div>' },
         { code: '<div tabIndex={-1}></div>' },
         { code: '<div tabIndex="0"></div>' },
         { code: '<div tabIndex="-1"></div>' },
@@ -40,7 +40,7 @@ describe('tabindex-no-positive', () => {
     ruleTester.run('invalid - positive tabindex', tabindexNoPositive, {
       valid: [],
       invalid: [
-        { code: '<div tabIndex="1"></div>', errors: [{ messageId: 'avoidPositiveTabIndex' }] },
+        { name: "a positive tabIndex reorders the whole document's tab sequence", code: '<div tabIndex="1"></div>', errors: [{ messageId: 'avoidPositiveTabIndex' }] },
         { code: '<button tabIndex="99">Click</button>', errors: [{ messageId: 'avoidPositiveTabIndex' }] },
       ],
     });

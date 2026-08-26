@@ -32,6 +32,7 @@ describe('no-noninteractive-element-to-interactive-role', () => {
       valid: [
         // Non-interactive elements without roles
         {
+          name: 'a plain div',
           code: '<div>Content</div>',
         },
         {
@@ -70,6 +71,7 @@ describe('no-noninteractive-element-to-interactive-role', () => {
       valid: [],
       invalid: [
         {
+          name: 'a div given the button role without the behaviour that implies',
           code: '<div role="button">Click me</div>',
           errors: [
             {

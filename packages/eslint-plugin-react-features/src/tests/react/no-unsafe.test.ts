@@ -26,11 +26,14 @@ describe('no-unsafe', () => {
   ruleTester.run('no-unsafe', noUnsafe, {
     valid: [
       // Modern lifecycle methods
-      `class MyComponent extends React.Component {
+      {
+        name: 'a current lifecycle',
+        code: `class MyComponent extends React.Component {
         componentDidMount() {}
         componentDidUpdate() {}
         componentWillUnmount() {}
       }`,
+      },
       // Using getDerivedStateFromProps
       `class MyComponent extends React.Component {
         static getDerivedStateFromProps(props, state) { return null; }
@@ -42,6 +45,7 @@ describe('no-unsafe', () => {
     ],
     invalid: [
       {
+        name: 'an UNSAFE_ lifecycle',
         code: `class MyComponent extends React.Component {
           UNSAFE_componentWillMount() {}
         }`,

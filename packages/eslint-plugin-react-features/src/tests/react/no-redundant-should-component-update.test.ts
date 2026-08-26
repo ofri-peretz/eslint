@@ -33,6 +33,7 @@ describe('no-redundant-should-component-update', () => {
       valid: [
         // Comparison logic
         {
+          name: 'an actual comparison',
           code: `
             class MyComponent extends Component {
               shouldComponentUpdate(nextProps) {
@@ -143,6 +144,7 @@ describe('no-redundant-should-component-update', () => {
       invalid: [
         // Just returns true
         {
+          name: 'shouldComponentUpdate returning true unconditionally',
           code: `
             class MyComponent extends Component {
               shouldComponentUpdate() {

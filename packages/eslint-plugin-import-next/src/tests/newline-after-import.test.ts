@@ -19,13 +19,17 @@ const ruleTester = new RuleTester({
 describe('newline-after-import', () => {
   ruleTester.run('newline-after-import', newlineAfterImport, {
     valid: [
-      "import foo from 'foo';\n\nconst a = 1;",
+      {
+        name: 'a blank line separates the imports from the code',
+        code: "import foo from 'foo';\n\nconst a = 1;",
+      },
       "import foo from 'foo';\nimport bar from 'bar';\n\nconst a = 1;",
       // If there's no code after imports, no newline needed (usually handled by other rules or formatting)
       "import foo from 'foo';",
     ],
     invalid: [
       {
+        name: 'code on the line straight after the imports',
         code: "import foo from 'foo';\nconst a = 1;",
         output: "import foo from 'foo';\n\nconst a = 1;",
         errors: [{ messageId: 'newlineAfterImport' }],

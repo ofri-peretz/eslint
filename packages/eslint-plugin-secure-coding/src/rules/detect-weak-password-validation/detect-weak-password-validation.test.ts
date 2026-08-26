@@ -23,7 +23,7 @@ ruleTester.run('detect-weak-password-validation', detectWeakPasswordValidation, 
         'const x = 42;',
         'const flag = true;',
     // Strong password requirements
-    { code: "if (password.length >= 12) { valid() }" },
+    { name: 'a twelve-character minimum', code: "if (password.length >= 12) { valid() }" },
     { code: "if (pwd.length >= 8) { valid() }" },
     // Non-password length checks
     { code: "if (name.length >= 2) { valid() }" },
@@ -84,7 +84,7 @@ ruleTester.run('detect-weak-password-validation', detectWeakPasswordValidation, 
 
   invalid: [
     // Weak password requirements
-    { code: "if (password.length >= 4) { accept() }", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'a four-character minimum', code: "if (password.length >= 4) { accept() }", errors: [{ messageId: 'violationDetected' }] },
     { code: "if (pwd.length >= 6) { proceed() }", errors: [{ messageId: 'violationDetected' }] },
     { code: "if (pass.length > 3) { ok() }", errors: [{ messageId: 'violationDetected' }] },
 

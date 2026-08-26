@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 describe('no-deprecated-buffer', () => {
   ruleTester.run('no-deprecated-buffer', noDeprecatedBuffer, {
     valid: [
-      { code: 'Buffer.from("hello")' },
+      { name: 'Buffer.from', code: 'Buffer.from("hello")' },
       { code: 'Buffer.alloc(1024)' },
       { code: 'Buffer.allocUnsafe(512)' },
       { code: 'Buffer.concat([a, b])' },
@@ -58,6 +58,7 @@ describe('no-deprecated-buffer', () => {
     invalid: [
       // new Buffer() — auto-fixed to Buffer.from()
       {
+        name: 'new Buffer() — removed, and ambiguous between size and content',
         code: 'new Buffer("hello")',
         output: 'Buffer.from("hello")',
         errors: [{ messageId: 'deprecatedBufferConstructor' }],

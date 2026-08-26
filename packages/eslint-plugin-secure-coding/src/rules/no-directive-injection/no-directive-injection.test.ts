@@ -34,6 +34,7 @@ describe('no-directive-injection', () => {
       valid: [
         // Safe innerHTML with text content (not innerHTML)
         {
+          name: 'assigning to textContent is not a sanitiser call',
           code: 'element.textContent = userInput;',
         },
         // Trusted directive names (string literal, not user input)
@@ -96,6 +97,7 @@ describe('no-directive-injection', () => {
       valid: [],
       invalid: [
         {
+          name: "ADD_TAGS: ['script'] hands the sanitiser back what it removes",
           code: `DOMPurify.sanitize(html, { ADD_TAGS: ['script'] });`,
           errors: [{ messageId: 'unsafeSanitizerConfig' }],
         },

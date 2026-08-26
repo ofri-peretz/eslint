@@ -62,7 +62,7 @@ describe('no-permissive-trust-proxy', () => {
   ruleTester.run('no-permissive-trust-proxy', noPermissiveTrustProxy, {
     valid: xp([
       // THE safe patterns — name the proxies you actually run behind
-      { code: `app.set('trust proxy', 1);` },
+      { name: 'a hop count', code: `app.set('trust proxy', 1);` },
       { code: `app.set('trust proxy', 'loopback');` },
       { code: `app.set('trust proxy', '10.0.0.0/8');` },
       { code: `app.set('trust proxy', (ip) => ip === '10.0.0.1');` },
@@ -85,6 +85,7 @@ describe('no-permissive-trust-proxy', () => {
     invalid: xp([
       // Unconditional trust — the classic rate-limit bypass
       {
+        name: 'trust proxy true — req.ip becomes whatever X-Forwarded-For says',
         code: `app.set('trust proxy', true);`,
         errors: [
           {

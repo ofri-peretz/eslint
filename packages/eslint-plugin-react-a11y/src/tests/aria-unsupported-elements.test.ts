@@ -25,7 +25,7 @@ describe('aria-unsupported-elements', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no aria on unsupported', ariaUnsupportedElements, {
       valid: [
-        { code: '<div aria-label="Label"></div>' },
+        { name: 'the same attribute on a div', code: '<div aria-label="Label"></div>' },
         { code: '<button aria-pressed="true"></button>' },
         { code: '<meta charset="UTF-8" />' },
         { code: '<html lang="en"></html>' },
@@ -40,7 +40,7 @@ describe('aria-unsupported-elements', () => {
     ruleTester.run('invalid - aria on unsupported elements', ariaUnsupportedElements, {
       valid: [],
       invalid: [
-        { code: '<meta aria-label="Label" />', errors: [{ messageId: 'unsupportedAria' }] },
+        { name: 'an aria attribute on an element that has no accessibility semantics', code: '<meta aria-label="Label" />', errors: [{ messageId: 'unsupportedAria' }] },
         { code: '<html aria-hidden="true"></html>', errors: [{ messageId: 'unsupportedAria' }] },
       ],
     });

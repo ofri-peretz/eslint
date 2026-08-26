@@ -25,7 +25,7 @@ describe('media-has-caption', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - media with captions', mediaHasCaption, {
       valid: [
-        { code: '<video><track kind="captions" /></video>' },
+        { name: 'a track element is present', code: '<video><track kind="captions" /></video>' },
         { code: '<audio><track kind="captions" /></audio>' },
         { code: '<div></div>' },
       ],
@@ -37,7 +37,7 @@ describe('media-has-caption', () => {
     ruleTester.run('invalid - media without captions', mediaHasCaption, {
       valid: [],
       invalid: [
-        { code: '<video src="video.mp4"></video>', errors: [{ messageId: 'missingCaption' }] },
+        { name: 'a video with no captions track', code: '<video src="video.mp4"></video>', errors: [{ messageId: 'missingCaption' }] },
         { code: '<audio src="audio.mp3"></audio>', errors: [{ messageId: 'missingCaption' }] },
       ],
     });

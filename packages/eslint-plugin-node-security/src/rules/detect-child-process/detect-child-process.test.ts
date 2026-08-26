@@ -39,6 +39,7 @@ describe('detect-child-process', () => {
       valid: [
         // Not child_process methods
         {
+          name: 'a local binding that only happens to be named exec',
           code: 'const exec = myFunction; exec(command);',
         },
         {
@@ -56,6 +57,7 @@ describe('detect-child-process', () => {
       valid: [],
       invalid: [
         {
+          name: 'a shell command built by interpolation',
           code: 'child_process.exec(`git clone ${repoUrl}`);',
           options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],

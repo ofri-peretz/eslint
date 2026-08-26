@@ -76,6 +76,7 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
     // 2026-08-12.
     // -----------------------------------------------------------------
     {
+      name: 'an app with no authentication route to limit',
       code: `
         import express from 'express';
         const app = express();
@@ -279,6 +280,7 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
     // servers accept a username/password pair on an unthrottled POST.
     // -----------------------------------------------------------------
     {
+      name: 'a login route with no rate limiter',
       code: `
         const express = require('express');
         const app = express();

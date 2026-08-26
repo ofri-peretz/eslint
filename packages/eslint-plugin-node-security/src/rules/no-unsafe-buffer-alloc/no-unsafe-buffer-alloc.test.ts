@@ -16,7 +16,7 @@ describe('no-unsafe-buffer-alloc', () => {
   ruleTester.run('no-unsafe-buffer-alloc', noUnsafeBufferAlloc, {
     valid: [
       // The safe allocator.
-      { code: 'Buffer.alloc(1024)' },
+      { name: 'alloc zeroes it', code: 'Buffer.alloc(1024)' },
       { code: 'Buffer.from("hello")' },
       { code: 'Buffer.concat([a, b])' },
       // Structural exemption: zeroed in the same expression.
@@ -92,6 +92,7 @@ describe('no-unsafe-buffer-alloc', () => {
     ],
     invalid: [
       {
+        name: 'allocUnsafe hands back whatever was in that memory',
         code: 'const buf = Buffer.allocUnsafe(1024);',
         errors: [
           {

@@ -28,6 +28,7 @@ describe('no-commonjs', () => {
       valid: [
         // Valid ES6 imports
         {
+          name: 'an ES import',
           code: 'import helper from "./helper";',
           filename: '/src/utils/helpers.js',
         },
@@ -55,6 +56,7 @@ describe('no-commonjs', () => {
       invalid: [
         // Invalid CommonJS require calls
         {
+          name: 'require() in a module file',
           code: 'const helper = require("./helper");',
           filename: '/src/utils/helpers.js',
           errors: [

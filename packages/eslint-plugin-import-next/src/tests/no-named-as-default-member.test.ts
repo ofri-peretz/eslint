@@ -24,6 +24,7 @@ ruleTester.run('no-named-as-default-member', noNamedAsDefaultMember, {
   valid: [
     // Standard default usage
     {
+      name: 'an ordinary property of the default',
       code: `
         import foo from './foo';
         const bar = foo.bar;
@@ -58,6 +59,7 @@ ruleTester.run('no-named-as-default-member', noNamedAsDefaultMember, {
     // If we assume the rule uses a simplified heuristic (e.g. checking existing named imports),
     // we can try:
     {
+      name: 'a property read off the default that is actually a named export',
       code: `
         import foo, { bar } from './foo';
         const baz = foo.bar; // Accessing 'bar' on default 'foo' when 'bar' is a named export

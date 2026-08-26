@@ -16,6 +16,7 @@ ruleTester.run('no-barrel-import', noBarrelImport, {
   valid: [
     // ✅ Direct import with file extension
     {
+      name: 'an import of the file itself',
       code: `import { Button } from './components/Button.tsx';`,
     },
 
@@ -69,6 +70,7 @@ ruleTester.run('no-barrel-import', noBarrelImport, {
   invalid: [
     // ❌ Explicit index import (clear barrel)
     {
+      name: 'an import through a directory index',
       code: `import { config } from './config/index';`,
       errors: [{ messageId: 'barrelImportDetected' }],
     },

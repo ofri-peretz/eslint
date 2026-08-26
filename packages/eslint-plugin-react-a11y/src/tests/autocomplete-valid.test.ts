@@ -25,7 +25,7 @@ describe('autocomplete-valid', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid autocomplete values', autocompleteValid, {
       valid: [
-        { code: '<input autocomplete="name" />' },
+        { name: 'a valid token', code: '<input autocomplete="name" />' },
         { code: '<input autocomplete="email" />' },
         { code: '<input autocomplete="username" />' },
         { code: '<input autocomplete="current-password" />' },
@@ -44,7 +44,7 @@ describe('autocomplete-valid', () => {
     ruleTester.run('invalid autocomplete values', autocompleteValid, {
       valid: [],
       invalid: [
-        { code: '<input autocomplete="foo" />', errors: [{ messageId: 'invalidAutocomplete' }] },
+        { name: 'an autocomplete token that is not in the spec', code: '<input autocomplete="foo" />', errors: [{ messageId: 'invalidAutocomplete' }] },
         { code: '<input autocomplete="invalid" />', errors: [{ messageId: 'invalidAutocomplete' }] },
       ],
     });

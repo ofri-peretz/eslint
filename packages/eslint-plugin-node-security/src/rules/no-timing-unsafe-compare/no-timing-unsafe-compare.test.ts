@@ -85,7 +85,7 @@ describe('no-timing-unsafe-compare', () => {
         `if (prop.key === 'text') return;`,
         `const first = keys.find((key) => key === wanted);`,
         // Regular non-secret comparisons
-        { code: 'if (name === otherName) {}' },
+        { name: 'two names compared, which is not a secret', code: 'if (name === otherName) {}' },
         { code: 'if (count === 5) {}' },
         { code: 'if (userId === targetId) {}' },
         { code: 'if (status === "active") {}' },
@@ -162,6 +162,7 @@ describe('no-timing-unsafe-compare', () => {
           //
           // A camelCase object is an ordinary runtime value, not a namespace.
           {
+            name: 'an API token compared with ===',
             code: 'if (userToken === credentials.API_TOKEN) grant();',
             errors: [{ messageId: 'timingUnsafeCompare' }],
           },

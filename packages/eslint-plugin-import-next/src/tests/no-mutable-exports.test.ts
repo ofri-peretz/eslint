@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-mutable-exports', noMutableExports, {
   valid: [
     // const exports are allowed
-    { code: `export const foo = 1;` },
+    { name: 'a const export', code: `export const foo = 1;` },
     { code: `export const bar = { a: 1 };` },
     { code: `export const baz = [1, 2, 3];` },
 
@@ -42,6 +42,7 @@ ruleTester.run('no-mutable-exports', noMutableExports, {
   invalid: [
     // Export let
     {
+      name: 'a let export the importer sees change under them',
       code: `export let foo = 1;`,
       errors: [{ messageId: 'letExport' }],
     },

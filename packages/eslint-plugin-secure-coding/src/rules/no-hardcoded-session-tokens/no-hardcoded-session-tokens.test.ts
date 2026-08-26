@@ -24,7 +24,7 @@ ruleTester.run('no-hardcoded-session-tokens', noHardcodedSessionTokens, {
         'const x = 42;',
         'const flag = true;',
     // Environment variables
-    { code: "const token = process.env.JWT_TOKEN" },
+    { name: 'the token comes from the environment', code: "const token = process.env.JWT_TOKEN" },
     { code: "const session = getSession()" },
     // Short strings (not tokens)
     { code: "const id = 'abc'" },
@@ -42,7 +42,8 @@ ruleTester.run('no-hardcoded-session-tokens', noHardcodedSessionTokens, {
 
   invalid: [
     // JWT tokens
-    { 
+    {
+      name: 'a JWT literal in source', 
       code: "const jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.Rq8IjqGXVV'",
       errors: [{ messageId: 'violationDetected' }]
     },

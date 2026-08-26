@@ -16,6 +16,7 @@ ruleTester.run('prefer-direct-import', preferDirectImport, {
   valid: [
     // ✅ Direct import (already using component path)
     {
+      name: 'an import of the module itself',
       code: `import { Button } from '@/components/Button';`,
     },
 
@@ -58,6 +59,7 @@ ruleTester.run('prefer-direct-import', preferDirectImport, {
   invalid: [
     // ❌ Single named import from barrel
     {
+      name: 'an import through the barrel',
       code: `import { Button } from '@/components';`,
       output: `import { Button } from '@/components/Button';`,
       errors: [{ messageId: 'preferDirectImport' }],

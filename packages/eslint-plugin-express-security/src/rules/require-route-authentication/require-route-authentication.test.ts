@@ -63,7 +63,7 @@ describe('require-route-authentication', () => {
   ruleTester.run('require-route-authentication', requireRouteAuthentication, {
     valid: xp([
       // THE safe pattern — auth middleware in the chain
-      { code: `app.post('/account/password', requireAuth, changePassword);` },
+      { name: 'the route carries requireAuth', code: `app.post('/account/password', requireAuth, changePassword);` },
       { code: `router.delete('/users/:id', authenticate, removeUser);` },
       {
         code: `app.put('/billing/card', passport.authenticate('jwt'), saveCard);`,
@@ -186,6 +186,7 @@ describe('require-route-authentication', () => {
       // a route that merely *contains* one of its words is still judged.
       // `unlocked` is not `unlock`; this route stays reported.
       {
+        name: 'a config-writing POST with no auth middleware',
         code: `app.post('/unlocked-items/config', saveConfig);`,
         errors: [{ messageId: 'missingAuthentication' as const }],
       },

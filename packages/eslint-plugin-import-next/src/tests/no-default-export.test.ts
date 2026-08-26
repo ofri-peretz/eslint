@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-default-export', noDefaultExport, {
   valid: [
     // Named exports only
-    { code: `export const foo = 1;` },
+    { name: 'a named export', code: `export const foo = 1;` },
     { code: `export function bar() {}` },
     { code: `export class Baz {}` },
     { code: `export { foo, bar };` },
@@ -35,6 +35,7 @@ ruleTester.run('no-default-export', noDefaultExport, {
   invalid: [
     // Default export expression (Literal)
     {
+      name: 'a default export',
       code: `export default 42;`,
       errors: [{ messageId: 'defaultExport' }],
       output: `const defaultExport = 42;\nexport { defaultExport };`,

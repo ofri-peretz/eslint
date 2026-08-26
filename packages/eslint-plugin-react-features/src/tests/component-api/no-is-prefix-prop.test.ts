@@ -24,7 +24,7 @@ describe('no-is-prefix-prop', () => {
   ruleTester.run('no-is-prefix-prop', noIsPrefixProp, {
     valid: [
       // Boolean without `is` prefix
-      { code: `interface Props { looped: boolean; }` },
+      { name: 'the same prop without the prefix', code: `interface Props { looped: boolean; }` },
       // Non-boolean type — even with `is` prefix, not flagged
       { code: `interface Props { isLooped: string; }` },
       // `is` followed by lowercase — not a prefix pattern
@@ -36,6 +36,7 @@ describe('no-is-prefix-prop', () => {
     ],
     invalid: [
       {
+        name: 'an is-prefixed boolean prop',
         code: `interface Props { isLooped: boolean; }`,
         errors: [
           {

@@ -65,7 +65,7 @@ describe('require-case-insensitive-path-guard', () => {
     {
       valid: xp([
         // Normalized before comparing — the canonical safe pattern
-        { code: `if (req.path.toLowerCase().startsWith('/admin')) deny();` },
+        { name: 'the path is lowercased first', code: `if (req.path.toLowerCase().startsWith('/admin')) deny();` },
         { code: `if (req.url.toUpperCase() === '/ADMIN') deny();` },
         // Regex guard already case-insensitive
         { code: `if (req.path.match(/^\\/admin/i)) deny();` },
@@ -123,6 +123,7 @@ module.exports = app;
         // REGRESSION: manual `'...'` quoting emitted invalid JS when the
         // rewritten literal itself contained a quote.
         {
+          name: 'a path guard that compares case-sensitively',
           code: `if (req.path.startsWith("/Parent's/Admin")) deny();`,
           errors: [
             {

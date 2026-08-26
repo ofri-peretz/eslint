@@ -363,11 +363,23 @@ const documented = (entry: RuleEntry, kinds: Kind[]): boolean =>
 // opposite of a caught defect. An FP does satisfy the TN requirement — it is a
 // TN that arrived with provenance.
 const missing = entries.filter((e) => !documented(e, ['TP']) || !documented(e, ['TN', 'FP']));
+/**
+ * A rule with an EMPTY `invalid` array claims nothing. It is not
+ * under-documented — it asserts no defect exists that it catches, and its
+ * whole suite passes by proving it stays quiet. Two of these were found by the
+ * gate and both are honest about why in a comment: one waits on a property
+ * ordering nobody has produced, the other cannot be reached at all because a
+ * real parser ends the block comment before the rule ever sees the text.
+ *
+ * They are listed separately because "add a description" is not the fix.
+ */
+const claimsNothing = entries.filter((e) => e.cases.length > 0 && !e.cases.some((c) => c.kind === 'TP'));
 
 console.log(`  ${entries.length} rules`);
 console.log(`  TP ${counts.TP}   TN ${counts.TN}   FP ${counts.FP}   FN ${counts.FN}`);
 console.log(`  undescribed cases                       ${undescribed}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
+console.log(`  rules that claim no defect at all       ${claimsNothing.length}`);
 console.log(`  rules with a TP taken from real code    ${grounded.length}`);
 console.log(`  rules with ANY case from real code      ${touched.length}`);
 /**
@@ -447,6 +459,10 @@ if (!CHECK) {
     '',
     `${missing.length} of ${entries.length} rules do not yet carry both a described TP and a described TN.`,
     `${undescribed} cases run without a \`name\`: they prove behaviour without saying what behaviour.`,
+    '',
+    `${claimsNothing.length} rules have an EMPTY \`invalid\` array: they claim no defect at all, and`,
+    'their suites pass by proving they stay quiet. Adding a description is not the',
+    'fix for those — see each one\'s own comment for why it has nothing to catch.',
     '',
     `**${grounded.length} of ${entries.length} rules have a TP taken from code somebody else shipped.**`,
     `${touched.length} have any case at all drawn from real code — usually a false positive we`,

@@ -61,7 +61,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the key comes from the environment",
           "file": "packages/eslint-plugin-anthropic-security/src/rules/no-hardcoded-api-key/no-hardcoded-api-key.test.ts"
         },
         {
@@ -131,7 +131,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an sk-ant key literal in the client construction",
           "file": "packages/eslint-plugin-anthropic-security/src/rules/no-hardcoded-api-key/no-hardcoded-api-key.test.ts"
         },
         {
@@ -2194,8 +2194,8 @@
         }
       ],
       "wild": {
-        "count": 92,
-        "repos": 12
+        "count": 63,
+        "repos": 9
       }
     },
     {
@@ -2837,8 +2837,8 @@
         }
       ],
       "wild": {
-        "count": 83,
-        "repos": 15
+        "count": 26,
+        "repos": 9
       }
     },
     {
@@ -3481,8 +3481,8 @@
         }
       ],
       "wild": {
-        "count": 92,
-        "repos": 16
+        "count": 47,
+        "repos": 8
       }
     },
     {
@@ -3875,8 +3875,8 @@
         }
       ],
       "wild": {
-        "count": 3,
-        "repos": 2
+        "count": 2,
+        "repos": 1
       }
     },
     {
@@ -4339,8 +4339,8 @@
         }
       ],
       "wild": {
-        "count": 445,
-        "repos": 22
+        "count": 203,
+        "repos": 16
       }
     },
     {
@@ -6345,8 +6345,8 @@
         }
       ],
       "wild": {
-        "count": 111,
-        "repos": 13
+        "count": 92,
+        "repos": 10
       }
     },
     {
@@ -6949,8 +6949,8 @@
         }
       ],
       "wild": {
-        "count": 26,
-        "repos": 13
+        "count": 15,
+        "repos": 8
       }
     },
     {
@@ -7148,8 +7148,8 @@
         }
       ],
       "wild": {
-        "count": 11,
-        "repos": 4
+        "count": 7,
+        "repos": 3
       }
     },
     {
@@ -7699,11 +7699,7 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-wildcard-origin/no-postmessage-wildcard-origin.test.ts"
         }
-      ],
-      "wild": {
-        "count": 6,
-        "repos": 2
-      }
+      ]
     },
     {
       "rule": "browser-security/no-sensitive-cookie-js",
@@ -9360,8 +9356,8 @@
         }
       ],
       "wild": {
-        "count": 10,
-        "repos": 2
+        "count": 9,
+        "repos": 1
       }
     },
     {
@@ -9659,8 +9655,8 @@
         }
       ],
       "wild": {
-        "count": 102,
-        "repos": 9
+        "count": 71,
+        "repos": 7
       }
     },
     {
@@ -11541,8 +11537,8 @@
         }
       ],
       "wild": {
-        "count": 6,
-        "repos": 5
+        "count": 5,
+        "repos": 4
       }
     },
     {
@@ -12270,8 +12266,8 @@
         }
       ],
       "wild": {
-        "count": 21,
-        "repos": 7
+        "count": 20,
+        "repos": 6
       }
     },
     {
@@ -13048,8 +13044,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 3
+        "count": 4,
+        "repos": 4
       }
     },
     {
@@ -13347,7 +13343,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "wss://",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-websocket-wss/require-websocket-wss.test.ts"
         },
         {
@@ -13422,7 +13418,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a ws:// endpoint — the frames travel in clear",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-websocket-wss/require-websocket-wss.test.ts"
         },
         {
@@ -16070,14 +16066,18 @@
           "description": "returning does not scope the mutation",
           "file": "packages/eslint-plugin-drizzle-security/src/rules/no-unscoped-mutation/no-unscoped-mutation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/no-client-controlled-authorization",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the role comes from the authenticated session",
           "file": "packages/eslint-plugin-express-security/src/rules/no-client-controlled-authorization/no-client-controlled-authorization.test.ts"
         },
         {
@@ -16192,7 +16192,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a role read from the request body decides access",
           "file": "packages/eslint-plugin-express-security/src/rules/no-client-controlled-authorization/no-client-controlled-authorization.test.ts"
         },
         {
@@ -16271,7 +16271,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named origin with credentials",
           "file": "packages/eslint-plugin-express-security/src/rules/no-cors-credentials-wildcard/no-cors-credentials-wildcard.test.ts"
         },
         {
@@ -16301,7 +16301,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "origin '*' with credentials — the browser refuses it, so the intent is wrong either way",
           "file": "packages/eslint-plugin-express-security/src/rules/no-cors-credentials-wildcard/no-cors-credentials-wildcard.test.ts"
         },
         {
@@ -16375,7 +16375,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "helmet with its defaults",
           "file": "packages/eslint-plugin-express-security/src/rules/no-disabled-helmet-protections/no-disabled-helmet-protections.test.ts"
         },
         {
@@ -16460,7 +16460,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a helmet protection switched off",
           "file": "packages/eslint-plugin-express-security/src/rules/no-disabled-helmet-protections/no-disabled-helmet-protections.test.ts"
         },
         {
@@ -16515,8 +16515,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 1,
+        "repos": 1
       }
     },
     {
@@ -16524,7 +16524,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a correlation id to the client, the error to the log",
           "file": "packages/eslint-plugin-express-security/src/rules/no-error-details-in-response/no-error-details-in-response.test.ts"
         },
         {
@@ -16629,7 +16629,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "the caught error serialised into the JSON response",
           "file": "packages/eslint-plugin-express-security/src/rules/no-error-details-in-response/no-error-details-in-response.test.ts"
         },
         {
@@ -16759,8 +16759,8 @@
         }
       ],
       "wild": {
-        "count": 6,
-        "repos": 3
+        "count": 5,
+        "repos": 2
       }
     },
     {
@@ -16783,7 +16783,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary API route",
           "file": "packages/eslint-plugin-express-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts"
         },
         {
@@ -16798,7 +16798,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a /debug route in the deployed app",
           "file": "packages/eslint-plugin-express-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts"
         },
         {
@@ -16943,8 +16943,8 @@
         }
       ],
       "wild": {
-        "count": 6,
-        "repos": 4
+        "count": 5,
+        "repos": 3
       }
     },
     {
@@ -16952,7 +16952,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal path",
           "file": "packages/eslint-plugin-express-security/src/rules/no-express-unsafe-regex-route/no-express-unsafe-regex-route.test.ts"
         },
         {
@@ -16992,7 +16992,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a route pattern with a nested quantifier",
           "file": "packages/eslint-plugin-express-security/src/rules/no-express-unsafe-regex-route/no-express-unsafe-regex-route.test.ts"
         },
         {
@@ -17107,7 +17107,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "introspection off",
           "file": "packages/eslint-plugin-express-security/src/rules/no-graphql-introspection-production/no-graphql-introspection-production.test.ts"
         },
         {
@@ -17137,7 +17137,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "introspection left on publishes the whole schema",
           "file": "packages/eslint-plugin-express-security/src/rules/no-graphql-introspection-production/no-graphql-introspection-production.test.ts"
         },
         {
@@ -17217,7 +17217,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the origin comes from server-side config",
           "file": "packages/eslint-plugin-express-security/src/rules/no-host-header-in-links/no-host-header-in-links.test.ts"
         },
         {
@@ -17272,7 +17272,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password-reset link built from req.headers.host",
           "file": "packages/eslint-plugin-express-security/src/rules/no-host-header-in-links/no-host-header-in-links.test.ts"
         },
         {
@@ -17467,8 +17467,8 @@
         }
       ],
       "wild": {
-        "count": 4,
-        "repos": 3
+        "count": 3,
+        "repos": 2
       }
     },
     {
@@ -17476,7 +17476,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the query is scoped to the caller",
           "file": "packages/eslint-plugin-express-security/src/rules/no-idor-resource-access/no-idor-resource-access.test.ts"
         },
         {
@@ -17571,7 +17571,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "findById on a path parameter with no ownership predicate",
           "file": "packages/eslint-plugin-express-security/src/rules/no-idor-resource-access/no-idor-resource-access.test.ts"
         },
         {
@@ -17626,7 +17626,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "all three set",
           "file": "packages/eslint-plugin-express-security/src/rules/no-insecure-cookie-options/no-insecure-cookie-options.test.ts"
         },
         {
@@ -17671,7 +17671,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a session cookie with no httpOnly, secure or sameSite",
           "file": "packages/eslint-plugin-express-security/src/rules/no-insecure-cookie-options/no-insecure-cookie-options.test.ts"
         },
         {
@@ -17765,7 +17765,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the origin is checked against an allowlist",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-cors-check/no-missing-cors-check.test.ts"
         },
         {
@@ -17790,7 +17790,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "origin '*'",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-cors-check/no-missing-cors-check.test.ts"
         },
         {
@@ -18065,7 +18065,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the route carries csrf()",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-csrf-protection/no-missing-csrf-protection.test.ts"
         },
         {
@@ -18095,7 +18095,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a state-changing POST with no CSRF middleware",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-csrf-protection/no-missing-csrf-protection.test.ts"
         },
         {
@@ -18175,8 +18175,8 @@
         }
       ],
       "wild": {
-        "count": 204,
-        "repos": 15
+        "count": 169,
+        "repos": 12
       }
     },
     {
@@ -18184,7 +18184,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the security headers are set",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts"
         },
         {
@@ -18194,7 +18194,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a response that sets headers but none of the security ones",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts"
         },
         {
@@ -18339,8 +18339,8 @@
         }
       ],
       "wild": {
-        "count": 40,
-        "repos": 12
+        "count": 25,
+        "repos": 8
       }
     },
     {
@@ -18348,7 +18348,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit origin list",
           "file": "packages/eslint-plugin-express-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         },
         {
@@ -18378,7 +18378,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "origin '*'",
           "file": "packages/eslint-plugin-express-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         },
         {
@@ -18483,7 +18483,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a hop count",
           "file": "packages/eslint-plugin-express-security/src/rules/no-permissive-trust-proxy/no-permissive-trust-proxy.test.ts"
         },
         {
@@ -18568,7 +18568,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "trust proxy true — req.ip becomes whatever X-Forwarded-For says",
           "file": "packages/eslint-plugin-express-security/src/rules/no-permissive-trust-proxy/no-permissive-trust-proxy.test.ts"
         },
         {
@@ -18593,8 +18593,8 @@
         }
       ],
       "wild": {
-        "count": 3,
-        "repos": 3
+        "count": 2,
+        "repos": 2
       }
     },
     {
@@ -18602,7 +18602,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same secrets in a POST body",
           "file": "packages/eslint-plugin-express-security/src/rules/no-sensitive-data-in-query/no-sensitive-data-in-query.test.ts"
         },
         {
@@ -18682,7 +18682,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "credentials in the query string, which lands in access logs and Referer",
           "file": "packages/eslint-plugin-express-security/src/rules/no-sensitive-data-in-query/no-sensitive-data-in-query.test.ts"
         },
         {
@@ -18847,8 +18847,8 @@
         }
       ],
       "wild": {
-        "count": 14,
-        "repos": 4
+        "count": 9,
+        "repos": 3
       }
     },
     {
@@ -18856,7 +18856,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a scoped public directory behind helmet",
           "file": "packages/eslint-plugin-express-security/src/rules/no-static-root-exposure/no-static-root-exposure.test.ts"
         },
         {
@@ -18941,7 +18941,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "express.static(__dirname) serves the source tree",
           "file": "packages/eslint-plugin-express-security/src/rules/no-static-root-exposure/no-static-root-exposure.test.ts"
         },
         {
@@ -19250,7 +19250,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "self-only sources with explicit frame-ancestors",
           "file": "packages/eslint-plugin-express-security/src/rules/no-unsafe-csp-directives/no-unsafe-csp-directives.test.ts"
         },
         {
@@ -19400,7 +19400,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "'unsafe-inline' in scriptSrc",
           "file": "packages/eslint-plugin-express-security/src/rules/no-unsafe-csp-directives/no-unsafe-csp-directives.test.ts"
         },
         {
@@ -19460,7 +19460,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal path",
           "file": "packages/eslint-plugin-express-security/src/rules/no-user-controlled-redirect/no-user-controlled-redirect.test.ts"
         },
         {
@@ -19520,7 +19520,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "one query parameter validated, a different one redirected to",
           "file": "packages/eslint-plugin-express-security/src/rules/no-user-controlled-redirect/no-user-controlled-redirect.test.ts"
         },
         {
@@ -19695,7 +19695,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "render with no locals",
           "file": "packages/eslint-plugin-express-security/src/rules/no-user-controlled-render-locals/no-user-controlled-render-locals.test.ts"
         },
         {
@@ -19765,7 +19765,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "request data passed as template locals",
           "file": "packages/eslint-plugin-express-security/src/rules/no-user-controlled-render-locals/no-user-controlled-render-locals.test.ts"
         },
         {
@@ -20145,7 +20145,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the path is lowercased first",
           "file": "packages/eslint-plugin-express-security/src/rules/require-case-insensitive-path-guard/require-case-insensitive-path-guard.test.ts"
         },
         {
@@ -20215,7 +20215,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a path guard that compares case-sensitively",
           "file": "packages/eslint-plugin-express-security/src/rules/require-case-insensitive-path-guard/require-case-insensitive-path-guard.test.ts"
         },
         {
@@ -20335,7 +20335,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a router whose handler carries the check",
           "file": "packages/eslint-plugin-express-security/src/rules/require-csrf-protection/require-csrf-protection.test.ts"
         },
         {
@@ -20480,7 +20480,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a session-bearing POST with authentication but no CSRF token",
           "file": "packages/eslint-plugin-express-security/src/rules/require-csrf-protection/require-csrf-protection.test.ts"
         },
         {
@@ -20674,7 +20674,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the default limit",
           "file": "packages/eslint-plugin-express-security/src/rules/require-express-body-parser-limits/require-express-body-parser-limits.test.ts"
         },
         {
@@ -20784,7 +20784,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a 100mb body limit",
           "file": "packages/eslint-plugin-express-security/src/rules/require-express-body-parser-limits/require-express-body-parser-limits.test.ts"
         },
         {
@@ -20904,7 +20904,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an app that only serves static files",
           "file": "packages/eslint-plugin-express-security/src/rules/require-helmet/require-helmet.test.ts"
         },
         {
@@ -21004,7 +21004,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an app that renders views with no helmet",
           "file": "packages/eslint-plugin-express-security/src/rules/require-helmet/require-helmet.test.ts"
         },
         {
@@ -21253,7 +21253,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the value is coerced with String() first",
           "file": "packages/eslint-plugin-express-security/src/rules/require-query-type-guard/require-query-type-guard.test.ts"
         },
         {
@@ -21323,7 +21323,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a string method on req.query, which can arrive as an array",
           "file": "packages/eslint-plugin-express-security/src/rules/require-query-type-guard/require-query-type-guard.test.ts"
         },
         {
@@ -21443,7 +21443,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an app with no authentication route to limit",
           "file": "packages/eslint-plugin-express-security/src/rules/require-rate-limiting/require-rate-limiting.test.ts"
         },
         {
@@ -21553,7 +21553,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a login route with no rate limiter",
           "file": "packages/eslint-plugin-express-security/src/rules/require-rate-limiting/require-rate-limiting.test.ts"
         },
         {
@@ -21632,7 +21632,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the route carries requireAuth",
           "file": "packages/eslint-plugin-express-security/src/rules/require-route-authentication/require-route-authentication.test.ts"
         },
         {
@@ -21862,7 +21862,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a config-writing POST with no auth middleware",
           "file": "packages/eslint-plugin-express-security/src/rules/require-route-authentication/require-route-authentication.test.ts"
         },
         {
@@ -21992,8 +21992,8 @@
         }
       ],
       "wild": {
-        "count": 6,
-        "repos": 4
+        "count": 5,
+        "repos": 3
       }
     },
     {
@@ -22001,7 +22001,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "helmet with its defaults",
           "file": "packages/eslint-plugin-express-security/src/rules/require-strict-transport-security/require-strict-transport-security.test.ts"
         },
         {
@@ -22151,7 +22151,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "hsts switched off",
           "file": "packages/eslint-plugin-express-security/src/rules/require-strict-transport-security/require-strict-transport-security.test.ts"
         },
         {
@@ -22196,7 +22196,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a threshold that still blocks",
           "file": "packages/eslint-plugin-gemini-security/src/rules/no-disabled-safety-settings/no-disabled-safety-settings.test.ts"
         },
         {
@@ -22261,7 +22261,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "BLOCK_NONE turns the safety filter off entirely",
           "file": "packages/eslint-plugin-gemini-security/src/rules/no-disabled-safety-settings/no-disabled-safety-settings.test.ts"
         },
         {
@@ -22426,7 +22426,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the inline `{ type Foo }` form",
           "file": "packages/eslint-plugin-import-next/src/tests/consistent-type-specifier-style.test.ts"
         },
         {
@@ -22471,7 +22471,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a top-level `import type` where the configured style is inline",
           "file": "packages/eslint-plugin-import-next/src/tests/consistent-type-specifier-style.test.ts"
         },
         {
@@ -22516,7 +22516,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a webpackChunkName comment",
           "file": "packages/eslint-plugin-import-next/src/tests/dynamic-import-chunkname.test.ts"
         },
         {
@@ -22536,7 +22536,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a dynamic import with no chunk name — the bundle gets a number",
           "file": "packages/eslint-plugin-import-next/src/tests/dynamic-import-chunkname.test.ts"
         },
         {
@@ -22549,7 +22549,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/dynamic-import-chunkname.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 136,
+        "repos": 15
+      }
     },
     {
       "rule": "import-next/enforce-dependency-direction",
@@ -22591,7 +22595,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a domain module importing another domain entity",
           "file": "packages/eslint-plugin-import-next/src/tests/enforce-dependency-direction.test.ts"
         },
         {
@@ -22611,7 +22615,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a domain module importing from infrastructure — the arrow points the wrong way",
           "file": "packages/eslint-plugin-import-next/src/tests/enforce-dependency-direction.test.ts"
         },
         {
@@ -22701,7 +22705,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "builtins, packages, aliases, parent, sibling",
           "file": "packages/eslint-plugin-import-next/src/tests/enforce-import-order.test.ts"
         },
         {
@@ -22721,7 +22725,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a relative import before a builtin",
           "file": "packages/eslint-plugin-import-next/src/tests/enforce-import-order.test.ts"
         },
         {
@@ -22739,7 +22743,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/enforce-import-order.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2774,
+        "repos": 37
+      }
     },
     {
       "rule": "import-next/enforce-team-boundaries",
@@ -22811,7 +22819,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an import within the same boundary",
           "file": "packages/eslint-plugin-import-next/src/tests/enforce-team-boundaries.test.ts"
         },
         {
@@ -22851,7 +22859,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import into another team's internals",
           "file": "packages/eslint-plugin-import-next/src/tests/enforce-team-boundaries.test.ts"
         },
         {
@@ -22881,7 +22889,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "exports at the bottom",
           "file": "packages/eslint-plugin-import-next/src/tests/exports-last.test.ts"
         },
         {
@@ -22916,7 +22924,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an export before the declarations it names",
           "file": "packages/eslint-plugin-import-next/src/tests/exports-last.test.ts"
         },
         {
@@ -22939,14 +22947,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/exports-last.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 133,
+        "repos": 15
+      }
     },
     {
       "rule": "import-next/group-exports",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a single grouped export",
           "file": "packages/eslint-plugin-import-next/src/tests/group-exports.test.ts"
         },
         {
@@ -22976,7 +22988,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "two export statements where one would do",
           "file": "packages/eslint-plugin-import-next/src/tests/group-exports.test.ts"
         },
         {
@@ -22994,7 +23006,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/group-exports.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 3
+      }
     },
     {
       "rule": "import-next/max-dependencies",
@@ -23041,7 +23057,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "at the maximum",
           "file": "packages/eslint-plugin-import-next/src/tests/max-dependencies.test.ts"
         },
         {
@@ -23051,7 +23067,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "one import past the configured maximum",
           "file": "packages/eslint-plugin-import-next/src/tests/max-dependencies.test.ts"
         },
         {
@@ -23204,14 +23220,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/max-dependencies.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 10,
+        "repos": 8
+      }
     },
     {
       "rule": "import-next/newline-after-import",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a blank line separates the imports from the code",
           "file": "packages/eslint-plugin-import-next/src/tests/newline-after-import.test.ts"
         },
         {
@@ -23226,7 +23246,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "code on the line straight after the imports",
           "file": "packages/eslint-plugin-import-next/src/tests/newline-after-import.test.ts"
         },
         {
@@ -23234,7 +23254,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/newline-after-import.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1553,
+        "repos": 15
+      }
     },
     {
       "rule": "import-next/no-absolute-path",
@@ -23266,7 +23290,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a relative path",
           "file": "packages/eslint-plugin-import-next/src/tests/no-absolute-path.test.ts"
         },
         {
@@ -23316,7 +23340,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an absolute filesystem path in an import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-absolute-path.test.ts"
         },
         {
@@ -23339,14 +23363,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-absolute-path.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "import-next/no-amd",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ES import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-amd.test.ts"
         },
         {
@@ -23366,7 +23394,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an AMD define() call",
           "file": "packages/eslint-plugin-import-next/src/tests/no-amd.test.ts"
         },
         {
@@ -23474,7 +23502,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-amd.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 18,
+        "repos": 8
+      }
     },
     {
       "rule": "import-next/no-anonymous-default-export",
@@ -23501,7 +23533,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named function",
           "file": "packages/eslint-plugin-import-next/src/tests/no-anonymous-default-export.test.ts"
         },
         {
@@ -23556,7 +23588,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a default export with no name to show in a stack trace",
           "file": "packages/eslint-plugin-import-next/src/tests/no-anonymous-default-export.test.ts"
         },
         {
@@ -23569,7 +23601,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-anonymous-default-export.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 185,
+        "repos": 15
+      }
     },
     {
       "rule": "import-next/no-barrel-file",
@@ -23586,7 +23622,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a single named re-export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-barrel-file.test.ts"
         },
         {
@@ -23651,7 +23687,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a file that is only re-exports — every consumer pulls the whole directory",
           "file": "packages/eslint-plugin-import-next/src/tests/no-barrel-file.test.ts"
         },
         {
@@ -23699,7 +23735,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-barrel-file.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 38,
+        "repos": 9
+      }
     },
     {
       "rule": "import-next/no-barrel-import",
@@ -23716,7 +23756,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an import of the file itself",
           "file": "packages/eslint-plugin-import-next/src/tests/no-barrel-import.test.ts"
         },
         {
@@ -23766,7 +23806,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import through a directory index",
           "file": "packages/eslint-plugin-import-next/src/tests/no-barrel-import.test.ts"
         },
         {
@@ -23819,7 +23859,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-barrel-import.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 133,
+        "repos": 12
+      }
     },
     {
       "rule": "import-next/no-commonjs",
@@ -23876,7 +23920,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ES import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-commonjs.test.ts"
         },
         {
@@ -23901,7 +23945,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "require() in a module file",
           "file": "packages/eslint-plugin-import-next/src/tests/no-commonjs.test.ts"
         },
         {
@@ -24059,7 +24103,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-commonjs.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 12355,
+        "repos": 57
+      }
     },
     {
       "rule": "import-next/no-cross-domain-imports",
@@ -24076,7 +24124,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a sibling import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-cross-domain-imports.test.ts"
         },
         {
@@ -24096,7 +24144,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import that reaches into another domain's internals",
           "file": "packages/eslint-plugin-import-next/src/tests/no-cross-domain-imports.test.ts"
         },
         {
@@ -24136,7 +24184,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an import that leads nowhere back",
           "file": "packages/eslint-plugin-import-next/src/tests/no-cycle.test.ts"
         },
         {
@@ -24146,7 +24194,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "two modules that import each other",
           "file": "packages/eslint-plugin-import-next/src/tests/no-cycle.test.ts"
         },
         {
@@ -24154,7 +24202,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-cycle.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 60,
+        "repos": 5
+      }
     },
     {
       "rule": "import-next/no-default-export",
@@ -24201,7 +24253,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-default-export.test.ts"
         },
         {
@@ -24251,7 +24303,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a default export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-default-export.test.ts"
         },
         {
@@ -24289,7 +24341,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-default-export.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2170,
+        "repos": 43
+      }
     },
     {
       "rule": "import-next/no-deprecated",
@@ -24386,7 +24442,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-deprecated.test.ts"
         },
         {
@@ -24416,7 +24472,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a call to something marked @deprecated",
           "file": "packages/eslint-plugin-import-next/src/tests/no-deprecated.test.ts"
         },
         {
@@ -24439,7 +24495,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-deprecated.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 10,
+        "repos": 2
+      }
     },
     {
       "rule": "import-next/no-duplicates",
@@ -24476,12 +24536,12 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "two value imports from the same module",
           "file": "packages/eslint-plugin-import-next/src/tests/no-duplicates.test.ts"
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a type import and a value import, which merge cleanly",
           "file": "packages/eslint-plugin-import-next/src/tests/no-duplicates.test.ts"
         },
         {
@@ -24499,14 +24559,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-duplicates.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1757,
+        "repos": 8
+      }
     },
     {
       "rule": "import-next/no-dynamic-require",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "require of a literal",
           "file": "packages/eslint-plugin-import-next/src/tests/no-dynamic-require.test.ts"
         },
         {
@@ -24551,7 +24615,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "require of a computed path",
           "file": "packages/eslint-plugin-import-next/src/tests/no-dynamic-require.test.ts"
         },
         {
@@ -24584,14 +24648,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-dynamic-require.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 59,
+        "repos": 18
+      }
     },
     {
       "rule": "import-next/no-empty-named-blocks",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-empty-named-blocks.test.ts"
         },
         {
@@ -24651,7 +24719,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import with an empty named block",
           "file": "packages/eslint-plugin-import-next/src/tests/no-empty-named-blocks.test.ts"
         },
         {
@@ -24761,7 +24829,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a declared dependency",
           "file": "packages/eslint-plugin-import-next/src/tests/no-extraneous-dependencies.test.ts"
         },
         {
@@ -24836,7 +24904,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import of a package that is not in package.json",
           "file": "packages/eslint-plugin-import-next/src/tests/no-extraneous-dependencies.test.ts"
         },
         {
@@ -24894,7 +24962,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-extraneous-dependencies.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3366,
+        "repos": 41
+      }
     },
     {
       "rule": "import-next/no-full-package-import",
@@ -24906,7 +24978,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a deep import of the one function",
           "file": "packages/eslint-plugin-import-next/src/tests/no-full-package-import.test.ts"
         },
         {
@@ -24966,7 +25038,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "importing all of lodash to use one function",
           "file": "packages/eslint-plugin-import-next/src/tests/no-full-package-import.test.ts"
         },
         {
@@ -25019,14 +25091,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-full-package-import.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 92,
+        "repos": 7
+      }
     },
     {
       "rule": "import-next/no-import-module-exports",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ES export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-import-module-exports.test.ts"
         },
         {
@@ -25056,7 +25132,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "module.exports in a file that also uses import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-import-module-exports.test.ts"
         },
         {
@@ -25079,7 +25155,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-import-module-exports.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 625,
+        "repos": 3
+      }
     },
     {
       "rule": "import-next/no-internal-modules",
@@ -25116,7 +25196,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the package entry",
           "file": "packages/eslint-plugin-import-next/src/tests/no-internal-modules.test.ts"
         },
         {
@@ -25136,7 +25216,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a deep import past the package's entry point",
           "file": "packages/eslint-plugin-import-next/src/tests/no-internal-modules.test.ts"
         },
         {
@@ -25394,7 +25474,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-internal-modules.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 11539,
+        "repos": 48
+      }
     },
     {
       "rule": "import-next/no-legacy-imports",
@@ -25436,7 +25520,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "date-fns",
           "file": "packages/eslint-plugin-import-next/src/tests/no-legacy-imports.test.ts"
         },
         {
@@ -25466,7 +25550,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "moment, where date-fns is the modern replacement",
           "file": "packages/eslint-plugin-import-next/src/tests/no-legacy-imports.test.ts"
         },
         {
@@ -25541,7 +25625,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a const export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-mutable-exports.test.ts"
         },
         {
@@ -25596,7 +25680,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a let export the importer sees change under them",
           "file": "packages/eslint-plugin-import-next/src/tests/no-mutable-exports.test.ts"
         },
         {
@@ -25619,7 +25703,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-mutable-exports.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 2
+      }
     },
     {
       "rule": "import-next/no-named-as-default",
@@ -25646,7 +25734,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a default import with its own name",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
         },
         {
@@ -25711,7 +25799,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a default import with the same name as a named export of that module",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
         },
         {
@@ -25756,7 +25844,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary property of the default",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts"
         },
         {
@@ -25771,10 +25859,14 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a property read off the default that is actually a named export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2667,
+        "repos": 3
+      }
     },
     {
       "rule": "import-next/no-named-default",
@@ -25791,7 +25883,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a default import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-default.test.ts"
         },
         {
@@ -25821,7 +25913,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "`{ default as foo }` where a default import says the same thing",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-default.test.ts"
         },
         {
@@ -25834,7 +25926,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-default.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 9,
+        "repos": 4
+      }
     },
     {
       "rule": "import-next/no-named-export",
@@ -25896,7 +25992,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a default export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-export.test.ts"
         },
         {
@@ -25956,7 +26052,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a named export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-export.test.ts"
         },
         {
@@ -25989,14 +26085,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-named-export.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6818,
+        "repos": 38
+      }
     },
     {
       "rule": "import-next/no-namespace",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "named imports",
           "file": "packages/eslint-plugin-import-next/src/tests/no-namespace.test.ts"
         },
         {
@@ -26031,7 +26131,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a namespace import defeats tree shaking",
           "file": "packages/eslint-plugin-import-next/src/tests/no-namespace.test.ts"
         },
         {
@@ -26049,7 +26149,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-namespace.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 525,
+        "repos": 20
+      }
     },
     {
       "rule": "import-next/no-nodejs-modules",
@@ -26086,7 +26190,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a relative import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-nodejs-modules.test.ts"
         },
         {
@@ -26111,7 +26215,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a Node builtin in code that must also run in a browser",
           "file": "packages/eslint-plugin-import-next/src/tests/no-nodejs-modules.test.ts"
         },
         {
@@ -26349,7 +26453,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-nodejs-modules.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1944,
+        "repos": 54
+      }
     },
     {
       "rule": "import-next/no-relative-packages",
@@ -26469,7 +26577,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-relative-packages.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 784,
+        "repos": 19
+      }
     },
     {
       "rule": "import-next/no-relative-parent-imports",
@@ -26526,7 +26638,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a sibling import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-relative-parent-imports.test.ts"
         },
         {
@@ -26546,7 +26658,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import that climbs out of its own directory",
           "file": "packages/eslint-plugin-import-next/src/tests/no-relative-parent-imports.test.ts"
         },
         {
@@ -26574,7 +26686,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-relative-parent-imports.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 10500,
+        "repos": 47
+      }
     },
     {
       "rule": "import-next/no-restricted-paths",
@@ -26591,7 +26707,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an allowed path",
           "file": "packages/eslint-plugin-import-next/src/tests/no-restricted-paths.test.ts"
         },
         {
@@ -26601,7 +26717,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import into a path the configuration puts off limits",
           "file": "packages/eslint-plugin-import-next/src/tests/no-restricted-paths.test.ts"
         },
         {
@@ -26656,7 +26772,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an import of a different module",
           "file": "packages/eslint-plugin-import-next/src/tests/no-self-import.test.ts"
         },
         {
@@ -26681,7 +26797,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a module importing itself",
           "file": "packages/eslint-plugin-import-next/src/tests/no-self-import.test.ts"
         },
         {
@@ -26911,7 +27027,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an import whose value is used",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unassigned-import.test.ts"
         },
         {
@@ -26971,7 +27087,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a side-effect-only import",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unassigned-import.test.ts"
         },
         {
@@ -27089,7 +27205,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unassigned-import.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 386,
+        "repos": 27
+      }
     },
     {
       "rule": "import-next/no-unresolved",
@@ -27126,7 +27246,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a resolvable builtin",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unresolved.test.ts"
         },
         {
@@ -27176,7 +27296,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import that resolves to nothing",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unresolved.test.ts"
         },
         {
@@ -27204,14 +27324,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unresolved.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4558,
+        "repos": 62
+      }
     },
     {
       "rule": "import-next/no-unused-modules",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an export",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unused-modules.test.ts"
         },
         {
@@ -27241,7 +27365,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import of something the target never exports",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unused-modules.test.ts"
         },
         {
@@ -27249,7 +27373,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unused-modules.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2735,
+        "repos": 58
+      }
     },
     {
       "rule": "import-next/no-useless-path-segments",
@@ -27276,7 +27404,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the direct path",
           "file": "packages/eslint-plugin-import-next/src/tests/no-useless-path-segments.test.ts"
         },
         {
@@ -27331,7 +27459,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a path that walks out and back into the same directory",
           "file": "packages/eslint-plugin-import-next/src/tests/no-useless-path-segments.test.ts"
         },
         {
@@ -27429,7 +27557,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-useless-path-segments.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 15,
+        "repos": 7
+      }
     },
     {
       "rule": "import-next/prefer-default-export",
@@ -27496,7 +27628,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a default export",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-default-export.test.ts"
         },
         {
@@ -27531,7 +27663,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a single named export where a default is the configured style",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-default-export.test.ts"
         },
         {
@@ -27549,7 +27681,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-default-export.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 842,
+        "repos": 31
+      }
     },
     {
       "rule": "import-next/prefer-direct-import",
@@ -27581,7 +27717,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an import of the module itself",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-direct-import.test.ts"
         },
         {
@@ -27621,7 +27757,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an import through the barrel",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-direct-import.test.ts"
         },
         {
@@ -27769,7 +27905,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-modern-api.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 336,
+        "repos": 20
+      }
     },
     {
       "rule": "import-next/prefer-node-protocol",
@@ -28099,14 +28239,18 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-node-protocol.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1901,
+        "repos": 47
+      }
     },
     {
       "rule": "import-next/prefer-tree-shakeable-imports",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "named imports",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-tree-shakeable-imports.test.ts"
         },
         {
@@ -28156,7 +28300,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a namespace import pulls the whole package into the bundle",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-tree-shakeable-imports.test.ts"
         },
         {
@@ -28219,7 +28363,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-tree-shakeable-imports.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 72,
+        "repos": 4
+      }
     },
     {
       "rule": "import-next/require-import-approval",
@@ -29324,8 +29472,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 1,
+        "repos": 1
       }
     },
     {
@@ -29627,8 +29775,8 @@
         }
       ],
       "wild": {
-        "count": 24,
-        "repos": 7
+        "count": 22,
+        "repos": 5
       }
     },
     {
@@ -29691,8 +29839,8 @@
         }
       ],
       "wild": {
-        "count": 25,
-        "repos": 8
+        "count": 23,
+        "repos": 6
       }
     },
     {
@@ -29860,8 +30008,8 @@
         }
       ],
       "wild": {
-        "count": 3,
-        "repos": 3
+        "count": 2,
+        "repos": 2
       }
     },
     {
@@ -29974,8 +30122,8 @@
         }
       ],
       "wild": {
-        "count": 24,
-        "repos": 7
+        "count": 22,
+        "repos": 5
       }
     },
     {
@@ -30038,8 +30186,8 @@
         }
       ],
       "wild": {
-        "count": 26,
-        "repos": 9
+        "count": 24,
+        "repos": 7
       }
     },
     {
@@ -30652,8 +30800,8 @@
         }
       ],
       "wild": {
-        "count": 44,
-        "repos": 3
+        "count": 3,
+        "repos": 1
       }
     },
     {
@@ -31165,8 +31313,8 @@
         }
       ],
       "wild": {
-        "count": 37,
-        "repos": 6
+        "count": 21,
+        "repos": 3
       }
     },
     {
@@ -34427,7 +34575,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a zod input schema is declared",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/require-tool-input-schema/require-tool-input-schema.test.ts"
         },
         {
@@ -34507,7 +34655,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a tool registered with no input schema takes whatever the model sends",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/require-tool-input-schema/require-tool-input-schema.test.ts"
         },
         {
@@ -34615,7 +34763,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modernization/src/tests/no-instanceof-array.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 17,
+        "repos": 5
+      }
     },
     {
       "rule": "modernization/prefer-at",
@@ -34685,7 +34837,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modernization/src/tests/prefer-at.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 142,
+        "repos": 24
+      }
     },
     {
       "rule": "modernization/prefer-event-target",
@@ -34810,7 +34966,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modernization/src/tests/prefer-event-target.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 29,
+        "repos": 4
+      }
     },
     {
       "rule": "modernization/prefer-template-literal",
@@ -34875,7 +35035,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modernization/src/tests/prefer-template-literal.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4470,
+        "repos": 40
+      }
     },
     {
       "rule": "modularity/ddd-anemic-domain-model",
@@ -35120,7 +35284,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modularity/src/tests/ddd-anemic-domain-model.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 62,
+        "repos": 2
+      }
     },
     {
       "rule": "modularity/ddd-value-object-immutability",
@@ -35410,7 +35578,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modularity/src/tests/enforce-rest-conventions.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 472,
+        "repos": 12
+      }
     },
     {
       "rule": "modularity/no-external-api-calls-in-utils",
@@ -35590,7 +35762,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modularity/src/tests/no-external-api-calls-in-utils.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 55,
+        "repos": 8
+      }
     },
     {
       "rule": "modularity/no-mutable-exports",
@@ -35640,7 +35816,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modularity/src/tests/no-mutable-exports.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "mongodb-security/no-bypass-middleware",
@@ -35782,8 +35962,8 @@
         }
       ],
       "wild": {
-        "count": 10,
-        "repos": 2
+        "count": 5,
+        "repos": 1
       }
     },
     {
@@ -36411,8 +36591,8 @@
         }
       ],
       "wild": {
-        "count": 12,
-        "repos": 2
+        "count": 6,
+        "repos": 1
       }
     },
     {
@@ -36585,8 +36765,8 @@
         }
       ],
       "wild": {
-        "count": 8,
-        "repos": 2
+        "count": 4,
+        "repos": 1
       }
     },
     {
@@ -37039,8 +37219,8 @@
         }
       ],
       "wild": {
-        "count": 18,
-        "repos": 2
+        "count": 9,
+        "repos": 1
       }
     },
     {
@@ -37587,8 +37767,8 @@
         }
       ],
       "wild": {
-        "count": 14,
-        "repos": 2
+        "count": 7,
+        "repos": 1
       }
     },
     {
@@ -37711,8 +37891,8 @@
         }
       ],
       "wild": {
-        "count": 14,
-        "repos": 2
+        "count": 7,
+        "repos": 1
       }
     },
     {
@@ -40548,7 +40728,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a local binding that only happens to be named exec",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-child-process/detect-child-process.test.ts"
         },
         {
@@ -40558,7 +40738,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a shell command built by interpolation",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-child-process/detect-child-process.test.ts"
         },
         {
@@ -41208,8 +41388,8 @@
         }
       ],
       "wild": {
-        "count": 35,
-        "repos": 6
+        "count": 33,
+        "repos": 4
       }
     },
     {
@@ -41242,7 +41422,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "eval on a value",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-eval-with-expression/detect-eval-with-expression.test.ts"
         },
         {
@@ -41362,7 +41542,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "eval on a literal",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-eval-with-expression/detect-eval-with-expression.test.ts"
         },
         {
@@ -41937,8 +42117,8 @@
         }
       ],
       "wild": {
-        "count": 77,
-        "repos": 17
+        "count": 28,
+        "repos": 11
       }
     },
     {
@@ -42046,7 +42226,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal path inside the project",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/detect-non-literal-fs-filename.test.ts"
         },
         {
@@ -42116,7 +42296,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a constant path that climbs out of the project with ../..",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/detect-non-literal-fs-filename.test.ts"
         },
         {
@@ -42985,7 +43165,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the real package",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-suspicious-dependencies/detect-suspicious-dependencies.test.ts"
         },
         {
@@ -43030,7 +43210,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a typosquat of a popular package name",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-suspicious-dependencies/detect-suspicious-dependencies.test.ts"
         },
         {
@@ -43215,7 +43395,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the expected lock file",
           "file": "packages/eslint-plugin-node-security/src/rules/lock-file/lock-file.test.ts"
         },
         {
@@ -43240,7 +43420,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a lock file for a package manager the project does not use",
           "file": "packages/eslint-plugin-node-security/src/rules/lock-file/lock-file.test.ts"
         },
         {
@@ -43263,11 +43443,7 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/lock-file/lock-file.test.ts"
         }
-      ],
-      "wild": {
-        "count": 51,
-        "repos": 16
-      }
+      ]
     },
     {
       "rule": "node-security/no-arbitrary-file-access",
@@ -43424,7 +43600,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal relative path",
           "file": "packages/eslint-plugin-node-security/src/rules/no-arbitrary-file-access/no-arbitrary-file-access.test.ts"
         },
         {
@@ -43499,7 +43675,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a request value reaching readFileSync through a helper",
           "file": "packages/eslint-plugin-node-security/src/rules/no-arbitrary-file-access/no-arbitrary-file-access.test.ts"
         },
         {
@@ -44013,7 +44189,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the index is range-checked first",
           "file": "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/no-buffer-overread.test.ts"
         },
         {
@@ -44098,7 +44274,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a buffer index taken from the request body with no bounds check",
           "file": "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/no-buffer-overread.test.ts"
         },
         {
@@ -44493,7 +44669,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "node:crypto",
           "file": "packages/eslint-plugin-node-security/src/rules/no-cryptojs/no-cryptojs.test.ts"
         },
         {
@@ -44508,7 +44684,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "crypto-js where node:crypto is available",
           "file": "packages/eslint-plugin-node-security/src/rules/no-cryptojs/no-cryptojs.test.ts"
         },
         {
@@ -44673,7 +44849,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "crypto.randomBytes",
           "file": "packages/eslint-plugin-node-security/src/rules/no-cryptojs-weak-random/no-cryptojs-weak-random.test.ts"
         },
         {
@@ -44688,7 +44864,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "CryptoJS.lib.WordArray.random is not a CSPRNG",
           "file": "packages/eslint-plugin-node-security/src/rules/no-cryptojs-weak-random/no-cryptojs-weak-random.test.ts"
         },
         {
@@ -44828,7 +45004,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a path inside the application's own data directory",
           "file": "packages/eslint-plugin-node-security/src/rules/no-data-in-temp-storage/no-data-in-temp-storage.test.ts"
         },
         {
@@ -45098,7 +45274,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "secrets written under /tmp, which is world-readable on most hosts",
           "file": "packages/eslint-plugin-node-security/src/rules/no-data-in-temp-storage/no-data-in-temp-storage.test.ts"
         },
         {
@@ -45228,8 +45404,8 @@
         }
       ],
       "wild": {
-        "count": 35,
-        "repos": 5
+        "count": 21,
+        "repos": 4
       }
     },
     {
@@ -45272,7 +45448,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "Buffer.from",
           "file": "packages/eslint-plugin-node-security/src/rules/no-deprecated-buffer/no-deprecated-buffer.test.ts"
         },
         {
@@ -45327,7 +45503,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "new Buffer() — removed, and ambiguous between size and content",
           "file": "packages/eslint-plugin-node-security/src/rules/no-deprecated-buffer/no-deprecated-buffer.test.ts"
         },
         {
@@ -45466,7 +45642,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "createCipheriv with an explicit IV",
           "file": "packages/eslint-plugin-node-security/src/rules/no-deprecated-cipher-method/no-deprecated-cipher-method.test.ts"
         },
         {
@@ -45476,7 +45652,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "createCipher derives the key from a password with MD5 and no salt",
           "file": "packages/eslint-plugin-node-security/src/rules/no-deprecated-cipher-method/no-deprecated-cipher-method.test.ts"
         },
         {
@@ -45516,7 +45692,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named algorithm",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-algorithm-selection/no-dynamic-algorithm-selection.test.ts"
         },
         {
@@ -45551,7 +45727,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "the hash algorithm chosen at runtime",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-algorithm-selection/no-dynamic-algorithm-selection.test.ts"
         },
         {
@@ -45651,8 +45827,8 @@
         }
       ],
       "wild": {
-        "count": 7,
-        "repos": 5
+        "count": 3,
+        "repos": 2
       }
     },
     {
@@ -45660,7 +45836,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "argv passed as an array",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-command-string/no-dynamic-command-string.test.ts"
         },
         {
@@ -45860,7 +46036,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "bash -c with an interpolated string re-enters the shell",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-command-string/no-dynamic-command-string.test.ts"
         },
         {
@@ -46220,7 +46396,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a static import",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-dependency-loading/no-dynamic-dependency-loading.test.ts"
         },
         {
@@ -46230,7 +46406,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "require of a computed module name",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-dependency-loading/no-dynamic-dependency-loading.test.ts"
         },
         {
@@ -46300,8 +46476,8 @@
         }
       ],
       "wild": {
-        "count": 106,
-        "repos": 29
+        "count": 74,
+        "repos": 20
       }
     },
     {
@@ -46404,7 +46580,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a bare variable, whose value is not visible here",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-require/no-dynamic-require.test.ts"
         },
         {
@@ -46434,7 +46610,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a require path built by interpolation",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-require/no-dynamic-require.test.ts"
         },
         {
@@ -46484,8 +46660,8 @@
         }
       ],
       "wild": {
-        "count": 67,
-        "repos": 20
+        "count": 43,
+        "repos": 15
       }
     },
     {
@@ -46513,7 +46689,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "GCM",
           "file": "packages/eslint-plugin-node-security/src/rules/no-ecb-mode/no-ecb-mode.test.ts"
         },
         {
@@ -46538,7 +46714,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "ECB leaks structure — identical blocks encrypt identically",
           "file": "packages/eslint-plugin-node-security/src/rules/no-ecb-mode/no-ecb-mode.test.ts"
         },
         {
@@ -46673,7 +46849,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a constant key",
           "file": "packages/eslint-plugin-node-security/src/rules/no-env-injection/no-env-injection.test.ts"
         },
         {
@@ -46738,7 +46914,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a request key and value written into process.env",
           "file": "packages/eslint-plugin-node-security/src/rules/no-env-injection/no-env-injection.test.ts"
         },
         {
@@ -46798,7 +46974,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the default parser",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-http-parser/no-insecure-http-parser.test.ts"
         },
         {
@@ -46873,7 +47049,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "insecureHTTPParser accepts malformed requests, which is how smuggling starts",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-http-parser/no-insecure-http-parser.test.ts"
         },
         {
@@ -46913,7 +47089,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "100,000",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-key-derivation/no-insecure-key-derivation.test.ts"
         },
         {
@@ -46938,7 +47114,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "1,000 PBKDF2 iterations",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-key-derivation/no-insecure-key-derivation.test.ts"
         },
         {
@@ -47253,7 +47429,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "OAEP",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-rsa-padding/no-insecure-rsa-padding.test.ts"
         },
         {
@@ -47268,7 +47444,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "PKCS#1 v1.5 decryption padding — the Bleichenbacher oracle",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-rsa-padding/no-insecure-rsa-padding.test.ts"
         },
         {
@@ -47684,7 +47860,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "two Math.random values concatenated into a non-secret state string",
           "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/no-math-random-crypto.test.ts"
         },
         {
@@ -47729,7 +47905,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a token from Math.random()",
           "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/no-math-random-crypto.test.ts"
         },
         {
@@ -47849,8 +48025,8 @@
         }
       ],
       "wild": {
-        "count": 41,
-        "repos": 12
+        "count": 21,
+        "repos": 7
       }
     },
     {
@@ -47883,7 +48059,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the default verification",
           "file": "packages/eslint-plugin-node-security/src/rules/no-self-signed-certs/no-self-signed-certs.test.ts"
         },
         {
@@ -47913,7 +48089,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "rejectUnauthorized false accepts any certificate",
           "file": "packages/eslint-plugin-node-security/src/rules/no-self-signed-certs/no-self-signed-certs.test.ts"
         },
         {
@@ -47953,8 +48129,8 @@
         }
       ],
       "wild": {
-        "count": 48,
-        "repos": 5
+        "count": 25,
+        "repos": 3
       }
     },
     {
@@ -47972,7 +48148,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "SHA-256",
           "file": "packages/eslint-plugin-node-security/src/rules/no-sha1-hash/no-sha1-hash.test.ts"
         },
         {
@@ -48002,7 +48178,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "SHA-1, which has practical collisions",
           "file": "packages/eslint-plugin-node-security/src/rules/no-sha1-hash/no-sha1-hash.test.ts"
         },
         {
@@ -48062,7 +48238,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal command",
           "file": "packages/eslint-plugin-node-security/src/rules/no-shell-injection/no-shell-injection.test.ts"
         },
         {
@@ -48107,7 +48283,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a shell command built from a user value",
           "file": "packages/eslint-plugin-node-security/src/rules/no-shell-injection/no-shell-injection.test.ts"
         },
         {
@@ -48372,8 +48548,8 @@
         }
       ],
       "wild": {
-        "count": 52,
-        "repos": 11
+        "count": 47,
+        "repos": 8
       }
     },
     {
@@ -48486,7 +48662,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a fixed host",
           "file": "packages/eslint-plugin-node-security/src/rules/no-ssrf/no-ssrf.test.ts"
         },
         {
@@ -48526,7 +48702,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a fetch to a URL the caller controls",
           "file": "packages/eslint-plugin-node-security/src/rules/no-ssrf/no-ssrf.test.ts"
         },
         {
@@ -48766,7 +48942,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a random IV per message",
           "file": "packages/eslint-plugin-node-security/src/rules/no-static-iv/no-static-iv.test.ts"
         },
         {
@@ -48816,7 +48992,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a literal IV reused on every message",
           "file": "packages/eslint-plugin-node-security/src/rules/no-static-iv/no-static-iv.test.ts"
         },
         {
@@ -49210,7 +49386,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "two names compared, which is not a secret",
           "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts"
         },
         {
@@ -49325,7 +49501,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an API token compared with ===",
           "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts"
         },
         {
@@ -50105,8 +50281,8 @@
         }
       ],
       "wild": {
-        "count": 16,
-        "repos": 5
+        "count": 14,
+        "repos": 4
       }
     },
     {
@@ -50284,7 +50460,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "existsSync then writeFileSync — the gap is the vulnerability",
           "file": "packages/eslint-plugin-node-security/src/rules/no-toctou-vulnerability/no-toctou-vulnerability.test.ts"
         },
         {
@@ -50424,7 +50600,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "existsSync then unlink, where losing the race is harmless",
           "file": "packages/eslint-plugin-node-security/src/rules/no-toctou-vulnerability/no-toctou-vulnerability.test.ts"
         },
         {
@@ -50569,8 +50745,8 @@
         }
       ],
       "wild": {
-        "count": 91,
-        "repos": 19
+        "count": 82,
+        "repos": 14
       }
     },
     {
@@ -50578,7 +50754,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "maxOutputLength is set",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unbounded-decompression/no-unbounded-decompression.test.ts"
         },
         {
@@ -50768,7 +50944,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "gunzip on request bytes with no output limit",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unbounded-decompression/no-unbounded-decompression.test.ts"
         },
         {
@@ -50843,8 +51019,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 1,
+        "repos": 1
       }
     },
     {
@@ -50892,7 +51068,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "alloc zeroes it",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/no-unsafe-buffer-alloc.test.ts"
         },
         {
@@ -50992,7 +51168,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "allocUnsafe hands back whatever was in that memory",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/no-unsafe-buffer-alloc.test.ts"
         },
         {
@@ -51612,8 +51788,8 @@
         }
       ],
       "wild": {
-        "count": 72,
-        "repos": 8
+        "count": 36,
+        "repos": 5
       }
     },
     {
@@ -51631,7 +51807,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "require of a literal",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unsafe-dynamic-require/no-unsafe-dynamic-require.test.ts"
         },
         {
@@ -51666,7 +51842,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "require of a runtime-chosen module",
           "file": "packages/eslint-plugin-node-security/src/rules/no-unsafe-dynamic-require/no-unsafe-dynamic-require.test.ts"
         },
         {
@@ -51976,8 +52152,8 @@
         }
       ],
       "wild": {
-        "count": 15,
-        "repos": 6
+        "count": 11,
+        "repos": 4
       }
     },
     {
@@ -52005,7 +52181,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a modern cipher",
           "file": "packages/eslint-plugin-node-security/src/rules/no-weak-cipher-algorithm/no-weak-cipher-algorithm.test.ts"
         },
         {
@@ -52050,7 +52226,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "DES",
           "file": "packages/eslint-plugin-node-security/src/rules/no-weak-cipher-algorithm/no-weak-cipher-algorithm.test.ts"
         },
         {
@@ -52195,7 +52371,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "SHA-256",
           "file": "packages/eslint-plugin-node-security/src/rules/no-weak-hash-algorithm/no-weak-hash-algorithm.test.ts"
         },
         {
@@ -52290,7 +52466,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "SHA-1 over secret material",
           "file": "packages/eslint-plugin-node-security/src/rules/no-weak-hash-algorithm/no-weak-hash-algorithm.test.ts"
         },
         {
@@ -52682,7 +52858,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an extraction library that validates for you",
           "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts"
         },
         {
@@ -52707,7 +52883,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "archive extraction with no path validation",
           "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts"
         },
         {
@@ -52877,8 +53053,8 @@
         }
       ],
       "wild": {
-        "count": 14,
-        "repos": 4
+        "count": 12,
+        "repos": 3
       }
     },
     {
@@ -53056,7 +53232,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "node:crypto",
           "file": "packages/eslint-plugin-node-security/src/rules/prefer-native-crypto/prefer-native-crypto.test.ts"
         },
         {
@@ -53066,7 +53242,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "crypto-js where the platform ships crypto",
           "file": "packages/eslint-plugin-node-security/src/rules/prefer-native-crypto/prefer-native-crypto.test.ts"
         },
         {
@@ -53140,7 +53316,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the tag is set before final()",
           "file": "packages/eslint-plugin-node-security/src/rules/require-aead-tag-verification/require-aead-tag-verification.test.ts"
         },
         {
@@ -53240,7 +53416,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "GCM decryption with no setAuthTag — the ciphertext is unauthenticated",
           "file": "packages/eslint-plugin-node-security/src/rules/require-aead-tag-verification/require-aead-tag-verification.test.ts"
         },
         {
@@ -53450,7 +53626,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "integrity is present",
           "file": "packages/eslint-plugin-node-security/src/rules/require-dependency-integrity/require-dependency-integrity.test.ts"
         },
         {
@@ -53470,7 +53646,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a CDN script tag with no integrity attribute",
           "file": "packages/eslint-plugin-node-security/src/rules/require-dependency-integrity/require-dependency-integrity.test.ts"
         },
         {
@@ -53570,7 +53746,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the platform keychain",
           "file": "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/require-secure-credential-storage.test.ts"
         },
         {
@@ -53580,7 +53756,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an API key in AsyncStorage, which is plain text on disk",
           "file": "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/require-secure-credential-storage.test.ts"
         },
         {
@@ -54025,8 +54201,8 @@
         }
       ],
       "wild": {
-        "count": 117,
-        "repos": 8
+        "count": 60,
+        "repos": 5
       }
     },
     {
@@ -54229,7 +54405,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit secure delete",
           "file": "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/require-secure-deletion.test.ts"
         },
         {
@@ -54274,7 +54450,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "delete on a property holding a secret leaves the value in memory",
           "file": "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/require-secure-deletion.test.ts"
         },
         {
@@ -54309,8 +54485,8 @@
         }
       ],
       "wild": {
-        "count": 68,
-        "repos": 4
+        "count": 42,
+        "repos": 3
       }
     },
     {
@@ -54358,7 +54534,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the platform's encrypted store",
           "file": "packages/eslint-plugin-node-security/src/rules/require-storage-encryption/require-storage-encryption.test.ts"
         },
         {
@@ -54368,7 +54544,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password written to a plain file",
           "file": "packages/eslint-plugin-node-security/src/rules/require-storage-encryption/require-storage-encryption.test.ts"
         },
         {
@@ -54473,8 +54649,8 @@
         }
       ],
       "wild": {
-        "count": 4,
-        "repos": 2
+        "count": 1,
+        "repos": 1
       }
     },
     {
@@ -54507,7 +54683,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a stream whose path is not request-derived",
           "file": "packages/eslint-plugin-node-security/src/rules/require-stream-error-handler/require-stream-error-handler.test.ts"
         },
         {
@@ -54582,7 +54758,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a stream from a request-derived path piped with no error handler",
           "file": "packages/eslint-plugin-node-security/src/rules/require-stream-error-handler/require-stream-error-handler.test.ts"
         },
         {
@@ -54612,8 +54788,8 @@
         }
       ],
       "wild": {
-        "count": 17,
-        "repos": 10
+        "count": 12,
+        "repos": 7
       }
     },
     {
@@ -54621,7 +54797,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a server client reading the key from the environment",
           "file": "packages/eslint-plugin-openai-security/src/rules/no-browser-api-key-exposure/no-browser-api-key-exposure.test.ts"
         },
         {
@@ -54686,7 +54862,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "dangerouslyAllowBrowser ships the key to every visitor",
           "file": "packages/eslint-plugin-openai-security/src/rules/no-browser-api-key-exposure/no-browser-api-key-exposure.test.ts"
         },
         {
@@ -60479,14 +60655,18 @@
           "description": "an empty where matches every row, so it is not a filter",
           "file": "packages/eslint-plugin-prisma-security/src/rules/no-unscoped-mutation/no-unscoped-mutation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "react-a11y/alt-text",
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an image with descriptive alt text",
           "file": "packages/eslint-plugin-react-a11y/src/tests/alt-text.test.ts"
         },
         {
@@ -60511,7 +60691,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an image with no alt attribute",
           "file": "packages/eslint-plugin-react-a11y/src/tests/alt-text.test.ts"
         },
         {
@@ -60921,7 +61101,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "link text that names the destination",
           "file": "packages/eslint-plugin-react-a11y/src/tests/anchor-ambiguous-text.test.ts"
         },
         {
@@ -60966,7 +61146,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "link text that says \"here\" and nothing else",
           "file": "packages/eslint-plugin-react-a11y/src/tests/anchor-ambiguous-text.test.ts"
         },
         {
@@ -61151,7 +61331,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an anchor with text",
           "file": "packages/eslint-plugin-react-a11y/src/tests/anchor-has-content.test.ts"
         },
         {
@@ -61201,7 +61381,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an anchor with nothing inside it",
           "file": "packages/eslint-plugin-react-a11y/src/tests/anchor-has-content.test.ts"
         },
         {
@@ -61271,7 +61451,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an anchor with a real destination",
           "file": "packages/eslint-plugin-react-a11y/src/tests/anchor-is-valid.test.ts"
         },
         {
@@ -61311,7 +61491,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an anchor whose href is a bare fragment",
           "file": "packages/eslint-plugin-react-a11y/src/tests/anchor-is-valid.test.ts"
         },
         {
@@ -61351,7 +61531,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an element with neither",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-activedescendant-has-tabindex.test.ts"
         },
         {
@@ -61406,7 +61586,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "aria-activedescendant on an element that cannot take focus",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-activedescendant-has-tabindex.test.ts"
         },
         {
@@ -61471,7 +61651,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a real aria attribute",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-props.test.ts"
         },
         {
@@ -61616,7 +61796,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a misspelled aria attribute is silently inert",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-props.test.ts"
         },
         {
@@ -61681,7 +61861,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a real role",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-role.test.ts"
         },
         {
@@ -61976,7 +62156,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a misspelled role",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-role.test.ts"
         },
         {
@@ -62026,7 +62206,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same attribute on a div",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-unsupported-elements.test.ts"
         },
         {
@@ -62056,7 +62236,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an aria attribute on an element that has no accessibility semantics",
           "file": "packages/eslint-plugin-react-a11y/src/tests/aria-unsupported-elements.test.ts"
         },
         {
@@ -62076,7 +62256,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a valid token",
           "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
         },
         {
@@ -62126,7 +62306,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an autocomplete token that is not in the spec",
           "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
         },
         {
@@ -62156,7 +62336,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "both handlers present",
           "file": "packages/eslint-plugin-react-a11y/src/tests/click-events-have-key-events.test.ts"
         },
         {
@@ -62201,7 +62381,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a click handler with no keyboard equivalent",
           "file": "packages/eslint-plugin-react-a11y/src/tests/click-events-have-key-events.test.ts"
         },
         {
@@ -62231,7 +62411,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a button with text",
           "file": "packages/eslint-plugin-react-a11y/src/tests/control-has-associated-label.test.ts"
         },
         {
@@ -62276,7 +62456,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a control with no accessible name",
           "file": "packages/eslint-plugin-react-a11y/src/tests/control-has-associated-label.test.ts"
         },
         {
@@ -62456,7 +62636,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a heading with text",
           "file": "packages/eslint-plugin-react-a11y/src/tests/heading-has-content.test.ts"
         },
         {
@@ -62521,7 +62701,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an empty heading",
           "file": "packages/eslint-plugin-react-a11y/src/tests/heading-has-content.test.ts"
         },
         {
@@ -62561,7 +62741,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "lang is set",
           "file": "packages/eslint-plugin-react-a11y/src/tests/html-has-lang.test.ts"
         },
         {
@@ -62581,7 +62761,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "no lang, so the screen reader guesses the language",
           "file": "packages/eslint-plugin-react-a11y/src/tests/html-has-lang.test.ts"
         }
       ]
@@ -62591,7 +62771,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a titled iframe",
           "file": "packages/eslint-plugin-react-a11y/src/tests/iframe-has-title.test.ts"
         },
         {
@@ -62606,7 +62786,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an iframe with no title to announce",
           "file": "packages/eslint-plugin-react-a11y/src/tests/iframe-has-title.test.ts"
         }
       ]
@@ -62621,7 +62801,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "alt text that describes the picture",
           "file": "packages/eslint-plugin-react-a11y/src/tests/img-redundant-alt.test.ts"
         },
         {
@@ -62651,7 +62831,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "alt text that starts with \"Photo of\" — the screen reader already says image",
           "file": "packages/eslint-plugin-react-a11y/src/tests/img-redundant-alt.test.ts"
         },
         {
@@ -62776,7 +62956,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a real button",
           "file": "packages/eslint-plugin-react-a11y/src/tests/interactive-supports-focus.test.ts"
         },
         {
@@ -62816,7 +62996,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a div with a click handler and no way to focus it",
           "file": "packages/eslint-plugin-react-a11y/src/tests/interactive-supports-focus.test.ts"
         },
         {
@@ -62876,7 +63056,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a label wrapping its input",
           "file": "packages/eslint-plugin-react-a11y/src/tests/label-has-associated-control.test.ts"
         },
         {
@@ -62896,7 +63076,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a label with nothing to label",
           "file": "packages/eslint-plugin-react-a11y/src/tests/label-has-associated-control.test.ts"
         }
       ]
@@ -62906,7 +63086,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a valid tag",
           "file": "packages/eslint-plugin-react-a11y/src/tests/lang.test.ts"
         },
         {
@@ -62951,7 +63131,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a lang value that is not a valid language tag",
           "file": "packages/eslint-plugin-react-a11y/src/tests/lang.test.ts"
         },
         {
@@ -62991,7 +63171,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a track element is present",
           "file": "packages/eslint-plugin-react-a11y/src/tests/media-has-caption.test.ts"
         },
         {
@@ -63006,7 +63186,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a video with no captions track",
           "file": "packages/eslint-plugin-react-a11y/src/tests/media-has-caption.test.ts"
         },
         {
@@ -63021,7 +63201,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "both present",
           "file": "packages/eslint-plugin-react-a11y/src/tests/mouse-events-have-key-events.test.ts"
         },
         {
@@ -63046,7 +63226,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "onMouseOver with no onFocus",
           "file": "packages/eslint-plugin-react-a11y/src/tests/mouse-events-have-key-events.test.ts"
         },
         {
@@ -63061,7 +63241,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "no access key",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-access-key.test.ts"
         },
         {
@@ -63081,7 +63261,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "accessKey collides with the screen reader's own shortcuts",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-access-key.test.ts"
         },
         {
@@ -63121,7 +63301,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "aria-hidden on a plain div",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-aria-hidden-on-focusable.test.ts"
         },
         {
@@ -63151,7 +63331,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "aria-hidden on a focusable element — reachable by tab, invisible to the reader",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-aria-hidden-on-focusable.test.ts"
         },
         {
@@ -63176,7 +63356,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "no autofocus",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-autofocus.test.ts"
         },
         {
@@ -63191,7 +63371,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "autoFocus moves focus before the user has read the page",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-autofocus.test.ts"
         },
         {
@@ -63216,7 +63396,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary div",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-distracting-elements.test.ts"
         },
         {
@@ -63236,7 +63416,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a blink element",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-distracting-elements.test.ts"
         },
         {
@@ -63261,7 +63441,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a plain button",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-interactive-element-to-noninteractive-role.test.ts"
         },
         {
@@ -63306,7 +63486,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a button given a document role",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-interactive-element-to-noninteractive-role.test.ts"
         },
         {
@@ -63386,7 +63566,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "tabIndex and role supplied",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-keyboard-inaccessible-elements.test.ts"
         },
         {
@@ -63411,7 +63591,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a click handler on a div with no tabIndex or role",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-keyboard-inaccessible-elements.test.ts"
         },
         {
@@ -63451,7 +63631,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an aria-label is present",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-missing-aria-labels.test.ts"
         },
         {
@@ -63486,7 +63666,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an icon-only button with no accessible name",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-missing-aria-labels.test.ts"
         },
         {
@@ -63561,7 +63741,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same handler on a button",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-noninteractive-element-interactions.test.ts"
         },
         {
@@ -63591,7 +63771,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a click handler on a paragraph",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-noninteractive-element-interactions.test.ts"
         },
         {
@@ -63616,7 +63796,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a plain div",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-noninteractive-element-to-interactive-role.test.ts"
         },
         {
@@ -63661,7 +63841,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a div given the button role without the behaviour that implies",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-noninteractive-element-to-interactive-role.test.ts"
         },
         {
@@ -63766,7 +63946,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "no tabIndex",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-noninteractive-tabindex.test.ts"
         },
         {
@@ -63836,7 +64016,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "tabIndex on an element with nothing to do",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-noninteractive-tabindex.test.ts"
         },
         {
@@ -64036,7 +64216,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "no explicit role",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
         },
         {
@@ -64066,7 +64246,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "role='main' on a main element",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
         },
         {
@@ -64086,7 +64266,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same handler on a button",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-static-element-interactions.test.ts"
         },
         {
@@ -64111,7 +64291,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a click handler on a div",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-static-element-interactions.test.ts"
         },
         {
@@ -64166,7 +64346,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the header element",
           "file": "packages/eslint-plugin-react-a11y/src/tests/prefer-tag-over-role.test.ts"
         },
         {
@@ -64281,7 +64461,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "role='banner' where a header element says the same thing",
           "file": "packages/eslint-plugin-react-a11y/src/tests/prefer-tag-over-role.test.ts"
         },
         {
@@ -64446,7 +64626,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "aria-checked supplied",
           "file": "packages/eslint-plugin-react-a11y/src/tests/role-has-required-aria-props.test.ts"
         },
         {
@@ -64476,7 +64656,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "role='checkbox' with no aria-checked — state is unannounced",
           "file": "packages/eslint-plugin-react-a11y/src/tests/role-has-required-aria-props.test.ts"
         }
       ]
@@ -64496,7 +64676,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a div with no aria at all",
           "file": "packages/eslint-plugin-react-a11y/src/tests/role-supports-aria-props.test.ts"
         },
         {
@@ -64571,7 +64751,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "aria-required on a role that does not support it",
           "file": "packages/eslint-plugin-react-a11y/src/tests/role-supports-aria-props.test.ts"
         },
         {
@@ -64721,7 +64901,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "scope on a th",
           "file": "packages/eslint-plugin-react-a11y/src/tests/scope.test.ts"
         },
         {
@@ -64751,7 +64931,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "scope on a td, where it means nothing",
           "file": "packages/eslint-plugin-react-a11y/src/tests/scope.test.ts"
         },
         {
@@ -64776,7 +64956,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "tabIndex zero",
           "file": "packages/eslint-plugin-react-a11y/src/tests/tabindex-no-positive.test.ts"
         },
         {
@@ -64806,7 +64986,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a positive tabIndex reorders the whole document's tab sequence",
           "file": "packages/eslint-plugin-react-a11y/src/tests/tabindex-no-positive.test.ts"
         },
         {
@@ -65131,7 +65311,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named function",
           "file": "packages/eslint-plugin-react-features/src/tests/react/display-name.test.ts"
         },
         {
@@ -65221,7 +65401,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an anonymous arrow as the default export — the devtools show nothing",
           "file": "packages/eslint-plugin-react-features/src/tests/react/display-name.test.ts"
         },
         {
@@ -65476,7 +65656,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an effect that reads nothing",
           "file": "packages/eslint-plugin-react-features/src/tests/react/hooks-exhaustive-deps.test.ts"
         },
         {
@@ -65506,7 +65686,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an effect reading a prop with an empty dependency array",
           "file": "packages/eslint-plugin-react-features/src/tests/react/hooks-exhaustive-deps.test.ts"
         },
         {
@@ -65636,7 +65816,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "handleClick",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-handler-names.test.ts"
         },
         {
@@ -65706,7 +65886,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a handler named outside the handle* convention",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-handler-names.test.ts"
         },
         {
@@ -65916,7 +66096,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a keyed element",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-key.test.ts"
         },
         {
@@ -65936,7 +66116,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a mapped element with no key",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-key.test.ts"
         },
         {
@@ -66231,7 +66411,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a single element",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-max-depth.test.ts"
         },
         {
@@ -66276,7 +66456,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "nesting past the configured maximum",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-max-depth.test.ts"
         },
         {
@@ -66331,7 +66511,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an arrow, which the configuration allows",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-bind.test.ts"
         },
         {
@@ -66391,7 +66571,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": ".bind in the render path allocates a new function every render",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-bind.test.ts"
         },
         {
@@ -66491,7 +66671,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "distinct props",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-duplicate-props.test.ts"
         },
         {
@@ -66521,7 +66701,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "the same prop twice — the second silently wins",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-duplicate-props.test.ts"
         },
         {
@@ -66561,7 +66741,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "text from a variable",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-literals.test.ts"
         },
         {
@@ -66616,7 +66796,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "user-facing text hard-coded in JSX",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-literals.test.ts"
         },
         {
@@ -66766,7 +66946,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary href",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-script-url.test.ts"
         },
         {
@@ -66816,7 +66996,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a javascript: href",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-script-url.test.ts"
         },
         {
@@ -66931,7 +67111,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "no target=_blank to protect",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-target-blank.test.ts"
         },
         {
@@ -66971,7 +67151,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "target=_blank with no rel — the opened page gets window.opener",
           "file": "packages/eslint-plugin-react-features/src/tests/react/jsx-no-target-blank.test.ts"
         },
         {
@@ -67006,7 +67186,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a plain value",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-access-state-in-setstate.test.ts"
         },
         {
@@ -67041,7 +67221,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "reading this.state inside setState races with batching",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-access-state-in-setstate.test.ts"
         },
         {
@@ -67296,7 +67476,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "scale tokens",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-arbitrary-token-class.test.ts"
         },
         {
@@ -67331,7 +67511,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an arbitrary value where the scale has a token",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-arbitrary-token-class.test.ts"
         },
         {
@@ -67496,7 +67676,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "nested children",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-children-prop.test.ts"
         },
         {
@@ -67526,7 +67706,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "children passed as a prop rather than nested",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-children-prop.test.ts"
         },
         {
@@ -67626,7 +67806,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "ordinary text",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-danger.test.ts"
         },
         {
@@ -67651,7 +67831,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "dangerouslySetInnerHTML",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-danger.test.ts"
         },
         {
@@ -67851,7 +68031,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "dangerouslySetInnerHTML with no children beside it",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-danger-with-children.test.ts"
         },
         {
@@ -67876,7 +68056,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "dangerouslySetInnerHTML together with children — React drops one",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-danger-with-children.test.ts"
         },
         {
@@ -67901,7 +68081,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the prop is passed through with no default",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-default-test-id.test.ts"
         },
         {
@@ -67916,7 +68096,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a default test id makes two instances indistinguishable in a test",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-default-test-id.test.ts"
         },
         {
@@ -68091,7 +68271,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a current API",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-deprecated.test.ts"
         },
         {
@@ -68116,7 +68296,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "ReactDOM.render, removed in React 18",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-deprecated.test.ts"
         },
         {
@@ -68131,7 +68311,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "setState in an event handler",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-did-mount-set-state.test.ts"
         },
         {
@@ -68161,7 +68341,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "setState in componentDidMount forces a second render before paint",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-did-mount-set-state.test.ts"
         },
         {
@@ -68221,7 +68401,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same call behind a prop comparison",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-did-update-set-state.test.ts"
         },
         {
@@ -68251,7 +68431,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "setState in componentDidUpdate with no guard — it loops",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-did-update-set-state.test.ts"
         },
         {
@@ -68331,7 +68511,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same assignment outside any component",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-direct-mutation-state.test.ts"
         },
         {
@@ -68351,7 +68531,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "assigning to this.state inside a component",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-direct-mutation-state.test.ts"
         },
         {
@@ -68561,7 +68741,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a ref instead",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-find-dom-node.test.ts"
         },
         {
@@ -68591,7 +68771,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "findDOMNode, removed in React 19",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-find-dom-node.test.ts"
         },
         {
@@ -68636,7 +68816,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a custom property, which classes cannot express",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-inline-style.test.ts"
         },
         {
@@ -68661,7 +68841,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a style value that belongs in a class",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-inline-style.test.ts"
         },
         {
@@ -68971,7 +69151,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "reading state",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-is-mounted.test.ts"
         },
         {
@@ -69011,7 +69191,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "isMounted, an anti-pattern React removed",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-is-mounted.test.ts"
         },
         {
@@ -69106,7 +69286,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same prop without the prefix",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-is-prefix-prop.test.ts"
         },
         {
@@ -69131,7 +69311,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an is-prefixed boolean prop",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-is-prefix-prop.test.ts"
         },
         {
@@ -69156,7 +69336,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "`variant`",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-kind-prop-discriminator.test.ts"
         },
         {
@@ -69181,7 +69361,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "`type` as the discriminator name — it collides with the DOM attribute",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-kind-prop-discriminator.test.ts"
         },
         {
@@ -69226,7 +69406,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "one component",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-multi-comp.test.ts"
         },
         {
@@ -69286,7 +69466,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "two components in one file",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-multi-comp.test.ts"
         },
         {
@@ -69686,7 +69866,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the token",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-raw-color-literal.test.ts"
         },
         {
@@ -69706,7 +69886,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a hex colour where a token exists",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-raw-color-literal.test.ts"
         },
         {
@@ -69736,7 +69916,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an actual comparison",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-redundant-should-component-update.test.ts"
         },
         {
@@ -69786,7 +69966,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "shouldComponentUpdate returning true unconditionally",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-redundant-should-component-update.test.ts"
         },
         {
@@ -69926,7 +70106,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a different this method",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-set-state.test.ts"
         },
         {
@@ -69946,7 +70126,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "setState where the configuration wants hooks",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-set-state.test.ts"
         },
         {
@@ -69986,7 +70166,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "no ref",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-string-refs.test.ts"
         },
         {
@@ -70016,7 +70196,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a string ref, removed in React 19",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-string-refs.test.ts"
         },
         {
@@ -70126,7 +70306,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "`this` in a class render, where it is the instance",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-this-in-sfc.test.ts"
         },
         {
@@ -70141,7 +70321,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "`this` in a function component, where it is undefined",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-this-in-sfc.test.ts"
         },
         {
@@ -70196,7 +70376,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "defaultProps",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-typos.test.ts"
         },
         {
@@ -70241,7 +70421,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "defaulProps — a static React never reads",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-typos.test.ts"
         },
         {
@@ -70416,7 +70596,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "known attributes",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-unknown-property.test.ts"
         },
         {
@@ -70476,7 +70656,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a DOM attribute React does not recognise in this position",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-unknown-property.test.ts"
         },
         {
@@ -70686,7 +70866,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a string prop",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-unnecessary-rerenders.test.ts"
         },
         {
@@ -70706,7 +70886,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an object literal prop — a new identity every render",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-unnecessary-rerenders.test.ts"
         },
         {
@@ -70791,7 +70971,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a current lifecycle",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-unsafe.test.ts"
         },
         {
@@ -70811,7 +70991,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an UNSAFE_ lifecycle",
           "file": "packages/eslint-plugin-react-features/src/tests/react/no-unsafe.test.ts"
         },
         {
@@ -70906,7 +71086,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a wrapper that adds a class",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-wrapper-sub-component.test.ts"
         },
         {
@@ -70936,7 +71116,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a wrapper that adds nothing but a spread",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/no-wrapper-sub-component.test.ts"
         },
         {
@@ -71096,7 +71276,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a class that holds state",
           "file": "packages/eslint-plugin-react-features/src/tests/react/prefer-stateless-function.test.ts"
         },
         {
@@ -71166,7 +71346,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a class with only render and no state",
           "file": "packages/eslint-plugin-react-features/src/tests/react/prefer-stateless-function.test.ts"
         },
         {
@@ -71236,7 +71416,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "propTypes declared",
           "file": "packages/eslint-plugin-react-features/src/tests/react/prop-types.test.ts"
         },
         {
@@ -71276,7 +71456,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a component reading props with no propTypes",
           "file": "packages/eslint-plugin-react-features/src/tests/react/prop-types.test.ts"
         },
         {
@@ -71431,7 +71611,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a function component",
           "file": "packages/eslint-plugin-react-features/src/tests/react/react-class-to-hooks.test.ts"
         },
         {
@@ -71446,7 +71626,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a class component where the configuration wants a function",
           "file": "packages/eslint-plugin-react-features/src/tests/react/react-class-to-hooks.test.ts"
         },
         {
@@ -71586,7 +71766,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "no JSX prop at all",
           "file": "packages/eslint-plugin-react-features/src/tests/react/react-no-inline-functions.test.ts"
         },
         {
@@ -71596,7 +71776,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an inline arrow in a prop",
           "file": "packages/eslint-plugin-react-features/src/tests/react/react-no-inline-functions.test.ts"
         },
         {
@@ -71686,7 +71866,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the object hoisted out",
           "file": "packages/eslint-plugin-react-features/src/tests/react/react-render-optimization.test.ts"
         },
         {
@@ -71711,7 +71891,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an object literal built inside JSX",
           "file": "packages/eslint-plugin-react-features/src/tests/react/react-render-optimization.test.ts"
         },
         {
@@ -71746,7 +71926,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "both present",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/require-data-slot.test.ts"
         },
         {
@@ -71761,7 +71941,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a test id with no matching data-slot",
           "file": "packages/eslint-plugin-react-features/src/tests/component-api/require-data-slot.test.ts"
         },
         {
@@ -71826,7 +72006,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "defaults supplied",
           "file": "packages/eslint-plugin-react-features/src/tests/react/require-default-props.test.ts"
         },
         {
@@ -71856,7 +72036,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an optional prop with no default",
           "file": "packages/eslint-plugin-react-features/src/tests/react/require-default-props.test.ts"
         },
         {
@@ -71911,7 +72091,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "React.memo",
           "file": "packages/eslint-plugin-react-features/src/tests/react/require-optimization.test.ts"
         },
         {
@@ -71931,7 +72111,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a component with many props and no memo",
           "file": "packages/eslint-plugin-react-features/src/tests/react/require-optimization.test.ts"
         },
         {
@@ -72176,7 +72356,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the attribute present",
           "file": "packages/eslint-plugin-react-features/src/tests/react/required-attributes.test.ts"
         },
         {
@@ -72191,7 +72371,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a component missing an attribute the configuration requires",
           "file": "packages/eslint-plugin-react-features/src/tests/react/required-attributes.test.ts"
         },
         {
@@ -72401,7 +72581,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "state assigned in the constructor",
           "file": "packages/eslint-plugin-react-features/src/tests/react/state-in-constructor.test.ts"
         },
         {
@@ -72441,7 +72621,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a class field where the configuration wants the constructor",
           "file": "packages/eslint-plugin-react-features/src/tests/react/state-in-constructor.test.ts"
         },
         {
@@ -72611,7 +72791,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a void element with no children",
           "file": "packages/eslint-plugin-react-features/src/tests/react/void-dom-elements-no-children.test.ts"
         },
         {
@@ -72701,7 +72881,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "children on a void element — the DOM discards them",
           "file": "packages/eslint-plugin-react-features/src/tests/react/void-dom-elements-no-children.test.ts"
         },
         {
@@ -74596,7 +74776,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary call that happens to take a pattern",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-non-literal-regexp/detect-non-literal-regexp.test.ts"
         },
         {
@@ -74611,7 +74791,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a RegExp built from user input",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-non-literal-regexp/detect-non-literal-regexp.test.ts"
         },
         {
@@ -74986,8 +75166,8 @@
         }
       ],
       "wild": {
-        "count": 369,
-        "repos": 44
+        "count": 162,
+        "repos": 29
       }
     },
     {
@@ -75110,7 +75290,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a read through a computed key is not a write",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/detect-object-injection.test.ts"
         },
         {
@@ -75340,7 +75520,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a computed key WRITE built from user input",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/detect-object-injection.test.ts"
         },
         {
@@ -76595,8 +76775,8 @@
         }
       ],
       "wild": {
-        "count": 7145,
-        "repos": 73
+        "count": 2438,
+        "repos": 47
       }
     },
     {
@@ -76614,7 +76794,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a twelve-character minimum",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-weak-password-validation/detect-weak-password-validation.test.ts"
         },
         {
@@ -76734,7 +76914,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a four-character minimum",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-weak-password-validation/detect-weak-password-validation.test.ts"
         },
         {
@@ -76809,7 +76989,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "plain text",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-bidi-characters/no-bidi-characters.test.ts"
         },
         {
@@ -76854,7 +77034,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "bidi overrides make the source read differently from what it does",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-bidi-characters/no-bidi-characters.test.ts"
         },
         {
@@ -76887,11 +77067,7 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-bidi-characters/no-bidi-characters.test.ts"
         }
-      ],
-      "wild": {
-        "count": 122,
-        "repos": 3
-      }
+      ]
     },
     {
       "rule": "secure-coding/no-directive-injection",
@@ -76903,7 +77079,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "assigning to textContent is not a sanitiser call",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-directive-injection/no-directive-injection.test.ts"
         },
         {
@@ -76983,7 +77159,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "ADD_TAGS: ['script'] hands the sanitiser back what it removes",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-directive-injection/no-directive-injection.test.ts"
         },
         {
@@ -77418,8 +77594,8 @@
         }
       ],
       "wild": {
-        "count": 17,
-        "repos": 6
+        "count": 9,
+        "repos": 3
       }
     },
     {
@@ -77427,7 +77603,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "context isolation on, node integration off",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-electron-security-issues/no-electron-security-issues.test.ts"
         },
         {
@@ -77447,7 +77623,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "nodeIntegration on gives renderer content Node access",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-electron-security-issues/no-electron-security-issues.test.ts"
         },
         {
@@ -78151,8 +78327,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 1,
+        "repos": 1
       }
     },
     {
@@ -78160,7 +78336,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal format string with the values as arguments",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/no-format-string-injection.test.ts"
         },
         {
@@ -78190,7 +78366,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a user value used AS the format string",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/no-format-string-injection.test.ts"
         },
         {
@@ -78710,8 +78886,8 @@
         }
       ],
       "wild": {
-        "count": 52,
-        "repos": 17
+        "count": 35,
+        "repos": 12
       }
     },
     {
@@ -78719,7 +78895,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a parameterised query",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/no-graphql-injection.test.ts"
         },
         {
@@ -78744,7 +78920,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an introspection query shipped in application code",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/no-graphql-injection.test.ts"
         },
         {
@@ -79479,8 +79655,8 @@
         }
       ],
       "wild": {
-        "count": 52,
-        "repos": 6
+        "count": 20,
+        "repos": 4
       }
     },
     {
@@ -79593,7 +79769,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the value comes from the environment",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         },
         {
@@ -79653,7 +79829,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password literal in source",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         },
         {
@@ -80318,8 +80494,8 @@
         }
       ],
       "wild": {
-        "count": 59,
-        "repos": 12
+        "count": 24,
+        "repos": 7
       }
     },
     {
@@ -80337,7 +80513,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the token comes from the environment",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-session-tokens/no-hardcoded-session-tokens.test.ts"
         },
         {
@@ -80372,7 +80548,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a JWT literal in source",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-session-tokens/no-hardcoded-session-tokens.test.ts"
         },
         {
@@ -80387,8 +80563,8 @@
         }
       ],
       "wild": {
-        "count": 69,
-        "repos": 10
+        "count": 64,
+        "repos": 8
       }
     },
     {
@@ -80509,11 +80685,7 @@
           "description": "a template chunk that ends with an invisible character",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-homoglyph-identifiers/no-homoglyph-identifiers.test.ts"
         }
-      ],
-      "wild": {
-        "count": 12,
-        "repos": 4
-      }
+      ]
     },
     {
       "rule": "secure-coding/no-improper-sanitization",
@@ -80620,7 +80792,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a value concatenated into HTML with no escaping",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-sanitization/no-improper-sanitization.test.ts"
         },
         {
@@ -80685,7 +80857,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the four HTML entities replaced",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-sanitization/no-improper-sanitization.test.ts"
         },
         {
@@ -81070,8 +81242,8 @@
         }
       ],
       "wild": {
-        "count": 36,
-        "repos": 11
+        "count": 28,
+        "repos": 8
       }
     },
     {
@@ -81084,7 +81256,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the null check comes first",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/no-improper-type-validation.test.ts"
         },
         {
@@ -81114,7 +81286,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "typeof x === 'object' is also true for null",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/no-improper-type-validation.test.ts"
         },
         {
@@ -81709,8 +81881,8 @@
         }
       ],
       "wild": {
-        "count": 1468,
-        "repos": 47
+        "count": 778,
+        "repos": 30
       }
     },
     {
@@ -81728,7 +81900,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "strict equality between two non-secrets",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/no-insecure-comparison.test.ts"
         },
         {
@@ -81788,7 +81960,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "loose equality between a number and a string",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/no-insecure-comparison.test.ts"
         },
         {
@@ -82194,8 +82366,8 @@
         }
       ],
       "wild": {
-        "count": 12303,
-        "repos": 51
+        "count": 1582,
+        "repos": 34
       }
     },
     {
@@ -82253,7 +82425,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a request value interpolated into an LDAP filter",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/no-ldap-injection.test.ts"
         },
         {
@@ -82278,7 +82450,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the value is escaped first",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/no-ldap-injection.test.ts"
         },
         {
@@ -82933,8 +83105,8 @@
         }
       ],
       "wild": {
-        "count": 6,
-        "repos": 6
+        "count": 5,
+        "repos": 5
       }
     },
     {
@@ -82987,7 +83159,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the route carries authenticate()",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/no-missing-authentication.test.ts"
         },
         {
@@ -83022,7 +83194,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a route with no authentication middleware",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/no-missing-authentication.test.ts"
         },
         {
@@ -83432,8 +83604,8 @@
         }
       ],
       "wild": {
-        "count": 483,
-        "repos": 18
+        "count": 368,
+        "repos": 14
       }
     },
     {
@@ -83461,7 +83633,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a status value",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-pii-in-logs/no-pii-in-logs.test.ts"
         },
         {
@@ -83491,7 +83663,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an email address written to the log",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-pii-in-logs/no-pii-in-logs.test.ts"
         },
         {
@@ -83705,7 +83877,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same assignment behind a role check",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-privilege-escalation/no-privilege-escalation.test.ts"
         },
         {
@@ -83740,7 +83912,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a role assigned straight from the request body",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-privilege-escalation/no-privilege-escalation.test.ts"
         },
         {
@@ -84320,7 +84492,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a nested quantifier — catastrophic backtracking",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-redos-vulnerable-regex/no-redos-vulnerable-regex.test.ts"
         },
         {
@@ -84375,7 +84547,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a constructed regex, where the pattern is not the literal here",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-redos-vulnerable-regex/no-redos-vulnerable-regex.test.ts"
         },
         {
@@ -84740,8 +84912,8 @@
         }
       ],
       "wild": {
-        "count": 142,
-        "repos": 31
+        "count": 63,
+        "repos": 20
       }
     },
     {
@@ -84749,7 +84921,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a message with no secret in it",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/no-sensitive-data-exposure.test.ts"
         },
         {
@@ -84854,7 +85026,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password in a log line",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/no-sensitive-data-exposure.test.ts"
         },
         {
@@ -85534,8 +85706,8 @@
         }
       ],
       "wild": {
-        "count": 21,
-        "repos": 10
+        "count": 14,
+        "repos": 7
       }
     },
     {
@@ -85743,7 +85915,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an allowlist that logs on a miss instead of stopping, then interpolates anyway",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-sql-injection/no-sql-injection.test.ts"
         },
         {
@@ -85933,7 +86105,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the identifier is escaped",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-sql-injection/no-sql-injection.test.ts"
         },
         {
@@ -86423,8 +86595,8 @@
         }
       ],
       "wild": {
-        "count": 6,
-        "repos": 2
+        "count": 3,
+        "repos": 1
       }
     },
     {
@@ -86432,7 +86604,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal template",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-template-injection/no-template-injection.test.ts"
         },
         {
@@ -86507,7 +86679,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a template compiled from a user-supplied string",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-template-injection/no-template-injection.test.ts"
         },
         {
@@ -86757,7 +86929,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a counted loop",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unchecked-loop-condition/no-unchecked-loop-condition.test.ts"
         },
         {
@@ -86797,7 +86969,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a loop with no exit condition",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unchecked-loop-condition/no-unchecked-loop-condition.test.ts"
         },
         {
@@ -87367,8 +87539,8 @@
         }
       ],
       "wild": {
-        "count": 339,
-        "repos": 36
+        "count": 185,
+        "repos": 26
       }
     },
     {
@@ -87376,7 +87548,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a fixed size",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/no-unlimited-resource-allocation.test.ts"
         },
         {
@@ -87486,7 +87658,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an allocation sized by the request",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/no-unlimited-resource-allocation.test.ts"
         },
         {
@@ -88325,7 +88497,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "JSON.parse",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/no-unsafe-deserialization.test.ts"
         },
         {
@@ -88350,7 +88522,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "eval on a request body",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/no-unsafe-deserialization.test.ts"
         },
         {
@@ -88880,8 +89052,8 @@
         }
       ],
       "wild": {
-        "count": 34,
-        "repos": 11
+        "count": 18,
+        "repos": 8
       }
     },
     {
@@ -88939,12 +89111,12 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a RegExp built from a query parameter",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a RegExp built from a short literal",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
@@ -89194,8 +89366,8 @@
         }
       ],
       "wild": {
-        "count": 22,
-        "repos": 15
+        "count": 7,
+        "repos": 7
       }
     },
     {
@@ -89258,7 +89430,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a reset token from Math.random()",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/no-weak-password-recovery.test.ts"
         },
         {
@@ -89283,7 +89455,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an email-existence check, which the rule declines to judge",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/no-weak-password-recovery.test.ts"
         },
         {
@@ -89623,7 +89795,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal expression",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-xpath-injection/no-xpath-injection.test.ts"
         },
         {
@@ -89718,7 +89890,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a request value concatenated into an XPath expression",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-xpath-injection/no-xpath-injection.test.ts"
         },
         {
@@ -90298,8 +90470,8 @@
         }
       ],
       "wild": {
-        "count": 17,
-        "repos": 8
+        "count": 13,
+        "repos": 4
       }
     },
     {
@@ -90307,7 +90479,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "HTML parsing, which has no external entities",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/no-xxe-injection.test.ts"
         },
         {
@@ -90532,7 +90704,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "resolveExternals lets the document fetch files and URLs of its choosing",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/no-xxe-injection.test.ts"
         },
         {
@@ -90697,8 +90869,8 @@
         }
       ],
       "wild": {
-        "count": 15,
-        "repos": 7
+        "count": 3,
+        "repos": 2
       }
     },
     {
@@ -90716,7 +90888,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the permission is checked on the server",
           "file": "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/require-backend-authorization.test.ts"
         },
         {
@@ -90836,7 +91008,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an admin check inside a client component — the browser decides",
           "file": "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/require-backend-authorization.test.ts"
         },
         {
@@ -90916,8 +91088,8 @@
         }
       ],
       "wild": {
-        "count": 38,
-        "repos": 7
+        "count": 25,
+        "repos": 6
       }
     },
     {
@@ -90955,7 +91127,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "secure and httpOnly both on",
           "file": "packages/eslint-plugin-secure-coding/src/rules/require-secure-defaults/require-secure-defaults.test.ts"
         },
         {
@@ -91130,7 +91302,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "strictSSL off on the agent",
           "file": "packages/eslint-plugin-secure-coding/src/rules/require-secure-defaults/require-secure-defaults.test.ts"
         },
         {
@@ -91255,8 +91427,8 @@
         }
       ],
       "wild": {
-        "count": 22,
-        "repos": 8
+        "count": 20,
+        "repos": 7
       }
     },
     {
@@ -91522,7 +91694,11 @@
           "description": "get() sink",
           "file": "packages/eslint-plugin-sqlite-security/src/rules/no-unsafe-query/no-unsafe-query.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "typeorm-security/no-hardcoded-credentials",

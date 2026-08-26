@@ -82,10 +82,24 @@ function allRules(): string[] {
     if (!fs.existsSync(path.join(pkgDir, pkg))) continue;
     for (const name of Object.keys(rules)) {
       const id = `${pkg.replace('eslint-plugin-', '')}/${name}`;
-      if (onDisk.has(id)) out.push(id);
+      if (onDisk.has(id)) out.push(published(id));
     }
   }
   return [...new Set(out)].sort();
+}
+
+/**
+ * Two plugins publish under a prefix that differs from their directory, so a
+ * ruleId ESLint reports will not match the directory-derived name. Without
+ * this every `jwt/` and `pg/` finding was filed as "not ours" and dropped —
+ * 26 rules reported as never scanned when they had simply been discarded.
+ */
+function published(rule: string): string {
+  const aliases: Record<string, string> = { 'jwt-security/': 'jwt/', 'postgresql-security/': 'pg/' };
+  for (const [dir, id] of Object.entries(aliases)) {
+    if (rule.startsWith(dir)) return id + rule.slice(dir.length);
+  }
+  return rule;
 }
 
 fs.mkdirSync(CACHE, { recursive: true });

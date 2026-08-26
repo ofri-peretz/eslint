@@ -1,2145 +1,1876 @@
 {
- "filesLinted": 13146,
- "suiteRules": 374,
- "withMaterial": 122,
- "withoutMaterial": [
-  "anthropic-security/no-browser-api-key-exposure",
-  "anthropic-security/no-hardcoded-api-key",
-  "anthropic-security/no-untrusted-content-in-prompt",
-  "browser-security/detect-mixed-content",
-  "browser-security/no-allow-arbitrary-loads",
-  "browser-security/no-cookie-auth-tokens",
-  "browser-security/no-dynamic-service-worker-url",
-  "browser-security/no-filereader-innerhtml",
-  "browser-security/no-insecure-websocket",
-  "browser-security/no-postmessage-innerhtml",
-  "browser-security/no-sensitive-cookie-js",
-  "browser-security/no-sensitive-data-in-analytics",
-  "browser-security/no-sensitive-data-in-cache",
-  "browser-security/no-sensitive-indexeddb",
-  "browser-security/no-sensitive-localstorage",
-  "browser-security/no-sensitive-sessionstorage",
-  "browser-security/no-unsafe-eval-csp",
-  "browser-security/no-unvalidated-deeplinks",
-  "browser-security/no-websocket-eval",
-  "browser-security/no-websocket-innerhtml",
-  "browser-security/no-worker-message-innerhtml",
-  "browser-security/require-cookie-secure-attrs",
-  "browser-security/require-https-only",
-  "browser-security/require-url-validation",
-  "browser-security/require-websocket-wss",
-  "drizzle-security/no-mass-assignment",
-  "drizzle-security/no-raw-identifier-interpolation",
-  "drizzle-security/no-unsafe-query",
-  "drizzle-security/no-unscoped-mutation",
-  "express-security/no-express-unsafe-regex-route",
-  "express-security/no-graphql-introspection-production",
-  "express-security/no-idor-resource-access",
-  "express-security/no-missing-cors-check",
-  "express-security/no-unsafe-csp-directives",
-  "express-security/no-user-controlled-redirect",
-  "express-security/no-user-controlled-render-locals",
-  "express-security/require-case-insensitive-path-guard",
-  "express-security/require-express-body-parser-limits",
-  "express-security/require-query-type-guard",
-  "express-security/require-strict-transport-security",
-  "gemini-security/no-disabled-safety-settings",
-  "gemini-security/no-hardcoded-api-key",
-  "gemini-security/no-untrusted-content-in-prompt",
-  "import-next/consistent-type-specifier-style",
-  "import-next/default",
-  "import-next/dynamic-import-chunkname",
-  "import-next/enforce-dependency-direction",
-  "import-next/enforce-import-order",
-  "import-next/enforce-team-boundaries",
-  "import-next/export",
-  "import-next/exports-last",
-  "import-next/extensions",
-  "import-next/first",
-  "import-next/group-exports",
-  "import-next/max-dependencies",
-  "import-next/named",
-  "import-next/namespace",
-  "import-next/newline-after-import",
-  "import-next/no-absolute-path",
-  "import-next/no-amd",
-  "import-next/no-anonymous-default-export",
-  "import-next/no-barrel-file",
-  "import-next/no-barrel-import",
-  "import-next/no-commonjs",
-  "import-next/no-cross-domain-imports",
-  "import-next/no-cycle",
-  "import-next/no-default-export",
-  "import-next/no-deprecated",
-  "import-next/no-duplicates",
-  "import-next/no-dynamic-require",
-  "import-next/no-empty-named-blocks",
-  "import-next/no-extraneous-dependencies",
-  "import-next/no-full-package-import",
-  "import-next/no-import-module-exports",
-  "import-next/no-internal-modules",
-  "import-next/no-legacy-imports",
-  "import-next/no-mutable-exports",
-  "import-next/no-named-as-default",
-  "import-next/no-named-as-default-member",
-  "import-next/no-named-default",
-  "import-next/no-named-export",
-  "import-next/no-namespace",
-  "import-next/no-nodejs-modules",
-  "import-next/no-relative-packages",
-  "import-next/no-relative-parent-imports",
-  "import-next/no-restricted-paths",
-  "import-next/no-self-import",
-  "import-next/no-unassigned-import",
-  "import-next/no-unresolved",
-  "import-next/no-unused-modules",
-  "import-next/no-useless-path-segments",
-  "import-next/prefer-default-export",
-  "import-next/prefer-direct-import",
-  "import-next/prefer-modern-api",
-  "import-next/prefer-node-protocol",
-  "import-next/prefer-tree-shakeable-imports",
-  "import-next/require-import-approval",
-  "import-next/unambiguous",
-  "jwt/no-algorithm-confusion",
-  "jwt/no-algorithm-none",
-  "jwt/no-timestamp-manipulation",
-  "jwt/require-issued-at",
-  "knex-security/no-hardcoded-credentials",
-  "knex-security/no-mass-assignment",
-  "knex-security/no-unsafe-query",
-  "knex-security/no-unscoped-mutation",
-  "knex-security/require-tls",
-  "lambda-security/no-env-logging",
-  "lambda-security/no-exposed-debug-endpoints",
-  "lambda-security/no-hardcoded-credentials-sdk",
-  "lambda-security/no-overly-permissive-iam-policy",
-  "lambda-security/no-permissive-cors-middy",
-  "lambda-security/no-permissive-cors-response",
-  "lambda-security/no-secrets-in-env",
-  "lambda-security/no-unbounded-batch-processing",
-  "lambda-security/no-user-controlled-requests",
-  "mcp-sdk-security/no-command-injection-in-tool",
-  "mcp-sdk-security/no-tool-description-injection",
-  "mcp-sdk-security/no-unvalidated-tool-args",
-  "mcp-sdk-security/require-tool-input-schema",
-  "modernization/no-instanceof-array",
-  "modernization/prefer-at",
-  "modernization/prefer-event-target",
-  "modernization/prefer-template-literal",
-  "modularity/ddd-anemic-domain-model",
-  "modularity/ddd-value-object-immutability",
-  "modularity/enforce-naming",
-  "modularity/enforce-rest-conventions",
-  "modularity/no-external-api-calls-in-utils",
-  "modularity/no-mutable-exports",
-  "mongodb-security/no-debug-mode-production",
-  "mongodb-security/no-hardcoded-connection-string",
-  "mongodb-security/no-hardcoded-credentials",
-  "mongodb-security/no-operator-injection",
-  "mongodb-security/no-unsafe-populate",
-  "mongodb-security/no-unsafe-regex-query",
-  "mongodb-security/no-unsafe-where",
-  "mysql-security/no-hardcoded-credentials",
-  "mysql-security/no-unsafe-query",
-  "mysql-security/require-tls",
-  "nestjs-security/no-exposed-private-fields",
-  "nestjs-security/no-hybrid-app-config-loss",
-  "nestjs-security/no-missing-validation-pipe",
-  "nestjs-security/no-permissive-cors",
-  "nestjs-security/no-res-bypass-serialization",
-  "nestjs-security/no-unguarded-swagger",
-  "nestjs-security/no-unsafe-multer-filename",
-  "nestjs-security/require-guards",
-  "nestjs-security/require-throttler",
-  "nestjs-security/require-validation-pipe-whitelist",
-  "node-security/detect-suspicious-dependencies",
-  "node-security/no-buffer-overread",
-  "node-security/no-cryptojs",
-  "node-security/no-cryptojs-weak-random",
-  "node-security/no-deprecated-cipher-method",
-  "node-security/no-dynamic-command-string",
-  "node-security/no-ecb-mode",
-  "node-security/no-env-injection",
-  "node-security/no-insecure-http-parser",
-  "node-security/no-insecure-key-derivation",
-  "node-security/no-insecure-rsa-padding",
-  "node-security/no-sha1-hash",
-  "node-security/no-ssrf",
-  "node-security/no-static-iv",
-  "node-security/no-weak-cipher-algorithm",
-  "node-security/no-weak-hash-algorithm",
-  "node-security/require-aead-tag-verification",
-  "node-security/require-dependency-integrity",
-  "openai-security/no-browser-api-key-exposure",
-  "openai-security/no-hardcoded-api-key",
-  "openai-security/no-untrusted-content-in-prompt",
-  "pg/check-query-params",
-  "pg/no-batch-insert-loop",
-  "pg/no-floating-query",
-  "pg/no-hardcoded-credentials",
-  "pg/no-insecure-ssl",
-  "pg/no-missing-client-release",
-  "pg/no-select-all",
-  "pg/no-transaction-on-pool",
-  "pg/no-unsafe-copy-from",
-  "pg/no-unsafe-query",
-  "pg/no-unsafe-search-path",
-  "pg/prefer-pool-query",
-  "pg/prevent-double-release",
-  "prisma-security/no-mass-assignment",
-  "prisma-security/no-raw-identifier-interpolation",
-  "prisma-security/no-unsafe-query",
-  "prisma-security/no-unscoped-mutation",
-  "react-a11y/alt-text",
-  "react-a11y/anchor-ambiguous-text",
-  "react-a11y/anchor-has-content",
-  "react-a11y/anchor-is-valid",
-  "react-a11y/aria-activedescendant-has-tabindex",
-  "react-a11y/aria-props",
-  "react-a11y/aria-role",
-  "react-a11y/aria-unsupported-elements",
-  "react-a11y/autocomplete-valid",
-  "react-a11y/click-events-have-key-events",
-  "react-a11y/control-has-associated-label",
-  "react-a11y/heading-has-content",
-  "react-a11y/html-has-lang",
-  "react-a11y/iframe-has-title",
-  "react-a11y/img-redundant-alt",
-  "react-a11y/interactive-supports-focus",
-  "react-a11y/label-has-associated-control",
-  "react-a11y/lang",
-  "react-a11y/media-has-caption",
-  "react-a11y/mouse-events-have-key-events",
-  "react-a11y/no-access-key",
-  "react-a11y/no-aria-hidden-on-focusable",
-  "react-a11y/no-autofocus",
-  "react-a11y/no-distracting-elements",
-  "react-a11y/no-interactive-element-to-noninteractive-role",
-  "react-a11y/no-keyboard-inaccessible-elements",
-  "react-a11y/no-missing-aria-labels",
-  "react-a11y/no-noninteractive-element-interactions",
-  "react-a11y/no-noninteractive-element-to-interactive-role",
-  "react-a11y/no-noninteractive-tabindex",
-  "react-a11y/no-redundant-roles",
-  "react-a11y/no-static-element-interactions",
-  "react-a11y/prefer-tag-over-role",
-  "react-a11y/role-has-required-aria-props",
-  "react-a11y/role-supports-aria-props",
-  "react-a11y/scope",
-  "react-a11y/tabindex-no-positive",
-  "secure-coding/detect-weak-password-validation",
-  "secure-coding/no-ldap-injection",
-  "secure-coding/no-privilege-escalation",
-  "secure-coding/no-template-injection",
-  "secure-coding/no-weak-password-recovery",
-  "sequelize-security/no-hardcoded-credentials",
-  "sequelize-security/no-mass-assignment",
-  "sequelize-security/no-unsafe-query",
-  "sequelize-security/require-tls",
-  "sqlite-security/no-unsafe-query",
-  "typeorm-security/no-hardcoded-credentials",
-  "typeorm-security/no-mass-assignment",
-  "typeorm-security/no-unsafe-query",
-  "typeorm-security/require-tls",
-  "vercel-ai-security/no-dynamic-system-prompt",
-  "vercel-ai-security/no-hardcoded-api-keys",
-  "vercel-ai-security/no-sensitive-in-prompt",
-  "vercel-ai-security/no-system-prompt-leak",
-  "vercel-ai-security/no-training-data-exposure",
-  "vercel-ai-security/no-unsafe-output-handling",
-  "vercel-ai-security/require-embedding-validation",
-  "vercel-ai-security/require-max-steps",
-  "vercel-ai-security/require-output-filtering",
-  "vercel-ai-security/require-output-validation",
-  "vercel-ai-security/require-rag-content-validation",
-  "vercel-ai-security/require-tool-confirmation",
-  "vercel-ai-security/require-tool-schema"
- ],
- "rules": {
-  "secure-coding/no-insecure-comparison": {
-   "count": 12303,
-   "repos": 51,
-   "samples": [
-    "18F__uswds-jekyll/assets/js/vendor/anchor.min.js:6",
-    "18F__uswds-jekyll/assets/js/vendor/anchor.min.js:6"
-   ]
-  },
-  "secure-coding/detect-object-injection": {
-   "count": 7145,
-   "repos": 73,
-   "samples": [
-    "18F__uswds-jekyll/assets/js/vendor/private_eye.js:41",
-    "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1"
-   ]
-  },
-  "secure-coding/no-improper-type-validation": {
-   "count": 1468,
-   "repos": 47,
-   "samples": [
-    "18F__uswds-jekyll/assets/js/vendor/private_eye.js:101",
-    "18F__uswds-jekyll/assets/js/vendor/private_eye.js:101"
-   ]
-  },
-  "secure-coding/no-missing-authentication": {
-   "count": 483,
-   "repos": 18,
-   "samples": [
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:69",
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:102"
-   ]
-  },
-  "browser-security/no-innerhtml": {
-   "count": 445,
-   "repos": 22,
-   "samples": [
-    "18F__uswds-jekyll/assets/uswds/js/uswds.js:1434",
-    "18F__uswds-jekyll/assets/uswds/js/uswds.js:1702"
-   ]
-  },
-  "secure-coding/detect-non-literal-regexp": {
-   "count": 369,
-   "repos": 44,
-   "samples": [
-    "18F__uswds-jekyll/assets/uswds/js/uswds.js:1797",
-    "18F__uswds-jekyll/assets/uswds/js/uswds.js:1810"
-   ]
-  },
-  "secure-coding/no-unchecked-loop-condition": {
-   "count": 339,
-   "repos": 36,
-   "samples": [
-    "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
-    "18F__uswds-jekyll/assets/uswds/js/uswds-init.min.js:1"
-   ]
-  },
-  "express-security/no-missing-csrf-protection": {
-   "count": 204,
-   "repos": 15,
-   "samples": [
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:69",
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:114"
-   ]
-  },
-  "secure-coding/no-redos-vulnerable-regex": {
-   "count": 142,
-   "repos": 31,
-   "samples": [
-    "OfficeDev__microsoft-teams-library-js/apps/typed-dependency-tester/MicrosoftTeams.min.js:1",
-    "Ontotext-AD__graphdb.js/docs/scripts/prettify/lang-css.js:1"
-   ]
-  },
-  "lodash/prefer-is-nil": {
-   "count": 130,
-   "repos": 2,
-   "samples": [
-    "postmanlabs__postman-code-generators/codegens/csharp-httpclient/lib/lodash.js:35",
-    "postmanlabs__postman-code-generators/codegens/csharp-httpclient/lib/lodash.js:294"
-   ]
-  },
-  "security/detect-object-injection": {
-   "count": 126,
-   "repos": 7,
-   "samples": [
-    "animir__node-rate-limiter-flexible/test/RateLimiterCluster.test.js:3",
-    "animir__node-rate-limiter-flexible/test/RateLimiterInsuredAbstract.test.js:1"
-   ]
-  },
-  "secure-coding/no-bidi-characters": {
-   "count": 122,
-   "repos": 3,
-   "samples": [
-    "learningequality__kolibri/kolibri/core/content/static/bloom/bloomPlayer-02a77592459cdf0b1bd7.min.js:83",
-    "learningequality__kolibri/kolibri/core/content/static/bloom/bloomPlayer-02a77592459cdf0b1bd7.min.js:83"
-   ]
-  },
-  "node-security/require-secure-credential-storage": {
-   "count": 117,
-   "repos": 8,
-   "samples": [
-    "auth0__express-openid-connect/examples/api.js:2",
-    "moleculerjs__moleculer/test/unit/loggers/datadog.spec.js:10"
-   ]
-  },
-  "browser-security/no-missing-csrf-protection": {
-   "count": 111,
-   "repos": 13,
-   "samples": [
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:69",
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:114"
-   ]
-  },
-  "node-security/no-dynamic-dependency-loading": {
-   "count": 106,
-   "repos": 29,
-   "samples": [
-    "FastyBird__smart-panel/build/bin/smart-panel-service.js:31",
-    "FastyBird__smart-panel/build/bin/smart-panel-service.js:32"
-   ]
-  },
-  "browser-security/no-unencrypted-transmission": {
-   "count": 102,
-   "repos": 9,
-   "samples": [
-    "auth0__express-openid-connect/test/sessionTransferToken.tests.js:867",
-    "eclass__sequelize-paginate/test/index.js:14"
-   ]
-  },
-  "browser-security/no-permissive-cors": {
-   "count": 94,
-   "repos": 4,
-   "samples": [
-    "Amsterdam__bmi-dms-upload/webpack.dev.conf.js:46",
-    "aws__aws-toolkit-vscode/packages/webpack.vue.config.js:83"
-   ]
-  },
-  "browser-security/no-http-urls": {
-   "count": 92,
-   "repos": 16,
-   "samples": [
-    "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:183",
-    "Sunnyside-UP-GmbH__lucy-cli/files/currents.config.js:4"
-   ]
-  },
-  "browser-security/no-credentials-in-query-params": {
-   "count": 92,
-   "repos": 12,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/util/urs/__tests__/deleteSystemToken.test.js:19",
-    "nasa__earthdata-search/serverless/src/util/urs/deleteSystemToken.js:25"
-   ]
-  },
-  "node-security/no-toctou-vulnerability": {
-   "count": 91,
-   "repos": 19,
-   "samples": [
-    "PostHog__context-mill/scripts/lib/marketplace-generator.js:151",
-    "Shopify__hydrogen/.changeset/calver-shared.js:270"
-   ]
-  },
-  "browser-security/no-eval": {
-   "count": 83,
-   "repos": 15,
-   "samples": [
-    "18F__uswds-jekyll/assets/uswds/js/uswds.js:518",
-    "18F__uswds-jekyll/assets/uswds/js/uswds.min.js:1"
-   ]
-  },
-  "node-security/detect-eval-with-expression": {
-   "count": 77,
-   "repos": 17,
-   "samples": [
-    "18F__uswds-jekyll/assets/uswds/js/uswds.js:518",
-    "18F__uswds-jekyll/assets/uswds/js/uswds.min.js:1"
-   ]
-  },
-  "node-security/no-unsafe-buffer-alloc": {
-   "count": 72,
-   "repos": 8,
-   "samples": [
-    "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:3888",
-    "emulsify-ds__emulsify-core/config/vite/plugins/assets/output-freshness.js:93"
-   ]
-  },
-  "secure-coding/no-hardcoded-session-tokens": {
-   "count": 69,
-   "repos": 10,
-   "samples": [
-    "IGNF__cartes.gouv.fr-entree-carto/src/mocks/handlers.js:28",
-    "auth0__express-openid-connect/test/customTokenExchange.tests.js:125"
-   ]
-  },
-  "node-security/require-secure-deletion": {
-   "count": 68,
-   "repos": 4,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/authorization/index.js:50",
-    "nightscout__cgm-remote-monitor/lib/authorization/index.js:53"
-   ]
-  },
-  "node-security/no-dynamic-require": {
-   "count": 67,
-   "repos": 20,
-   "samples": [
-    "OfficeDev__microsoft-teams-library-js/tools/cli/collectBundleAnalysis.js:53",
-    "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:163"
-   ]
-  },
-  "secure-coding/no-hardcoded-credentials": {
-   "count": 59,
-   "repos": 12,
-   "samples": [
-    "Zondax__ledger-polkadot/tests_integration/gen_dot_vector.js:6",
-    "Zondax__ledger-polkadot/tests_integration/gen_dot_vector.js:7"
-   ]
-  },
-  "node-security/no-shell-injection": {
-   "count": 52,
-   "repos": 11,
-   "samples": [
-    "FastyBird__smart-panel/.github/scripts/monorepo-version-sync.js:64",
-    "FastyBird__smart-panel/.github/scripts/npm-version-script.js:56"
-   ]
-  },
-  "secure-coding/no-format-string-injection": {
-   "count": 52,
-   "repos": 17,
-   "samples": [
-    "PostHog__context-mill/scripts/dev-server.js:285",
-    "Shopify__cli/bin/create-doc-pr.js:48"
-   ]
-  },
-  "secure-coding/no-graphql-injection": {
-   "count": 52,
-   "repos": 6,
-   "samples": [
-    "emulsify-ds__emulsify-core/config/vite/plugins/twig/virtual-twig-globs.js:50",
-    "mariadb-corporation__mariadb-connector-nodejs/lib/io/packet-output-stream.js:743"
-   ]
-  },
-  "node-security/lock-file": {
-   "count": 51,
-   "repos": 16,
-   "samples": [
-    "Simbiat__simbiat.ru/public/assets/html5games/Jiangshi/sound/worklets/audio-worklet.js:1",
-    "alexispurslane__vessel/lint-rules/no-long-comment-paragraphs-plugin.js:1"
-   ]
-  },
-  "node-security/no-self-signed-certs": {
-   "count": 48,
-   "repos": 5,
-   "samples": [
-    "mariadb-corporation__mariadb-connector-nodejs/test/conf.js:23",
-    "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:281"
-   ]
-  },
-  "browser-security/no-unescaped-url-parameter": {
-   "count": 46,
-   "repos": 5,
-   "samples": [
-    "Simbiat__simbiat.ru/public/assets/app.js:3",
-    "Simbiat__simbiat.ru/public/assets/app.js:3"
-   ]
-  },
-  "compat/compat": {
-   "count": 46,
-   "repos": 3,
-   "samples": [
-    "okta__okta-signin-widget/src/util/webauthn.js:74",
-    "okta__okta-signin-widget/src/util/webauthn.js:81"
-   ]
-  },
-  "lambda-security/no-error-swallowing": {
-   "count": 44,
-   "repos": 3,
-   "samples": [
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:3847",
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:3867"
-   ]
-  },
-  "node-security/no-math-random-crypto": {
-   "count": 41,
-   "repos": 12,
-   "samples": [
-    "YonasValentin__claude-kimi-relay/plugin/dist/cli.js:990",
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:11395"
-   ]
-  },
-  "express-security/no-missing-security-headers": {
-   "count": 40,
-   "repos": 12,
-   "samples": [
-    "animir__node-rate-limiter-flexible/lib/ExpressBruteFlexible.js:310",
-    "animir_node-rate-limiter-flexible/lib/ExpressBruteFlexible.js:310"
-   ]
-  },
-  "secure-coding/require-backend-authorization": {
-   "count": 38,
-   "repos": 7,
-   "samples": [
-    "auth0__express-openid-connect/docs/assets/main.js:6",
-    "nightscout__cgm-remote-monitor/lib/client/hashauth.js:35"
-   ]
-  },
-  "lambda-security/no-missing-authorization-check": {
-   "count": 37,
-   "repos": 6,
-   "samples": [
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:25175",
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:25189"
-   ]
-  },
-  "secure-coding/no-improper-sanitization": {
-   "count": 36,
-   "repos": 11,
-   "samples": [
-    "PostHog__context-mill/scripts/visual-dags.js:72",
-    "SpringRoll__SpringRoll/dist/SpringRoll.js:1"
-   ]
-  },
-  "node-security/no-data-in-temp-storage": {
-   "count": 35,
-   "repos": 5,
-   "samples": [
-    "PostHog__context-mill/scripts/visual-dags.js:26",
-    "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:394"
-   ]
-  },
-  "node-security/detect-child-process": {
-   "count": 35,
-   "repos": 6,
-   "samples": [
-    "boostercloud__booster/common/scripts/install-run.js:68",
-    "emulsify-ds__emulsify-core/.storybook/main.test.js:44"
-   ]
-  },
-  "secure-coding/no-unsafe-deserialization": {
-   "count": 34,
-   "repos": 11,
-   "samples": [
-    "Shopify__cli/packages/theme/assets/speedscope/demangle-cpp.1768f4cc.js:2",
-    "SpringRoll__SpringRoll/dist/SpringRoll.js:1"
-   ]
-  },
-  "express-security/require-csrf-protection": {
-   "count": 30,
-   "repos": 2,
-   "samples": [
-    "cncjs__cncjs/src/server/app.js:251",
-    "cncjs__cncjs/src/server/app.js:260"
-   ]
-  },
-  "security/detect-non-literal-fs-filename": {
-   "count": 27,
-   "repos": 8,
-   "samples": [
-    "comisai__comis/test/live/self-driving/scripts/local-config.mjs:1",
-    "comisai__comis/test/support/capability-service-mcp-fixture-launcher.mjs:46"
-   ]
-  },
-  "browser-security/no-missing-security-headers": {
-   "count": 26,
-   "repos": 13,
-   "samples": [
-    "FastyBird__smart-panel/build/raspbian/modules/configure/files/portal/server.js:380",
-    "animir__node-rate-limiter-flexible/lib/ExpressBruteFlexible.js:310"
-   ]
-  },
-  "jwt/require-max-age": {
-   "count": 26,
-   "repos": 9,
-   "samples": [
-    "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
-    "auth0__express-openid-connect/lib/context.js:1203"
-   ]
-  },
-  "browser-security/no-clickjacking": {
-   "count": 26,
-   "repos": 8,
-   "samples": [
-    "aemsites__idfc/scripts/sidekick-library.js:8830",
-    "aemsites__idfc/tools/sidekick/library/index.js:7487"
-   ]
-  },
-  "jwt/require-audience-validation": {
-   "count": 25,
-   "repos": 8,
-   "samples": [
-    "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
-    "cncjs__cncjs/src/server/api/api.users.js:110"
-   ]
-  },
-  "@okta/okta/no-unlocalized-text": {
-   "count": 25,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/views/BaseView.js:122",
-    "okta__okta-signin-widget/playground/mocks/spec-okta-api/api/v1/registration/index.js:1"
-   ]
-  },
-  "mongodb-security/require-schema-validation": {
-   "count": 25,
-   "repos": 1,
-   "samples": [
-    "spare8__chatbot/models/VSFile.js:15",
-    "spare8__chatbot/models/VSFile.js:19"
-   ]
-  },
-  "jwt/require-algorithm-whitelist": {
-   "count": 24,
-   "repos": 7,
-   "samples": [
-    "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
-    "cncjs__cncjs/src/server/api/api.users.js:110"
-   ]
-  },
-  "jwt/require-issuer-validation": {
-   "count": 24,
-   "repos": 7,
-   "samples": [
-    "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
-    "cncjs__cncjs/src/server/api/api.users.js:110"
-   ]
-  },
-  "secure-coding/no-unsafe-regex-construction": {
-   "count": 22,
-   "repos": 15,
-   "samples": [
-    "Ontotext-AD__graphdb.js/docs/scripts/prettify/prettify.js:6",
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:3967"
-   ]
-  },
-  "secure-coding/require-secure-defaults": {
-   "count": 22,
-   "repos": 8,
-   "samples": [
-    "auth0__express-openid-connect/test/appSession.tests.js:351",
-    "auth0__express-openid-connect/test/appSession.tests.js:370"
-   ]
-  },
-  "secure-coding/no-sensitive-data-exposure": {
-   "count": 21,
-   "repos": 10,
-   "samples": [
-    "Shopify__cli/bin/github-utils.js:37",
-    "Shopify__cli/bin/github-utils.js:43"
-   ]
-  },
-  "browser-security/require-csp-headers": {
-   "count": 21,
-   "repos": 7,
-   "samples": [
-    "cncjs__cncjs/src/server/lib/middleware/errnotfound.js:29",
-    "cncjs__cncjs/src/server/lib/middleware/errserver.js:41"
-   ]
-  },
-  "mongodb-security/no-unsafe-query": {
-   "count": 18,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/server/activity.js:110",
-    "nightscout__cgm-remote-monitor/lib/server/food.js:139"
-   ]
-  },
-  "node-security/require-stream-error-handler": {
-   "count": 17,
-   "repos": 10,
-   "samples": [
-    "PostHog__context-mill/scripts/dev-server.js:280",
-    "PostHog__context-mill/scripts/lib/build-phases.js:86"
-   ]
-  },
-  "secure-coding/no-xpath-injection": {
-   "count": 17,
-   "repos": 8,
-   "samples": [
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:1201",
-    "nasa__earthdata-search/serverless/src/util/echoForms/getNameValuePairsForResample.js:13"
-   ]
-  },
-  "secure-coding/no-directive-injection": {
-   "count": 17,
-   "repos": 6,
-   "samples": [
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:26128",
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:26128"
-   ]
-  },
-  "@typescript-eslint/no-var-requires": {
-   "count": 16,
-   "repos": 3,
-   "samples": [
-    "OfficeDev__microsoft-teams-library-js/apps/teams-perf-test-app/webpack.config.js:1",
-    "OfficeDev__microsoft-teams-library-js/apps/teams-test-app/webpack.cdn.config.js:1"
-   ]
-  },
-  "node-security/no-timing-unsafe-compare": {
-   "count": 16,
-   "repos": 5,
-   "samples": [
-    "Zerkjito__movie-watchlist-api/src/controllers/authController.js:137",
-    "Zerkjito__movie-watchlist-api/src/middleware/csrf.js:11"
-   ]
-  },
-  "security/detect-non-literal-regexp": {
-   "count": 16,
-   "repos": 10,
-   "samples": [
-    "dwp__govuk-casa/src/middleware/strip-proxy-path.js:42",
-    "dwp__govuk-casa/src/middleware/strip-proxy-path.js:49"
-   ]
-  },
-  "react-hooks/exhaustive-deps": {
-   "count": 16,
-   "repos": 1,
-   "samples": [
-    "tata1mg__catalyst-core/packages/catalyst-ai/src/useCloudAI.js:53",
-    "tata1mg__catalyst-core/packages/catalyst-ai/src/useWebAI.js:187"
-   ]
-  },
-  "jwt/no-weak-secret": {
-   "count": 16,
-   "repos": 1,
-   "samples": [
-    "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:127",
-    "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:142"
-   ]
-  },
-  "jwt/no-hardcoded-secret": {
-   "count": 16,
-   "repos": 1,
-   "samples": [
-    "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:127",
-    "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:142"
-   ]
-  },
-  "secure-coding/no-xxe-injection": {
-   "count": 15,
-   "repos": 7,
-   "samples": [
-    "Simbiat__simbiat.ru/public/assets/app.js:2",
-    "aemsites__idfc/scripts/dompurify.min.js:2"
-   ]
-  },
-  "node-security/no-unsafe-dynamic-require": {
-   "count": 15,
-   "repos": 6,
-   "samples": [
-    "auth0__express-openid-connect/examples/run_example.js:41",
-    "moleculerjs__moleculer-io/examples/index.js:6"
-   ]
-  },
-  "@typescript-eslint/no-unused-vars": {
-   "count": 15,
-   "repos": 2,
-   "samples": [
-    "nasa__earthdata-search/bin/getApiResources.mjs:31",
-    "nasa__earthdata-search/bin/getApiResources.mjs:180"
-   ]
-  },
-  "node-security/no-zip-slip": {
-   "count": 14,
-   "repos": 4,
-   "samples": [
-    "PostHog__context-mill/scripts/lib/build-phases.js:332",
-    "PostHog__context-mill/scripts/lib/build-phases.js:394"
-   ]
-  },
-  "express-security/no-sensitive-data-in-query": {
-   "count": 14,
-   "repos": 4,
-   "samples": [
-    "auth0__express-openid-connect/examples/cte-session-transfer.js:165",
-    "auth0__express-openid-connect/examples/cte-session-transfer.js:167"
-   ]
-  },
-  "mongodb-security/require-projection": {
-   "count": 14,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
-    "nightscout__cgm-remote-monitor/lib/server/websocket.js:237"
-   ]
-  },
-  "mongodb-security/require-lean-queries": {
-   "count": 14,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
-    "nightscout__cgm-remote-monitor/lib/server/websocket.js:237"
-   ]
-  },
-  "react-compiler/react-compiler": {
-   "count": 14,
-   "repos": 1,
-   "samples": [
-    "tata1mg__catalyst-core/packages/catalyst-core/src/native/bridge/hooks/useCamera.js:1",
-    "tata1mg__catalyst-core/packages/catalyst-core/src/native/bridge/hooks/useDataProtection.js:1"
-   ]
-  },
-  "node-security/detect-non-literal-fs-filename": {
-   "count": 13,
-   "repos": 4,
-   "samples": [
-    "Shopify__cli/bin/update-bugsnag.js:33",
-    "Shopify__cli/bin/update-bugsnag.js:36"
-   ]
-  },
-  "secure-coding/no-homoglyph-identifiers": {
-   "count": 12,
-   "repos": 4,
-   "samples": [
-    "SpringRoll__SpringRoll/dist/SpringRoll-umd.js:1",
-    "SpringRoll__SpringRoll/dist/SpringRoll-umd.js:1"
-   ]
-  },
-  "security/detect-unsafe-regex": {
-   "count": 12,
-   "repos": 5,
-   "samples": [
-    "moleculerjs__moleculer/src/utils.js:32",
-    "moleculerjs_moleculer/src/utils.js:32"
-   ]
-  },
-  "mongodb-security/no-select-sensitive-fields": {
-   "count": 12,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/server/websocket.js:237",
-    "nightscout__cgm-remote-monitor/lib/server/websocket.js:283"
-   ]
-  },
-  "eslint-comments/disable-enable-pair": {
-   "count": 12,
-   "repos": 2,
-   "samples": [
-    "paypal__paypal-checkout-components/src/shopper-insights/shopperSession.test.js:2",
-    "paypal__paypal-checkout-components/src/three-domain-secure/component.test.js:2"
-   ]
-  },
-  "@typescript-eslint/no-require-imports": {
-   "count": 11,
-   "repos": 6,
-   "samples": [
-    "Customerly__CustomerlyReactNativeSDK/example/babel.config.js:1",
-    "comisai__comis/packages/daemon/bundled-skills/chart-visualization/scripts/generate.cjs:2"
-   ]
-  },
-  "browser-security/no-password-in-url": {
-   "count": 11,
-   "repos": 4,
-   "samples": [
-    "nasa__earthdata-search/static/src/js/util/__tests__/getSafeRedirectUrl.test.js:79",
-    "postmanlabs__postman-code-generators/codegens/curl/test/unit/convert.test.js:670"
-   ]
-  },
-  "browser-security/no-tracking-without-consent": {
-   "count": 10,
-   "repos": 2,
-   "samples": [
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:50",
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:60"
-   ]
-  },
-  "mongodb-security/no-bypass-middleware": {
-   "count": 10,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/authorization/storage.js:97",
-    "nightscout__cgm-remote-monitor/lib/server/websocket.js:236"
-   ]
-  },
-  "complexity": {
-   "count": 10,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/models/SchemaProperty.js:367",
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/views/forms/BaseInput.js:231"
-   ]
-  },
-  "import/no-nodejs-modules": {
-   "count": 9,
-   "repos": 3,
-   "samples": [
-    "Customerly__CustomerlyReactNativeSDK/example/babel.config.js:2",
-    "paypal__paypal-checkout-components/test/percy/lib/browser.js:5"
-   ]
-  },
-  "import/no-commonjs": {
-   "count": 9,
-   "repos": 2,
-   "samples": [
-    "paypal__paypal-checkout-components/__sdk__.js:2",
-    "paypal__paypal-checkout-components/globals.js:1"
-   ]
-  },
-  "import/no-unresolved": {
-   "count": 8,
-   "repos": 4,
-   "samples": [
-    "aemsites__idfc/blocks/tabs-upi-link/tabs-upi-link.js:1",
-    "aemsites__idfc/blocks/tabs/tabs.js:1"
-   ]
-  },
-  "lambda-security/require-timeout-handling": {
-   "count": 8,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/edlCallback/handler.js:21",
-    "nasa__earthdata-search/serverless/src/generateGibsTags/handler.js:23"
-   ]
-  },
-  "mongodb-security/no-unbounded-find": {
-   "count": 8,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
-    "nightscout__cgm-remote-monitor/lib/server/websocket.js:394"
-   ]
-  },
-  "import/no-namespace": {
-   "count": 8,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/paypal.dev.js:5",
-    "paypal__paypal-checkout-components/paypal.dev.js:6"
-   ]
-  },
-  "import-x/no-default-export": {
-   "count": 7,
-   "repos": 1,
-   "samples": [
-    "DataDog__browser-sdk/test/unit/jasmineSeedReporterPlugin.js:12",
-    "DataDog__browser-sdk/test/unit/karma.base.conf.js:57"
-   ]
-  },
-  "node-security/prefer-native-crypto": {
-   "count": 7,
-   "repos": 3,
-   "samples": [
-    "Zerkjito__movie-watchlist-api/src/controllers/authController.js:2",
-    "Zerkjito__movie-watchlist-api/src/controllers/userController.js:7"
-   ]
-  },
-  "node-security/no-dynamic-algorithm-selection": {
-   "count": 7,
-   "repos": 5,
-   "samples": [
-    "moleculerjs__moleculer/src/middlewares/transmit/encryption.js:41",
-    "moleculerjs__moleculer/src/middlewares/transmit/encryption.js:54"
-   ]
-  },
-  "secure-coding/no-unlimited-resource-allocation": {
-   "count": 7,
-   "repos": 4,
-   "samples": [
-    "nwutils__getter/src/decompress.js:21",
-    "paypal__paypal-messaging-components/utils/devServerProxy/messages.js:231"
-   ]
-  },
-  "@okta/okta/no-unlocalized-text-in-templates": {
-   "count": 7,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/jest.config.js:7",
-    "okta__okta-signin-widget/playground/mocks/spec-okta-api/app/userHome.js:1"
-   ]
-  },
-  "express-security/no-client-controlled-authorization": {
-   "count": 6,
-   "repos": 1,
-   "samples": [
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:103",
-    "PostHog__context-mill/example-apps/javascript-node/todo.js:128"
-   ]
-  },
-  "secure-coding/no-log-injection": {
-   "count": 6,
-   "repos": 6,
-   "samples": [
-    "PostHog__context-mill/scripts/dev-server.js:285",
-    "dwp__govuk-casa/examples/barebones/app.js:39"
-   ]
-  },
-  "browser-security/require-blob-url-revocation": {
-   "count": 6,
-   "repos": 5,
-   "samples": [
-    "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:171",
-    "Simbiat__simbiat.ru/public/assets/app.js:3"
-   ]
-  },
-  "browser-security/no-postmessage-wildcard-origin": {
-   "count": 6,
-   "repos": 2,
-   "samples": [
-    "SpringRoll__SpringRoll/dist/SpringRoll-umd.js:1",
-    "SpringRoll__SpringRoll/dist/SpringRoll.js:1"
-   ]
-  },
-  "import/prefer-default-export": {
-   "count": 6,
-   "repos": 2,
-   "samples": [
-    "aemsites__idfc/scripts/aem.js:212",
-    "aemsites__idfc/scripts/aem.js:516"
-   ]
-  },
-  "express-security/no-exposed-debug-endpoints": {
-   "count": 6,
-   "repos": 4,
-   "samples": [
-    "auth0__express-openid-connect/examples/routes.js:18",
-    "nightscout__cgm-remote-monitor/lib/api3/index.js:81"
-   ]
-  },
-  "express-security/require-route-authentication": {
-   "count": 6,
-   "repos": 4,
-   "samples": [
-    "auth0__express-openid-connect/test/callback.tests.js:923",
-    "auth0__express-openid-connect/test/fixture/server.js:26"
-   ]
-  },
-  "secure-coding/no-sql-injection": {
-   "count": 6,
-   "repos": 2,
-   "samples": [
-    "mariadb-corporation__mariadb-connector-nodejs/test/integration/big-query.test.js:146",
-    "mariadb-corporation__mariadb-connector-nodejs/test/integration/big-query.test.js:147"
-   ]
-  },
-  "express-security/no-error-details-in-response": {
-   "count": 6,
-   "repos": 3,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/api2/notifications-v2.js:20",
-    "nightscout_cgm-remote-monitor/lib/api2/notifications-v2.js:20"
-   ]
-  },
-  "lodash/prefer-includes": {
-   "count": 6,
-   "repos": 2,
-   "samples": [
-    "postmanlabs__postman-code-generators/codegens/java-okhttp/lib/lodash.js:263",
-    "postmanlabs__postman-code-generators/codegens/java-unirest/lib/lodash.js:264"
-   ]
-  },
-  "express-security/no-static-root-exposure": {
-   "count": 6,
-   "repos": 1,
-   "samples": [
-    "tata1mg__catalyst-core/apps/catalyst-core-test/server/server.js:10",
-    "tata1mg__catalyst-core/docs/server/index.js:46"
-   ]
-  },
-  "browser-security/require-mime-type-validation": {
-   "count": 5,
-   "repos": 2,
-   "samples": [
-    "Simbiat__simbiat.ru/public/assets/app.js:5",
-    "Simbiat__simbiat.ru/public/assets/app.js:5"
-   ]
-  },
-  "browser-security/require-postmessage-origin-check": {
-   "count": 5,
-   "repos": 3,
-   "samples": [
-    "SpringRoll__SpringRoll/src/state/UserData.spec.js:6",
-    "learningequality__kolibri/kolibri/core/content/static/bloom/bloomPlayer-02a77592459cdf0b1bd7.min.js:116"
-   ]
-  },
-  "sonarjs/no-duplicate-string": {
-   "count": 5,
-   "repos": 1,
-   "samples": [
-    "eclass__semantic-release-sentry-releases/src/errors.js:1",
-    "eclass__semantic-release-sentry-releases/src/errors.js:153"
-   ]
-  },
-  "import-x/no-commonjs": {
-   "count": 5,
-   "repos": 1,
-   "samples": [
-    "learningequality__kolibri/.github/__tests__/githubUtils.spec.js:1",
-    "learningequality__kolibri/.github/githubUtils.js:1"
-   ]
-  },
-  "import-x/no-amd": {
-   "count": 5,
-   "repos": 1,
-   "samples": [
-    "learningequality__kolibri/.github/__tests__/githubUtils.spec.js:1",
-    "learningequality__kolibri/.github/githubUtils.js:1"
-   ]
-  },
-  "unicorn/no-array-reduce": {
-   "count": 5,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/eslint-internal-rules/require-meta-docs-url.js:76",
-    "mpx-ecology__eslint-plugin-mpx/eslint-internal-rules/require-meta-docs-url.js:95"
-   ]
-  },
-  "jasmine/no-disabled-tests": {
-   "count": 5,
-   "repos": 1,
-   "samples": [
-    "okta__okta-auth-js/test/e2e/specs/login.js:114",
-    "okta__okta-auth-js/test/e2e/specs/login.js:129"
-   ]
-  },
-  "@okta/okta/no-exclusive-language": {
-   "count": 5,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/scripts/buildtools/commands/generate-phone-codes.js:5",
-    "okta__okta-signin-widget/stylelint.config.js:48"
-   ]
-  },
-  "promise/no-native": {
-   "count": 5,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/src/hosted-buttons/index.test.js:2",
-    "paypal__paypal-checkout-components/src/hosted-buttons/index.test.js:265"
-   ]
-  },
-  "n/no-unsupported-features/node-builtins": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "Shopify__cli/packages/cli/bin/dev.js:1",
-    "Shopify__cli/packages/cli/bin/run.js:3"
-   ]
-  },
-  "node-security/require-storage-encryption": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "YonasValentin__claude-kimi-relay/plugin/dist/cli.js:15918",
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:32488"
-   ]
-  },
-  "sonarjs/cognitive-complexity": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "aemsites__idfc/scripts/aem.js:14",
-    "aemsites__idfc/scripts/aem.js:213"
-   ]
-  },
-  "sonarjs/no-os-command-from-path": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "cityssm__eslint-config-cityssm/test/runEslint.js:7",
-    "usaljs__usal/scripts/postbuild.js:319"
-   ]
-  },
-  "express-security/no-insecure-cookie-options": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "dwp__govuk-casa/examples/barebones/plugins/cookie-consent/plugin.js:30",
-    "dwp__govuk-casa/examples/barebones/plugins/cookie-consent/plugin.js:47"
-   ]
-  },
-  "security/detect-possible-timing-attacks": {
-   "count": 4,
-   "repos": 4,
-   "samples": [
-    "emulsify-ds__emulsify-core/config/vite/plugins/reporter/source-roots.js:512",
-    "nightscout__cgm-remote-monitor/lib/client/browser-settings.js:174"
-   ]
-  },
-  "import-x/no-import-module-exports": {
-   "count": 4,
-   "repos": 1,
-   "samples": [
-    "learningequality__kolibri/.github/githubUtils.js:1",
-    "learningequality__kolibri/.prettierrc.js:1"
-   ]
-  },
-  "n/no-process-exit": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "macCesar__purgeTSS/src/cli/commands/purge.js:723",
-    "macCesar__purgeTSS/src/core/branding/index.js:337"
-   ]
-  },
-  "unicorn/consistent-function-scoping": {
-   "count": 4,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/syntaxes/slot-attribute.js:18",
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/syntaxes/slot-scope-attribute.js:23"
-   ]
-  },
-  "express-security/no-host-header-in-links": {
-   "count": 4,
-   "repos": 3,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/server/app.js:37",
-    "nightscout_cgm-remote-monitor/lib/server/app.js:37"
-   ]
-  },
-  "express-security/require-rate-limiting": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "okta__okta-auth-js/samples/generated/express-web-no-oidc/server.js:28",
-    "okta__okta-auth-js/samples/generated/express-web-with-oidc/server.js:44"
-   ]
-  },
-  "@okta/okta-ui/no-specific-methods": {
-   "count": 4,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/framework/View.js:451",
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/util/TemplateUtil.js:4"
-   ]
-  },
-  "inclusive-language/use-inclusive-words": {
-   "count": 4,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/models/SchemaProperty.js:10",
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/util/BaseController.js:119"
-   ]
-  },
-  "@typescript-eslint/ban-ts-comment": {
-   "count": 4,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/views/forms/BaseForm.js:1255",
-    "okta__okta-signin-widget/polyfill/debugger.js:1"
-   ]
-  },
-  "no-unsanitized/property": {
-   "count": 4,
-   "repos": 1,
-   "samples": [
-    "passbolt__passbolt_styleguide/src/public-website-sign-in/lib/SignIn/SignInManager.test.js:43",
-    "passbolt__passbolt_styleguide/src/public-website-sign-in/lib/SignIn/SignInManager.test.js:52"
-   ]
-  },
-  "import/no-default-export": {
-   "count": 4,
-   "repos": 2,
-   "samples": [
-    "paypal__paypal-checkout-components/test/percy/playwright.config.js:20",
-    "paypal__paypal-checkout-components/vite.config.js:3"
-   ]
-  },
-  "@typescript-eslint/unbound-method": {
-   "count": 3,
-   "repos": 3,
-   "samples": [
-    "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:3976",
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:1734"
-   ]
-  },
-  "sonarjs/pseudo-random": {
-   "count": 3,
-   "repos": 2,
-   "samples": [
-    "aemsites__idfc/scripts/aem.js:28",
-    "aemsites__idfc/scripts/aem.js:30"
-   ]
-  },
-  "jwt/require-expiration": {
-   "count": 3,
-   "repos": 3,
-   "samples": [
-    "auth0__express-openid-connect/end-to-end/fixture/helpers.js:116",
-    "nightscout__cgm-remote-monitor/lib/authorization/index.js:298"
-   ]
-  },
-  "express-security/no-permissive-trust-proxy": {
-   "count": 3,
-   "repos": 3,
-   "samples": [
-    "cncjs__cncjs/src/server/app.js:77",
-    "nightscout__cgm-remote-monitor/lib/server/app.js:28"
-   ]
-  },
-  "unicorn/no-process-exit": {
-   "count": 3,
-   "repos": 2,
-   "samples": [
-    "davidjbradshaw__eslint-config-auto/lib/missing.js:63",
-    "paypal__paypal-checkout-components/test/percy/lib/browser.js:4"
-   ]
-  },
-  "sonarjs/assertions-in-tests": {
-   "count": 3,
-   "repos": 1,
-   "samples": [
-    "dwp__govuk-casa/tests/lib/validators/postalAddressObject.test.js:228",
-    "dwp__govuk-casa/tests/lib/validators/postalAddressObject.test.js:281"
-   ]
-  },
-  "require-jsdoc": {
-   "count": 3,
-   "repos": 2,
-   "samples": [
-    "eclass__semantic-release-sentry-releases/test/publish.test.js:9",
-    "eclass__semantic-release-sentry-releases/test/publish.test.js:22"
-   ]
-  },
-  "browser-security/no-incomplete-url-sanitization": {
-   "count": 3,
-   "repos": 2,
-   "samples": [
-    "learningequality__kolibri/kolibri/core/content/static/bloom/bloomPlayer-02a77592459cdf0b1bd7.min.js:116",
-    "nasa__earthdata-search/tests/support/setupTests.js:8"
-   ]
-  },
-  "eslint-plugin/require-meta-fixable": {
-   "count": 3,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/eslint-internal-rules/consistent-docs-description.js:121",
-    "mpx-ecology__eslint-plugin-mpx/eslint-internal-rules/no-invalid-meta-docs-categories.js:132"
-   ]
-  },
-  "eslint-plugin/prefer-message-ids": {
-   "count": 3,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/script-indent.js:43",
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/script-setup-uses-vars.js:29"
-   ]
-  },
-  "lambda-security/no-exposed-error-details": {
-   "count": 3,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/generateColorMaps/handler.js:30",
-    "nasa__earthdata-search/serverless/src/generateColorMaps/handler.js:38"
-   ]
-  },
-  "node/no-deprecated-api": {
-   "count": 3,
-   "repos": 2,
-   "samples": [
-    "okta__okta-auth-js/test/e2e/util/browserUtils.js:17",
-    "synapsecns__sanguine/.yarn/releases/yarn-1.22.19.cjs:2291"
-   ]
-  },
-  "@okta/okta-ui/no-specific-modules": {
-   "count": 3,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/util/handlebars/helper-i18n.js:7",
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/util/jquery-wrapper.js:7"
-   ]
-  },
-  "flowtype/require-valid-file-annotation": {
-   "count": 3,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/globals.js:1",
-    "paypal__paypal-checkout-components/test/globals.js:1"
-   ]
-  },
-  "flowtype/require-return-type": {
-   "count": 3,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/globals.js:1",
-    "paypal__paypal-checkout-components/test/globals.js:1"
-   ]
-  },
-  "import/no-anonymous-default-export": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/esm/test.mjs:1",
-    "EvgenyOrekhov__eslint-config-hardcore/test.mjs:1"
-   ]
-  },
-  "@typescript-eslint/naming-convention": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "Sunnyside-UP-GmbH__lucy-cli/dist/index.js:24",
-    "Sunnyside-UP-GmbH__lucy-cli/dist/index.js:26"
-   ]
-  },
-  "sonarjs/no-nested-functions": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "aemsites__idfc/blocks/cards/cards.js:975",
-    "aemsites__idfc/blocks/cards/cards.js:980"
-   ]
-  },
-  "import/no-cycle": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "aemsites__idfc/scripts/delayed.js:1",
-    "aemsites__idfc/scripts/scripts.js:1888"
-   ]
-  },
-  "@typescript-eslint/no-unsafe-assignment": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "cityssm__eslint-config-cityssm/eslint.packageConfig.js:56",
-    "tidal-music__eslint-config-tidal/rule-sets/base.js:1"
-   ]
-  },
-  "secure-coding/no-electron-security-issues": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "cncjs__cncjs/src/main.js:55",
-    "cncjs__cncjs/src/main.js:56"
-   ]
-  },
-  "browser-security/no-unsafe-inline-csp": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "digital-blueprint__esign-app/rolldown.config.js:127",
-    "okta__okta-signin-widget/Gruntfile.js:267"
-   ]
-  },
-  "sonarjs/regex-complexity": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "dwp__govuk-casa/src/lib/validators/postalAddressObject.js:110",
-    "dwp__govuk-casa/src/lib/validators/postalAddressObject.js:113"
-   ]
-  },
-  "valid-jsdoc": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "eclass__semantic-release-sentry-releases/src/diff-tree.js:38",
-    "ringcentral__juno/assets/ResizeObserver.global.js:16"
-   ]
-  },
-  "node-security/no-unbounded-decompression": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "mariadb-corporation__mariadb-connector-nodejs/lib/io/compression-input-stream.js:48",
-    "mariadb-corporation_mariadb-connector-nodejs/lib/io/compression-input-stream.js:48"
-   ]
-  },
-  "eslint-plugin/require-meta-docs-description": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/script-setup-uses-vars.js:23",
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/valid-setup-define-expose.js:83"
-   ]
-  },
-  "unicorn/prefer-ternary": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/valid-properties.js:130",
-    "mpx-ecology__eslint-plugin-mpx/tools/update-docs.js:92"
-   ]
-  },
-  "unicorn/prefer-switch": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/utils/index.js:1053",
-    "mpx-ecology__eslint-plugin-mpx/lib/utils/index.js:1432"
-   ]
-  },
-  "unicorn/no-array-for-each": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/tools/setup-eslint-rule-types.js:34",
-    "pustovitDmytro__logger-decorator/tests/utils.js:44"
-   ]
-  },
-  "vercel-ai-security/require-request-timeout": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:132",
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
-   ]
-  },
-  "vercel-ai-security/require-max-tokens": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:132",
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
-   ]
-  },
-  "secure-coding/no-fail-open-auth": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/authorization/index.js:192",
-    "nightscout_cgm-remote-monitor/lib/authorization/index.js:192"
-   ]
-  },
-  "jwt/no-sensitive-payload": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/authorization/index.js:298",
-    "nightscout_cgm-remote-monitor/lib/authorization/index.js:298"
-   ]
-  },
-  "express-security/no-disabled-helmet-protections": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "nightscout__cgm-remote-monitor/lib/server/app.js:93",
-    "nightscout_cgm-remote-monitor/lib/server/app.js:93"
-   ]
-  },
-  "node/no-extraneous-import": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "okta__okta-auth-js/samples/generated/react-embedded-auth-with-sdk/vite.config.js:6",
-    "okta__okta-auth-js/test/apps/react-mfa-v1/vite.config.js:5"
-   ]
-  },
-  "@typescript-eslint/no-use-before-define": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/framework/Model.js:279",
-    "redis__RedisInsight/redisinsight/api/esbuild.js:42"
-   ]
-  },
-  "express-security/no-cors-credentials-wildcard": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/playground/mocks/server.js:73",
-    "okta__okta-signin-widget/playground/mocks/server.js:79"
-   ]
-  },
-  "import/no-extraneous-dependencies": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "okta__okta-signin-widget/src/v3/config/jsdom-env-with-polyfills.js:13",
-    "redis__RedisInsight/babel.config.cjs:1"
-   ]
-  },
-  "jasmine/no-spec-dupes": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/test/unit/spec/v1/RegistrationSchema_spec.js:86",
-    "okta__okta-signin-widget/test/unit/spec/v1/RegistrationSchema_spec.js:114"
-   ]
-  },
-  "fb-www/unsafe-html": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/test/integration/vendor/react_v15.1.0.js:24284",
-    "paypal__paypal-checkout-components/test/integration/vendor/react_v15.1.0.js:24523"
-   ]
-  },
-  "flowtype/no-unused-expressions": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-messaging-components/src/utils/performance.js:85",
-    "paypal__paypal-messaging-components/src/utils/performance.js:93"
-   ]
-  },
-  "security/detect-non-literal-require": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "pustovitDmytro__logger-decorator/tests/entry.js:1",
-    "pustovitDmytro__logger-decorator/tests/utils.js:55"
-   ]
-  },
-  "import/no-self-import": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "redis__RedisInsight/configs/webpack.config.eslint.js:1",
-    "redis__RedisInsight/configs/webpack.config.eslint.js:2"
-   ]
-  },
-  "mongodb-security/require-tls-connection": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "spare8__chatbot/server/admin/controller/config/testMongoDB.js:12",
-    "spare8__chatbot/server/admin/index.js:33"
-   ]
-  },
-  "mongodb-security/require-auth-mechanism": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "spare8__chatbot/server/admin/controller/config/testMongoDB.js:12",
-    "spare8__chatbot/server/admin/index.js:33"
-   ]
-  },
-  "node-security/no-deprecated-buffer": {
-   "count": 2,
-   "repos": 2,
-   "samples": [
-    "universal-material__universal-material-web/gulp-tasks/scripts.js:39",
-    "ytsaurus__ytsaurus-ui/packages/javascript-wrapper/lib/utils/setup.js:137"
-   ]
-  },
-  "sonarjs/slow-regex": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "usaljs__usal/scripts/lint-texts.js:5",
-    "usaljs__usal/scripts/publish.js:19"
-   ]
-  },
-  "sonarjs/os-command": {
-   "count": 2,
-   "repos": 1,
-   "samples": [
-    "usaljs__usal/scripts/publish.js:3",
-    "usaljs__usal/scripts/release-gh.js:3"
-   ]
-  },
-  "import-x/no-unresolved": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "DataDog__browser-sdk/test/apps/angular-app/webpack.config.js:2"
-   ]
-  },
-  "unicorn/prefer-module": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/test.js:3"
-   ]
-  },
-  "putout/putout": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/test.js:3"
-   ]
-  },
-  "import/max-dependencies": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/test.js:3"
-   ]
-  },
-  "import/no-unused-modules": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/test.stories.js:1"
-   ]
-  },
-  "storybook/csf-component": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/test.stories.js:1"
-   ]
-  },
-  "storybook/story-exports": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/test.stories.js:1"
-   ]
-  },
-  "storybook/meta-satisfies-type": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "EvgenyOrekhov__eslint-config-hardcore/test.stories.js:1"
-   ]
-  },
-  "strict-null-checks/all": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "OfficeDev__microsoft-teams-library-js/packages/teams-js/jest-setup.cjs:1"
-   ]
-  },
-  "@shopify/cli/specific-imports-in-bootstrap-code": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "Shopify__cli/packages/cli/bin/bundle.js:1"
-   ]
-  },
-  "@nx/enforce-module-boundaries": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "Shopify__cli/packages/cli/bin/bundle.js:1"
-   ]
-  },
-  "@typescript-eslint/no-explicit-any": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "YonasValentin__claude-kimi-relay/plugin/dist/mcp.js:27080"
-   ]
-  },
-  "browser-security/no-jwt-in-storage": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "adadaptedinc__adadapted-js-sdk/src/index.js:1018"
-   ]
-  },
-  "@typescript-eslint/no-unsafe-type-assertion": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "cityssm__eslint-config-cityssm/eslint.packageConfig.js:43"
-   ]
-  },
-  "unicorn/prevent-abbreviations": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "cityssm__eslint-config-cityssm/samples/jsdoc.sample.js:2"
-   ]
-  },
-  "financial/no-division": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "cloydlau__webgl-fluid/src/index.js:21"
-   ]
-  },
-  "financial/no-float-calculation": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "cloydlau__webgl-fluid/src/index.js:21"
-   ]
-  },
-  "lodash-fp/no-extraneous-function-wrapping": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "davidjbradshaw__eslint-config-auto/lib/utils.js:24"
-   ]
-  },
-  "sonarjs/no-unused-vars": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "dwp__govuk-casa/src/lib/JourneyContext.js:276"
-   ]
-  },
-  "jsdoc/require-returns-check": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "dwp__govuk-casa/src/lib/ValidatorFactory.js:84"
-   ]
-  },
-  "sonarjs/test-check-exception": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "dwp__govuk-casa/tests/lib/configuration-ingestor.test.js:54"
-   ]
-  },
-  "jsdoc/require-example": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "eclass__semantic-release-sentry-releases/src/diff-tree.js:38"
-   ]
-  },
-  "sonarjs/no-identical-functions": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "eclass__semantic-release-sentry-releases/test/publish.test.js:197"
-   ]
-  },
-  "eslint-plugin/report-message-format": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/comment-directive.js:4"
-   ]
-  },
-  "internal/no-invalid-meta-docs-categories": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/eqeqeq.js:1"
-   ]
-  },
-  "internal/no-invalid-meta": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/eqeqeq.js:9"
-   ]
-  },
-  "unicorn/prefer-native-coercion-functions": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/rules/valid-wx-key.js:59"
-   ]
-  },
-  "unicorn/no-lonely-if": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "mpx-ecology__eslint-plugin-mpx/lib/utils/index.js:1107"
-   ]
-  },
-  "import/extensions": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/bin/api.mjs:17"
-   ]
-  },
-  "import/no-dynamic-require": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/portals/buildAvailablePortals.js:43"
-   ]
-  },
-  "lambda-security/no-unvalidated-event-body": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/edlCallback/handler.js:33"
-   ]
-  },
-  "vercel-ai-security/require-abort-signal": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
-   ]
-  },
-  "vercel-ai-security/require-error-handling": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
-   ]
-  },
-  "vercel-ai-security/require-audit-logging": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
-   ]
-  },
-  "vercel-ai-security/require-validated-prompt": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:259"
-   ]
-  },
-  "jwt/no-decode-without-verify": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/util/authorizer/validateToken.js:31"
-   ]
-  },
-  "browser-security/no-disabled-certificate-validation": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nasa__earthdata-search/serverless/src/util/database/getDbConnectionConfig.js:35"
-   ]
-  },
-  "node/no-missing-require": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "nioc__node-red-contrib-opentelemetry/lib/prometheus-exporter.js:1"
-   ]
-  },
-  "node/no-unpublished-require": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-auth-js/rollup.config.js:101"
-   ]
-  },
-  "browser-security/no-insecure-redirects": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-auth-js/samples/generated/express-web-with-oidc/server.js:89"
-   ]
-  },
-  "node/no-unsupported-features/es-syntax": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-auth-js/samples/generated/react-embedded-auth-with-sdk/vite.config.js:1"
-   ]
-  },
-  "max-statements": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/framework/View.js:309"
-   ]
-  },
-  "@okta/okta-ui/no-deprecated-methods": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/util/ButtonFactory.js:4"
-   ]
-  },
-  "@okta/okta-ui/enforce-requirejs-names": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/util/jquery-wrapper.js:7"
-   ]
-  },
-  "@okta/okta-ui/no-bare-templates": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/packages/@okta/courage-dist/esm/src/courage/util/underscore-wrapper.js:38"
-   ]
-  },
-  "browser-security/no-missing-cors-check": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "okta__okta-signin-widget/playground/mocks/server.js:79"
-   ]
-  },
-  "browser-security/no-client-side-auth-logic": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "passbolt__passbolt_styleguide/src/shared/models/entity/secretData/secretDataV5DefaultTotpEntity.js:102"
-   ]
-  },
-  "unicorn/filename-case": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/__sdk__.js:2"
-   ]
-  },
-  "import/unambiguous": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/__sdk__.js:2"
-   ]
-  },
-  "fb-www/typeof-undefined": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-checkout-components/test/integration/vendor/react_v15.1.0.js:24485"
-   ]
-  },
-  "security/detect-eval-with-expression": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "paypal__paypal-messaging-components/utils/devServerProxy/messages.js:210"
-   ]
-  },
-  "import/export": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "pustovitDmytro__logger-decorator/tests/Test.js:5"
-   ]
-  },
-  "unicorn/no-object-as-default-parameter": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "pustovitDmytro__logger-decorator/tests/utils.js:25"
-   ]
-  },
-  "secure-coding/no-pii-in-logs": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "saas-js__saas-ui/packages/saas-ui-cli/lib/impl-RFWKV4NP.js:1"
-   ]
-  },
-  "node-security/no-arbitrary-file-access": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "segmentio__functions-library/buildpack/boreal/index.js:228"
-   ]
-  },
-  "jest/no-disabled-tests": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "stripe__stripe-terminal-react-native/e2e/in-person-refund.e2e.js:15"
-   ]
-  },
-  "yarn-internal/warn-language": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "synapsecns__sanguine/.yarn/releases/yarn-1.22.19.cjs:92158"
-   ]
-  },
-  "babel/new-cap": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "synapsecns__sanguine/.yarn/releases/yarn-1.22.19.cjs:105653"
-   ]
-  },
-  "xo/throw-new-error": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "synapsecns__sanguine/.yarn/releases/yarn-1.22.19.cjs:105653"
-   ]
-  },
-  "express-security/require-helmet": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "tata1mg__catalyst-core/docs/server/index.js:15"
-   ]
-  },
-  "express-security/no-permissive-cors": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "tata1mg__catalyst-core/docs/server/index.js:26"
-   ]
-  },
-  "@typescript-eslint/no-unsafe-member-access": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "tidal-music__eslint-config-tidal/rule-sets/base.js:55"
-   ]
-  },
-  "sonarjs/no-control-regex": {
-   "count": 1,
-   "repos": 1,
-   "samples": [
-    "usaljs__usal/scripts/lint-texts.js:6"
-   ]
-  }
- },
- "note": "Which rules fire on real third-party code. Generated by linting 158 cloned OSS repositories (13,146 files) with the benchmark config. Rule ids not belonging to this suite are references from eslint-disable comments in the scanned source, not our findings. This is the material available for sourcing corpus fixtures — see benchmarks/PRECISION_GOAL.md.",
- "generated": "2026-08-26",
- "reposScanned": 158
+  "filesLinted": 49783,
+  "filesFailed": 0,
+  "reposScanned": 70,
+  "suiteRules": 470,
+  "withMaterial": 166,
+  "withoutMaterial": [
+    "anthropic-security/no-browser-api-key-exposure",
+    "anthropic-security/no-hardcoded-api-key",
+    "anthropic-security/no-untrusted-content-in-prompt",
+    "browser-security/detect-mixed-content",
+    "browser-security/no-allow-arbitrary-loads",
+    "browser-security/no-cookie-auth-tokens",
+    "browser-security/no-dynamic-service-worker-url",
+    "browser-security/no-filereader-innerhtml",
+    "browser-security/no-insecure-websocket",
+    "browser-security/no-postmessage-innerhtml",
+    "browser-security/no-postmessage-wildcard-origin",
+    "browser-security/no-sensitive-cookie-js",
+    "browser-security/no-sensitive-data-in-analytics",
+    "browser-security/no-sensitive-data-in-cache",
+    "browser-security/no-sensitive-indexeddb",
+    "browser-security/no-sensitive-localstorage",
+    "browser-security/no-sensitive-sessionstorage",
+    "browser-security/no-unsafe-eval-csp",
+    "browser-security/no-unvalidated-deeplinks",
+    "browser-security/no-websocket-eval",
+    "browser-security/no-websocket-innerhtml",
+    "browser-security/no-worker-message-innerhtml",
+    "browser-security/require-cookie-secure-attrs",
+    "browser-security/require-https-only",
+    "browser-security/require-url-validation",
+    "browser-security/require-websocket-wss",
+    "conventions/analytics-event-naming",
+    "conventions/consistent-existence-index-check",
+    "conventions/expiring-todo-comments",
+    "conventions/filename-case",
+    "conventions/no-commented-code",
+    "conventions/no-console-spaces",
+    "conventions/no-deprecated-api",
+    "conventions/no-json-schema-tags",
+    "conventions/no-magic-numbers",
+    "conventions/no-raw-cross-property-href",
+    "conventions/prefer-code-point",
+    "conventions/prefer-dependency-version-strategy",
+    "conventions/prefer-dom-node-text-content",
+    "conventions/require-data-testid",
+    "conventions/utm-taxonomy",
+    "drizzle-security/no-mass-assignment",
+    "drizzle-security/no-raw-identifier-interpolation",
+    "drizzle-security/no-unsafe-query",
+    "express-security/no-express-unsafe-regex-route",
+    "express-security/no-graphql-introspection-production",
+    "express-security/no-idor-resource-access",
+    "express-security/no-missing-cors-check",
+    "express-security/no-unsafe-csp-directives",
+    "express-security/no-user-controlled-redirect",
+    "express-security/no-user-controlled-render-locals",
+    "express-security/require-case-insensitive-path-guard",
+    "express-security/require-express-body-parser-limits",
+    "express-security/require-query-type-guard",
+    "express-security/require-strict-transport-security",
+    "gemini-security/no-disabled-safety-settings",
+    "gemini-security/no-hardcoded-api-key",
+    "gemini-security/no-untrusted-content-in-prompt",
+    "import-next/consistent-type-specifier-style",
+    "import-next/enforce-dependency-direction",
+    "import-next/enforce-team-boundaries",
+    "import-next/no-cross-domain-imports",
+    "import-next/no-empty-named-blocks",
+    "import-next/no-legacy-imports",
+    "import-next/no-named-as-default",
+    "import-next/no-restricted-paths",
+    "import-next/no-self-import",
+    "import-next/prefer-direct-import",
+    "import-next/require-import-approval",
+    "jwt/no-algorithm-confusion",
+    "jwt/no-algorithm-none",
+    "jwt/no-timestamp-manipulation",
+    "jwt/require-issued-at",
+    "knex-security/no-hardcoded-credentials",
+    "knex-security/no-mass-assignment",
+    "knex-security/no-unsafe-query",
+    "knex-security/no-unscoped-mutation",
+    "knex-security/require-tls",
+    "lambda-security/no-env-logging",
+    "lambda-security/no-exposed-debug-endpoints",
+    "lambda-security/no-hardcoded-credentials-sdk",
+    "lambda-security/no-overly-permissive-iam-policy",
+    "lambda-security/no-permissive-cors-middy",
+    "lambda-security/no-permissive-cors-response",
+    "lambda-security/no-secrets-in-env",
+    "lambda-security/no-unbounded-batch-processing",
+    "lambda-security/no-user-controlled-requests",
+    "maintainability/cognitive-complexity",
+    "maintainability/consistent-function-scoping",
+    "maintainability/error-message",
+    "maintainability/identical-functions",
+    "maintainability/max-parameters",
+    "maintainability/nested-complexity-hotspots",
+    "maintainability/no-lonely-if",
+    "maintainability/no-missing-error-context",
+    "maintainability/no-nested-ternary",
+    "maintainability/no-silent-errors",
+    "maintainability/no-unhandled-promise",
+    "maintainability/no-unreadable-iife",
+    "mcp-sdk-security/no-command-injection-in-tool",
+    "mcp-sdk-security/no-tool-description-injection",
+    "mcp-sdk-security/no-unvalidated-tool-args",
+    "mcp-sdk-security/require-tool-input-schema",
+    "modularity/ddd-value-object-immutability",
+    "modularity/enforce-naming",
+    "mongodb-security/no-debug-mode-production",
+    "mongodb-security/no-hardcoded-connection-string",
+    "mongodb-security/no-hardcoded-credentials",
+    "mongodb-security/no-operator-injection",
+    "mongodb-security/no-unsafe-populate",
+    "mongodb-security/no-unsafe-regex-query",
+    "mongodb-security/no-unsafe-where",
+    "mysql-security/no-hardcoded-credentials",
+    "mysql-security/no-unsafe-query",
+    "mysql-security/require-tls",
+    "nestjs-security/no-exposed-private-fields",
+    "nestjs-security/no-hybrid-app-config-loss",
+    "nestjs-security/no-missing-validation-pipe",
+    "nestjs-security/no-permissive-cors",
+    "nestjs-security/no-res-bypass-serialization",
+    "nestjs-security/no-unguarded-swagger",
+    "nestjs-security/no-unsafe-multer-filename",
+    "nestjs-security/require-guards",
+    "nestjs-security/require-throttler",
+    "nestjs-security/require-validation-pipe-whitelist",
+    "node-security/detect-suspicious-dependencies",
+    "node-security/lock-file",
+    "node-security/no-buffer-overread",
+    "node-security/no-cryptojs",
+    "node-security/no-cryptojs-weak-random",
+    "node-security/no-deprecated-cipher-method",
+    "node-security/no-dynamic-command-string",
+    "node-security/no-ecb-mode",
+    "node-security/no-env-injection",
+    "node-security/no-insecure-http-parser",
+    "node-security/no-insecure-key-derivation",
+    "node-security/no-insecure-rsa-padding",
+    "node-security/no-sha1-hash",
+    "node-security/no-ssrf",
+    "node-security/no-static-iv",
+    "node-security/no-weak-cipher-algorithm",
+    "node-security/no-weak-hash-algorithm",
+    "node-security/require-aead-tag-verification",
+    "node-security/require-dependency-integrity",
+    "openai-security/no-browser-api-key-exposure",
+    "openai-security/no-hardcoded-api-key",
+    "openai-security/no-untrusted-content-in-prompt",
+    "operability/no-console-log",
+    "operability/no-debug-code-in-production",
+    "operability/no-process-exit",
+    "operability/no-verbose-error-messages",
+    "operability/require-code-minification",
+    "operability/require-data-minimization",
+    "pg/check-query-params",
+    "pg/no-batch-insert-loop",
+    "pg/no-floating-query",
+    "pg/no-hardcoded-credentials",
+    "pg/no-insecure-ssl",
+    "pg/no-missing-client-release",
+    "pg/no-select-all",
+    "pg/no-transaction-on-pool",
+    "pg/no-unsafe-copy-from",
+    "pg/no-unsafe-query",
+    "pg/no-unsafe-search-path",
+    "pg/prefer-pool-query",
+    "pg/prevent-double-release",
+    "prisma-security/no-mass-assignment",
+    "prisma-security/no-raw-identifier-interpolation",
+    "prisma-security/no-unsafe-query",
+    "react-a11y/alt-text",
+    "react-a11y/anchor-ambiguous-text",
+    "react-a11y/anchor-has-content",
+    "react-a11y/anchor-is-valid",
+    "react-a11y/aria-activedescendant-has-tabindex",
+    "react-a11y/aria-props",
+    "react-a11y/aria-role",
+    "react-a11y/aria-unsupported-elements",
+    "react-a11y/autocomplete-valid",
+    "react-a11y/click-events-have-key-events",
+    "react-a11y/control-has-associated-label",
+    "react-a11y/heading-has-content",
+    "react-a11y/html-has-lang",
+    "react-a11y/iframe-has-title",
+    "react-a11y/img-redundant-alt",
+    "react-a11y/interactive-supports-focus",
+    "react-a11y/label-has-associated-control",
+    "react-a11y/lang",
+    "react-a11y/media-has-caption",
+    "react-a11y/mouse-events-have-key-events",
+    "react-a11y/no-access-key",
+    "react-a11y/no-aria-hidden-on-focusable",
+    "react-a11y/no-autofocus",
+    "react-a11y/no-distracting-elements",
+    "react-a11y/no-interactive-element-to-noninteractive-role",
+    "react-a11y/no-keyboard-inaccessible-elements",
+    "react-a11y/no-missing-aria-labels",
+    "react-a11y/no-noninteractive-element-interactions",
+    "react-a11y/no-noninteractive-element-to-interactive-role",
+    "react-a11y/no-noninteractive-tabindex",
+    "react-a11y/no-redundant-roles",
+    "react-a11y/no-static-element-interactions",
+    "react-a11y/prefer-tag-over-role",
+    "react-a11y/role-has-required-aria-props",
+    "react-a11y/role-supports-aria-props",
+    "react-a11y/scope",
+    "react-a11y/tabindex-no-positive",
+    "react-features/checked-requires-onchange-or-readonly",
+    "react-features/default-props-match-prop-types",
+    "react-features/display-name",
+    "react-features/hooks-exhaustive-deps",
+    "react-features/jsx-handler-names",
+    "react-features/jsx-key",
+    "react-features/jsx-max-depth",
+    "react-features/jsx-no-bind",
+    "react-features/jsx-no-duplicate-props",
+    "react-features/jsx-no-literals",
+    "react-features/jsx-no-script-url",
+    "react-features/jsx-no-target-blank",
+    "react-features/no-access-state-in-setstate",
+    "react-features/no-adjacent-inline-elements",
+    "react-features/no-arbitrary-token-class",
+    "react-features/no-arrow-function-lifecycle",
+    "react-features/no-children-prop",
+    "react-features/no-danger",
+    "react-features/no-danger-with-children",
+    "react-features/no-default-test-id",
+    "react-features/no-deprecated",
+    "react-features/no-did-mount-set-state",
+    "react-features/no-did-update-set-state",
+    "react-features/no-direct-mutation-state",
+    "react-features/no-find-dom-node",
+    "react-features/no-inline-style",
+    "react-features/no-invalid-html-attribute",
+    "react-features/no-is-mounted",
+    "react-features/no-is-prefix-prop",
+    "react-features/no-kind-prop-discriminator",
+    "react-features/no-multi-comp",
+    "react-features/no-namespace",
+    "react-features/no-object-type-as-default-prop",
+    "react-features/no-raw-color-literal",
+    "react-features/no-redundant-should-component-update",
+    "react-features/no-render-return-value",
+    "react-features/no-set-state",
+    "react-features/no-string-refs",
+    "react-features/no-this-in-sfc",
+    "react-features/no-typos",
+    "react-features/no-unescaped-entities",
+    "react-features/no-unknown-property",
+    "react-features/no-unnecessary-rerenders",
+    "react-features/no-unsafe",
+    "react-features/no-wrapper-sub-component",
+    "react-features/prefer-es6-class",
+    "react-features/prefer-stateless-function",
+    "react-features/prop-types",
+    "react-features/react-class-to-hooks",
+    "react-features/react-in-jsx-scope",
+    "react-features/react-no-inline-functions",
+    "react-features/react-render-optimization",
+    "react-features/require-data-slot",
+    "react-features/require-default-props",
+    "react-features/require-optimization",
+    "react-features/require-render-return",
+    "react-features/required-attributes",
+    "react-features/sort-comp",
+    "react-features/state-in-constructor",
+    "react-features/static-property-placement",
+    "react-features/void-dom-elements-no-children",
+    "reliability/error-message",
+    "reliability/no-await-in-loop",
+    "reliability/no-jsdoc-terminator-in-example",
+    "reliability/no-missing-error-context",
+    "reliability/no-missing-null-checks",
+    "reliability/no-silent-errors",
+    "reliability/no-unhandled-promise",
+    "reliability/no-unsafe-type-narrowing",
+    "reliability/require-network-timeout",
+    "secure-coding/detect-weak-password-validation",
+    "secure-coding/no-bidi-characters",
+    "secure-coding/no-homoglyph-identifiers",
+    "secure-coding/no-ldap-injection",
+    "secure-coding/no-privilege-escalation",
+    "secure-coding/no-template-injection",
+    "secure-coding/no-weak-password-recovery",
+    "sequelize-security/no-hardcoded-credentials",
+    "sequelize-security/no-mass-assignment",
+    "sequelize-security/no-unsafe-query",
+    "sequelize-security/require-tls",
+    "typeorm-security/no-hardcoded-credentials",
+    "typeorm-security/no-mass-assignment",
+    "typeorm-security/no-unsafe-query",
+    "typeorm-security/require-tls",
+    "vercel-ai-security/no-dynamic-system-prompt",
+    "vercel-ai-security/no-hardcoded-api-keys",
+    "vercel-ai-security/no-sensitive-in-prompt",
+    "vercel-ai-security/no-system-prompt-leak",
+    "vercel-ai-security/no-training-data-exposure",
+    "vercel-ai-security/no-unsafe-output-handling",
+    "vercel-ai-security/require-embedding-validation",
+    "vercel-ai-security/require-max-steps",
+    "vercel-ai-security/require-output-filtering",
+    "vercel-ai-security/require-output-validation",
+    "vercel-ai-security/require-rag-content-validation",
+    "vercel-ai-security/require-tool-confirmation",
+    "vercel-ai-security/require-tool-schema"
+  ],
+  "rules": {
+    "import-next/no-commonjs": {
+      "count": 12355,
+      "repos": 57,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:238",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:273",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:466",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:865"
+      ]
+    },
+    "import-next/no-internal-modules": {
+      "count": 11539,
+      "repos": 48,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1226",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1228",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1230",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1232"
+      ]
+    },
+    "import-next/no-relative-parent-imports": {
+      "count": 10500,
+      "repos": 47,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:973",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:975",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1071",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1073"
+      ]
+    },
+    "import-next/no-named-export": {
+      "count": 6818,
+      "repos": 38,
+      "samples": [
+        "DataDog__browser-sdk/packages/browser-rum-core/test/allJsonSchemas.js:19",
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:1702",
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:4078",
+        "DataDog__browser-sdk/test/apps/nextjs/instrumentation-client.js:15"
+      ]
+    },
+    "import-next/no-unresolved": {
+      "count": 4558,
+      "repos": 62,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:973",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:975",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1056",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1071"
+      ]
+    },
+    "modernization/prefer-template-literal": {
+      "count": 4470,
+      "repos": 40,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:101",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:123"
+      ]
+    },
+    "import-next/no-extraneous-dependencies": {
+      "count": 3366,
+      "repos": 41,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:971",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1056",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1118",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1484"
+      ]
+    },
+    "import-next/enforce-import-order": {
+      "count": 2774,
+      "repos": 37,
+      "samples": [
+        "Amsterdam__bmi-dms-upload/.storybook/manager.js:1",
+        "DataDog__browser-sdk/test/unit/karma.base.conf.js:1",
+        "DataDog__browser-sdk/test/unit/karma.bs.conf.js:1",
+        "DataDog__browser-sdk/test/unit/karma.local.conf.js:1"
+      ]
+    },
+    "import-next/no-unused-modules": {
+      "count": 2735,
+      "repos": 58,
+      "samples": [
+        "18F__uswds-jekyll/assets/js/private_eye_conf.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "Amsterdam__bmi-dms-upload/.storybook/manager.js:1",
+        "DataDog__browser-sdk/test/unit/globalThisPolyfill.js:1"
+      ]
+    },
+    "import-next/no-named-as-default-member": {
+      "count": 2667,
+      "repos": 3,
+      "samples": [
+        "emulsify-ds__emulsify-core/.storybook/main.js:113",
+        "emulsify-ds__emulsify-core/.storybook/main.js:126",
+        "emulsify-ds__emulsify-core/.storybook/main.js:127",
+        "emulsify-ds__emulsify-core/.storybook/main.js:131"
+      ]
+    },
+    "secure-coding/detect-object-injection": {
+      "count": 2438,
+      "repos": 47,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:144",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:195"
+      ]
+    },
+    "import-next/no-default-export": {
+      "count": 2170,
+      "repos": 43,
+      "samples": [
+        "Amsterdam__bmi-dms-upload/.storybook/theme.js:3",
+        "DataDog__browser-sdk/test/apps/sf-experience-app/force-app/main/default/lwc/experienceProductExplorer/experienceProductExplorer.js:29",
+        "DataDog__browser-sdk/test/apps/sf-lwc-app/force-app/main/default/lwc/productExplorer/productExplorer.js:42",
+        "DataDog__browser-sdk/test/unit/jasmineSeedReporterPlugin.js:13"
+      ]
+    },
+    "import-next/no-nodejs-modules": {
+      "count": 1944,
+      "repos": 54,
+      "samples": [
+        "Amsterdam__bmi-dms-upload/tests/jest-svg-transformer.js:4",
+        "Amsterdam__bmi-dms-upload/webpack.base.conf.js:1",
+        "Amsterdam__bmi-dms-upload/webpack.dev.conf.js:1",
+        "Amsterdam__bmi-dms-upload/webpack.prod.conf.js:1"
+      ]
+    },
+    "import-next/prefer-node-protocol": {
+      "count": 1901,
+      "repos": 47,
+      "samples": [
+        "Amsterdam__bmi-dms-upload/tests/jest-svg-transformer.js:4",
+        "Amsterdam__bmi-dms-upload/webpack.base.conf.js:1",
+        "Amsterdam__bmi-dms-upload/webpack.dev.conf.js:1",
+        "Amsterdam__bmi-dms-upload/webpack.prod.conf.js:1"
+      ]
+    },
+    "import-next/no-duplicates": {
+      "count": 1757,
+      "repos": 8,
+      "samples": [
+        "IGNF__cartes.gouv.fr-entree-carto/src/plugins/BusEvent.js:2",
+        "IGNF__cartes.gouv.fr-entree-carto/src/services/ServiceLocal.js:7",
+        "digital-blueprint__esign-app/src/dbp-official-signature-pdf-upload.js:8",
+        "digital-blueprint__esign-app/src/dbp-official-signature-pdf-upload.js:13"
+      ]
+    },
+    "secure-coding/no-insecure-comparison": {
+      "count": 1582,
+      "repos": 34,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1"
+      ]
+    },
+    "import-next/newline-after-import": {
+      "count": 1553,
+      "repos": 15,
+      "samples": [
+        "FastyBird__smart-panel/packages/example-extension/vite.config.js:2",
+        "Shopify__hydrogen/packages/hydrogen/src/storefrontClient.example.js:2",
+        "SpringRoll__SpringRoll/src/localization/captions/spec/CaptionFactory.spec.js:4",
+        "SpringRoll__SpringRoll/src/state/UserData.js:1"
+      ]
+    },
+    "import-next/prefer-default-export": {
+      "count": 842,
+      "repos": 31,
+      "samples": [
+        "DataDog__browser-sdk/packages/browser-rum-core/test/allJsonSchemas.js:19",
+        "IGNF__cartes.gouv.fr-entree-carto/scripts/icons.js:80",
+        "IGNF__cartes.gouv.fr-entree-carto/src/components/carte/control/actions/actionEditButton.js:1",
+        "IGNF__cartes.gouv.fr-entree-carto/src/components/carte/control/printUtils/mapExport.js:59"
+      ]
+    },
+    "import-next/no-relative-packages": {
+      "count": 784,
+      "repos": 19,
+      "samples": [
+        "Customerly__CustomerlyReactNativeSDK/example/babel.config.js:4",
+        "OfficeDev__microsoft-teams-library-js/tools/bundle-size-tools/jest.config.js:2",
+        "Shopify__cli/packages/cli/bin/bundle.js:10",
+        "Shopify__cli/packages/cli/bin/bundle.js:11"
+      ]
+    },
+    "secure-coding/no-improper-type-validation": {
+      "count": 778,
+      "repos": 30,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "IGNF__cartes.gouv.fr-entree-carto/src/services/ServiceError.js:100",
+        "IGNF__cartes.gouv.fr-entree-carto/src/stores/dataStore.js:125"
+      ]
+    },
+    "import-next/no-import-module-exports": {
+      "count": 625,
+      "repos": 3,
+      "samples": [
+        "okta__okta-signin-widget/packages/@okta/courage-dist/esm/lib/underscore/underscore-min.js:6",
+        "okta__okta-signin-widget/test/unit/helpers/xhr/v2/ERROR_FEATURE_NOT_ENABLED.js:3",
+        "okta__okta-signin-widget/test/unit/helpers/xhr/v2/IDX_ERROR_SESSION_EXPIRED.js:3",
+        "okta__okta-signin-widget/test/unit/helpers/xhr/v2/IDX_ERROR_USER_IS_NOT_ASSIGNED.js:3"
+      ]
+    },
+    "import-next/no-namespace": {
+      "count": 525,
+      "repos": 20,
+      "samples": [
+        "Shopify__cli/bin/check-commands-snapshot.js:4",
+        "Shopify__cli/bin/create-doc-pr.js:6",
+        "Shopify__cli/bin/create-homebrew-pr.js:9",
+        "Shopify__cli/bin/create-test-app.js:3"
+      ]
+    },
+    "modularity/enforce-rest-conventions": {
+      "count": 472,
+      "repos": 12,
+      "samples": [
+        "Zerkjito__movie-watchlist-api/src/routes/authRoutes.js:19",
+        "Zerkjito__movie-watchlist-api/src/routes/authRoutes.js:27",
+        "Zerkjito__movie-watchlist-api/src/routes/authRoutes.js:34",
+        "Zerkjito__movie-watchlist-api/src/routes/authRoutes.js:37"
+      ]
+    },
+    "import-next/no-unassigned-import": {
+      "count": 386,
+      "repos": 27,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1056",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1118",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:5777",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:5780"
+      ]
+    },
+    "secure-coding/no-missing-authentication": {
+      "count": 368,
+      "repos": 14,
+      "samples": [
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:69",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:102",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:114",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:140"
+      ]
+    },
+    "import-next/prefer-modern-api": {
+      "count": 336,
+      "repos": 20,
+      "samples": [
+        "adadaptedinc__adadapted-js-sdk/demo/react-typescript/webpack.config.js:1",
+        "animir__node-rate-limiter-flexible/test/BurstyRateLimiter.test.js:2",
+        "animir__node-rate-limiter-flexible/test/BurstyRateLimiter.test.js:3",
+        "animir__node-rate-limiter-flexible/test/ExpressBruteFlexible.test.js:3"
+      ]
+    },
+    "browser-security/no-innerhtml": {
+      "count": 203,
+      "repos": 16,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1434",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1702",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1876",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1878"
+      ]
+    },
+    "secure-coding/no-unchecked-loop-condition": {
+      "count": 185,
+      "repos": 26,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds-init.js:1",
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:2266",
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:2363",
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:2525"
+      ]
+    },
+    "import-next/no-anonymous-default-export": {
+      "count": 185,
+      "repos": 15,
+      "samples": [
+        "DataDog__browser-sdk/test/unit/karma.bs.conf.js:16",
+        "DataDog__browser-sdk/test/unit/karma.local.conf.js:12",
+        "cloydlau__webgl-fluid/src/index.js:29",
+        "cncjs__cncjs/src/app/lib/gcode-text.js:4"
+      ]
+    },
+    "express-security/no-missing-csrf-protection": {
+      "count": 169,
+      "repos": 12,
+      "samples": [
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:69",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:114",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:140",
+        "Zerkjito__movie-watchlist-api/src/routes/authRoutes.js:34"
+      ]
+    },
+    "secure-coding/detect-non-literal-regexp": {
+      "count": 162,
+      "repos": 29,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1797",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:1810",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:6313",
+        "IGNF__cartes.gouv.fr-entree-carto/src/features/cityinfo.js:270"
+      ]
+    },
+    "modernization/prefer-at": {
+      "count": 142,
+      "repos": 24,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:6056",
+        "FastyBird__smart-panel/.github/scripts/monorepo-version-sync.js:103",
+        "FastyBird__smart-panel/.github/scripts/monorepo-version-sync.js:120",
+        "PostHog__context-mill/scripts/lib/skill-generator.js:358"
+      ]
+    },
+    "import-next/dynamic-import-chunkname": {
+      "count": 136,
+      "repos": 15,
+      "samples": [
+        "IGNF__cartes.gouv.fr-entree-carto/src/plugins/Eulerian.js:69",
+        "Shopify__cli/packages/cli/bin/dev.js:8",
+        "Shopify__cli/packages/cli/bin/run.js:10",
+        "Simbiat__simbiat.ru/public/assets/app.js:3"
+      ]
+    },
+    "import-next/exports-last": {
+      "count": 133,
+      "repos": 15,
+      "samples": [
+        "DataDog__browser-sdk/test/apps/sf-lwc-app/force-app/main/default/lwc/productExplorer/productExplorer.js:42",
+        "DataDog__browser-sdk/test/unit/karma.base.conf.js:58",
+        "DataDog__browser-sdk/test/unit/karma.local.conf.js:12",
+        "IGNF__cartes.gouv.fr-entree-carto/src/features/reportingActions/iocInputAction.js:134"
+      ]
+    },
+    "import-next/no-barrel-import": {
+      "count": 133,
+      "repos": 12,
+      "samples": [
+        "PostHog__context-mill/scripts/lib/example-processor.js:11",
+        "Shopify__cli/packages/create-app/bin/dev.js:4",
+        "SpringRoll__SpringRoll/src/Application.spec.js:1",
+        "dwp__govuk-casa/src/casa.js:3"
+      ]
+    },
+    "browser-security/no-permissive-cors": {
+      "count": 94,
+      "repos": 4,
+      "samples": [
+        "Amsterdam__bmi-dms-upload/webpack.dev.conf.js:46",
+        "aws__aws-toolkit-vscode/packages/webpack.vue.config.js:83",
+        "nasa__earthdata-search/serverless/src/getSavedAccessConfigs/__tests__/handler.test.js:58",
+        "nasa__earthdata-search/serverless/src/getSavedAccessConfigs/__tests__/handler.test.js:117"
+      ]
+    },
+    "browser-security/no-missing-csrf-protection": {
+      "count": 92,
+      "repos": 10,
+      "samples": [
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:69",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:114",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:140",
+        "Zerkjito__movie-watchlist-api/src/routes/authRoutes.js:34"
+      ]
+    },
+    "import-next/no-full-package-import": {
+      "count": 92,
+      "repos": 7,
+      "samples": [
+        "cncjs__cncjs/src/app/lib/immutable-store.js:1",
+        "cncjs__cncjs/src/app/widgets/Axes/ShuttleControl.js:1",
+        "cncjs__cncjs/src/app/widgets/Visualizer/PivotPoint3.js:1",
+        "cncjs__cncjs/src/server/access-control.js:2"
+      ]
+    },
+    "node-security/no-toctou-vulnerability": {
+      "count": 82,
+      "repos": 14,
+      "samples": [
+        "Ontotext-AD__graphdb.js/scripts/fs-utils.js:24",
+        "PostHog__context-mill/scripts/lib/marketplace-generator.js:151",
+        "Shopify__hydrogen/.changeset/calver-shared.js:270",
+        "Shopify__hydrogen/.changeset/detect-calver-bump-type.js:89"
+      ]
+    },
+    "node-security/no-dynamic-dependency-loading": {
+      "count": 74,
+      "repos": 20,
+      "samples": [
+        "OfficeDev__microsoft-teams-library-js/tools/cli/collectBundleAnalysis.js:53",
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:163",
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:163",
+        "Shopify__hydrogen/packages/hydrogen/src/cache/InMemoryCache.example.js:34"
+      ]
+    },
+    "import-next/prefer-tree-shakeable-imports": {
+      "count": 72,
+      "repos": 4,
+      "samples": [
+        "cncjs__cncjs/src/app/lib/immutable-store.js:1",
+        "cncjs__cncjs/src/app/widgets/Axes/ShuttleControl.js:1",
+        "cncjs__cncjs/src/app/widgets/Visualizer/PivotPoint3.js:1",
+        "cncjs__cncjs/src/server/access-control.js:2"
+      ]
+    },
+    "browser-security/no-unencrypted-transmission": {
+      "count": 71,
+      "repos": 7,
+      "samples": [
+        "auth0__express-openid-connect/test/sessionTransferToken.tests.js:867",
+        "eclass__sequelize-paginate/test/index.js:14",
+        "moleculerjs__moleculer/dev/stream-java.js:13",
+        "moleculerjs__moleculer/test/unit/cachers/index.spec.js:92"
+      ]
+    },
+    "secure-coding/no-hardcoded-session-tokens": {
+      "count": 64,
+      "repos": 8,
+      "samples": [
+        "IGNF__cartes.gouv.fr-entree-carto/src/mocks/handlers.js:28",
+        "auth0__express-openid-connect/test/customTokenExchange.tests.js:125",
+        "eclass__semantic-release-sentry-releases/test/verify.test.js:26",
+        "nasa__earthdata-search/serverless/src/generateCollectionCapabilityTags/__tests__/handler.test.js:61"
+      ]
+    },
+    "secure-coding/no-redos-vulnerable-regex": {
+      "count": 63,
+      "repos": 20,
+      "samples": [
+        "Ontotext-AD__graphdb.js/docs/scripts/prettify/lang-css.js:1",
+        "Ontotext-AD__graphdb.js/docs/scripts/prettify/prettify.js:10",
+        "PostHog__context-mill/scripts/lib/agent-generator.js:60",
+        "Shopify__cli/bin/create-notification-pr.js:134"
+      ]
+    },
+    "browser-security/no-credentials-in-query-params": {
+      "count": 63,
+      "repos": 9,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/util/urs/__tests__/deleteSystemToken.test.js:19",
+        "nasa__earthdata-search/serverless/src/util/urs/deleteSystemToken.js:25",
+        "nasa__earthdata-search/static/src/js/components/OrderStatus/__tests__/buildEddLink.test.js:79",
+        "nasa__earthdata-search/static/src/js/components/OrderStatus/__tests__/buildEddLink.test.js:115"
+      ]
+    },
+    "modularity/ddd-anemic-domain-model": {
+      "count": 62,
+      "repos": 2,
+      "samples": [
+        "Ontotext-AD__graphdb.js/src/model/namespace.js:7",
+        "passbolt__passbolt_styleguide/src/shared/models/Mfa/Duo.js:18",
+        "passbolt__passbolt_styleguide/src/shared/models/Mfa/MfaModel.js:20",
+        "passbolt__passbolt_styleguide/src/shared/models/Mfa/Yubikey.js:18"
+      ]
+    },
+    "import-next/no-cycle": {
+      "count": 60,
+      "repos": 5,
+      "samples": [
+        "dwp__govuk-casa/src/casa.js:15",
+        "dwp__govuk-casa/src/core-plugins/edit-snapshot/src/configure.js:2",
+        "dwp__govuk-casa/src/core-plugins/edit-snapshot/src/configure.js:3",
+        "dwp__govuk-casa/src/core-plugins/edit-snapshot/src/index.js:1"
+      ]
+    },
+    "node-security/require-secure-credential-storage": {
+      "count": 60,
+      "repos": 5,
+      "samples": [
+        "moleculerjs__moleculer/test/unit/loggers/datadog.spec.js:10",
+        "moleculerjs__moleculer/test/unit/loggers/index.spec.js:10",
+        "moleculerjs__moleculer/test/unit/metrics/reporters/datadog.spec.js:11",
+        "moleculerjs__moleculer/test/unit/metrics/reporters/index.spec.js:7"
+      ]
+    },
+    "import-next/no-dynamic-require": {
+      "count": 59,
+      "repos": 18,
+      "samples": [
+        "OfficeDev__microsoft-teams-library-js/tools/cli/collectBundleAnalysis.js:53",
+        "OfficeDev__microsoft-teams-library-js/tools/cli/preRelease.js:86",
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:163",
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:163"
+      ]
+    },
+    "modularity/no-external-api-calls-in-utils": {
+      "count": 55,
+      "repos": 8,
+      "samples": [
+        "PostHog__context-mill/scripts/lib/skill-generator.js:470",
+        "nasa__earthdata-search/serverless/src/scaleImage/utils/downloadImageFromSource.js:12",
+        "nightscout__cgm-remote-monitor/lib/plugins/maker.js:110",
+        "nightscout__cgm-remote-monitor/lib/plugins/pushover.js:81"
+      ]
+    },
+    "node-security/no-shell-injection": {
+      "count": 47,
+      "repos": 8,
+      "samples": [
+        "FastyBird__smart-panel/.github/scripts/monorepo-version-sync.js:64",
+        "FastyBird__smart-panel/.github/scripts/npm-version-script.js:56",
+        "Shopify__hydrogen/.changeset/enforce-calver-ci.js:103",
+        "alexispurslane__vessel/lint-rules/similarity-ts-rule.js:137"
+      ]
+    },
+    "browser-security/no-http-urls": {
+      "count": 47,
+      "repos": 8,
+      "samples": [
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:183",
+        "Sunnyside-UP-GmbH__lucy-cli/files/currents.config.js:4",
+        "eclipse-theia__theia-cloud/node/.prettierrc.js:2",
+        "eclipse-theia__theia-cloud/theia/.prettierrc.js:2"
+      ]
+    },
+    "browser-security/no-unescaped-url-parameter": {
+      "count": 46,
+      "repos": 5,
+      "samples": [
+        "Simbiat__simbiat.ru/public/assets/app.js:3",
+        "Simbiat__simbiat.ru/public/assets/app.js:3",
+        "Simbiat__simbiat.ru/public/assets/app.js:3",
+        "Simbiat__simbiat.ru/public/assets/app.js:3"
+      ]
+    },
+    "node-security/no-dynamic-require": {
+      "count": 43,
+      "repos": 15,
+      "samples": [
+        "OfficeDev__microsoft-teams-library-js/tools/cli/collectBundleAnalysis.js:53",
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:163",
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:163",
+        "Shopify__hydrogen/packages/hydrogen/src/cache/InMemoryCache.example.js:34"
+      ]
+    },
+    "node-security/require-secure-deletion": {
+      "count": 42,
+      "repos": 3,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:50",
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:53",
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:88",
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:91"
+      ]
+    },
+    "import-next/no-barrel-file": {
+      "count": 38,
+      "repos": 9,
+      "samples": [
+        "SpringRoll__SpringRoll/src/hints/index.js:1",
+        "SpringRoll__SpringRoll/src/index.js:1",
+        "SpringRoll__SpringRoll/src/localization/captions/index.js:1",
+        "SpringRoll__SpringRoll/src/localization/captions/renderers/index.js:1"
+      ]
+    },
+    "node-security/no-unsafe-buffer-alloc": {
+      "count": 36,
+      "repos": 5,
+      "samples": [
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:3888",
+        "cncjs__cncjs/src/app/lib/three/STLLoader.js:320",
+        "emulsify-ds__emulsify-core/config/vite/plugins/assets/output-freshness.js:93",
+        "emulsify-ds__emulsify-core/config/vite/plugins/assets/output-freshness.js:94"
+      ]
+    },
+    "secure-coding/no-format-string-injection": {
+      "count": 35,
+      "repos": 12,
+      "samples": [
+        "PostHog__context-mill/scripts/dev-server.js:285",
+        "Shopify__cli/bin/create-doc-pr.js:48",
+        "Shopify__cli/bin/create-homebrew-pr.js:97",
+        "Shopify__cli/bin/create-notification-pr.js:93"
+      ]
+    },
+    "node-security/detect-child-process": {
+      "count": 33,
+      "repos": 4,
+      "samples": [
+        "boostercloud__booster/common/scripts/install-run.js:68",
+        "emulsify-ds__emulsify-core/.storybook/main.test.js:44",
+        "emulsify-ds__emulsify-core/.storybook/main.test.js:92",
+        "emulsify-ds__emulsify-core/.storybook/main.test.js:130"
+      ]
+    },
+    "express-security/require-csrf-protection": {
+      "count": 30,
+      "repos": 2,
+      "samples": [
+        "cncjs__cncjs/src/server/app.js:251",
+        "cncjs__cncjs/src/server/app.js:260",
+        "cncjs__cncjs/src/server/app.js:261",
+        "cncjs__cncjs/src/server/app.js:265"
+      ]
+    },
+    "modernization/prefer-event-target": {
+      "count": 29,
+      "repos": 4,
+      "samples": [
+        "cncjs__cncjs/src/app/lib/combokeys.js:532",
+        "cncjs__cncjs/src/app/lib/immutable-store.js:4",
+        "cncjs__cncjs/src/app/widgets/Axes/ShuttleControl.js:13",
+        "cncjs__cncjs/src/server/controllers/Grbl/GrblRunner.js:19"
+      ]
+    },
+    "node-security/detect-eval-with-expression": {
+      "count": 28,
+      "repos": 11,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:518",
+        "Shopify__cli/packages/theme/assets/speedscope/demangle-cpp.1768f4cc.js:2",
+        "Shopify__cli/packages/theme/assets/speedscope/import.bcbb2033.js:66",
+        "cncjs__cncjs/src/server/lib/evaluate-expression.js:235"
+      ]
+    },
+    "secure-coding/no-improper-sanitization": {
+      "count": 28,
+      "repos": 8,
+      "samples": [
+        "PostHog__context-mill/scripts/visual-dags.js:72",
+        "aemsites__idfc/scripts/sidekick-library.js:9117",
+        "aemsites__idfc/tools/sidekick/library/index.js:7509",
+        "auth0__express-openid-connect/examples/cte-session-transfer.js:194"
+      ]
+    },
+    "browser-security/no-eval": {
+      "count": 26,
+      "repos": 9,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:518",
+        "Shopify__cli/packages/theme/assets/speedscope/demangle-cpp.1768f4cc.js:2",
+        "Shopify__cli/packages/theme/assets/speedscope/import.bcbb2033.js:66",
+        "cncjs__cncjs/src/server/lib/evaluate-expression.js:235"
+      ]
+    },
+    "browser-security/no-clickjacking": {
+      "count": 26,
+      "repos": 8,
+      "samples": [
+        "aemsites__idfc/scripts/sidekick-library.js:8830",
+        "aemsites__idfc/tools/sidekick/library/index.js:7487",
+        "macCesar__purgeTSS/src/shared/helpers/animation.js:239",
+        "macCesar__purgeTSS/src/shared/helpers/animation.js:240"
+      ]
+    },
+    "express-security/no-missing-security-headers": {
+      "count": 25,
+      "repos": 8,
+      "samples": [
+        "animir__node-rate-limiter-flexible/lib/ExpressBruteFlexible.js:310",
+        "auth0__express-openid-connect/lib/context.js:1185",
+        "cncjs__cncjs/src/server/app.js:52",
+        "dwp__govuk-casa/examples/barebones/app.js:63"
+      ]
+    },
+    "secure-coding/require-backend-authorization": {
+      "count": 25,
+      "repos": 6,
+      "samples": [
+        "auth0__express-openid-connect/docs/assets/main.js:6",
+        "nightscout__cgm-remote-monitor/lib/client/hashauth.js:35",
+        "nightscout__cgm-remote-monitor/lib/client/hashauth.js:36",
+        "nightscout__cgm-remote-monitor/lib/client/hashauth.js:192"
+      ]
+    },
+    "node-security/no-self-signed-certs": {
+      "count": 25,
+      "repos": 3,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/test/conf.js:23",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:281",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:317",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:481"
+      ]
+    },
+    "mongodb-security/require-schema-validation": {
+      "count": 25,
+      "repos": 1,
+      "samples": [
+        "spare8__chatbot/models/VSFile.js:15",
+        "spare8__chatbot/models/VSFile.js:19",
+        "spare8__chatbot/models/VSFile.js:22",
+        "spare8__chatbot/models/assistant.js:13"
+      ]
+    },
+    "jwt/require-max-age": {
+      "count": 24,
+      "repos": 7,
+      "samples": [
+        "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
+        "auth0__express-openid-connect/lib/context.js:1203",
+        "cncjs__cncjs/src/server/api/api.users.js:110",
+        "cncjs__cncjs/src/server/app.js:230"
+      ]
+    },
+    "secure-coding/no-hardcoded-credentials": {
+      "count": 24,
+      "repos": 7,
+      "samples": [
+        "Zondax__ledger-polkadot/tests_integration/gen_dot_vector.js:6",
+        "Zondax__ledger-polkadot/tests_integration/gen_dot_vector.js:7",
+        "boostercloud__booster/website/docusaurus.config.js:184",
+        "cityssm__eslint-config-cityssm/samples/main.sample.js:33"
+      ]
+    },
+    "jwt/require-audience-validation": {
+      "count": 23,
+      "repos": 6,
+      "samples": [
+        "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
+        "cncjs__cncjs/src/server/api/api.users.js:110",
+        "cncjs__cncjs/src/server/app.js:230",
+        "nasa__earthdata-search/serverless/src/util/authorizer/validateToken.js:52"
+      ]
+    },
+    "jwt/require-algorithm-whitelist": {
+      "count": 22,
+      "repos": 5,
+      "samples": [
+        "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
+        "cncjs__cncjs/src/server/api/api.users.js:110",
+        "cncjs__cncjs/src/server/app.js:230",
+        "nightscout__cgm-remote-monitor/lib/server/enclave.js:65"
+      ]
+    },
+    "jwt/require-issuer-validation": {
+      "count": 22,
+      "repos": 5,
+      "samples": [
+        "Zerkjito__movie-watchlist-api/src/utils/jwt.js:16",
+        "cncjs__cncjs/src/server/api/api.users.js:110",
+        "cncjs__cncjs/src/server/app.js:230",
+        "nightscout__cgm-remote-monitor/lib/server/enclave.js:65"
+      ]
+    },
+    "node-security/no-data-in-temp-storage": {
+      "count": 21,
+      "repos": 4,
+      "samples": [
+        "PostHog__context-mill/scripts/visual-dags.js:26",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:394",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:519",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/change-user.test.js:153"
+      ]
+    },
+    "node-security/no-math-random-crypto": {
+      "count": 21,
+      "repos": 7,
+      "samples": [
+        "macCesar__purgeTSS/test-project/app/lib/fontawesome.js:52",
+        "macCesar__purgeTSS/test-project/app/lib/fontawesome.js:57",
+        "macCesar__purgeTSS/test-project/app/lib/framework7icons.js:52",
+        "macCesar__purgeTSS/test-project/app/lib/framework7icons.js:57"
+      ]
+    },
+    "lambda-security/no-missing-authorization-check": {
+      "count": 21,
+      "repos": 3,
+      "samples": [
+        "moleculerjs__moleculer/src/service.js:223",
+        "nasa__earthdata-search/serverless/src/cleanupOldRetrievals/handler.js:28",
+        "nasa__earthdata-search/serverless/src/cleanupOldRetrievals/handler.js:33",
+        "nasa__earthdata-search/serverless/src/edlCallback/handler.js:81"
+      ]
+    },
+    "secure-coding/require-secure-defaults": {
+      "count": 20,
+      "repos": 7,
+      "samples": [
+        "auth0__express-openid-connect/test/appSession.tests.js:351",
+        "auth0__express-openid-connect/test/appSession.tests.js:370",
+        "auth0__express-openid-connect/test/config.tests.js:145",
+        "auth0__express-openid-connect/test/config.tests.js:179"
+      ]
+    },
+    "browser-security/require-csp-headers": {
+      "count": 20,
+      "repos": 6,
+      "samples": [
+        "cncjs__cncjs/src/server/lib/middleware/errnotfound.js:29",
+        "cncjs__cncjs/src/server/lib/middleware/errserver.js:41",
+        "dwp__govuk-casa/examples/barebones/app.js:84",
+        "dwp__govuk-casa/examples/barebones/app.js:93"
+      ]
+    },
+    "secure-coding/no-graphql-injection": {
+      "count": 20,
+      "repos": 4,
+      "samples": [
+        "emulsify-ds__emulsify-core/config/vite/plugins/twig/virtual-twig-globs.js:50",
+        "mariadb-corporation__mariadb-connector-nodejs/lib/io/packet-output-stream.js:743",
+        "paypal__paypal-messaging-components/src/server/v2/flexStyles.js:111",
+        "paypal__paypal-messaging-components/src/server/v2/flexStyles.js:172"
+      ]
+    },
+    "import-next/no-amd": {
+      "count": 18,
+      "repos": 8,
+      "samples": [
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:238",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:464",
+        "18F__uswds-jekyll/assets/uswds/js/uswds.js:5809",
+        "Shopify__cli/packages/theme/assets/speedscope/demangle-cpp.1768f4cc.js:1"
+      ]
+    },
+    "secure-coding/no-unsafe-deserialization": {
+      "count": 18,
+      "repos": 8,
+      "samples": [
+        "Shopify__cli/packages/theme/assets/speedscope/demangle-cpp.1768f4cc.js:2",
+        "cncjs__cncjs/src/server/lib/evaluate-expression.js:235",
+        "emulsify-ds__emulsify-core/config/vite/test-utils/plugins.js:65",
+        "emulsify-ds__emulsify-core/config/vite/test-utils/plugins.js:211"
+      ]
+    },
+    "modernization/no-instanceof-array": {
+      "count": 17,
+      "repos": 5,
+      "samples": [
+        "Ontotext-AD__graphdb.js/src/model/term-converter.js:160",
+        "Ontotext-AD__graphdb.js/src/model/term-converter.js:248",
+        "Shopify__cli/packages/theme/assets/speedscope/import.bcbb2033.js:44",
+        "nightscout__cgm-remote-monitor/lib/plugins/mmconnect.js:104"
+      ]
+    },
+    "jwt/no-weak-secret": {
+      "count": 16,
+      "repos": 1,
+      "samples": [
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:127",
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:142",
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:160",
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:173"
+      ]
+    },
+    "jwt/no-hardcoded-secret": {
+      "count": 16,
+      "repos": 1,
+      "samples": [
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:127",
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:142",
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:160",
+        "twilio__twilio-node/spec/unit/jwt/AccessToken.spec.js:173"
+      ]
+    },
+    "import-next/no-useless-path-segments": {
+      "count": 15,
+      "repos": 7,
+      "samples": [
+        "SpringRoll__SpringRoll/src/localization/captions/CaptionFactory.js:1",
+        "auth0__express-openid-connect/test/attemptSilentLogin.tests.js:6",
+        "auth0__express-openid-connect/test/backchannelLogout.tests.js:6",
+        "auth0__express-openid-connect/test/logout.tests.js:6"
+      ]
+    },
+    "browser-security/no-missing-security-headers": {
+      "count": 15,
+      "repos": 8,
+      "samples": [
+        "animir__node-rate-limiter-flexible/lib/ExpressBruteFlexible.js:310",
+        "cncjs__cncjs/src/server/api/api.gcode.js:94",
+        "emulsify-ds__emulsify-core/.storybook/main-static-assets.js:181",
+        "emulsify-ds__emulsify-core/scripts/a11y.js:155"
+      ]
+    },
+    "secure-coding/no-sensitive-data-exposure": {
+      "count": 14,
+      "repos": 7,
+      "samples": [
+        "Shopify__cli/bin/github-utils.js:37",
+        "Shopify__cli/bin/github-utils.js:43",
+        "macCesar__purgeTSS/src/core/branding/pieces.js:397",
+        "moleculerjs__moleculer-io/examples/full/index.js:166"
+      ]
+    },
+    "node-security/no-timing-unsafe-compare": {
+      "count": 14,
+      "repos": 4,
+      "samples": [
+        "Zerkjito__movie-watchlist-api/src/controllers/authController.js:137",
+        "Zerkjito__movie-watchlist-api/src/middleware/csrf.js:11",
+        "mpx-ecology__eslint-plugin-mpx/lib/utils/indent-common.js:1075",
+        "mpx-ecology__eslint-plugin-mpx/lib/utils/indent-common.js:1169"
+      ]
+    },
+    "node-security/detect-non-literal-fs-filename": {
+      "count": 13,
+      "repos": 4,
+      "samples": [
+        "Shopify__cli/bin/update-bugsnag.js:33",
+        "Shopify__cli/bin/update-bugsnag.js:36",
+        "emulsify-ds__emulsify-core/scripts/test-custom-element-storybook.js:53",
+        "segmentio__functions-library/buildpack/boreal/index.js:228"
+      ]
+    },
+    "secure-coding/no-xpath-injection": {
+      "count": 13,
+      "repos": 4,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/util/echoForms/getNameValuePairsForResample.js:13",
+        "nasa__earthdata-search/serverless/src/util/echoForms/getNameValuePairsForResample.js:14",
+        "nasa__earthdata-search/serverless/src/util/removeSpatialFromAccessMethod.js:12",
+        "postmanlabs__postman-code-generators/codegens/rust-reqwest/lib/reqwest.js:64"
+      ]
+    },
+    "node-security/require-stream-error-handler": {
+      "count": 12,
+      "repos": 7,
+      "samples": [
+        "PostHog__context-mill/scripts/dev-server.js:280",
+        "PostHog__context-mill/scripts/lib/build-phases.js:86",
+        "emulsify-ds__emulsify-core/scripts/a11y.js:159",
+        "mariadb-corporation__mariadb-connector-nodejs/tools/generate-mariadb.js:30"
+      ]
+    },
+    "node-security/no-zip-slip": {
+      "count": 12,
+      "repos": 3,
+      "samples": [
+        "PostHog__context-mill/scripts/lib/build-phases.js:332",
+        "PostHog__context-mill/scripts/lib/build-phases.js:394",
+        "PostHog__context-mill/scripts/mirror-dist.js:214",
+        "PostHog__context-mill/scripts/scan-warlock.js:151"
+      ]
+    },
+    "node-security/no-unsafe-dynamic-require": {
+      "count": 11,
+      "repos": 4,
+      "samples": [
+        "auth0__express-openid-connect/examples/run_example.js:41",
+        "moleculerjs__moleculer/benchmark/index.js:3",
+        "moleculerjs__moleculer/dev/index.js:6",
+        "moleculerjs__moleculer/examples/index.js:6"
+      ]
+    },
+    "import-next/max-dependencies": {
+      "count": 10,
+      "repos": 8,
+      "samples": [
+        "Shopify__cli/packages/theme/assets/speedscope/import.bcbb2033.js:1",
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:1",
+        "Shopify__hydrogen/eslint.config.js:1",
+        "Shopify__hydrogen/templates/skeleton/eslint.config.js:1"
+      ]
+    },
+    "import-next/no-deprecated": {
+      "count": 10,
+      "repos": 2,
+      "samples": [
+        "macCesar__purgeTSS/src/cli/utils/file-operations.js:104",
+        "macCesar__purgeTSS/src/cli/utils/file-operations.js:104",
+        "macCesar__purgeTSS/src/shared/config-manager.js:248",
+        "macCesar__purgeTSS/src/shared/config-manager.js:248"
+      ]
+    },
+    "browser-security/no-tracking-without-consent": {
+      "count": 9,
+      "repos": 1,
+      "samples": [
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:50",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:60",
+        "PostHog__context-mill/example-apps/javascript-web/src/main.js:39",
+        "PostHog__context-mill/example-apps/javascript-web/src/main.js:41"
+      ]
+    },
+    "express-security/no-sensitive-data-in-query": {
+      "count": 9,
+      "repos": 3,
+      "samples": [
+        "auth0__express-openid-connect/examples/cte-session-transfer.js:165",
+        "auth0__express-openid-connect/examples/cte-session-transfer.js:167",
+        "nightscout__cgm-remote-monitor/lib/api/status.js:22",
+        "nightscout__cgm-remote-monitor/lib/api/status.js:22"
+      ]
+    },
+    "import-next/no-named-default": {
+      "count": 9,
+      "repos": 4,
+      "samples": [
+        "dwp__govuk-casa/examples/dwp-frontend/app.js:1",
+        "dwp__govuk-casa/tests/lib/JourneyContext.test.js:2",
+        "dwp__govuk-casa/tests/lib/Plan.test.js:2",
+        "dwp__govuk-casa/tests/lib/configuration-ingestor.test.js:1"
+      ]
+    },
+    "secure-coding/no-directive-injection": {
+      "count": 9,
+      "repos": 3,
+      "samples": [
+        "moleculerjs__moleculer/dev/i18n-validator.js:25",
+        "moleculerjs__moleculer/dev/i18n-validator.js:34",
+        "okta__okta-signin-widget/Gruntfile.js:135",
+        "okta__okta-signin-widget/Gruntfile.js:202"
+      ]
+    },
+    "mongodb-security/no-unsafe-query": {
+      "count": 9,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/server/activity.js:110",
+        "nightscout__cgm-remote-monitor/lib/server/food.js:139",
+        "nightscout__cgm-remote-monitor/lib/server/profile.js:129",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:236"
+      ]
+    },
+    "lambda-security/require-timeout-handling": {
+      "count": 8,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/edlCallback/handler.js:21",
+        "nasa__earthdata-search/serverless/src/generateGibsTags/handler.js:23",
+        "nasa__earthdata-search/serverless/src/processColorMap/handler.js:38",
+        "nasa__earthdata-search/serverless/src/processTag/handler.js:21"
+      ]
+    },
+    "secure-coding/no-unsafe-regex-construction": {
+      "count": 7,
+      "repos": 7,
+      "samples": [
+        "Ontotext-AD__graphdb.js/docs/scripts/prettify/prettify.js:6",
+        "digital-blueprint__esign-app/src/utils.js:130",
+        "emulsify-ds__emulsify-core/config/vite/plugins/require-context.js:228",
+        "moleculerjs__moleculer/src/serializers/json-extended.js:116"
+      ]
+    },
+    "node-security/prefer-native-crypto": {
+      "count": 7,
+      "repos": 3,
+      "samples": [
+        "Zerkjito__movie-watchlist-api/src/controllers/authController.js:2",
+        "Zerkjito__movie-watchlist-api/src/controllers/userController.js:7",
+        "cncjs__cncjs/src/server/api/api.users.js:2",
+        "cncjs__cncjs/src/server/index.js:6"
+      ]
+    },
+    "browser-security/no-password-in-url": {
+      "count": 7,
+      "repos": 3,
+      "samples": [
+        "nasa__earthdata-search/static/src/js/util/__tests__/getSafeRedirectUrl.test.js:79",
+        "postmanlabs__postman-code-generators/codegens/curl/test/unit/convert.test.js:670",
+        "postmanlabs__postman-code-generators/codegens/java-unirest/test/unit/convert.test.js:442",
+        "postmanlabs__postman-code-generators/codegens/postman-cli/test/unit/convert.test.js:670"
+      ]
+    },
+    "mongodb-security/require-projection": {
+      "count": 7,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:237",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:283",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:394"
+      ]
+    },
+    "mongodb-security/require-lean-queries": {
+      "count": 7,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:237",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:283",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:394"
+      ]
+    },
+    "secure-coding/no-unlimited-resource-allocation": {
+      "count": 7,
+      "repos": 4,
+      "samples": [
+        "nwutils__getter/src/decompress.js:21",
+        "paypal__paypal-messaging-components/utils/devServerProxy/messages.js:231",
+        "spare8__chatbot/server/admin/routes.js:18",
+        "tata1mg__catalyst-core/docs/server/controller/collection.js:352"
+      ]
+    },
+    "express-security/no-client-controlled-authorization": {
+      "count": 6,
+      "repos": 1,
+      "samples": [
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:103",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:128",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:150",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:166"
+      ]
+    },
+    "mongodb-security/no-select-sensitive-fields": {
+      "count": 6,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:237",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:283",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:394",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:438"
+      ]
+    },
+    "express-security/no-static-root-exposure": {
+      "count": 6,
+      "repos": 1,
+      "samples": [
+        "tata1mg__catalyst-core/apps/catalyst-core-test/server/server.js:10",
+        "tata1mg__catalyst-core/docs/server/index.js:46",
+        "tata1mg__catalyst-core/docs/server/index.js:50",
+        "tata1mg__catalyst-core/examples/test-video-hook-poc/server/server.js:9"
+      ]
+    },
+    "secure-coding/no-log-injection": {
+      "count": 5,
+      "repos": 5,
+      "samples": [
+        "PostHog__context-mill/scripts/dev-server.js:285",
+        "dwp__govuk-casa/examples/barebones/app.js:39",
+        "moleculerjs__moleculer/dev/sharding.js:20",
+        "moleculerjs__moleculer-io/src/index.js:140"
+      ]
+    },
+    "browser-security/require-blob-url-revocation": {
+      "count": 5,
+      "repos": 4,
+      "samples": [
+        "Shopify__cli/packages/theme/assets/speedscope/speedscope.6f107512.js:171",
+        "Simbiat__simbiat.ru/public/assets/app.js:3",
+        "nasa__earthdata-search/static/src/js/util/files/constructDownloadableFile.js:10",
+        "tata1mg__catalyst-core/packages/catalyst-ai/src/useWebAI.js:172"
+      ]
+    },
+    "browser-security/require-mime-type-validation": {
+      "count": 5,
+      "repos": 2,
+      "samples": [
+        "Simbiat__simbiat.ru/public/assets/app.js:5",
+        "Simbiat__simbiat.ru/public/assets/app.js:5",
+        "Simbiat__simbiat.ru/public/assets/app.js:7",
+        "Simbiat__simbiat.ru/public/assets/app.js:9"
+      ]
+    },
+    "express-security/no-exposed-debug-endpoints": {
+      "count": 5,
+      "repos": 3,
+      "samples": [
+        "auth0__express-openid-connect/examples/routes.js:18",
+        "nightscout__cgm-remote-monitor/lib/api3/index.js:81",
+        "spare8__chatbot/server/admin/configRoutes.js:18",
+        "spare8__chatbot/server/admin/configRoutes.js:19"
+      ]
+    },
+    "express-security/require-route-authentication": {
+      "count": 5,
+      "repos": 3,
+      "samples": [
+        "auth0__express-openid-connect/test/callback.tests.js:923",
+        "auth0__express-openid-connect/test/fixture/server.js:26",
+        "nightscout__cgm-remote-monitor/lib/api/index.js:54",
+        "stripe__stripe-terminal-react-native/docs/integration-builder/server.js:40"
+      ]
+    },
+    "express-security/no-error-details-in-response": {
+      "count": 5,
+      "repos": 2,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/api2/notifications-v2.js:20",
+        "tata1mg__catalyst-core/docs/server/controller/collection.js:327",
+        "tata1mg__catalyst-core/docs/server/controller/documentController.js:125",
+        "tata1mg__catalyst-core/docs/server/controller/documentController.js:148"
+      ]
+    },
+    "mongodb-security/no-bypass-middleware": {
+      "count": 5,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:97",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:236",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:282",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:444"
+      ]
+    },
+    "browser-security/require-postmessage-origin-check": {
+      "count": 4,
+      "repos": 4,
+      "samples": [
+        "IGNF__cartes.gouv.fr-entree-carto/public/mockServiceWorker.js:23",
+        "SpringRoll__SpringRoll/src/state/UserData.spec.js:6",
+        "okta__okta-signin-widget/playground/mockServiceWorker.js:22",
+        "paypal__paypal-messaging-components/src/components/modal/v2/lib/zoid-polyfill.js:87"
+      ]
+    },
+    "drizzle-security/no-unscoped-mutation": {
+      "count": 4,
+      "repos": 1,
+      "samples": [
+        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzleNonAtomicPostgres.test.js:15",
+        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzleNonAtomicPostgres.test.js:19",
+        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzlePostgres.test.js:15",
+        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzlePostgres.test.js:19"
+      ]
+    },
+    "express-security/no-insecure-cookie-options": {
+      "count": 4,
+      "repos": 2,
+      "samples": [
+        "dwp__govuk-casa/examples/barebones/plugins/cookie-consent/plugin.js:30",
+        "dwp__govuk-casa/examples/barebones/plugins/cookie-consent/plugin.js:47",
+        "dwp__govuk-casa/examples/barebones/plugins/cookie-consent/plugin.js:55",
+        "tata1mg__catalyst-core/docs/server/controller/authController.js:34"
+      ]
+    },
+    "import-next/group-exports": {
+      "count": 4,
+      "repos": 3,
+      "samples": [
+        "macCesar__purgeTSS/src/cli/utils/project-detection.js:35",
+        "macCesar__purgeTSS/src/core/builders/auto-utilities-builder.js:268",
+        "okta__okta-auth-js/samples/test/util/index.js:23",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/MetaTable/presets/index.js:6"
+      ]
+    },
+    "mongodb-security/no-unbounded-find": {
+      "count": 4,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:394",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:438",
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:486"
+      ]
+    },
+    "express-security/require-rate-limiting": {
+      "count": 4,
+      "repos": 2,
+      "samples": [
+        "okta__okta-auth-js/samples/generated/express-web-no-oidc/server.js:28",
+        "okta__okta-auth-js/samples/generated/express-web-with-oidc/server.js:44",
+        "okta__okta-auth-js/test/apps/app/server/index.js:52",
+        "stripe__stripe-terminal-react-native/docs/integration-builder/server.js:33"
+      ]
+    },
+    "secure-coding/no-xxe-injection": {
+      "count": 3,
+      "repos": 2,
+      "samples": [
+        "Simbiat__simbiat.ru/public/assets/app.js:2",
+        "nightscout__cgm-remote-monitor/tests/api3.renderer.test.js:117",
+        "nightscout__cgm-remote-monitor/tests/api3.renderer.test.js:199"
+      ]
+    },
+    "secure-coding/no-sql-injection": {
+      "count": 3,
+      "repos": 1,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/big-query.test.js:146",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/big-query.test.js:147",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/pipelining.test.js:111"
+      ]
+    },
+    "node-security/no-dynamic-algorithm-selection": {
+      "count": 3,
+      "repos": 2,
+      "samples": [
+        "moleculerjs__moleculer/src/middlewares/transmit/encryption.js:41",
+        "moleculerjs__moleculer/src/middlewares/transmit/encryption.js:54",
+        "nightscout__cgm-remote-monitor/lib/server/enclave.js:33"
+      ]
+    },
+    "lambda-security/no-exposed-error-details": {
+      "count": 3,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/generateColorMaps/handler.js:30",
+        "nasa__earthdata-search/serverless/src/generateColorMaps/handler.js:38",
+        "nasa__earthdata-search/serverless/src/getShapefile/handler.js:63"
+      ]
+    },
+    "lambda-security/no-error-swallowing": {
+      "count": 3,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/generateGibsTags/handler.js:112",
+        "nasa__earthdata-search/serverless/src/storeUserData/handler.js:55",
+        "nasa__earthdata-search/serverless/src/util/startOrderStatusUpdateWorkflow.js:39"
+      ]
+    },
+    "express-security/no-host-header-in-links": {
+      "count": 3,
+      "repos": 2,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/server/app.js:37",
+        "okta__okta-auth-js/samples/generated/express-embedded-auth-with-sdk/web-server/routes/login.js:88",
+        "okta__okta-auth-js/samples/generated/express-embedded-sign-in-widget/web-server/routes/login.js:63"
+      ]
+    },
+    "import-next/no-mutable-exports": {
+      "count": 2,
+      "repos": 2,
+      "samples": [
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:1702",
+        "macCesar__purgeTSS/src/shared/logger.js:20"
+      ]
+    },
+    "prisma-security/no-unscoped-mutation": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "animir__node-rate-limiter-flexible/test/RateLimiterPrisma/Postgres/RateLimiterPrismaPostgres.test.js:18",
+        "animir__node-rate-limiter-flexible/test/RateLimiterPrisma/Postgres/RateLimiterPrismaPostgres.test.js:22"
+      ]
+    },
+    "jwt/require-expiration": {
+      "count": 2,
+      "repos": 2,
+      "samples": [
+        "auth0__express-openid-connect/end-to-end/fixture/helpers.js:116",
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:298"
+      ]
+    },
+    "secure-coding/no-electron-security-issues": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "cncjs__cncjs/src/main.js:55",
+        "cncjs__cncjs/src/main.js:56"
+      ]
+    },
+    "express-security/no-permissive-trust-proxy": {
+      "count": 2,
+      "repos": 2,
+      "samples": [
+        "cncjs__cncjs/src/server/app.js:77",
+        "nightscout__cgm-remote-monitor/lib/server/app.js:28"
+      ]
+    },
+    "browser-security/no-unsafe-inline-csp": {
+      "count": 2,
+      "repos": 2,
+      "samples": [
+        "digital-blueprint__esign-app/rolldown.config.js:127",
+        "okta__okta-signin-widget/Gruntfile.js:267"
+      ]
+    },
+    "vercel-ai-security/require-request-timeout": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:132",
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
+      ]
+    },
+    "vercel-ai-security/require-max-tokens": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:132",
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
+      ]
+    },
+    "browser-security/no-incomplete-url-sanitization": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/tests/support/setupTests.js:8",
+        "nasa__earthdata-search/tests/support/setupTests.js:28"
+      ]
+    },
+    "express-security/no-cors-credentials-wildcard": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "okta__okta-signin-widget/playground/mocks/server.js:73",
+        "okta__okta-signin-widget/playground/mocks/server.js:79"
+      ]
+    },
+    "mongodb-security/require-tls-connection": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "spare8__chatbot/server/admin/controller/config/testMongoDB.js:12",
+        "spare8__chatbot/server/admin/index.js:33"
+      ]
+    },
+    "mongodb-security/require-auth-mechanism": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "spare8__chatbot/server/admin/controller/config/testMongoDB.js:12",
+        "spare8__chatbot/server/admin/index.js:33"
+      ]
+    },
+    "node-security/no-deprecated-buffer": {
+      "count": 2,
+      "repos": 2,
+      "samples": [
+        "universal-material__universal-material-web/gulp-tasks/scripts.js:39",
+        "ytsaurus__ytsaurus-ui/packages/javascript-wrapper/lib/utils/setup.js:137"
+      ]
+    },
+    "modularity/no-mutable-exports": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "DataDog__browser-sdk/packages/browser-worker/src/domain/deflate.js:1702"
+      ]
+    },
+    "import-next/no-absolute-path": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "Simbiat__simbiat.ru/public/assets/app.js:3"
+      ]
+    },
+    "browser-security/no-jwt-in-storage": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "adadaptedinc__adadapted-js-sdk/src/index.js:1018"
+      ]
+    },
+    "sqlite-security/no-unsafe-query": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "cityssm__eslint-config-cityssm/samples/database.sample.js:9"
+      ]
+    },
+    "node-security/require-storage-encryption": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "cityssm__eslint-config-cityssm/samples/main.sample.js:34"
+      ]
+    },
+    "node-security/no-unbounded-decompression": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/lib/io/compression-input-stream.js:48"
+      ]
+    },
+    "lambda-security/no-unvalidated-event-body": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/edlCallback/handler.js:33"
+      ]
+    },
+    "vercel-ai-security/require-abort-signal": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
+      ]
+    },
+    "vercel-ai-security/require-error-handling": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
+      ]
+    },
+    "vercel-ai-security/require-audit-logging": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:256"
+      ]
+    },
+    "vercel-ai-security/require-validated-prompt": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:259"
+      ]
+    },
+    "jwt/no-decode-without-verify": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/util/authorizer/validateToken.js:31"
+      ]
+    },
+    "browser-security/no-disabled-certificate-validation": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nasa__earthdata-search/serverless/src/util/database/getDbConnectionConfig.js:35"
+      ]
+    },
+    "secure-coding/no-fail-open-auth": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:192"
+      ]
+    },
+    "jwt/no-sensitive-payload": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:298"
+      ]
+    },
+    "express-security/no-disabled-helmet-protections": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/server/app.js:93"
+      ]
+    },
+    "browser-security/no-insecure-redirects": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "okta__okta-auth-js/samples/generated/express-web-with-oidc/server.js:89"
+      ]
+    },
+    "browser-security/no-missing-cors-check": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "okta__okta-signin-widget/playground/mocks/server.js:79"
+      ]
+    },
+    "browser-security/no-client-side-auth-logic": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "passbolt__passbolt_styleguide/src/shared/models/entity/secretData/secretDataV5DefaultTotpEntity.js:102"
+      ]
+    },
+    "secure-coding/no-pii-in-logs": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "saas-js__saas-ui/packages/saas-ui-cli/lib/impl-RFWKV4NP.js:1"
+      ]
+    },
+    "node-security/no-arbitrary-file-access": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "segmentio__functions-library/buildpack/boreal/index.js:228"
+      ]
+    },
+    "express-security/require-helmet": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "tata1mg__catalyst-core/docs/server/index.js:15"
+      ]
+    },
+    "express-security/no-permissive-cors": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "tata1mg__catalyst-core/docs/server/index.js:26"
+      ]
+    }
+  },
+  "note": "Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; the repository list is `benchmarks/real-source-repos.json`. Firing is not catching — see the header of that script. Inline eslint-disable comments in the scanned source are ignored.",
+  "generated": "2026-08-26"
 }

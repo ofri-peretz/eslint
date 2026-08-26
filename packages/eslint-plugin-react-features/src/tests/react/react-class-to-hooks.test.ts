@@ -33,6 +33,7 @@ describe('react-class-to-hooks', () => {
       valid: [
         // Functional components
         {
+          name: 'a function component',
           code: 'function MyComponent() { return <div>Hello</div>; }',
         },
         {
@@ -54,6 +55,7 @@ describe('react-class-to-hooks', () => {
       valid: [],
       invalid: [
         {
+          name: 'a class component where the configuration wants a function',
           code: 'class MyComponent extends Component { }',
           errors: [
             {

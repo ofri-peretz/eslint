@@ -33,6 +33,7 @@ describe('require-default-props', () => {
       valid: [
         // All optional props have defaultProps
         {
+          name: 'defaults supplied',
           code: `
             class MyComponent extends Component {
               static propTypes = {
@@ -122,6 +123,7 @@ describe('require-default-props', () => {
       invalid: [
         // Optional prop without default
         {
+          name: 'an optional prop with no default',
           code: `
             class MyComponent extends Component {
               static propTypes = {

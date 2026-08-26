@@ -109,7 +109,8 @@ beforeAll(() => {
 // ruleTester.run() creates its own describe/it blocks - don't nest inside it()
 ruleTester.run('no-cycle', noCycle as any, { // eslint-disable-line @typescript-eslint/no-explicit-any
   valid: [
-    { 
+    {
+        name: 'an import that leads nowhere back',
         code: `import foo from './foo';`,
         filename: '/path/to/no-cycle.ts' 
     },
@@ -122,6 +123,7 @@ ruleTester.run('no-cycle', noCycle as any, { // eslint-disable-line @typescript-
 
   invalid: [
     {
+      name: 'two modules that import each other',
       code: `import b from './cycle-b';`,
       filename: '/path/to/cycle-a.ts',
       errors: [{ messageId: 'moduleSplit' }] 
