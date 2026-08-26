@@ -67,6 +67,27 @@ const SHARD = shardArg ? { index: Number(shardArg.split('/')[0]), of: Number(sha
  * and reading them costs more than every other file put together.
  */
 const MAX_FILE_BYTES = 200_000;
+
+/**
+ * A bundle is not somebody's source, whatever its size.
+ *
+ * `assets/uswds/js/uswds.js` is 180KB of concatenated vendor code, under the
+ * byte cap and responsible for the top four samples of the three
+ * highest-volume rules. Machine-packed output announces itself in its line
+ * lengths rather than its path — `dist/` and `vendor/` are conventions a
+ * stranger's repository is free to ignore.
+ */
+const MAX_LINE_CHARS = 2_000;
+function looksGenerated(file: string): boolean {
+  let head: string;
+  try {
+    head = fs.readFileSync(file, 'utf8').slice(0, 200_000);
+  } catch {
+    return true;
+  }
+  if (/^\s*(\/\/|\/\*)[^\n]*(@generated|DO NOT EDIT|auto-generated)/im.test(head.slice(0, 2_000))) return true;
+  return head.split('\n').some((line) => line.length > MAX_LINE_CHARS);
+}
 const STAMP = new Date().toISOString().slice(0, 10);
 
 const { repos } = JSON.parse(fs.readFileSync(REPOS, 'utf8')) as { repos: string[] };
@@ -199,13 +220,16 @@ for (const repo of present) walk(path.join(CACHE, repo.replace('/', '__')));
 files.sort();
 const oversized = files.filter((f) => {
   try {
-    return fs.statSync(f).size > MAX_FILE_BYTES;
+    if (fs.statSync(f).size > MAX_FILE_BYTES) return true;
   } catch {
     return true;
   }
+  return looksGenerated(f);
 });
 const scannable = files.filter((f) => !oversized.includes(f));
-say(`  ${files.length} files, ${oversized.length} skipped as generated (> ${MAX_FILE_BYTES / 1000}KB)\n`);
+say(
+  `  ${files.length} files, ${oversized.length} skipped as generated (over ${MAX_FILE_BYTES / 1000}KB, a line over ${MAX_LINE_CHARS} chars, or a generated header)\n`,
+);
 const mine = SHARD === null ? scannable : scannable.filter((_, i) => i % SHARD.of === SHARD.index);
 
 if (SHARD === null) {
@@ -311,7 +335,18 @@ for (let i = 0; i < mine.length; i += BATCH) {
       const hit = hits.get(ruleId) ?? { count: 0, repos: new Set<string>(), samples: [] };
       hit.count += 1;
       hit.repos.add(repo);
-      if (hit.samples.length < 4) hit.samples.push(`${rel}:${message.line}`);
+      /**
+       * One sample per repository, not the first four findings.
+       *
+       * The walk is alphabetical, so "first four" meant all four came from
+       * whichever repository sorts first — every sample for every rule was
+       * `18F/uswds-jekyll`, and for several rules all four were the same
+       * vendored bundle. Four rows that are really one file cannot show what a
+       * rule does across a corpus, which is the only reason to keep samples.
+       */
+      if (!hit.samples.some((existing) => existing.startsWith(`${repo}/`)) && hit.samples.length < 8) {
+        hit.samples.push(`${rel}:${message.line}`);
+      }
       hits.set(ruleId, hit);
     }
   }
