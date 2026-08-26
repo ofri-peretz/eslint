@@ -1,8 +1,8 @@
 {
   "bench": "ILB-Juliet",
   "benchVersion": "1.0",
-  "timestamp": "2026-08-26T00:36:58.541Z",
-  "methodologyCommit": "f183434c8297ef2c5cf6b67c8a42b2a0da9b5247",
+  "timestamp": "2026-08-26T03:31:20.799Z",
+  "methodologyCommit": "cfbf6f9f4d724376b81caf30a5f5235cc787fa43",
   "methodologyHash": "sha256:a81176710e7622fd28c6db6152abebfb5f72a80a18e66048eb29c2f54cc3d077",
   "methodologyPaths": [
     "benchmarks/score.ts",
@@ -22,7 +22,7 @@
     "platform": "darwin-arm64"
   },
   "preregistration": {
-    "methodologyCommit": "f183434c8297ef2c5cf6b67c8a42b2a0da9b5247",
+    "methodologyCommit": "cfbf6f9f4d724376b81caf30a5f5235cc787fa43",
     "methodologyHash": "sha256:a81176710e7622fd28c6db6152abebfb5f72a80a18e66048eb29c2f54cc3d077",
     "methodologyPaths": [
       "benchmarks/score.ts",
@@ -34,12 +34,9 @@
       "benchmarks/lib/toolchain.ts"
     ],
     "dirtyPaths": [
-      "benchmarks/corpus/CWE-022/safe/oauth-claims-extractor.js",
-      "benchmarks/corpus/CWE-022/safe/otel-propagation-extract.js",
-      "benchmarks/corpus/CWE-079/safe/dompurify-optional-chaining.js",
-      "benchmarks/corpus/CWE-798/safe/typeorm-migration-name.js"
+      "benchmarks/corpus/by-rule/"
     ],
-    "capturedAt": "2026-08-26T00:36:58.541Z",
+    "capturedAt": "2026-08-26T03:31:20.799Z",
     "paths": [
       "benchmarks/corpus",
       "benchmarks/suites",
@@ -51,16 +48,16 @@
   },
   "cost": {},
   "effectiveness": {
-    "f1": 0.9787234042553191,
-    "precision": 0.9583333333333334,
+    "f1": 0.9928057553956835,
+    "precision": 0.9857142857142858,
     "recall": 1,
-    "ciLow": 0.9494949494949495,
+    "ciLow": 0.9790209790209791,
     "ciHigh": 1,
     "ciMethod": "bootstrap"
   },
   "latency": {},
-  "weightedF1": 0.9767441860465117,
-  "weightedPrecision": 0.9545454545454546,
+  "weightedF1": 0.9932432432432432,
+  "weightedPrecision": 0.9865771812080537,
   "weightedRecall": 1,
   "cwes": [
     {
@@ -70,7 +67,7 @@
       "fn": 0,
       "tn": 5,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 5,
       "details": {
         "truePositives": [
           "incomplete-hostname-regexp.js",
@@ -88,7 +85,13 @@
           "url-parse-hostname.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "anchored-origin-regexp.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "endswith-boundary.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "escaped-anchored-hostname.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "scheme-allowlist.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "url-parse-hostname.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -101,7 +104,7 @@
       "fn": 0,
       "tn": 4,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 4,
       "details": {
         "truePositives": [
           "path-join-user.js",
@@ -115,7 +118,12 @@
           "static-path.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "dirname-path.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "oauth-claims-extractor.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?]",
+          "otel-propagation-extract.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-unresolved [?], import-next/no-extraneous-dependencies [?]",
+          "static-path.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -140,7 +148,7 @@
         ],
         "falsePositives": [],
         "offCategoryFindings": [
-          "render-explicit-locals.js -> secure-coding/no-missing-authentication [CWE-287]"
+          "render-explicit-locals.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?], import-next/no-unresolved [?], secure-coding/no-missing-authentication [CWE-287], modularity/enforce-rest-conventions [?]"
         ]
       },
       "precision": 1,
@@ -154,7 +162,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "exec-concat.js",
@@ -166,7 +174,10 @@
           "execFile-array.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "exec-static.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "execFile-array.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -178,8 +189,8 @@
       "tp": 2,
       "fn": 0,
       "tn": 2,
-      "fp": 1,
-      "fpAnyRule": 1,
+      "fp": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "document-write-dynamic.js",
@@ -190,14 +201,15 @@
           "static-innerhtml.js",
           "textcontent-safe.js"
         ],
-        "falsePositives": [
-          "dompurify-optional-chaining.js (browser-security/no-innerhtml)"
-        ],
-        "offCategoryFindings": []
+        "falsePositives": [],
+        "offCategoryFindings": [
+          "static-innerhtml.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "textcontent-safe.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
-      "precision": 0.67,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.8
+      "f1": 1
     },
     {
       "cwe": "CWE-088",
@@ -206,7 +218,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "git-ls-remote-arg-injection.js",
@@ -218,7 +230,10 @@
           "separator-guard.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "literal-argv.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "separator-guard.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -231,7 +246,7 @@
       "fn": 0,
       "tn": 3,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 3,
       "details": {
         "truePositives": [
           "dynamic-column.js",
@@ -245,7 +260,11 @@
           "static-query.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "parameterized.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "prepared-statement.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "static-query.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -258,7 +277,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "vm-run-user-string.js",
@@ -270,7 +289,10 @@
           "worker-isolation.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "vm-literal-script.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "worker-isolation.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?], import-next/prefer-node-protocol [?], import-next/no-nodejs-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -283,7 +305,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "env-key-from-user.js"
@@ -293,7 +315,9 @@
           "env-allowlisted-key.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "env-allowlisted-key.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -306,7 +330,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "cyrillic-homoglyph-identifier.js",
@@ -318,7 +342,10 @@
           "i18n-ui-copy.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "ascii-identifiers.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "i18n-ui-copy.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -331,7 +358,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "single-pass-replace.js",
@@ -343,7 +370,10 @@
           "replace-until-stable.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "dompurify-sanitize.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "replace-until-stable.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -356,7 +386,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "newline-in-log-message.js",
@@ -368,7 +398,10 @@
           "structured-logging.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "stripped-newlines.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?], modernization/prefer-template-literal [?]",
+          "structured-logging.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -381,7 +414,7 @@
       "fn": 0,
       "tn": 3,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 3,
       "details": {
         "truePositives": [
           "real-cve.js",
@@ -395,7 +428,11 @@
           "simple-anchored.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "atomic-equivalent.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "literal-match.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "simple-anchored.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -408,7 +445,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "case-sensitive-admin-guard.js"
@@ -418,7 +455,9 @@
           "normalized-path-guard.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "normalized-path-guard.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -431,7 +470,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "error-object-in-json.js",
@@ -442,7 +481,9 @@
           "generic-error-response.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "generic-error-response.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -455,7 +496,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "multipart-pipe-no-handler.js",
@@ -467,7 +508,10 @@
           "pipeline-promises.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "pipe-with-error-listener.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "pipeline-promises.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?], import-next/no-extraneous-dependencies [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -480,7 +524,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "reject-unauthorized-false.js",
@@ -492,7 +536,10 @@
           "tls-default-verification.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "tls-checkserveridentity-validates.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "tls-default-verification.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -505,7 +552,7 @@
       "fn": 0,
       "tn": 3,
       "fp": 1,
-      "fpAnyRule": 1,
+      "fpAnyRule": 4,
       "details": {
         "truePositives": [
           "gcm-decipher-no-final.js",
@@ -522,7 +569,12 @@
         "falsePositives": [
           "verify-allowlist.js (jwt/require-issuer-validation, jwt/require-audience-validation, jwt/require-max-age)"
         ],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "gcm-decrypt-verified.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "gcm-encrypt-authtag.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "sign-rs256.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?]",
+          "verify-allowlist.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?]"
+        ]
       },
       "precision": 0.8,
       "recall": 1,
@@ -535,7 +587,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "iframe-wildcard.js",
@@ -547,7 +599,10 @@
           "self-origin.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "explicit-origin.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "self-origin.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -560,7 +615,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "static-tmp-write.js",
@@ -571,7 +626,9 @@
           "mkdtemp-write.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "mkdtemp-write.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -584,7 +641,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "gunzip-no-limit.js"
@@ -594,7 +651,9 @@
           "gunzip-limited.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "gunzip-limited.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -607,7 +666,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "request-insecure-parser.js",
@@ -619,7 +678,10 @@
           "server-default-parser.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "request-default-parser.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]",
+          "server-default-parser.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -632,7 +694,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "serve-index-root.js",
@@ -643,7 +705,9 @@
           "static-public-dir.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "static-public-dir.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -656,7 +720,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "login-via-query.js",
@@ -667,7 +731,9 @@
           "login-via-body-post.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "login-via-body-post.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?], import-next/no-unresolved [?], modularity/enforce-rest-conventions [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -680,7 +746,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "catch-returns-true.js",
@@ -692,7 +758,10 @@
           "catch-rethrows.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "catch-denies.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "catch-rethrows.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -705,7 +774,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "reset-link-forwarded-host.js",
@@ -716,7 +785,9 @@
           "reset-link-config-origin.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "reset-link-config-origin.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?], import-next/no-unresolved [?], modularity/enforce-rest-conventions [?], modernization/prefer-template-literal [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -729,7 +800,7 @@
       "fn": 0,
       "tn": 1,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 1,
       "details": {
         "truePositives": [
           "array-length-user.js",
@@ -740,7 +811,9 @@
           "buffer-alloc-clamped.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "buffer-alloc-clamped.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-nodejs-modules [?], import-next/prefer-node-protocol [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -752,8 +825,8 @@
       "tp": 5,
       "fn": 0,
       "tn": 4,
-      "fp": 1,
-      "fpAnyRule": 1,
+      "fp": 0,
+      "fpAnyRule": 4,
       "details": {
         "truePositives": [
           "api-key-in-source.js",
@@ -769,14 +842,17 @@
           "provider-env-credentials.js",
           "test-placeholder-values.js"
         ],
-        "falsePositives": [
-          "typeorm-migration-name.js (secure-coding/no-hardcoded-credentials)"
-        ],
-        "offCategoryFindings": []
+        "falsePositives": [],
+        "offCategoryFindings": [
+          "env-credentials.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "password-label.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "provider-env-credentials.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "test-placeholder-values.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
-      "precision": 0.83,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.91
+      "f1": 1
     },
     {
       "cwe": "CWE-843",
@@ -797,7 +873,7 @@
         ],
         "falsePositives": [],
         "offCategoryFindings": [
-          "guarded-query-type.js -> secure-coding/no-missing-authentication [CWE-287]"
+          "guarded-query-type.js -> import-next/unambiguous [CWE-1078], import-next/no-commonjs [?], import-next/no-extraneous-dependencies [?], secure-coding/no-missing-authentication [CWE-287], modularity/enforce-rest-conventions [?]"
         ]
       },
       "precision": 1,
@@ -811,7 +887,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "axios-user-url.js",
@@ -823,7 +899,10 @@
           "fetch-validated-url.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "fetch-static-url.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "fetch-validated-url.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -836,7 +915,7 @@
       "fn": 0,
       "tn": 2,
       "fp": 0,
-      "fpAnyRule": 0,
+      "fpAnyRule": 2,
       "details": {
         "truePositives": [
           "user-input-in-find.js",
@@ -848,7 +927,10 @@
           "static-filter.js"
         ],
         "falsePositives": [],
-        "offCategoryFindings": []
+        "offCategoryFindings": [
+          "explicit-eq.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]",
+          "static-filter.js -> import-next/unambiguous [CWE-1078], import-next/no-unused-modules [?]"
+        ]
       },
       "precision": 1,
       "recall": 1,
@@ -859,9 +941,9 @@
     "tp": 69,
     "fn": 0,
     "tn": 61,
-    "fp": 3,
-    "precision": 0.96,
+    "fp": 1,
+    "precision": 0.99,
     "recall": 1,
-    "f1": 0.98
+    "f1": 0.99
   }
 }

@@ -85,7 +85,7 @@ const canonical = (rule: string): string => {
  * the harness itself broke, and that has to be loud: treated as "no rules
  * fired" it would mark every rule unmeasured and mass-widen the baseline.
  */
-function rulesWithCorpusEvidence(): Set<string> {
+function rulesWithCorpusEvidence(globs: string[] = ['benchmarks/corpus/**/*.js']): Set<string> {
   let raw = '';
   try {
     raw = execFileSync(
@@ -97,7 +97,7 @@ function rulesWithCorpusEvidence(): Set<string> {
         'eslint.benchmark.config.mjs',
         '--format',
         'json',
-        'benchmarks/corpus/**/*.js',
+        ...globs,
       ],
       {
         cwd: ROOT,
@@ -148,12 +148,29 @@ function readBaseline(): { unmeasured: string[] } | null {
 
 const rules = allRules();
 const fired = rulesWithCorpusEvidence();
+
+/*
+ * Two coverage numbers, because they answer different questions.
+ *
+ * `fired` counts any corpus fixture, including benchmarks/corpus/by-rule/,
+ * where a rule's fixture is its own test case — so it fires by construction.
+ * That is fine for "is this rule exercised at all", which is what the ratchet
+ * guards, but it must not be read as measured precision.
+ *
+ * `firedIndependent` counts only the hand-reviewed CWE-NNN fixtures, which are
+ * the ones the published precision figure is computed from.
+ */
+const firedIndependent = rulesWithCorpusEvidence(['benchmarks/corpus/CWE-*/**/*.js']);
 const unmeasured = rules.map(canonical).filter((r) => !fired.has(r)).sort();
 const measured = rules.length - unmeasured.length;
 const pct = Math.round((measured / rules.length) * 100);
 
+const independent = rules.map(canonical).filter((r) => firedIndependent.has(r)).length;
 console.log(
-  `\n${rules.length} rules · ${measured} with corpus evidence (${pct}%) · ${unmeasured.length} unmeasured\n`,
+  `\n${rules.length} rules\n` +
+    `  exercised by any fixture      : ${measured} (${pct}%)\n` +
+    `  by an INDEPENDENT fixture     : ${independent} (${Math.round((independent / rules.length) * 100)}%)  <- what precision is measured on\n` +
+    `  unmeasured                    : ${unmeasured.length}\n`,
 );
 
 if (UPDATE) {
