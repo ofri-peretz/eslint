@@ -33,6 +33,8 @@ describe('analytics-event-naming', () => {
         { code: 'track("homepage:hero_cta_click", {});' },
         { code: 'track("rule_page:doc_view", { slug: "x" });' },
         { code: 'track("signup_flow:submit_send", {});' },
+        // copy is a canonical dev-content verb (code blocks, install commands).
+        { code: 'track("article:code_copy", { language: "ts" });' },
         // PostHog convention.
         { code: 'posthog.capture("articles:card_click", { id: 1 });' },
         { code: 'ph.capture("homepage:hero_view", {});' },
