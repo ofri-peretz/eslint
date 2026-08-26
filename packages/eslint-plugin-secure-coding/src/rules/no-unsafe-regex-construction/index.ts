@@ -24,9 +24,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'unsafeRegexConstruction'
-  | 'escapeUserInput';
+type MessageIds = 'unsafeRegexConstruction' | 'escapeUserInput';
 
 /**
  * Functions the ecosystem actually uses to escape a regex metacharacter set.
@@ -144,7 +142,8 @@ function taintSource(
     let root: TSESTree.Node = node;
     const properties: string[] = [];
     while (root.type === 'MemberExpression') {
-      if (root.property.type === 'Identifier') properties.unshift(root.property.name);
+      if (root.property.type === 'Identifier')
+        properties.unshift(root.property.name);
       root = root.object;
     }
     if (root.type === 'Identifier') {
@@ -164,7 +163,10 @@ function taintSource(
 
   if (node.type === 'CallExpression') {
     const callee = node.callee;
-    if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+    if (
+      callee.type === 'MemberExpression' &&
+      callee.property.type === 'Identifier'
+    ) {
       // Reading a file or a response body yields bytes from outside the program.
       if (READER_METHODS.has(callee.property.name)) {
         return callee.property.name;
@@ -256,17 +258,34 @@ function lookupVariable(
 
 /** Identifier roots that denote an inbound request. */
 const REQUEST_ROOTS: ReadonlySet<string> = new Set([
-  'req', 'request', 'ctx', 'event', 'message',
+  'req',
+  'request',
+  'ctx',
+  'event',
+  'message',
 ]);
 
 /** Properties of a request that carry caller-supplied data. */
 const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
-  'query', 'params', 'body', 'headers', 'url', 'path', 'cookies', 'data',
+  'query',
+  'params',
+  'body',
+  'headers',
+  'url',
+  'path',
+  'cookies',
+  'data',
 ]);
 
 /** Calls whose result is bytes from outside the program. */
 const READER_METHODS: ReadonlySet<string> = new Set([
-  'readFile', 'readFileSync', 'text', 'json', 'arrayBuffer', 'formData', 'blob',
+  'readFile',
+  'readFileSync',
+  'text',
+  'json',
+  'arrayBuffer',
+  'formData',
+  'blob',
 ]);
 
 /**
@@ -302,9 +321,7 @@ function isEscaperPackageBinding(
   const binding = resolveModuleBinding(callee, scope);
   if (binding && ESCAPER_PACKAGES.has(binding.module)) return true;
   // `lodash`'s own `escapeRegExp`, however the lodash import was spelled.
-  return (
-    binding?.module === 'lodash' && binding.path.at(-1) === 'escapeRegExp'
-  );
+  return binding?.module === 'lodash' && binding.path.at(-1) === 'escapeRegExp';
 }
 
 /**
@@ -459,6 +476,35 @@ function isRegexClone(node: TSESTree.Node): boolean {
   return false;
 }
 
+/**
+ * Are the pattern and the flags read off the SAME object?
+ *
+ * `new RegExp(node.pattern, node.flags)` is the copy idiom that
+ * `isRegexClone` already exempts for `re.source` / `re.flags` — the same
+ * thought, spelled with a different property name because the object is a
+ * parser node rather than a RegExp. Whoever controlled the original controls
+ * the copy, and nothing else changed.
+ *
+ * Deliberately requires both sides to be non-computed reads off one
+ * IDENTIFIER. `new RegExp(req.query.p, req.query.f)` shares an object too, but
+ * its pattern is untrusted and the pattern check reports it on its own — this
+ * predicate only ever silences the FLAGS finding, never the pattern one.
+ */
+function isSameObjectPair(pattern: TSESTree.Node, flags: TSESTree.Node): boolean {
+  // No `undefined` guard: the only caller runs behind `hasDynamicFlags`, which
+  // already required a second argument. A check no test could reach is worse
+  // than no check — it reads as defensive and is dead.
+  const root = (node: TSESTree.Node): string | null =>
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.object.type === 'Identifier' &&
+    node.property.type === 'Identifier'
+      ? node.object.name
+      : null;
+  const a = root(pattern);
+  return a !== null && a === root(flags);
+}
+
 function hasDynamicFlags(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
 ): boolean {
@@ -491,7 +537,12 @@ function extractPattern(
   const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
 
   if (!patternNode) {
-    return { patternNode: null, isUserInput: false, taintedBy: null, isEscaped: false };
+    return {
+      patternNode: null,
+      isUserInput: false,
+      taintedBy: null,
+      isEscaped: false,
+    };
   }
 
   const taintedBy = taintSource(patternNode, scope);
@@ -554,7 +605,6 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
       }),
-
     },
     schema: [
       {
@@ -709,8 +759,23 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         });
       }
 
-      // Check for dynamic flags
-      if (hasDynamicFlags(node) && !isRegexClone(patternNode)) {
+      // Check for dynamic flags.
+      //
+      // NOT reported on their own. This rule's CWE is CWE-400 — catastrophic
+      // backtracking — and a dynamic FLAG cannot cause it. `g` and `y` change
+      // where matching starts; they do not change what the pattern costs.
+      // Reported alone, this fired on 11 findings in the wild that were all
+      // one shape: re-compiling a pattern read off an object beside its own
+      // flags, which is a copy, not a new attacker surface.
+      //
+      // So a dynamic flag is only interesting when the PATTERN beside it is
+      // also unreadable — that is the case where nothing about the resulting
+      // regex is known, and it is the one worth a word.
+      if (
+        hasDynamicFlags(node) &&
+        !isRegexClone(patternNode) &&
+        !isSameObjectPair(patternNode, node.arguments[1] as TSESTree.Node)
+      ) {
         context.report({
           node,
           messageId: 'unsafeRegexConstruction',

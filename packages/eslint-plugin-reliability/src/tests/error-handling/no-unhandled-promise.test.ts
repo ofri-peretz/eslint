@@ -142,15 +142,19 @@ describe('no-unhandled-promise', () => {
   });
 
   describe('Delegation to Caller', () => {
-    ruleTester.run('valid - returned and forwarded promises', noUnhandledPromise, {
-      valid: [
-        // return fn() — caller takes responsibility
-        { code: 'function f() { return fetchData(); }' },
-        // Concise-body arrow forwards the promise
-        { code: 'const g = () => fetchData();' },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - returned and forwarded promises',
+      noUnhandledPromise,
+      {
+        valid: [
+          // return fn() — caller takes responsibility
+          { code: 'function f() { return fetchData(); }' },
+          // Concise-body arrow forwards the promise
+          { code: 'const g = () => fetchData();' },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Chain Detection Edge Cases', () => {
@@ -279,22 +283,26 @@ describe('no-unhandled-promise', () => {
   });
 
   describe('Computed promise-method callbacks', () => {
-    ruleTester.run('computed member callee is not a promise chain', noUnhandledPromise, {
-      valid: [],
-      invalid: [
-        // `p["then"](() => {...})` — the arrow IS an argument of a call whose
-        // callee is a MemberExpression, but the property is a Literal, so
-        // isInsidePromiseCallback does not treat it as a promise callback.
-        // Both the outer computed call and the inner doAsync() report.
-        {
-          code: 'async function doAsync() {}\np["then"](() => { doAsync(); });',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'computed member callee is not a promise chain',
+      noUnhandledPromise,
+      {
+        valid: [],
+        invalid: [
+          // `p["then"](() => {...})` — the arrow IS an argument of a call whose
+          // callee is a MemberExpression, but the property is a Literal, so
+          // isInsidePromiseCallback does not treat it as a promise callback.
+          // Both the outer computed call and the inner doAsync() report.
+          {
+            code: 'async function doAsync() {}\np["then"](() => { doAsync(); });',
+            errors: [
+              { messageId: 'unhandledPromise' },
+              { messageId: 'unhandledPromise' },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   // ---------------------------------------------------------------------
@@ -303,7 +311,10 @@ describe('no-unhandled-promise', () => {
 
   describe('Layer 2: isLikelyPromiseExpression', () => {
     it('returns false for non-CallExpression nodes', () => {
-      const ident = { type: 'Identifier', name: 'maybePromise' } as unknown as TSESTree.Node;
+      const ident = {
+        type: 'Identifier',
+        name: 'maybePromise',
+      } as unknown as TSESTree.Node;
       expect(isLikelyPromiseExpression(ident)).toBe(false);
     });
   });
@@ -312,7 +323,11 @@ describe('no-unhandled-promise', () => {
     /** Build `<ident>.<method>` optionally wrapped in a call of that member. */
     function identInChain(
       method: string | { computed: true },
-      opts: { called?: boolean; asCallee?: boolean; objectIsIdent?: boolean } = {},
+      opts: {
+        called?: boolean;
+        asCallee?: boolean;
+        objectIsIdent?: boolean;
+      } = {},
     ): TSESTree.Node {
       const { called = true, asCallee = true, objectIsIdent = true } = opts;
       const ident: Record<string, unknown> = { type: 'Identifier', name: 'p' };
@@ -354,19 +369,28 @@ describe('no-unhandled-promise', () => {
     });
 
     it('returns false when .then is accessed but never called', () => {
-      expect(isPromiseHandled(identInChain('then', { called: false }))).toBe(false);
+      expect(isPromiseHandled(identInChain('then', { called: false }))).toBe(
+        false,
+      );
     });
 
     it('returns false when the member is an argument instead of the callee', () => {
-      expect(isPromiseHandled(identInChain('then', { asCallee: false }))).toBe(false);
+      expect(isPromiseHandled(identInChain('then', { asCallee: false }))).toBe(
+        false,
+      );
     });
 
     it('returns false when the identifier is not the object of the member', () => {
-      expect(isPromiseHandled(identInChain('then', { objectIsIdent: false }))).toBe(false);
+      expect(
+        isPromiseHandled(identInChain('then', { objectIsIdent: false })),
+      ).toBe(false);
     });
 
     it('returns false for a parentless identifier', () => {
-      const orphan = { type: 'Identifier', name: 'p' } as unknown as TSESTree.Node;
+      const orphan = {
+        type: 'Identifier',
+        name: 'p',
+      } as unknown as TSESTree.Node;
       expect(isPromiseHandled(orphan)).toBe(false);
     });
 
@@ -393,10 +417,13 @@ describe('no-unhandled-promise', () => {
         callee: { type: 'Identifier', name: 'fetch' },
         arguments: [],
       } as unknown as TSESTree.CallExpression;
-      (listeners['CallExpression'] as (n: TSESTree.CallExpression) => void)(node);
+      (listeners['CallExpression'] as (n: TSESTree.CallExpression) => void)(
+        node,
+      );
       expect(reports).toHaveLength(1);
       expect(reports[0]).toMatchObject({ messageId: 'unhandledPromise' });
-      const suggest = (reports[0] as { suggest?: { messageId: string }[] }).suggest;
+      const suggest = (reports[0] as { suggest?: { messageId: string }[] })
+        .suggest;
       expect(suggest?.map((s) => s.messageId)).toEqual([
         'addCatch',
         'useTryCatch',

@@ -40,60 +40,129 @@ RuleTester.describe = describe;
 const ruleTester = new RuleTester({
   languageOptions: {
     parser,
-    parserOptions: { ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: { jsx: true } },
+    parserOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      ecmaFeatures: { jsx: true },
+    },
   },
 });
 
 describe('no-unhandled-promise — a call is not a promise', () => {
   ruleTester.run('evidence', noUnhandledPromise, {
     valid: [
+      // The evidence arm of the outer-call test: `wrap` here IS a promise, so
+      // the inner call is skipped and only the outer reports.
+      {
+        name: 'a promise handed to another promise-returning call',
+        code: 'await fetch(fetch(url));',
+      },
+      // The three arms of the outer-call test, each pinned so the skip cannot
+      // silently widen: a computed `catch` and a computed `finally` both mean
+      // the outer call IS a promise (so the inner is not reported twice), and
+      // a call in CALLEE position is not an argument at all.
+      {
+        name: 'a wrapper chained through a computed catch',
+        code: 'wrap(fetch(url))["catch"](handle);',
+      },
+      {
+        name: 'a wrapper chained through a computed finally',
+        code: 'wrap(fetch(url))["finally"](handle);',
+      },
+      // CALLEE position, not argument position. `fetch(url)(arg)` calls the
+      // result, so the outer call is not "a promise handed to something" — it
+      // is the promise being invoked, which this rule does not report on.
+      {
+        name: 'a promise-returning call in callee position',
+        code: 'fetch(url)(arg);',
+      },
       // The statement form is the only one reported. A promise whose result
       // is used may be handled somewhere this rule cannot see.
-      { name: 'a dynamic import that is awaited', code: 'async function f() { await import("./m"); }' },
-      { name: 'a dynamic import whose result is bound', code: 'const m = import("./m");' },
-      { name: 'new Promise whose result is bound', code: 'const p = new Promise((r) => r(1));' },
-      { name: 'new Promise that is returned', code: 'function f() { return new Promise((r) => r(1)); }' },
+      {
+        name: 'a dynamic import that is awaited',
+        code: 'async function f() { await import("./m"); }',
+      },
+      {
+        name: 'a dynamic import whose result is bound',
+        code: 'const m = import("./m");',
+      },
+      {
+        name: 'new Promise whose result is bound',
+        code: 'const p = new Promise((r) => r(1));',
+      },
+      {
+        name: 'new Promise that is returned',
+        code: 'function f() { return new Promise((r) => r(1)); }',
+      },
       // Constructing anything else is not a promise, whatever its position.
       { name: 'a constructor that is not Promise', code: 'new Map();' },
       { name: 'a member constructor', code: 'new lib.Thing();' },
       {
         // @source excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:25
-        name: 'a synchronous require', code: 'require("./styles.css");'
+        name: 'a synchronous require',
+        code: 'require("./styles.css");',
       },
       { name: 'a plain synchronous call', code: 'doTheThing();' },
       {
         // @source excalidraw/excalidraw dev-docs/src/pages/index.tsx:11
-        name: 'a call whose result is destructured', code: 'const { siteConfig } = useDocusaurusContext();'
+        name: 'a call whose result is destructured',
+        code: 'const { siteConfig } = useDocusaurusContext();',
       },
       { name: 'a method call on an object', code: 'logger.info("started");' },
-      { name: 'an empty catch callback still counts as handling', code: 'p.catch(() => {});' },
+      {
+        name: 'an empty catch callback still counts as handling',
+        code: 'p.catch(() => {});',
+      },
       {
         // @source excalidraw/excalidraw examples/with-script-in-browser/components/ExampleApp.tsx:467
-        name: 'an optional call', code: 'excalidrawAPI?.setActiveTool({ type: "freedraw" });'
+        name: 'an optional call',
+        code: 'excalidrawAPI?.setActiveTool({ type: "freedraw" });',
       },
       {
         // @source excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:47
-        name: 'a call inside JSX', code: 'const el = <div className={clsx("col")} />;'
+        name: 'a call inside JSX',
+        code: 'const el = <div className={clsx("col")} />;',
       },
-      { name: 'a synchronous array method', code: 'items.forEach((i) => render(i));' },
-      // Each of these walks one branch of the evidence check to a `false`.
-      { name: 'a computed member call that is not then', code: 'handlers["run"]();' },
-      { name: 'a computed member call with a numeric key', code: 'handlers[0]();' },
-      { name: 'a name with no declaration anywhere', code: 'function f() { arguments(); }' },
-      { name: 'a member call on a non-identifier receiver', code: 'get().run();' },
-      { name: 'a Promise static that does not exist', code: 'Promise.notAThing(x);' },
-      { name: 'a binding declared with no initialiser', code: 'let later;\nlater();' },
-      { name: 'a binding whose initialiser is not a function', code: 'const table = {};\ntable();' },
-      { name: 'a name resolved from an enclosing scope', code: 'const sync = () => 1;\nfunction outer() { sync(); }' },
-      { name: 'a non-async immediately-invoked function', code: '(function () { return 1; })();' },
       {
-        // A real miss, and the last uncovered branch of the rule: a promise
-        // handed to another call is skipped so that `console.log(fetch(url))`
-        // does not report the inner call twice — but nothing reports it once
-        // either, and the rejection is unhandled.
-        // @found nested arguments are skipped so console.log(fetch(url)) does not report twice
-        name: 'GAP: a promise passed as an argument to another call',
-        code: 'console.log(fetch(url));',
+        name: 'a synchronous array method',
+        code: 'items.forEach((i) => render(i));',
+      },
+      // Each of these walks one branch of the evidence check to a `false`.
+      {
+        name: 'a computed member call that is not then',
+        code: 'handlers["run"]();',
+      },
+      {
+        name: 'a computed member call with a numeric key',
+        code: 'handlers[0]();',
+      },
+      {
+        name: 'a name with no declaration anywhere',
+        code: 'function f() { arguments(); }',
+      },
+      {
+        name: 'a member call on a non-identifier receiver',
+        code: 'get().run();',
+      },
+      {
+        name: 'a Promise static that does not exist',
+        code: 'Promise.notAThing(x);',
+      },
+      {
+        name: 'a binding declared with no initialiser',
+        code: 'let later;\nlater();',
+      },
+      {
+        name: 'a binding whose initialiser is not a function',
+        code: 'const table = {};\ntable();',
+      },
+      {
+        name: 'a name resolved from an enclosing scope',
+        code: 'const sync = () => 1;\nfunction outer() { sync(); }',
+      },
+      {
+        name: 'a non-async immediately-invoked function',
+        code: '(function () { return 1; })();',
       },
       {
         // The binding resolves to an ImportSpecifier, which says nothing about
@@ -104,6 +173,26 @@ describe('no-unhandled-promise — a call is not a promise', () => {
       },
     ],
     invalid: [
+      {
+        // Reaches the RESOLVER arm of the outer-call test: `load` is a local
+        // async function, so deciding whether the outer call is a promise
+        // requires resolving the binding rather than reading a name. The outer
+        // call is the one reported; the inner is skipped, which is the
+        // one-finding-per-defect guarantee working.
+        name: 'a promise handed to a locally-declared async function',
+        code: 'async function load(x) { return x; }\nload(fetch(url));',
+        errors: 1,
+      },
+      {
+        // @found grammar review
+        // Sealed 2026-08-26: the nested-argument skip was unconditional, so when
+        // the OUTER call was not itself a promise nothing reported at all. It now
+        // decides on the outer call, which keeps one-finding-per-defect and
+        // recovers the miss.
+        name: 'FN: a promise handed to a call that is not itself a promise',
+        code: 'console.log(fetch(url));',
+        errors: 1,
+      },
       {
         // @found grammar review
         name: 'FN: a dynamic import nobody awaits',

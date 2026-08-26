@@ -1,10 +1,10 @@
 {
   "counts": {
-    "TP": 7391,
-    "TN": 10958,
-    "FP": 21,
-    "FN": 26,
-    "GAP": 8
+    "TP": 7398,
+    "TN": 10972,
+    "FP": 22,
+    "FN": 29,
+    "GAP": 2
   },
   "rules": [
     {
@@ -5594,7 +5594,7 @@
           "file": "packages/eslint-plugin-browser-security/src/coverage-gaps.layer1.test.ts"
         },
         {
-          "id": "browser-security/no-innerhtml#TN-c97817",
+          "id": "browser-security/no-innerhtml#TN-e018e1",
           "kind": "TN",
           "code": "process.stdout.write(`Preview URL: ${previewUrl}`)",
           "description": "writing to stdout is not the DOM",
@@ -5920,7 +5920,7 @@
           "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/no-innerhtml.test.ts"
         },
         {
-          "id": "browser-security/no-innerhtml#TN-e7fa57",
+          "id": "browser-security/no-innerhtml#TN-998fb0",
           "kind": "TN",
           "code": "let markup = '<p>one</p>'; markup = '<p>two</p>'; el.innerHTML = markup;",
           "description": "",
@@ -6144,6 +6144,50 @@
           "code": "window.addEventListener(\"message\", (e) => { host.append(document.createRange().createContextualFragment(e.data)); });",
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/no-innerhtml.test.ts"
+        },
+        {
+          "id": "browser-security/no-innerhtml#TN-eb8264",
+          "kind": "TN",
+          "code": "`${IMPORT}\\nfunction f(el, html) { el.innerHTML = DOMPurify?.sanitize(html); }`",
+          "description": "an optional sanitiser call with no fallback",
+          "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/optional-sanitizer.test.ts"
+        },
+        {
+          "id": "browser-security/no-innerhtml#TN-6cd52c",
+          "kind": "TN",
+          "code": "`${IMPORT}\\nfunction f(el, html) { el.innerHTML = DOMPurify.sanitize(html); }`",
+          "description": "the ordinary non-optional call",
+          "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/optional-sanitizer.test.ts"
+        },
+        {
+          "id": "browser-security/no-innerhtml#TN-114407",
+          "kind": "TN",
+          "code": "`${IMPORT}\\nfunction f(el, html) { el.innerHTML = DOMPurify.sanitize(html) ?? ''; }`",
+          "description": "a fallback to a literal, which carries no user input",
+          "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/optional-sanitizer.test.ts"
+        },
+        {
+          "id": "browser-security/no-innerhtml#FN-794146",
+          "kind": "FN",
+          "code": "`${IMPORT}\\nfunction f(el, html) { el.innerHTML = DOMPurify?.sanitize(html) ?? html; }`",
+          "description": "a sanitiser whose ?? fallback is the unsanitised value",
+          "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/optional-sanitizer.test.ts",
+          "source": "the real-source scan, 21 findings",
+          "found": "rule review"
+        },
+        {
+          "id": "browser-security/no-innerhtml#TP-52b4e0",
+          "kind": "TP",
+          "code": "`${IMPORT}\\nfunction f(el, html) { el.innerHTML = DOMPurify?.sanitize(html) || html; }`",
+          "description": "the same written with || instead of ??",
+          "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/optional-sanitizer.test.ts"
+        },
+        {
+          "id": "browser-security/no-innerhtml#TP-505cc5",
+          "kind": "TP",
+          "code": "`${IMPORT}\\nfunction f(el, html) { el.innerHTML = DOMPurify ? DOMPurify.sanitize(html) : html; }`",
+          "description": "the same through a ternary on the sanitiser itself",
+          "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/optional-sanitizer.test.ts"
         },
         {
           "id": "browser-security/no-innerhtml#FN-7ec882",
@@ -48879,22 +48923,6 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#GAP-175b7b",
-          "kind": "GAP",
-          "code": "console.log(fetch(url));",
-          "description": "a promise passed as an argument — the nested call is skipped",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts",
-          "found": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
-        },
-        {
-          "id": "maintainability/no-unhandled-promise#GAP-b749bb",
-          "kind": "GAP",
-          "code": "first(fetch(url)).third;",
-          "description": "the same, one member access further along",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts",
-          "found": "same skip, one member access further along"
-        },
-        {
           "id": "maintainability/no-unhandled-promise#TP-6b545c",
           "kind": "TP",
           "code": "fetch(url);",
@@ -48902,28 +48930,56 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-6b6d7e",
+          "id": "maintainability/no-unhandled-promise#TN-c95765",
+          "kind": "TN",
+          "code": "await fetch(fetch(url));",
+          "description": "a promise handed to another promise-returning call",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-b14115",
+          "kind": "TN",
+          "code": "wrap(fetch(url))[\"catch\"](handle);",
+          "description": "a wrapper chained through a computed catch",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-3eb35a",
+          "kind": "TN",
+          "code": "wrap(fetch(url))[\"finally\"](handle);",
+          "description": "a wrapper chained through a computed finally",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-2113ec",
+          "kind": "TN",
+          "code": "fetch(url)(arg);",
+          "description": "a promise-returning call in callee position",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TN-9f938a",
           "kind": "TN",
           "code": "async function f() { await import(\"./m\"); }",
           "description": "a dynamic import that is awaited",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-721bf1",
+          "id": "maintainability/no-unhandled-promise#TN-a7d689",
           "kind": "TN",
           "code": "const m = import(\"./m\");",
           "description": "a dynamic import whose result is bound",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-05bfa1",
+          "id": "maintainability/no-unhandled-promise#TN-7e89c1",
           "kind": "TN",
           "code": "const p = new Promise((r) => r(1));",
           "description": "new Promise whose result is bound",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-ae76ba",
+          "id": "maintainability/no-unhandled-promise#TN-196f8c",
           "kind": "TN",
           "code": "function f() { return new Promise((r) => r(1)); }",
           "description": "new Promise that is returned",
@@ -48944,7 +49000,7 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-87d994",
+          "id": "maintainability/no-unhandled-promise#TN-01ed71",
           "kind": "TN",
           "code": "require(\"./styles.css\");",
           "description": "a synchronous require",
@@ -48959,7 +49015,7 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-1234e3",
+          "id": "maintainability/no-unhandled-promise#TN-1e68ff",
           "kind": "TN",
           "code": "const { siteConfig } = useDocusaurusContext();",
           "description": "a call whose result is destructured",
@@ -48974,14 +49030,14 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-f7ef3d",
+          "id": "maintainability/no-unhandled-promise#TN-8c7b4e",
           "kind": "TN",
           "code": "p.catch(() => {});",
           "description": "an empty catch callback still counts as handling",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-0e8410",
+          "id": "maintainability/no-unhandled-promise#TN-bea208",
           "kind": "TN",
           "code": "excalidrawAPI?.setActiveTool({ type: \"freedraw\" });",
           "description": "an optional call",
@@ -48989,7 +49045,7 @@
           "source": "excalidraw/excalidraw examples/with-script-in-browser/components/ExampleApp.tsx:467"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-089b46",
+          "id": "maintainability/no-unhandled-promise#TN-e97186",
           "kind": "TN",
           "code": "const el = <div className={clsx(\"col\")} />;",
           "description": "a call inside JSX",
@@ -48997,70 +49053,70 @@
           "source": "excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:47"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-afaf4e",
+          "id": "maintainability/no-unhandled-promise#TN-cfee08",
           "kind": "TN",
           "code": "items.forEach((i) => render(i));",
           "description": "a synchronous array method",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-ae5269",
+          "id": "maintainability/no-unhandled-promise#TN-6c48cd",
           "kind": "TN",
           "code": "handlers[\"run\"]();",
           "description": "a computed member call that is not then",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-126ff7",
+          "id": "maintainability/no-unhandled-promise#TN-02b272",
           "kind": "TN",
           "code": "handlers[0]();",
           "description": "a computed member call with a numeric key",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-afe855",
+          "id": "maintainability/no-unhandled-promise#TN-3bad5b",
           "kind": "TN",
           "code": "get().run();",
           "description": "a member call on a non-identifier receiver",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-43b1c4",
+          "id": "maintainability/no-unhandled-promise#TN-4b3413",
           "kind": "TN",
           "code": "Promise.notAThing(x);",
           "description": "a Promise static that does not exist",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-e003f3",
+          "id": "maintainability/no-unhandled-promise#TN-c32858",
           "kind": "TN",
           "code": "let later; later();",
           "description": "a binding declared with no initialiser",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-ada926",
+          "id": "maintainability/no-unhandled-promise#TN-8e314f",
           "kind": "TN",
           "code": "const table = {}; table();",
           "description": "a binding whose initialiser is not a function",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-1edbf4",
+          "id": "maintainability/no-unhandled-promise#TN-40a179",
           "kind": "TN",
           "code": "function f() { arguments(); }",
           "description": "a name with no declaration anywhere",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-599e0a",
+          "id": "maintainability/no-unhandled-promise#TN-0ada4d",
           "kind": "TN",
           "code": "const sync = () => 1; function outer() { sync(); }",
           "description": "a name resolved from an enclosing scope",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-261ffd",
+          "id": "maintainability/no-unhandled-promise#TN-7adb6e",
           "kind": "TN",
           "code": "(function () { return 1; })();",
           "description": "a non-async immediately-invoked function",
@@ -49074,34 +49130,18 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#GAP-0f9ad0",
-          "kind": "GAP",
-          "code": "console.log(fetch(url));",
-          "description": "a promise passed as an argument to another call",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
-          "found": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
-        },
-        {
-          "id": "maintainability/no-unhandled-promise#TN-9e97c9",
+          "id": "maintainability/no-unhandled-promise#TN-635590",
           "kind": "TN",
           "code": "wrap(fetch(url)).catch(handle);",
           "description": "a wrapped promise whose chain ends in catch",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TN-d80805",
+          "id": "maintainability/no-unhandled-promise#TN-028a31",
           "kind": "TN",
           "code": "wrap(fetch(url)).finally(handle);",
           "description": "a wrapped promise whose chain ends in finally",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
-        },
-        {
-          "id": "maintainability/no-unhandled-promise#GAP-441394",
-          "kind": "GAP",
-          "code": "outer(wrap(fetch(url)));",
-          "description": "a promise wrapped twice",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
-          "found": "same skip, through two layers"
         },
         {
           "id": "maintainability/no-unhandled-promise#TN-835333",
@@ -49111,20 +49151,27 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#GAP-fc1f8e",
-          "kind": "GAP",
-          "code": "const v = a[wrap(fetch(url))].then;",
-          "description": "a wrapped promise used as a computed key",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
-          "found": "same skip, in computed-key position"
-        },
-        {
           "id": "maintainability/no-unhandled-promise#TN-1b0a67",
           "kind": "TN",
           "code": "void fetch(url);",
           "description": "a void expression, when the option allows it",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
           "options": "[{ ignoreVoidExpressions: true }]"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#TP-4c6d83",
+          "kind": "TP",
+          "code": "async function load(x) { return x; } load(fetch(url));",
+          "description": "a promise handed to a locally-declared async function",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "maintainability/no-unhandled-promise#FN-956b3d",
+          "kind": "FN",
+          "code": "console.log(fetch(url));",
+          "description": "a promise handed to a call that is not itself a promise",
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "grammar review"
         },
         {
           "id": "maintainability/no-unhandled-promise#FN-491640",
@@ -49157,14 +49204,14 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TP-896db3",
+          "id": "maintainability/no-unhandled-promise#TP-7c7ef8",
           "kind": "TP",
           "code": "p[\"then\"]((r) => r.json());",
           "description": "a computed then access is the same protocol",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TP-812e5a",
+          "id": "maintainability/no-unhandled-promise#TP-50d142",
           "kind": "TP",
           "code": "wrap(fetch(url))[\"then\"](handle);",
           "description": "a wrapper chained through a computed then",
@@ -49185,14 +49232,14 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TP-441fc5",
+          "id": "maintainability/no-unhandled-promise#TP-ad7176",
           "kind": "TP",
           "code": "(async function () { return 1; })();",
           "description": "an immediately-invoked async function",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "maintainability/no-unhandled-promise#TP-12ea07",
+          "id": "maintainability/no-unhandled-promise#TP-83ca30",
           "kind": "TP",
           "code": "const load = async () => {}; load();",
           "description": "an async arrow bound to a const",
@@ -106602,28 +106649,56 @@
       "rule": "reliability/no-unhandled-promise",
       "cases": [
         {
-          "id": "reliability/no-unhandled-promise#TN-12dec5",
+          "id": "reliability/no-unhandled-promise#TN-109f62",
+          "kind": "TN",
+          "code": "await fetch(fetch(url));",
+          "description": "a promise handed to another promise-returning call",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-e941b2",
+          "kind": "TN",
+          "code": "wrap(fetch(url))[\"catch\"](handle);",
+          "description": "a wrapper chained through a computed catch",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-d9d63f",
+          "kind": "TN",
+          "code": "wrap(fetch(url))[\"finally\"](handle);",
+          "description": "a wrapper chained through a computed finally",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-a23db3",
+          "kind": "TN",
+          "code": "fetch(url)(arg);",
+          "description": "a promise-returning call in callee position",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TN-80be50",
           "kind": "TN",
           "code": "async function f() { await import(\"./m\"); }",
           "description": "a dynamic import that is awaited",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-e00e41",
+          "id": "reliability/no-unhandled-promise#TN-f30e90",
           "kind": "TN",
           "code": "const m = import(\"./m\");",
           "description": "a dynamic import whose result is bound",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-959a95",
+          "id": "reliability/no-unhandled-promise#TN-bc48a1",
           "kind": "TN",
           "code": "const p = new Promise((r) => r(1));",
           "description": "new Promise whose result is bound",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-cca391",
+          "id": "reliability/no-unhandled-promise#TN-ee50b0",
           "kind": "TN",
           "code": "function f() { return new Promise((r) => r(1)); }",
           "description": "new Promise that is returned",
@@ -106644,7 +106719,7 @@
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-952346",
+          "id": "reliability/no-unhandled-promise#TN-cd04bc",
           "kind": "TN",
           "code": "require(\"./styles.css\");",
           "description": "a synchronous require",
@@ -106659,7 +106734,7 @@
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-3a0d28",
+          "id": "reliability/no-unhandled-promise#TN-0e46a6",
           "kind": "TN",
           "code": "const { siteConfig } = useDocusaurusContext();",
           "description": "a call whose result is destructured",
@@ -106674,14 +106749,14 @@
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-fd09aa",
+          "id": "reliability/no-unhandled-promise#TN-125320",
           "kind": "TN",
           "code": "p.catch(() => {});",
           "description": "an empty catch callback still counts as handling",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-80eb7d",
+          "id": "reliability/no-unhandled-promise#TN-0c4a5e",
           "kind": "TN",
           "code": "excalidrawAPI?.setActiveTool({ type: \"freedraw\" });",
           "description": "an optional call",
@@ -106689,7 +106764,7 @@
           "source": "excalidraw/excalidraw examples/with-script-in-browser/components/ExampleApp.tsx:467"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-288a44",
+          "id": "reliability/no-unhandled-promise#TN-fbb289",
           "kind": "TN",
           "code": "const el = <div className={clsx(\"col\")} />;",
           "description": "a call inside JSX",
@@ -106697,82 +106772,74 @@
           "source": "excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:47"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-498b2b",
+          "id": "reliability/no-unhandled-promise#TN-4299f5",
           "kind": "TN",
           "code": "items.forEach((i) => render(i));",
           "description": "a synchronous array method",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-8d5ef7",
+          "id": "reliability/no-unhandled-promise#TN-e15c4c",
           "kind": "TN",
           "code": "handlers[\"run\"]();",
           "description": "a computed member call that is not then",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-8ed83f",
+          "id": "reliability/no-unhandled-promise#TN-e9c45a",
           "kind": "TN",
           "code": "handlers[0]();",
           "description": "a computed member call with a numeric key",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-53d024",
+          "id": "reliability/no-unhandled-promise#TN-7a1cfd",
           "kind": "TN",
           "code": "function f() { arguments(); }",
           "description": "a name with no declaration anywhere",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-f01791",
+          "id": "reliability/no-unhandled-promise#TN-dcfa65",
           "kind": "TN",
           "code": "get().run();",
           "description": "a member call on a non-identifier receiver",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-50f12b",
+          "id": "reliability/no-unhandled-promise#TN-4b27cc",
           "kind": "TN",
           "code": "Promise.notAThing(x);",
           "description": "a Promise static that does not exist",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-bb5268",
+          "id": "reliability/no-unhandled-promise#TN-fc0150",
           "kind": "TN",
           "code": "let later; later();",
           "description": "a binding declared with no initialiser",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-814051",
+          "id": "reliability/no-unhandled-promise#TN-b2d322",
           "kind": "TN",
           "code": "const table = {}; table();",
           "description": "a binding whose initialiser is not a function",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-8baf15",
+          "id": "reliability/no-unhandled-promise#TN-e7b491",
           "kind": "TN",
           "code": "const sync = () => 1; function outer() { sync(); }",
           "description": "a name resolved from an enclosing scope",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
         },
         {
-          "id": "reliability/no-unhandled-promise#TN-05b23f",
+          "id": "reliability/no-unhandled-promise#TN-f52bc0",
           "kind": "TN",
           "code": "(function () { return 1; })();",
           "description": "a non-async immediately-invoked function",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
-        },
-        {
-          "id": "reliability/no-unhandled-promise#GAP-1611db",
-          "kind": "GAP",
-          "code": "console.log(fetch(url));",
-          "description": "a promise passed as an argument to another call",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
-          "found": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
         },
         {
           "id": "reliability/no-unhandled-promise#TN-6bf88a",
@@ -106780,6 +106847,21 @@
           "code": "import { load } from \"./loader\"; load();",
           "description": "an imported name, whose body is in another file",
           "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#TP-74c7b9",
+          "kind": "TP",
+          "code": "async function load(x) { return x; } load(fetch(url));",
+          "description": "a promise handed to a locally-declared async function",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        },
+        {
+          "id": "reliability/no-unhandled-promise#FN-e65b87",
+          "kind": "FN",
+          "code": "console.log(fetch(url));",
+          "description": "a promise handed to a call that is not itself a promise",
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "found": "grammar review"
         },
         {
           "id": "reliability/no-unhandled-promise#FN-5353dc",
@@ -107125,7 +107207,7 @@
           "options": "[{ ignoreVoidExpressions: true }]"
         },
         {
-          "id": "reliability/no-unhandled-promise#TP-b52339",
+          "id": "reliability/no-unhandled-promise#TP-ca3693",
           "kind": "TP",
           "code": "async function doAsync() {} p[\"then\"](() => { doAsync(); });",
           "description": "",
@@ -128333,6 +128415,57 @@
       "rule": "secure-coding/no-unsafe-regex-construction",
       "cases": [
         {
+          "id": "secure-coding/no-unsafe-regex-construction#FP-52461d",
+          "kind": "FP",
+          "code": "function f(node) { return new RegExp(node.pattern, node.flags); }",
+          "description": "a pattern re-compiled beside its own object’s flags",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/dynamic-flags-alone.test.ts",
+          "source": "the real-source scan, 11 findings",
+          "found": "real-source scan"
+        },
+        {
+          "id": "secure-coding/no-unsafe-regex-construction#TN-a8fced",
+          "kind": "TN",
+          "code": "function f(re) { return new RegExp(re.source, re.flags); }",
+          "description": "the RegExp clone this already exempted",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/dynamic-flags-alone.test.ts"
+        },
+        {
+          "id": "secure-coding/no-unsafe-regex-construction#TN-bfcda3",
+          "kind": "TN",
+          "code": "const RE = new RegExp(\"^a+$\", \"g\");",
+          "description": "static pattern and static flags",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/dynamic-flags-alone.test.ts"
+        },
+        {
+          "id": "secure-coding/no-unsafe-regex-construction#TN-9ea88b",
+          "kind": "TN",
+          "code": "function f(o) { return new RegExp(o.pattern); }",
+          "description": "an opaque pattern with no flags at all, which was always quiet",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/dynamic-flags-alone.test.ts"
+        },
+        {
+          "id": "secure-coding/no-unsafe-regex-construction#TP-e9d2fb",
+          "kind": "TP",
+          "code": "function f(req) { return new RegExp(req.query.q, req.query.f); }",
+          "description": "an untrusted pattern still reports even when it shares an object with its flags",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/dynamic-flags-alone.test.ts"
+        },
+        {
+          "id": "secure-coding/no-unsafe-regex-construction#TP-bf6467",
+          "kind": "TP",
+          "code": "function f(req) { return new RegExp(req.query.q); }",
+          "description": "an untrusted pattern with no flags",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/dynamic-flags-alone.test.ts"
+        },
+        {
+          "id": "secure-coding/no-unsafe-regex-construction#TP-df3e29",
+          "kind": "TP",
+          "code": "function f(req, opts) { return new RegExp(req.body.p, opts.flags); }",
+          "description": "flags from a different object than the pattern",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/dynamic-flags-alone.test.ts"
+        },
+        {
           "id": "secure-coding/no-unsafe-regex-construction#TN-aa41c4",
           "kind": "TN",
           "code": "const regex = /^[a-z]+$/;",
@@ -128403,14 +128536,14 @@
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-5fa05c",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-94150f",
           "kind": "TP",
           "code": "const regex = new RegExp(req.query.pattern);",
           "description": "a RegExp built from a query parameter",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-3ebd81",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-5bf819",
           "kind": "TN",
           "code": "const regex = new RegExp(\"^short$\");",
           "description": "a RegExp built from a short literal",
@@ -128418,7 +128551,7 @@
           "options": "[{ maxPatternLength: 100 }]"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-51a7c0",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-78544f",
           "kind": "TP",
           "code": "`const regex = new RegExp(\"${'a'.repeat(150)}\");`",
           "description": "",
@@ -128426,7 +128559,7 @@
           "options": "[{ maxPatternLength: 100 }]"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-54e326",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-829d7e",
           "kind": "TN",
           "code": "const regex = new RegExp(\"^test$\");",
           "description": "",
@@ -128434,7 +128567,7 @@
           "options": "[{ allowLiterals: true }]"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-d1ea18",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-cea2bb",
           "kind": "TP",
           "code": "const regex = new RegExp(\"^test$\");",
           "description": "",
@@ -128442,40 +128575,40 @@
           "options": "[{ allowLiterals: false }]"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-b47237",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-c034ed",
           "kind": "TN",
           "code": "const regex = new RegExp(\"^test$\", \"gi\");",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-5b6c6a",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-60751c",
           "kind": "TP",
           "code": "const regex = new RegExp(\"^test$\", flags);",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-51cdbc",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-c31333",
           "kind": "TP",
           "code": "const regex = new RegExp(\"^test$\", options.flags);",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-f48060",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-279b38",
           "kind": "TP",
           "code": "const regex = new RegExp(\"^test$\", getFlags());",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-58226a",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-0925ec",
           "kind": "TN",
           "code": "const regex = new RegExp(myCustomEscape(userInput));",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts",
-          "options": "[{ trustedEscapingFunctions: ['myCustomEscape', 'escapeRegex'] }]"
+          "options": "[ { trustedEscapingFunctions: ['myCustomEscape', 'escapeRegex'] }, ]"
         },
         {
           "id": "secure-coding/no-unsafe-regex-construction#TN-87cf3f",
@@ -128563,91 +128696,91 @@
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-1add63",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-06ced8",
           "kind": "TN",
           "code": "const r = new RegExp('a' + ('b' + ('c' + ('d' + ('e' + ('f' + ('g' + ('h' + req.query.q))))))));",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-ab5d37",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-fa8b62",
           "kind": "TP",
           "code": "const r = new RegExp(req.query.q);",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-0d4a1b",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-7c059e",
           "kind": "TP",
           "code": "const r = new RegExp(`^${req.params.id}$`);",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-0e7787",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-866547",
           "kind": "TP",
           "code": "const r = new RegExp(await res.text());",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-49af31",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-6811ab",
           "kind": "TP",
           "code": "const r = new RegExp('^' + req.query.q);",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-f0ce71",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-ea2bf1",
           "kind": "TP",
           "code": "const r = new RegExp(process.argv[2]);",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-97b2c9",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-a711dd",
           "kind": "TP",
           "code": "const r = new RegExp(readFileSync(f, \"utf8\"));",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-15edd5",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-3d6222",
           "kind": "TN",
           "code": "const regex = escapeRegex(new RegExp(userInput));",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-0e0f97",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-9a4979",
           "kind": "TN",
           "code": "function clone(re) { return new RegExp(re.source, re.flags); }",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-96667c",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-7b89a0",
           "kind": "TN",
           "code": "function anchor(re) { return new RegExp(re.source + '$', re.flags); }",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TN-2395b1",
+          "id": "secure-coding/no-unsafe-regex-construction#TN-7b2236",
           "kind": "TN",
           "code": "function anchor(re) { return new RegExp('^' + re.source, re.flags); }",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-ac5698",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-a2767c",
           "kind": "TP",
           "code": "function f(p, item) { return new RegExp(p, item.flags); }",
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-c93138",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-1b96ce",
           "kind": "TP",
           "code": "function f(item) { return new RegExp(undefined, item.flags); }",
           "description": "",
@@ -128661,7 +128794,7 @@
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts"
         },
         {
-          "id": "secure-coding/no-unsafe-regex-construction#TP-6e3096",
+          "id": "secure-coding/no-unsafe-regex-construction#TP-1fdc61",
           "kind": "TP",
           "code": "const re = new RegExp(req.query.q as string, 'i');",
           "description": "",

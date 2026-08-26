@@ -183,8 +183,14 @@ function score(
     tn = 0;
   for (const c of cases) {
     const fired = (pick(c) ?? 0) > 0;
-    if (c.kind === 'defect') fired ? (tp += 1) : (fn += 1);
-    else fired ? (fp += 1) : (tn += 1);
+    if (c.kind === 'defect') {
+      if (fired) tp += 1;
+      else fn += 1;
+    } else if (fired) {
+      fp += 1;
+    } else {
+      tn += 1;
+    }
   }
   const precision = tp + fp === 0 ? 0 : tp / (tp + fp);
   const recall = tp + fn === 0 ? 0 : tp / (tp + fn);

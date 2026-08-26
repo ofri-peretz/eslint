@@ -13,7 +13,12 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-4635/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unhandledPromise' | 'addCatch' | 'useTryCatch' | 'useAwait';
@@ -57,41 +62,139 @@ type RuleOptions = [Options?];
  * does the FILE show this call to produce a promise?
  */
 const NEVER_RETURNS_PROMISE_FUNCTIONS = new Set<string>([
-  'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
-  'setImmediate', 'clearImmediate',
-  'requestAnimationFrame', 'cancelAnimationFrame',
+  'setTimeout',
+  'clearTimeout',
+  'setInterval',
+  'clearInterval',
+  'setImmediate',
+  'clearImmediate',
+  'requestAnimationFrame',
+  'cancelAnimationFrame',
   'queueMicrotask',
-  'String', 'Number', 'Boolean', 'Symbol', 'BigInt',
-  'parseInt', 'parseFloat', 'isNaN', 'isFinite',
-  'Array', 'Object',
+  'String',
+  'Number',
+  'Boolean',
+  'Symbol',
+  'BigInt',
+  'parseInt',
+  'parseFloat',
+  'isNaN',
+  'isFinite',
+  'Array',
+  'Object',
 ]);
 
 const NEVER_RETURNS_PROMISE_METHODS = new Set<string>([
   // console / logger
-  'log', 'error', 'warn', 'info', 'debug', 'trace', 'group', 'groupEnd',
-  'time', 'timeEnd', 'assert',
+  'log',
+  'error',
+  'warn',
+  'info',
+  'debug',
+  'trace',
+  'group',
+  'groupEnd',
+  'time',
+  'timeEnd',
+  'assert',
   // Math
-  'floor', 'ceil', 'round', 'abs', 'min', 'max', 'pow', 'sqrt', 'random',
-  'sin', 'cos', 'tan', 'log2', 'log10',
+  'floor',
+  'ceil',
+  'round',
+  'abs',
+  'min',
+  'max',
+  'pow',
+  'sqrt',
+  'random',
+  'sin',
+  'cos',
+  'tan',
+  'log2',
+  'log10',
   // String / Array helpers
-  'slice', 'split', 'join', 'concat', 'includes', 'indexOf', 'lastIndexOf',
-  'startsWith', 'endsWith', 'replace', 'replaceAll', 'trim', 'toLowerCase', 'toUpperCase',
-  'repeat', 'padStart', 'padEnd', 'charAt', 'charCodeAt', 'codePointAt',
-  'push', 'pop', 'shift', 'unshift', 'splice', 'reverse', 'sort',
-  'map', 'filter', 'reduce', 'reduceRight', 'forEach', 'every', 'some', 'find', 'findIndex',
-  'flat', 'flatMap', 'fill', 'copyWithin', 'entries', 'keys', 'values',
+  'slice',
+  'split',
+  'join',
+  'concat',
+  'includes',
+  'indexOf',
+  'lastIndexOf',
+  'startsWith',
+  'endsWith',
+  'replace',
+  'replaceAll',
+  'trim',
+  'toLowerCase',
+  'toUpperCase',
+  'repeat',
+  'padStart',
+  'padEnd',
+  'charAt',
+  'charCodeAt',
+  'codePointAt',
+  'push',
+  'pop',
+  'shift',
+  'unshift',
+  'splice',
+  'reverse',
+  'sort',
+  'map',
+  'filter',
+  'reduce',
+  'reduceRight',
+  'forEach',
+  'every',
+  'some',
+  'find',
+  'findIndex',
+  'flat',
+  'flatMap',
+  'fill',
+  'copyWithin',
+  'entries',
+  'keys',
+  'values',
   // JSON
-  'parse', 'stringify',
+  'parse',
+  'stringify',
   // AbortController/AbortSignal
-  'abort', 'addEventListener', 'removeEventListener', 'dispatchEvent',
+  'abort',
+  'addEventListener',
+  'removeEventListener',
+  'dispatchEvent',
   // Date / Buffer / Number / Array static helpers (sync)
-  'now', 'parse', 'UTC', 'from', 'of', 'isArray', 'isBuffer',
-  'isInteger', 'isFinite', 'isNaN', 'isSafeInteger',
-  'fromCharCode', 'fromCodePoint', 'raw',
+  'now',
+  'parse',
+  'UTC',
+  'from',
+  'of',
+  'isArray',
+  'isBuffer',
+  'isInteger',
+  'isFinite',
+  'isNaN',
+  'isSafeInteger',
+  'fromCharCode',
+  'fromCodePoint',
+  'raw',
   // Object helpers (sync)
-  'assign', 'freeze', 'isFrozen', 'create', 'defineProperty', 'defineProperties',
-  'getOwnPropertyDescriptor', 'getOwnPropertyNames', 'getPrototypeOf', 'setPrototypeOf',
-  'preventExtensions', 'isExtensible', 'seal', 'isSealed', 'fromEntries',
+  'assign',
+  'freeze',
+  'isFrozen',
+  'create',
+  'defineProperty',
+  'defineProperties',
+  'getOwnPropertyDescriptor',
+  'getOwnPropertyNames',
+  'getPrototypeOf',
+  'setPrototypeOf',
+  'preventExtensions',
+  'isExtensible',
+  'seal',
+  'isSealed',
+  'fromEntries',
   // Promise constructors that are themselves a promise but the callee is OK
 ]);
 
@@ -103,8 +206,20 @@ const NEVER_RETURNS_PROMISE_METHODS = new Set<string>([
  * async on a user-defined object.
  */
 const SYNC_NAMESPACE_OBJECTS = new Set<string>([
-  'Math', 'JSON', 'Date', 'Buffer', 'Array', 'Object', 'Number', 'String',
-  'Boolean', 'Symbol', 'BigInt', 'Reflect', 'console', 'process',
+  'Math',
+  'JSON',
+  'Date',
+  'Buffer',
+  'Array',
+  'Object',
+  'Number',
+  'String',
+  'Boolean',
+  'Symbol',
+  'BigInt',
+  'Reflect',
+  'console',
+  'process',
 ]);
 
 /**
@@ -134,7 +249,12 @@ const SYNC_NAMESPACE_OBJECTS = new Set<string>([
  * that decides from a name has to let the consumer own the name.
  */
 const PROMISE_STATICS: ReadonlySet<string> = new Set([
-  'all', 'allSettled', 'any', 'race', 'resolve', 'reject',
+  'all',
+  'allSettled',
+  'any',
+  'race',
+  'resolve',
+  'reject',
 ]);
 
 function isAsyncFunctionNode(node: TSESTree.Node | undefined | null): boolean {
@@ -208,13 +328,17 @@ export function isLikelyPromiseExpression(node: TSESTree.Node): boolean {
   if (callee.type === 'MemberExpression') {
     const prop = (callee as TSESTree.MemberExpression).property;
     if (prop.type === 'Identifier') {
-      if (NEVER_RETURNS_PROMISE_METHODS.has((prop as TSESTree.Identifier).name)) return false;
+      if (NEVER_RETURNS_PROMISE_METHODS.has((prop as TSESTree.Identifier).name))
+        return false;
     }
     // Static helpers on known sync namespaces — `Buffer.from`, `Date.now`,
     // `Array.isArray`, `Object.keys`, etc. The standard library never
     // returns a Promise from any method on these globals.
     const obj = (callee as TSESTree.MemberExpression).object;
-    if (obj.type === 'Identifier' && SYNC_NAMESPACE_OBJECTS.has((obj as TSESTree.Identifier).name)) {
+    if (
+      obj.type === 'Identifier' &&
+      SYNC_NAMESPACE_OBJECTS.has((obj as TSESTree.Identifier).name)
+    ) {
       return false;
     }
     return true;
@@ -236,7 +360,11 @@ function isPromiseDelegatedToCaller(node: TSESTree.CallExpression): boolean {
   const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
   if (!parent) return false;
   if (parent.type === 'ReturnStatement') return true;
-  if (parent.type === 'ArrowFunctionExpression' && (parent as TSESTree.ArrowFunctionExpression).body === node) return true;
+  if (
+    parent.type === 'ArrowFunctionExpression' &&
+    (parent as TSESTree.ArrowFunctionExpression).body === node
+  )
+    return true;
   return false;
 }
 
@@ -490,7 +618,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
      * resolves to an ImportSpecifier, which says nothing about what it
      * returns, and is correctly not evidence.
      */
-    function resolveBinding(name: string, from: TSESTree.Node): TSESTree.Node | null {
+    function resolveBinding(
+      name: string,
+      from: TSESTree.Node,
+    ): TSESTree.Node | null {
       let scope = context.sourceCode.getScope(from);
       while (scope) {
         const variable = scope.variables.find((v) => v.name === name);
@@ -579,7 +710,9 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       // whether the file shows anything that IS one.
       if (
         requirePromiseEvidence &&
-        !hasPromiseEvidence(node, promiseNames, (name) => resolveBinding(name, node))
+        !hasPromiseEvidence(node, promiseNames, (name) =>
+          resolveBinding(name, node),
+        )
       ) {
         return;
       }
@@ -602,27 +735,73 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Skip if this CallExpression is an argument to another CallExpression
-      // (e.g., console.log(fetch(url)) - we don't want to flag fetch(url) here)
+      // This call is an argument to another call.
+      //
+      // The skip exists so one defect produces one finding: in
+      // `wrapPromise(fetch(url))` both calls are promise candidates and both
+      // would report. But it was UNCONDITIONAL, and when the outer call is not
+      // a promise candidate — `console.log(fetch(url))` is the everyday one —
+      // nothing reported at all. The outer is not a candidate, the inner was
+      // skipped, and the unhandled rejection went unmentioned. Six documented
+      // misses across two plugins were this one branch.
+      //
+      // Deciding on the OUTER call keeps one-finding-per-defect and recovers
+      // the miss: whichever of the two is a promise reports, and when both
+      // are, only the outer does.
+      //
+      // The chain test below deliberately still reads the DOTTED spelling
+      // only. Routing it through `propertyName` looks like an obvious
+      // improvement and is not: it made `wrap(p)["then"](h)` report twice and
+      // `wrap(p)["catch"](h)` report once, because four other sites in this
+      // rule read the same property and they do not all agree yet. That is a
+      // separate change with its own measurements, and `p["then"](…)` is
+      // already handled by `hasPromiseEvidence`.
       const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
         .parent;
       if (parent && parent.type === 'CallExpression') {
-        // Only skip if it's not part of a promise chain
-        // If it's the object of a MemberExpression with .then/.catch/.finally, it's a promise
         const grandParent = (
           parent as TSESTree.Node & { parent?: TSESTree.Node }
         ).parent;
-        if (
-          !(
-            grandParent &&
-            grandParent.type === 'MemberExpression' &&
-            grandParent.object === parent &&
-            grandParent.property.type === 'Identifier' &&
-            (grandParent.property.name === 'then' ||
-              grandParent.property.name === 'catch' ||
-              grandParent.property.name === 'finally')
-          )
-        ) {
+        // ONE lookup, two questions. The chain method is read once with
+        // `propertyName`, which answers for `wrap(p)["then"]` as well as
+        // `wrap(p).then`; `inPromiseChain` then keeps the DOTTED-only meaning
+        // it has always had, because widening it changed four other sites in
+        // this rule at once and made `wrap(p)["then"](h)` report twice.
+        //
+        // Testing the grandparent twice was the same question asked in two
+        // shapes, and left an arm only a synthetic node could reach.
+        const chainOn =
+          grandParent?.type === 'MemberExpression' &&
+          grandParent.object === parent
+            ? grandParent
+            : null;
+        const outerChainMethod =
+          chainOn === null ? null : propertyName(chainOn);
+        // All three, unlike the maintainability twin where `.catch`/`.finally`
+        // are unreachable here because its handled-check returns first. The
+        // two rules reached the same behaviour by different routes, and the
+        // difference is real: trimming these arms fails two cases in this
+        // plugin and none in that one.
+        const inPromiseChain =
+          chainOn !== null &&
+          chainOn.property.type === 'Identifier' &&
+          (outerChainMethod === 'then' ||
+            outerChainMethod === 'catch' ||
+            outerChainMethod === 'finally');
+        // `arguments.includes` and not `callee ===`: in `getPromise()(x)` this
+        // call is the CALLEE, where the outer call is the promise.
+        const isArgument = parent.arguments.some((a) => a === (node as never));
+        // The outer call is also a promise when a chain method is called ON it,
+        // in either spelling. This decides only whether to SKIP the inner call,
+        // so widening it can lose a report but never add one.
+        const outerIsPromise =
+          outerChainMethod === 'then' ||
+          outerChainMethod === 'catch' ||
+          outerChainMethod === 'finally' ||
+          hasPromiseEvidence(parent, promiseNames, (name) =>
+            resolveBinding(name, parent),
+          );
+        if (!inPromiseChain && (!isArgument || outerIsPromise)) {
           return;
         }
       }
@@ -720,7 +899,8 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
      * the chains.
      */
     function checkStatementPromise(node: TSESTree.Node): void {
-      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
+        .parent;
       if (parent?.type !== 'ExpressionStatement') return;
       context.report({ node, messageId: 'unhandledPromise' });
     }
@@ -729,7 +909,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       CallExpression: checkCallExpression,
       ImportExpression: checkStatementPromise,
       NewExpression(node: TSESTree.NewExpression) {
-        if (node.callee.type === 'Identifier' && node.callee.name === 'Promise') {
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'Promise'
+        ) {
           checkStatementPromise(node);
         }
       },

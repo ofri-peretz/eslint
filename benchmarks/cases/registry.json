@@ -291,7 +291,12 @@
       "references": [],
       "occurrences": [],
       "code": "function f(o) { o[getKey()] = 1; }",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report"
+        }
+      ],
       "kind": "decoy"
     },
     {
@@ -905,7 +910,12 @@
       "occurrences": [],
       "code": "console.log(fetch(url));",
       "kind": "defect",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
       "importedFrom": "maintainability/no-unhandled-promise#GAP-175b7b",
       "foundBy": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
     },
@@ -924,7 +934,12 @@
       "occurrences": [],
       "code": "first(fetch(url)).third;",
       "kind": "defect",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
       "importedFrom": "maintainability/no-unhandled-promise#GAP-b749bb",
       "foundBy": "same skip, one member access further along"
     },
@@ -943,7 +958,12 @@
       "occurrences": [],
       "code": "console.log(fetch(url));",
       "kind": "defect",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
       "importedFrom": "maintainability/no-unhandled-promise#GAP-0f9ad0",
       "foundBy": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
     },
@@ -962,7 +982,12 @@
       "occurrences": [],
       "code": "outer(wrap(fetch(url)));",
       "kind": "defect",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
       "importedFrom": "maintainability/no-unhandled-promise#GAP-441394",
       "foundBy": "same skip, through two layers"
     },
@@ -981,7 +1006,12 @@
       "occurrences": [],
       "code": "const v = a[wrap(fetch(url))].then;",
       "kind": "defect",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
       "importedFrom": "maintainability/no-unhandled-promise#GAP-fc1f8e",
       "foundBy": "same skip, in computed-key position"
     },
@@ -1580,7 +1610,12 @@
       "occurrences": [],
       "code": "console.log(fetch(url));",
       "kind": "defect",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "reliability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
       "importedFrom": "reliability/no-unhandled-promise#GAP-1611db",
       "foundBy": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
     },

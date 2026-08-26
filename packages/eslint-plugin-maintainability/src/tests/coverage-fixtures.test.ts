@@ -126,16 +126,6 @@ describe('coverage fixtures', () => {
         // exists to catch. `.then` no longer terminates a chain, so the
         // handled-check gets to look for a `.catch`, and this now reports.
         { code: 'getData().catch(handleError);' },
-        {
-          // @found nested arguments are skipped so console.log(fetch(url)) does not report twice
-          name: 'GAP: a promise passed as an argument — the nested call is skipped',
-          code: 'console.log(fetch(url));',
-        },
-        {
-          // @found same skip, one member access further along
-          name: 'GAP: the same, one member access further along',
-          code: 'first(fetch(url)).third;',
-        },
       ],
       invalid: [
         /**

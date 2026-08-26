@@ -9,7 +9,7 @@ say, and a rule cannot be missing a case it never claimed. This register is
 case-first, so a gap is visible as an entry with no coverage rather than as
 an absence nobody can see.
 
-**98 cases · 89 verified · 9 uncovered · 0 regressed**
+**98 cases · 96 verified · 2 uncovered · 0 regressed**
 
 Every `status` below was computed on this run by executing the case code
 through the rule that claims it. A stored "covered: yes" would be a
@@ -69,7 +69,7 @@ configuration as their miss.
 | `ILB-0007` | A merge helper guarded by Object.hasOwn | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
 | `ILB-0008` | A timing-unsafe comparison of a bearer token | defect | CWE-208 | `node-security/no-timing-unsafe-compare` (report) | — | ✅ |
 | `ILB-0009` | An AST discriminant compared with === | decoy | — | `node-security/no-timing-unsafe-compare` (silent) | — | ✅ |
-| `ILB-0010` | Prototype pollution through a key reached by a call | decoy | CWE-1321 | **nothing** | — | uncovered |
+| `ILB-0010` | Prototype pollution through a key reached by a call | decoy | CWE-1321 | `secure-coding/detect-object-injection` (report) | — | ✅ |
 | `ILB-0011` | the same code with template literals instead of quoted strings | defect | — | `browser-security/no-innerhtml` (report) | property: **we are ahead** | ✅ |
 | `ILB-0012` | the same code with template literals instead of quoted strings | defect | — | `browser-security/no-missing-security-headers` (report) | — | ✅ |
 | `ILB-0013` | a named const through a type assertion — 33% of findings, with the arithmetic case | decoy | — | `conventions/no-magic-numbers` (silent) | — | ✅ |
@@ -90,11 +90,11 @@ configuration as their miss.
 | `ILB-0028` | an object-literal method is the object, not a nested helper | decoy | — | `maintainability/consistent-function-scoping` (silent) | — | ✅ |
 | `ILB-0029` | the same helper as an arrow | defect | — | `maintainability/consistent-function-scoping` (report) | — | ✅ |
 | `ILB-0030` | the same helper as a function expression | defect | — | `maintainability/consistent-function-scoping` (report) | — | ✅ |
-| `ILB-0031` | a promise passed as an argument — the nested call is skipped | defect | — | **nothing** | — | uncovered |
-| `ILB-0032` | the same, one member access further along | defect | — | **nothing** | — | uncovered |
-| `ILB-0033` | a promise passed as an argument to another call | defect | — | **nothing** | — | uncovered |
-| `ILB-0034` | a promise wrapped twice | defect | — | **nothing** | — | uncovered |
-| `ILB-0035` | a wrapped promise used as a computed key | defect | — | **nothing** | — | uncovered |
+| `ILB-0031` | a promise passed as an argument — the nested call is skipped | defect | — | `maintainability/no-unhandled-promise` (report) | — | ✅ |
+| `ILB-0032` | the same, one member access further along | defect | — | `maintainability/no-unhandled-promise` (report) | — | ✅ |
+| `ILB-0033` | a promise passed as an argument to another call | defect | — | `maintainability/no-unhandled-promise` (report) | — | ✅ |
+| `ILB-0034` | a promise wrapped twice | defect | — | `maintainability/no-unhandled-promise` (report) | — | ✅ |
+| `ILB-0035` | a wrapped promise used as a computed key | defect | — | `maintainability/no-unhandled-promise` (report) | — | ✅ |
 | `ILB-0036` | a dynamic import nobody awaits | defect | — | `maintainability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
 | `ILB-0037` | new Promise as a whole statement | defect | — | `maintainability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
 | `ILB-0038` | the same code with template literals instead of quoted strings | defect | — | `node-security/detect-non-literal-fs-filename` (report) | detect-non-literal-fs-filename: **we are ahead** | ✅ |
@@ -115,7 +115,7 @@ configuration as their miss.
 | `ILB-0053` | a section label with no field name after it | defect | — | `react-a11y/autocomplete-valid` (report) | autocomplete-valid: level | ✅ |
 | `ILB-0054` | an empty lang names no language | defect | — | `react-a11y/html-has-lang` (report) | html-has-lang: level | ✅ |
 | `ILB-0055` | an empty title announces nothing | defect | — | `react-a11y/iframe-has-title` (report) | iframe-has-title: level | ✅ |
-| `ILB-0056` | a promise passed as an argument to another call | defect | — | **nothing** | — | uncovered |
+| `ILB-0056` | a promise passed as an argument to another call | defect | — | `reliability/no-unhandled-promise` (report) | — | ✅ |
 | `ILB-0057` | a dynamic import nobody awaits | defect | — | `reliability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
 | `ILB-0058` | new Promise as a whole statement | defect | — | `reliability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
 | `ILB-0059` | an array append written as a self-indexed length | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
@@ -345,7 +345,10 @@ function f(o) { o[getKey()] = 1; }
 - **Occurrences** none recorded — this case is constructed, not observed
 - **References** none
 
-**No rule claims this case.**
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
 
 ### ILB-0011 — the same code with template literals instead of quoted strings
 
@@ -740,7 +743,10 @@ console.log(fetch(url));
 - **Occurrences** none recorded — this case is constructed, not observed
 - **References** none
 
-**No rule claims this case.**
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
 
 ### ILB-0032 — the same, one member access further along
 
@@ -755,7 +761,10 @@ first(fetch(url)).third;
 - **Occurrences** none recorded — this case is constructed, not observed
 - **References** none
 
-**No rule claims this case.**
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
 
 ### ILB-0033 — a promise passed as an argument to another call
 
@@ -770,7 +779,10 @@ console.log(fetch(url));
 - **Occurrences** none recorded — this case is constructed, not observed
 - **References** none
 
-**No rule claims this case.**
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
 
 ### ILB-0034 — a promise wrapped twice
 
@@ -785,7 +797,10 @@ outer(wrap(fetch(url)));
 - **Occurrences** none recorded — this case is constructed, not observed
 - **References** none
 
-**No rule claims this case.**
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
 
 ### ILB-0035 — a wrapped promise used as a computed key
 
@@ -800,7 +815,10 @@ const v = a[wrap(fetch(url))].then;
 - **Occurrences** none recorded — this case is constructed, not observed
 - **References** none
 
-**No rule claims this case.**
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
 
 ### ILB-0036 — a dynamic import nobody awaits
 
@@ -1187,7 +1205,10 @@ console.log(fetch(url));
 - **Occurrences** none recorded — this case is constructed, not observed
 - **References** none
 
-**No rule claims this case.**
+| rule | must | did | |
+|---|---|---|---|
+| `reliability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
 
 ### ILB-0057 — a dynamic import nobody awaits
 

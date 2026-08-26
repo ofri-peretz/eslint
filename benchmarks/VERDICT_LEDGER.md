@@ -71,11 +71,11 @@ then, recall numbers should be read as a floor, not a measurement.
 | FP-002 | `no-timing-unsafe-compare` | `node.kind === SyntaxKind.X` | 11 | **fixed** (#727) |
 | FP-003 | `no-insecure-comparison` | `if (e.code == 'MODULE_NOT_FOUND')` | 140 | **configurable** |
 | FP-004 | `require-secure-credential-storage` | `TOKEN_SIGNING_ALG = 'RS256'` | 110 | **fixed** |
-| FP-005 | `no-innerhtml` | `DOMPurify?.sanitize(h) ?? h` | 21 | parked |
-| FP-006 | `no-hardcoded-credentials` | TypeORM migration `name` | 20 | parked |
+| FP-005 | `no-innerhtml` | `DOMPurify?.sanitize(h) ?? h` | 21 | **not an FP — it is a TP** |
+| FP-006 | `no-hardcoded-credentials` | TypeORM migration `name` | 20 | **fixed** |
 | FP-007 | `jwt/require-issuer-validation` ×3 | minimal `jwt.verify` | — | open |
-| FP-008 | `pg/no-transaction-on-pool` | hardcoded identifier `pool` | — | open |
-| FP-009 | `no-unsafe-regex-construction` | `new RegExp(node.pattern, node.flags)` | 11 | open |
+| FP-008 | `pg/no-transaction-on-pool` | hardcoded identifier `pool` | — | **fixed** |
+| FP-009 | `no-unsafe-regex-construction` | `new RegExp(node.pattern, node.flags)` | 11 | **fixed** |
 | FP-010 | `detect-object-injection` | computed-key **write**, key locally derived | ~750 | characterised |
 | FP-014 | `detect-object-injection` | `arr[arr.length] = x`, the array-append idiom | — | **fixed** |
 | FP-015 | `detect-object-injection` | a key iterated from a `const` array of string literals | — | **fixed** |
@@ -179,6 +179,42 @@ findings with zero real oracles to near-zero noise. Whether the same trade is
 right here is a judgement about prototype pollution, not about triage, and it
 is now the only thing standing between this entry and a verdict.
 
+
+## FP-005 — parked for weeks as noise, and it was a true positive
+
+`el.innerHTML = DOMPurify?.sanitize(html) ?? html` reads as belt-and-braces.
+Running it settles the matter:
+
+```js
+let DOMPurify;                                    // module not loaded
+DOMPurify?.sanitize(payload) ?? payload
+// -> "<img src=x onerror=alert(1)>"              the RAW payload
+```
+
+`?.` yields `undefined` when the sanitiser is absent and `??` then chooses the
+unsanitised operand, so the shape degrades to no sanitisation at all in exactly
+the circumstance the optional chain was written to survive. All 21 findings
+stand. **A shape that looks like a remediation is not one if it has a fallback
+path** — the third time in this work that something filed as a false positive
+turned out to be correct behaviour, after `<nav role="navigation">` and
+`this[k] = v`.
+
+Two genuine false positives were hiding behind it, and both are now fixed: the
+same call with NO fallback (`DOMPurify?.sanitize(h)` throws when absent, and a
+crash is not an XSS) and a fallback to a constant (`… ?? ''`). The rule now
+judges every branch of a fallback, which keeps the dangerous shape reporting.
+
+## FP-009 — a dynamic flag is not a denial of service
+
+The tell was that the FLAGS argument changed the verdict on the PATTERN:
+`new RegExp(o.pattern)` was silent, `new RegExp(o.pattern, o.flags)` reported.
+Nothing about the pattern's trustworthiness differs between those two lines.
+
+This rule's CWE is CWE-400 — catastrophic backtracking — and `g`/`y` change
+where matching starts, not what a pattern costs. All 11 wild findings were one
+shape: re-compiling a pattern read off an object beside that object's own
+flags, which is the copy idiom `isRegexClone` already exempted for
+`re.source`/`re.flags`. An untrusted pattern still reports on its own.
 
 ## FP-014 / FP-015 — found by reading our rule beside its nearest neighbour
 

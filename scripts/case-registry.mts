@@ -486,10 +486,6 @@ const prose = (text: string): string =>
   text.replace(/(?<!`)__([A-Za-z]+)__(?!`)/g, '`__$1__`');
 
 if (!CHECK) {
-  const sev = (c: Case): string =>
-    c.severity.cvss === null
-      ? '—'
-      : `${c.severity.cvss}${c.severity.source === null ? ' *' : ''}`;
   const md: string[] = [
     '# Case registry',
     '',

@@ -348,11 +348,17 @@ describe('no-unhandled-promise — helper functions with synthetic AST', () => {
         callee: { type: 'Identifier', name: 'fetch' },
         arguments: [],
       } as Record<string, unknown>;
-      // The parent is a CallExpression with no parent — the `grandParent &&`
+      // The parent is a CallExpression with no parent — the `grandParent`
       // arm of the nested-argument skip.
+      //
+      // This asserted `[]` until 2026-08-26, when the skip stopped being
+      // unconditional. `wrap(fetch(url))` where `wrap` is not a promise now
+      // reports the INNER call, because otherwise nothing reports it at all
+      // and the rejection is unhandled. The synthetic node exercises the arm
+      // where there is no grandparent to inspect.
       inner['parent'] = { type: 'CallExpression', callee: { type: 'Identifier', name: 'wrap' }, arguments: [inner] };
       invoke(listeners, 'CallExpression', inner);
-      expect(reports).toEqual([]);
+      expect(reports).toHaveLength(1);
     });
 
     it('null options entry falls back to defaults and reports an unhandled call', () => {

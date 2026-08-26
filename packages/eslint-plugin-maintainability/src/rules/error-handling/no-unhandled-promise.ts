@@ -13,7 +13,12 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-4635/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unhandledPromise' | 'addCatch' | 'useTryCatch' | 'useAwait';
@@ -92,7 +97,12 @@ export function isPromiseExpression(node: TSESTree.Node): boolean {
  * reads.
  */
 const PROMISE_STATICS: ReadonlySet<string> = new Set([
-  'all', 'allSettled', 'any', 'race', 'resolve', 'reject',
+  'all',
+  'allSettled',
+  'any',
+  'race',
+  'resolve',
+  'reject',
 ]);
 
 function isAsyncFunctionNode(node: TSESTree.Node | undefined | null): boolean {
@@ -411,7 +421,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
      * count as evidence — an imported name resolves to an ImportSpecifier,
      * which says nothing about what it returns, and is correctly not evidence.
      */
-    function resolveBinding(name: string, from: TSESTree.Node): TSESTree.Node | null {
+    function resolveBinding(
+      name: string,
+      from: TSESTree.Node,
+    ): TSESTree.Node | null {
       let scope = context.sourceCode.getScope(from);
       while (scope) {
         const variable = scope.variables.find((v) => v.name === name);
@@ -498,7 +511,9 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
        */
       if (
         requirePromiseEvidence &&
-        !hasPromiseEvidence(node, promiseNames, (name) => resolveBinding(name, node))
+        !hasPromiseEvidence(node, promiseNames, (name) =>
+          resolveBinding(name, node),
+        )
       ) {
         return;
       }
@@ -521,27 +536,70 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Skip if this CallExpression is an argument to another CallExpression
-      // (e.g., console.log(fetch(url)) - we don't want to flag fetch(url) here)
+      // This call is an argument to another call.
+      //
+      // The skip exists so one defect produces one finding: in
+      // `wrapPromise(fetch(url))` both calls are promise candidates and both
+      // would report. But it was UNCONDITIONAL, and when the outer call is not
+      // a promise candidate — `console.log(fetch(url))` is the everyday one —
+      // nothing reported at all. The outer is not a candidate, the inner was
+      // skipped, and the unhandled rejection went unmentioned. Six documented
+      // misses across two plugins were this one branch.
+      //
+      // Deciding on the OUTER call keeps one-finding-per-defect and recovers
+      // the miss: whichever of the two is a promise reports, and when both
+      // are, only the outer does.
+      //
+      // The chain test below deliberately still reads the DOTTED spelling
+      // only. Routing it through `propertyName` looks like an obvious
+      // improvement and is not: it made `wrap(p)["then"](h)` report twice and
+      // `wrap(p)["catch"](h)` report once, because four other sites in this
+      // rule read the same property and they do not all agree yet. That is a
+      // separate change with its own measurements, and `p["then"](…)` is
+      // already handled by `hasPromiseEvidence`.
       const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
         .parent;
       if (parent && parent.type === 'CallExpression') {
-        // Only skip if it's not part of a promise chain
-        // If it's the object of a MemberExpression with .then/.catch/.finally, it's a promise
         const grandParent = (
           parent as TSESTree.Node & { parent?: TSESTree.Node }
         ).parent;
-        if (
-          !(
-            grandParent &&
-            grandParent.type === 'MemberExpression' &&
-            grandParent.object === parent &&
-            grandParent.property.type === 'Identifier' &&
-            (grandParent.property.name === 'then' ||
-              grandParent.property.name === 'catch' ||
-              grandParent.property.name === 'finally')
-          )
-        ) {
+        // ONE lookup, two questions. The chain method is read once with
+        // `propertyName`, which answers for `wrap(p)["then"]` as well as
+        // `wrap(p).then`; `inPromiseChain` then keeps the DOTTED-only meaning
+        // it has always had, because widening it changed four other sites in
+        // this rule at once and made `wrap(p)["then"](h)` report twice.
+        //
+        // Testing the grandparent twice was the same question asked in two
+        // shapes, and left an arm only a synthetic node could reach.
+        const chainOn =
+          grandParent?.type === 'MemberExpression' &&
+          grandParent.object === parent
+            ? grandParent
+            : null;
+        const outerChainMethod =
+          chainOn === null ? null : propertyName(chainOn);
+        // `then` only. A `.catch` or `.finally` on the wrapper means the chain
+        // is HANDLED, and the handled-check above has already returned by the
+        // time this runs — so arms for those two were unreachable, not merely
+        // untested. Verified by coverage: both were dead.
+        const inPromiseChain =
+          chainOn !== null &&
+          chainOn.property.type === 'Identifier' &&
+          outerChainMethod === 'then';
+        // `arguments.includes` and not `callee ===`: in `getPromise()(x)` this
+        // call is the CALLEE, where the outer call is the promise.
+        const isArgument = parent.arguments.some((a) => a === (node as never));
+        // The outer call is also a promise when a chain method is called ON it,
+        // in either spelling. This decides only whether to SKIP the inner call,
+        // so widening it can lose a report but never add one.
+        const outerIsPromise =
+          outerChainMethod === 'then' ||
+          outerChainMethod === 'catch' ||
+          outerChainMethod === 'finally' ||
+          hasPromiseEvidence(parent, promiseNames, (name) =>
+            resolveBinding(name, parent),
+          );
+        if (!inPromiseChain && (!isArgument || outerIsPromise)) {
           return;
         }
       }
@@ -632,7 +690,8 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
      * the chains.
      */
     function checkStatementPromise(node: TSESTree.Node): void {
-      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
+        .parent;
       if (parent?.type !== 'ExpressionStatement') return;
       context.report({ node, messageId: 'unhandledPromise' });
     }
@@ -641,7 +700,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       CallExpression: checkCallExpression,
       ImportExpression: checkStatementPromise,
       NewExpression(node: TSESTree.NewExpression) {
-        if (node.callee.type === 'Identifier' && node.callee.name === 'Promise') {
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'Promise'
+        ) {
           checkStatementPromise(node);
         }
       },
