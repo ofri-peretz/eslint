@@ -49,6 +49,8 @@ that way.
 | FP-010 | `detect-object-injection` | computed-key **write**, key locally derived | ~750 | characterised |
 | FP-011 | `no-unhandled-promise` (×2 plugins) | every call treated as a promise | **11,866** | **fixed** |
 | FP-012 | `no-magic-numbers` | a number already named, and a number that is data | 536 | **fixed** |
+| FP-013 | `consistent-function-scoping` | a function passed as an argument | 1,270 | **fixed** |
+| FN-001 | `consistent-function-scoping` | every arrow and function-expression helper | — | **fixed** |
 
 `detect-object-injection` alone is six of the top eleven clusters. It is the
 largest single block of unexamined findings we have, and it is one rule.
@@ -214,3 +216,52 @@ Two things the measurement corrected on the way:
 A third came from the coverage gate: the recursive array arm in the element
 check could never be taken, because the array selected is always the innermost
 one containing the literal. Deleted rather than covered.
+
+
+## FP-013 and FN-001 — one rule, wrong in both directions
+
+The first entry harvested from `CANDIDATES.md`, and it turned out to be two
+defects sharing a rule.
+
+### The false positive: a host list that had to name the world
+
+`consistent-function-scoping` exempted callbacks passed to hosts it recognised
+— array methods, `.then`, `setTimeout`. `describe`, `it` and the lifecycle
+hooks were on no list, so **every block in every spec file reported**: 1,415
+findings across two small repositories.
+
+Adding the test frameworks would have been the same mistake one entry larger.
+With them added, the survivors were `chrome.storage.onChanged.addListener` —
+`addEventListener` was listed, `addListener` was not — and
+`defineBackground(cb)`, a framework entry point no list would ever contain.
+That is a denylist wearing an allowlist's clothes.
+
+The structural fact needs no vocabulary: **an argument cannot be moved to
+module scope without changing what it is an argument to**, and neither can an
+object-literal method. It also passes the suite's own litmus test — rename
+every identifier to `foo` and the rule behaves the same, which was not true of
+any version that read `describe` or `map`.
+
+**1,415 → 145**, and every survivor is a genuine nested helper.
+
+### The false negative: the rule only worked on legacy syntax
+
+Pinning the fix exposed something larger. `collectReferences` walked
+`for (const key in node)` — which includes **`parent`**, a link back *up* the
+tree. So "which names does this body use" was really "which names appear
+anywhere in the file". An arrow whose entire body is `42` collected
+`helper, outer`, looked as though it captured its enclosing scope, and never
+reported.
+
+Only the `function` declaration form ever fired. Arrows are the dominant modern
+form, so the rule was missing most of what it exists to find — while producing
+1,415 findings on the things it should have ignored.
+
+A coverage fixture had written the bug down as intent:
+
+> *"Function expressions assigned to variables reference their own binding
+> through the parent chain and are treated as capturing."*
+
+Fixing the walk then exposed a third thing: the module-scope guard checked the
+literal parent, so `const f = function () {}` at module scope was never
+recognised as already-top-level. It had been saved by the same bug.

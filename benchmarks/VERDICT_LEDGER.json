@@ -280,6 +280,35 @@
       "why": "The largest source of findings once no-unhandled-promise was fixed. Classified over 120 TypeScript files: 290 of 735 (39%) were inside an all-numeric array literal — coordinates and colour matrices, which are data — and 246 (33%) were the initialiser of a named const reached through a type assertion or all-literal arithmetic. The rule already exempted `const FOO = 42`, but only as a DIRECT initialiser, so `180 as Degrees` and `10 / 1.5` walked past it. Reporting those contradicts the rule's own fix, which is to give the number a name. 735 → 428 on the same files; the remainder is `clamp(tolerance * height, 5, 80)` and `Math.max(GAP, 15)`, which are magic and should report.",
       "fixture": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
       "fixed_in": "this branch"
+    },
+    {
+      "id": "FP-013",
+      "rule": "maintainability/consistent-function-scoping",
+      "verdict": "FP",
+      "status": "fixed",
+      "shape": "a function passed as an argument, and an object-literal method",
+      "wild": 1270,
+      "repos": [
+        "nwutils/getter",
+        "telepat-io/otto"
+      ],
+      "source": "nwutils/getter tests/specs/request.test.js:10, telepat-io/otto extension/src/background.ts:217",
+      "why": "The rule kept a LIST of callback-taking hosts — array methods, .then, setTimeout — and reported every callback to a host it had not heard of. `describe`/`it`/`test` were on no list, so every block in every spec file reported: 1,415 findings across two small repositories. Adding the test frameworks would have been the same mistake one entry larger; the survivors were `chrome.storage.onChanged.addListener` (`addEventListener` was listed, `addListener` was not) and `defineBackground`, a framework entry point no list would ever contain. Replaced with the structural fact: an argument cannot be moved to module scope without changing what it is an argument to, and neither can an object-literal method. 1,415 → 145, and the survivors are genuine nested helpers.",
+      "fixture": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+      "fixed_in": "this branch"
+    },
+    {
+      "id": "FN-001",
+      "rule": "maintainability/consistent-function-scoping",
+      "verdict": "FN",
+      "status": "fixed",
+      "shape": "every arrow and function-expression helper",
+      "wild": 0,
+      "repos": [],
+      "source": "found while pinning FP-013",
+      "why": "`collectReferences` walked `for (const key in node)`, which includes `parent` — a link back UP the tree. So \"which names does this body use\" was really \"which names appear anywhere in the file\": an arrow whose entire body is `42` collected `helper, outer`, appeared to capture its enclosing scope, and never reported. Only the `function` declaration form ever fired, which is why the rule looked like it worked. Arrows are the dominant modern form, so the rule was missing most of what it exists to find. A coverage fixture had documented the bug as intended behaviour: \"function expressions assigned to variables reference their own binding through the parent chain and are treated as capturing\".",
+      "fixture": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+      "fixed_in": "this branch"
     }
   ]
 }

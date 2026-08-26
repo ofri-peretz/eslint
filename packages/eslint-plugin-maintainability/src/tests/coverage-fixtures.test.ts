@@ -175,9 +175,22 @@ describe('coverage fixtures', () => {
 
     ruleTester.run('consistent-function-scoping', consistentFunctionScoping, {
       valid: [
-        // Function expressions assigned to variables reference their own
-        // binding through the parent chain and are treated as capturing —
-        // these exercise the FunctionExpression parameter bookkeeping.
+        /**
+         * The two cases below moved here from `invalid` in 2026-08.
+         *
+         * They asserted that a callback to an UNRECOGNISED host reports, which
+         * was the behaviour and was the defect: the rule kept a list of
+         * callback-taking functions, and everything it had not heard of got
+         * flagged. `chrome.storage.onChanged.addListener` was one such —
+         * `addEventListener` was listed, `addListener` was not.
+         *
+         * An argument is now never reported, which needs no vocabulary and
+         * survives the suite's litmus test: rename every identifier to `foo`
+         * and the rule behaves the same.
+         */
+        { code: 'obj.customMethod(function (x) { return x + 1; });' },
+        { code: 'customFn(function (x) { return x + 1; });' },
+        // Module-scope bindings: nowhere further to move them.
         { code: 'const doubler = function (x) { return x * 2; };' },
         { code: 'const reader = function ({ a }) { return a; };' },
         // Arrow function with a destructured parameter.
@@ -211,37 +224,6 @@ describe('coverage fixtures', () => {
                 {
                   messageId: 'moveToModuleScope',
                   output: `function outer() { ${moveTodo}function inner({ a }) { return a; } return inner; }`,
-                },
-              ],
-            },
-          ],
-        },
-        {
-          // Anonymous function expression passed to a non-host method:
-          // reported with the "anonymous function" fallback name.
-          code: 'obj.customMethod(function (x) { return x + 1; });',
-          errors: [
-            {
-              messageId: 'inconsistentFunctionScoping',
-              suggestions: [
-                {
-                  messageId: 'moveToModuleScope',
-                  output: `obj.customMethod(${moveTodo}function (x) { return x + 1; });`,
-                },
-              ],
-            },
-          ],
-        },
-        {
-          // Callback to a plain function that is not a scheduler host.
-          code: 'customFn(function (x) { return x + 1; });',
-          errors: [
-            {
-              messageId: 'inconsistentFunctionScoping',
-              suggestions: [
-                {
-                  messageId: 'moveToModuleScope',
-                  output: `customFn(${moveTodo}function (x) { return x + 1; });`,
                 },
               ],
             },

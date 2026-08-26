@@ -1,8 +1,8 @@
 {
   "counts": {
-    "TP": 7336,
-    "TN": 10917,
-    "FP": 9,
+    "TP": 7338,
+    "TN": 10926,
+    "FP": 14,
     "FN": 12
   },
   "rules": [
@@ -32679,7 +32679,12 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
-          "kind": "TP",
+          "kind": "TN",
+          "description": "",
+          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+        },
+        {
+          "kind": "TN",
           "description": "",
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
@@ -32699,9 +32704,89 @@
           "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
         },
         {
+          "kind": "FP",
+          "description": "a describe block — 1,415 findings in the wild",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+          "source": "nwutils/getter tests/specs/request.test.js:10"
+        },
+        {
+          "kind": "FP",
+          "description": "a test block",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+          "source": "telepat-io/otto extension/test/network-intercept-emission.test.ts:5"
+        },
+        {
+          "kind": "TN",
+          "description": "an it block",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a beforeEach hook",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an afterAll hook",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a module-level arrow",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a module-level function expression",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an exported module-level arrow",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a benchmark DSL nobody has heard of",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "FP",
+          "description": "addListener — `addEventListener` was on the old host list and this was not",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+          "source": "telepat-io/otto extension/src/background.ts:217"
+        },
+        {
+          "kind": "FP",
+          "description": "a framework entry point no allowlist would contain",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+          "source": "telepat-io/otto extension/src/background.ts:101"
+        },
+        {
+          "kind": "FP",
+          "description": "an object-literal method is the object, not a nested helper",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts",
+          "source": "telepat-io/otto extension/src/commands/check-login.ts:13"
+        },
+        {
           "kind": "TP",
-          "description": "",
-          "file": "packages/eslint-plugin-maintainability/src/tests/coverage-fixtures.test.ts"
+          "description": "a helper nested inside a function it does not close over",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "the same helper as an arrow",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "the same helper as a function expression",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a helper nested two levels deep",
+          "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
         },
         {
           "kind": "TN",
