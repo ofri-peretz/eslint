@@ -240,6 +240,7 @@
     "check:corpus-coverage": "tsx scripts/check-corpus-coverage.ts",
     "check:rule-cases": "tsx scripts/rule-case-ledger.ts --check",
     "case-registry": "tsx scripts/case-registry.mts",
+    "case-registry:import": "tsx scripts/case-registry-import.mts",
     "check:case-registry": "tsx scripts/case-registry.mts --check",
     "check:name-vocabulary": "tsx scripts/check-name-vocabulary.ts",
     "rule-cases": "tsx scripts/rule-case-ledger.ts"

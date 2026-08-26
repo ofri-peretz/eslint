@@ -261,6 +261,76 @@ const stringOf = (node: ts.Node): string | null => {
  * *reason* when it is not; both are worth having, but only one of them can be
  * checked against the rule, and it is this one.
  */
+/**
+ * The `options` a case runs under, as source text, or `''`.
+ *
+ * A case's verdict depends on its configuration, so `code` alone does not
+ * identify what was proved. Importing FP cases into the case registry surfaced
+ * this immediately: two `no-insecure-comparison` cases are valid only under
+ * `reportLooseEquality: false`, and re-running them at defaults reported —
+ * the register was testing something other than what the test tests.
+ */
+function optionsOf(element: ts.Expression, source: ts.SourceFile): string {
+  if (!ts.isObjectLiteralExpression(element)) return '';
+  for (const prop of element.properties) {
+    if (!ts.isPropertyAssignment(prop)) continue;
+    const key =
+      ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)
+        ? prop.name.text
+        : '';
+    if (key !== 'options') continue;
+    // `options: OFF` where `const OFF = [{ reportLooseEquality: false }]` is the
+    // house idiom for a setting several cases share. The NAME is not the
+    // configuration, so resolving it is the difference between a re-runnable
+    // claim and one that quietly runs at defaults — which is exactly how the
+    // first import of the case registry called two sealed cases regressions.
+    const initializer = ts.isIdentifier(prop.initializer)
+      ? (constInitializerIn(source, prop.initializer.text) ?? prop.initializer)
+      : prop.initializer;
+    return initializer
+      .getText()
+      .replace(/\s+/g, ' ')
+      .replace(/ as const$/, '')
+      .trim();
+  }
+  return '';
+}
+
+/** A top-level `const <name> = <expr>` in this file, if there is exactly one. */
+function constInitializerIn(
+  source: ts.SourceFile,
+  name: string,
+): ts.Expression | null {
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (
+        ts.isIdentifier(declaration.name) &&
+        declaration.name.text === name &&
+        declaration.initializer !== undefined
+      ) {
+        return declaration.initializer;
+      }
+    }
+  }
+  return null;
+}
+
+/** The `filename` a case runs under, or `''`. Test-file paths change verdicts. */
+function filenameOf(element: ts.Expression): string {
+  if (!ts.isObjectLiteralExpression(element)) return '';
+  for (const prop of element.properties) {
+    if (!ts.isPropertyAssignment(prop)) continue;
+    const key =
+      ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)
+        ? prop.name.text
+        : '';
+    if (key === 'filename' && ts.isStringLiteralLike(prop.initializer))
+      return prop.initializer.text;
+  }
+  return '';
+}
+
 function codeOf(element: ts.Expression): string {
   const squash = (text: string): string =>
     text.replace(/\s+/g, ' ').trim().slice(0, 200);
@@ -449,6 +519,8 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
         const found = tagOf(FOUND, element, source_text, raw);
         const list = out.get(rule) ?? [];
         const caseCode = codeOf(element);
+        const caseOptions = optionsOf(element, element.getSourceFile());
+        const caseFilename = filenameOf(element);
         list.push({
           id: caseId(rule, kind, element.getText()),
           kind,
@@ -458,6 +530,8 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
             .replace(FOUND, '')
             .trim(),
           file: rel,
+          ...(caseOptions ? { options: caseOptions } : {}),
+          ...(caseFilename ? { filename: caseFilename } : {}),
           ...(source ? { source } : {}),
           ...(found ? { found } : {}),
         });

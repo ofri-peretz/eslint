@@ -9,7 +9,7 @@ say, and a rule cannot be missing a case it never claimed. This register is
 case-first, so a gap is visible as an entry with no coverage rather than as
 an absence nobody can see.
 
-**10 cases · 9 verified · 1 uncovered · 0 regressed**
+**64 cases · 55 verified · 9 uncovered · 0 regressed**
 
 Every `status` below was computed on this run by executing the case code
 through the rule that claims it. A stored "covered: yes" would be a
@@ -18,7 +18,47 @@ spreadsheet, and it would start decaying the moment a rule changed.
 `*` on a severity means the score has no cited source yet and is our own
 reading, not a published one.
 
-| id | case | CWE | CVSS | covered by | status |
+## Against the neighbours
+
+The same code, put to a peer plugin that is installed here and answers the
+same question. There is no `expect` on a peer — we do not get to assert what
+somebody else's rule ought to do, only measure what it did.
+
+`ahead` means we got the case right and the peer did not. It is NOT "they
+reported less": on a `decoy` or a `remedy`, firing is the wrong answer, and a
+rule that reports everything would otherwise win every comparison while being
+useless. Where a peer is not installed the row says so rather than scoring a
+zero — "they miss it" and "we did not ask" are different claims.
+
+| peer rule | cases compared | we are ahead | level |
+|---|---:|---:|---:|
+| `eslint-plugin-security/detect-object-injection` | 9 | 5 | 4 |
+| `eslint-plugin-promise/catch-or-return` | 4 | 4 | 0 |
+| `eslint-plugin-import/no-internal-modules` | 1 | 1 | 0 |
+| `eslint-plugin-import/no-nodejs-modules` | 1 | 1 | 0 |
+| `eslint-plugin-import/no-unassigned-import` | 1 | 1 | 0 |
+| `eslint-plugin-import/no-unresolved` | 1 | 1 | 0 |
+| `eslint-plugin-n/prefer-node-protocol` | 1 | 1 | 0 |
+| `eslint-plugin-no-unsanitized/property` | 1 | 1 | 0 |
+| `eslint-plugin-security/detect-non-literal-fs-filename` | 1 | 1 | 0 |
+| `eslint-plugin-jsx-a11y/autocomplete-valid` | 6 | 0 | 6 |
+| `eslint-plugin-jsx-a11y/html-has-lang` | 1 | 0 | 1 |
+| `eslint-plugin-jsx-a11y/iframe-has-title` | 1 | 0 | 1 |
+
+**2 peer rule(s) are excluded**, having failed a positive control —
+code their own documentation says they report on, which they did not:
+
+- `eslint-plugin-import/no-named-as-default`
+- `eslint-plugin-import/no-named-as-default-member`
+
+Both resolve the imported module off disk, so they cannot answer in a
+harness that lints a string. That is a limit of this measurement, not a
+defect in their rule, and scoring it as a win would be reporting our own
+configuration as their miss.
+
+## Every case
+
+| id | case | kind | CWE | covered by | peers | status |
 |---|---|---|---|---|---|
 | `ILB-0001` | Prototype pollution through a request-supplied key | CWE-1321 | — | `secure-coding/detect-object-injection` (report) | ✅ verified |
 | `ILB-0002` | Prototype pollution through an unguarded merge helper | CWE-1321 | — | `secure-coding/detect-object-injection` (report) | ✅ verified |
@@ -30,6 +70,60 @@ reading, not a published one.
 | `ILB-0008` | A timing-unsafe comparison of a bearer token | CWE-208 | — | `node-security/no-timing-unsafe-compare` (report) | ✅ verified |
 | `ILB-0009` | An AST discriminant compared with === | — | — | `node-security/no-timing-unsafe-compare` (silent) | ✅ verified |
 | `ILB-0010` | Prototype pollution through a key reached by a call | CWE-1321 | — | **nothing** | uncovered |
+| `ILB-0011` | the same code with template literals instead of quoted strings | — | — | `browser-security/no-innerhtml` (report) | ✅ verified |
+| `ILB-0012` | the same code with template literals instead of quoted strings | — | — | `browser-security/no-missing-security-headers` (report) | ✅ verified |
+| `ILB-0013` | a named const through a type assertion — 33% of findings, with the arithmetic case | — | — | `conventions/no-magic-numbers` (silent) | ✅ verified |
+| `ILB-0014` | a named const computed from two literals | — | — | `conventions/no-magic-numbers` (silent) | ✅ verified |
+| `ILB-0015` | a coordinate pair — 39% of findings, the largest class | — | — | `conventions/no-magic-numbers` (silent) | ✅ verified |
+| `ILB-0016` | the same code with template literals instead of quoted strings | — | — | `import-next/no-internal-modules` (report) | ✅ verified |
+| `ILB-0017` | the same collision written through an aliased default specifier | — | — | `import-next/no-named-as-default` (report) | ✅ verified |
+| `ILB-0018` | the same access written through a computed literal key | — | — | `import-next/no-named-as-default-member` (report) | ✅ verified |
+| `ILB-0019` | the same code with template literals instead of quoted strings | — | — | `import-next/no-nodejs-modules` (report) | ✅ verified |
+| `ILB-0020` | the same code with template literals instead of quoted strings | — | — | `import-next/no-unassigned-import` (report) | ✅ verified |
+| `ILB-0021` | the same code with template literals instead of quoted strings | — | — | `import-next/no-unresolved` (report) | ✅ verified |
+| `ILB-0022` | the same code with template literals instead of quoted strings | — | — | `import-next/prefer-node-protocol` (report) | ✅ verified |
+| `ILB-0023` | the same code with template literals instead of quoted strings | — | — | `lambda-security/no-overly-permissive-iam-policy` (report) | ✅ verified |
+| `ILB-0024` | a describe block — 1,415 findings in the wild | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
+| `ILB-0025` | a test block | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
+| `ILB-0026` | addListener — `addEventListener` was on the old host list and this was not | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
+| `ILB-0027` | a framework entry point no allowlist would contain | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
+| `ILB-0028` | an object-literal method is the object, not a nested helper | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
+| `ILB-0029` | the same helper as an arrow | — | — | `maintainability/consistent-function-scoping` (report) | ✅ verified |
+| `ILB-0030` | the same helper as a function expression | — | — | `maintainability/consistent-function-scoping` (report) | ✅ verified |
+| `ILB-0031` | a promise passed as an argument — the nested call is skipped | — | — | **nothing** | uncovered |
+| `ILB-0032` | the same, one member access further along | — | — | **nothing** | uncovered |
+| `ILB-0033` | a promise passed as an argument to another call | — | — | **nothing** | uncovered |
+| `ILB-0034` | a promise wrapped twice | — | — | **nothing** | uncovered |
+| `ILB-0035` | a wrapped promise used as a computed key | — | — | **nothing** | uncovered |
+| `ILB-0036` | a dynamic import nobody awaits | — | — | `maintainability/no-unhandled-promise` (report) | ✅ verified |
+| `ILB-0037` | new Promise as a whole statement | — | — | `maintainability/no-unhandled-promise` (report) | ✅ verified |
+| `ILB-0038` | the same code with template literals instead of quoted strings | — | — | `node-security/detect-non-literal-fs-filename` (report) | ✅ verified |
+| `ILB-0039` | the same code with template literals instead of quoted strings | — | — | `node-security/no-data-in-temp-storage` (report) | ✅ verified |
+| `ILB-0040` | a secret arriving as a parameter has no visible taint source | — | — | **nothing** | uncovered |
+| `ILB-0041` | an AST discriminant is not a credential — 11 findings in the wild | — | — | `node-security/no-timing-unsafe-compare` (silent) | ✅ verified |
+| `ILB-0042` | a secret compared through an anonymous name is not detected | — | — | **nothing** | uncovered |
+| `ILB-0043` | the same code with template literals instead of quoted strings | — | — | `node-security/no-timing-unsafe-compare` (report) | ✅ verified |
+| `ILB-0044` | OpenTelemetry context propagation is not an archive — 6 findings in the wild | — | — | `node-security/no-zip-slip` (silent) | ✅ verified |
+| `ILB-0045` | an OAuth claims extractor is not an archive | — | — | `node-security/no-zip-slip` (silent) | ✅ verified |
+| `ILB-0046` | an algorithm name — 110 findings in the wild came from this shape | — | — | `node-security/require-secure-credential-storage` (silent) | ✅ verified |
+| `ILB-0047` | minify — the Vite, Rollup and esbuild spelling of the same setting | — | — | `operability/require-code-minification` (report) | ✅ verified |
+| `ILB-0048` | a shipping address modifier | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
+| `ILB-0049` | a billing address modifier | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
+| `ILB-0050` | a contact-channel modifier | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
+| `ILB-0051` | the webauthn credential suffix | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
+| `ILB-0052` | two field names, where the grammar allows one | — | — | `react-a11y/autocomplete-valid` (report) | ✅ verified |
+| `ILB-0053` | a section label with no field name after it | — | — | `react-a11y/autocomplete-valid` (report) | ✅ verified |
+| `ILB-0054` | an empty lang names no language | — | — | `react-a11y/html-has-lang` (report) | ✅ verified |
+| `ILB-0055` | an empty title announces nothing | — | — | `react-a11y/iframe-has-title` (report) | ✅ verified |
+| `ILB-0056` | a promise passed as an argument to another call | — | — | **nothing** | uncovered |
+| `ILB-0057` | a dynamic import nobody awaits | — | — | `reliability/no-unhandled-promise` (report) | ✅ verified |
+| `ILB-0058` | new Promise as a whole statement | — | — | `reliability/no-unhandled-promise` (report) | ✅ verified |
+| `ILB-0059` | an array append written as a self-indexed length | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
+| `ILB-0060` | the same allowlist behind Object.freeze | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
+| `ILB-0061` | an error code is not a credential — 69 findings in the wild | — | — | `secure-coding/no-insecure-comparison` (silent) | ✅ verified |
+| `ILB-0062` | a filename is not a credential — 71 findings, the largest shape | — | — | `secure-coding/no-insecure-comparison` (silent) | ✅ verified |
+| `ILB-0063` | the same code with template literals instead of quoted strings | — | — | `secure-coding/no-insecure-comparison` (report) | ✅ verified |
+| `ILB-0064` | the same code with template literals instead of quoted strings | — | — | `secure-coding/no-sensitive-data-exposure` (report) | ✅ verified |
 
 ## Each case in full
 
@@ -218,4 +312,998 @@ function f(o) { o[getKey()] = 1; }
 - **References** none
 
 **No rule claims this case.**
+
+### ILB-0011 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+el[`innerHTML`] = userInput;
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-innerhtml` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-browser-security/src/spelling-seals.test.ts`.
+
+### ILB-0012 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+module.exports = { async headers() { return [{ source: `/(.*)`, headers: [{ key: `X-Frame-Options`, value: `DENY` }] }]; } };
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `browser-security/no-missing-security-headers` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-browser-security/src/spelling-seals.test.ts`.
+
+### ILB-0013 — a named const through a type assertion — 33% of findings, with the arithmetic case
+
+Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw packages/excalidraw/colors.ts:17) and have since sealed it.
+
+```js
+const DARK_MODE_FILTER_HUE_ROTATE_DEGREES = 180 as Degrees;
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `excalidraw/excalidraw packages/excalidraw/colors.ts:17`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `conventions/no-magic-numbers` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts`.
+
+### ILB-0014 — a named const computed from two literals
+
+Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw packages/element/binding.ts:119) and have since sealed it.
+
+```js
+export const FOCUS_POINT_SIZE = 10 / 1.5;
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `excalidraw/excalidraw packages/element/binding.ts:119`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `conventions/no-magic-numbers` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts`.
+
+### ILB-0015 — a coordinate pair — 39% of findings, the largest class
+
+Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw examples/.../initialData.tsx:64) and have since sealed it.
+
+```js
+const points = [[-92.28090097254909, 7.105427357601002e-15], [-154.72, 19.19]];
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `excalidraw/excalidraw examples/.../initialData.tsx:64`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `conventions/no-magic-numbers` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts`.
+
+### ILB-0016 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+const x = require(`lodash/fp/get/extra`);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `import-next/no-internal-modules` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts`.
+
+### ILB-0017 — the same collision written through an aliased default specifier
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+import { default as foo, foo } from './module';
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `import-next/no-named-as-default` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts`.
+
+### ILB-0018 — the same access written through a computed literal key
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+import foo, { bar } from './foo'; const baz = foo['bar'];
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `import-next/no-named-as-default-member` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts`.
+
+### ILB-0019 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+const p = import(`fs`);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `import-next/no-nodejs-modules` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts`.
+
+### ILB-0020 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+const y = (require(`side-effect`), compute());
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `import-next/no-unassigned-import` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts`.
+
+### ILB-0021 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+require(`missing-module`);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `import-next/no-unresolved` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts`.
+
+### ILB-0022 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+const fs = require(`fs`);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `import-next/prefer-node-protocol` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts`.
+
+### ILB-0023 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+export const handler = async (event) => { return { principalId: `user`, policyDocument: { Statement: [{ Effect: `Allow`, Action: `execute-api:Invoke`, Resource: `*` }] } }; };
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `lambda-security/no-overly-permissive-iam-policy` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-lambda-security/src/spelling-seals.test.ts`.
+
+### ILB-0024 — a describe block — 1,415 findings in the wild
+
+Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (nwutils/getter tests/specs/request.test.js:10) and have since sealed it.
+
+```js
+describe("request test suite", function () { const x = 1; });
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `nwutils/getter tests/specs/request.test.js:10`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/consistent-function-scoping` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts`.
+
+### ILB-0025 — a test block
+
+Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/test/network-intercept-emission.test.ts:5) and have since sealed it.
+
+```js
+test("createEmitUpdate sends messages", async () => { const y = 2; });
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `telepat-io/otto extension/test/network-intercept-emission.test.ts:5`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/consistent-function-scoping` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts`.
+
+### ILB-0026 — addListener — `addEventListener` was on the old host list and this was not
+
+Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/background.ts:217) and have since sealed it.
+
+```js
+chrome.storage.onChanged.addListener((changes, area) => { sync(changes); });
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `telepat-io/otto extension/src/background.ts:217`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/consistent-function-scoping` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts`.
+
+### ILB-0027 — a framework entry point no allowlist would contain
+
+Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/background.ts:101) and have since sealed it.
+
+```js
+export default defineBackground(() => { start(); });
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `telepat-io/otto extension/src/background.ts:101`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/consistent-function-scoping` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts`.
+
+### ILB-0028 — an object-literal method is the object, not a nested helper
+
+Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/commands/check-login.ts:13) and have since sealed it.
+
+```js
+const cmd = { name: "check", async execute(ctx) { return ctx.ok(); } };
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `telepat-io/otto extension/src/commands/check-login.ts:13`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/consistent-function-scoping` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts`.
+
+### ILB-0029 — the same helper as an arrow
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+function outer() { const helper = () => 42; return helper(); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/consistent-function-scoping` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts`.
+
+### ILB-0030 — the same helper as a function expression
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+function outer() { const helper = function () { return 42; }; return helper(); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/consistent-function-scoping` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts`.
+
+### ILB-0031 — a promise passed as an argument — the nested call is skipped
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+console.log(fetch(url));
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0032 — the same, one member access further along
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+first(fetch(url)).third;
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0033 — a promise passed as an argument to another call
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+console.log(fetch(url));
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0034 — a promise wrapped twice
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+outer(wrap(fetch(url)));
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0035 — a wrapped promise used as a computed key
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+const v = a[wrap(fetch(url))].then;
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0036 — a dynamic import nobody awaits
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+import("./heavy-module");
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts`.
+
+### ILB-0037 — new Promise as a whole statement
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+new Promise((resolve) => resolve(1));
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `maintainability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts`.
+
+### ILB-0038 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+fs.readFile(`../../etc/passwd`);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/detect-non-literal-fs-filename` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-node-security/src/spelling-seals.test.ts`.
+
+### ILB-0039 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+const file = path.join(os.tmpdir(), `report-cache.tmp`);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-data-in-temp-storage` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-node-security/src/spelling-seals.test.ts`.
+
+### ILB-0040 — a secret arriving as a parameter has no visible taint source
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+export function isAuthorized(bearerToken: string, sessionSecret: string): boolean { return bearerToken === sessionSecret; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0041 — an AST discriminant is not a credential — 11 findings in the wild
+
+Looks like a node-security/no-timing-unsafe-compare finding and is not. We reported it in real code (flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56) and have since sealed it.
+
+```js
+if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts`.
+
+### ILB-0042 — a secret compared through an anonymous name is not detected
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+if (a === b) { grant(); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0043 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+const creds = await vault.fetch(req.params.id); if (creds[`apiKey`] === req.headers[`x-integration-key`]) { ok(); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-timing-unsafe-compare` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-node-security/src/spelling-seals.test.ts`.
+
+### ILB-0044 — OpenTelemetry context propagation is not an archive — 6 findings in the wild
+
+Looks like a node-security/no-zip-slip finding and is not. We reported it in real code (diia-open-source/be-diia-app src/grpc/grpcService.ts:280) and have since sealed it.
+
+```js
+const ctx = propagation.extract(context.active(), metadata, getter);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `diia-open-source/be-diia-app src/grpc/grpcService.ts:280`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-zip-slip` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts`.
+
+### ILB-0045 — an OAuth claims extractor is not an archive
+
+Looks like a node-security/no-zip-slip finding and is not. We reported it and have since sealed it.
+
+```js
+const claims = extractClaims(token);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/no-zip-slip` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts`.
+
+### ILB-0046 — an algorithm name — 110 findings in the wild came from this shape
+
+Looks like a node-security/require-secure-credential-storage finding and is not. We reported it in real code (auth0/express-openid-connect api.js:2) and have since sealed it.
+
+```js
+process.env.TOKEN_SIGNING_ALG = 'RS256';
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `auth0/express-openid-connect api.js:2`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `node-security/require-secure-credential-storage` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/config-is-not-a-credential.test.ts`.
+
+### ILB-0047 — minify — the Vite, Rollup and esbuild spelling of the same setting
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+export default { build: { minify: false } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `operability/require-code-minification` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts`.
+
+### ILB-0048 — a shipping address modifier
+
+Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.
+
+```js
+<input autocomplete="shipping street-address" />
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/autocomplete-valid` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts`.
+
+### ILB-0049 — a billing address modifier
+
+Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.
+
+```js
+<input autocomplete="billing cc-number" />
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/autocomplete-valid` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts`.
+
+### ILB-0050 — a contact-channel modifier
+
+Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.
+
+```js
+<input autocomplete="home tel" />
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/autocomplete-valid` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts`.
+
+### ILB-0051 — the webauthn credential suffix
+
+Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.
+
+```js
+<input autocomplete="username webauthn" />
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/autocomplete-valid` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts`.
+
+### ILB-0052 — two field names, where the grammar allows one
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+<input autocomplete="name email" />
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/autocomplete-valid` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts`.
+
+### ILB-0053 — a section label with no field name after it
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+<input autocomplete="section-email" />
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/autocomplete-valid` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts`.
+
+### ILB-0054 — an empty lang names no language
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+<html lang=""></html>
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/html-has-lang` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/html-has-lang.test.ts`.
+
+### ILB-0055 — an empty title announces nothing
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+<iframe src="a.html" title=""></iframe>
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `react-a11y/iframe-has-title` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-react-a11y/src/tests/iframe-has-title.test.ts`.
+
+### ILB-0056 — a promise passed as an argument to another call
+
+A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.
+
+```js
+console.log(fetch(url));
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+**No rule claims this case.**
+
+### ILB-0057 — a dynamic import nobody awaits
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+import("./heavy-module");
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `reliability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts`.
+
+### ILB-0058 — new Promise as a whole statement
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+new Promise((resolve) => resolve(1));
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `reliability/no-unhandled-promise` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts`.
+
+### ILB-0059 — an array append written as a self-indexed length
+
+Looks like a secure-coding/detect-object-injection finding and is not. We reported it and have since sealed it.
+
+```js
+const arr = []; arr[arr.length] = x;
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts`.
+
+### ILB-0060 — the same allowlist behind Object.freeze
+
+Looks like a secure-coding/detect-object-injection finding and is not. We reported it and have since sealed it.
+
+```js
+const KEYS = Object.freeze(["alpha", "beta"]); const o = {}; for (const k of KEYS) { o[k] = 1; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts`.
+
+### ILB-0061 — an error code is not a credential — 69 findings in the wild
+
+Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (moleculerjs/moleculer utils.js:289) and have since sealed it.
+
+```js
+if (e.code == 'MODULE_NOT_FOUND') { retry(); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `moleculerjs/moleculer utils.js:289`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/no-insecure-comparison` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts`.
+
+### ILB-0062 — a filename is not a credential — 71 findings, the largest shape
+
+Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (IGNF/cartes.gouv.fr-entree-carto) and have since sealed it.
+
+```js
+if (key == filename) { use(key); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** `IGNF/cartes.gouv.fr-entree-carto`
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/no-insecure-comparison` | silent | 0 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts`.
+
+### ILB-0063 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+if (req.headers[`x-api-key`] === config[`apiKey`]) {}
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/no-insecure-comparison` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-secure-coding/src/spelling-seals.test.ts`.
+
+### ILB-0064 — the same code with template literals instead of quoted strings
+
+A defect this rule missed and now catches. Imported from the sealed case that proved it.
+
+```js
+console.log(`password: 123456`);
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/no-sensitive-data-exposure` | report | 1 report(s) | ✅ |
+
+Pinned in `packages/eslint-plugin-secure-coding/src/spelling-seals.test.ts`.
 

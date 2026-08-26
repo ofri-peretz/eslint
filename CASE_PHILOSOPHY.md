@@ -259,3 +259,43 @@ because it reports as protection.
 ILB-0010 — a key reached through a call the file cannot summarise — has no
 coverage and says so. That row is the point: in a rule-first view it is invisible,
 because no rule claimed it and no test is missing.
+
+---
+
+## 10. Measuring against a neighbour
+
+A case may name `peers` — a plugin installed here that answers the same
+question. The registry runs the case through their rule too, and reports what
+it did.
+
+**There is no `expect` on a peer.** We do not get to assert what somebody
+else's rule ought to do, only measure what it did.
+
+### `ahead` is not "they reported less"
+
+A `defect` should fire; a `decoy` and a `remedy` should not. A rule that
+reports everything would otherwise win every comparison while being useless —
+which is precisely the design of the most-installed rule in this space, and it
+is a deliberate choice on their part, not a bug. So the question asked of a
+peer is *did it get the case right*, and on a decoy, firing is the wrong
+answer.
+
+### Every peer needs a positive control
+
+`peers[].control` is code the peer's **own documentation** says it reports on.
+If the peer is silent on its own example, it is not functioning in this
+harness, and every comparison against it is `unscoreable` — never `behind`.
+
+This is not hypothetical. `eslint-plugin-import/no-named-as-default` is silent
+on its own doc example here, because it resolves the imported module off disk
+and the file does not exist. Before the control existed, every comparison
+against it read as a win. Two peer rules are excluded on this basis today, and
+the report says which and why rather than dropping them quietly — a peer that
+vanishes from a table looks like it was never compared.
+
+**A comparison without a control measures our configuration, not their rule.**
+
+### Absence is reported, not scored
+
+A peer that is not installed says so. "They miss it" and "we did not ask" are
+different claims, and a scoreboard that merges them is marketing.

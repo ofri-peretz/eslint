@@ -65,6 +65,18 @@ type Coverage = {
   rule: string;
   /** What the rule must do with `code`. */
   expect: 'report' | 'silent';
+  /**
+   * The options the verdict depends on.
+   *
+   * Not optional decoration. Two `no-insecure-comparison` cases are quiet only
+   * under `reportLooseEquality: false`, and the first import of this register
+   * ran them at defaults and called them regressions — it was asking a
+   * different question than the test asks. A coverage claim without its
+   * configuration is not a claim about anything.
+   */
+  options?: unknown[];
+  /** Test-file paths change verdicts in rules with an `allowInTests` escape. */
+  filename?: string;
   /** The RuleTester file that pins this, so the claim has a home in the suite. */
   evidence?: string;
 };
@@ -82,6 +94,46 @@ type Reference = {
 
 type Occurrence = { repo: string; path?: string; line?: number };
 
+/**
+ * What sort of case this is. The distinction the security world draws between
+ * a vulnerability and a hardening note, applied to lint.
+ *
+ *   defect    code that IS the thing the rule exists to catch
+ *   decoy     code that LOOKS like it and is not — the near-miss that decides
+ *             whether a rule is precise or merely loud
+ *   remedy    the documented fix for a `defect` case, which must stay silent:
+ *             reporting the fix leaves the user nothing to do, and is how a
+ *             rule teaches people to disable it
+ */
+type Kind = 'defect' | 'decoy' | 'remedy';
+
+/**
+ * The same question, asked of a neighbouring plugin that is installed here.
+ *
+ * A claim about a peer is worth nothing unless it is executed, and a peer
+ * moves independently of us — so this records only `rule` and lets the run
+ * report what it actually did. There is no `expect`: we do not get to assert
+ * what somebody else's rule ought to do, only measure it.
+ */
+type Peer = {
+  plugin: string;
+  rule: string;
+  /**
+   * Code the peer is DOCUMENTED to report on — a positive control for the peer
+   * itself.
+   *
+   * Without it, a peer that cannot function in this harness scores as a peer
+   * that missed the case, and the scoreboard measures our own configuration.
+   * `eslint-plugin-import/no-named-as-default` is the example that forced this:
+   * it is silent on its own doc example here, because it resolves the imported
+   * module off disk and `./bar` does not exist. Every comparison against it was
+   * reading as a win.
+   *
+   * A peer that fails its control is `unscoreable`, never `behind`.
+   */
+  control?: string;
+};
+
 type Case = {
   id: string;
   added: string;
@@ -98,7 +150,9 @@ type Case = {
   /** Where this has actually been seen. Empty means "constructed", and says so. */
   occurrences: Occurrence[];
   code: string;
+  kind: Kind;
   coverage: Coverage[];
+  peers?: Peer[];
   retired?: string;
 };
 
@@ -115,6 +169,38 @@ for (const entry of registry.cases) {
 
 const linter = new Linter();
 const pluginCache = new Map<string, Record<string, unknown>>();
+const peerCache = new Map<string, Record<string, unknown> | null>();
+
+/**
+ * A neighbour's rule, or `null` when that plugin is not installed here.
+ *
+ * Absence is reported, never treated as a zero. "They do not catch it" and "we
+ * did not ask" are different claims, and a scoreboard that merges them is
+ * marketing rather than measurement.
+ */
+async function peerRuleFor(
+  plugin: string,
+  rule: string,
+): Promise<unknown | null> {
+  if (!peerCache.has(plugin)) {
+    try {
+      const mod = (await import(plugin)) as {
+        default?: { rules?: Record<string, unknown> };
+        rules?: Record<string, unknown>;
+      };
+      peerCache.set(
+        plugin,
+        (mod.default?.rules ?? mod.rules ?? null) as Record<
+          string,
+          unknown
+        > | null,
+      );
+    } catch {
+      peerCache.set(plugin, null);
+    }
+  }
+  return peerCache.get(plugin)?.[rule] ?? null;
+}
 
 async function ruleFor(qualified: string): Promise<unknown | null> {
   const [pkg, ...rest] = qualified.split('/');
@@ -149,7 +235,13 @@ async function ruleFor(qualified: string): Promise<unknown | null> {
  * so an unscoreable run is reported as unscoreable rather than counted either
  * way.
  */
-function reportsFor(rule: unknown, name: string, code: string): number | null {
+function reportsFor(
+  rule: unknown,
+  name: string,
+  code: string,
+  options: unknown[] = [],
+  filename = 'case.tsx',
+): number | null {
   const messages = linter.verify(
     code,
     [
@@ -164,14 +256,23 @@ function reportsFor(rule: unknown, name: string, code: string): number | null {
             ecmaFeatures: { jsx: true },
           },
         },
-        rules: { [`p/${name}`]: 'error' },
+        rules: { [`p/${name}`]: ['error', ...options] as never },
       },
     ],
-    'case.tsx',
+    filename,
   );
   if (messages.some((m) => m.ruleId === null)) return null;
   return messages.length;
 }
+
+type PeerResult = {
+  plugin: string;
+  rule: string;
+  reports: number | null;
+  installed: boolean;
+  /** null when no control was given, true/false when one was run. */
+  functioning: boolean | null;
+};
 
 type Verdict = {
   case: Case;
@@ -181,24 +282,76 @@ type Verdict = {
     reports: number | null;
     ok: boolean;
   }[];
+  peers: PeerResult[];
   status: 'verified' | 'regressed' | 'unscoreable' | 'uncovered' | 'retired';
 };
+
+/**
+ * How our verdict compares with a peer's ON THIS CASE.
+ *
+ * `defect` and `decoy`/`remedy` invert what "better" means, which is why
+ * precision and recall are reported separately everywhere else here: a rule
+ * that reports everything wins every recall comparison and is useless. So the
+ * question asked of a peer is not "did it fire" but "did it fire when it
+ * should have" — and on a decoy, firing is the wrong answer.
+ */
+function judgePeer(
+  kind: Kind,
+  peer: PeerResult,
+): 'ahead' | 'level' | 'unknown' {
+  if (!peer.installed || peer.reports === null) return 'unknown';
+  // A peer that cannot answer its own documented example is not behind, it is
+  // unmeasured. Scoring it would be reporting our harness as their defect.
+  if (peer.functioning === false) return 'unknown';
+  const shouldFire = kind === 'defect';
+  return peer.reports > 0 === shouldFire ? 'level' : 'ahead';
+}
+
+/** The same code, put to every neighbour this case names. */
+async function peerResults(entry: Case): Promise<PeerResult[]> {
+  const out: PeerResult[] = [];
+  for (const peer of entry.peers ?? []) {
+    const rule = await peerRuleFor(peer.plugin, peer.rule);
+    const control =
+      rule === null || peer.control === undefined
+        ? null
+        : (reportsFor(rule, peer.rule, peer.control) ?? 0) > 0;
+    out.push({
+      plugin: peer.plugin,
+      rule: peer.rule,
+      installed: rule !== null,
+      functioning: control,
+      reports: rule === null ? null : reportsFor(rule, peer.rule, entry.code),
+    });
+  }
+  return out;
+}
 
 const verdicts: Verdict[] = [];
 for (const entry of registry.cases) {
   if (entry.retired !== undefined) {
-    verdicts.push({ case: entry, results: [], status: 'retired' });
+    verdicts.push({ case: entry, results: [], peers: [], status: 'retired' });
     continue;
   }
+  const peers = await peerResults(entry);
   if (entry.coverage.length === 0) {
-    verdicts.push({ case: entry, results: [], status: 'uncovered' });
+    verdicts.push({ case: entry, results: [], peers, status: 'uncovered' });
     continue;
   }
   const results = [];
   for (const claim of entry.coverage) {
     const rule = await ruleFor(claim.rule);
     const name = claim.rule.split('/').slice(1).join('/');
-    const reports = rule === null ? null : reportsFor(rule, name, entry.code);
+    const reports =
+      rule === null
+        ? null
+        : reportsFor(
+            rule,
+            name,
+            entry.code,
+            claim.options ?? [],
+            claim.filename,
+          );
     const ok =
       reports === null
         ? false
@@ -212,7 +365,7 @@ for (const entry of registry.cases) {
     : results.every((r) => r.ok)
       ? 'verified'
       : 'regressed';
-  verdicts.push({ case: entry, results, status });
+  verdicts.push({ case: entry, results, peers, status });
 }
 
 const verified = verdicts
@@ -286,6 +439,44 @@ if (CHECK) {
   }
 }
 
+/** Per-peer tallies, so a scoreboard claim can be traced to the cases behind it. */
+const peerTally = new Map<
+  string,
+  { compared: number; ahead: number; level: number }
+>();
+for (const v of verdicts) {
+  for (const pr of v.peers) {
+    if (!pr.installed || pr.reports === null || pr.functioning === false)
+      continue;
+    const key = `${pr.plugin}/${pr.rule}`;
+    const row = peerTally.get(key) ?? { compared: 0, ahead: 0, level: 0 };
+    row.compared += 1;
+    if (judgePeer(v.case.kind, pr) === 'ahead') row.ahead += 1;
+    else row.level += 1;
+    peerTally.set(key, row);
+  }
+}
+/**
+ * Peers dropped from the scoreboard because they failed their own control.
+ *
+ * Reported, never silently omitted: a peer vanishing from the table looks like
+ * it was never compared, and the reason it vanished is a fact about our harness
+ * that the reader is entitled to.
+ */
+const peerBroken = new Map<string, string>();
+for (const v of verdicts) {
+  for (const pr of v.peers) {
+    if (pr.installed && pr.functioning === false)
+      peerBroken.set(`${pr.plugin}/${pr.rule}`, pr.rule);
+  }
+}
+
+const peerRows = [...peerTally.entries()]
+  .sort((a, b) => b[1].ahead - a[1].ahead || a[0].localeCompare(b[0]))
+  .map(
+    ([rule, t]) => `| \`${rule}\` | ${t.compared} | ${t.ahead} | ${t.level} |`,
+  );
+
 if (!CHECK) {
   const sev = (c: Case): string =>
     c.severity.cvss === null
@@ -312,7 +503,43 @@ if (!CHECK) {
     '`*` on a severity means the score has no cited source yet and is our own',
     'reading, not a published one.',
     '',
-    '| id | case | CWE | CVSS | covered by | status |',
+    '## Against the neighbours',
+    '',
+    'The same code, put to a peer plugin that is installed here and answers the',
+    'same question. There is no `expect` on a peer — we do not get to assert what',
+    "somebody else's rule ought to do, only measure what it did.",
+    '',
+    '`ahead` means we got the case right and the peer did not. It is NOT "they',
+    'reported less": on a `decoy` or a `remedy`, firing is the wrong answer, and a',
+    'rule that reports everything would otherwise win every comparison while being',
+    'useless. Where a peer is not installed the row says so rather than scoring a',
+    'zero — "they miss it" and "we did not ask" are different claims.',
+    '',
+    ...(peerRows.length === 0
+      ? ['No case names a peer yet.', '']
+      : [
+          '| peer rule | cases compared | we are ahead | level |',
+          '|---|---:|---:|---:|',
+          ...peerRows,
+          '',
+          ...(peerBroken.size === 0
+            ? []
+            : [
+                `**${peerBroken.size} peer rule(s) are excluded**, having failed a positive control —`,
+                'code their own documentation says they report on, which they did not:',
+                '',
+                ...[...peerBroken.keys()].sort().map((r) => `- \`${r}\``),
+                '',
+                'Both resolve the imported module off disk, so they cannot answer in a',
+                'harness that lints a string. That is a limit of this measurement, not a',
+                'defect in their rule, and scoring it as a win would be reporting our own',
+                'configuration as their miss.',
+                '',
+              ]),
+        ]),
+    '## Every case',
+    '',
+    '| id | case | kind | CWE | covered by | peers | status |',
     '|---|---|---|---|---|---|',
     ...verdicts.map(
       (v) =>
