@@ -1,0 +1,239 @@
+{
+  "note": "Append-only. Ids are permanent: a case that no longer applies gets `retired` with a reason and keeps its number. Coverage is a CLAIM; scripts/case-registry.ts turns it into evidence by executing it.",
+  "cases": [
+    {
+      "id": "ILB-0001",
+      "added": "2026-08-26",
+      "title": "Prototype pollution through a request-supplied key",
+      "rationale": "A value the caller controls is used directly as a computed key on a write. Setting `__proto__` re-parents the object, which is the whole of CWE-1321. This is the shortest form the bug takes in real code.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CVE-2019-10744",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-10744",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.query.p] = 1; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0002",
+      "added": "2026-08-26",
+      "title": "Prototype pollution through an unguarded merge helper",
+      "rationale": "`for (const k in src) dst[k] = src[k]` over a caller-supplied source is the shape behind the published prototype-pollution advisories in the deep-merge family. The key is never named in the source, so no allowlist can be read off the file.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CVE-2018-16487",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2018-16487",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function merge(dst, src) { for (const k in src) { dst[k] = src[k]; } return dst; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0003",
+      "added": "2026-08-26",
+      "title": "A computed write onto `this` inside a class method",
+      "rationale": "Reads like noise and is not. Verified by execution: calling the method with `__proto__` re-parents the instance. Registered so the finding cannot be dismissed as an FP a second time.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "class Bag { set(k, v) { this[k] = v; } }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0004",
+      "added": "2026-08-26",
+      "title": "Array append written as a self-indexed length",
+      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists \u2014 a case that cannot fail is not evidence.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function push(arr, x) { arr[arr.length] = x; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0005",
+      "added": "2026-08-26",
+      "title": "A key iterated from a const array of string literals",
+      "rationale": "NOT a defect. Every value the key can take is written out in the same file and none is a dangerous property, so the question is decidable rather than assumed. An author who lists `__proto__` themselves still gets the report.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const KEYS = [\"alpha\", \"beta\"]; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0006",
+      "added": "2026-08-26",
+      "title": "A copy loop over an object the module itself owns",
+      "rationale": "NOT a defect. Nothing an attacker supplies reaches the loop. eslint-plugin-security reports this twice, once per side of the assignment; the noise is by their design, not a disagreement about the facts.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cfg = { a: 1 }; const out = {}; for (const k in cfg) { out[k] = cfg[k]; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0007",
+      "added": "2026-08-26",
+      "title": "A merge helper guarded by Object.hasOwn",
+      "rationale": "NOT a defect \u2014 it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0008",
+      "added": "2026-08-26",
+      "title": "A timing-unsafe comparison of a bearer token",
+      "rationale": "`===` on a secret short-circuits at the first differing byte, so response time leaks the shared prefix. Observed guarding five HTTP endpoints in a real deployment.",
+      "cwe": "CWE-208",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "eclipse-theia/theia-cloud"
+        }
+      ],
+      "code": "import crypto from 'node:crypto';\nfunction check(req, secret) { if (req.headers.authorization === secret) { return true; } return false; }",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0009",
+      "added": "2026-08-26",
+      "title": "An AST discriminant compared with ===",
+      "rationale": "NOT a defect. `node.kind === SyntaxKind.X` is a tag comparison, not a secret. Eleven findings in the wild came from this one shape before it was sealed.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "flint-fyi/flint",
+          "path": "packages/ts/src/rules/errorSubclassProperties.ts",
+          "line": 56
+        }
+      ],
+      "code": "import ts from 'typescript';\nfunction f(node) { return node.kind === ts.SyntaxKind.ClassDeclaration; }",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0010",
+      "added": "2026-08-26",
+      "title": "Prototype pollution through a key reached by a call",
+      "rationale": "The key is computed at runtime by a function this file cannot summarise. Registered as an OPEN question rather than a claim: whether an unresolvable key should report is the same judgement as FP-010, and no rule currently answers it deliberately.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o) { o[getKey()] = 1; }",
+      "coverage": []
+    }
+  ]
+}

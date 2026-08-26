@@ -1,0 +1,14 @@
+{
+  "note": "Case ids verified at least once. Grow-only: losing one is a regression.",
+  "verified": [
+    "ILB-0001",
+    "ILB-0002",
+    "ILB-0003",
+    "ILB-0004",
+    "ILB-0005",
+    "ILB-0006",
+    "ILB-0007",
+    "ILB-0008",
+    "ILB-0009"
+  ]
+}
