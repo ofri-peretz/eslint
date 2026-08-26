@@ -46,13 +46,25 @@ const ruleTester = new RuleTester({
 describe('no-unhandled-promise — a call is not a promise', () => {
   ruleTester.run('evidence', noUnhandledPromise, {
     valid: [
-      { name: 'a synchronous require', code: 'require("./styles.css");' },
+      {
+        // @source excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:25
+        name: 'a synchronous require', code: 'require("./styles.css");'
+      },
       { name: 'a plain synchronous call', code: 'doTheThing();' },
-      { name: 'a call whose result is destructured', code: 'const { siteConfig } = useDocusaurusContext();' },
+      {
+        // @source excalidraw/excalidraw dev-docs/src/pages/index.tsx:11
+        name: 'a call whose result is destructured', code: 'const { siteConfig } = useDocusaurusContext();'
+      },
       { name: 'a method call on an object', code: 'logger.info("started");' },
       { name: 'an empty catch callback still counts as handling', code: 'p.catch(() => {});' },
-      { name: 'an optional call', code: 'excalidrawAPI?.setActiveTool({ type: "freedraw" });' },
-      { name: 'a call inside JSX', code: 'const el = <div className={clsx("col")} />;' },
+      {
+        // @source excalidraw/excalidraw examples/with-script-in-browser/components/ExampleApp.tsx:467
+        name: 'an optional call', code: 'excalidrawAPI?.setActiveTool({ type: "freedraw" });'
+      },
+      {
+        // @source excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:47
+        name: 'a call inside JSX', code: 'const el = <div className={clsx("col")} />;'
+      },
       { name: 'a synchronous array method', code: 'items.forEach((i) => render(i));' },
       // Each of these walks one branch of the evidence check to a `false`.
       { name: 'a computed member call that is not then', code: 'handlers["run"]();' },

@@ -47,10 +47,16 @@ describe('detect-object-injection — the shapes real code produces', () => {
       // and that is the correct half of the line: prototype pollution needs a
       // write. A read of `__proto__` returns the prototype; it does not
       // replace it.
-      { name: 'an array read through a loop counter — 73 findings, the commonest shape', code: 'path = paths[i];' },
+      {
+        // @source Automattic/mongoose lib/cast.js:62
+        name: 'an array read through a loop counter — 73 findings, the commonest shape', code: 'path = paths[i];'
+      },
       { name: 'a key read off a named property — 23 findings', code: 'if (!current[app.name]) { init(); }' },
       { name: 'a path segment used as a read key — 19 findings', code: 'cur = cur instanceof Map ? cur.get(parts[i]) : cur[parts[i]];' },
-      { name: 'a key taken from a field descriptor — 15 findings', code: 'const v = obj[field.field];' },
+      {
+        // @source directus/directus api/src/services/graphql/schema/get-types.ts:125
+        name: 'a key taken from a field descriptor — 15 findings', code: 'const v = obj[field.field];'
+      },
     ],
     invalid: [
       /**
@@ -73,13 +79,31 @@ describe('detect-object-injection — the shapes real code produces', () => {
        * which was inverted to require an attacker-controlled operand and went
        * from 27 findings and zero real oracles to near-zero noise.
        */
-      { name: 'a write through a local key — 33 findings', code: 'fields[field] = include;', errors: 1 },
-      { name: 'a nested write, both keys local — 28 findings', code: 'obj[i][op] = castPipelineOperator(op, obj[i][op]);', errors: 1 },
-      { name: 'copying one document into another — 25 findings', code: 'self[i] = doc[i];', errors: 1 },
+      {
+        // @source Automattic/mongoose lib/aggregate.js:261
+        name: 'a write through a local key — 33 findings', code: 'fields[field] = include;', errors: 1
+      },
+      {
+        // @source Automattic/mongoose lib/helpers/query/castUpdate.js:61
+        name: 'a nested write, both keys local — 28 findings', code: 'obj[i][op] = castPipelineOperator(op, obj[i][op]);', errors: 1
+      },
+      {
+        // @source Automattic/mongoose lib/document.js:799
+        name: 'copying one document into another — 25 findings', code: 'self[i] = doc[i];', errors: 1
+      },
       { name: 'lazy initialisation of a nested object — 22 findings', code: 'doc_ = doc_[piece] || (doc_[piece] = {});', errors: 1 },
-      { name: 'collecting duplicates into an array — 18 findings', code: 'rawDocs[key] = [rawDocs[key], val];', errors: 1 },
-      { name: 'a two-level write, both keys local — 16 findings', code: 'currentUpdate[start][remnant] = now;', errors: 1 },
-      { name: 'a tag name used as a label key — 15 findings', code: 'labels[tag.name] = tag.value;', errors: 1 },
+      {
+        // @source Automattic/mongoose lib/model.js:4905
+        name: 'collecting duplicates into an array — 18 findings', code: 'rawDocs[key] = [rawDocs[key], val];', errors: 1
+      },
+      {
+        // @source Automattic/mongoose lib/helpers/update/applyTimestampsToUpdate.js:62
+        name: 'a two-level write, both keys local — 16 findings', code: 'currentUpdate[start][remnant] = now;', errors: 1
+      },
+      {
+        // @source louislam/uptime-kuma server/notification-providers/flashduty.js:77
+        name: 'a tag name used as a label key — 15 findings', code: 'labels[tag.name] = tag.value;', errors: 1
+      },
     ],
   });
 });

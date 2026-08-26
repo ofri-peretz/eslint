@@ -34071,7 +34071,8 @@
         {
           "kind": "TN",
           "description": "a synchronous require",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:25"
         },
         {
           "kind": "TN",
@@ -34081,7 +34082,8 @@
         {
           "kind": "TN",
           "description": "a call whose result is destructured",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw dev-docs/src/pages/index.tsx:11"
         },
         {
           "kind": "TN",
@@ -34096,12 +34098,14 @@
         {
           "kind": "TN",
           "description": "an optional call",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw examples/with-script-in-browser/components/ExampleApp.tsx:467"
         },
         {
           "kind": "TN",
           "description": "a call inside JSX",
-          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:47"
         },
         {
           "kind": "TN",
@@ -54038,7 +54042,8 @@
         {
           "kind": "FP",
           "description": "an algorithm name — 110 findings in the wild came from this shape",
-          "file": "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/config-is-not-a-credential.test.ts"
+          "file": "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/config-is-not-a-credential.test.ts",
+          "source": "auth0/express-openid-connect api.js:2"
         },
         {
           "kind": "TN",
@@ -74561,7 +74566,8 @@
         {
           "kind": "TN",
           "description": "a synchronous require",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:25"
         },
         {
           "kind": "TN",
@@ -74571,7 +74577,8 @@
         {
           "kind": "TN",
           "description": "a call whose result is destructured",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw dev-docs/src/pages/index.tsx:11"
         },
         {
           "kind": "TN",
@@ -74586,12 +74593,14 @@
         {
           "kind": "TN",
           "description": "an optional call",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw examples/with-script-in-browser/components/ExampleApp.tsx:467"
         },
         {
           "kind": "TN",
           "description": "a call inside JSX",
-          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+          "file": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts",
+          "source": "excalidraw/excalidraw dev-docs/src/components/Homepage/index.tsx:47"
         },
         {
           "kind": "TN",
@@ -77150,7 +77159,8 @@
         {
           "kind": "TN",
           "description": "an array read through a loop counter — 73 findings, the commonest shape",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "Automattic/mongoose lib/cast.js:62"
         },
         {
           "kind": "TN",
@@ -77165,22 +77175,26 @@
         {
           "kind": "TN",
           "description": "a key taken from a field descriptor — 15 findings",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "directus/directus api/src/services/graphql/schema/get-types.ts:125"
         },
         {
           "kind": "TP",
           "description": "a write through a local key — 33 findings",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "Automattic/mongoose lib/aggregate.js:261"
         },
         {
           "kind": "TP",
           "description": "a nested write, both keys local — 28 findings",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "Automattic/mongoose lib/helpers/query/castUpdate.js:61"
         },
         {
           "kind": "TP",
           "description": "copying one document into another — 25 findings",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "Automattic/mongoose lib/document.js:799"
         },
         {
           "kind": "TP",
@@ -77190,17 +77204,20 @@
         {
           "kind": "TP",
           "description": "collecting duplicates into an array — 18 findings",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "Automattic/mongoose lib/model.js:4905"
         },
         {
           "kind": "TP",
           "description": "a two-level write, both keys local — 16 findings",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "Automattic/mongoose lib/helpers/update/applyTimestampsToUpdate.js:62"
         },
         {
           "kind": "TP",
           "description": "a tag name used as a label key — 15 findings",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts",
+          "source": "louislam/uptime-kuma server/notification-providers/flashduty.js:77"
         },
         {
           "kind": "TN",
@@ -82913,7 +82930,8 @@
         {
           "kind": "FP",
           "description": "an error code is not a credential — 69 findings in the wild",
-          "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts"
+          "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts",
+          "source": "moleculerjs/moleculer utils.js:289"
         },
         {
           "kind": "FP",

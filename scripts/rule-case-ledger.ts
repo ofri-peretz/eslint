@@ -380,6 +380,8 @@ console.log(`  TP ${counts.TP}   TN ${counts.TN}   FP ${counts.FP}   FN ${counts
 console.log(`  undescribed cases                       ${undescribed}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
 console.log(`  rules that claim no defect at all       ${claimsNothing.length}`);
+const cited = entries.flatMap((e) => e.cases.filter((c) => c.source !== undefined)).length;
+console.log(`  cases citing real code (@source)        ${cited}`);
 console.log(`  rules with a TP taken from real code    ${grounded.length}`);
 console.log(`  rules with ANY case from real code      ${touched.length}`);
 /**

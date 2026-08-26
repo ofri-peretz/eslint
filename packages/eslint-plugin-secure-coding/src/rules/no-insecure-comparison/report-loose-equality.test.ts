@@ -37,6 +37,7 @@ describe('no-insecure-comparison — reportLooseEquality', () => {
     valid: [
       {
         // 69 findings across the scanned corpus were this exact shape.
+        // @source moleculerjs/moleculer utils.js:289
         name: 'FP: an error code is not a credential — 69 findings in the wild',
         code: `if (e.code == 'MODULE_NOT_FOUND') { retry(); }`,
         options: OFF,
