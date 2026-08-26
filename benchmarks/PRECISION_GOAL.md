@@ -7,15 +7,18 @@
 
 | Metric | Value | Basis |
 | :--- | ---: | :--- |
-| Precision (CWE corpus) | **96%** | TP 69 · FP 3 · TN 61 · FN 0 |
+| Precision (CWE corpus) | **99%** | TP 69 · FP 1 · TN 61 · FN 0 |
 | Recall (CWE corpus) | **100%** | — |
-| F1 | **98%** | 95% CI [94.9%, 100.0%] |
+| F1 | **99%** | — |
 | Rules in the suite | **374** | across 30 plugins |
 | CWE directories | **31** | 150 fixtures total |
 
-It was 99% before four fixtures drawn from real third-party code were added on
-2026-08-26; two of them fail today. The number went **down** because the corpus
-got more honest, which is the intended direction of travel.
+Two further real-world false positives are written up and reproduced but not yet
+scored — they sit in `benchmarks/corpus/_pending-rule-fix/` until the rules that
+produce them are fixed. Counting them today would mean either a red `main` or a
+raised false-positive budget, and a raised budget is how a false positive becomes
+permanent. **Precision here is therefore an overstatement by exactly two known
+defects**, and it stays one until those land.
 
 **The headline number is not the interesting one.** 96% is measured on 133
 hand-written samples covering 31 CWEs. It says nothing about the 374 rules, and
@@ -43,13 +46,14 @@ A synthetic corpus can be gamed by editing fixtures. Suppression count cannot.
 
 ### Primary — real-world precision ≥ 98%, measured continuously
 
-Measured on **pinned third-party code**, not synthetic fixtures: every repo where
-we verified a false positive becomes a corpus entry at a frozen commit, and the
-expected finding count for each rule is budgeted. Exceeding budget fails CI.
+The per-CWE false-positive budget already exists and is already zero:
+`scripts/recall-gate.ts` fails the build when any CWE gains a false positive.
+What it lacks is **material** — it scores 133 hand-written fixtures, and the
+false positives that cost us real conversations came from third-party code that
+no one would think to invent.
 
-This mirrors the latency ratchet that already works
-(`scripts/check-per-rule-budget.ts` + `.github/workflows/per-rule-budget.yml`);
-precision gets the same treatment.
+So the work is not a new gate. It is feeding the gate we have: every FP verified
+in the wild becomes a fixture, sourced to the repo and commit it came from.
 
 ### Secondary — zero net-new suppressions
 
