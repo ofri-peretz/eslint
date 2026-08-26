@@ -1,7 +1,7 @@
 {
   "counts": {
-    "TP": 7338,
-    "TN": 10926,
+    "TP": 7343,
+    "TN": 10929,
     "FP": 14,
     "FN": 12
   },
@@ -48027,6 +48027,31 @@
           "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/a-request-id-is-not-a-credential.test.ts"
         },
         {
+          "kind": "TN",
+          "description": "a word the consumer removed stops reporting",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/consumer-vocabulary.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "with the defaults, a keyboard handler is not a key",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/consumer-vocabulary.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a word the consumer added starts reporting",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/consumer-vocabulary.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "the defaults still hold when nothing is configured",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/consumer-vocabulary.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a correlation word the consumer replaced no longer exempts",
+          "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/consumer-vocabulary.test.ts"
+        },
+        {
           "kind": "TP",
           "description": "a device pairing code built from Math.random()",
           "file": "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/found-in-the-wild.test.ts",
@@ -54664,6 +54689,21 @@
     {
       "rule": "node-security/require-secure-deletion",
       "cases": [
+        {
+          "kind": "TN",
+          "description": "a word the consumer replaced out stops reporting",
+          "file": "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/consumer-vocabulary.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a word the consumer replaced in starts reporting",
+          "file": "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/consumer-vocabulary.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "the built-in vocabulary still holds when nothing is configured",
+          "file": "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/consumer-vocabulary.test.ts"
+        },
         {
           "kind": "TN",
           "description": "",

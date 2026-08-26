@@ -151,6 +151,17 @@ jobs:
       # than in the corpus job. Shrink-only baseline, 342 rules when added.
       - run: npm run check:rule-cases
 
+      # A rule that decides from an identifier NAME must let the consumer
+      # replace the vocabulary. The space of names a project might use is
+      # endless — `isAuthorized`, `hasAccess`, `canEdit`, `gate` — so a fixed
+      # list is wrong in both directions and the project cannot fix it.
+      # An `additional*` option does not count: it grows the list but cannot
+      # remove the word we guessed wrong about.
+      #
+      # A standard SDK API name is exempt and stays hardcoded:
+      # `dangerouslyAllowBrowser` is Anthropic's, not the consumer's.
+      - run: npm run check:name-vocabulary
+
   recall:
     name: Detection Recall (CWE corpus)
     runs-on: ubuntu-latest
