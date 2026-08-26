@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'permissivePolicy';
@@ -114,14 +115,15 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
       const value = node.value;
 
       // Check literal string
-      if (value.type === AST_NODE_TYPES.Literal && typeof value.value === 'string') {
-        if (isDangerousWildcard(value.value)) {
+      const staticText = staticString(value);
+      if (staticText !== null) {
+        if (isDangerousWildcard(staticText)) {
           context.report({
             node,
             messageId: 'permissivePolicy',
             data: {
               property: propertyName,
-              value: value.value,
+              value: staticText,
             },
           });
         }

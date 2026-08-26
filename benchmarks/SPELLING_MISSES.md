@@ -6,13 +6,13 @@ Every row below is a rule reporting a known true positive and then going
 silent on the same code rewritten into a form the grammar treats as
 identical. None of these mutations changes what the code does.
 
-**1156 across 163 rules**, from 3825 mutations.
+**1113 across 159 rules**, from 3847 mutations.
 
 | mutation | misses |
 |---|---:|
-| a computed literal key instead of a bare object key | 205 |
-| a no-substitution template literal instead of a quoted string | 460 |
-| a computed literal key instead of a dotted member access | 491 |
+| a computed literal key instead of a bare object key | 211 |
+| a no-substitution template literal instead of a quoted string | 410 |
+| a computed literal key instead of a dotted member access | 492 |
 
 ## The shared cause
 
@@ -97,7 +97,7 @@ import jwt from 'jsonwebtoken'; jwt.sign({ password: 'secret123' }, secret);
 import jwt from 'jsonwebtoken'; jwt.sign({ ['password']: 'secret123' }, secret);
 ```
 
-### `browser-security/no-missing-security-headers` — 28
+### `browser-security/no-missing-security-headers` — 29
 
 a no-substitution template literal instead of a quoted string.
 
@@ -117,17 +117,6 @@ a no-substitution template literal instead of a quoted string.
 const vm = require('vm'); function evaluate(req, res) { const value = vm.runInNewContext(req.query.expr, { Math }); res.json({ value }); }
 // misses
 const vm = require(`vm`); function evaluate(req, res) { const value = vm.runInNewContext(req.query.expr, { Math }); res.json({ value }); }
-```
-
-### `secure-coding/no-sensitive-data-exposure` — 26
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-console.log('password: 123456');
-// misses
-console.log(`password: 123456`);
 ```
 
 ### `react-features/no-direct-mutation-state` — 24
@@ -339,15 +328,15 @@ app.use(corsLib({ origin: '*' }));
 app.use(corsLib({ origin: `*` }));
 ```
 
-### `node-security/no-data-in-temp-storage` — 13
+### `node-security/no-zip-slip` — 13
 
 a no-substitution template literal instead of a quoted string.
 
 ```js
 // reports
-const file = path.join(os.tmpdir(), 'report-cache.tmp');
+extract('../../evil', './out');
 // misses
-const file = path.join(os.tmpdir(), `report-cache.tmp`);
+extract(`../../evil`, `./out`);
 ```
 
 ### `secure-coding/detect-weak-password-validation` — 13
@@ -372,28 +361,6 @@ console.log(user.email)
 console.log(user['email'])
 ```
 
-### `node-security/detect-non-literal-fs-filename` — 12
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-fs.readFile('../../etc/passwd');
-// misses
-fs.readFile(`../../etc/passwd`);
-```
-
-### `node-security/no-zip-slip` — 12
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-extract('../../evil', './out');
-// misses
-extract(`../../evil`, `./out`);
-```
-
 ### `browser-security/no-clickjacking` — 11
 
 a computed literal key instead of a dotted member access.
@@ -403,6 +370,17 @@ a computed literal key instead of a dotted member access.
 top.location = 'about:blank';
 // misses
 top['location'] = 'about:blank';
+```
+
+### `node-security/detect-non-literal-fs-filename` — 11
+
+a no-substitution template literal instead of a quoted string.
+
+```js
+// reports
+var one = require('fs').readFile; one(filename);
+// misses
+var one = require(`fs`).readFile; one(filename);
 ```
 
 ### `node-security/require-dependency-integrity` — 11
@@ -735,39 +713,6 @@ export function insecure_noImproperTypeValidation(input: unknown): string | unde
 export function insecure_noImproperTypeValidation(input: unknown): string | undefined { if (typeof input === `object`) { return (input as { toString: () => string }).toString(); } return undefined; }
 ```
 
-### `browser-security/no-innerhtml` — 5
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-el['innerHTML'] = userInput;
-// misses
-el[`innerHTML`] = userInput;
-```
-
-### `import-next/no-unassigned-import` — 5
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-const y = (require('side-effect'), compute());
-// misses
-const y = (require(`side-effect`), compute());
-```
-
-### `import-next/prefer-node-protocol` — 5
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-const fs = require('fs');
-// misses
-const fs = require(`fs`);
-```
-
 ### `node-security/no-math-random-crypto` — 5
 
 a computed literal key instead of a bare object key.
@@ -788,6 +733,28 @@ a no-substitution template literal instead of a quoted string.
 const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv); let out = decipher.update(ciphertext, 'hex', 'utf8'); out += decipher.final('utf8');
 // misses
 const decipher = crypto.createDecipheriv(`aes-256-gcm`, key, iv); let out = decipher.update(ciphertext, `hex`, `utf8`); out += decipher.final(`utf8`);
+```
+
+### `secure-coding/detect-object-injection` — 5
+
+a no-substitution template literal instead of a quoted string.
+
+```js
+// reports
+const o = {}; o['__proto__'] = payload;
+// misses
+const o = {}; o[`__proto__`] = payload;
+```
+
+### `secure-coding/no-sensitive-data-exposure` — 5
+
+a computed literal key instead of a dotted member access.
+
+```js
+// reports
+app.logger.info('password: 123456');
+// misses
+app['logger'].info('password: 123456');
 ```
 
 ### `secure-coding/no-xxe-injection` — 5
@@ -823,17 +790,6 @@ import foo from 'foo'; module.exports = foo;
 import foo from 'foo'; module['exports'] = foo;
 ```
 
-### `import-next/no-internal-modules` — 4
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-const x = require('lodash/fp/get/extra');
-// misses
-const x = require(`lodash/fp/get/extra`);
-```
-
 ### `import-next/no-useless-path-segments` — 4
 
 a no-substitution template literal instead of a quoted string.
@@ -865,6 +821,17 @@ a computed literal key instead of a dotted member access.
 class Foo extends events.EventEmitter {}
 // misses
 class Foo extends events['EventEmitter'] {}
+```
+
+### `node-security/no-data-in-temp-storage` — 4
+
+a no-substitution template literal instead of a quoted string.
+
+```js
+// reports
+const { writeFileSync } = require('node:fs'); writeFileSync('/tmp/oauth-refresh.json', body);
+// misses
+const { writeFileSync } = require(`node:fs`); writeFileSync(`/tmp/oauth-refresh.json`, body);
 ```
 
 ### `node-security/no-deprecated-buffer` — 4
@@ -964,6 +931,17 @@ a no-substitution template literal instead of a quoted string.
 document['cookie'] = 'accessToken=x';
 // misses
 document[`cookie`] = `accessToken=x`;
+```
+
+### `browser-security/no-innerhtml` — 3
+
+a computed literal key instead of a dotted member access.
+
+```js
+// reports
+window.document.write(userInput)
+// misses
+window['document'].write(userInput)
 ```
 
 ### `browser-security/no-worker-message-innerhtml` — 3
@@ -1131,17 +1109,6 @@ const jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.Rq
 const jwt = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.Rq8IjqGXVV`
 ```
 
-### `secure-coding/no-insecure-comparison` — 3
-
-a computed literal key instead of a bare object key.
-
-```js
-// reports
-const { token: t } = session; if (t === presented) {}
-// misses
-const { ['token']: t } = session; if (t === presented) {}
-```
-
 ### `anthropic-security/no-hardcoded-api-key` — 2
 
 a computed literal key instead of a bare object key.
@@ -1274,17 +1241,6 @@ const module = await import('/absolute/module');
 const module = await import(`/absolute/module`);
 ```
 
-### `import-next/no-unresolved` — 2
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-require('missing-module');
-// misses
-require(`missing-module`);
-```
-
 ### `import-next/prefer-modern-api` — 2
 
 a no-substitution template literal instead of a quoted string.
@@ -1294,6 +1250,17 @@ a no-substitution template literal instead of a quoted string.
 const sass = require('node-sass');
 // misses
 const sass = require(`node-sass`);
+```
+
+### `import-next/prefer-node-protocol` — 2
+
+a no-substitution template literal instead of a quoted string.
+
+```js
+// reports
+const fs = await import('fs');
+// misses
+const fs = await import(`fs`);
 ```
 
 ### `node-security/no-insecure-key-derivation` — 2
@@ -1439,6 +1406,17 @@ makeSchema({ typeDefs: `interface Node { ${extraField} }` });
 makeSchema({ ['typeDefs']: `interface Node { ${extraField} }` });
 ```
 
+### `secure-coding/no-insecure-comparison` — 2
+
+a computed literal key instead of a bare object key.
+
+```js
+// reports
+const { token: t } = session; if (t === presented) {}
+// misses
+const { ['token']: t } = session; if (t === presented) {}
+```
+
 ### `secure-coding/no-log-injection` — 2
 
 a computed literal key instead of a dotted member access.
@@ -1571,15 +1549,26 @@ a computed literal key instead of a dotted member access.
 /** @deprecated */ const obj = { prop: 1 }; obj['prop'];
 ```
 
-### `import-next/no-nodejs-modules` — 1
+### `import-next/no-internal-modules` — 1
 
 a no-substitution template literal instead of a quoted string.
 
 ```js
 // reports
-const p = import('fs');
+const Button = import('@company/ui/components/Button');
 // misses
-const p = import(`fs`);
+const Button = import(`@company/ui/components/Button`);
+```
+
+### `import-next/no-unresolved` — 1
+
+a no-substitution template literal instead of a quoted string.
+
+```js
+// reports
+import('missing-module');
+// misses
+import(`missing-module`);
 ```
 
 ### `jwt-security/require-algorithm-whitelist` — 1
@@ -1591,17 +1580,6 @@ a no-substitution template literal instead of a quoted string.
 const jwt = require('jsonwebtoken'); const { verify } = require('jsonwebtoken'); export const check = (t, k) => verify(t, k);
 // misses
 const jwt = require(`jsonwebtoken`); const { verify } = require(`jsonwebtoken`); export const check = (t, k) => verify(t, k);
-```
-
-### `lambda-security/no-overly-permissive-iam-policy` — 1
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-export const handler = async (event) => { return { principalId: 'user', policyDocument: { Statement: [{ Effect: 'Allow', Action: 'execute-api:Invoke', Resource: '*' }] } }; };
-// misses
-export const handler = async (event) => { return { principalId: `user`, policyDocument: { Statement: [{ Effect: `Allow`, Action: `execute-api:Invoke`, Resource: `*` }] } }; };
 ```
 
 ### `maintainability/no-unhandled-promise` — 1
@@ -1725,17 +1703,6 @@ const { createCipheriv: mkCipher } = require("node:crypto"); mkCipher("aes-256-c
 const { ['createCipheriv']: mkCipher } = require("node:crypto"); mkCipher("aes-256-cbc", key, Buffer.from("deadbeefdeadbeefdeadbeefdeadbeef", "hex"));
 ```
 
-### `node-security/no-timing-unsafe-compare` — 1
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-const creds = await vault.fetch(req.params.id); if (creds['apiKey'] === req.headers['x-integration-key']) { ok(); }
-// misses
-const creds = await vault.fetch(req.params.id); if (creds[`apiKey`] === req.headers[`x-integration-key`]) { ok(); }
-```
-
 ### `node-security/no-toctou-vulnerability` — 1
 
 a computed literal key instead of a dotted member access.
@@ -1800,17 +1767,6 @@ a computed literal key instead of a bare object key.
 <Component {...{ children: "spread" }} />
 // misses
 <Component {...{ ['children']: "spread" }} />
-```
-
-### `secure-coding/detect-object-injection` — 1
-
-a no-substitution template literal instead of a quoted string.
-
-```js
-// reports
-const o = {}; o['__proto__'].polluted = 1;
-// misses
-const o = {}; o[`__proto__`].polluted = 1;
 ```
 
 ### `secure-coding/no-fail-open-auth` — 1

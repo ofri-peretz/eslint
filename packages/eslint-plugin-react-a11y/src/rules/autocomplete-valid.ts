@@ -4,11 +4,10 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-
 /**
  * ESLint Rule: autocomplete-valid
  * Enforce that autocomplete attribute has valid value
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/autocomplete-valid.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -24,15 +23,59 @@ type Options = {
 type RuleOptions = [Options?];
 
 const VALID_AUTOCOMPLETE_VALUES = new Set([
-  'on', 'off', 'name', 'honorific-prefix', 'given-name', 'additional-name', 'family-name',
-  'honorific-suffix', 'nickname', 'email', 'username', 'new-password', 'current-password',
-  'organization-title', 'organization', 'street-address', 'address-line1', 'address-line2',
-  'address-line3', 'address-level4', 'address-level3', 'address-level2', 'address-level1',
-  'country', 'country-name', 'postal-code', 'cc-name', 'cc-given-name', 'cc-additional-name',
-  'cc-family-name', 'cc-number', 'cc-exp', 'cc-exp-month', 'cc-exp-year', 'cc-csc', 'cc-type',
-  'transaction-currency', 'transaction-amount', 'language', 'bday', 'bday-day', 'bday-month',
-  'bday-year', 'sex', 'tel', 'tel-country-code', 'tel-national', 'tel-area-code', 'tel-local',
-  'tel-extension', 'impp', 'url', 'photo'
+  'on',
+  'off',
+  'name',
+  'honorific-prefix',
+  'given-name',
+  'additional-name',
+  'family-name',
+  'honorific-suffix',
+  'nickname',
+  'email',
+  'username',
+  'new-password',
+  'current-password',
+  'organization-title',
+  'organization',
+  'street-address',
+  'address-line1',
+  'address-line2',
+  'address-line3',
+  'address-level4',
+  'address-level3',
+  'address-level2',
+  'address-level1',
+  'country',
+  'country-name',
+  'postal-code',
+  'cc-name',
+  'cc-given-name',
+  'cc-additional-name',
+  'cc-family-name',
+  'cc-number',
+  'cc-exp',
+  'cc-exp-month',
+  'cc-exp-year',
+  'cc-csc',
+  'cc-type',
+  'transaction-currency',
+  'transaction-amount',
+  'language',
+  'bday',
+  'bday-day',
+  'bday-month',
+  'bday-year',
+  'sex',
+  'tel',
+  'tel-country-code',
+  'tel-national',
+  'tel-area-code',
+  'tel-local',
+  'tel-extension',
+  'impp',
+  'url',
+  'photo',
 ]);
 
 /**
@@ -52,7 +95,13 @@ const VALID_AUTOCOMPLETE_VALUES = new Set([
  * at, so they belong in the rule rather than behind an option.
  */
 const ADDRESS_MODIFIERS: ReadonlySet<string> = new Set(['shipping', 'billing']);
-const CONTACT_MODIFIERS: ReadonlySet<string> = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
+const CONTACT_MODIFIERS: ReadonlySet<string> = new Set([
+  'home',
+  'work',
+  'mobile',
+  'fax',
+  'pager',
+]);
 const CREDENTIAL_SUFFIX = 'webauthn';
 
 /** `off` and `on` stand alone: they are not field names in a sequence. */
@@ -74,45 +123,66 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
         description: 'Invalid autocomplete value',
         severity: 'MEDIUM',
         fix: 'Use a valid autocomplete token (e.g., "username", "current-password")',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/autocomplete-valid.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/autocomplete-valid.md',
       }),
     },
     schema: [
       {
         type: 'object',
         properties: {
-            inputComponents: { type: 'array', items: { type: 'string' } }
+          inputComponents: { type: 'array', items: { type: 'string' } },
         },
         additionalProperties: false,
       },
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { inputComponents = [] } = options ?? {} as Options;
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { inputComponents = [] } = options ?? ({} as Options);
     const inputs = new Set(['input', ...inputComponents]);
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type !== 'JSXIdentifier' || !inputs.has(node.name.name)) return;
+        if (node.name.type !== 'JSXIdentifier' || !inputs.has(node.name.name))
+          return;
 
-        const autocomplete = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            attr.name.name === 'autocomplete'
+        const autocomplete = node.attributes.find(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'autocomplete',
         );
 
-        if (!autocomplete || autocomplete.type !== 'JSXAttribute' || !autocomplete.value || autocomplete.value.type !== 'Literal' || typeof autocomplete.value.value !== 'string') return;
+        if (
+          !autocomplete ||
+          autocomplete.type !== 'JSXAttribute' ||
+          !autocomplete.value ||
+          autocomplete.value.type !== 'Literal' ||
+          typeof autocomplete.value.value !== 'string'
+        )
+          return;
 
         const value = autocomplete.value.value.trim();
         if (value === '') {
-          context.report({ node: autocomplete, messageId: 'invalidAutocomplete' });
+          context.report({
+            node: autocomplete,
+            messageId: 'invalidAutocomplete',
+          });
           return;
         }
 
         const tokens = value.toLowerCase().split(/\s+/);
         const report = (): void => {
-          context.report({ node: autocomplete, messageId: 'invalidAutocomplete' });
+          context.report({
+            node: autocomplete,
+            messageId: 'invalidAutocomplete',
+          });
         };
 
         // `on` / `off` stand alone.
@@ -125,8 +195,16 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
         // An optional `section-*` label comes first.
         if (tokens[index]?.startsWith('section-')) index += 1;
         // Then at most one address modifier, then at most one contact modifier.
-        if (index < tokens.length && ADDRESS_MODIFIERS.has(tokens[index] as string)) index += 1;
-        if (index < tokens.length && CONTACT_MODIFIERS.has(tokens[index] as string)) index += 1;
+        if (
+          index < tokens.length &&
+          ADDRESS_MODIFIERS.has(tokens[index] as string)
+        )
+          index += 1;
+        if (
+          index < tokens.length &&
+          CONTACT_MODIFIERS.has(tokens[index] as string)
+        )
+          index += 1;
 
         // Then EXACTLY one field name. Two is the shape this rule used to pass.
         const field = tokens[index];
@@ -137,10 +215,10 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
         index += 1;
 
         // Then an optional `webauthn`, and then nothing.
-        if (index < tokens.length && tokens[index] === CREDENTIAL_SUFFIX) index += 1;
+        if (index < tokens.length && tokens[index] === CREDENTIAL_SUFFIX)
+          index += 1;
         if (index !== tokens.length) report();
       },
     };
   },
 });
-

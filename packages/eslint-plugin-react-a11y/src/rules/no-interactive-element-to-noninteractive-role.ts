@@ -21,35 +21,54 @@ type Options = Record<string, string[]>;
 type RuleOptions = [Options?];
 
 const INTERACTIVE_ELEMENTS = new Set([
-  'a', 'button', 'input', 'select', 'textarea'
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
 ]);
 
 const NON_INTERACTIVE_ROLES = new Set([
-  'article', 'banner', 'complementary', 'img', 'listitem', 'main', 'region', 'tooltip', 'presentation', 'none'
+  'article',
+  'banner',
+  'complementary',
+  'img',
+  'listitem',
+  'main',
+  'region',
+  'tooltip',
+  'presentation',
+  'none',
 ]);
 
 const DEFAULT_EXCEPTIONS: Record<string, string[]> = {
   tr: ['none', 'presentation'],
 };
 
-export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, MessageIds>({
+export const noInteractiveElementToNoninteractiveRole = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'no-interactive-element-to-noninteractive-role',
   meta: {
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-interactive-element-to-noninteractive-role.md',
-      description: 'Enforce that interactive elements don\'t have non-interactive ARIA roles',
+      description:
+        "Enforce that interactive elements don't have non-interactive ARIA roles",
       wcag: 'WCAG 4.1.2',
     },
     messages: {
       interactiveToNoninteractive: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Interactive Element with Non-interactive Role',
-        description: 'Interactive element <{{element}}> should not have non-interactive role "{{role}}"',
+        description:
+          'Interactive element <{{element}}> should not have non-interactive role "{{role}}"',
         severity: 'HIGH',
         fix: 'Use a wrapper element with the role, or remove the role',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-interactive-element-to-noninteractive-role.md',
-        wcag: 'WCAG 4.1.2'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-interactive-element-to-noninteractive-role.md',
+        wcag: 'WCAG 4.1.2',
       }),
     },
     schema: [
@@ -63,8 +82,14 @@ export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, 
     ],
   },
   defaultOptions: [DEFAULT_EXCEPTIONS],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const exceptions: Record<string, string[]> = { ...DEFAULT_EXCEPTIONS, ...options };
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const exceptions: Record<string, string[]> = {
+      ...DEFAULT_EXCEPTIONS,
+      ...options,
+    };
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -77,13 +102,21 @@ export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, 
 
         // Find role attribute
         const roleAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'role',
         );
 
-        if (!roleAttr || roleAttr.type !== 'JSXAttribute' || !roleAttr.value || roleAttr.value.type !== 'Literal') return;
+        if (
+          !roleAttr ||
+          roleAttr.type !== 'JSXAttribute' ||
+          !roleAttr.value ||
+          roleAttr.value.type !== 'Literal'
+        )
+          return;
 
         const role = roleAttr.value.value;
         if (typeof role !== 'string') return;
@@ -107,4 +140,3 @@ export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, 
     };
   },
 });
-

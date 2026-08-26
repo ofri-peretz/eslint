@@ -20,7 +20,7 @@
  * - Trusted extraction libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 /**
  * Six more used to sit here: `zipSlipVulnerability`, `validateArchivePaths`,
@@ -486,7 +486,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
             destArg = args.length >= 2 ? args[1] : undefined;
           }
 
-          const destText = destArg && destArg.type === 'Literal' && typeof destArg.value === 'string' ? destArg.value : '';
+          const destText = (destArg === undefined ? null : staticString(destArg)) ?? '';
           const isDestDangerous = isDangerousDestination(destText);
           const isMethodCall = node.callee.type === 'MemberExpression';
 

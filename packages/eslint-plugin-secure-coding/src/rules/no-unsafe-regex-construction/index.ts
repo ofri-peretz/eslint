@@ -20,6 +20,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -467,7 +468,7 @@ function hasDynamicFlags(
     // Flags built at runtime are the concern here regardless of provenance —
     // `new RegExp(p, item.flags)` can silently add `g`/`y` and change matching
     // semantics. A string literal is fine.
-    return !(flagsNode.type === 'Literal' && typeof flagsNode.value === 'string');
+    return !(staticString(flagsNode) !== null);
   }
 
   return false;

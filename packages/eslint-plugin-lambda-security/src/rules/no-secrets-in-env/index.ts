@@ -13,7 +13,7 @@
  * @see https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'secretsInEnv';
@@ -111,8 +111,9 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
      */
     function isHardcodedSecretValue(node: TSESTree.Node): boolean {
       // Literal strings with reasonable length could be secrets
-      if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-        return node.value.length > 5;
+      const staticText = staticString(node);
+      if (staticText !== null) {
+        return staticText.length > 5;
       }
       // Template literals with string parts
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
@@ -135,8 +136,8 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
           let envVarName = '';
           if (node.left.property.type === AST_NODE_TYPES.Identifier) {
             envVarName = node.left.property.name;
-          } else if (node.left.property.type === AST_NODE_TYPES.Literal && typeof node.left.property.value === 'string') {
-            envVarName = node.left.property.value;
+          } else {
+            envVarName = staticString(node.left.property) ?? '';
           }
 
           if (isSecretName(envVarName) && isHardcodedSecretValue(node.right)) {
@@ -154,8 +155,8 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
         let propName = '';
         if (node.key.type === AST_NODE_TYPES.Identifier) {
           propName = node.key.name;
-        } else if (node.key.type === AST_NODE_TYPES.Literal && typeof node.key.value === 'string') {
-          propName = node.key.value;
+        } else {
+          propName = staticString(node.key) ?? '';
         }
 
         if (isSecretName(propName) && isHardcodedSecretValue(node.value)) {

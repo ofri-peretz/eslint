@@ -7,11 +7,15 @@
 /**
  * ESLint Rule: aria-props
  * Enforce that ARIA attributes are valid
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-props.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, ARIA_ATTRIBUTES } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  ARIA_ATTRIBUTES,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'invalidAriaProp';
@@ -34,8 +38,9 @@ export const ariaProps = createRule<RuleOptions, MessageIds>({
         description: 'Attribute {{name}} is not a valid ARIA attribute',
         severity: 'HIGH',
         fix: 'Use a valid ARIA attribute (e.g., aria-label)',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-props.md',
-        wcag: 'WCAG 4.1.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-props.md',
+        wcag: 'WCAG 4.1.1',
       }),
     },
     schema: [],
@@ -62,4 +67,3 @@ export const ariaProps = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

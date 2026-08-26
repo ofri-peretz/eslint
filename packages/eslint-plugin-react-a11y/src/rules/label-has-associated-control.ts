@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: label-has-associated-control
  * Enforce that labels have accessible controls
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/label-has-associated-control.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -42,56 +42,85 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
         description: 'Form label must have an associated control',
         severity: 'HIGH',
         fix: 'Nest the input or use htmlFor attribute',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/label-has-associated-control.md',
-        wcag: 'WCAG 1.3.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/label-has-associated-control.md',
+        wcag: 'WCAG 1.3.1',
       }),
     },
     schema: [
-        {
-            type: 'object',
-            properties: {
-                labelComponents: { type: 'array', items: { type: 'string' } },
-                labelAttributes: { type: 'array', items: { type: 'string' } },
-                controlComponents: { type: 'array', items: { type: 'string' } },
-                assert: { type: 'string', enum: ['htmlFor', 'nesting', 'both', 'either'] },
-                depth: { type: 'integer' }
-            },
-            additionalProperties: false
-        }
+      {
+        type: 'object',
+        properties: {
+          labelComponents: { type: 'array', items: { type: 'string' } },
+          labelAttributes: { type: 'array', items: { type: 'string' } },
+          controlComponents: { type: 'array', items: { type: 'string' } },
+          assert: {
+            type: 'string',
+            enum: ['htmlFor', 'nesting', 'both', 'either'],
+          },
+          depth: { type: 'integer' },
+        },
+        additionalProperties: false,
+      },
     ],
   },
-  defaultOptions: [{
+  defaultOptions: [
+    {
       assert: 'either',
       depth: 2,
-  }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { 
-        labelComponents = [], 
-        labelAttributes = [], 
-        controlComponents = [], 
-        assert = 'either',
-        depth = 2
-    } = options ?? {} as Options;
-    
-    const labelTags = new Set(['label', ...labelComponents]);
-    const controlTags = new Set(['input', 'select', 'textarea', 'meter', 'output', 'progress', ...controlComponents]);
+    },
+  ],
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const {
+      labelComponents = [],
+      labelAttributes = [],
+      controlComponents = [],
+      assert = 'either',
+      depth = 2,
+    } = options ?? ({} as Options);
 
-    function hasNestedControl(node: TSESTree.JSXElement, currentDepth: number): boolean {
-        if (currentDepth > depth) return false;
-        
-        return node.children.some((child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
-            if (child.type !== 'JSXElement') return false;
-            if (child.openingElement.name.type === 'JSXIdentifier' && controlTags.has(child.openingElement.name.name)) {
-                return true;
-            }
-            return hasNestedControl(child, currentDepth + 1);
-        });
+    const labelTags = new Set(['label', ...labelComponents]);
+    const controlTags = new Set([
+      'input',
+      'select',
+      'textarea',
+      'meter',
+      'output',
+      'progress',
+      ...controlComponents,
+    ]);
+
+    function hasNestedControl(
+      node: TSESTree.JSXElement,
+      currentDepth: number,
+    ): boolean {
+      if (currentDepth > depth) return false;
+
+      return node.children.some(
+        (child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
+          if (child.type !== 'JSXElement') return false;
+          if (
+            child.openingElement.name.type === 'JSXIdentifier' &&
+            controlTags.has(child.openingElement.name.name)
+          ) {
+            return true;
+          }
+          return hasNestedControl(child, currentDepth + 1);
+        },
+      );
     }
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
-        if (openingElement.name.type !== 'JSXIdentifier' || !labelTags.has(openingElement.name.name)) return;
+        if (
+          openingElement.name.type !== 'JSXIdentifier' ||
+          !labelTags.has(openingElement.name.name)
+        )
+          return;
 
         // aria-label / aria-labelledby on the element itself provides an accessible
         // name without requiring a paired <label> or htmlFor (WCAG 2.1 SC 1.3.1).
@@ -99,17 +128,22 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
           (attr): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            (attr.name.name === 'aria-label' || attr.name.name === 'aria-labelledby') &&
+            (attr.name.name === 'aria-label' ||
+              attr.name.name === 'aria-labelledby') &&
             !!attr.value,
         );
         if (hasAriaLabel) return;
 
         // Check htmlFor
-        const hasHtmlFor = openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+        const hasHtmlFor = openingElement.attributes.some(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            (attr.name.name === 'htmlFor' || labelAttributes.includes(attr.name.name)) &&
-            attr.value?.type === 'Literal'
+            (attr.name.name === 'htmlFor' ||
+              labelAttributes.includes(attr.name.name)) &&
+            attr.value?.type === 'Literal',
         );
 
         // Check nesting
@@ -122,13 +156,12 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
         else valid = hasHtmlFor || hasNesting; // either
 
         if (!valid) {
-            context.report({
-                node: openingElement,
-                messageId: 'missingControl',
-            });
+          context.report({
+            node: openingElement,
+            messageId: 'missingControl',
+          });
         }
       },
     };
   },
 });
-

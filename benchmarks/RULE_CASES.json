@@ -1,9 +1,9 @@
 {
   "counts": {
     "TP": 7376,
-    "TN": 10951,
+    "TN": 10953,
     "FP": 18,
-    "FN": 13,
+    "FN": 26,
     "GAP": 8
   },
   "rules": [
@@ -6031,6 +6031,14 @@
           "code": "window.addEventListener(\"message\", (e) => { host.append(document.createRange().createContextualFragment(e.data)); });",
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/no-innerhtml.test.ts"
+        },
+        {
+          "id": "browser-security/no-innerhtml#FN-7ec882",
+          "kind": "FN",
+          "code": "el[`innerHTML`] = userInput;",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-browser-security/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -9669,6 +9677,14 @@
           "code": "const c = { headers: [{ key: 'Content-Type', 'value': 'application/json' }] };",
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts"
+        },
+        {
+          "id": "browser-security/no-missing-security-headers#FN-cec03b",
+          "kind": "FN",
+          "code": "module.exports = { async headers() { return [{ source: `/(.*)`, headers: [{ key: `X-Frame-Options`, value: `DENY` }] }]; } };",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-browser-security/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -35508,6 +35524,14 @@
           "code": "const Button = import('@company/ui/components/Button');",
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-internal-modules.test.ts"
+        },
+        {
+          "id": "import-next/no-internal-modules#FN-24772c",
+          "kind": "FN",
+          "code": "const x = require(`lodash/fp/get/extra`);",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -36897,6 +36921,14 @@
           "code": "const fs = require(\"fs\");",
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-nodejs-modules.test.ts"
+        },
+        {
+          "id": "import-next/no-nodejs-modules#FN-d63dd2",
+          "kind": "FN",
+          "code": "const p = import(`fs`);",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -37939,6 +37971,14 @@
           "code": "import './a'; import './b';",
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unassigned-import.test.ts"
+        },
+        {
+          "id": "import-next/no-unassigned-import#FN-cac86b",
+          "kind": "FN",
+          "code": "const y = (require(`side-effect`), compute());",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -38102,6 +38142,14 @@
           "code": "import foo = require('missing-module');",
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-unresolved.test.ts"
+        },
+        {
+          "id": "import-next/no-unresolved#FN-038315",
+          "kind": "FN",
+          "code": "require(`missing-module`);",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -39370,6 +39418,14 @@
           "code": "import custom from 'custom';",
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/prefer-node-protocol.test.ts"
+        },
+        {
+          "id": "import-next/prefer-node-protocol#FN-c70c38",
+          "kind": "FN",
+          "code": "const fs = require(`fs`);",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -43794,6 +43850,14 @@
           "code": "const policy = { Action: ['*', 's3:*'], Resource: ['*', 'arn:*:*:*:*:*'] };",
           "description": "",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-overly-permissive-iam-policy/no-overly-permissive-iam-policy.test.ts"
+        },
+        {
+          "id": "lambda-security/no-overly-permissive-iam-policy#FN-27b6ea",
+          "kind": "FN",
+          "code": "export const handler = async (event) => { return { principalId: `user`, policyDocument: { Statement: [{ Effect: `Allow`, Action: `execute-api:Invoke`, Resource: `*` }] } }; };",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-lambda-security/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ]
     },
@@ -47945,14 +48009,14 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-fcfed7",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-de0308",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ cmd }) => { execSync(\"ls \" + cmd); });'",
           "description": "a concatenated command likewise",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-08a177",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-367037",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ cmd }) => { execSync(\"ls -la\"); });'",
           "description": "a literal command",
@@ -47973,7 +48037,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-1931fe",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-d04161",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async (args) => { execSync(args); });'",
           "description": "the whole args object is not a command",
@@ -48001,21 +48065,21 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-c876dc",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-3403ae",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async () => { execSync(cmd); });'",
           "description": "a handler with no parameters",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-ca9e63",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-a2ecc2",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ cmd }) => { logger.info(cmd); });'",
           "description": "a non-sink call taking the argument",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-8e9d96",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-d090f7",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ cmd }) => { spawn(); });'",
           "description": "a sink with no arguments",
@@ -48043,7 +48107,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-694fb2",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-15fa7b",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ cmd }) => { getRunner()(cmd); });'",
           "description": "a callee that is neither an identifier nor a member",
@@ -48057,42 +48121,42 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-2a9044",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TN-bce611",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async (args) => { execSync(args[key]); });'",
           "description": "a computed member on the args object",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-fb4c41",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-e80917",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ cmd }) => { execSync(cmd); });'",
           "description": "a destructured argument as the command",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-00f6e8",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-47e968",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async (args) => { execSync(args.cmd); });'",
           "description": "the whole-args member form",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-285a47",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-7841f5",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ bin }) => { spawn(bin, argv); });'",
           "description": "spawn chooses the binary too",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-0cd5db",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-52b7ac",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ bin }) => { execFile(bin, []); });'",
           "description": "execFile",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-e9a191",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-095173",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ mod }) => { fork(mod); });'",
           "description": "fork",
@@ -48113,21 +48177,21 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-b9fd8e",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-46b169",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ cmd = \"ls\" }) => { execSync(cmd); });'",
           "description": "a defaulted destructure",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-f9a312",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-d40105",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ ...rest }) => { execSync(rest.cmd); });'",
           "description": "a rest element is an object, and its member is tainted",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-8f8419",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-09ecf2",
           "kind": "TP",
           "code": "SDK + 'server.tool(\"run\", cfg, async ({ cmd }) => { execSync(cmd); });'",
           "description": "the legacy tool() arity",
@@ -48141,14 +48205,14 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-8a00aa",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-6702c4",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"outer\", cfg, async ({ outerArg }) => {\\n' + ' server.registerTool(\"inner\", cfg, async ({ inner }) => { execSync(inner); });\\n' + '});'",
           "description": "a sink inside a nested registration uses the inner handler",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-command-injection-in-tool/no-command-injection-in-tool.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-c64e0a",
+          "id": "mcp-sdk-security/no-command-injection-in-tool#TP-4e0586",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"run\", cfg, async ({ a, b }) => { execSync(a); spawn(b); });'",
           "description": "two sinks in one handler report separately",
@@ -48167,14 +48231,14 @@
       "rule": "mcp-sdk-security/no-tool-description-injection",
       "cases": [
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TN-35dd0c",
+          "id": "mcp-sdk-security/no-tool-description-injection#TN-46d15e",
           "kind": "TN",
           "code": "SDK + \"server.registerTool('search', { description: 'Search the docs' }, handler);\"",
           "description": "a string literal",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TN-0866c5",
+          "id": "mcp-sdk-security/no-tool-description-injection#TN-a83b09",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"search\", { description: `Search the docs` }, handler);'",
           "description": "a template with no interpolations",
@@ -48195,7 +48259,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TN-b531a5",
+          "id": "mcp-sdk-security/no-tool-description-injection#TN-88a4c7",
           "kind": "TN",
           "code": "SDK + \"server.registerTool('search', { inputSchema: {} }, handler);\"",
           "description": "no description at all",
@@ -48223,7 +48287,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TN-77872b",
+          "id": "mcp-sdk-security/no-tool-description-injection#TN-4d33e3",
           "kind": "TN",
           "code": "SDK + 'server[method](\"search\", { description: `Search ${x}` }, handler);'",
           "description": "a computed callee",
@@ -48237,7 +48301,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TN-66cd11",
+          "id": "mcp-sdk-security/no-tool-description-injection#TN-3131b5",
           "kind": "TN",
           "code": "SDK + 'registerTool(\"search\", { description: `Search ${x}` }, handler);'",
           "description": "a bare function call is not a registration",
@@ -48251,84 +48315,84 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TN-796aa3",
+          "id": "mcp-sdk-security/no-tool-description-injection#TN-3d27bc",
           "kind": "TN",
           "code": "SDK + \"server.registerTool('search', { [key]: `Search ${x}` }, handler);\"",
           "description": "a computed key is not statically a description",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-231fd4",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-7c07f9",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"search\", { description: `Search ${scope}` }, handler);'",
           "description": "an interpolated template",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-c3c8da",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-8a6a6e",
           "kind": "TP",
           "code": "SDK + \"server.registerTool('search', { description: tenantBlurb }, handler);\"",
           "description": "a value loaded from elsewhere",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-613352",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-6a4f8d",
           "kind": "TP",
           "code": "SDK + \"server.registerTool('search', { description: buildDescription() }, handler);\"",
           "description": "a call result",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-90a3be",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-917197",
           "kind": "TP",
           "code": "SDK + \"server.registerTool('search', { description: config.blurb }, handler);\"",
           "description": "a member access",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-739494",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-4f496d",
           "kind": "TP",
           "code": "SDK + \"server.registerTool('search', { description: 'Search ' + scope }, handler);\"",
           "description": "concatenation with a non-literal",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-e769b2",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-8b0260",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"search\", { title: `Search ${scope}` }, handler);'",
           "description": "a dynamic title is the same defect",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-3c3b83",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-4c9bf2",
           "kind": "TP",
           "code": "SDK + 'server.tool(\"search\", { description: `Search ${scope}` }, handler);'",
           "description": "the legacy tool() arity",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-089b6f",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-a27f46",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"s\", { title: `T ${x}`, description: `D ${y}` }, handler);'",
           "description": "a dynamic title AND description report separately",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-e3f77b",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-c71309",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"search\", { \"description\": `Search ${x}` }, handler);'",
           "description": "a quoted key is still a description",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-601279",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-a8ce8a",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(toolName, { description: `Search ${x}` }, handler);'",
           "description": "a non-literal tool name still reports",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-90b07b",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-bf14c7",
           "kind": "TP",
           "code": "\"import { z } from 'zod';\\n\" + SDK + 'server.registerTool(\"search\", { description: `Search ${x}` }, handler);'",
           "description": "the SDK import alongside unrelated imports",
@@ -48342,7 +48406,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-tool-description-injection#TP-fa9a37",
+          "id": "mcp-sdk-security/no-tool-description-injection#TP-cf8912",
           "kind": "TP",
           "code": "'server.registerTool(\"search\", { description: `Search ${x}` }, handler);\\n' + SDK",
           "description": "the import appearing after the registration",
@@ -48386,7 +48450,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TN-e44ded",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TN-265908",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"read\", { title: \"Read\" }, async ({ path }) => read(path));'",
           "description": "no inputSchema declared",
@@ -48449,14 +48513,14 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TN-7e36b2",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TN-3ada71",
           "kind": "TN",
           "code": "SDK + 'server.registerTool(\"read\", cfg, async ({ path }) => read(path));'",
           "description": "a config passed by reference",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TN-a11802",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TN-e69468",
           "kind": "TN",
           "code": "server.registerTool(\"read\", { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));",
           "description": "a file that never imports the MCP SDK",
@@ -48484,35 +48548,35 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-db828f",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-131f3d",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"read\", { inputSchema: { path: z.string() } }, async ({ path, encoding }) => read(path, encoding));'",
           "description": "one undeclared key",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-a03161",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-69ee91",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"read\", { inputSchema: { path: z.string() } }, async ({ path, encoding, flags }) => read(path));'",
           "description": "two undeclared keys report separately",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-c19fdb",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-254bae",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"read\", { inputSchema: {} }, async ({ path }) => read(path));'",
           "description": "an empty schema declares nothing",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-3cba13",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-fdc96e",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"read\", { inputSchema: { path: z.string() } }, async ({ encoding: enc }) => read(enc));'",
           "description": "a renamed destructure is judged on the key, not the local name",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-e05fe8",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-510b7a",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(\"read\", { inputSchema: { path: z.string() } }, async ({ encoding = \"utf8\" }) => encoding);'",
           "description": "a defaulted destructure is still a read",
@@ -48533,7 +48597,7 @@
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-unvalidated-tool-args/no-unvalidated-tool-args.test.ts"
         },
         {
-          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-48a311",
+          "id": "mcp-sdk-security/no-unvalidated-tool-args#TP-cc2347",
           "kind": "TP",
           "code": "SDK + 'server.registerTool(toolName, { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));'",
           "description": "a non-literal tool name falls back to unknown",
@@ -60478,6 +60542,14 @@
           "code": "import fs from 'fs'; import path from 'path'; const baseDir = process.argv[2]; export const read = (req) => fs.readFileSync(path.join(baseDir, req.query.f), 'utf8');",
           "description": "CONTROL: an argv base with a REQUEST segment still reports",
           "file": "packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/taint-evidence.test.ts"
+        },
+        {
+          "id": "node-security/detect-non-literal-fs-filename#FN-b40b0e",
+          "kind": "FN",
+          "code": "fs.readFile(`../../etc/passwd`);",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-node-security/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -63612,6 +63684,14 @@
           "code": "const fs = require('fs'); const P = path.join(os.tmpdir(), 'ingest-'); fs.mkdtempSync(base, P);",
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-data-in-temp-storage/no-data-in-temp-storage.test.ts"
+        },
+        {
+          "id": "node-security/no-data-in-temp-storage#FN-d4d30a",
+          "kind": "FN",
+          "code": "const file = path.join(os.tmpdir(), `report-cache.tmp`);",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-node-security/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -70406,6 +70486,14 @@
           "code": "`const sig = req.headers['x-sig']; const expected = createHmac('sha256', S)${'.q()'.repeat(100)}; if (sig === expected) { ok(); }`",
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts"
+        },
+        {
+          "id": "node-security/no-timing-unsafe-compare#FN-7f908b",
+          "kind": "FN",
+          "code": "const creds = await vault.fetch(req.params.id); if (creds[`apiKey`] === req.headers[`x-integration-key`]) { ok(); }",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-node-security/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         },
         {
           "id": "node-security/no-timing-unsafe-compare#TN-85aa92",
@@ -90047,7 +90135,21 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
         },
         {
-          "id": "react-a11y/no-redundant-roles#TN-b98610",
+          "id": "react-a11y/no-redundant-roles#TN-0e6ae9",
+          "kind": "TN",
+          "code": "<nav role={roleName} />",
+          "description": "a role supplied by an expression, which the AST cannot read",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
+        },
+        {
+          "id": "react-a11y/no-redundant-roles#TN-8246ff",
+          "kind": "TN",
+          "code": "<nav role={`${prefix}-navigation`} />",
+          "description": "a role from a template with an interpolation",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
+        },
+        {
+          "id": "react-a11y/no-redundant-roles#TN-40f261",
           "kind": "TN",
           "code": "<nav role=\"navigation\"></nav>",
           "description": "nav with an explicit navigation role — allowed by default",
@@ -90096,21 +90198,21 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
         },
         {
-          "id": "react-a11y/no-redundant-roles#TP-4a57d7",
+          "id": "react-a11y/no-redundant-roles#TP-53bac8",
           "kind": "TP",
           "code": "<nav role=\"navigation\"></nav>",
           "description": "nav with an explicit navigation role, once the exception is cleared",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
         },
         {
-          "id": "react-a11y/no-redundant-roles#TP-e9d838",
+          "id": "react-a11y/no-redundant-roles#TP-4a01b1",
           "kind": "TP",
           "code": "<main role=\"main\"></main>",
           "description": "role='main' on a main element",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
         },
         {
-          "id": "react-a11y/no-redundant-roles#TP-e295bd",
+          "id": "react-a11y/no-redundant-roles#TP-e7456f",
           "kind": "TP",
           "code": "<article role=\"article\"></article>",
           "description": "",
@@ -115638,6 +115740,14 @@
           "code": "if (e.code == 'MODULE_NOT_FOUND') { retry(); }",
           "description": "the default is unchanged — plain loose equality still reports",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts"
+        },
+        {
+          "id": "secure-coding/no-insecure-comparison#FN-3f866d",
+          "kind": "FN",
+          "code": "if (req.headers[`x-api-key`] === config[`apiKey`]) {}",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-secure-coding/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {
@@ -120296,6 +120406,14 @@
           "code": "export function f(error, k) { console.log(`access token: ${error[k]}`); }",
           "description": "FN GUARD: a computed read names nothing, so it is not assumed diagnostic",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/no-sensitive-data-exposure.test.ts"
+        },
+        {
+          "id": "secure-coding/no-sensitive-data-exposure#FN-ade7eb",
+          "kind": "FN",
+          "code": "console.log(`password: 123456`);",
+          "description": "the same code with template literals instead of quoted strings",
+          "file": "packages/eslint-plugin-secure-coding/src/spelling-seals.test.ts",
+          "found": "spelling probe"
         }
       ],
       "wild": {

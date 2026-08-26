@@ -9,7 +9,7 @@
  * Prevents Node.js builtin imports (eslint-plugin-import inspired)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -249,7 +249,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const moduleName = node.source.value;
+        const moduleName = staticString(node.source);
 
         if (typeof moduleName === 'string' && isNodejsBuiltin(moduleName)) {
           reportBuiltin(node.source, moduleName, 'static');
@@ -264,8 +264,9 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
           node.arguments.length === 1
         ) {
           const arg = node.arguments[0];
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            const moduleName = arg.value;
+          const staticText1 = staticString(arg);
+          if (staticText1 !== null) {
+            const moduleName = staticText1;
             if (isNodejsBuiltin(moduleName)) {
               reportBuiltin(arg, moduleName, 'require');
             }
@@ -276,8 +277,9 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
       // Check dynamic imports via ImportExpression
       ImportExpression(node: TSESTree.ImportExpression) {
         const source = node.source;
-        if (source.type === 'Literal' && typeof source.value === 'string') {
-          const moduleName = source.value;
+        const staticText2 = staticString(source);
+        if (staticText2 !== null) {
+          const moduleName = staticText2;
           if (isNodejsBuiltin(moduleName)) {
             reportBuiltin(source, moduleName, 'dynamic');
           }

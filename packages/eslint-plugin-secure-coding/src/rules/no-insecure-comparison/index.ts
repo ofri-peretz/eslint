@@ -13,7 +13,7 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
 /**
@@ -400,13 +400,13 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             resolveIdentifier(n);
           } else if (n.type === 'MemberExpression') {
             walk(n.object);
-            if (!n.computed && n.property.type === 'Identifier') out.push(n.property.name);
-            // `req.headers['x-api-key']` — a computed key that is a string literal is
-            // the same property name as `req.headers.xApiKey`, just spelled with
-            // brackets. Read it; anything non-literal is walked as an expression.
-            else if (n.computed && n.property.type === 'Literal' && typeof n.property.value === 'string') {
-              out.push(n.property.value);
-            } else walk(n.property);
+            // `req.headers['x-api-key']` names the same property as
+            // `req.headers.xApiKey`, just spelled with brackets — so both
+            // spellings contribute a name, and anything the AST cannot name is
+            // walked as an expression instead.
+            const key = propertyName(n);
+            if (key !== null) out.push(key);
+            else walk(n.property);
           } else if (n.type === 'CallExpression') {
             walk(n.callee);
           } else if (n.type === 'ConditionalExpression') {

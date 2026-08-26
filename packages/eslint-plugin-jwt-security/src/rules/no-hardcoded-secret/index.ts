@@ -19,6 +19,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { isSignOperation, isVerifyOperation, isEnvVariable } from '../../utils';
 import type { NoHardcodedSecretOptions } from '../../types';
@@ -102,19 +103,10 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
      * Check if a node is a hardcoded string literal
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const isHardcodedString = (node: TSESTree.Node): boolean => {
-      // String literal
-      if (node.type === 'Literal' && typeof node.value === 'string') {
-        return true;
-      }
-
-      // Template literal without expressions
-      if (node.type === 'TemplateLiteral' && node.expressions.length === 0) {
-        return true;
-      }
-
-      return false;
-    };
+    // A quoted string and a no-substitution template literal are one thing;
+    // `staticString` answers for both, which made the separate template arm
+    // that used to sit here unreachable.
+    const isHardcodedString = (node: TSESTree.Node): boolean => staticString(node) !== null;
 
     /**
      * Resolve an Identifier node to its initializer (one frame of indirection).

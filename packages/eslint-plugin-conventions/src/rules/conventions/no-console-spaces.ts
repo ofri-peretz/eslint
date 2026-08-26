@@ -9,7 +9,7 @@
  * Prevent leading/trailing space between console.log parameters
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noConsoleSpaces';
@@ -108,17 +108,23 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
         if (isConsoleMethodCall(node) && !isInAllowedContext()) {
           // Check each argument for leading/trailing spaces
           for (const arg of node.arguments) {
-            if (arg.type === 'Literal' && typeof arg.value === 'string') {
-              if (hasLeadingOrTrailingSpaces(arg.value)) {
+            // A template literal is NOT read here even though it names a
+            // static string, because this branch's fixer rewrites the argument
+            // as `'...'` — which would silently convert every backtick in the
+            // codebase to a quote. The `TemplateLiteral` branch below owns them
+            // and fixes them in place.
+            const staticText = arg.type === 'TemplateLiteral' ? null : staticString(arg);
+            if (staticText !== null) {
+              if (hasLeadingOrTrailingSpaces(staticText)) {
                 context.report({
                   node: arg,
                   messageId: 'noConsoleSpaces',
                   data: {
                     method: getConsoleMethodName(node),
-                    arg: arg.value,
+                    arg: staticText,
                   },
                   fix(fixer: TSESLint.RuleFixer) {
-                    const trimmed = arg.value.trim();
+                    const trimmed = staticText.trim();
                     return fixer.replaceText(arg, `'${trimmed}'`);
                   },
                 });

@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: heading-has-content
  * Enforce that headings have content
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/heading-has-content.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -22,19 +22,25 @@ type Options = {
 
 type RuleOptions = [Options?];
 
-function hasContent(node: TSESTree.JSXOpeningElement, children: TSESTree.JSXChild[]): boolean {
+function hasContent(
+  node: TSESTree.JSXOpeningElement,
+  children: TSESTree.JSXChild[],
+): boolean {
   if (children.length > 0) return true;
-  
-  return node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
-    if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier') return false;
-    const name = attr.name.name;
-    return (
-        name === 'dangerouslySetInnerHTML' || 
+
+  return node.attributes.some(
+    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
+      if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier')
+        return false;
+      const name = attr.name.name;
+      return (
+        name === 'dangerouslySetInnerHTML' ||
         name === 'children' ||
         name === 'title'
         // Headings don't typically use aria-label as primary content source, but usually accepted if no text
-    ); 
-  });
+      );
+    },
+  );
 }
 
 export const headingHasContent = createRule<RuleOptions, MessageIds>({
@@ -53,8 +59,9 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
         description: 'Heading elements must have accessible content',
         severity: 'HIGH',
         fix: 'Provide text content for the heading',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/heading-has-content.md',
-        wcag: 'WCAG 1.3.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/heading-has-content.md',
+        wcag: 'WCAG 1.3.1',
       }),
     },
     schema: [
@@ -68,14 +75,28 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { components = [] } = options ?? {} as Options;
-    const headings = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ...components]);
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { components = [] } = options ?? ({} as Options);
+    const headings = new Set([
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      ...components,
+    ]);
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
-        if (openingElement.name.type !== 'JSXIdentifier' || !headings.has(openingElement.name.name)) {
+        if (
+          openingElement.name.type !== 'JSXIdentifier' ||
+          !headings.has(openingElement.name.name)
+        ) {
           return;
         }
 
@@ -89,4 +110,3 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

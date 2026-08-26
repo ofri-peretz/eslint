@@ -10,6 +10,7 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { CheckQueryParamsOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -234,13 +235,14 @@ function knowableValueCount(node: TSESTree.Node, scope: TSESLint.Scope.Scope): n
 function propertyName(property: TSESTree.Property): string | null {
   if (property.computed) {
     return property.key.type === AST_NODE_TYPES.Literal &&
-      typeof property.key.value === 'string'
-      ? property.key.value
+      staticString(property.key) !== null
+      ? staticString(property.key)
       : null;
   }
   if (property.key.type === AST_NODE_TYPES.Identifier) return property.key.name;
-  if (property.key.type === AST_NODE_TYPES.Literal && typeof property.key.value === 'string') {
-    return property.key.value;
+  const staticText = staticString(property.key);
+  if (staticText !== null) {
+    return staticText;
   }
   return null;
 }

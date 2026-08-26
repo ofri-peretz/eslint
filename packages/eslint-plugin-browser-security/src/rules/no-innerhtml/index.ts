@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/attacks/xss/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createPayloadResolver, isStaticExpression, isTestFilePath } from '@interlace/eslint-devkit';
+import { createPayloadResolver, isStaticExpression, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -240,15 +240,9 @@ function isLocallyDeclaredFunction(
 /**
  * Check if the value is a literal string
  */
-function isLiteralString(node: TSESTree.Node): boolean {
-  if (node.type === 'Literal' && typeof node.value === 'string') {
-    return true;
-  }
-  if (node.type === 'TemplateLiteral' && node.expressions.length === 0) {
-    return true;
-  }
-  return false;
-}
+// `staticString` answers for BOTH spellings, so the hand-rolled template arm
+// that used to sit here is now unreachable rather than merely redundant.
+const isLiteralString = (node: TSESTree.Node): boolean => staticString(node) !== null;
 
 /**
  * Are these arguments all string constants, and is there at least one?
@@ -411,16 +405,17 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         return member.property.name;
       }
       if (!member.computed) return null;
-      if (member.property.type === 'Literal' && typeof member.property.value === 'string') {
-        return member.property.value;
+      const staticText2 = staticString(member.property);
+      if (staticText2 !== null) {
+        return staticText2;
       }
       // `const PROP = 'innerHTML'; el[PROP] = payload` — resolve the key.
       // Without this the computed form is a one-line evasion of the whole rule,
       // and it is one no competitor on this corpus catches either.
       if (member.property.type === 'Identifier') {
         const init = resolveInitializer(member.property, sourceCode);
-        if (init !== undefined && init.type === 'Literal' && typeof init.value === 'string') {
-          return init.value;
+        if (init !== undefined && staticString(init) !== null) {
+          return staticString(init);
         }
       }
       return null;

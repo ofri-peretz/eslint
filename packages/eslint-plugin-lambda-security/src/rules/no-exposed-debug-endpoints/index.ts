@@ -8,7 +8,7 @@
  * @fileoverview Detect debug endpoints without auth in AWS Lambda handlers
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
@@ -85,9 +85,9 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
 
     return {
       Property(node: TSESTree.Property) {
-        if (node.key.type === 'Identifier' && node.key.name === 'path' && 
-            node.value.type === 'Literal' && typeof node.value.value === 'string') {
-          const path = node.value.value.toLowerCase();
+        const pathText = staticString(node.value);
+        if (node.key.type === 'Identifier' && node.key.name === 'path' && pathText !== null) {
+          const path = pathText.toLowerCase();
           if (debugPaths.some(dp => path.includes(dp.toLowerCase()))) {
             // Check if it's inside an 'http' or 'httpApi' block
             let parent: TSESTree.Node | undefined = node.parent;
@@ -107,8 +107,9 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         // Detect event.path === '/debug' or event.rawPath.includes('/admin')
         if (node.operator === '===' || node.operator === '==' || node.operator === '!==' || node.operator === '!=') {
           const checkNode = (side: TSESTree.Expression) => {
-            if (side.type === 'Literal' && typeof side.value === 'string') {
-              const val = side.value.toLowerCase();
+            const staticText = staticString(side);
+            if (staticText !== null) {
+              const val = staticText.toLowerCase();
               if (debugPaths.some(dp => val.includes(dp.toLowerCase()))) {
                 // Check if the other side is an event property
                 const other = side === node.left ? node.right : node.left;

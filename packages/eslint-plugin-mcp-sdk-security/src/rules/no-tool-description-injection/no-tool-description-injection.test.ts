@@ -9,7 +9,11 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, expect } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
-import { noToolDescriptionInjection, isStaticText, modelFacingProperties } from './index';
+import {
+  noToolDescriptionInjection,
+  isStaticText,
+  modelFacingProperties,
+} from './index';
 import type { TSESTree } from '@typescript-eslint/utils';
 
 RuleTester.afterAll = afterAll;
@@ -25,7 +29,8 @@ const ruleTester = new RuleTester({
 });
 
 /** Opens the SDK gate; see MCP_MODULE_PREFIX. */
-const SDK = "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n";
+const SDK =
+  "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n";
 
 describe('no-tool-description-injection', () => {
   describe('Valid — text the developer wrote', () => {
@@ -33,11 +38,15 @@ describe('no-tool-description-injection', () => {
       valid: [
         {
           name: 'a string literal',
-          code: SDK + "server.registerTool('search', { description: 'Search the docs' }, handler);",
+          code:
+            SDK +
+            "server.registerTool('search', { description: 'Search the docs' }, handler);",
         },
         {
           name: 'a template with no interpolations',
-          code: SDK + 'server.registerTool("search", { description: `Search the docs` }, handler);',
+          code:
+            SDK +
+            'server.registerTool("search", { description: `Search the docs` }, handler);',
         },
         {
           name: 'literals concatenated across lines',
@@ -53,7 +62,9 @@ describe('no-tool-description-injection', () => {
         },
         {
           name: 'no description at all',
-          code: SDK + "server.registerTool('search', { inputSchema: {} }, handler);",
+          code:
+            SDK +
+            "server.registerTool('search', { inputSchema: {} }, handler);",
         },
         {
           // A config by reference could hold anything; reporting it would be
@@ -73,7 +84,9 @@ describe('no-tool-description-injection', () => {
           // `server[method](...)` — the method name is not statically known,
           // so this cannot be shown to be a tool registration.
           name: 'a computed callee',
-          code: SDK + 'server[method]("search", { description: `Search ${x}` }, handler);',
+          code:
+            SDK +
+            'server[method]("search", { description: `Search ${x}` }, handler);',
         },
         {
           // A private method is the one non-computed property that is not an
@@ -85,7 +98,9 @@ describe('no-tool-description-injection', () => {
         },
         {
           name: 'a bare function call is not a registration',
-          code: SDK + 'registerTool("search", { description: `Search ${x}` }, handler);',
+          code:
+            SDK +
+            'registerTool("search", { description: `Search ${x}` }, handler);',
         },
         {
           name: 'an unrelated import does not open the gate on its own',
@@ -93,7 +108,9 @@ describe('no-tool-description-injection', () => {
         },
         {
           name: 'a computed key is not statically a description',
-          code: SDK + "server.registerTool('search', { [key]: `Search ${x}` }, handler);",
+          code:
+            SDK +
+            "server.registerTool('search', { [key]: `Search ${x}` }, handler);",
         },
       ],
       invalid: [],
@@ -106,40 +123,53 @@ describe('no-tool-description-injection', () => {
       invalid: [
         {
           name: 'an interpolated template',
-          code: SDK + 'server.registerTool("search", { description: `Search ${scope}` }, handler);',
+          code:
+            SDK +
+            'server.registerTool("search", { description: `Search ${scope}` }, handler);',
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           // The advisory shape: text loaded per tenant, appended to the
           // instruction block.
           name: 'a value loaded from elsewhere',
-          code: SDK + "server.registerTool('search', { description: tenantBlurb }, handler);",
+          code:
+            SDK +
+            "server.registerTool('search', { description: tenantBlurb }, handler);",
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a call result',
-          code: SDK + "server.registerTool('search', { description: buildDescription() }, handler);",
+          code:
+            SDK +
+            "server.registerTool('search', { description: buildDescription() }, handler);",
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a member access',
-          code: SDK + "server.registerTool('search', { description: config.blurb }, handler);",
+          code:
+            SDK +
+            "server.registerTool('search', { description: config.blurb }, handler);",
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'concatenation with a non-literal',
           code:
-            SDK + "server.registerTool('search', { description: 'Search ' + scope }, handler);",
+            SDK +
+            "server.registerTool('search', { description: 'Search ' + scope }, handler);",
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a dynamic title is the same defect',
-          code: SDK + 'server.registerTool("search", { title: `Search ${scope}` }, handler);',
+          code:
+            SDK +
+            'server.registerTool("search", { title: `Search ${scope}` }, handler);',
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'the legacy tool() arity',
-          code: SDK + 'server.tool("search", { description: `Search ${scope}` }, handler);',
+          code:
+            SDK +
+            'server.tool("search", { description: `Search ${scope}` }, handler);',
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
@@ -151,24 +181,37 @@ describe('no-tool-description-injection', () => {
           code:
             SDK +
             'server.registerTool("s", { title: `T ${x}`, description: `D ${y}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription' }, { messageId: 'dynamicDescription' }],
+          errors: [
+            { messageId: 'dynamicDescription' },
+            { messageId: 'dynamicDescription' },
+          ],
         },
         {
           name: 'a quoted key is still a description',
-          code: SDK + 'server.registerTool("search", { "description": `Search ${x}` }, handler);',
+          code:
+            SDK +
+            'server.registerTool("search", { "description": `Search ${x}` }, handler);',
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           // The tool name is only used for the message; a non-literal name
           // falls back to "unknown" rather than suppressing the finding.
           name: 'a non-literal tool name still reports',
-          code: SDK + 'server.registerTool(toolName, { description: `Search ${x}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription', data: { tool: 'unknown', key: 'description' } }],
+          code:
+            SDK +
+            'server.registerTool(toolName, { description: `Search ${x}` }, handler);',
+          errors: [
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'unknown', key: 'description' },
+            },
+          ],
         },
         {
           name: 'the SDK import alongside unrelated imports',
           code:
-            "import { z } from 'zod';\n" + SDK +
+            "import { z } from 'zod';\n" +
+            SDK +
             'server.registerTool("search", { description: `Search ${x}` }, handler);',
           errors: [{ messageId: 'dynamicDescription' }],
         },
@@ -184,7 +227,8 @@ describe('no-tool-description-injection', () => {
           // still opens the gate.
           name: 'the import appearing after the registration',
           code:
-            'server.registerTool("search", { description: `Search ${x}` }, handler);\n' + SDK,
+            'server.registerTool("search", { description: `Search ${x}` }, handler);\n' +
+            SDK,
           errors: [{ messageId: 'dynamicDescription' }],
         },
       ],
@@ -194,7 +238,10 @@ describe('no-tool-description-injection', () => {
 
 describe('isStaticText', () => {
   const exprOf = (code: string): TSESTree.Node =>
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement).expression;
+    (
+      parser.parse(code, { range: true })
+        .body[0] as TSESTree.ExpressionStatement
+    ).expression;
 
   it('accepts what a developer can be said to have written', () => {
     expect(isStaticText(exprOf("'Search the docs'"))).toBe(true);
@@ -224,31 +271,41 @@ describe('isStaticText', () => {
 
 describe('modelFacingProperties', () => {
   const objOf = (code: string): TSESTree.ObjectExpression =>
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-      .expression as TSESTree.ObjectExpression;
+    (
+      parser.parse(code, { range: true })
+        .body[0] as TSESTree.ExpressionStatement
+    ).expression as TSESTree.ObjectExpression;
 
   it('finds a dynamic description', () => {
-    expect(modelFacingProperties(objOf('({ description: `a ${b}` })'))[0]?.key).toBe('description');
+    expect(
+      modelFacingProperties(objOf('({ description: `a ${b}` })'))[0]?.key,
+    ).toBe('description');
   });
 
   it('finds a dynamic title', () => {
-    expect(modelFacingProperties(objOf('({ title: blurb })'))[0]?.key).toBe('title');
+    expect(modelFacingProperties(objOf('({ title: blurb })'))[0]?.key).toBe(
+      'title',
+    );
   });
 
   it('returns undefined when every model-facing key is static', () => {
-    expect(modelFacingProperties(objOf("({ title: 'S', description: 'D' })"))).toEqual([]);
+    expect(
+      modelFacingProperties(objOf("({ title: 'S', description: 'D' })")),
+    ).toEqual([]);
   });
 
   it('ignores keys the model never sees', () => {
-    expect(modelFacingProperties(objOf('({ inputSchema: buildSchema() })'))).toEqual([]);
+    expect(
+      modelFacingProperties(objOf('({ inputSchema: buildSchema() })')),
+    ).toEqual([]);
     expect(modelFacingProperties(objOf('({ handler: fn })'))).toEqual([]);
   });
 
   it('walks past a spread rather than stopping at it', () => {
     // A spread is not a Property; the scan must continue to the keys after it.
-    expect(modelFacingProperties(objOf('({ ...base, description: blurb })'))[0]?.key).toBe(
-      'description',
-    );
+    expect(
+      modelFacingProperties(objOf('({ ...base, description: blurb })'))[0]?.key,
+    ).toBe('description');
   });
 
   it('ignores a computed key', () => {
@@ -256,7 +313,9 @@ describe('modelFacingProperties', () => {
   });
 
   it('returns both when title and description are each dynamic', () => {
-    const found = modelFacingProperties(objOf('({ title: a, description: b })'));
+    const found = modelFacingProperties(
+      objOf('({ title: a, description: b })'),
+    );
     expect(found.map((f) => f.key)).toEqual(['title', 'description']);
   });
 

@@ -38,6 +38,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'excessiveLimit';
@@ -117,12 +118,10 @@ const UNITS: Readonly<Record<string, number>> = {
  * a constant usually is — was invisible to this rule.
  */
 function limitInBytes(value: TSESTree.Node): number | null {
-  if (value.type !== 'Literal') return null;
-  if (typeof value.value === 'number') return value.value;
-  if (typeof value.value !== 'string') return null;
-  const parsed = /^\s*(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb)?\s*$/i.exec(
-    value.value,
-  );
+  if (value.type === 'Literal' && typeof value.value === 'number') return value.value;
+  const text = staticString(value);
+  if (text === null) return null;
+  const parsed = /^\s*(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb)?\s*$/i.exec(text);
   if (!parsed) return null;
   return Number(parsed[1]) * UNITS[(parsed[2] ?? 'b').toLowerCase()];
 }
@@ -135,9 +134,10 @@ function isExcessiveLimit(
   excessiveLimits: string[],
   maxLimit: number,
 ): boolean {
-  if (value.type === 'Literal' && typeof value.value === 'string') {
+  const staticText = staticString(value);
+  if (staticText !== null) {
     const named = excessiveLimits.some(
-      (limit) => String(value.value).toLowerCase() === limit.toLowerCase(),
+      (limit) => staticText.toLowerCase() === limit.toLowerCase(),
     );
     if (named) return true;
   }

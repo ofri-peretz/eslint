@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: html-has-lang
  * Enforce that html element has lang attribute
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/html-has-lang.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -34,8 +34,9 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
         description: '<html> element must have a lang attribute',
         severity: 'HIGH',
         fix: 'Add lang="en" (or appropriate language code)',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/html-has-lang.md',
-        wcag: 'WCAG 3.1.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/html-has-lang.md',
+        wcag: 'WCAG 3.1.1',
       }),
     },
     schema: [],
@@ -46,7 +47,9 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type === 'JSXIdentifier' && node.name.name === 'html') {
           const hasLang = node.attributes.some(
-            (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            (
+              attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+            ): attr is TSESTree.JSXAttribute =>
               attr.type === 'JSXAttribute' &&
               attr.name.type === 'JSXIdentifier' &&
               attr.name.name === 'lang' &&
@@ -54,7 +57,7 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
               // Presence is not the requirement — a VALUE is.
               // an empty `lang` names no language: the screen reader still has to guess,
               typeof attr.value.value === 'string' &&
-              attr.value.value.trim() !== ''
+              attr.value.value.trim() !== '',
           );
 
           if (!hasLang) {
@@ -68,4 +71,3 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

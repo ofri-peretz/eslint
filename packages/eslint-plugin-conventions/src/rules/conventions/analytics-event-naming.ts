@@ -35,7 +35,7 @@
  * - `<obj>.page(...)` / `pageview(...)` — event name is implicit
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'invalidEventName' | 'interpolatedEventName';
@@ -128,12 +128,13 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (!isCaptureLike(node) || node.arguments.length === 0) return;
         const first = node.arguments[0];
-        if (first.type === 'Literal' && typeof first.value === 'string') {
-          if (!EVENT_NAME_RE.test(first.value)) {
+        const staticText = staticString(first);
+        if (staticText !== null) {
+          if (!EVENT_NAME_RE.test(staticText)) {
             context.report({
               node: first,
               messageId: 'invalidEventName',
-              data: { name: first.value },
+              data: { name: staticText },
             });
           }
           return;

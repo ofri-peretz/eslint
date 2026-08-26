@@ -11,7 +11,7 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-1128/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -67,8 +67,9 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     // own message internally; the constructor argument IS the context.
     if (node.argument.arguments.length > 0) {
       const firstArg = node.argument.arguments[0];
-      if (firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
-        return firstArg.value.length > 0;
+      const staticText = staticString(firstArg);
+      if (staticText !== null) {
+        return staticText.length > 0;
       }
       if (firstArg.type === 'TemplateLiteral') {
         return true;

@@ -14,6 +14,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -139,7 +140,7 @@ function isStaticTmpdirJoin(node: TSESTree.CallExpression): boolean {
   if (!isTmpdirCall(node.arguments[0])) return false;
   return node.arguments
     .slice(1)
-    .every((arg) => arg.type === 'Literal' && typeof arg.value === 'string');
+    .every((arg) => staticString(arg) !== null);
 }
 
 /**
@@ -179,7 +180,7 @@ function isStaticTmpdirConcat(node: TSESTree.Node): boolean {
   if (node.type !== AST_NODE_TYPES.BinaryExpression || node.operator !== '+') return false;
   const side = (part: TSESTree.Node): 'tmpdir' | 'static' | 'other' => {
     if (isTmpdirCall(part)) return 'tmpdir';
-    if (part.type === AST_NODE_TYPES.Literal && typeof part.value === 'string') return 'static';
+    if (staticString(part) !== null) return 'static';
     if (isStaticTmpdirConcat(part)) return 'tmpdir';
     return 'other';
   };
@@ -420,12 +421,11 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
         node.callee.property.type === AST_NODE_TYPES.Identifier &&
         (node.callee.property.name === 'join' || node.callee.property.name === 'resolve')
       ) {
+        // Filter-then-map cannot narrow through the call, so resolve first and
+        // drop the unresolvable in one pass.
         return node.arguments
-          .filter(
-            (arg): arg is TSESTree.StringLiteral =>
-              arg.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string',
-          )
-          .map((arg) => arg.value);
+          .map((arg) => staticString(arg))
+          .filter((text): text is string => text !== null);
       }
       return [];
     }

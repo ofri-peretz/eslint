@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, AST_NODE_TYPES, unwrapTypeSyntax, isStaticExpression } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, AST_NODE_TYPES, unwrapTypeSyntax, isStaticExpression, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -222,8 +222,8 @@ function memberCarriesSecret(
   // a *variable holding* the name, and reading it would report `obj[password]`
   // for a lookup whose key nobody can see statically.
   const propName = node.computed
-    ? prop.type === AST_NODE_TYPES.Literal && typeof prop.value === 'string'
-      ? prop.value
+    ? staticString(prop) !== null
+      ? staticString(prop)
       : null
     : prop.type === AST_NODE_TYPES.Identifier
       ? prop.name
@@ -474,9 +474,10 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
       // never fired on the dialect TypeScript users are forced to write.
       const arg = unwrapTypeSyntax(argument) as TSESTree.Node;
 
-      if (arg.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string') {
-        const pattern = literalCarriesSecret(arg.value, sensitivePatterns)
-          ? containsSensitiveData(arg.value, sensitivePatterns)
+      const staticText1 = staticString(arg);
+      if (staticText1 !== null) {
+        const pattern = literalCarriesSecret(staticText1, sensitivePatterns)
+          ? containsSensitiveData(staticText1, sensitivePatterns)
           : null;
         return pattern ? { node: arg, pattern } : null;
       }
@@ -490,8 +491,9 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         //
         // Recursion handles `'a: ' + b + '/' + c.d`, which parses as a
         // left-leaning tree of BinaryExpressions rather than one flat argument.
-        if (arg.left.type === AST_NODE_TYPES.Literal && typeof arg.left.value === 'string') {
-          const labelled = literalLabelsValue(arg.left.value, sensitivePatterns);
+        const staticText2 = staticString(arg.left);
+        if (staticText2 !== null) {
+          const labelled = literalLabelsValue(staticText2, sensitivePatterns);
           if (labelled) return { node: arg.left, pattern: labelled };
         } else {
           const fromLeft = describeExposure(arg.left);

@@ -9,7 +9,7 @@
  * Prefer template literals over string concatenation with the + operator.
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferTemplateLiteral';
@@ -106,9 +106,10 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
     ): string {
       let result = '`';
       for (const part of parts) {
-        if (part.type === 'Literal' && typeof part.value === 'string') {
+        const staticText = staticString(part);
+        if (staticText !== null) {
           // Escape backticks and ${ in the string value
-          result += part.value
+          result += staticText
             .replace(/\\/g, '\\\\')
             .replace(/`/g, '\\`')
             .replace(/\$\{/g, '\\${');

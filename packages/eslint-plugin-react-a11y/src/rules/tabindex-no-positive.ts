@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: tabindex-no-positive
  * Enforce that tabIndex is not positive
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/tabindex-no-positive.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -31,11 +31,13 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
       avoidPositiveTabIndex: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Positive TabIndex',
-        description: 'Positive tabIndex values should be avoided as they mess up the focus order',
+        description:
+          'Positive tabIndex values should be avoided as they mess up the focus order',
         severity: 'MEDIUM',
         fix: 'Use tabIndex="0" or tabIndex="-1"',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/tabindex-no-positive.md',
-        wcag: 'WCAG 2.4.3'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/tabindex-no-positive.md',
+        wcag: 'WCAG 2.4.3',
       }),
     },
     schema: [],
@@ -44,7 +46,10 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'tabIndex') {
+        if (
+          node.name.type !== 'JSXIdentifier' ||
+          node.name.name !== 'tabIndex'
+        ) {
           return;
         }
 
@@ -66,4 +71,3 @@ export const tabindexNoPositive = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

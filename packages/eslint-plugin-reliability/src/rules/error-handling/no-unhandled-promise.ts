@@ -13,7 +13,7 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-4635/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unhandledPromise' | 'addCatch' | 'useTryCatch' | 'useAwait';
@@ -177,8 +177,8 @@ export function hasPromiseEvidence(
     const propertyName =
       property.type === 'Identifier'
         ? property.name
-        : property.type === 'Literal' && typeof property.value === 'string'
-          ? property.value
+        : staticString(property) !== null
+          ? staticString(property)
           : null;
     if (propertyName === 'then') return true;
     return object.type === 'Identifier' && promiseReturning.has(object.name);

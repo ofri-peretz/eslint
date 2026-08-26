@@ -17,6 +17,7 @@ import {
   MessageIcons,
   compileUserPatterns,
   type PatternTest,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   createModuleEvidence,
@@ -1188,8 +1189,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         const keyText =
           key.type === 'Identifier'
             ? key.name
-            : key.type === 'Literal' && typeof key.value === 'string'
-              ? key.value
+            : staticString(key) !== null
+              ? staticString(key)
               : null;
         if (
           keyText !== null &&

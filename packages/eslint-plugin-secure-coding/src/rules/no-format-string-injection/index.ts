@@ -26,6 +26,7 @@ import {
   isModuleBinding,
   isStaticExpression,
   unwrapTypeSyntax,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 // Temporarily remove complex imports to fix type issues
@@ -495,10 +496,12 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
     // Helper functions for expression analysis
     function containsFormatSpecifiersInExpression(expr: TSESTree.BinaryExpression): boolean {
-      if (expr.left.type === 'Literal' && typeof expr.left.value === 'string' && containsFormatSpecifiers(expr.left.value)) {
+      const left = staticString(expr.left);
+      if (left !== null && containsFormatSpecifiers(left)) {
         return true;
       }
-      if (expr.right.type === 'Literal' && typeof expr.right.value === 'string' && containsFormatSpecifiers(expr.right.value)) {
+      const right = staticString(expr.right);
+      if (right !== null && containsFormatSpecifiers(right)) {
         return true;
       }
       if (expr.left.type === 'BinaryExpression' && containsFormatSpecifiersInExpression(expr.left)) {
@@ -635,8 +638,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
           // Check if any argument (potential format string) contains specifiers
           const firstArg = args[0];
-          if (firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
-            if (containsFormatSpecifiers(firstArg.value)) {
+          const staticText = staticString(firstArg);
+          if (staticText !== null) {
+            if (containsFormatSpecifiers(staticText)) {
               hasSpecifiersInFormat = true;
             }
           } else if (firstArg.type === 'Identifier') {

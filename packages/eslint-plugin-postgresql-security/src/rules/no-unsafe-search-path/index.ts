@@ -11,6 +11,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isStaticExpression,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeSearchPathOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -64,10 +65,7 @@ function staticText(node: TSESTree.Node): string {
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return `${staticText(node.left as TSESTree.Node)}${staticText(node.right)}`;
   }
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    return node.value;
-  }
-  return '';
+  return staticString(node) ?? '';
 }
 
 /** Whether any statement in this text sets the search path. */
@@ -146,7 +144,7 @@ function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   }
   return body.type === AST_NODE_TYPES.TemplateLiteral ||
     body.type === AST_NODE_TYPES.BinaryExpression ||
-    (body.type === AST_NODE_TYPES.Literal && typeof body.value === 'string')
+    (staticString(body) !== null)
     ? body
     : null;
 }

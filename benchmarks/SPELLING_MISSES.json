@@ -1,5 +1,5 @@
 {
-  "probed": 3825,
+  "probed": 3847,
   "found": [
     {
       "rule": "anthropic-security/no-hardcoded-api-key",
@@ -822,20 +822,6 @@
     },
     {
       "rule": "browser-security/no-innerhtml",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "el['innerHTML'] = userInput;",
-      "mutant": "el[`innerHTML`] = userInput;",
-      "description": ""
-    },
-    {
-      "rule": "browser-security/no-innerhtml",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "document['write'](userInput);",
-      "mutant": "document[`write`](userInput);",
-      "description": ""
-    },
-    {
-      "rule": "browser-security/no-innerhtml",
       "mutation": "a computed literal key instead of a dotted member access",
       "original": "window.document.write(userInput)",
       "mutant": "window['document'].write(userInput)",
@@ -1284,9 +1270,9 @@
     },
     {
       "rule": "browser-security/no-missing-security-headers",
-      "mutation": "a no-substitution template literal instead of a quoted string",
+      "mutation": "a computed literal key instead of a bare object key",
       "original": "module.exports = { async headers() { return [{ source: '/(.*)', headers: [{ key: 'X-Frame-Options', value: 'DENY' }] }]; } };",
-      "mutant": "module.exports = { async headers() { return [{ source: `/(.*)`, headers: [{ key: `X-Frame-Options`, value: `DENY` }] }]; } };",
+      "mutant": "module.exports = { async headers() { return [{ ['source']: '/(.*)', ['headers']: [{ ['key']: 'X-Frame-Options', ['value']: 'DENY' }] }]; } };",
       "description": ""
     },
     {
@@ -1354,30 +1340,30 @@
     },
     {
       "rule": "browser-security/no-missing-security-headers",
-      "mutation": "a no-substitution template literal instead of a quoted string",
+      "mutation": "a computed literal key instead of a bare object key",
       "original": "const c = { headers: [{ key: 'Content-Type', value: 'text/html' }] };",
-      "mutant": "const c = { headers: [{ key: `Content-Type`, value: `text/html` }] };",
+      "mutant": "const c = { ['headers']: [{ ['key']: 'Content-Type', ['value']: 'text/html' }] };",
       "description": ""
     },
     {
       "rule": "browser-security/no-missing-security-headers",
-      "mutation": "a no-substitution template literal instead of a quoted string",
+      "mutation": "a computed literal key instead of a bare object key",
       "original": "const c = { headers: [{ key: 'Content-Type' }] };",
-      "mutant": "const c = { headers: [{ key: `Content-Type` }] };",
+      "mutant": "const c = { ['headers']: [{ ['key']: 'Content-Type' }] };",
       "description": ""
     },
     {
       "rule": "browser-security/no-missing-security-headers",
-      "mutation": "a no-substitution template literal instead of a quoted string",
+      "mutation": "a computed literal key instead of a bare object key",
       "original": "const c = { headers: [{ key: 'Content-Type', ...rest }] };",
-      "mutant": "const c = { headers: [{ key: `Content-Type`, ...rest }] };",
+      "mutant": "const c = { ['headers']: [{ ['key']: 'Content-Type', ...rest }] };",
       "description": ""
     },
     {
       "rule": "browser-security/no-missing-security-headers",
-      "mutation": "a no-substitution template literal instead of a quoted string",
+      "mutation": "a computed literal key instead of a bare object key",
       "original": "const c = { headers: [{ key: 'Content-Type', [k]: 'text/html' }] };",
-      "mutant": "const c = { headers: [{ key: `Content-Type`, [k]: `text/html` }] };",
+      "mutant": "const c = { ['headers']: [{ ['key']: 'Content-Type', [k]: 'text/html' }] };",
       "description": ""
     },
     {
@@ -1386,6 +1372,13 @@
       "original": "const c = { headers: [{ key: 'Content-Type', 'value': 'application/json' }] };",
       "mutant": "const c = { ['headers']: [{ ['key']: 'Content-Type', 'value': 'application/json' }] };",
       "description": ""
+    },
+    {
+      "rule": "browser-security/no-missing-security-headers",
+      "mutation": "a computed literal key instead of a bare object key",
+      "original": "module.exports = { async headers() { return [{ source: `/(.*)`, headers: [{ key: `X-Frame-Options`, value: `DENY` }] }]; } };",
+      "mutant": "module.exports = { async headers() { return [{ ['source']: `/(.*)`, ['headers']: [{ ['key']: `X-Frame-Options`, ['value']: `DENY` }] }]; } };",
+      "description": "the same code with template literals instead of quoted strings"
     },
     {
       "rule": "browser-security/no-permissive-cors",
@@ -2643,78 +2636,8 @@
     {
       "rule": "import-next/no-internal-modules",
       "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const x = require('lodash/fp/get/extra');",
-      "mutant": "const x = require(`lodash/fp/get/extra`);",
-      "description": "autofix strategy rewrites deep require to the package root"
-    },
-    {
-      "rule": "import-next/no-internal-modules",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const x = require('lodash/fp/get/extra');",
-      "mutant": "const x = require(`lodash/fp/get/extra`);",
-      "description": "suggest strategy offers public API and barrel paths"
-    },
-    {
-      "rule": "import-next/no-internal-modules",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const Button = require('@company/ui/components/Button');",
-      "mutant": "const Button = require(`@company/ui/components/Button`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/no-internal-modules",
-      "mutation": "a no-substitution template literal instead of a quoted string",
       "original": "const Button = import('@company/ui/components/Button');",
       "mutant": "const Button = import(`@company/ui/components/Button`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/no-nodejs-modules",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const p = import('fs');",
-      "mutant": "const p = import(`fs`);",
-      "description": "dynamic import of a builtin is reported"
-    },
-    {
-      "rule": "import-next/no-unassigned-import",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const y = (require('side-effect'), compute());",
-      "mutant": "const y = (require(`side-effect`), compute());",
-      "description": "require in non-final sequence position is unassigned"
-    },
-    {
-      "rule": "import-next/no-unassigned-import",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "require('./side-effects');",
-      "mutant": "require(`./side-effects`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/no-unassigned-import",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "require('init-module');",
-      "mutant": "require(`init-module`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/no-unassigned-import",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "require('./init');",
-      "mutant": "require(`./init`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/no-unassigned-import",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "if (true) require('./conditional');",
-      "mutant": "if (true) require(`./conditional`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/no-unresolved",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "require('missing-module');",
-      "mutant": "require(`missing-module`);",
       "description": ""
     },
     {
@@ -2764,27 +2687,6 @@
       "mutation": "a no-substitution template literal instead of a quoted string",
       "original": "const m = await import('moment');",
       "mutant": "const m = await import(`moment`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/prefer-node-protocol",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const fs = require('fs');",
-      "mutant": "const fs = require(`fs`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/prefer-node-protocol",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const path = require('path');",
-      "mutant": "const path = require(`path`);",
-      "description": ""
-    },
-    {
-      "rule": "import-next/prefer-node-protocol",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const crypto = require('crypto');",
-      "mutant": "const crypto = require(`crypto`);",
       "description": ""
     },
     {
@@ -3289,13 +3191,6 @@
       "mutation": "a computed literal key instead of a dotted member access",
       "original": "export const handler = async (event) => { try { await riskyOperation(); } catch (err) { return { statusCode: 500, body: JSON.stringify({ cause: err.cause }) }; } };",
       "mutant": "export const handler = async (event) => { try { await riskyOperation(); } catch (err) { return { statusCode: 500, body: JSON.stringify({ cause: err['cause'] }) }; } };",
-      "description": ""
-    },
-    {
-      "rule": "lambda-security/no-overly-permissive-iam-policy",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "export const handler = async (event) => { return { principalId: 'user', policyDocument: { Statement: [{ Effect: 'Allow', Action: 'execute-api:Invoke', Resource: '*' }] } }; };",
-      "mutant": "export const handler = async (event) => { return { principalId: `user`, policyDocument: { Statement: [{ Effect: `Allow`, Action: `execute-api:Invoke`, Resource: `*` }] } }; };",
       "description": ""
     },
     {
@@ -4127,13 +4022,6 @@
     {
       "rule": "node-security/detect-non-literal-fs-filename",
       "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "fs.readFile('../../etc/passwd');",
-      "mutant": "fs.readFile(`../../etc/passwd`);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/detect-non-literal-fs-filename",
-      "mutation": "a no-substitution template literal instead of a quoted string",
       "original": "var one = require('fs').readFile; one(filename);",
       "mutant": "var one = require(`fs`).readFile; one(filename);",
       "description": ""
@@ -4218,34 +4106,6 @@
     {
       "rule": "node-security/no-data-in-temp-storage",
       "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const file = path.join(os.tmpdir(), 'report-cache.tmp');",
-      "mutant": "const file = path.join(os.tmpdir(), `report-cache.tmp`);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "fs.writeFileSync(path.join(os.tmpdir(), 'report-cache.tmp'), buffer);",
-      "mutant": "fs.writeFileSync(path.join(os.tmpdir(), `report-cache.tmp`), buffer);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "let file; file = path.join(os.tmpdir(), 'cache', 'report.tmp');",
-      "mutant": "let file; file = path.join(os.tmpdir(), `cache`, `report.tmp`);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const file = path.resolve(os.tmpdir(), 'report-cache.tmp');",
-      "mutant": "const file = path.resolve(os.tmpdir(), `report-cache.tmp`);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
       "original": "const { writeFileSync } = require('node:fs'); writeFileSync('/tmp/oauth-refresh.json', body);",
       "mutant": "const { writeFileSync } = require(`node:fs`); writeFileSync(`/tmp/oauth-refresh.json`, body);",
       "description": ""
@@ -4269,41 +4129,6 @@
       "mutation": "a no-substitution template literal instead of a quoted string",
       "original": "const fs = require('fs'); const write = fs.writeFileSync; write('/tmp/license-key.txt', license);",
       "mutant": "const fs = require(`fs`); const write = fs.writeFileSync; write(`/tmp/license-key.txt`, license);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const fs = require('node:fs'); fs.writeFileSync(path.join('/tmp', 'saml-assertion.xml'), body);",
-      "mutant": "const fs = require(`node:fs`); fs.writeFileSync(path.join(`/tmp`, `saml-assertion.xml`), body);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const p = os.tmpdir() + '/agent-state.json';",
-      "mutant": "const p = os.tmpdir() + `/agent-state.json`;",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const p = '/prefix' + (os.tmpdir() + '/agent-state.json');",
-      "mutant": "const p = `/prefix` + (os.tmpdir() + `/agent-state.json`);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "tmpPrefix = path.join(os.tmpdir(), 'ingest-');",
-      "mutant": "tmpPrefix = path.join(os.tmpdir(), `ingest-`);",
-      "description": ""
-    },
-    {
-      "rule": "node-security/no-data-in-temp-storage",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const fs = require('fs'); const P = path.join(os.tmpdir(), 'ingest-'); fs.mkdtempSync(base, P);",
-      "mutant": "const fs = require(`fs`); const P = path.join(os.tmpdir(), `ingest-`); fs.mkdtempSync(base, P);",
       "description": ""
     },
     {
@@ -4587,13 +4412,6 @@
       "description": ""
     },
     {
-      "rule": "node-security/no-timing-unsafe-compare",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "const creds = await vault.fetch(req.params.id); if (creds['apiKey'] === req.headers['x-integration-key']) { ok(); }",
-      "mutant": "const creds = await vault.fetch(req.params.id); if (creds[`apiKey`] === req.headers[`x-integration-key`]) { ok(); }",
-      "description": ""
-    },
-    {
       "rule": "node-security/no-toctou-vulnerability",
       "mutation": "a computed literal key instead of a dotted member access",
       "original": "const fs = require(\"node:fs\"); async function f(draft, body) { if (fs.existsSync(draft)) { await fs.promises.writeFile(draft, body); } }",
@@ -4703,6 +4521,13 @@
       "mutation": "a no-substitution template literal instead of a quoted string",
       "original": "const AdmZip = require('adm-zip'); if (!checkIt(p)) { fs.cp(path.join(dest, entry.name)); }",
       "mutant": "const AdmZip = require(`adm-zip`); if (!checkIt(p)) { fs.cp(path.join(dest, entry.name)); }",
+      "description": ""
+    },
+    {
+      "rule": "node-security/no-zip-slip",
+      "mutation": "a no-substitution template literal instead of a quoted string",
+      "original": "zip.extractAllTo('../../output');",
+      "mutant": "zip.extractAllTo(`../../output`);",
       "description": ""
     },
     {
@@ -5758,9 +5583,37 @@
     {
       "rule": "secure-coding/detect-object-injection",
       "mutation": "a no-substitution template literal instead of a quoted string",
+      "original": "const o = {}; o['__proto__'] = payload;",
+      "mutant": "const o = {}; o[`__proto__`] = payload;",
+      "description": "DEFAULT: the literal write reports with no options at all"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "mutation": "a no-substitution template literal instead of a quoted string",
+      "original": "const o = {}; o['prototype'] = payload;",
+      "mutant": "const o = {}; o[`prototype`] = payload;",
+      "description": "DEFAULT: a name still on the list keeps reporting"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "mutation": "a no-substitution template literal instead of a quoted string",
+      "original": "const o = {}; o['constructor']['prototype'].polluted = 1;",
+      "mutant": "const o = {}; o[`constructor`][`prototype`].polluted = 1;",
+      "description": "bracket spelling of constructor.prototype"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "mutation": "a no-substitution template literal instead of a quoted string",
       "original": "const o = {}; o['__proto__'].polluted = 1;",
       "mutant": "const o = {}; o[`__proto__`].polluted = 1;",
       "description": "non-final __proto__, bracket spelling"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "mutation": "a no-substitution template literal instead of a quoted string",
+      "original": "const target = {}; target['constructor']['prototype'].isAdmin = true;",
+      "mutant": "const target = {}; target[`constructor`][`prototype`].isAdmin = true;",
+      "description": "exactly ONE finding for the bracket form, not two"
     },
     {
       "rule": "secure-coding/detect-weak-password-validation",
@@ -6576,13 +6429,6 @@
     },
     {
       "rule": "secure-coding/no-insecure-comparison",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "if (req.headers['x-api-key'] === config['apiKey']) {}",
-      "mutant": "if (req.headers[`x-api-key`] === config[`apiKey`]) {}",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-insecure-comparison",
       "mutation": "a computed literal key instead of a bare object key",
       "original": "const { session: { token: t } } = state; if (t === presented) {}",
       "mutant": "const { ['session']: { ['token']: t } } = state; if (t === presented) {}",
@@ -6898,93 +6744,9 @@
     },
     {
       "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('password: 123456');",
-      "mutant": "console.log(`password: 123456`);",
-      "description": "a password in a log line"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "logger.info(config['apiKey']);",
-      "mutant": "logger.info(config[`apiKey`]);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('API token: abc123');",
-      "mutant": "console.log(`API token: abc123`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('secret key: sk_live_9f2a');",
-      "mutant": "console.log(`secret key: sk_live_9f2a`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('SSN: 123-45-6789');",
-      "mutant": "console.log(`SSN: 123-45-6789`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('credit card: 4111111111111111');",
-      "mutant": "console.log(`credit card: 4111111111111111`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "logger.warn('api_key: xyz');",
-      "mutant": "logger.warn(`api_key: xyz`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "logger.error('token=eyJhbGciOiJIUzI1NiJ9');",
-      "mutant": "logger.error(`token=eyJhbGciOiJIUzI1NiJ9`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.error('apikey=AKIA1234567890');",
-      "mutant": "console.error(`apikey=AKIA1234567890`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.trace('token: eyJhbGciOi');",
-      "mutant": "console.trace(`token: eyJhbGciOi`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "log('password: 123');",
-      "mutant": "log(`password: 123`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "throw new Error('password: ' + value);",
-      "mutant": "throw new Error(`password: ` + value);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
+      "mutation": "a computed literal key instead of a dotted member access",
       "original": "app.logger.info('password: 123456');",
-      "mutant": "app.logger.info(`password: 123456`);",
+      "mutant": "app['logger'].info('password: 123456');",
       "description": ""
     },
     {
@@ -7003,73 +6765,10 @@
     },
     {
       "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('password: hunter2');",
-      "mutant": "console.log(`password: hunter2`);",
-      "description": "literal carrying a value"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('api_key=abc123');",
-      "mutant": "console.log(`api_key=abc123`);",
-      "description": "literal with = separator"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "throw new Error('password: hunter2');",
-      "mutant": "throw new Error(`password: hunter2`);",
-      "description": "error literal carrying a value"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "logDebug('password: hunter2')",
-      "mutant": "logDebug(`password: hunter2`)",
-      "description": "logDebug is still a logger"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "log_error('password: hunter2')",
-      "mutant": "log_error(`password: hunter2`)",
-      "description": "log_error is still a logger"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "appLogger('token=eyJhbGciOi')",
-      "mutant": "appLogger(`token=eyJhbGciOi`)",
-      "description": "appLogger is still a logger"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
       "mutation": "a computed literal key instead of a dotted member access",
       "original": "this.logger.debug(payload.apiKey as string);",
       "mutant": "this['logger'].debug(payload['apiKey'] as string);",
       "description": "as-string cast"
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('password: 123456');",
-      "mutant": "console.log(`password: 123456`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "logger.error('token=eyJhbGciOiJIUzI1NiJ9');",
-      "mutant": "logger.error(`token=eyJhbGciOiJIUzI1NiJ9`);",
-      "description": ""
-    },
-    {
-      "rule": "secure-coding/no-sensitive-data-exposure",
-      "mutation": "a no-substitution template literal instead of a quoted string",
-      "original": "console.log('SSN: 123-45-6789');",
-      "mutant": "console.log(`SSN: 123-45-6789`);",
-      "description": ""
     },
     {
       "rule": "secure-coding/no-sensitive-data-exposure",

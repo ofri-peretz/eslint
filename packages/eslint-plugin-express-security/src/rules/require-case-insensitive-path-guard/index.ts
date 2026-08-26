@@ -50,6 +50,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -198,7 +199,7 @@ export const requireCaseInsensitivePathGuard = createRule<
       node: TSESTree.Node,
     ): node is TSESTree.StringLiteral {
       return (
-        node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string'
+        staticString(node) !== null
       );
     }
 

@@ -92,7 +92,7 @@
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, resolveModuleBinding } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, resolveModuleBinding, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -752,7 +752,7 @@ allowLiterals = false,
      */
     // oxlint-disable-next-line consistent-function-scoping
     const isLiteralString = (node: TSESTree.Node): boolean => {
-      return node.type === 'Literal' && typeof node.value === 'string';
+      return staticString(node) !== null;
     };
 
     /**
@@ -1275,8 +1275,9 @@ allowLiterals = false,
         ) {
           return true;
         }
-        if (n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string') {
-          return n.value.endsWith('/') || n.value.endsWith('\\');
+        const staticText = staticString(n);
+        if (staticText !== null) {
+          return staticText.endsWith('/') || staticText.endsWith('\\');
         }
         return false;
       };
@@ -1646,9 +1647,7 @@ allowLiterals = false,
           const key =
             prop.key.type === AST_NODE_TYPES.Identifier
               ? prop.key.name
-              : prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string'
-                ? prop.key.value
-                : undefined;
+              : (staticString(prop.key) ?? undefined);
           if (key === undefined) continue;
           bindFsName(prop.value.name, key);
         }

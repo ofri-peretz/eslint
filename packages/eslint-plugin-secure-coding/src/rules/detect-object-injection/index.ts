@@ -134,7 +134,7 @@
  * @see https://cwe.mitre.org/data/definitions/1321.html
  * @see https://cwe.mitre.org/data/definitions/915.html
  */
-import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESLint, TSESTree, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 import { resolvedReference } from '../../utils/resolve-reference';
@@ -431,7 +431,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check if a node is a literal string (potentially safe)
      */
     const isLiteralString = (node: TSESTree.Node): boolean => {
-      return node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string';
+      return staticString(node) !== null;
     };
 
     /**

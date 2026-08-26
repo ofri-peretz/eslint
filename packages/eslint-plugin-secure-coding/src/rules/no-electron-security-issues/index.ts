@@ -20,7 +20,7 @@
  * - Trusted Electron security patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -137,8 +137,9 @@ function isOffProjectPreload(preloadPath: string): boolean {
 function propertyName(property: TSESTree.Node): string | null {
   if (property.type !== 'Property' || property.computed) return null;
   if (property.key.type === 'Identifier') return property.key.name;
-  if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
-    return property.key.value;
+  const staticText1 = staticString(property.key);
+  if (staticText1 !== null) {
+    return staticText1;
   }
   return null;
 }
@@ -377,8 +378,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
 
       // Check channel name (first argument)
       const channelArg = args[0];
-      if (channelArg.type === 'Literal' && typeof channelArg.value === 'string') {
-        const channel = channelArg.value;
+      const staticText2 = staticString(channelArg);
+      if (staticText2 !== null) {
+        const channel = staticText2;
 
         // Check if channel is allowed
         if (allowedIpcChannels.length > 0 && !allowedIpcChannels.includes(channel)) {
@@ -511,8 +513,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
           if (node.left.type === 'MemberExpression' &&
               node.left.property.type === 'Identifier' &&
               node.left.property.name === 'preload') {
-            if (node.right.type === 'Literal' && typeof node.right.value === 'string') {
-              const preloadPath = node.right.value;
+            const staticText3 = staticString(node.right);
+            if (staticText3 !== null) {
+              const preloadPath = staticText3;
 
               // Check for potentially unsafe preload patterns.
               if (isOffProjectPreload(preloadPath)) {

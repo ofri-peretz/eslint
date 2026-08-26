@@ -7,11 +7,15 @@
 /**
  * ESLint Rule: aria-role
  * Enforce that elements with ARIA roles have valid values
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-role.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, ARIA_ROLES } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  ARIA_ROLES,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'invalidRole';
@@ -39,8 +43,9 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
         description: 'Role "{{role}}" is not a valid ARIA role',
         severity: 'HIGH',
         fix: 'Use a valid ARIA role (e.g., button, alert)',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-role.md',
-        wcag: 'WCAG 4.1.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-role.md',
+        wcag: 'WCAG 4.1.1',
       }),
     },
     schema: [
@@ -60,8 +65,11 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { allowedInvalidRoles = [] } = options ?? {} as Options;
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { allowedInvalidRoles = [] } = options ?? ({} as Options);
 
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
@@ -69,13 +77,17 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (!node.value || node.value.type !== 'Literal' || typeof node.value.value !== 'string') {
+        if (
+          !node.value ||
+          node.value.type !== 'Literal' ||
+          typeof node.value.value !== 'string'
+        ) {
           // Skip dynamic values or empty values
           return;
         }
 
         const roles = node.value.value.split(/\s+/);
-        
+
         for (const role of roles) {
           if (!ARIA_ROLES.has(role) && !allowedInvalidRoles.includes(role)) {
             context.report({
@@ -91,4 +103,3 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

@@ -22,7 +22,7 @@
  * - Input validation functions
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { resolvedReference } from '../../utils/resolve-reference';
 import {
@@ -776,14 +776,15 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           concatenatedStaticText(node.left) + concatenatedStaticText(node.right)
         );
       }
-      if (node.type === 'Literal' && typeof node.value === 'string')
-        return node.value;
+      // A template WITH interpolations still contributes its literal parts, so
+      // it is read before `staticString` — which only answers for one with
+      // none, and would send an interpolated query down the empty path.
       if (node.type === 'TemplateLiteral') {
         return node.quasis
           .map((q: TSESTree.TemplateElement) => q.value.cooked ?? q.value.raw)
           .join('');
       }
-      return '';
+      return staticString(node) ?? '';
     };
 
     /**
@@ -877,11 +878,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
       // Check string literals for GraphQL queries
       Literal(node: TSESTree.Literal) {
-        if (typeof node.value !== 'string') {
-          return;
-        }
-
-        const queryText = node.value;
+        const queryText = staticString(node);
+        if (queryText === null) return;
 
         if (!containsGraphqlText(queryText, hasGraphqlAttribution(node))) {
           return;

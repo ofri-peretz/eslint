@@ -28,6 +28,7 @@ import {
   createRule,
   isStaticExpression,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
@@ -835,8 +836,14 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // Check first argument (usually the XPath expression)
         const xpathArg = args[0];
 
-        if (xpathArg.type === 'Literal' && typeof xpathArg.value === 'string') {
-          const xpathText = xpathArg.value;
+        // Templates are NOT read here. A dedicated `TemplateLiteral` listener
+        // below owns them, with the URL and file-path exclusions this path does
+        // not have, and it fires wherever the template sits — argument or not.
+        // Reading them in both places reported the same expression twice.
+        const staticText =
+          xpathArg.type === AST_NODE_TYPES.TemplateLiteral ? null : staticString(xpathArg);
+        if (staticText !== null) {
+          const xpathText = staticText;
 
           // Check for dangerous XPath patterns
           if (containsDangerousXpath(xpathText)) {

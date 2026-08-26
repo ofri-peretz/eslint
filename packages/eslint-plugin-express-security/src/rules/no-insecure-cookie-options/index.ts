@@ -19,6 +19,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'insecureCookie' | 'addSecureFlags';
@@ -56,8 +57,9 @@ function propertyName(
   if (property.key.type === 'Identifier' && !property.computed) {
     return property.key.name.toLowerCase();
   }
-  if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
-    return property.key.value.toLowerCase();
+  const staticText = staticString(property.key);
+  if (staticText !== null) {
+    return staticText.toLowerCase();
   }
   return undefined;
 }
