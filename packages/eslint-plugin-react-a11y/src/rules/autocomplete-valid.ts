@@ -35,6 +35,29 @@ const VALID_AUTOCOMPLETE_VALUES = new Set([
   'tel-extension', 'impp', 'url', 'photo'
 ]);
 
+/**
+ * The autofill grammar, not just its field names.
+ *
+ * HTML defines an autocomplete value as an ORDERED sequence:
+ *
+ *   [section-*] [shipping|billing] [home|work|mobile|fax|pager] field [webauthn]
+ *
+ * The rule checked every token against the field-name set alone, which was
+ * wrong in both directions at once. `autocomplete="shipping street-address"`
+ * reported — a false positive on four spec-valid forms — while
+ * `autocomplete="name email"` passed, because each token is a legal field name
+ * even though only one field name is allowed.
+ *
+ * These are HTML spec vocabularies, fixed by the standard rather than guessed
+ * at, so they belong in the rule rather than behind an option.
+ */
+const ADDRESS_MODIFIERS: ReadonlySet<string> = new Set(['shipping', 'billing']);
+const CONTACT_MODIFIERS: ReadonlySet<string> = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
+const CREDENTIAL_SUFFIX = 'webauthn';
+
+/** `off` and `on` stand alone: they are not field names in a sequence. */
+const STANDALONE: ReadonlySet<string> = new Set(['on', 'off']);
+
 export const autocompleteValid = createRule<RuleOptions, MessageIds>({
   name: 'autocomplete-valid',
   meta: {
@@ -81,22 +104,41 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
 
         if (!autocomplete || autocomplete.type !== 'JSXAttribute' || !autocomplete.value || autocomplete.value.type !== 'Literal' || typeof autocomplete.value.value !== 'string') return;
 
-        const value = autocomplete.value.value;
-        // Handle space-separated values
-        const tokens = value.split(/\s+/);
-        
-        for (const token of tokens) {
-             // Handle optional 'section-' prefix
-            const effectiveToken = token.startsWith('section-') ? token.replace(/^section-/, '') : token;
-            
-            if (!VALID_AUTOCOMPLETE_VALUES.has(effectiveToken)) {
-                context.report({
-                    node: autocomplete,
-                    messageId: 'invalidAutocomplete',
-                });
-                break;
-            }
+        const value = autocomplete.value.value.trim();
+        if (value === '') {
+          context.report({ node: autocomplete, messageId: 'invalidAutocomplete' });
+          return;
         }
+
+        const tokens = value.toLowerCase().split(/\s+/);
+        const report = (): void => {
+          context.report({ node: autocomplete, messageId: 'invalidAutocomplete' });
+        };
+
+        // `on` / `off` stand alone.
+        if (tokens.some((t) => STANDALONE.has(t))) {
+          if (tokens.length !== 1) report();
+          return;
+        }
+
+        let index = 0;
+        // An optional `section-*` label comes first.
+        if (tokens[index]?.startsWith('section-')) index += 1;
+        // Then at most one address modifier, then at most one contact modifier.
+        if (index < tokens.length && ADDRESS_MODIFIERS.has(tokens[index] as string)) index += 1;
+        if (index < tokens.length && CONTACT_MODIFIERS.has(tokens[index] as string)) index += 1;
+
+        // Then EXACTLY one field name. Two is the shape this rule used to pass.
+        const field = tokens[index];
+        if (field === undefined || !VALID_AUTOCOMPLETE_VALUES.has(field)) {
+          report();
+          return;
+        }
+        index += 1;
+
+        // Then an optional `webauthn`, and then nothing.
+        if (index < tokens.length && tokens[index] === CREDENTIAL_SUFFIX) index += 1;
+        if (index !== tokens.length) report();
       },
     };
   },

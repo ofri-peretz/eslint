@@ -456,10 +456,23 @@ describe('autocomplete-valid — guards and section- prefix (Layer 1)', () => {
     valid: [
       { code: '<Foo.Bar autocomplete="bogus" />' },
       { code: '<div autocomplete="bogus" />' },
-      // section-* prefix is stripped before validation
-      { code: '<input autocomplete="section-email" />' },
+      // A section label followed by a field name — the shape the spec defines.
+      { code: '<input autocomplete="section-billing email" />' },
     ],
-    invalid: [],
+    invalid: [
+      {
+        /**
+         * Was asserted VALID until 2026-08, on the reading that `section-` is a
+         * prefix to be stripped. It is not: HTML defines it as a section LABEL
+         * that is its own token, and a field name has to follow it. Stripping
+         * turned `section-email` into `email` and passed a value that names a
+         * section and no field at all.
+         */
+        name: 'a section label with no field name after it',
+        code: '<input autocomplete="section-email" />',
+        errors: [{ messageId: 'invalidAutocomplete' }],
+      },
+    ],
   });
 });
 

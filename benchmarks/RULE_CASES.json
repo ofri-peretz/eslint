@@ -1,9 +1,9 @@
 {
   "counts": {
-    "TP": 7376,
-    "TN": 10948,
-    "FP": 14,
-    "FN": 12
+    "TP": 7384,
+    "TN": 10951,
+    "FP": 18,
+    "FN": 10
   },
   "rules": [
     {
@@ -87158,10 +87158,45 @@
       "rule": "react-a11y/autocomplete-valid",
       "cases": [
         {
-          "id": "react-a11y/autocomplete-valid#FN-ff14fc",
-          "kind": "FN",
-          "code": "<input autocomplete=\"name email\" />",
-          "description": "two autocomplete tokens that cannot be combined — the rule checks each token, not the pairing",
+          "id": "react-a11y/autocomplete-valid#FP-46ca7a",
+          "kind": "FP",
+          "code": "<input autocomplete=\"shipping street-address\" />",
+          "description": "a shipping address modifier",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#FP-6eaab1",
+          "kind": "FP",
+          "code": "<input autocomplete=\"billing cc-number\" />",
+          "description": "a billing address modifier",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#FP-2e795e",
+          "kind": "FP",
+          "code": "<input autocomplete=\"home tel\" />",
+          "description": "a contact-channel modifier",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#FP-3747c9",
+          "kind": "FP",
+          "code": "<input autocomplete=\"username webauthn\" />",
+          "description": "the webauthn credential suffix",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TN-953549",
+          "kind": "TN",
+          "code": "<input autocomplete=\"section-a billing home tel\" />",
+          "description": "a section label with a modifier and a field",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TN-ad1c75",
+          "kind": "TN",
+          "code": "<input autocomplete=\"off\" />",
+          "description": "off stands alone",
           "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
         },
         {
@@ -87235,6 +87270,48 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
         },
         {
+          "id": "react-a11y/autocomplete-valid#TP-155a30",
+          "kind": "TP",
+          "code": "<input autocomplete=\"name email\" />",
+          "description": "two field names, where the grammar allows one",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TP-0c8969",
+          "kind": "TP",
+          "code": "<input autocomplete=\"street-address shipping\" />",
+          "description": "a modifier in the wrong order",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TP-9e4027",
+          "kind": "TP",
+          "code": "<input autocomplete=\"off name\" />",
+          "description": "off combined with a field name",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TP-ed0a48",
+          "kind": "TP",
+          "code": "<input autocomplete=\"username webauthn extra\" />",
+          "description": "a trailing token after webauthn",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TP-0070a5",
+          "kind": "TP",
+          "code": "<input autocomplete=\"\" />",
+          "description": "an empty autocomplete names no field",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TP-517ea0",
+          "kind": "TP",
+          "code": "<input autocomplete=\" \" />",
+          "description": "whitespace only, which is the same thing",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        },
+        {
           "id": "react-a11y/autocomplete-valid#TP-7e57c5",
           "kind": "TP",
           "code": "<input autocomplete=\"foo\" />",
@@ -87263,10 +87340,17 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
         },
         {
-          "id": "react-a11y/autocomplete-valid#TN-08ca96",
+          "id": "react-a11y/autocomplete-valid#TN-17e71a",
           "kind": "TN",
-          "code": "<input autocomplete=\"section-email\" />",
+          "code": "<input autocomplete=\"section-billing email\" />",
           "description": "",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
+        },
+        {
+          "id": "react-a11y/autocomplete-valid#TP-4e68db",
+          "kind": "TP",
+          "code": "<input autocomplete=\"section-email\" />",
+          "description": "a section label with no field name after it",
           "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
         }
       ]
@@ -89907,10 +89991,10 @@
           "file": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
         },
         {
-          "id": "react-a11y/no-redundant-roles#FN-f9a360",
-          "kind": "FN",
+          "id": "react-a11y/no-redundant-roles#TN-b98610",
+          "kind": "TN",
           "code": "<nav role=\"navigation\"></nav>",
-          "description": "the implicit role of nav is not in the rule map, so this redundancy is missed",
+          "description": "nav with an explicit navigation role — allowed by default",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
         },
         {
@@ -89953,6 +90037,13 @@
           "kind": "TN",
           "code": "<span role=\"link\"></span>",
           "description": "",
+          "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
+        },
+        {
+          "id": "react-a11y/no-redundant-roles#TP-4a57d7",
+          "kind": "TP",
+          "code": "<nav role=\"navigation\"></nav>",
+          "description": "nav with an explicit navigation role, once the exception is cleared",
           "file": "packages/eslint-plugin-react-a11y/src/tests/no-redundant-roles.test.ts"
         },
         {
