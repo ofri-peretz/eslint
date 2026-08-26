@@ -5,6 +5,316 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.1.4",
+      "date": "2026-08-25T17:59:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five false positives found by scanning real repositories.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-xxe-injection` reported `parseFromString(text, 'text/html')`.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unsafe-deserialization` reported `yaml.load()` on repositories pinned to js-yaml v4.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "two more false positives, found by rescanning after the last batch shipped.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-improper-sanitization` reported through a `satisfies` wrapper.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.4.0",
+      "date": "2026-08-25T17:59:18Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unknown-property` stops reporting on custom elements and `xmlns`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unknown-property` reported `loading`, `decoding`, and `fetchPriority` — three standard React DOM props for `<img>` (and `<iframe>`/`<link>`/`<script>` where applicable). `loading` and `decoding` have been valid React props for years; `fetchPriority` is the React 19 camelCase form. All three are in upstream eslint-plugin-react's known-property list; ours was missing them, so every lazy-loaded image in a consumer codebase produced three false positives.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "2.4.0",
+      "date": "2026-08-25T17:59:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-tag-over-role` stops reporting on `<svg role=\"img\">` and on components",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-openai-security",
+      "short": "eslint-plugin-openai-security",
+      "version": "0.3.2",
+      "date": "2026-08-25T17:59:13Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "the four AI-security plugins are documented on the site at last",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.2.3",
+      "date": "2026-08-25T17:59:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-timing-unsafe-compare` reported AST discriminant comparisons.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "five false positives found by scanning real repositories.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-improper-sanitization` reported through a `satisfies` wrapper.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-anthropic-security",
+      "short": "eslint-plugin-anthropic-security",
+      "version": "0.3.2",
+      "date": "2026-08-25T17:58:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "the four AI-security plugins are documented on the site at last",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "2.3.0",
+      "date": "2026-08-25T17:58:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`ddd-value-object-immutability` matches the naming convention by suffix, and skips generated files",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.17.3",
+      "date": "2026-08-25T17:58:52Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "the four AI-security plugins are documented on the site at last",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "five false positives found by scanning real repositories.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`getFileImports` sees ES2022 arbitrary module namespace names",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.0.6",
+      "date": "2026-08-25T17:58:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two more false positives, found by rescanning after the last batch shipped.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-improper-sanitization` reported through a `satisfies` wrapper.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "0.3.1",
+      "date": "2026-08-25T17:58:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "the four AI-security plugins are documented on the site at last",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-gemini-security",
+      "short": "eslint-plugin-gemini-security",
+      "version": "0.3.3",
+      "date": "2026-08-25T17:58:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "docs",
+          "title": "the four AI-security plugins are documented on the site at last",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.6.0",
+      "date": "2026-08-25T17:58:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-cycle` no longer reports a cycle whose edge is erased before emit",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.0.0",
+      "date": "2026-08-25T17:58:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "`prefer-event-target` is no longer autofixable — its fix broke the program",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`prefer-at` no longer suggests `.at()` where the element is being written",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-vercel-ai-security",
       "short": "eslint-plugin-vercel-ai-security",
       "version": "2.0.1",
@@ -12642,31 +12952,6 @@
     {
       "package": "@interlace/eslint-devkit",
       "short": "eslint-devkit",
-      "version": "1.17.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "docs",
-          "title": "the four AI-security plugins are documented on the site at last",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "five false positives found by scanning real repositories.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`getFileImports` sees ES2022 arbitrary module namespace names",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
       "version": "1.17.0",
       "date": null,
       "isApp": false,
@@ -12731,91 +13016,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-anthropic-security",
-      "short": "eslint-plugin-anthropic-security",
-      "version": "0.3.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "docs",
-          "title": "the four AI-security plugins are documented on the site at last",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-browser-security",
-      "short": "eslint-plugin-browser-security",
-      "version": "2.0.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two more false positives, found by rescanning after the last batch shipped.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-improper-sanitization` reported through a `satisfies` wrapper.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-gemini-security",
-      "short": "eslint-plugin-gemini-security",
-      "version": "0.3.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "docs",
-          "title": "the four AI-security plugins are documented on the site at last",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.6.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-cycle` no longer reports a cycle whose edge is erased before emit",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
         }
       ]
     },
@@ -12935,121 +13135,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-mcp-sdk-security",
-      "short": "eslint-plugin-mcp-sdk-security",
-      "version": "0.3.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "docs",
-          "title": "the four AI-security plugins are documented on the site at last",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-modernization",
-      "short": "eslint-plugin-modernization",
-      "version": "3.0.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "breaking",
-          "title": "`prefer-event-target` is no longer autofixable — its fix broke the program",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`prefer-at` no longer suggests `.at()` where the element is being written",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-modularity",
-      "short": "eslint-plugin-modularity",
-      "version": "2.3.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`ddd-value-object-immutability` matches the naming convention by suffix, and skips generated files",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.2.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-timing-unsafe-compare` reported AST discriminant comparisons.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "five false positives found by scanning real repositories.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-improper-sanitization` reported through a `satisfies` wrapper.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-openai-security",
-      "short": "eslint-plugin-openai-security",
-      "version": "0.3.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "docs",
-          "title": "the four AI-security plugins are documented on the site at last",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
           "pr": null
         }
       ]
@@ -13175,91 +13260,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-react-a11y",
-      "short": "eslint-plugin-react-a11y",
-      "version": "2.4.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`prefer-tag-over-role` stops reporting on `<svg role=\"img\">` and on components",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-react-features",
-      "short": "eslint-plugin-react-features",
-      "version": "1.4.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-unknown-property` stops reporting on custom elements and `xmlns`",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-unknown-property` reported `loading`, `decoding`, and `fetchPriority` — three standard React DOM props for `<img>` (and `<iframe>`/`<link>`/`<script>` where applicable). `loading` and `decoding` have been valid React props for years; `fetchPriority` is the React 19 camelCase form. All three are in upstream eslint-plugin-react's known-property list; ours was missing them, so every lazy-loaded image in a consumer codebase produced three false positives.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.1.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "five false positives found by scanning real repositories.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-xxe-injection` reported `parseFromString(text, 'text/html')`.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-unsafe-deserialization` reported `yaml.load()` on repositories pinned to js-yaml v4.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "two more false positives, found by rescanning after the last batch shipped.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-improper-sanitization` reported through a `satisfies` wrapper.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`",
           "pr": null
         }
       ]
