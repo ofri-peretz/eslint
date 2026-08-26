@@ -43,6 +43,7 @@
  *   npx tsx scripts/rule-case-ledger.ts --check    # gate: every rule has TP + TN
  */
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,7 +59,33 @@ const CHECK = process.argv.includes('--check');
 const UPDATE = process.argv.includes('--update');
 
 type Kind = 'TP' | 'TN' | 'FP' | 'FN';
-type Case = { kind: Kind; code: string; description: string; file: string; source?: string };
+type Case = { id: string; kind: Kind; code: string; description: string; file: string; source?: string };
+
+/**
+ * A stable name for one row of the matrix — `secure-coding/no-magic-numbers#TP-a3f1c2`.
+ *
+ * Derived from the rule, the kind, and the case's whole source text, so it
+ * survives the things that actually happen to a test file: cases get
+ * reordered, a description is reworded, a case moves between files. A
+ * positional id (`#TP-3`) would change under every one of those and could not
+ * be cited anywhere durable.
+ *
+ * The WHOLE case, not just its `code`: hashing code alone produced 727
+ * collisions, because the same source under two different `options` is two
+ * different claims and has to be two different rows.
+ *
+ * It moves when the code moves, and that is correct: changing what the rule was
+ * shown makes it a different claim, and the old id should stop resolving rather
+ * than silently point at something else.
+ *
+ * The kind is IN the id on purpose. A case that flips TP → FN is the most
+ * important event this database records, and it should read as a new row rather
+ * than the same row with a different label.
+ */
+function caseId(rule: string, kind: Kind, text: string): string {
+  const digest = crypto.createHash('sha256').update(`${rule}\u0000${text}`).digest('hex');
+  return `${rule}#${kind}-${digest.slice(0, 6)}`;
+}
 type RuleEntry = { rule: string; cases: Case[]; wild?: { count: number; repos: number } };
 
 /**
@@ -301,9 +328,11 @@ function casesIn(file: string, known: Set<string>): Map<string, Case[]> {
         const { kind, description } = classify(raw, key);
         const source = provenanceOf(element, source_text, raw);
         const list = out.get(rule) ?? [];
+        const caseCode = codeOf(element);
         list.push({
+          id: caseId(rule, kind, element.getText()),
           kind,
-          code: codeOf(element),
+          code: caseCode,
           description: description.replace(SOURCE, '').trim(),
           file: rel,
           ...(source ? { source } : {}),
@@ -355,11 +384,28 @@ for (const file of testFiles) {
   for (const [rule, cases] of casesIn(file, known)) collected.get(rule)?.push(...cases);
 }
 
+/**
+ * Byte-identical cases share an id, because they are the same claim written
+ * twice. They are suffixed so every row still names exactly one, and counted,
+ * because a duplicated case adds no coverage and reads like it does.
+ */
+let duplicates = 0;
+function disambiguate(cases: Case[]): Case[] {
+  const seen = new Map<string, number>();
+  return cases.map((c) => {
+    const n = (seen.get(c.id) ?? 0) + 1;
+    seen.set(c.id, n);
+    if (n === 1) return c;
+    duplicates += 1;
+    return { ...c, id: `${c.id}.${n}` };
+  });
+}
+
 const entries: RuleEntry[] = rules.map((r) => {
   const wild = inventory?.rules[published(r.rule)];
   return {
     rule: r.rule,
-    cases: collected.get(r.rule) ?? [],
+    cases: disambiguate(collected.get(r.rule) ?? []),
     ...(wild ? { wild: { count: wild.count, repos: wild.repos } } : {}),
   };
 });
@@ -430,6 +476,7 @@ const claimsNothing = entries.filter((e) => e.cases.length > 0 && !e.cases.some(
 console.log(`  ${entries.length} rules`);
 console.log(`  TP ${counts.TP}   TN ${counts.TN}   FP ${counts.FP}   FN ${counts.FN}`);
 console.log(`  undescribed cases                       ${undescribed}`);
+console.log(`  byte-identical duplicate cases          ${duplicates}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
 console.log(`  rules that claim no defect at all       ${claimsNothing.length}`);
 console.log(`  rules under ${CASE_FLOOR} classified cases a side     ${belowFloor.length}`);
@@ -598,7 +645,7 @@ if (!CHECK) {
           ? 'never fired across the scanned repositories'
           : 'not covered by the real-code scan';
     md.push(`TP ${n('TP')} · TN ${n('TN')} · FP ${n('FP')} · FN ${n('FN')} — ${wild}`, '');
-    md.push('| | case |', '|---|---|');
+    md.push('| id | case |', '|---|---|');
     for (const kind of ['TP', 'TN', 'FP', 'FN'] as Kind[]) {
       for (const c of entry.cases.filter((x) => x.kind === kind)) {
         // A pipe ends the cell early and takes the rest of the row with it;
@@ -610,7 +657,7 @@ if (!CHECK) {
             ? '*(undescribed)*'
             : c.description.replaceAll('|', '\\|').replaceAll('_', '\\_');
         const cited = c.source === undefined ? '' : ` <br>↳ \`${c.source.replaceAll('|', '\\|')}\``;
-        md.push(`| ${kind} | ${cell}${cited} |`);
+        md.push(`| \`${c.id.split('#')[1]}\` | ${cell}${cited} |`);
       }
     }
     md.push('');

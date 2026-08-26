@@ -53,7 +53,11 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'title' &&
-            attr.value?.type === 'Literal'
+            attr.value?.type === 'Literal' &&
+            // Presence is not the requirement — a VALUE is.
+            // an empty `title` announces nothing: the frame is still unlabelled in the
+            typeof attr.value.value === 'string' &&
+            attr.value.value.trim() !== ''
         );
 
         if (!hasTitle) {

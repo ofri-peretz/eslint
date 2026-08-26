@@ -50,7 +50,11 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
               attr.type === 'JSXAttribute' &&
               attr.name.type === 'JSXIdentifier' &&
               attr.name.name === 'lang' &&
-              attr.value?.type === 'Literal'
+              attr.value?.type === 'Literal' &&
+              // Presence is not the requirement — a VALUE is.
+              // an empty `lang` names no language: the screen reader still has to guess,
+              typeof attr.value.value === 'string' &&
+              attr.value.value.trim() !== ''
           );
 
           if (!hasLang) {

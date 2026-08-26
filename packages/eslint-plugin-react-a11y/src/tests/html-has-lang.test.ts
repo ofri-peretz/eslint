@@ -25,10 +25,6 @@ describe('html-has-lang', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - html with lang', htmlHasLang, {
       valid: [
-      {
-        name: 'FN: an empty lang attribute — present, so the rule is satisfied, but it names no language',
-        code: '<html lang=""></html>',
-      },
         { name: 'lang is set', code: '<html lang="en"></html>' },
         { code: '<html lang="es"></html>' },
         { code: '<html lang="fr-CA"></html>' },
@@ -42,6 +38,11 @@ describe('html-has-lang', () => {
     ruleTester.run('invalid - html without lang', htmlHasLang, {
       valid: [],
       invalid: [
+      {
+        name: 'an empty lang names no language',
+        code: '<html lang=""></html>',
+        errors: [{ messageId: 'missingLang' }],
+      },
       {
         name: 'other attributes present, still no lang',
         code: '<html dir="ltr"></html>',
