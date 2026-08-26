@@ -167,7 +167,11 @@ for (const repo of present) walk(path.join(CACHE, repo.replace('/', '__')));
 console.log(`  ${files.length} files\n`);
 
 const eslint = new ESLint({
-  overrideConfigFile: path.join(ROOT, 'eslint.benchmark.config.mjs'),
+  // NOT the benchmark config: that one matches `**/*.js` with no TypeScript
+  // parser, so a run over 345,841 files produced findings from `.js` only —
+  // 214,855 TypeScript files were walked, handed to ESLint, and matched by no
+  // config block. See the header of the file below.
+  overrideConfigFile: path.join(ROOT, 'eslint.real-source.config.mjs'),
   errorOnUnmatchedPattern: false,
   // A stranger's `eslint-disable` comment must not silence our measurement:
   // the question is what OUR rules see, not what their authors chose to hide.
