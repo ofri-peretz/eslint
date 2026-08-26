@@ -32,7 +32,8 @@
  *   npx tsx scripts/real-source-scan.mts --no-clone # lint whatever is cached
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, fork } from 'node:child_process';
+import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +45,29 @@ const CACHE = path.join(ROOT, 'benchmarks', '.real-source-cache');
 const REPOS = path.join(ROOT, 'benchmarks', 'real-source-repos.json');
 const OUT = path.join(ROOT, 'benchmarks', 'budgets', 'real-world-rule-inventory.json');
 const NO_CLONE = process.argv.includes('--no-clone');
+
+/**
+ * `--shard i/n` makes this process lint only its slice and print the result as
+ * JSON on stdout. Without it the process is the COORDINATOR: it forks one
+ * worker per core and merges what they send back.
+ *
+ * Not premature. Linting 346,837 files with 566 rules and a TypeScript parser
+ * ran at roughly one file per second single-threaded — 96 hours. The work is
+ * embarrassingly parallel (no file's result depends on another's) and the
+ * machine has cores sitting idle, so the only reason it was serial is that
+ * nobody had measured it.
+ */
+const shardArg = process.argv.find((a) => a.startsWith('--shard='))?.slice('--shard='.length);
+const SHARD = shardArg ? { index: Number(shardArg.split('/')[0]), of: Number(shardArg.split('/')[1]) } : null;
+
+/**
+ * Files large enough that they are certainly generated — a bundle, a minified
+ * vendor drop, a checked-in lockfile-shaped data module. 186 of them across the
+ * corpus, and 8.8% of all bytes. A finding in one says nothing about the rule,
+ * and reading them costs more than every other file put together.
+ */
+const MAX_FILE_BYTES = 200_000;
+const STAMP = new Date().toISOString().slice(0, 10);
 
 const { repos } = JSON.parse(fs.readFileSync(REPOS, 'utf8')) as { repos: string[] };
 
@@ -122,13 +146,18 @@ if (!NO_CLONE) {
       // because one of 75 moved would make the measurement impossible to keep.
       missing += 1;
       fs.rmSync(dir, { recursive: true, force: true });
-      console.log(`  unreachable: ${repo}`);
+      console.error(`  unreachable: ${repo}`);
     }
   }
 }
 
 const present = repos.filter((r) => fs.existsSync(path.join(CACHE, r.replace('/', '__'))));
-console.log(`  ${present.length} repositories cached (${cloned} newly cloned, ${missing} unreachable)\n`);
+// stdout carries the shard's JSON result and nothing else; a worker's progress
+// goes to stderr, which the parent inherits.
+const say = (line: string): void => {
+  if (SHARD === null) console.log(line);
+};
+say(`  ${present.length} repositories cached (${cloned} newly cloned, ${missing} unreachable)\n`);
 if (present.length === 0) {
   console.error('  nothing to scan');
   process.exit(1);
@@ -164,7 +193,67 @@ const walk = (dir: string): void => {
   }
 };
 for (const repo of present) walk(path.join(CACHE, repo.replace('/', '__')));
-console.log(`  ${files.length} files\n`);
+
+// Sorted so every shard sees the same list, and so a re-run splits it the same
+// way. `readdir` order is not guaranteed stable across machines.
+files.sort();
+const oversized = files.filter((f) => {
+  try {
+    return fs.statSync(f).size > MAX_FILE_BYTES;
+  } catch {
+    return true;
+  }
+});
+const scannable = files.filter((f) => !oversized.includes(f));
+say(`  ${files.length} files, ${oversized.length} skipped as generated (> ${MAX_FILE_BYTES / 1000}KB)\n`);
+const mine = SHARD === null ? scannable : scannable.filter((_, i) => i % SHARD.of === SHARD.index);
+
+if (SHARD === null) {
+  const workers = Math.max(1, Math.min(12, os.availableParallelism() - 2));
+  say(`  ${workers} workers\n`);
+  const merged = new Map<string, { count: number; repos: Set<string>; samples: string[] }>();
+  let linted = 0;
+  let failed = 0;
+  await Promise.all(
+    Array.from({ length: workers }, (_, index) => {
+      return new Promise<void>((resolve, reject) => {
+        const child = fork(new URL(import.meta.url).pathname, ['--no-clone', `--shard=${index}/${workers}`], {
+          execPath: process.execPath,
+          execArgv: process.execArgv,
+          stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
+        });
+        let out = '';
+        child.stdout?.on('data', (chunk: Buffer) => {
+          out += chunk.toString();
+        });
+        child.on('exit', (code) => {
+          if (code !== 0) {
+            reject(new Error(`shard ${index} exited ${code}`));
+            return;
+          }
+          const payload = JSON.parse(out) as {
+            linted: number;
+            failed: number;
+            rules: Record<string, { count: number; repos: string[]; samples: string[] }>;
+          };
+          linted += payload.linted;
+          failed += payload.failed;
+          for (const [id, hit] of Object.entries(payload.rules)) {
+            const existing = merged.get(id) ?? { count: 0, repos: new Set<string>(), samples: [] };
+            existing.count += hit.count;
+            for (const r of hit.repos) existing.repos.add(r);
+            for (const sample of hit.samples) if (existing.samples.length < 4) existing.samples.push(sample);
+            merged.set(id, existing);
+          }
+          console.log(`  shard ${index} done — ${payload.linted} files`);
+          resolve();
+        });
+      });
+    }),
+  );
+  writeInventory(merged, linted, failed, present.length);
+  process.exit(0);
+}
 
 const eslint = new ESLint({
   // NOT the benchmark config: that one matches `**/*.js` with no TypeScript
@@ -184,8 +273,8 @@ let linted = 0;
 let failed = 0;
 
 const BATCH = 200;
-for (let i = 0; i < files.length; i += BATCH) {
-  const batch = files.slice(i, i + BATCH);
+for (let i = 0; i < mine.length; i += BATCH) {
+  const batch = mine.slice(i, i + BATCH);
   let results: Awaited<ReturnType<ESLint['lintFiles']>>;
   try {
     results = await eslint.lintFiles(batch);
@@ -207,36 +296,65 @@ for (let i = 0; i < files.length; i += BATCH) {
       hits.set(ruleId, hit);
     }
   }
-  if (i % 2000 === 0) console.log(`  ${linted}/${files.length} files, ${hits.size} rules firing`);
+  if (i % 4000 === 0 && SHARD !== null && SHARD.index === 0) {
+    console.error(`  shard 0: ${linted}/${mine.length} files, ${hits.size} rules firing`);
+  }
 }
 
-const suite = new Set(allRules());
-/** Rule ids seen that are NOT ours: references from the scanned repo's own config. */
-const ours = [...hits.entries()].filter(([id]) => suite.has(id));
-const fired = new Set(ours.map(([id]) => id));
-const silent = [...suite].filter((id) => !fired.has(id)).sort();
+if (SHARD !== null) {
+  process.stdout.write(
+    JSON.stringify({
+      linted,
+      failed,
+      rules: Object.fromEntries(
+        [...hits.entries()].map(([id, hit]) => [id, { count: hit.count, repos: [...hit.repos], samples: hit.samples }]),
+      ),
+    }),
+  );
+  process.exit(0);
+}
 
-const inventory = {
-  filesLinted: linted,
-  filesFailed: failed,
-  reposScanned: present.length,
-  suiteRules: suite.size,
-  withMaterial: fired.size,
-  withoutMaterial: silent,
-  rules: Object.fromEntries(
-    ours
-      .sort((a, b) => b[1].count - a[1].count)
-      .map(([id, hit]) => [id, { count: hit.count, repos: hit.repos.size, samples: hit.samples }]),
-  ),
-  note:
-    'Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; ' +
-    'the repository list is `benchmarks/real-source-repos.json`. Firing is not catching — see the header ' +
-    'of that script. Inline eslint-disable comments in the scanned source are ignored.',
-  generated: new Date().toISOString().slice(0, 10),
-};
+/**
+ * Merge every shard's counts into the committed inventory.
+ *
+ * Defined as a function rather than run at the tail, because the coordinator
+ * never lints anything itself — it has only what the workers sent back.
+ */
+function writeInventory(
+  hits: Map<string, { count: number; repos: Set<string>; samples: string[] }>,
+  linted: number,
+  failed: number,
+  reposScanned: number,
+): void {
+  const suite = new Set(allRules());
+  /** Rule ids seen that are NOT ours: references from the scanned repo's own config. */
+  const ours = [...hits.entries()].filter(([id]) => suite.has(id));
+  const fired = new Set(ours.map(([id]) => id));
+  const silent = [...suite].filter((id) => !fired.has(id)).sort();
 
-fs.writeFileSync(OUT, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`\n  ${linted} files · ${present.length} repositories`);
-console.log(`  rules firing   ${fired.size}/${suite.size}`);
-console.log(`  rules silent   ${silent.length}`);
-console.log(`  → ${path.relative(ROOT, OUT)}`);
+  const inventory = {
+    filesLinted: linted,
+    filesFailed: failed,
+    reposScanned,
+    suiteRules: suite.size,
+    withMaterial: fired.size,
+    withoutMaterial: silent,
+    rules: Object.fromEntries(
+      ours
+        .sort((a, b) => b[1].count - a[1].count)
+        .map(([id, hit]) => [id, { count: hit.count, repos: hit.repos.size, samples: hit.samples }]),
+    ),
+    note:
+      'Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; ' +
+      'the repository list is `benchmarks/real-source-repos.json`. Firing is not catching — see the header ' +
+      'of that script. Inline eslint-disable comments in the scanned source are ignored, and files over ' +
+      '200KB are skipped as generated.',
+    generated: STAMP,
+  };
+
+  fs.writeFileSync(OUT, `${JSON.stringify(inventory, null, 2)}\n`);
+  console.log(`\n  ${linted} files · ${reposScanned} repositories`);
+  console.log(`  rules firing   ${fired.size}/${suite.size}`);
+  console.log(`  rules silent   ${silent.length}`);
+  console.log(`  → ${path.relative(ROOT, OUT)}`);
+}
