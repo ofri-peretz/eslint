@@ -107,7 +107,7 @@
       "id": "ILB-0004",
       "added": "2026-08-26",
       "title": "Array append written as a self-indexed length",
-      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists \u2014 a case that cannot fail is not evidence.",
+      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists — a case that cannot fail is not evidence.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -197,7 +197,7 @@
       "id": "ILB-0007",
       "added": "2026-08-26",
       "title": "A merge helper guarded by Object.hasOwn",
-      "rationale": "NOT a defect \u2014 it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
+      "rationale": "NOT a defect — it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -354,7 +354,7 @@
     {
       "id": "ILB-0013",
       "added": "2026-08-26",
-      "title": "a named const through a type assertion \u2014 33% of findings, with the arithmetic case",
+      "title": "a named const through a type assertion — 33% of findings, with the arithmetic case",
       "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw packages/excalidraw/colors.ts:17) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -414,7 +414,7 @@
     {
       "id": "ILB-0015",
       "added": "2026-08-26",
-      "title": "a coordinate pair \u2014 39% of findings, the largest class",
+      "title": "a coordinate pair — 39% of findings, the largest class",
       "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw examples/.../initialData.tsx:64) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -693,7 +693,7 @@
     {
       "id": "ILB-0024",
       "added": "2026-08-26",
-      "title": "a describe block \u2014 1,415 findings in the wild",
+      "title": "a describe block — 1,415 findings in the wild",
       "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (nwutils/getter tests/specs/request.test.js:10) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -753,7 +753,7 @@
     {
       "id": "ILB-0026",
       "added": "2026-08-26",
-      "title": "addListener \u2014 `addEventListener` was on the old host list and this was not",
+      "title": "addListener — `addEventListener` was on the old host list and this was not",
       "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/background.ts:217) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -893,7 +893,7 @@
     {
       "id": "ILB-0031",
       "added": "2026-08-26",
-      "title": "a promise passed as an argument \u2014 the nested call is skipped",
+      "title": "a promise passed as an argument — the nested call is skipped",
       "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
       "cwe": null,
       "severity": {
@@ -1128,7 +1128,7 @@
     {
       "id": "ILB-0041",
       "added": "2026-08-26",
-      "title": "an AST discriminant is not a credential \u2014 11 findings in the wild",
+      "title": "an AST discriminant is not a credential — 11 findings in the wild",
       "rationale": "Looks like a node-security/no-timing-unsafe-compare finding and is not. We reported it in real code (flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1202,7 +1202,7 @@
     {
       "id": "ILB-0044",
       "added": "2026-08-26",
-      "title": "OpenTelemetry context propagation is not an archive \u2014 6 findings in the wild",
+      "title": "OpenTelemetry context propagation is not an archive — 6 findings in the wild",
       "rationale": "Looks like a node-security/no-zip-slip finding and is not. We reported it in real code (diia-open-source/be-diia-app src/grpc/grpcService.ts:280) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1257,7 +1257,7 @@
     {
       "id": "ILB-0046",
       "added": "2026-08-26",
-      "title": "an algorithm name \u2014 110 findings in the wild came from this shape",
+      "title": "an algorithm name — 110 findings in the wild came from this shape",
       "rationale": "Looks like a node-security/require-secure-credential-storage finding and is not. We reported it in real code (auth0/express-openid-connect api.js:2) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1287,7 +1287,7 @@
     {
       "id": "ILB-0047",
       "added": "2026-08-26",
-      "title": "minify \u2014 the Vite, Rollup and esbuild spelling of the same setting",
+      "title": "minify — the Vite, Rollup and esbuild spelling of the same setting",
       "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
       "cwe": null,
       "severity": {
@@ -1715,7 +1715,7 @@
     {
       "id": "ILB-0061",
       "added": "2026-08-26",
-      "title": "an error code is not a credential \u2014 69 findings in the wild",
+      "title": "an error code is not a credential — 69 findings in the wild",
       "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (moleculerjs/moleculer utils.js:289) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1750,7 +1750,7 @@
     {
       "id": "ILB-0062",
       "added": "2026-08-26",
-      "title": "a filename is not a credential \u2014 71 findings, the largest shape",
+      "title": "a filename is not a credential — 71 findings, the largest shape",
       "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (IGNF/cartes.gouv.fr-entree-carto) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1830,6 +1830,812 @@
       ],
       "importedFrom": "secure-coding/no-sensitive-data-exposure#FN-ade7eb",
       "foundBy": "spelling probe"
+    },
+    {
+      "id": "ILB-0065",
+      "added": "2026-08-26",
+      "title": "request value bound one line earlier",
+      "rationale": "Same defect, one binding of indirection.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { const k = req.body.key; o[k] = req.body.value; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0066",
+      "added": "2026-08-26",
+      "title": "destructured from the body",
+      "rationale": "Same defect, destructured.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { const { key } = req.body; o[key] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0067",
+      "added": "2026-08-26",
+      "title": "route parameter as a key",
+      "rationale": "A path segment is caller-chosen.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.params.id] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0068",
+      "added": "2026-08-26",
+      "title": "key from parsed JSON",
+      "rationale": "Parsed input is caller-controlled by definition.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, s) { const d = JSON.parse(s); o[d.k] = d.v; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D05"
+    },
+    {
+      "id": "ILB-0069",
+      "added": "2026-08-26",
+      "title": "merge iterating the request body",
+      "rationale": "Same loop, attacker at the root, no parameter to hide behind.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(dst, req) { for (const k in req.body) { dst[k] = req.body[k]; } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D07"
+    },
+    {
+      "id": "ILB-0070",
+      "added": "2026-08-26",
+      "title": "key reached through a template",
+      "rationale": "Interpolation does not launder the value.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[`${req.query.p}`] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D10"
+    },
+    {
+      "id": "ILB-0071",
+      "added": "2026-08-26",
+      "title": "header value as key",
+      "rationale": "A header is caller-chosen.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.headers[\"x-key\"]] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D11"
+    },
+    {
+      "id": "ILB-0072",
+      "added": "2026-08-26",
+      "title": "nested destructure from the body",
+      "rationale": "Two levels of destructuring do not launder it.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { const { a: { b } } = req.body; o[b] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D12"
+    },
+    {
+      "id": "ILB-0073",
+      "added": "2026-08-26",
+      "title": "two attacker-chosen keys in one chain",
+      "rationale": "Both segments are caller-chosen.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.body.a][req.body.b] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D13"
+    },
+    {
+      "id": "ILB-0074",
+      "added": "2026-08-26",
+      "title": "merge over Object.keys of the body",
+      "rationale": "The for-of spelling of D07.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { for (const k of Object.keys(req.body)) o[k] = req.body[k]; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D14"
+    },
+    {
+      "id": "ILB-0075",
+      "added": "2026-08-26",
+      "title": "key assigned after declaration",
+      "rationale": "A late write to the binding is still a caller-chosen key.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { let k; k = req.query.p; o[k] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D15"
+    },
+    {
+      "id": "ILB-0076",
+      "added": "2026-08-26",
+      "title": "write straight onto Object.prototype",
+      "rationale": "Pollution without an intermediate object at all.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(req) { const k = req.query.k; ({}).constructor.prototype[k] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D16"
+    },
+    {
+      "id": "ILB-0077",
+      "added": "2026-08-26",
+      "title": "read by loop counter",
+      "rationale": "A read. [[Get]] returns the prototype, it does not replace it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(paths, i) { return paths[i]; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N01"
+    },
+    {
+      "id": "ILB-0078",
+      "added": "2026-08-26",
+      "title": "read by a sibling key",
+      "rationale": "A read.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(current, app) { return current[app.name]; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0079",
+      "added": "2026-08-26",
+      "title": "read in a call argument",
+      "rationale": "A read.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(config, name) { send(config[name]); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0080",
+      "added": "2026-08-26",
+      "title": "index write in a counted loop",
+      "rationale": "The key is provably numeric from its declaration.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(a, out) { for (let i = 0; i < a.length; i++) { out[i] = a[i]; } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N05"
+    },
+    {
+      "id": "ILB-0081",
+      "added": "2026-08-26",
+      "title": "index arithmetic",
+      "rationale": "Numeric by construction.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(out, i, v) { out[i + 1] = v; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N06"
+    },
+    {
+      "id": "ILB-0082",
+      "added": "2026-08-26",
+      "title": "typed-array element write",
+      "rationale": "A typed array has no string keys to pollute.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const buf = new Uint8Array(8); buf[0] = 1;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N07"
+    },
+    {
+      "id": "ILB-0083",
+      "added": "2026-08-26",
+      "title": "literal string key",
+      "rationale": "The key is written in the source.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o) { return o[\"name\"]; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N11"
+    },
+    {
+      "id": "ILB-0084",
+      "added": "2026-08-26",
+      "title": "numeric literal key",
+      "rationale": "A number.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o) { o[0] = 1; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N12"
+    },
+    {
+      "id": "ILB-0085",
+      "added": "2026-08-26",
+      "title": "write to a null-prototype bag",
+      "rationale": "No prototype to pollute.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(k, v) { const bag = Object.create(null); bag[k] = v; return bag; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N13"
+    },
+    {
+      "id": "ILB-0086",
+      "added": "2026-08-26",
+      "title": "Map, which has no prototype chain for keys",
+      "rationale": "Not a computed property access at all.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(m, k, v) { m.set(k, v); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N14"
+    },
+    {
+      "id": "ILB-0087",
+      "added": "2026-08-26",
+      "title": "read from a module-local lookup table",
+      "rationale": "A read.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const e = {}; function f(k) { return e[k] ?? null; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N15"
+    },
+    {
+      "id": "ILB-0088",
+      "added": "2026-08-26",
+      "title": "symbol key",
+      "rationale": "A symbol cannot name `__proto__`.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, g) { o[Symbol.iterator] = g; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N16"
+    },
+    {
+      "id": "ILB-0089",
+      "added": "2026-08-26",
+      "title": "write guarded by an explicit __proto__ check",
+      "rationale": "The other documented fix.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(dst, src) { for (const k in src) { if (k === \"__proto__\") continue; dst[k] = src[k]; } }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "R02"
+    },
+    {
+      "id": "ILB-0090",
+      "added": "2026-08-26",
+      "title": "read guarded by hasOwnProperty",
+      "rationale": "Guarded, and a read besides.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(map, k) { if (Object.hasOwn(map, k)) { return map[k]; } return undefined; }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "R03"
     }
   ]
 }

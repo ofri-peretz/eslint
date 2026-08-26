@@ -477,6 +477,14 @@ const peerRows = [...peerTally.entries()]
     ([rule, t]) => `| \`${rule}\` | ${t.compared} | ${t.ahead} | ${t.level} |`,
   );
 
+/**
+ * Markdown reads a bare `__proto__` as bold. Escaping at RENDER time rather
+ * than in the data keeps every future entry safe without asking an author to
+ * remember, and leaves the registry holding what people actually typed.
+ */
+const prose = (text: string): string =>
+  text.replace(/(?<!`)__([A-Za-z]+)__(?!`)/g, '`__$1__`');
+
 if (!CHECK) {
   const sev = (c: Case): string =>
     c.severity.cvss === null
@@ -540,26 +548,36 @@ if (!CHECK) {
     '## Every case',
     '',
     '| id | case | kind | CWE | covered by | peers | status |',
-    '|---|---|---|---|---|---|',
-    ...verdicts.map(
-      (v) =>
-        `| \`${v.case.id}\` | ${v.case.title} | ${v.case.cwe ?? '—'} | ${sev(v.case)} | ${
-          v.case.coverage.length === 0
-            ? '**nothing**'
-            : v.case.coverage
-                .map((c) => `\`${c.rule}\` (${c.expect})`)
-                .join('<br>')
-        } | ${v.status === 'verified' ? '✅ verified' : v.status} |`,
-    ),
+    '|---|---|---|---|---|---|---|',
+    ...verdicts.map((v) => {
+      const peers =
+        v.peers.length === 0
+          ? '—'
+          : v.peers
+              .map((pr) => {
+                if (!pr.installed) return `${pr.rule}: not installed`;
+                if (pr.functioning === false)
+                  return `${pr.rule}: failed its control`;
+                return `${pr.rule}: ${judgePeer(v.case.kind, pr) === 'ahead' ? '**we are ahead**' : 'level'}`;
+              })
+              .join('<br>');
+      const covered =
+        v.case.coverage.length === 0
+          ? '**nothing**'
+          : v.case.coverage
+              .map((c) => `\`${c.rule}\` (${c.expect})`)
+              .join('<br>');
+      return `| \`${v.case.id}\` | ${prose(v.case.title)} | ${v.case.kind} | ${v.case.cwe ?? '—'} | ${covered} | ${peers} | ${v.status === 'verified' ? '✅' : v.status} |`;
+    }),
     '',
     '## Each case in full',
     '',
     ...verdicts.flatMap((v) => {
       const c = v.case;
       return [
-        `### ${c.id} — ${c.title}`,
+        `### ${c.id} — ${prose(c.title)}`,
         '',
-        c.rationale,
+        prose(c.rationale),
         '',
         '```js',
         c.code,

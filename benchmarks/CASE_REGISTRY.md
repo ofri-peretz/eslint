@@ -9,7 +9,7 @@ say, and a rule cannot be missing a case it never claimed. This register is
 case-first, so a gap is visible as an entry with no coverage rather than as
 an absence nobody can see.
 
-**64 cases · 55 verified · 9 uncovered · 0 regressed**
+**90 cases · 81 verified · 9 uncovered · 0 regressed**
 
 Every `status` below was computed on this run by executing the case code
 through the rule that claims it. A stored "covered: yes" would be a
@@ -32,7 +32,7 @@ zero — "they miss it" and "we did not ask" are different claims.
 
 | peer rule | cases compared | we are ahead | level |
 |---|---:|---:|---:|
-| `eslint-plugin-security/detect-object-injection` | 9 | 5 | 4 |
+| `eslint-plugin-security/detect-object-injection` | 35 | 17 | 18 |
 | `eslint-plugin-promise/catch-or-return` | 4 | 4 | 0 |
 | `eslint-plugin-import/no-internal-modules` | 1 | 1 | 0 |
 | `eslint-plugin-import/no-nodejs-modules` | 1 | 1 | 0 |
@@ -59,71 +59,97 @@ configuration as their miss.
 ## Every case
 
 | id | case | kind | CWE | covered by | peers | status |
-|---|---|---|---|---|---|
-| `ILB-0001` | Prototype pollution through a request-supplied key | CWE-1321 | — | `secure-coding/detect-object-injection` (report) | ✅ verified |
-| `ILB-0002` | Prototype pollution through an unguarded merge helper | CWE-1321 | — | `secure-coding/detect-object-injection` (report) | ✅ verified |
-| `ILB-0003` | A computed write onto `this` inside a class method | CWE-1321 | — | `secure-coding/detect-object-injection` (report) | ✅ verified |
-| `ILB-0004` | Array append written as a self-indexed length | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
-| `ILB-0005` | A key iterated from a const array of string literals | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
-| `ILB-0006` | A copy loop over an object the module itself owns | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
-| `ILB-0007` | A merge helper guarded by Object.hasOwn | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
-| `ILB-0008` | A timing-unsafe comparison of a bearer token | CWE-208 | — | `node-security/no-timing-unsafe-compare` (report) | ✅ verified |
-| `ILB-0009` | An AST discriminant compared with === | — | — | `node-security/no-timing-unsafe-compare` (silent) | ✅ verified |
-| `ILB-0010` | Prototype pollution through a key reached by a call | CWE-1321 | — | **nothing** | uncovered |
-| `ILB-0011` | the same code with template literals instead of quoted strings | — | — | `browser-security/no-innerhtml` (report) | ✅ verified |
-| `ILB-0012` | the same code with template literals instead of quoted strings | — | — | `browser-security/no-missing-security-headers` (report) | ✅ verified |
-| `ILB-0013` | a named const through a type assertion — 33% of findings, with the arithmetic case | — | — | `conventions/no-magic-numbers` (silent) | ✅ verified |
-| `ILB-0014` | a named const computed from two literals | — | — | `conventions/no-magic-numbers` (silent) | ✅ verified |
-| `ILB-0015` | a coordinate pair — 39% of findings, the largest class | — | — | `conventions/no-magic-numbers` (silent) | ✅ verified |
-| `ILB-0016` | the same code with template literals instead of quoted strings | — | — | `import-next/no-internal-modules` (report) | ✅ verified |
-| `ILB-0017` | the same collision written through an aliased default specifier | — | — | `import-next/no-named-as-default` (report) | ✅ verified |
-| `ILB-0018` | the same access written through a computed literal key | — | — | `import-next/no-named-as-default-member` (report) | ✅ verified |
-| `ILB-0019` | the same code with template literals instead of quoted strings | — | — | `import-next/no-nodejs-modules` (report) | ✅ verified |
-| `ILB-0020` | the same code with template literals instead of quoted strings | — | — | `import-next/no-unassigned-import` (report) | ✅ verified |
-| `ILB-0021` | the same code with template literals instead of quoted strings | — | — | `import-next/no-unresolved` (report) | ✅ verified |
-| `ILB-0022` | the same code with template literals instead of quoted strings | — | — | `import-next/prefer-node-protocol` (report) | ✅ verified |
-| `ILB-0023` | the same code with template literals instead of quoted strings | — | — | `lambda-security/no-overly-permissive-iam-policy` (report) | ✅ verified |
-| `ILB-0024` | a describe block — 1,415 findings in the wild | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
-| `ILB-0025` | a test block | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
-| `ILB-0026` | addListener — `addEventListener` was on the old host list and this was not | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
-| `ILB-0027` | a framework entry point no allowlist would contain | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
-| `ILB-0028` | an object-literal method is the object, not a nested helper | — | — | `maintainability/consistent-function-scoping` (silent) | ✅ verified |
-| `ILB-0029` | the same helper as an arrow | — | — | `maintainability/consistent-function-scoping` (report) | ✅ verified |
-| `ILB-0030` | the same helper as a function expression | — | — | `maintainability/consistent-function-scoping` (report) | ✅ verified |
-| `ILB-0031` | a promise passed as an argument — the nested call is skipped | — | — | **nothing** | uncovered |
-| `ILB-0032` | the same, one member access further along | — | — | **nothing** | uncovered |
-| `ILB-0033` | a promise passed as an argument to another call | — | — | **nothing** | uncovered |
-| `ILB-0034` | a promise wrapped twice | — | — | **nothing** | uncovered |
-| `ILB-0035` | a wrapped promise used as a computed key | — | — | **nothing** | uncovered |
-| `ILB-0036` | a dynamic import nobody awaits | — | — | `maintainability/no-unhandled-promise` (report) | ✅ verified |
-| `ILB-0037` | new Promise as a whole statement | — | — | `maintainability/no-unhandled-promise` (report) | ✅ verified |
-| `ILB-0038` | the same code with template literals instead of quoted strings | — | — | `node-security/detect-non-literal-fs-filename` (report) | ✅ verified |
-| `ILB-0039` | the same code with template literals instead of quoted strings | — | — | `node-security/no-data-in-temp-storage` (report) | ✅ verified |
-| `ILB-0040` | a secret arriving as a parameter has no visible taint source | — | — | **nothing** | uncovered |
-| `ILB-0041` | an AST discriminant is not a credential — 11 findings in the wild | — | — | `node-security/no-timing-unsafe-compare` (silent) | ✅ verified |
-| `ILB-0042` | a secret compared through an anonymous name is not detected | — | — | **nothing** | uncovered |
-| `ILB-0043` | the same code with template literals instead of quoted strings | — | — | `node-security/no-timing-unsafe-compare` (report) | ✅ verified |
-| `ILB-0044` | OpenTelemetry context propagation is not an archive — 6 findings in the wild | — | — | `node-security/no-zip-slip` (silent) | ✅ verified |
-| `ILB-0045` | an OAuth claims extractor is not an archive | — | — | `node-security/no-zip-slip` (silent) | ✅ verified |
-| `ILB-0046` | an algorithm name — 110 findings in the wild came from this shape | — | — | `node-security/require-secure-credential-storage` (silent) | ✅ verified |
-| `ILB-0047` | minify — the Vite, Rollup and esbuild spelling of the same setting | — | — | `operability/require-code-minification` (report) | ✅ verified |
-| `ILB-0048` | a shipping address modifier | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
-| `ILB-0049` | a billing address modifier | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
-| `ILB-0050` | a contact-channel modifier | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
-| `ILB-0051` | the webauthn credential suffix | — | — | `react-a11y/autocomplete-valid` (silent) | ✅ verified |
-| `ILB-0052` | two field names, where the grammar allows one | — | — | `react-a11y/autocomplete-valid` (report) | ✅ verified |
-| `ILB-0053` | a section label with no field name after it | — | — | `react-a11y/autocomplete-valid` (report) | ✅ verified |
-| `ILB-0054` | an empty lang names no language | — | — | `react-a11y/html-has-lang` (report) | ✅ verified |
-| `ILB-0055` | an empty title announces nothing | — | — | `react-a11y/iframe-has-title` (report) | ✅ verified |
-| `ILB-0056` | a promise passed as an argument to another call | — | — | **nothing** | uncovered |
-| `ILB-0057` | a dynamic import nobody awaits | — | — | `reliability/no-unhandled-promise` (report) | ✅ verified |
-| `ILB-0058` | new Promise as a whole statement | — | — | `reliability/no-unhandled-promise` (report) | ✅ verified |
-| `ILB-0059` | an array append written as a self-indexed length | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
-| `ILB-0060` | the same allowlist behind Object.freeze | — | — | `secure-coding/detect-object-injection` (silent) | ✅ verified |
-| `ILB-0061` | an error code is not a credential — 69 findings in the wild | — | — | `secure-coding/no-insecure-comparison` (silent) | ✅ verified |
-| `ILB-0062` | a filename is not a credential — 71 findings, the largest shape | — | — | `secure-coding/no-insecure-comparison` (silent) | ✅ verified |
-| `ILB-0063` | the same code with template literals instead of quoted strings | — | — | `secure-coding/no-insecure-comparison` (report) | ✅ verified |
-| `ILB-0064` | the same code with template literals instead of quoted strings | — | — | `secure-coding/no-sensitive-data-exposure` (report) | ✅ verified |
+|---|---|---|---|---|---|---|
+| `ILB-0001` | Prototype pollution through a request-supplied key | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0002` | Prototype pollution through an unguarded merge helper | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0003` | A computed write onto `this` inside a class method | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0004` | Array append written as a self-indexed length | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0005` | A key iterated from a const array of string literals | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0006` | A copy loop over an object the module itself owns | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0007` | A merge helper guarded by Object.hasOwn | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0008` | A timing-unsafe comparison of a bearer token | defect | CWE-208 | `node-security/no-timing-unsafe-compare` (report) | — | ✅ |
+| `ILB-0009` | An AST discriminant compared with === | decoy | — | `node-security/no-timing-unsafe-compare` (silent) | — | ✅ |
+| `ILB-0010` | Prototype pollution through a key reached by a call | decoy | CWE-1321 | **nothing** | — | uncovered |
+| `ILB-0011` | the same code with template literals instead of quoted strings | defect | — | `browser-security/no-innerhtml` (report) | property: **we are ahead** | ✅ |
+| `ILB-0012` | the same code with template literals instead of quoted strings | defect | — | `browser-security/no-missing-security-headers` (report) | — | ✅ |
+| `ILB-0013` | a named const through a type assertion — 33% of findings, with the arithmetic case | decoy | — | `conventions/no-magic-numbers` (silent) | — | ✅ |
+| `ILB-0014` | a named const computed from two literals | decoy | — | `conventions/no-magic-numbers` (silent) | — | ✅ |
+| `ILB-0015` | a coordinate pair — 39% of findings, the largest class | decoy | — | `conventions/no-magic-numbers` (silent) | — | ✅ |
+| `ILB-0016` | the same code with template literals instead of quoted strings | defect | — | `import-next/no-internal-modules` (report) | no-internal-modules: **we are ahead** | ✅ |
+| `ILB-0017` | the same collision written through an aliased default specifier | defect | — | `import-next/no-named-as-default` (report) | no-named-as-default: failed its control | ✅ |
+| `ILB-0018` | the same access written through a computed literal key | defect | — | `import-next/no-named-as-default-member` (report) | no-named-as-default-member: failed its control | ✅ |
+| `ILB-0019` | the same code with template literals instead of quoted strings | defect | — | `import-next/no-nodejs-modules` (report) | no-nodejs-modules: **we are ahead** | ✅ |
+| `ILB-0020` | the same code with template literals instead of quoted strings | defect | — | `import-next/no-unassigned-import` (report) | no-unassigned-import: **we are ahead** | ✅ |
+| `ILB-0021` | the same code with template literals instead of quoted strings | defect | — | `import-next/no-unresolved` (report) | no-unresolved: **we are ahead** | ✅ |
+| `ILB-0022` | the same code with template literals instead of quoted strings | defect | — | `import-next/prefer-node-protocol` (report) | prefer-node-protocol: **we are ahead** | ✅ |
+| `ILB-0023` | the same code with template literals instead of quoted strings | defect | — | `lambda-security/no-overly-permissive-iam-policy` (report) | — | ✅ |
+| `ILB-0024` | a describe block — 1,415 findings in the wild | decoy | — | `maintainability/consistent-function-scoping` (silent) | — | ✅ |
+| `ILB-0025` | a test block | decoy | — | `maintainability/consistent-function-scoping` (silent) | — | ✅ |
+| `ILB-0026` | addListener — `addEventListener` was on the old host list and this was not | decoy | — | `maintainability/consistent-function-scoping` (silent) | — | ✅ |
+| `ILB-0027` | a framework entry point no allowlist would contain | decoy | — | `maintainability/consistent-function-scoping` (silent) | — | ✅ |
+| `ILB-0028` | an object-literal method is the object, not a nested helper | decoy | — | `maintainability/consistent-function-scoping` (silent) | — | ✅ |
+| `ILB-0029` | the same helper as an arrow | defect | — | `maintainability/consistent-function-scoping` (report) | — | ✅ |
+| `ILB-0030` | the same helper as a function expression | defect | — | `maintainability/consistent-function-scoping` (report) | — | ✅ |
+| `ILB-0031` | a promise passed as an argument — the nested call is skipped | defect | — | **nothing** | — | uncovered |
+| `ILB-0032` | the same, one member access further along | defect | — | **nothing** | — | uncovered |
+| `ILB-0033` | a promise passed as an argument to another call | defect | — | **nothing** | — | uncovered |
+| `ILB-0034` | a promise wrapped twice | defect | — | **nothing** | — | uncovered |
+| `ILB-0035` | a wrapped promise used as a computed key | defect | — | **nothing** | — | uncovered |
+| `ILB-0036` | a dynamic import nobody awaits | defect | — | `maintainability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
+| `ILB-0037` | new Promise as a whole statement | defect | — | `maintainability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
+| `ILB-0038` | the same code with template literals instead of quoted strings | defect | — | `node-security/detect-non-literal-fs-filename` (report) | detect-non-literal-fs-filename: **we are ahead** | ✅ |
+| `ILB-0039` | the same code with template literals instead of quoted strings | defect | — | `node-security/no-data-in-temp-storage` (report) | — | ✅ |
+| `ILB-0040` | a secret arriving as a parameter has no visible taint source | defect | — | **nothing** | — | uncovered |
+| `ILB-0041` | an AST discriminant is not a credential — 11 findings in the wild | decoy | — | `node-security/no-timing-unsafe-compare` (silent) | — | ✅ |
+| `ILB-0042` | a secret compared through an anonymous name is not detected | defect | — | **nothing** | — | uncovered |
+| `ILB-0043` | the same code with template literals instead of quoted strings | defect | — | `node-security/no-timing-unsafe-compare` (report) | — | ✅ |
+| `ILB-0044` | OpenTelemetry context propagation is not an archive — 6 findings in the wild | decoy | — | `node-security/no-zip-slip` (silent) | — | ✅ |
+| `ILB-0045` | an OAuth claims extractor is not an archive | decoy | — | `node-security/no-zip-slip` (silent) | — | ✅ |
+| `ILB-0046` | an algorithm name — 110 findings in the wild came from this shape | decoy | — | `node-security/require-secure-credential-storage` (silent) | — | ✅ |
+| `ILB-0047` | minify — the Vite, Rollup and esbuild spelling of the same setting | defect | — | `operability/require-code-minification` (report) | — | ✅ |
+| `ILB-0048` | a shipping address modifier | decoy | — | `react-a11y/autocomplete-valid` (silent) | autocomplete-valid: level | ✅ |
+| `ILB-0049` | a billing address modifier | decoy | — | `react-a11y/autocomplete-valid` (silent) | autocomplete-valid: level | ✅ |
+| `ILB-0050` | a contact-channel modifier | decoy | — | `react-a11y/autocomplete-valid` (silent) | autocomplete-valid: level | ✅ |
+| `ILB-0051` | the webauthn credential suffix | decoy | — | `react-a11y/autocomplete-valid` (silent) | autocomplete-valid: level | ✅ |
+| `ILB-0052` | two field names, where the grammar allows one | defect | — | `react-a11y/autocomplete-valid` (report) | autocomplete-valid: level | ✅ |
+| `ILB-0053` | a section label with no field name after it | defect | — | `react-a11y/autocomplete-valid` (report) | autocomplete-valid: level | ✅ |
+| `ILB-0054` | an empty lang names no language | defect | — | `react-a11y/html-has-lang` (report) | html-has-lang: level | ✅ |
+| `ILB-0055` | an empty title announces nothing | defect | — | `react-a11y/iframe-has-title` (report) | iframe-has-title: level | ✅ |
+| `ILB-0056` | a promise passed as an argument to another call | defect | — | **nothing** | — | uncovered |
+| `ILB-0057` | a dynamic import nobody awaits | defect | — | `reliability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
+| `ILB-0058` | new Promise as a whole statement | defect | — | `reliability/no-unhandled-promise` (report) | catch-or-return: **we are ahead** | ✅ |
+| `ILB-0059` | an array append written as a self-indexed length | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0060` | the same allowlist behind Object.freeze | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0061` | an error code is not a credential — 69 findings in the wild | decoy | — | `secure-coding/no-insecure-comparison` (silent) | — | ✅ |
+| `ILB-0062` | a filename is not a credential — 71 findings, the largest shape | decoy | — | `secure-coding/no-insecure-comparison` (silent) | — | ✅ |
+| `ILB-0063` | the same code with template literals instead of quoted strings | defect | — | `secure-coding/no-insecure-comparison` (report) | — | ✅ |
+| `ILB-0064` | the same code with template literals instead of quoted strings | defect | — | `secure-coding/no-sensitive-data-exposure` (report) | — | ✅ |
+| `ILB-0065` | request value bound one line earlier | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0066` | destructured from the body | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0067` | route parameter as a key | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0068` | key from parsed JSON | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0069` | merge iterating the request body | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0070` | key reached through a template | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0071` | header value as key | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0072` | nested destructure from the body | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0073` | two attacker-chosen keys in one chain | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0074` | merge over Object.keys of the body | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0075` | key assigned after declaration | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0076` | write straight onto Object.prototype | defect | CWE-1321 | `secure-coding/detect-object-injection` (report) | detect-object-injection: level | ✅ |
+| `ILB-0077` | read by loop counter | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0078` | read by a sibling key | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0079` | read in a call argument | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0080` | index write in a counted loop | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0081` | index arithmetic | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0082` | typed-array element write | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0083` | literal string key | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0084` | numeric literal key | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0085` | write to a null-prototype bag | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0086` | Map, which has no prototype chain for keys | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0087` | read from a module-local lookup table | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0088` | symbol key | decoy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: level | ✅ |
+| `ILB-0089` | write guarded by an explicit `__proto__` check | remedy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
+| `ILB-0090` | read guarded by hasOwnProperty | remedy | — | `secure-coding/detect-object-injection` (silent) | detect-object-injection: **we are ahead** | ✅ |
 
 ## Each case in full
 
@@ -1306,4 +1332,498 @@ console.log(`password: 123456`);
 | `secure-coding/no-sensitive-data-exposure` | report | 1 report(s) | ✅ |
 
 Pinned in `packages/eslint-plugin-secure-coding/src/spelling-seals.test.ts`.
+
+### ILB-0065 — request value bound one line earlier
+
+Same defect, one binding of indirection.
+
+```js
+function f(o, req) { const k = req.body.key; o[k] = req.body.value; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0066 — destructured from the body
+
+Same defect, destructured.
+
+```js
+function f(o, req) { const { key } = req.body; o[key] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0067 — route parameter as a key
+
+A path segment is caller-chosen.
+
+```js
+function f(o, req) { o[req.params.id] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0068 — key from parsed JSON
+
+Parsed input is caller-controlled by definition.
+
+```js
+function f(o, s) { const d = JSON.parse(s); o[d.k] = d.v; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0069 — merge iterating the request body
+
+Same loop, attacker at the root, no parameter to hide behind.
+
+```js
+function f(dst, req) { for (const k in req.body) { dst[k] = req.body[k]; } }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0070 — key reached through a template
+
+Interpolation does not launder the value.
+
+```js
+function f(o, req) { o[`${req.query.p}`] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0071 — header value as key
+
+A header is caller-chosen.
+
+```js
+function f(o, req) { o[req.headers["x-key"]] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0072 — nested destructure from the body
+
+Two levels of destructuring do not launder it.
+
+```js
+function f(o, req) { const { a: { b } } = req.body; o[b] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0073 — two attacker-chosen keys in one chain
+
+Both segments are caller-chosen.
+
+```js
+function f(o, req) { o[req.body.a][req.body.b] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0074 — merge over Object.keys of the body
+
+The for-of spelling of D07.
+
+```js
+function f(o, req) { for (const k of Object.keys(req.body)) o[k] = req.body[k]; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0075 — key assigned after declaration
+
+A late write to the binding is still a caller-chosen key.
+
+```js
+function f(o, req) { let k; k = req.query.p; o[k] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0076 — write straight onto Object.prototype
+
+Pollution without an intermediate object at all.
+
+```js
+function f(req) { const k = req.query.k; ({}).constructor.prototype[k] = 1; }
+```
+
+- **CWE** CWE-1321
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | report | 1 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0077 — read by loop counter
+
+A read. [[Get]] returns the prototype, it does not replace it.
+
+```js
+function f(paths, i) { return paths[i]; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0078 — read by a sibling key
+
+A read.
+
+```js
+function f(current, app) { return current[app.name]; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0079 — read in a call argument
+
+A read.
+
+```js
+function f(config, name) { send(config[name]); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0080 — index write in a counted loop
+
+The key is provably numeric from its declaration.
+
+```js
+function f(a, out) { for (let i = 0; i < a.length; i++) { out[i] = a[i]; } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0081 — index arithmetic
+
+Numeric by construction.
+
+```js
+function f(out, i, v) { out[i + 1] = v; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0082 — typed-array element write
+
+A typed array has no string keys to pollute.
+
+```js
+const buf = new Uint8Array(8); buf[0] = 1;
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0083 — literal string key
+
+The key is written in the source.
+
+```js
+function f(o) { return o["name"]; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0084 — numeric literal key
+
+A number.
+
+```js
+function f(o) { o[0] = 1; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0085 — write to a null-prototype bag
+
+No prototype to pollute.
+
+```js
+function f(k, v) { const bag = Object.create(null); bag[k] = v; return bag; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0086 — Map, which has no prototype chain for keys
+
+Not a computed property access at all.
+
+```js
+function f(m, k, v) { m.set(k, v); }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0087 — read from a module-local lookup table
+
+A read.
+
+```js
+const e = {}; function f(k) { return e[k] ?? null; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0088 — symbol key
+
+A symbol cannot name `__proto__`.
+
+```js
+function f(o, g) { o[Symbol.iterator] = g; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0089 — write guarded by an explicit `__proto__` check
+
+The other documented fix.
+
+```js
+function f(dst, src) { for (const k in src) { if (k === "__proto__") continue; dst[k] = src[k]; } }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
+
+### ILB-0090 — read guarded by hasOwnProperty
+
+Guarded, and a read besides.
+
+```js
+function f(map, k) { if (Object.hasOwn(map, k)) { return map[k]; } return undefined; }
+```
+
+- **CWE** not classified
+- **CVSS** not scored
+- **Occurrences** none recorded — this case is constructed, not observed
+- **References** none
+
+| rule | must | did | |
+|---|---|---|---|
+| `secure-coding/detect-object-injection` | silent | 0 report(s) | ✅ |
+
+Pinned in `scripts/doi-head-to-head.mts`.
 
