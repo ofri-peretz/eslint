@@ -1,0 +1,254 @@
+{
+ "note": "Every verdict rendered against real third-party code. TP = we reported a real defect. FP = we reported something that was not one. Sourced entries name the repository, file and line so any verdict can be re-checked.",
+ "generated": "2026-08-26",
+ "count": 16,
+ "entries": [
+  {
+   "id": "FP-001",
+   "rule": "node-security/no-zip-slip",
+   "verdict": "FP",
+   "status": "fixed",
+   "shape": ".extract() on something that is not an archive",
+   "wild": 6,
+   "repos": [
+    "diia-open-source/be-diia-app",
+    "vitemcp/server"
+   ],
+   "source": "diia-open-source/be-diia-app src/grpc/grpcService.ts:280",
+   "why": "OpenTelemetry propagation.extract() and an OAuth claims extractor. Neither touches an archive.",
+   "fixture": "benchmarks/corpus/CWE-022/safe/otel-propagation-extract.js",
+   "fixed_in": "#727"
+  },
+  {
+   "id": "FP-002",
+   "rule": "node-security/no-timing-unsafe-compare",
+   "verdict": "FP",
+   "status": "fixed",
+   "shape": "node.kind === SyntaxKind.X \u2014 an AST discriminant",
+   "wild": 11,
+   "repos": [
+    "flint-fyi/flint"
+   ],
+   "source": "flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56",
+   "why": "A lint rule comparing an AST node kind against an enum member. The identifier carries \"token\"; the value is a discriminant.",
+   "fixture": "rule tests: kinds / category tails",
+   "fixed_in": "#727"
+  },
+  {
+   "id": "FP-003",
+   "rule": "secure-coding/no-insecure-comparison",
+   "verdict": "FP",
+   "status": "configurable",
+   "shape": "if (key == filename) / if (e.code == \"MODULE_NOT_FOUND\")",
+   "wild": 140,
+   "repos": [
+    "moleculerjs/moleculer",
+    "digital-blueprint/esign-app",
+    "IGNF/cartes.gouv.fr-entree-carto"
+   ],
+   "source": "moleculerjs/moleculer utils.js:289",
+   "why": "Plain type coercion reported as CWE-697 HIGH. A filename and an error code are not credentials. IGNF suppressed this rule 15 times over exactly this.",
+   "fixture": "packages/eslint-plugin-secure-coding/.../report-loose-equality.test.ts",
+   "fixed_in": "reportLooseEquality option"
+  },
+  {
+   "id": "FP-004",
+   "rule": "node-security/require-secure-credential-storage",
+   "verdict": "FP",
+   "status": "fixed",
+   "shape": "process.env.TOKEN_SIGNING_ALG = 'RS256'",
+   "wild": 110,
+   "repos": [
+    "auth0/express-openid-connect"
+   ],
+   "source": "auth0/express-openid-connect api.js:2",
+   "why": "Substring match on \"token\". The value is an algorithm name, not a credential.",
+   "fixture": "benchmarks/corpus/CWE-526/safe/env-config-about-a-credential.js",
+   "fixed_in": "config tails guard"
+  },
+  {
+   "id": "FP-005",
+   "rule": "browser-security/no-innerhtml",
+   "verdict": "FP",
+   "status": "parked",
+   "shape": "window.DOMPurify?.sanitize(html, CFG) ?? html",
+   "wild": 21,
+   "repos": [
+    "aemdemos/lundbeck-vyepti",
+    "aemsites/idfc",
+    "aemdemos/poc-rbc",
+    "aemdemos/summit-dsg",
+    "aemdemos/summit-rob",
+    "aemdemos/lundbeck-vyeptihcp",
+    "aemdemos/lundbeck-onfi"
+   ],
+   "source": "aemdemos/lundbeck-vyepti blocks/embed/embed.js:60",
+   "why": "Optional chaining defeats sanitizer detection, so the MORE defensive spelling is reported as CWE-79 CRITICAL. Blocks an upgrade PR to seven Adobe repos.",
+   "fixture": "benchmarks/corpus/_pending-rule-fix/CWE-079.dompurify-optional-chaining.js",
+   "fixed_in": null
+  },
+  {
+   "id": "FP-006",
+   "rule": "secure-coding/no-hardcoded-credentials",
+   "verdict": "FP",
+   "status": "parked",
+   "shape": "name = 'AddRewardTokenToJobTable1733127731356'",
+   "wild": 20,
+   "repos": [
+    "humanprotocol/human-protocol"
+   ],
+   "source": "humanprotocol/human-protocol packages/apps/job-launcher/server/src/database/migrations/*.ts:4",
+   "why": "Every generated TypeORM migration carries this field. The trailing timestamp makes the literal look high-entropy.",
+   "fixture": "benchmarks/corpus/_pending-rule-fix/CWE-798.typeorm-migration-name.js",
+   "fixed_in": null
+  },
+  {
+   "id": "FP-007",
+   "rule": "jwt/require-issuer-validation + require-audience-validation + require-max-age",
+   "verdict": "FP",
+   "status": "open",
+   "shape": "jwt.verify(token, secret, { algorithms: [...] })",
+   "wild": 0,
+   "repos": [],
+   "source": "benchmarks/corpus/CWE-327/safe/verify-allowlist.js",
+   "why": "Three findings on a fixture whose only claim was a safe algorithm allowlist. Hardening advice reported as defects \u2014 the one FP in the scored corpus.",
+   "fixture": "benchmarks/corpus/CWE-327/safe/verify-allowlist.js",
+   "fixed_in": null
+  },
+  {
+   "id": "FP-008",
+   "rule": "pg/no-transaction-on-pool",
+   "verdict": "FP",
+   "status": "open",
+   "shape": "name === 'pool' || name.includes('pool')",
+   "wild": 0,
+   "repos": [],
+   "source": "packages/eslint-plugin-pg/src/rules/no-transaction-on-pool/index.ts:74",
+   "why": "The only name heuristic in the suite with no option to override it. A pg.Pool named db is missed; carpoolService is flagged.",
+   "fixture": null,
+   "fixed_in": null
+  },
+  {
+   "id": "FP-009",
+   "rule": "secure-coding/no-unsafe-regex-construction",
+   "verdict": "FP",
+   "status": "open",
+   "shape": "new RegExp(node.pattern, node.flags)",
+   "wild": 11,
+   "repos": [
+    "flint-fyi/flint"
+   ],
+   "source": "flint-fyi/flint packages/ts/src/rules/regexEmptyCharacterClasses.ts:26",
+   "why": "A linter rebuilding a regex from an AST node\u2019s own flags. No attacker input exists.",
+   "fixture": null,
+   "fixed_in": null
+  },
+  {
+   "id": "FP-010",
+   "rule": "secure-coding/detect-object-injection",
+   "verdict": "FP",
+   "status": "open",
+   "shape": "obj[key] = value / Object.assign(defaults, data)",
+   "wild": 750,
+   "repos": [
+    "18F/uswds-jekyll",
+    "passbolt/passbolt_styleguide",
+    "SpringRoll/SpringRoll"
+   ],
+   "source": "18F/uswds-jekyll uswds.js:924",
+   "why": "Six of the top eleven clusters. Largest remaining block, and it is one rule.",
+   "fixture": null,
+   "fixed_in": null
+  },
+  {
+   "id": "TP-001",
+   "rule": "node-security/no-timing-unsafe-compare",
+   "verdict": "TP",
+   "status": "reported",
+   "shape": "bearerToken === sessionSecret in isAuthorized()",
+   "wild": 2,
+   "repos": [
+    "eclipse-theia/theia-cloud"
+   ],
+   "source": "eclipse-theia/theia-cloud node/monitor/src/util/util.ts:10",
+   "why": "Gates five HTTP endpoints. CWE-208.",
+   "fixture": null,
+   "fixed_in": "PR eclipse-theia/theia-cloud#501"
+  },
+  {
+   "id": "TP-002",
+   "rule": "node-security/no-math-random-crypto",
+   "verdict": "TP",
+   "status": "reported",
+   "shape": "Math.random() building a device pairing code",
+   "wild": 2,
+   "repos": [
+    "telepat-io/otto"
+   ],
+   "source": "telepat-io/otto packages/relay/src/auth/helpers.ts:6",
+   "why": "The code is the map key that claims a pairing challenge. Predictable generator, 5-minute window. CWE-338.",
+   "fixture": null,
+   "fixed_in": "PR telepat-io/otto#29"
+  },
+  {
+   "id": "TP-003",
+   "rule": "node-security/no-timing-unsafe-compare",
+   "verdict": "TP",
+   "status": "reported",
+   "shape": "x-otto-registration-secret header === configured secret",
+   "wild": 2,
+   "repos": [
+    "telepat-io/otto"
+   ],
+   "source": "telepat-io/otto packages/relay/src/controller-client-utils.ts:130",
+   "why": "Gates controller registration, the privileged role. The same file already used timingSafeEqual elsewhere.",
+   "fixture": null,
+   "fixed_in": "PR telepat-io/otto#29"
+  },
+  {
+   "id": "TP-004",
+   "rule": "node-security/no-timing-unsafe-compare",
+   "verdict": "TP",
+   "status": "reported",
+   "shape": "signedPayload !== hmacSignature in a webhook guard",
+   "wild": 2,
+   "repos": [
+    "humanprotocol/human-protocol"
+   ],
+   "source": "humanprotocol/human-protocol packages/apps/reputation-oracle/server/src/modules/kyc/kyc-webhook-auth.guard.ts:39",
+   "why": "KYC webhook signature verification. The guard had no test of any kind.",
+   "fixture": null,
+   "fixed_in": "PR humanprotocol/human-protocol#4009"
+  },
+  {
+   "id": "TP-005",
+   "rule": "node-security/no-zip-slip",
+   "verdict": "TP",
+   "status": "reported",
+   "shape": "fs.symlink(linkTarget, entryPathAbs) from archive bytes",
+   "wild": 1,
+   "repos": [
+    "nwutils/getter"
+   ],
+   "source": "nwutils/getter src/decompress.js:100",
+   "why": "yauzl validates entry NAMES; nothing validated the link TARGET. Verified by building malicious zips: only this case escaped.",
+   "fixture": null,
+   "fixed_in": "PR nwutils/getter#48"
+  },
+  {
+   "id": "TP-006",
+   "rule": "express-security/no-permissive-trust-proxy",
+   "verdict": "TP",
+   "status": "undisclosed",
+   "shape": "app.enable('trust proxy') behind an IP allowlist",
+   "wild": 1,
+   "repos": [
+    "cncjs/cncjs"
+   ],
+   "source": "cncjs/cncjs app.js:77",
+   "why": "req.ip becomes attacker-controlled, bypassing authorizeIPAddress. Disclosure drafted, not sent.",
+   "fixture": null,
+   "fixed_in": null
+  }
+ ]
+}
