@@ -28,6 +28,7 @@ describe('prefer-dom-node-text-content', () => {
       valid: [
         // textContent usage (preferred)
         {
+          name: 'textContent',
           code: 'const text = element.textContent;',
         },
         // Other properties
@@ -49,6 +50,7 @@ describe('prefer-dom-node-text-content', () => {
       invalid: [
         // Direct innerText access
         {
+          name: 'innerText reflows layout to answer',
           code: 'const text = element.innerText;',
           errors: [
             {

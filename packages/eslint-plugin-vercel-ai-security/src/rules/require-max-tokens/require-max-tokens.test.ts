@@ -61,6 +61,7 @@ ruleTester.run('require-max-tokens', requireMaxTokens, {
   valid: xai([
     // Has maxTokens
     {
+      name: 'maxTokens is set',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -134,6 +135,7 @@ ruleTester.run('require-max-tokens', requireMaxTokens, {
   invalid: xai([
     // generateText without maxTokens
     {
+      name: 'no token ceiling on a call that bills per token',
       code: `
         await generateText({
           model: openai('gpt-4'),

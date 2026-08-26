@@ -53,6 +53,7 @@ ruleTester.run('no-env-logging', noEnvLogging, {
   valid: lambda([
     // ========== VALID: Logging specific env vars ==========
     {
+      name: 'logging one non-secret variable by name',
       code: `console.log('Region:', process.env.AWS_REGION);`,
     },
     {
@@ -88,6 +89,7 @@ ruleTester.run('no-env-logging', noEnvLogging, {
   invalid: lambda([
     // ========== INVALID: Direct process.env logging ==========
     {
+      name: 'logging the whole environment prints every secret in it',
       code: `console.log(process.env);`,
       errors: [{ messageId: 'envLogging' }],
     },

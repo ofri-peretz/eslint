@@ -25,6 +25,13 @@
  */
 
 const SHOW = process.argv[2] === '--show' ? process.argv[3] : null;
+/**
+ * `--show <plugin> own` restricts the dump to each rule's own
+ * `<rule>.test.ts`. Several plugins keep a shared `coverage-*.test.ts` whose
+ * cases exercise branches rather than the rule's position, and readdir order
+ * puts it first — which is the wrong file to write a description against.
+ */
+const OWN = process.argv[4] === 'own';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
@@ -95,7 +102,8 @@ for (const file of files) {
       const target = node.arguments[1];
       const rule = ts.isIdentifier(target) ? byBinding.get(target.text) : undefined;
       const cfg = node.arguments[2];
-      const wanted = rule === undefined ? undefined : table[rule]?.file;
+      const wanted =
+        rule === undefined ? undefined : OWN ? `${rule.split('/')[1]}.test.ts` : table[rule]?.file;
       const fileOk = wanted === undefined || file.includes(wanted);
       const wanting = rule !== undefined && (SHOW !== null || table[rule] !== undefined);
       if (wanting && fileOk && ts.isObjectLiteralExpression(cfg)) {

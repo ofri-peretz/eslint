@@ -75,6 +75,7 @@ describe('no-select-sensitive-fields', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-select-sensitive-fields', () => {
       invalid: xmo([
         // Triggers selectSensitiveFields: user input in query
         {
+          name: 'a query with no projection returns the password field the schema declares',
           code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({ username: req.body.username });`,
           errors: [{ messageId: 'selectSensitiveFields' }],
         },

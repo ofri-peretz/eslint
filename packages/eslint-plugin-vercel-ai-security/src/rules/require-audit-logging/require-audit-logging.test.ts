@@ -61,6 +61,7 @@ ruleTester.run('require-audit-logging', requireAuditLogging, {
   valid: xai([
     // Logging before AI call
     {
+      name: 'the call is logged',
       code: `
         async function handler() {
           logger.info('Starting AI generation');
@@ -140,6 +141,7 @@ ruleTester.run('require-audit-logging', requireAuditLogging, {
   invalid: xai([
     // No logging before generateText
     {
+      name: 'a generation with nothing recording that it happened',
       code: `
         async function handler() {
           const result = await generateText({ prompt: 'Hello' });

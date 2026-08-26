@@ -25,6 +25,7 @@ describe('no-unreadable-iife', () => {
     valid: [
       // Simple IIFE with return (expression body)
       {
+        name: 'a one-expression IIFE still reads',
         code: `const result = (() => 'value')();`,
       },
       // Simple IIFE with block and return
@@ -62,6 +63,7 @@ describe('no-unreadable-iife', () => {
     invalid: [
       // Too many statements (default max is 3)
       {
+        name: 'a multi-statement IIFE inline',
         code: `(() => { const a = 1; const b = 2; const c = 3; const d = 4; })();`,
         errors: [{
           messageId: 'unreadableIIFE',

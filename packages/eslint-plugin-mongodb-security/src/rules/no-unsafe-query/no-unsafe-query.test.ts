@@ -75,6 +75,7 @@ describe('no-unsafe-query', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-unsafe-query', () => {
       invalid: xmo([
         // Triggers unsafeQuery: user input in query
         {
+          name: 'a request value used directly as a query value',
           code: `db.users.find({ username: req.body.username });`,
           errors: [{
             messageId: 'unsafeQuery',

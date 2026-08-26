@@ -179,6 +179,7 @@ ruleTester.run('no-unsafe-multer-filename', noUnsafeMulterFilename, {
     `storage['diskStorage']({ filename(req, file, cb) { cb(null, file.originalname); } });`,
     // Test files are exempt by default.
     {
+      name: 'a spec file is exempt by default',
       code: `diskStorage({ filename(req, file, cb) { cb(null, file.originalname); } });`,
       filename: 'upload.spec.ts',
     },
@@ -188,6 +189,7 @@ ruleTester.run('no-unsafe-multer-filename', noUnsafeMulterFilename, {
     // shape three separate course projects ship, and the reason this rule
     // exists: a timestamp prefix reads as a mitigation and is not one.
     {
+      name: 'a timestamp prefix reads as a mitigation and is not one — the client name still lands on disk',
       code: `
         diskStorage({
           destination: './uploads',

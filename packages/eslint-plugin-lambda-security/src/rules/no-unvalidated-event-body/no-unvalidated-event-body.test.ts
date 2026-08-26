@@ -59,6 +59,7 @@ ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
   valid: lambda([
     // Validation with Zod
     {
+      name: 'the body is parsed through a zod schema',
       code: `
         import { z } from 'zod';
         const schema = z.object({ name: z.string() });
@@ -177,6 +178,7 @@ ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
   invalid: lambda([
     // Direct use of event.body in variable assignment
     {
+      name: 'event.body used with no schema between it and the code',
       code: `
         export const handler = async (event) => {
           const data = event.body;

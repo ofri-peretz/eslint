@@ -13396,7 +13396,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an event named the way the taxonomy says",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/analytics-event-naming.test.ts"
         },
         {
@@ -13476,7 +13476,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "PascalCase where the taxonomy is object:verb in snake_case",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/analytics-event-naming.test.ts"
         },
         {
@@ -13526,7 +13526,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the `in` operator",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/consistent-existence-index-check.test.ts"
         },
         {
@@ -13541,7 +13541,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "hasOwnProperty walks the prototype question the long way",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/consistent-existence-index-check.test.ts"
         },
         {
@@ -13656,7 +13656,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a TODO still inside its window",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/expiring-todo-comments.test.ts"
         },
         {
@@ -13676,7 +13676,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a TODO whose date has passed",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/expiring-todo-comments.test.ts"
         },
         {
@@ -13826,7 +13826,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a filename in the configured case",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/filename-case.test.ts"
         },
         {
@@ -13866,7 +13866,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a filename that is not in the configured case",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/filename-case.test.ts"
         },
         {
@@ -14011,7 +14011,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "prose in a comment",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-commented-code.test.ts"
         },
         {
@@ -14066,7 +14066,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a commented-out statement",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-commented-code.test.ts"
         },
         {
@@ -14271,7 +14271,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "separate arguments, which console spaces for you",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-console-spaces.test.ts"
         },
         {
@@ -14341,7 +14341,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a trailing space console already adds",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-console-spaces.test.ts"
         },
         {
@@ -14516,7 +14516,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a current API",
           "file": "packages/eslint-plugin-conventions/src/tests/deprecation/no-deprecated-api.test.ts"
         },
         {
@@ -14531,7 +14531,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a call to an API on the deprecation list",
           "file": "packages/eslint-plugin-conventions/src/tests/deprecation/no-deprecated-api.test.ts"
         },
         {
@@ -14591,7 +14591,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "ordinary JSDoc tags",
           "file": "packages/eslint-plugin-conventions/src/rules/conventions/no-json-schema-tags.test.ts"
         },
         {
@@ -14621,7 +14621,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "@minimum is a JSON Schema tag, not a JSDoc one",
           "file": "packages/eslint-plugin-conventions/src/rules/conventions/no-json-schema-tags.test.ts"
         },
         {
@@ -14691,7 +14691,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "zero needs no name",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers.test.ts"
         },
         {
@@ -14751,7 +14751,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "5000 with nothing saying what it measures",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers.test.ts"
         },
         {
@@ -14916,7 +14916,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a relative in-property link",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-raw-cross-property-href.test.ts"
         },
         {
@@ -14966,7 +14966,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a hard-coded absolute URL to another property",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-raw-cross-property-href.test.ts"
         },
         {
@@ -15016,7 +15016,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "codePointAt",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/prefer-code-point.test.ts"
         },
         {
@@ -15031,7 +15031,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "charCodeAt splits characters above the BMP",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/prefer-code-point.test.ts"
         },
         {
@@ -15151,7 +15151,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a caret range",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/prefer-dependency-version-strategy.test.ts"
         },
         {
@@ -15171,7 +15171,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a tilde range pins tighter than the strategy allows",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/prefer-dependency-version-strategy.test.ts"
         },
         {
@@ -15301,7 +15301,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "textContent",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/prefer-dom-node-text-content.test.ts"
         },
         {
@@ -15326,7 +15326,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "innerText reflows layout to answer",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/prefer-dom-node-text-content.test.ts"
         },
         {
@@ -15486,7 +15486,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a data-testid is present",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/require-data-testid.test.ts"
         },
         {
@@ -15551,7 +15551,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an interactive element with no test handle",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/require-data-testid.test.ts"
         },
         {
@@ -15591,7 +15591,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a URL with no UTM parameters at all",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/utm-taxonomy.test.ts"
         },
         {
@@ -15646,7 +15646,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "utm_source capitalised, outside the fixed taxonomy",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/utm-taxonomy.test.ts"
         },
         {
@@ -28176,7 +28176,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the asymmetric algorithm the key actually belongs to",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts"
         },
         {
@@ -28231,7 +28231,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "verifying with HS256 against a key that is public",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts"
         },
         {
@@ -28286,7 +28286,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a real algorithm",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-algorithm-none/no-algorithm-none.test.ts"
         },
         {
@@ -28361,7 +28361,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "algorithm 'none' means the signature is never checked",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-algorithm-none/no-algorithm-none.test.ts"
         },
         {
@@ -28521,7 +28521,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "verify",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-decode-without-verify/no-decode-without-verify.test.ts"
         },
         {
@@ -28556,7 +28556,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "decode reads the claims without checking who signed them",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-decode-without-verify/no-decode-without-verify.test.ts"
         },
         {
@@ -28781,7 +28781,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the secret comes from the environment",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts"
         },
         {
@@ -28851,7 +28851,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "the signing secret is a literal in the source",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts"
         },
         {
@@ -28931,7 +28931,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a subject and a role",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-sensitive-payload/no-sensitive-payload.test.ts"
         },
         {
@@ -28981,7 +28981,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password inside a token anyone can base64-decode",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-sensitive-payload/no-sensitive-payload.test.ts"
         },
         {
@@ -29161,7 +29161,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the default timestamp behaviour",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts"
         },
         {
@@ -29186,7 +29186,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "noTimestamp strips the iat the receiver ages the token by",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts"
         },
         {
@@ -29201,7 +29201,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the secret comes from the environment, length unknown here",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-weak-secret/no-weak-secret.test.ts"
         },
         {
@@ -29231,7 +29231,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a six-character secret is inside brute-force range",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-weak-secret/no-weak-secret.test.ts"
         },
         {
@@ -29376,7 +29376,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit algorithms list",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts"
         },
         {
@@ -29411,7 +29411,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "verify with no algorithms list accepts whatever the token claims",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts"
         },
         {
@@ -29446,7 +29446,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit audience",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-audience-validation/require-audience-validation.test.ts"
         },
         {
@@ -29476,7 +29476,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "verify with no audience accepts a token minted for another service",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-audience-validation/require-audience-validation.test.ts"
         },
         {
@@ -29506,7 +29506,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "expiresIn is set",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-expiration/require-expiration.test.ts"
         },
         {
@@ -29541,7 +29541,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a token signed with no expiry is valid forever",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-expiration/require-expiration.test.ts"
         },
         {
@@ -29671,7 +29671,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit iat",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-issued-at/require-issued-at.test.ts"
         },
         {
@@ -29701,7 +29701,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "noTimestamp removes the only claim that dates the token",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-issued-at/require-issued-at.test.ts"
         },
         {
@@ -29721,7 +29721,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit issuer",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-issuer-validation/require-issuer-validation.test.ts"
         },
         {
@@ -29751,7 +29751,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "verify with no issuer accepts a token from any signer holding the key",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-issuer-validation/require-issuer-validation.test.ts"
         },
         {
@@ -29781,7 +29781,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit maxAge",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-max-age/require-max-age.test.ts"
         },
         {
@@ -29811,7 +29811,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "verify with no maxAge trusts whatever expiry the token carries",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-max-age/require-max-age.test.ts"
         },
         {
@@ -30106,7 +30106,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "logging one non-secret variable by name",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-env-logging/no-env-logging.test.ts"
         },
         {
@@ -30151,7 +30151,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "logging the whole environment prints every secret in it",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-env-logging/no-env-logging.test.ts"
         },
         {
@@ -30261,7 +30261,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the catch rethrows",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-error-swallowing/no-error-swallowing.test.ts"
         },
         {
@@ -30411,7 +30411,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an empty catch — the invocation reports success",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-error-swallowing/no-error-swallowing.test.ts"
         },
         {
@@ -30521,7 +30521,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary application route",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts"
         },
         {
@@ -30531,7 +30531,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a /debug route reachable in the deployed function",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts"
         },
         {
@@ -30586,7 +30586,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the stack is logged and a generic message is returned",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-exposed-error-details/no-exposed-error-details.test.ts"
         },
         {
@@ -30606,7 +30606,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "the stack trace goes back to the caller in the response body",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-exposed-error-details/no-exposed-error-details.test.ts"
         },
         {
@@ -30716,7 +30716,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the provider chain resolves the role's credentials",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-hardcoded-credentials-sdk/no-hardcoded-credentials-sdk.test.ts"
         },
         {
@@ -30771,7 +30771,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an access key pair written into the client construction",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-hardcoded-credentials-sdk/no-hardcoded-credentials-sdk.test.ts"
         },
         {
@@ -30811,7 +30811,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a test file is exempt",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-missing-authorization-check/no-missing-authorization-check.test.ts"
         },
         {
@@ -30871,7 +30871,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a handler that deletes rows without checking who asked",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-missing-authorization-check/no-missing-authorization-check.test.ts"
         },
         {
@@ -30961,7 +30961,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a scoped bucket ARN",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-overly-permissive-iam-policy/no-overly-permissive-iam-policy.test.ts"
         },
         {
@@ -31006,7 +31006,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "Resource '*' grants the action over every object in the account",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-overly-permissive-iam-policy/no-overly-permissive-iam-policy.test.ts"
         },
         {
@@ -31086,7 +31086,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit origin list",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-middy/no-permissive-cors-middy.test.ts"
         },
         {
@@ -31121,7 +31121,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "httpCors with no origins defaults to any origin",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-middy/no-permissive-cors-middy.test.ts"
         },
         {
@@ -31191,7 +31191,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named origin",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/no-permissive-cors-response.test.ts"
         },
         {
@@ -31226,7 +31226,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "Access-Control-Allow-Origin '*' on a handler response",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/no-permissive-cors-response.test.ts"
         },
         {
@@ -31286,7 +31286,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "reading a secret out of the environment",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-secrets-in-env/no-secrets-in-env.test.ts"
         },
         {
@@ -31326,7 +31326,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a secret assigned into process.env, where the console shows it",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-secrets-in-env/no-secrets-in-env.test.ts"
         },
         {
@@ -31401,7 +31401,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a test file is exempt",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-unbounded-batch-processing/no-unbounded-batch-processing.test.ts"
         },
         {
@@ -31446,7 +31446,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "every record processed with no bound on how many arrive",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-unbounded-batch-processing/no-unbounded-batch-processing.test.ts"
         },
         {
@@ -31566,7 +31566,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the body is parsed through a zod schema",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-unvalidated-event-body/no-unvalidated-event-body.test.ts"
         },
         {
@@ -31626,7 +31626,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "event.body used with no schema between it and the code",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-unvalidated-event-body/no-unvalidated-event-body.test.ts"
         },
         {
@@ -31716,7 +31716,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a fetch to a fixed host",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-user-controlled-requests/no-user-controlled-requests.test.ts"
         },
         {
@@ -31741,7 +31741,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a fetch to a URL taken from the query string",
           "file": "packages/eslint-plugin-lambda-security/src/rules/no-user-controlled-requests/no-user-controlled-requests.test.ts"
         },
         {
@@ -31826,7 +31826,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a test file is exempt",
           "file": "packages/eslint-plugin-lambda-security/src/rules/require-timeout-handling/require-timeout-handling.test.ts"
         },
         {
@@ -31866,7 +31866,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an outbound call with no timeout can burn the whole invocation",
           "file": "packages/eslint-plugin-lambda-security/src/rules/require-timeout-handling/require-timeout-handling.test.ts"
         },
         {
@@ -31976,7 +31976,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a function with one exit and no branches",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/cognitive-complexity.test.ts"
         },
         {
@@ -31991,7 +31991,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "five levels of nesting past the threshold",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/cognitive-complexity.test.ts"
         },
         {
@@ -32181,7 +32181,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same helper at module scope",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping.test.ts"
         },
         {
@@ -32286,7 +32286,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an inner function that closes over nothing from its parent",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping.test.ts"
         }
       ]
@@ -32306,7 +32306,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an Error carrying a message",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/error-message.test.ts"
         },
         {
@@ -32371,7 +32371,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an Error thrown with nothing to say",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/error-message.test.ts"
         },
         {
@@ -32596,7 +32596,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "two functions that do different things",
           "file": "packages/eslint-plugin-maintainability/src/tests/duplication/identical-functions.test.ts"
         },
         {
@@ -32606,7 +32606,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "two functions with the same body under different names",
           "file": "packages/eslint-plugin-maintainability/src/tests/duplication/identical-functions.test.ts"
         },
         {
@@ -32776,7 +32776,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "exactly at the maximum",
           "file": "packages/eslint-plugin-maintainability/src/tests/quality/max-parameters.test.ts"
         },
         {
@@ -32796,7 +32796,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "one parameter over the configured maximum",
           "file": "packages/eslint-plugin-maintainability/src/tests/quality/max-parameters.test.ts"
         },
         {
@@ -32851,7 +32851,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a single if",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/nested-complexity-hotspots.test.ts"
         },
         {
@@ -32866,7 +32866,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "five ifs nested inside one another",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/nested-complexity-hotspots.test.ts"
         },
         {
@@ -32891,7 +32891,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "an if with no else",
           "file": "packages/eslint-plugin-maintainability/src/tests/quality/no-lonely-if.test.ts"
         },
         {
@@ -32906,7 +32906,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an else whose only content is an if",
           "file": "packages/eslint-plugin-maintainability/src/tests/quality/no-lonely-if.test.ts"
         },
         {
@@ -32971,7 +32971,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an Error that names what went wrong",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-missing-error-context.test.ts"
         },
         {
@@ -32996,7 +32996,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an Error with no context for whoever reads the log",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-missing-error-context.test.ts"
         },
         {
@@ -33056,7 +33056,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a single ternary",
           "file": "packages/eslint-plugin-maintainability/src/tests/quality/no-nested-ternary.test.ts"
         },
         {
@@ -33081,7 +33081,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a ternary inside a ternary",
           "file": "packages/eslint-plugin-maintainability/src/tests/quality/no-nested-ternary.test.ts"
         },
         {
@@ -33361,7 +33361,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the catch at least logs",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-silent-errors.test.ts"
         },
         {
@@ -33381,7 +33381,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an empty catch swallows the failure",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-silent-errors.test.ts"
         },
         {
@@ -33566,7 +33566,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the chain ends in .catch",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise.test.ts"
         },
         {
@@ -33601,7 +33601,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a floating fetch — rejection goes nowhere",
           "file": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise.test.ts"
         },
         {
@@ -33676,7 +33676,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a one-expression IIFE still reads",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/no-unreadable-iife.test.ts"
         },
         {
@@ -33711,7 +33711,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a multi-statement IIFE inline",
           "file": "packages/eslint-plugin-maintainability/src/tests/maintainability/no-unreadable-iife.test.ts"
         },
         {
@@ -35526,7 +35526,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-bypass-middleware/no-bypass-middleware.test.ts"
         },
         {
@@ -35551,7 +35551,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "updateMany goes straight to the collection, past every mongoose hook",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-bypass-middleware/no-bypass-middleware.test.ts"
         }
       ]
@@ -35606,7 +35606,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-debug-mode-production/no-debug-mode-production.test.ts"
         },
         {
@@ -35631,7 +35631,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "debug mode prints every query, arguments included",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-debug-mode-production/no-debug-mode-production.test.ts"
         },
         {
@@ -35701,7 +35701,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-hardcoded-connection-string/no-hardcoded-connection-string.test.ts"
         },
         {
@@ -35726,7 +35726,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "credentials inside the connection URI in source",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-hardcoded-connection-string/no-hardcoded-connection-string.test.ts"
         }
       ]
@@ -35816,7 +35816,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         },
         {
@@ -35841,7 +35841,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a username and password literal in the connection options",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         }
       ]
@@ -35916,7 +35916,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-operator-injection/no-operator-injection.test.ts"
         },
         {
@@ -35941,7 +35941,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a request value used where an operator is expected",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-operator-injection/no-operator-injection.test.ts"
         }
       ]
@@ -36151,7 +36151,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-select-sensitive-fields/no-select-sensitive-fields.test.ts"
         },
         {
@@ -36176,7 +36176,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a query with no projection returns the password field the schema declares",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-select-sensitive-fields/no-select-sensitive-fields.test.ts"
         }
       ]
@@ -36316,7 +36316,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unbounded-find/no-unbounded-find.test.ts"
         },
         {
@@ -36341,7 +36341,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "find with no limit returns the whole collection",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unbounded-find/no-unbounded-find.test.ts"
         },
         {
@@ -36446,7 +36446,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-populate/no-unsafe-populate.test.ts"
         },
         {
@@ -36471,7 +36471,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "populate given a field name from the query string",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-populate/no-unsafe-populate.test.ts"
         }
       ]
@@ -36746,7 +36746,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-query/no-unsafe-query.test.ts"
         },
         {
@@ -36771,7 +36771,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a request value used directly as a query value",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-query/no-unsafe-query.test.ts"
         },
         {
@@ -36916,7 +36916,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-regex-query/no-unsafe-regex-query.test.ts"
         },
         {
@@ -36941,7 +36941,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "$regex built from request input",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-regex-query/no-unsafe-regex-query.test.ts"
         }
       ]
@@ -37001,7 +37001,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-where/no-unsafe-where.test.ts"
         },
         {
@@ -37031,7 +37031,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "$where runs JavaScript on the server",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-where/no-unsafe-where.test.ts"
         },
         {
@@ -37166,7 +37166,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-auth-mechanism/require-auth-mechanism.test.ts"
         },
         {
@@ -37196,7 +37196,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "connect with empty options names no auth mechanism",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-auth-mechanism/require-auth-mechanism.test.ts"
         }
       ]
@@ -37286,7 +37286,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-lean-queries/require-lean-queries.test.ts"
         },
         {
@@ -37311,7 +37311,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a read-only find that still hydrates full documents",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-lean-queries/require-lean-queries.test.ts"
         },
         {
@@ -37431,7 +37431,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-projection/require-projection.test.ts"
         },
         {
@@ -37456,7 +37456,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a find with no projection ships every field",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-projection/require-projection.test.ts"
         }
       ]
@@ -37566,7 +37566,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-schema-validation/require-schema-validation.test.ts"
         },
         {
@@ -37591,7 +37591,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a schema field with a type and no constraint on the value",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-schema-validation/require-schema-validation.test.ts"
         }
       ]
@@ -37701,7 +37701,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the driver is imported but nothing queries",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-tls-connection/require-tls-connection.test.ts"
         },
         {
@@ -37746,7 +37746,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "connect with no TLS option",
           "file": "packages/eslint-plugin-mongodb-security/src/rules/require-tls-connection/require-tls-connection.test.ts"
         },
         {
@@ -38006,7 +38006,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the sensitive field carries @Exclude",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-exposed-private-fields/no-exposed-private-fields.test.ts"
         },
         {
@@ -38031,7 +38031,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a secret column on an entity with nothing keeping it out of the response",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-exposed-private-fields/no-exposed-private-fields.test.ts"
         },
         {
@@ -38211,7 +38211,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "inheritAppConfig is set",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-hybrid-app-config-loss/no-hybrid-app-config-loss.test.ts"
         },
         {
@@ -38261,7 +38261,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a microservice attached without inheritAppConfig loses the global pipes and guards",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-hybrid-app-config-loss/no-hybrid-app-config-loss.test.ts"
         },
         {
@@ -38396,7 +38396,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the controller carries @UsePipes(ValidationPipe)",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-missing-validation-pipe/no-missing-validation-pipe.test.ts"
         },
         {
@@ -38441,7 +38441,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a @Body() typed `any` with no pipe to check it",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-missing-validation-pipe/no-missing-validation-pipe.test.ts"
         },
         {
@@ -38721,7 +38721,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit origin list",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         },
         {
@@ -38776,7 +38776,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "origin '*' together with credentials",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         },
         {
@@ -39146,7 +39146,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same controller where the interceptor still runs",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-res-bypass-serialization/no-res-bypass-serialization.test.ts"
         },
         {
@@ -39176,7 +39176,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "writing through @Res() skips the ClassSerializerInterceptor above it",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-res-bypass-serialization/no-res-bypass-serialization.test.ts"
         },
         {
@@ -39311,12 +39311,12 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "no document is built for the setup call to expose",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-unguarded-swagger/no-unguarded-swagger.test.ts"
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "the API schema served with nothing in front of it",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-unguarded-swagger/no-unguarded-swagger.test.ts"
         },
         {
@@ -39426,12 +39426,12 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a spec file is exempt by default",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-unsafe-multer-filename/no-unsafe-multer-filename.test.ts"
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a timestamp prefix reads as a mitigation and is not one — the client name still lands on disk",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/no-unsafe-multer-filename/no-unsafe-multer-filename.test.ts"
         },
         {
@@ -39581,7 +39581,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a controller with no privileged route to guard",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/require-guards/require-guards.test.ts"
         },
         {
@@ -39741,7 +39741,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a role checked by hand inside the handler instead of by a guard",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/require-guards/require-guards.test.ts"
         },
         {
@@ -39966,7 +39966,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the controller carries @Throttle",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/require-throttler/require-throttler.test.ts"
         },
         {
@@ -40016,7 +40016,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an unauthenticated verification endpoint with no rate limit",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/require-throttler/require-throttler.test.ts"
         },
         {
@@ -40101,7 +40101,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "whitelist is on",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/require-validation-pipe-whitelist/require-validation-pipe-whitelist.test.ts"
         },
         {
@@ -40146,7 +40146,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "ValidationPipe without whitelist lets unknown properties through",
           "file": "packages/eslint-plugin-nestjs-security/src/rules/require-validation-pipe-whitelist/require-validation-pipe-whitelist.test.ts"
         },
         {
@@ -91186,7 +91186,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a fixed system prompt with the user text in `prompt`",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-dynamic-system-prompt/no-dynamic-system-prompt.test.ts"
         },
         {
@@ -91211,7 +91211,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a value interpolated into the system prompt can rewrite the instructions",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-dynamic-system-prompt/no-dynamic-system-prompt.test.ts"
         },
         {
@@ -91336,7 +91336,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the key comes from the environment",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-hardcoded-api-keys/no-hardcoded-api-keys.test.ts"
         },
         {
@@ -91416,7 +91416,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a provider key written into the source",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-hardcoded-api-keys/no-hardcoded-api-keys.test.ts"
         },
         {
@@ -91481,7 +91481,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "ordinary user input",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-sensitive-in-prompt/no-sensitive-in-prompt.test.ts"
         },
         {
@@ -91526,7 +91526,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password sent to the provider as prompt text",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-sensitive-in-prompt/no-sensitive-in-prompt.test.ts"
         },
         {
@@ -91656,7 +91656,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "only the answer is returned",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-system-prompt-leak/no-system-prompt-leak.test.ts"
         },
         {
@@ -91681,7 +91681,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "the system prompt returned to the caller alongside the answer",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-system-prompt-leak/no-system-prompt-leak.test.ts"
         },
         {
@@ -91721,7 +91721,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "training explicitly off",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-training-data-exposure/no-training-data-exposure.test.ts"
         },
         {
@@ -91741,7 +91741,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "training left on sends the conversation to the provider's corpus",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-training-data-exposure/no-training-data-exposure.test.ts"
         },
         {
@@ -91851,7 +91851,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "model output assigned as text",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-unsafe-output-handling/no-unsafe-output-handling.test.ts"
         },
         {
@@ -91871,7 +91871,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "model output passed to eval",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/no-unsafe-output-handling/no-unsafe-output-handling.test.ts"
         },
         {
@@ -91966,7 +91966,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an AbortController signal is passed",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-abort-signal/require-abort-signal.test.ts"
         },
         {
@@ -91986,7 +91986,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a stream with no abort signal cannot be cancelled",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-abort-signal/require-abort-signal.test.ts"
         },
         {
@@ -92056,7 +92056,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the call is logged",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-audit-logging/require-audit-logging.test.ts"
         },
         {
@@ -92096,7 +92096,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a generation with nothing recording that it happened",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-audit-logging/require-audit-logging.test.ts"
         },
         {
@@ -92166,7 +92166,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the embedding is validated before upsert",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-embedding-validation/require-embedding-validation.test.ts"
         },
         {
@@ -92186,7 +92186,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an embedding written to the store without being checked first",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-embedding-validation/require-embedding-validation.test.ts"
         },
         {
@@ -92221,7 +92221,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the call is wrapped in try/catch",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-error-handling/require-error-handling.test.ts"
         },
         {
@@ -92251,7 +92251,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a provider call with no catch — a rate limit takes down the route",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-error-handling/require-error-handling.test.ts"
         },
         {
@@ -92281,7 +92281,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "maxSteps is set",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-max-steps/require-max-steps.test.ts"
         },
         {
@@ -92341,7 +92341,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "tools with no step ceiling can loop until the budget is gone",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-max-steps/require-max-steps.test.ts"
         },
         {
@@ -92426,7 +92426,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "maxTokens is set",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-max-tokens/require-max-tokens.test.ts"
         },
         {
@@ -92461,7 +92461,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "no token ceiling on a call that bills per token",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-max-tokens/require-max-tokens.test.ts"
         },
         {
@@ -92576,7 +92576,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the result is filtered first",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-output-filtering/require-output-filtering.test.ts"
         },
         {
@@ -92601,7 +92601,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a tool returns the raw query result to the model",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-output-filtering/require-output-filtering.test.ts"
         },
         {
@@ -92656,7 +92656,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the text is validated first",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-output-validation/require-output-validation.test.ts"
         },
         {
@@ -92681,7 +92681,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "model text displayed without being checked",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-output-validation/require-output-validation.test.ts"
         },
         {
@@ -92751,7 +92751,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the retrieved content is validated first",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-rag-content-validation/require-rag-content-validation.test.ts"
         },
         {
@@ -92776,7 +92776,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "retrieved documents interpolated straight into the prompt",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-rag-content-validation/require-rag-content-validation.test.ts"
         },
         {
@@ -92821,7 +92821,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an abort signal bounds the call",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-request-timeout/require-request-timeout.test.ts"
         },
         {
@@ -92841,7 +92841,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a provider call that can hang for as long as the provider wants",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-request-timeout/require-request-timeout.test.ts"
         },
         {
@@ -92916,7 +92916,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a read-only tool needs no confirmation",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-tool-confirmation/require-tool-confirmation.test.ts"
         },
         {
@@ -92946,7 +92946,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a destructive tool the model can call unattended",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-tool-confirmation/require-tool-confirmation.test.ts"
         },
         {
@@ -93026,7 +93026,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the tool declares a zod input schema",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-tool-schema/require-tool-schema.test.ts"
         },
         {
@@ -93076,7 +93076,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a tool with no input schema takes whatever the model invents",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-tool-schema/require-tool-schema.test.ts"
         },
         {
@@ -93111,7 +93111,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "a fixed prompt",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-validated-prompt/require-validated-prompt.test.ts"
         },
         {
@@ -93136,7 +93136,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "user input passed straight through as the prompt",
           "file": "packages/eslint-plugin-vercel-ai-security/src/rules/require-validated-prompt/require-validated-prompt.test.ts"
         },
         {

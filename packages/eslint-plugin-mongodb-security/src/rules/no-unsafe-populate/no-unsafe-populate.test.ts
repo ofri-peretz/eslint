@@ -75,6 +75,7 @@ describe('no-unsafe-populate', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-unsafe-populate', () => {
       invalid: xmo([
         // Triggers unsafePopulate: user-controlled populate
         {
+          name: 'populate given a field name from the query string',
           code: `User.find().populate(req.query.field);`,
           errors: [{ messageId: 'unsafePopulate' }],
         },

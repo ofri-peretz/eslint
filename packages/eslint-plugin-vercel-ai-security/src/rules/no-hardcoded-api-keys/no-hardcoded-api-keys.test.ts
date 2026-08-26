@@ -61,6 +61,7 @@ ruleTester.run('no-hardcoded-api-keys', noHardcodedApiKeys, {
   valid: xai([
     // Environment variable
     {
+      name: 'the key comes from the environment',
       code: `
         const openai = createOpenAI({
           apiKey: process.env.OPENAI_API_KEY,
@@ -181,6 +182,7 @@ ruleTester.run('no-hardcoded-api-keys', noHardcodedApiKeys, {
   invalid: xai([
     // Hardcoded OpenAI key in Property
     {
+      name: 'a provider key written into the source',
       code: `
         const config = {
           apiKey: 'sk-proj-1234567890abcdefghijklmnopqrstuvwxyz123456',

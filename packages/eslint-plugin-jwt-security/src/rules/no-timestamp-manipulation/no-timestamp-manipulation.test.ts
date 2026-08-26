@@ -27,6 +27,7 @@ describe('no-timestamp-manipulation', () => {
         'const x = 42;',
         'const flag = true;',
         {
+          name: 'the default timestamp behaviour',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, secret);`,
         },
@@ -56,6 +57,7 @@ jwt.verify(token, secret);`,
       valid: [],
       invalid: [
         {
+          name: 'noTimestamp strips the iat the receiver ages the token by',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, secret, { noTimestamp: true });`,
           errors: [{ messageId: 'noTimestampTrue' }],

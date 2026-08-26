@@ -59,6 +59,7 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
   valid: lambda([
     // Test file (allowed)
     {
+      name: 'a test file is exempt',
       code: `
         export const handler = async (event) => {
           for (const record of event.Records) {
@@ -158,6 +159,7 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
   invalid: lambda([
     // Lambda handler processing Records without size check (classic FN)
     {
+      name: 'every record processed with no bound on how many arrive',
       code: `
         export const handler = async (event) => {
           for (const record of event.Records) {

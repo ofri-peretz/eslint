@@ -24,6 +24,7 @@ describe('require-algorithm-whitelist', () => {
     ruleTester.run('valid - with algorithms', requireAlgorithmWhitelist, {
       valid: [
         {
+          name: 'an explicit algorithms list',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret, { algorithms: ['RS256'] });`,
         },
@@ -63,6 +64,7 @@ jwtVerify(token, key, { algorithms: ['RS256'] });`,
       valid: [],
       invalid: [
         {
+          name: 'verify with no algorithms list accepts whatever the token claims',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingAlgorithmWhitelist' }],

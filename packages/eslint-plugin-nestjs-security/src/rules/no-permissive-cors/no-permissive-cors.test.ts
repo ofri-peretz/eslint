@@ -154,7 +154,7 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     `app.enableCors({ origin: [] });`,
 
     // Explicit allowlist — the shape we want people to reach for.
-    { code: `app.enableCors({ origin: ['https://app.example.com'] });` },
+    { name: 'an explicit origin list', code: `app.enableCors({ origin: ['https://app.example.com'] });` },
     { code: `app.enableCors({ origin: 'https://app.example.com' });` },
     // Explicitly disabled.
     { code: `app.enableCors({ origin: false });` },
@@ -188,6 +188,7 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     // The documented Fastify spelling puts the options object third, so
     // reading `arguments[1]` found the adapter and gave up.
     {
+      name: "origin '*' together with credentials",
       code: `
         const app = await NestFactory.create(AppModule, new FastifyAdapter(), {
           cors: { origin: '*', credentials: true },

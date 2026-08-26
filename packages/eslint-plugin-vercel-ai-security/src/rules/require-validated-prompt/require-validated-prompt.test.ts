@@ -60,6 +60,7 @@ ruleTester.run('require-validated-prompt', requireValidatedPrompt, {
   valid: xai([
     // Static prompts are safe
     {
+      name: 'a fixed prompt',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -109,6 +110,7 @@ ruleTester.run('require-validated-prompt', requireValidatedPrompt, {
   invalid: xai([
     // Direct user input in prompt
     {
+      name: 'user input passed straight through as the prompt',
       code: `
         await generateText({
           model: openai('gpt-4'),

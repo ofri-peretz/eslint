@@ -68,6 +68,7 @@ ruleTester.run('no-permissive-cors-middy', noPermissiveCorsMidly, {
   valid: lambda([
     // ========== VALID: Specific origins ==========
     {
+      name: 'an explicit origin list',
       code: `
         middy(handler).use(httpCors({ origins: ['https://example.com'] }));
       `,
@@ -117,6 +118,7 @@ ruleTester.run('no-permissive-cors-middy', noPermissiveCorsMidly, {
   invalid: lambda([
     // ========== INVALID: No arguments (defaults to permissive) ==========
     {
+      name: 'httpCors with no origins defaults to any origin',
       code: `middy(handler).use(httpCors());`,
       errors: [{ messageId: 'permissiveCors' }],
     },

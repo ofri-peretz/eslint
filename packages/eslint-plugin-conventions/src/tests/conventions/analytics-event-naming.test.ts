@@ -28,7 +28,7 @@ describe('analytics-event-naming', () => {
     {
       valid: [
         // Our bare track() primitive.
-        { code: 'track("articles:card_click", { id: 1 });' },
+        { name: 'an event named the way the taxonomy says', code: 'track("articles:card_click", { id: 1 });' },
         { code: 'track("articles:search_submit", { q: "x" });' },
         { code: 'track("homepage:hero_cta_click", {});' },
         { code: 'track("rule_page:doc_view", { slug: "x" });' },
@@ -53,6 +53,7 @@ describe('analytics-event-naming', () => {
       invalid: [
         // CamelCase event name.
         {
+          name: 'PascalCase where the taxonomy is object:verb in snake_case',
           code: 'track("ArticlesCardClick", {});',
           errors: [{ messageId: 'invalidEventName' }],
         },

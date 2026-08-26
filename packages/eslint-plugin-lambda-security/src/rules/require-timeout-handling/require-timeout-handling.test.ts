@@ -59,6 +59,7 @@ ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
   valid: lambda([
     // Test file (allowed by default)
     {
+      name: 'a test file is exempt',
       code: `
         export const handler = async (event, context) => {
           await fetch('https://api.example.com');
@@ -134,6 +135,7 @@ ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
   invalid: lambda([
     // Lambda handler with fetch but no timeout handling (classic FN)
     {
+      name: 'an outbound call with no timeout can burn the whole invocation',
       code: `
         export const handler = async (event, context) => {
           const data = await fetch('https://api.example.com/data');

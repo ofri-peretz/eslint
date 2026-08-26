@@ -26,6 +26,7 @@ describe('no-missing-error-context', () => {
       valid: [
         // Error with message
         {
+          name: 'an Error that names what went wrong',
           code: 'throw new Error("Something went wrong");',
           options: [{ requireMessage: true }],
         },
@@ -59,6 +60,7 @@ describe('no-missing-error-context', () => {
       valid: [],
       invalid: [
         {
+          name: 'an Error with no context for whoever reads the log',
           code: 'throw new Error();',
           options: [{ requireMessage: true }],
           errors: [{ messageId: 'missingErrorContext' }],

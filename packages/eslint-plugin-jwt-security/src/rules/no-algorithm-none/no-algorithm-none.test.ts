@@ -27,6 +27,7 @@ describe('no-algorithm-none', () => {
       valid: [
         // RS256 - RSA with SHA-256
         {
+          name: 'a real algorithm',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { algorithms: ['RS256'] });`,
         },
@@ -110,6 +111,7 @@ someOtherFunction(token, key, { algorithm: 'none' });`,
       invalid: [
         // Direct 'none' algorithm
         {
+          name: "algorithm 'none' means the signature is never checked",
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret, { algorithm: 'none' });`,
           errors: [{ messageId: 'algorithmNone' }],

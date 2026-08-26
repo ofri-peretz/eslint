@@ -28,6 +28,7 @@ describe('no-nested-ternary', () => {
       valid: [
         // Simple ternary expressions
         {
+          name: 'a single ternary',
           code: 'const result = condition ? "yes" : "no";',
         },
         // Ternary in function call (not nested)
@@ -50,6 +51,7 @@ describe('no-nested-ternary', () => {
       invalid: [
         // Nested ternary in consequent
         {
+          name: 'a ternary inside a ternary',
           code: 'const result = condition1 ? (condition2 ? "a" : "b") : "c";',
           errors: [
             {

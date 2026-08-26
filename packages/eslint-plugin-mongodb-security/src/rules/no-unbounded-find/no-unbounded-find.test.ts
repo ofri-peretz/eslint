@@ -75,6 +75,7 @@ describe('no-unbounded-find', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-unbounded-find', () => {
       invalid: xmo([
         // Triggers unboundedFind: unbounded find without limit
         {
+          name: 'find with no limit returns the whole collection',
           code: `const results = await Model.find({});`,
           errors: [{
         messageId: 'unboundedFind',

@@ -26,6 +26,7 @@ describe('no-silent-errors', () => {
       valid: [
         // Catch with error logging
         {
+          name: 'the catch at least logs',
           code: `
             try {
               doSomething();
@@ -74,6 +75,7 @@ describe('no-silent-errors', () => {
       valid: [],
       invalid: [
         {
+          name: 'an empty catch swallows the failure',
           code: `
             try {
               doSomething();

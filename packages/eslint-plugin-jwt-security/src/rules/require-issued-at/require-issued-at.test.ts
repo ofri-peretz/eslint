@@ -25,6 +25,7 @@ describe('require-issued-at', () => {
       valid: [
         // iat in payload
         {
+          name: 'an explicit iat',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign({ sub: 'user', iat: Date.now() }, secret);`,
         },
@@ -63,6 +64,7 @@ jwt.sign({ iat: Math.floor(Date.now() / 1000), sub: 'user' }, secret);`,
       invalid: [
         // noTimestamp: true explicitly disables iat
         {
+          name: 'noTimestamp removes the only claim that dates the token',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign({ sub: 'user' }, secret, { noTimestamp: true });`,
           errors: [{ messageId: 'missingIssuedAt' }],
