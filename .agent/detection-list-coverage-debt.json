@@ -127,11 +127,9 @@
   "packages/eslint-plugin-modularity/src/rules/ddd-anemic-domain-model.ts#DEFAULT_DOMAIN_PATHS": [
     "aggregate",
     "aggregates",
-    "domain",
     "domains",
     "entities",
     "entity",
-    "model",
     "models"
   ],
   "packages/eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts#DEFAULT_HTTP_MODULES": [
