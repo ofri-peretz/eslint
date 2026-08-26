@@ -46,6 +46,7 @@ describe('no-floating-query', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('no-floating-query', () => {
       invalid: pg([
         // Triggers noFloatingQuery
         {
+          name: 'a query whose promise nobody awaits — the rejection is unhandled',
           code: `client.query('SELECT 1')`,
           errors: [{ messageId: 'noFloatingQuery' }],
         },

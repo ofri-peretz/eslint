@@ -24,6 +24,7 @@ ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
         'function noop() {}',
     // Properly revoked
     {
+      name: 'the URL is revoked',
       code: `
         const url = URL.createObjectURL(blob);
         img.src = url;
@@ -43,6 +44,7 @@ ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
   invalid: [
     // Missing revocation
     {
+      name: 'an object URL created and never revoked',
       code: `const url = URL.createObjectURL(blob);`,
       errors: [{ messageId: 'missingRevoke' }],
     },

@@ -46,6 +46,7 @@ describe('no-unsafe-copy-from', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('no-unsafe-copy-from', () => {
       invalid: pg([
         // Triggers dynamicPath
         {
+          name: 'a file path interpolated into COPY FROM',
           code: `client.query(\`COPY users FROM '\${filePath}'\`)`,
           errors: [{ messageId: 'dynamicPath' }],
         },

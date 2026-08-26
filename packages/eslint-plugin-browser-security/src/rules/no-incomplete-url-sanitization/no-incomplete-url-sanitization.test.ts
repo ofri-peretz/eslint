@@ -20,6 +20,7 @@ ruleTester.run(
       // ── Corpus locks: benchmarks/corpus/CWE-020/safe/*.js ────────────────
       // benchmarks/corpus/CWE-020/safe/endswith-boundary.js
       {
+        name: 'the host is parsed and compared exactly',
         code: `
           function isTrustedSubdomain(hostname) {
             const host = String(hostname).toLowerCase().split(':')[0];
@@ -140,6 +141,7 @@ ruleTester.run(
       // ── Corpus lock: benchmarks/corpus/CWE-020/vulnerable/
       //    url-substring-sanitization.js ───────────────────────────────────
       {
+        name: 'includes() on a hostname matches trusted.com.evil.test',
         code: `
           function isTrustedApi(url) {
             return url.includes('trusted.com') || url.indexOf('trusted.com') !== -1;

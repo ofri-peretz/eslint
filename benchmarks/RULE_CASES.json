@@ -256,7 +256,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an http URL in a variable that never reaches the DOM",
           "file": "packages/eslint-plugin-browser-security/src/rules/detect-mixed-content/detect-mixed-content.test.ts"
         },
         {
@@ -351,7 +351,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an http:// script pulled into an https page",
           "file": "packages/eslint-plugin-browser-security/src/rules/detect-mixed-content/detect-mixed-content.test.ts"
         },
         {
@@ -601,7 +601,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a look-alike key outside the iOS plist structure",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-allow-arbitrary-loads/no-allow-arbitrary-loads.test.ts"
         },
         {
@@ -656,7 +656,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "NSAllowsArbitraryLoads turns off ATS for the whole app",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-allow-arbitrary-loads/no-allow-arbitrary-loads.test.ts"
         },
         {
@@ -961,7 +961,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a same-origin iframe",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-clickjacking/no-clickjacking.test.ts"
         },
         {
@@ -981,7 +981,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a frame-buster that navigates the top frame",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-clickjacking/no-clickjacking.test.ts"
         },
         {
@@ -1545,7 +1545,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the token is verified",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/no-client-side-auth-logic.test.ts"
         },
         {
@@ -1590,7 +1590,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an admin flag read out of localStorage",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/no-client-side-auth-logic.test.ts"
         },
         {
@@ -1824,7 +1824,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a preference cookie",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-cookie-auth-tokens/no-cookie-auth-tokens.test.ts"
         },
         {
@@ -1914,7 +1914,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a session token written to document.cookie from script",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-cookie-auth-tokens/no-cookie-auth-tokens.test.ts"
         },
         {
@@ -2009,7 +2009,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a URL with no credential in it",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-credentials-in-query-params/no-credentials-in-query-params.test.ts"
         },
         {
@@ -2054,7 +2054,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a token in the query string, where logs and Referer keep it",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-credentials-in-query-params/no-credentials-in-query-params.test.ts"
         },
         {
@@ -2233,7 +2233,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "certificate validation left on",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-disabled-certificate-validation/no-disabled-certificate-validation.test.ts"
         },
         {
@@ -2298,7 +2298,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "rejectUnauthorized false accepts any certificate",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-disabled-certificate-validation/no-disabled-certificate-validation.test.ts"
         },
         {
@@ -2382,7 +2382,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal script path",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-dynamic-service-worker-url/no-dynamic-service-worker-url.test.ts"
         },
         {
@@ -2407,7 +2407,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a worker registered from a computed URL — it owns every request after",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-dynamic-service-worker-url/no-dynamic-service-worker-url.test.ts"
         },
         {
@@ -2612,7 +2612,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "new Function on a WebSocket message is left to no-websocket-eval",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-eval/no-eval.test.ts"
         },
         {
@@ -2707,7 +2707,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "eval on a Worker message",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-eval/no-eval.test.ts"
         },
         {
@@ -2911,7 +2911,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a different property of the event, not the file bytes",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-filereader-innerhtml/no-filereader-innerhtml.test.ts"
         },
         {
@@ -2941,7 +2941,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "file contents written to innerHTML",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-filereader-innerhtml/no-filereader-innerhtml.test.ts"
         },
         {
@@ -3036,7 +3036,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a list of scheme prefixes is not a request",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-http-urls/no-http-urls.test.ts"
         },
         {
@@ -3176,7 +3176,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an http URL built for a request",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-http-urls/no-http-urls.test.ts"
         },
         {
@@ -3490,7 +3490,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "the host is parsed and compared exactly",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-incomplete-url-sanitization/no-incomplete-url-sanitization.test.ts"
         },
         {
@@ -3710,7 +3710,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "includes() on a hostname matches trusted.com.evil.test",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-incomplete-url-sanitization/no-incomplete-url-sanitization.test.ts"
         },
         {
@@ -3949,7 +3949,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "writing to stdout is not the DOM",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/no-innerhtml.test.ts"
         },
         {
@@ -4054,7 +4054,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "document.write of user input",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/no-innerhtml.test.ts"
         },
         {
@@ -4443,7 +4443,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal in-app path",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-insecure-redirects/no-insecure-redirects.test.ts"
         },
         {
@@ -4468,7 +4468,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a redirect to a request-supplied URL",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-insecure-redirects/no-insecure-redirects.test.ts"
         },
         {
@@ -5027,7 +5027,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "wss://",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-insecure-websocket/no-insecure-websocket.test.ts"
         },
         {
@@ -5057,7 +5057,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a ws:// endpoint",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-insecure-websocket/no-insecure-websocket.test.ts"
         },
         {
@@ -5177,7 +5177,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a theme preference",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-jwt-in-storage/no-jwt-in-storage.test.ts"
         },
         {
@@ -5277,7 +5277,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a JWT in localStorage, readable by any script on the page",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-jwt-in-storage/no-jwt-in-storage.test.ts"
         },
         {
@@ -5786,7 +5786,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the origin is checked against an allowlist",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-cors-check/no-missing-cors-check.test.ts"
         },
         {
@@ -5811,7 +5811,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "origin '*' accepts every site",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-cors-check/no-missing-cors-check.test.ts"
         },
         {
@@ -6005,7 +6005,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the route carries csrf()",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/no-missing-csrf-protection.test.ts"
         },
         {
@@ -6110,7 +6110,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a state-changing POST with no CSRF middleware",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/no-missing-csrf-protection.test.ts"
         },
         {
@@ -6404,7 +6404,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the security headers are set",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts"
         },
         {
@@ -6414,7 +6414,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a response that sets headers but none of the security ones",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts"
         },
         {
@@ -6983,7 +6983,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a URL with no userinfo",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-password-in-url/no-password-in-url.test.ts"
         },
         {
@@ -7038,7 +7038,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "credentials in the URL userinfo",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-password-in-url/no-password-in-url.test.ts"
         },
         {
@@ -7177,7 +7177,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a named origin",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         },
         {
@@ -7247,7 +7247,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "origin '*'",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts"
         },
         {
@@ -7536,7 +7536,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same data as textContent",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-innerhtml/no-postmessage-innerhtml.test.ts"
         },
         {
@@ -7566,7 +7566,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "postMessage data written to innerHTML",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-innerhtml/no-postmessage-innerhtml.test.ts"
         },
         {
@@ -7616,7 +7616,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an explicit target origin",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-wildcard-origin/no-postmessage-wildcard-origin.test.ts"
         },
         {
@@ -7661,7 +7661,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "postMessage to '*' — any listener receives it",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-wildcard-origin/no-postmessage-wildcard-origin.test.ts"
         },
         {
@@ -7740,7 +7740,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a theme preference",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-cookie-js/no-sensitive-cookie-js.test.ts"
         },
         {
@@ -7810,7 +7810,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an API key written to document.cookie",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-cookie-js/no-sensitive-cookie-js.test.ts"
         },
         {
@@ -7905,7 +7905,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a page path",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-data-in-analytics/no-sensitive-data-in-analytics.test.ts"
         },
         {
@@ -7925,7 +7925,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an email address sent to the analytics provider",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-data-in-analytics/no-sensitive-data-in-analytics.test.ts"
         },
         {
@@ -8135,7 +8135,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "nothing is cached",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-data-in-cache/no-sensitive-data-in-cache.test.ts"
         },
         {
@@ -8230,7 +8230,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a response holding an SSN put in the Cache API",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-data-in-cache/no-sensitive-data-in-cache.test.ts"
         },
         {
@@ -8300,7 +8300,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an ordinary store",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-indexeddb/no-sensitive-indexeddb.test.ts"
         },
         {
@@ -8385,7 +8385,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an object store named for the secrets it holds",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-indexeddb/no-sensitive-indexeddb.test.ts"
         },
         {
@@ -8555,7 +8555,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a theme preference",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-localstorage/no-sensitive-localstorage.test.ts"
         },
         {
@@ -8660,7 +8660,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password in localStorage",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-localstorage/no-sensitive-localstorage.test.ts"
         },
         {
@@ -8885,7 +8885,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a theme preference",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-sessionstorage/no-sensitive-sessionstorage.test.ts"
         },
         {
@@ -8960,7 +8960,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a password in sessionStorage",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-sessionstorage/no-sensitive-sessionstorage.test.ts"
         },
         {
@@ -9080,7 +9080,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the call is behind a consent check",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-tracking-without-consent/no-tracking-without-consent.test.ts"
         },
         {
@@ -9175,7 +9175,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a tracking call on no consent path",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-tracking-without-consent/no-tracking-without-consent.test.ts"
         },
         {
@@ -9439,7 +9439,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an https URL",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unencrypted-transmission/no-unencrypted-transmission.test.ts"
         },
         {
@@ -9469,7 +9469,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an http endpoint used in a comparison that gates a request",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unencrypted-transmission/no-unencrypted-transmission.test.ts"
         },
         {
@@ -10143,7 +10143,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a query parameter interpolated into a URL unescaped",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/no-unescaped-url-parameter.test.ts"
         },
         {
@@ -10293,7 +10293,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "an exported helper whose argument has no known source",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/no-unescaped-url-parameter.test.ts"
         },
         {
@@ -10347,7 +10347,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a policy without it",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unsafe-eval-csp/no-unsafe-eval-csp.test.ts"
         },
         {
@@ -10367,7 +10367,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "'unsafe-eval' in the policy",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unsafe-eval-csp/no-unsafe-eval-csp.test.ts"
         },
         {
@@ -10567,7 +10567,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a nonce instead",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unsafe-inline-csp/no-unsafe-inline-csp.test.ts"
         },
         {
@@ -10587,7 +10587,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "'unsafe-inline' in the policy",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unsafe-inline-csp/no-unsafe-inline-csp.test.ts"
         },
         {
@@ -10756,7 +10756,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal URL",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unvalidated-deeplinks/no-unvalidated-deeplinks.test.ts"
         },
         {
@@ -10841,7 +10841,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a deep link opened straight from the incoming URL event",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-unvalidated-deeplinks/no-unvalidated-deeplinks.test.ts"
         },
         {
@@ -11031,7 +11031,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the message is parsed as JSON",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-websocket-eval/no-websocket-eval.test.ts"
         },
         {
@@ -11061,7 +11061,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "eval on a WebSocket message",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-websocket-eval/no-websocket-eval.test.ts"
         },
         {
@@ -11146,7 +11146,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same data as textContent",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-websocket-innerhtml/no-websocket-innerhtml.test.ts"
         },
         {
@@ -11181,7 +11181,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "WebSocket data reaching innerHTML through a worker hop",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-websocket-innerhtml/no-websocket-innerhtml.test.ts"
         },
         {
@@ -11316,7 +11316,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the same data as textContent",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-worker-message-innerhtml/no-worker-message-innerhtml.test.ts"
         },
         {
@@ -11331,7 +11331,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "worker message data written to innerHTML",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-worker-message-innerhtml/no-worker-message-innerhtml.test.ts"
         },
         {
@@ -11421,7 +11421,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the URL is revoked",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-blob-url-revocation/require-blob-url-revocation.test.ts"
         },
         {
@@ -11436,7 +11436,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an object URL created and never revoked",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-blob-url-revocation/require-blob-url-revocation.test.ts"
         },
         {
@@ -11570,7 +11570,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "both attributes set",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-cookie-secure-attrs/require-cookie-secure-attrs.test.ts"
         },
         {
@@ -11625,7 +11625,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a cookie with neither Secure nor SameSite",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-cookie-secure-attrs/require-cookie-secure-attrs.test.ts"
         },
         {
@@ -11815,7 +11815,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a JSON response needs no CSP",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-csp-headers/require-csp-headers.test.ts"
         },
         {
@@ -11835,7 +11835,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "HTML sent with no Content-Security-Policy",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-csp-headers/require-csp-headers.test.ts"
         },
         {
@@ -12339,7 +12339,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "https",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-https-only/require-https-only.test.ts"
         },
         {
@@ -12489,7 +12489,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a fetch to an http endpoint",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-https-only/require-https-only.test.ts"
         },
         {
@@ -12674,7 +12674,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a fileFilter is supplied",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-mime-type-validation/require-mime-type-validation.test.ts"
         },
         {
@@ -12774,7 +12774,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "an upload handler that accepts any content type",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-mime-type-validation/require-mime-type-validation.test.ts"
         },
         {
@@ -12863,7 +12863,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "the origin is checked first",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-postmessage-origin-check/require-postmessage-origin-check.test.ts"
         },
         {
@@ -12898,7 +12898,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a message listener that trusts every sender",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-postmessage-origin-check/require-postmessage-origin-check.test.ts"
         },
         {
@@ -13072,7 +13072,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "a literal URL",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-url-validation/require-url-validation.test.ts"
         },
         {
@@ -13207,7 +13207,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "window.open on the URL fragment",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-url-validation/require-url-validation.test.ts"
         },
         {
@@ -55416,7 +55416,7 @@
       "cases": [
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/check-query-params/check-query-params.test.ts"
         },
         {
@@ -55441,7 +55441,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "two placeholders, one parameter — the second is undefined at runtime",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/check-query-params/check-query-params.test.ts"
         },
         {
@@ -55991,7 +55991,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-batch-insert-loop/no-batch-insert-loop.test.ts"
         },
         {
@@ -56016,7 +56016,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "one INSERT round-trip per item in the loop",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-batch-insert-loop/no-batch-insert-loop.test.ts"
         },
         {
@@ -56356,7 +56356,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-floating-query/no-floating-query.test.ts"
         },
         {
@@ -56381,7 +56381,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a query whose promise nobody awaits — the rejection is unhandled",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-floating-query/no-floating-query.test.ts"
         },
         {
@@ -56591,7 +56591,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         },
         {
@@ -56616,7 +56616,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a database password literal in the client options",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         },
         {
@@ -56886,7 +56886,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-insecure-ssl/no-insecure-ssl.test.ts"
         },
         {
@@ -56911,7 +56911,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "rejectUnauthorized false accepts any certificate",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-insecure-ssl/no-insecure-ssl.test.ts"
         },
         {
@@ -57181,7 +57181,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-missing-client-release/no-missing-client-release.test.ts"
         },
         {
@@ -57206,7 +57206,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a pooled client checked out and never released",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-missing-client-release/no-missing-client-release.test.ts"
         },
         {
@@ -57521,7 +57521,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-select-all/no-select-all.test.ts"
         },
         {
@@ -57546,7 +57546,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "SELECT * ships every column, including ones added later",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-select-all/no-select-all.test.ts"
         },
         {
@@ -57751,7 +57751,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-transaction-on-pool/no-transaction-on-pool.test.ts"
         },
         {
@@ -57776,7 +57776,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "BEGIN on the pool — the next statement may land on another connection",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-transaction-on-pool/no-transaction-on-pool.test.ts"
         },
         {
@@ -58251,7 +58251,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-copy-from/no-unsafe-copy-from.test.ts"
         },
         {
@@ -58276,7 +58276,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a file path interpolated into COPY FROM",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-copy-from/no-unsafe-copy-from.test.ts"
         },
         {
@@ -58686,7 +58686,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-query/no-unsafe-query.test.ts"
         },
         {
@@ -58711,7 +58711,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "request input concatenated into SQL",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-query/no-unsafe-query.test.ts"
         },
         {
@@ -59111,7 +59111,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-search-path/no-unsafe-search-path.test.ts"
         },
         {
@@ -59136,7 +59136,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a schema name interpolated into SET search_path",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-unsafe-search-path/no-unsafe-search-path.test.ts"
         },
         {
@@ -59486,7 +59486,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/prefer-pool-query/prefer-pool-query.test.ts"
         },
         {
@@ -59511,7 +59511,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "a checkout-and-release round trip for a single statement",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/prefer-pool-query/prefer-pool-query.test.ts"
         },
         {
@@ -60061,7 +60061,7 @@
         },
         {
           "kind": "TN",
-          "description": "",
+          "description": "pg is imported but nothing queries",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/prevent-double-release/prevent-double-release.test.ts"
         },
         {
@@ -60086,7 +60086,7 @@
         },
         {
           "kind": "TP",
-          "description": "",
+          "description": "release on both the success and the catch path",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/prevent-double-release/prevent-double-release.test.ts"
         },
         {

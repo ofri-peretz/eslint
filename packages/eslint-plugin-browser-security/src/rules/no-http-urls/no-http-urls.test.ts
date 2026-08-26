@@ -26,7 +26,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // `const URL_PREFIXES = ['http://', 'https://', 'data:']`. There is no host
     // here to be insecure and nothing to rewrite; the report it drew read
     // `Hardcoded HTTP URL detected: "http://"`, a statement about nothing.
-    { code: "const URL_PREFIXES = ['http://', 'https://', 'data:'];" },
+    { name: 'a list of scheme prefixes is not a request', code: "const URL_PREFIXES = ['http://', 'https://', 'data:'];" },
     { code: "if (u.startsWith('http://')) { upgrade(u); }" },
     { code: "const scheme = 'http://';" },
     // The template form of the same thing, for the same reason.
@@ -115,6 +115,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // A host that IS written down is still judged, however much of the rest of
     // the URL is interpolated.
     {
+      name: 'an http URL built for a request',
       code: 'const u = `http://api.acmecorp.io/${path}`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },

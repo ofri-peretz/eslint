@@ -46,6 +46,7 @@ describe('prefer-pool-query', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('prefer-pool-query', () => {
       invalid: pg([
         // Triggers preferPoolQuery
         {
+          name: 'a checkout-and-release round trip for a single statement',
           code: `async function test() { const client = await pool.connect(); await client.query('SELECT 1'); client.release(); }`,
           errors: [{ messageId: 'preferPoolQuery' }],
         },

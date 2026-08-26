@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
   valid: [
-    { code: `db.createObjectStore('users');` },
+    { name: 'an ordinary store', code: `db.createObjectStore('users');` },
     { code: `db.createObjectStore('settings');` },
     { code: `db.createObjectStore('passwords');`, filename: 'db.test.ts' },
     { code: `db.createObjectStore();` },
@@ -58,6 +58,7 @@ ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
   ],
   invalid: [
     {
+      name: 'an object store named for the secrets it holds',
       code: `db.createObjectStore('passwords');`,
       errors: [
         { messageId: 'sensitiveInIndexedDB', data: { name: 'passwords' } },

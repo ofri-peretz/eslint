@@ -24,7 +24,7 @@ ruleTester.run('require-https-only', requireHttpsOnly, {
     'class Foo {}',
 
     // HTTPS on both sinks, across every axios verb the rule claims.
-    { code: "fetch('https://api.example.com')" },
+    { name: 'https', code: "fetch('https://api.example.com')" },
     { code: "axios.get('https://secure.io')" },
     { code: "axios.post('https://api.stripe.com/v1/charges', body)" },
     { code: "axios.put('https://api.acme.io/users/1', patch)" },
@@ -83,7 +83,7 @@ ruleTester.run('require-https-only', requireHttpsOnly, {
   ],
 
   invalid: [
-    { code: "fetch('http://api.example.com')", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'a fetch to an http endpoint', code: "fetch('http://api.example.com')", errors: [{ messageId: 'violationDetected' }] },
     { code: "axios.get('http://api.acme.io/v1')", errors: [{ messageId: 'violationDetected' }] },
     {
       code: "axios.post('http://api.acme.io/v1/orders', cart)",

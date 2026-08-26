@@ -33,7 +33,7 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     // `no-http-urls` reports each of them. They are silent HERE so that one
     // line does not draw two findings under two CWEs, which is what got this
     // rule demoted out of `recommended` in the first place.
-    { code: "const url = 'http://acmecorp.io/api'" },        // -> no-http-urls
+    { name: 'an http URL in a variable that never reaches the DOM', code: "const url = 'http://acmecorp.io/api'" },        // -> no-http-urls
     { code: "fetch('http://cdn.acmecorp.io/lib.js')" },      // -> require-https-only
     { code: "const base = 'http://localhost.evil.com/api'" },// -> no-http-urls
     { code: "const base = 'http://'" },                      // -> no-http-urls
@@ -70,6 +70,7 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     // `.src` is a subresource on every element that has one, so the property
     // alone is sufficient evidence — no type information needed.
     {
+      name: 'an http:// script pulled into an https page',
       code: "el.src = 'http://cdn.acmecorp.io/analytics.js'",
       errors: [{ messageId: 'violationDetected' }],
     },

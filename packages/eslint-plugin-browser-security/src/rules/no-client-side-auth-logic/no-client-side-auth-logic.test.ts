@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-client-side-auth-logic', noClientSideAuthLogic, {
   valid: [
     // Server-side auth checks
-    { code: "if (await verifyToken(token)) { proceed() }" },
+    { name: 'the token is verified', code: "if (await verifyToken(token)) { proceed() }" },
     { code: "const isAuth = await authService.verify()" },
     // Non-auth localStorage usage
     { code: "if (localStorage.getItem('theme')) { setTheme() }" },
@@ -35,7 +35,7 @@ ruleTester.run('no-client-side-auth-logic', noClientSideAuthLogic, {
 
   invalid: [
     // Local storage auth checks
-    { code: "if (localStorage.getItem('isAdmin')) { showAdmin() }", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'an admin flag read out of localStorage', code: "if (localStorage.getItem('isAdmin')) { showAdmin() }", errors: [{ messageId: 'violationDetected' }] },
     { code: "if (localStorage.getItem('authenticated')) { proceed() }", errors: [{ messageId: 'violationDetected' }] },
     { code: "if (localStorage.getItem('role')) { checkRole() }", errors: [{ messageId: 'violationDetected' }] },
     // Password comparison

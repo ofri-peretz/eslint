@@ -20,7 +20,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
   valid: [
     // Non-sensitive data
-    { code: `localStorage.setItem('theme', 'dark');` },
+    { name: 'a theme preference', code: `localStorage.setItem('theme', 'dark');` },
     { code: `localStorage.setItem('language', 'en');` },
     { code: `localStorage['settings'] = JSON.stringify(settings);` },
     // Test file with allowInTests
@@ -80,6 +80,7 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
   ],
   invalid: [
     {
+      name: 'a password in localStorage',
       code: `localStorage.setItem('password', pwd);`,
       errors: [{ messageId: 'sensitiveLocalStorage' }],
     },

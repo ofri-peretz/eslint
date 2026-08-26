@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-sensitive-data-in-analytics', noSensitiveDataInAnalytics, {
   valid: [
     // Non-sensitive analytics
-    { code: "analytics.track('page_view', { page: '/home' })" },
+    { name: 'a page path', code: "analytics.track('page_view', { page: '/home' })" },
     { code: "analytics.track('click', { element: 'button', action: 'submit' })" },
     { code: "gtag('event', 'click', { element: 'button' })" },
     // Non-analytics code
@@ -24,7 +24,7 @@ ruleTester.run('no-sensitive-data-in-analytics', noSensitiveDataInAnalytics, {
 
   invalid: [
     // Email in analytics
-    { code: "analytics.track('signup', { email: user.email })", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'an email address sent to the analytics provider', code: "analytics.track('signup', { email: user.email })", errors: [{ messageId: 'violationDetected' }] },
     { code: "analytics.track('login', { userEmail: email })", errors: [{ messageId: 'violationDetected' }] },
     // SSN
     { code: "analytics.track('verify', { ssn: userSSN })", errors: [{ messageId: 'violationDetected' }] },

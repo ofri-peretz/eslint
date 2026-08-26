@@ -21,6 +21,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
   valid: [
     // Safe: JSON.parse usage
     {
+      name: 'the message is parsed as JSON',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
@@ -75,6 +76,7 @@ ruleTester.run('no-websocket-eval', noWebsocketEval, {
   invalid: [
     // eval with event.data
     {
+      name: 'eval on a WebSocket message',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
