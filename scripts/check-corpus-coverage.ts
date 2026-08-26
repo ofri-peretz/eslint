@@ -129,6 +129,23 @@ function rulesWithCorpusEvidence(): Set<string> {
   return fired;
 }
 
+/**
+ * Read the baseline, or null when it is absent.
+ *
+ * Deliberately not `existsSync` followed by `readFileSync`: that is a
+ * check-then-use race (CodeQL js/file-system-race), and it is the same defect
+ * our own node-security/no-toctou-vulnerability rule reports. Ask once and
+ * handle the answer.
+ */
+function readBaseline(): { unmeasured: string[] } | null {
+  try {
+    return JSON.parse(fs.readFileSync(BASELINE, 'utf-8'));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
+}
+
 const rules = allRules();
 const fired = rulesWithCorpusEvidence();
 const unmeasured = rules.map(canonical).filter((r) => !fired.has(r)).sort();
@@ -140,9 +157,7 @@ console.log(
 );
 
 if (UPDATE) {
-  const previous: string[] = fs.existsSync(BASELINE)
-    ? JSON.parse(fs.readFileSync(BASELINE, 'utf-8')).unmeasured
-    : null;
+  const previous = readBaseline()?.unmeasured ?? null;
   if (previous && unmeasured.length > previous.length) {
     console.error(
       `✗ refusing to update: the baseline may only shrink.\n` +
@@ -160,12 +175,13 @@ if (UPDATE) {
   process.exit(0);
 }
 
-if (!fs.existsSync(BASELINE)) {
+const committed = readBaseline();
+if (committed === null) {
   console.error('✗ no baseline. Run with --update to record the current state.');
   process.exit(1);
 }
 
-const baseline: string[] = JSON.parse(fs.readFileSync(BASELINE, 'utf-8')).unmeasured;
+const baseline: string[] = committed.unmeasured;
 const known = new Set(baseline);
 const regressed = unmeasured.filter((r) => !known.has(r));
 const improved = baseline.filter((r) => !unmeasured.includes(r));
