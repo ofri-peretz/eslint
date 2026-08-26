@@ -74,7 +74,7 @@
     "typecheck:benchmarks": "tsc --noEmit -p benchmarks/tsconfig.scripts.json",
     "release": "gh workflow run release.yml --ref main",
     "release:dry-run": "gh workflow run release.yml --ref main -f dry-run=true",
-    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '\u2705 Workflow triggered!'",
+    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
     "delete-branches": "bash scripts/delete-branches.sh",
@@ -236,7 +236,8 @@
     "ilb:corpus-truth": "tsx benchmarks/suites/ilb-corpus-truth/run.ts",
     "ilb:corpus-truth:baseline": "tsx benchmarks/suites/ilb-corpus-truth/run.ts --update-baseline",
     "ilb:preset-budget": "tsx benchmarks/suites/ilb-preset-budget/run.ts",
-    "ilb:preset-budget:baseline": "tsx benchmarks/suites/ilb-preset-budget/run.ts --update-baseline"
+    "ilb:preset-budget:baseline": "tsx benchmarks/suites/ilb-preset-budget/run.ts --update-baseline",
+    "check:corpus-coverage": "tsx scripts/check-corpus-coverage.ts"
   },
   "keywords": [
     "eslint",

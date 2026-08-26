@@ -133,6 +133,11 @@ jobs:
       # much of it was actually looked at. no-cycle carried "the DETECTION
       # is right" until the first sample read 66.7% wrong (#702, #705).
       - run: npm run lint:triage-sampling
+      # And the same question at the level of MEASUREMENT: a rule with no
+      # corpus fixture has no precision number at all, so it can be wrong
+      # about real code indefinitely and nothing moves. 62 of 374 rules had
+      # evidence when this gate was added; the baseline may only shrink.
+      - run: npm run check:corpus-coverage
       # The FULL rule-audit ratchet. The pre-commit hook runs a scoped version
       # that only sees rules whose own files changed; a shared-util edit can
       # move a rule's findings without touching it, so this run — every rule,
