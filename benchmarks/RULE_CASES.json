@@ -1,8 +1,8 @@
 {
   "counts": {
-    "TP": 7330,
-    "TN": 10908,
-    "FP": 6,
+    "TP": 7336,
+    "TN": 10917,
+    "FP": 9,
     "FN": 12
   },
   "rules": [
@@ -14800,6 +14800,100 @@
           "kind": "TN",
           "description": "",
           "file": "packages/eslint-plugin-conventions/src/tests/conventions/coverage-completion.test.ts"
+        },
+        {
+          "kind": "FP",
+          "description": "a named const through a type assertion — 33% of findings, with the arithmetic case",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
+          "source": "excalidraw/excalidraw packages/excalidraw/colors.ts:17"
+        },
+        {
+          "kind": "FP",
+          "description": "a named const computed from two literals",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
+          "source": "excalidraw/excalidraw packages/element/binding.ts:119"
+        },
+        {
+          "kind": "FP",
+          "description": "a coordinate pair — 39% of findings, the largest class",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
+          "source": "excalidraw/excalidraw examples/.../initialData.tsx:64"
+        },
+        {
+          "kind": "TN",
+          "description": "a colour matrix row",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a negated element still reads as data",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a satisfies assertion is the same shape as an as-assertion",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a negated literal reaches the const through the unary",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "an assertion inside a named const computation",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a nested coordinate list with negative values",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "the same list passed straight to a call",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a flat list with a negative first element",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a negated operand inside a named const computation",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "arithmetic on a variable is not a named constant",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "bounds passed as arguments are magic",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts",
+          "source": "excalidraw/excalidraw packages/element/binding.ts:1722"
+        },
+        {
+          "kind": "TP",
+          "description": "a single-element array is a value that happens to be wrapped",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a mixed array is not data",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a sparse array is not a data table",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "the array exemption can be turned off",
+          "file": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
         },
         {
           "kind": "TN",

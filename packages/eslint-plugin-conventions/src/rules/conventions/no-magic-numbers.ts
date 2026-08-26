@@ -77,6 +77,24 @@ export interface Options {
 
   /** Allow numbers in bitwise expressions. Default: false */
   ignoreBitwiseExpressions?: boolean;
+
+  /**
+   * Allow every element of an all-numeric array literal — coordinates, colour
+   * matrices, lookup tables. Default: true.
+   *
+   * The array is data. Naming each cell produces `const MAGIC_92_28 = -92.28`
+   * a hundred times over, which is worse than the literal it replaces.
+   */
+  ignoreNumericArrays?: boolean;
+
+  /**
+   * Allow arithmetic in a named constant's initialiser — `const SIZE = 10 / 1.5`.
+   * Default: true.
+   *
+   * Part of the `const NAME = …` exemption rather than a separate idea: the
+   * number is already named, and the name is on the line.
+   */
+  namedConstArithmetic?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -179,6 +197,8 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
           detectObjects: { type: 'boolean', default: false },
           ignoreLoopBounds: { type: 'boolean', default: true },
           ignoreLengthComparisons: { type: 'boolean', default: true },
+          ignoreNumericArrays: { type: 'boolean', default: true },
+          namedConstArithmetic: { type: 'boolean', default: true },
           ignoreDefaultValues: { type: 'boolean', default: true },
           ignoreEnums: { type: 'boolean', default: true },
           ignoreBitwiseExpressions: { type: 'boolean', default: false },
@@ -194,6 +214,8 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       detectObjects: false,
       ignoreLoopBounds: true,
       ignoreLengthComparisons: true,
+      ignoreNumericArrays: true,
+      namedConstArithmetic: true,
       ignoreDefaultValues: true,
       ignoreEnums: true,
       ignoreBitwiseExpressions: false,
@@ -207,6 +229,8 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       detectObjects = false,
       ignoreLoopBounds = true,
       ignoreLengthComparisons = true,
+      ignoreNumericArrays = true,
+      namedConstArithmetic = true,
       ignoreDefaultValues = true,
       ignoreEnums = true,
       ignoreBitwiseExpressions = false,
@@ -359,10 +383,93 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /**
+     * `const FOO = 42` — the literal IS the named constant.
+     *
+     * The direct-parent check was too literal. `const DEGREES = 180 as Degrees`
+     * puts a `TSAsExpression` in between, and `const SIZE = 10 / 1.5` puts a
+     * `BinaryExpression` there, so neither matched — and the rule reported a
+     * number that is already named, which is the very fix it suggests.
+     *
+     * Measured on 120 TypeScript files of excalidraw: 246 of 735 findings, 33%,
+     * were a literal that reaches a `const NAME = …` through exactly these two
+     * node types. The walk stops at anything else — a call, a member access, a
+     * conditional — because past those the number is no longer the constant's
+     * value, it is an argument to something.
+     *
+     * Arithmetic is only walked when EVERY operand is a literal.
+     * `const SIZE = 10 / 1.5` names a computed constant; `const scaled = value * 1.5`
+     * names the result of applying 1.5 to something, and 1.5 is still magic.
+     * The first version of this walk did not distinguish them and silenced the
+     * second, which an existing test caught.
+     */
+    const allLiteralOperands = (node: TSESTree.Node | undefined | null): boolean => {
+      // Synthetic nodes reach this rule from the mock-context tests, and a
+      // `BinaryExpression` built by hand has no `left`/`right`. Absent operands
+      // are not literal operands.
+      if (!node || typeof node !== 'object') return false;
+      if (node.type === 'Literal') return typeof node.value === 'number';
+      if (node.type === 'UnaryExpression') return allLiteralOperands(node.argument);
+      if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression') {
+        return allLiteralOperands(node.expression);
+      }
+      if (node.type === 'BinaryExpression') {
+        return allLiteralOperands(node.left as TSESTree.Node) && allLiteralOperands(node.right);
+      }
+      return false;
+    };
     function isVariableDeclarator(node: TSESTree.Literal): boolean {
-      // const FOO = 42 — the literal is the named constant itself
+      let current: TSESTree.Node = node;
+      let parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      while (
+        parent &&
+        (parent.type === 'TSAsExpression' ||
+          parent.type === 'TSSatisfiesExpression' ||
+          parent.type === 'UnaryExpression' ||
+          (parent.type === 'BinaryExpression' &&
+            namedConstArithmetic &&
+            allLiteralOperands(parent)))
+      ) {
+        current = parent;
+        parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      }
+      return parent?.type === 'VariableDeclarator' && parent.id.type === 'Identifier';
+    }
+
+    /**
+     * Every element of an array literal is a number — coordinates, a colour
+     * matrix, a lookup table. The array is DATA, and naming each cell of it
+     * produces `const MAGIC_92_28 = -92.28` a hundred times over.
+     *
+     * Measured on the same 120 files: 290 of 735 findings, 39%, and the single
+     * largest class. Two elements is enough (a coordinate pair is the commonest
+     * shape); one is not, because `[5]` is a value that happens to be wrapped.
+     */
+    function isNumericDataArray(node: TSESTree.Literal): boolean {
+      if (!ignoreNumericArrays) return false;
       const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-      return parent?.type === 'VariableDeclarator';
+      const array =
+        parent?.type === 'ArrayExpression'
+          ? parent
+          : parent?.type === 'UnaryExpression' &&
+              (parent as TSESTree.Node & { parent?: TSESTree.Node }).parent?.type === 'ArrayExpression'
+            ? ((parent as TSESTree.Node & { parent?: TSESTree.Node }).parent as TSESTree.ArrayExpression)
+            : null;
+      if (array === null) return false;
+      /**
+       * No recursive `ArrayExpression` arm. `array` above is always the
+       * INNERMOST array containing the literal, so a nested list like
+       * `[[-1.5, 2], [3, 4]]` is judged one row at a time and an element that
+       * is itself an array never reaches here. The first version had that arm
+       * and coverage proved it could not be taken.
+       */
+      const numeric = (element: TSESTree.Node | null): boolean => {
+        if (element === null) return false;
+        if (element.type === 'Literal') return typeof element.value === 'number';
+        if (element.type === 'UnaryExpression') return numeric(element.argument);
+        return false;
+      };
+      return array.elements.length >= 2 && array.elements.every(numeric);
     }
 
     function isExportedConst(node: TSESTree.Literal): boolean {
@@ -413,6 +520,7 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         if (isEnumMember(node)) return;
         if (isBitwiseContext(node)) return;
         if (isPropertyKey(node)) return;
+        if (isNumericDataArray(node)) return;
 
         const constName = constNameFor(value);
         const sourceCode = context.sourceCode;

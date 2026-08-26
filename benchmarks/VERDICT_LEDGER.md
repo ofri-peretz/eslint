@@ -48,6 +48,7 @@ that way.
 | FP-009 | `no-unsafe-regex-construction` | `new RegExp(node.pattern, node.flags)` | 11 | open |
 | FP-010 | `detect-object-injection` | computed-key **write**, key locally derived | ~750 | characterised |
 | FP-011 | `no-unhandled-promise` (×2 plugins) | every call treated as a promise | **11,866** | **fixed** |
+| FP-012 | `no-magic-numbers` | a number already named, and a number that is data | 536 | **fixed** |
 
 `detect-object-injection` alone is six of the top eleven clusters. It is the
 largest single block of unexamined findings we have, and it is one rule.
@@ -169,3 +170,47 @@ branch it was written for is still exercised and the case says something true.
 Three shapes are recorded as `FN:` — `new Promise(…)` never reaches the rule,
 which listens for `CallExpression` only, and a promise passed as an argument
 (`console.log(fetch(url))`) is skipped by the nested-argument rule.
+
+
+## FP-012 — the rule contradicting its own fix
+
+With `no-unhandled-promise` silenced, `no-magic-numbers` became the largest
+source of findings on real code. Classified over 120 TypeScript files of
+excalidraw, 735 findings split into two dominant classes:
+
+| class | findings | share |
+|---|---:|---:|
+| inside an all-numeric array literal | 290 | 39% |
+| initialiser of a named `const` | 246 | 33% |
+| everything else | 199 | 28% |
+
+Both are the rule arguing with itself. Its entire suggestion is *give the number
+a name* — so reporting `export const FOCUS_POINT_SIZE = 10 / 1.5;` reports a
+number that already has one. And `[[-92.28, 7.1e-15], [-154.72, 19.19]]` is a
+coordinate list: naming each cell produces `const MAGIC_92_28 = -92.28` a
+hundred times over.
+
+The rule already carried a `const FOO = 42` exemption. It checked the literal's
+DIRECT parent, so `180 as Degrees` (a `TSAsExpression` in between) and
+`10 / 1.5` (a `BinaryExpression`) both walked straight past it. Eight measured
+carve-outs already existed; these are the ninth and tenth, and they were the two
+biggest.
+
+**735 → 428 on the same files**, with the array class at zero. The remainder is
+unchanged in character — `clamp(tolerance * height, 5, 80)`,
+`Math.max(BASE_BINDING_GAP, 15)`, `snapToMid(…, 0.05, …)` — magic numbers passed
+as arguments, which is what the rule is for.
+
+Two things the measurement corrected on the way:
+
+- The first hypothesis was that data arrays were the whole story. Measured at
+  4%, because the filter required more than two elements and these are
+  coordinate **pairs**. At two or more it is 39%.
+- The first version of the named-const walk followed any arithmetic, which
+  silenced `const scaled = value * 1.5` — there the const names the *result*
+  and 1.5 is still a magic factor. An existing test caught it. The walk now
+  requires every operand to be a literal.
+
+A third came from the coverage gate: the recursive array arm in the element
+check could never be taken, because the array selected is always the innermost
+one containing the literal. Deleted rather than covered.
