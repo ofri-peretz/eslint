@@ -1,8 +1,8 @@
 {
   "counts": {
-    "TP": 7376,
-    "TN": 10953,
-    "FP": 18,
+    "TP": 7391,
+    "TN": 10958,
+    "FP": 21,
     "FN": 26,
     "GAP": 8
   },
@@ -107404,6 +107404,170 @@
           "code": "export function f(target, key, v) { getMetadata(target)[key] = v; }",
           "description": "CONTROL: a non-Reflect call result written through",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/guards-on-the-write-path.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#FP-4a1cf2",
+          "kind": "FP",
+          "code": "const arr = []; arr[arr.length] = x;",
+          "description": "an array append written as a self-indexed length",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts",
+          "found": "head-to-head with eslint-plugin-security"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#FP-a2a960",
+          "kind": "FP",
+          "code": "const KEYS = [\"alpha\", \"beta\"]; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "a key iterated from a const array of string literals",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts",
+          "found": "head-to-head with eslint-plugin-security"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#FP-27e850",
+          "kind": "FP",
+          "code": "const KEYS = Object.freeze([\"alpha\", \"beta\"]); const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "the same allowlist behind Object.freeze",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts",
+          "found": "head-to-head with eslint-plugin-security"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TN-93e476",
+          "kind": "TN",
+          "code": "const o = {}; for (const k of Object.freeze([\"alpha\", \"beta\"])) { o[k] = 1; }",
+          "description": "an allowlist frozen inline in the loop head",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TN-87b498",
+          "kind": "TN",
+          "code": "const KEYS = [\"alpha\", \"beta\"]; const o = {}; for (const k of Object.freeze(KEYS)) { o[k] = 1; }",
+          "description": "a named allowlist frozen at the point of use",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TN-a19233",
+          "kind": "TN",
+          "code": "const o = {}; for (const k of [\"alpha\", \"beta\"]) { o[k] = 1; }",
+          "description": "an allowlist written inline without freezing",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TN-85a5c3",
+          "kind": "TN",
+          "code": "const cfg = { a: 1 }; const out = {}; for (const k in cfg) { out[k] = cfg[k]; }",
+          "description": "a copy loop over a module-local object",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TN-c358ac",
+          "kind": "TN",
+          "code": "function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }",
+          "description": "a merge helper guarded by Object.hasOwn",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-5253b1",
+          "kind": "TP",
+          "code": "function f(o, req) { o[req.query.p] = 1; }",
+          "description": "a request value used directly as a key",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-3f695f",
+          "kind": "TP",
+          "code": "function merge(dst, src) { for (const k in src) { dst[k] = src[k]; } return dst; }",
+          "description": "the merge helper behind every deep-extend CVE",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-7a3110",
+          "kind": "TP",
+          "code": "class Bag { set(k, v) { this[k] = v; } }",
+          "description": "a key written onto this, which does re-parent the object",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-049041",
+          "kind": "TP",
+          "code": "const KEYS = [\"a\", \"__proto__\"]; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "an allowlist that names a dangerous property",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-e87f3c",
+          "kind": "TP",
+          "code": "let KEYS = [\"a\"]; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "a list that is not const, so its contents are not fixed",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-07f798",
+          "kind": "TP",
+          "code": "function f(o, x) { o[x.length] = 1; }",
+          "description": "a length read off a different object than the one indexed",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-614cef",
+          "kind": "TP",
+          "code": "function f(o, x) { o[x[\"length\"]] = 1; }",
+          "description": "a length reached through a computed key, not a dotted one",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-6fa68e",
+          "kind": "TP",
+          "code": "function f(o) { o.inner[o.inner.length] = 1; }",
+          "description": "an array-shaped index whose object is not an identifier",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-86e190",
+          "kind": "TP",
+          "code": "const KEYS = getKeys(); const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "a list produced by a call, whose contents are not in the file",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-d9e84d",
+          "kind": "TP",
+          "code": "const KEYS = []; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "an empty list, which proves nothing about what k can hold",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-c47166",
+          "kind": "TP",
+          "code": "const KEYS = [\"a\", , \"b\"]; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "a list with a hole, so one element names no value",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-14d920",
+          "kind": "TP",
+          "code": "const o = {}; for (const k of GLOBAL_KEYS) { o[k] = 1; }",
+          "description": "a list declared nowhere this file can see",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-bf54dd",
+          "kind": "TP",
+          "code": "import { KEYS } from \"./keys\"; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+          "description": "a list imported from another module",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-9c82df",
+          "kind": "TP",
+          "code": "function f(KEYS, o) { for (const k of KEYS) { o[k] = 1; } }",
+          "description": "a list arriving as a parameter",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        },
+        {
+          "id": "secure-coding/detect-object-injection#TP-718de7",
+          "kind": "TP",
+          "code": "const o = {}; for (const k of makeKeys()) { o[k] = 1; }",
+          "description": "a for-of over an inline array, not a named const",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
         },
         {
           "id": "secure-coding/detect-object-injection#TN-0bff31",

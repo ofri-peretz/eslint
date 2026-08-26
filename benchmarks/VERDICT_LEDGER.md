@@ -14,12 +14,12 @@ Machine-readable in `VERDICT_LEDGER.json`. Definitions are the ordinary ones:
 | **FN** | a defect we missed |
 | **GAP** | a defect we still miss, with nothing holding it shut |
 
-**Current: 6 TP · 13 FP · 7 FN.** The false positives represent **1,069
+**Current: 6 TP · 15 FP · 7 FN.** The false positives represent **1,069
 findings** in the wild.
 
 Those are *clusters* — one row per mistake, however many findings or spellings
 it produced. `RULE_CASES.md` counts the same history in *cases*, which is the
-unit that does the protecting, and reports **18 FP · 13 FN · 8 GAP**. One
+unit that does the protecting, and reports **21 FP · 26 FN · 8 GAP**. One
 cluster commonly needs several cases: FP-013 took five, because five distinct
 shapes had to be shown to stay quiet before the fix could be called done.
 
@@ -77,6 +77,8 @@ then, recall numbers should be read as a floor, not a measurement.
 | FP-008 | `pg/no-transaction-on-pool` | hardcoded identifier `pool` | — | open |
 | FP-009 | `no-unsafe-regex-construction` | `new RegExp(node.pattern, node.flags)` | 11 | open |
 | FP-010 | `detect-object-injection` | computed-key **write**, key locally derived | ~750 | characterised |
+| FP-014 | `detect-object-injection` | `arr[arr.length] = x`, the array-append idiom | — | **fixed** |
+| FP-015 | `detect-object-injection` | a key iterated from a `const` array of string literals | — | **fixed** |
 | FP-011 | `no-unhandled-promise` (×2 plugins) | every call treated as a promise | **11,866** | **fixed** |
 | FP-012 | `no-magic-numbers` | a number already named, and a number that is data | 536 | **fixed** |
 | FP-013 | `consistent-function-scoping` | a function passed as an argument | 1,270 | **fixed** |
@@ -176,6 +178,56 @@ which was inverted to require an attacker-controlled operand and went from 27
 findings with zero real oracles to near-zero noise. Whether the same trade is
 right here is a judgement about prototype pollution, not about triage, and it
 is now the only thing standing between this entry and a verdict.
+
+
+## FP-014 / FP-015 — found by reading our rule beside its nearest neighbour
+
+`eslint-plugin-security`'s `detect-object-injection` is four lines of logic —
+report every computed member access whose property is an `Identifier` — and it
+is the most-installed rule of this kind. Running both over the same shapes is
+cheap, and every disagreement is a question with an answer.
+
+| case | ours | theirs |
+| :--- | ---: | ---: |
+| `merge(dst, src)` — the deep-extend CVE shape | 1 | 2 |
+| merge over `req.body` | 1 | 2 |
+| copy loop over a module-local object | 0 | 2 |
+| merge guarded by `Object.hasOwn` | 0 | 2 |
+| `obj[req.query.p] = 1` | 1 | **0** |
+| `labels[tag.name] = v` | 1 | **0** |
+| `arr[arr.length] = x` | **1 → 0** | 0 |
+| `const KEYS = ["a"]; for (const k of KEYS) o[k] = 1` | **1 → 0** | 1 |
+
+Their two zeroes have one cause: the `Identifier`-only test means a key reached
+through a member expression never arrives at the check — and `obj[req.query.p]`
+is the shortest way anyone writes this bug. Their twos on the benign loops are
+the other half of the same design: no read/write distinction, so a copy loop
+reports on each side of the assignment.
+
+Two of the disagreements were ours, and both are now fixed:
+
+- **FP-014** `arr[arr.length] = x`. Verified by running it: `arr.length` is a
+  number, so the key cannot name a prototype slot. The clearing is deliberately
+  narrow — the same identifier must be both the object and the receiver of
+  `.length`, because `o[x.length] = v` is only safe if `x.length` is a number,
+  and an attacker-supplied `{ length: '__proto__' }` makes it a string.
+- **FP-015** a key bound by `for (const k of KEYS)` over a `const` array of
+  string literals. Every value `k` can take is written out in the file, so
+  whether any is dangerous is decidable — and an author who lists `__proto__`
+  themselves still gets the report.
+
+One case nearly went in as a third and should not have: `this[k] = v` inside a
+class method. It looks like noise, and executing it settles the matter —
+calling with `'__proto__'` re-parents the instance. It reports, and now has a
+case saying why. A rule that declines on purpose and a rule that cannot see are
+different facts; so are a false positive and a true one that reads like noise.
+
+Sealed in
+`packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts`,
+where every escape hatch in the two new predicates is pinned shut alongside
+them — the list that is not `const`, the list that contains `__proto__`, the
+imported list, the parameter, the empty array, the sparse hole, and a `.length`
+read off a different object than the one indexed.
 
 
 ## FP-011 — the largest false positive in the suite, shipped twice
