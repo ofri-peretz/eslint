@@ -1,7 +1,7 @@
 {
   "counts": {
-    "TP": 7313,
-    "TN": 10865,
+    "TP": 7320,
+    "TN": 10869,
     "FP": 6,
     "FN": 2
   },
@@ -574,7 +574,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/detect-mixed-content/detect-mixed-content.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/no-allow-arbitrary-loads",
@@ -1511,8 +1515,8 @@
         }
       ],
       "wild": {
-        "count": 26,
-        "repos": 8
+        "count": 30,
+        "repos": 10
       }
     },
     {
@@ -1780,8 +1784,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 7,
+        "repos": 2
       }
     },
     {
@@ -2194,8 +2198,8 @@
         }
       ],
       "wild": {
-        "count": 63,
-        "repos": 9
+        "count": 122,
+        "repos": 13
       }
     },
     {
@@ -2368,8 +2372,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 15,
+        "repos": 4
       }
     },
     {
@@ -2837,8 +2841,8 @@
         }
       ],
       "wild": {
-        "count": 26,
-        "repos": 9
+        "count": 1785,
+        "repos": 11
       }
     },
     {
@@ -3481,8 +3485,8 @@
         }
       ],
       "wild": {
-        "count": 47,
-        "repos": 8
+        "count": 69,
+        "repos": 12
       }
     },
     {
@@ -3875,8 +3879,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 1
+        "count": 10,
+        "repos": 4
       }
     },
     {
@@ -4339,8 +4343,8 @@
         }
       ],
       "wild": {
-        "count": 203,
-        "repos": 16
+        "count": 300,
+        "repos": 23
       }
     },
     {
@@ -5105,7 +5109,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-insecure-websocket/no-insecure-websocket.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 2
+      }
     },
     {
       "rule": "browser-security/no-jwt-in-storage",
@@ -5981,8 +5989,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 3,
+        "repos": 3
       }
     },
     {
@@ -6345,8 +6353,8 @@
         }
       ],
       "wild": {
-        "count": 92,
-        "repos": 10
+        "count": 291,
+        "repos": 11
       }
     },
     {
@@ -6949,8 +6957,8 @@
         }
       ],
       "wild": {
-        "count": 15,
-        "repos": 8
+        "count": 76,
+        "repos": 18
       }
     },
     {
@@ -7148,8 +7156,8 @@
         }
       ],
       "wild": {
-        "count": 7,
-        "repos": 3
+        "count": 112,
+        "repos": 6
       }
     },
     {
@@ -7502,8 +7510,8 @@
         }
       ],
       "wild": {
-        "count": 94,
-        "repos": 4
+        "count": 97,
+        "repos": 7
       }
     },
     {
@@ -7699,7 +7707,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-wildcard-origin/no-postmessage-wildcard-origin.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/no-sensitive-cookie-js",
@@ -9655,8 +9667,8 @@
         }
       ],
       "wild": {
-        "count": 71,
-        "repos": 7
+        "count": 100,
+        "repos": 12
       }
     },
     {
@@ -10329,8 +10341,8 @@
         }
       ],
       "wild": {
-        "count": 46,
-        "repos": 5
+        "count": 49,
+        "repos": 7
       }
     },
     {
@@ -11537,8 +11549,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 4
+        "count": 8,
+        "repos": 7
       }
     },
     {
@@ -11699,7 +11711,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-cookie-secure-attrs/require-cookie-secure-attrs.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "browser-security/require-csp-headers",
@@ -12266,8 +12282,8 @@
         }
       ],
       "wild": {
-        "count": 20,
-        "repos": 6
+        "count": 45,
+        "repos": 9
       }
     },
     {
@@ -12825,8 +12841,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 2
+        "count": 12,
+        "repos": 4
       }
     },
     {
@@ -13044,8 +13060,8 @@
         }
       ],
       "wild": {
-        "count": 4,
-        "repos": 4
+        "count": 135,
+        "repos": 13
       }
     },
     {
@@ -13481,7 +13497,11 @@
           "description": "",
           "file": "packages/eslint-plugin-browser-security/src/rules/require-websocket-wss/require-websocket-wss.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "conventions/analytics-event-naming",
@@ -16759,8 +16779,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 2
+        "count": 14,
+        "repos": 3
       }
     },
     {
@@ -16943,8 +16963,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 3
+        "count": 21,
+        "repos": 4
       }
     },
     {
@@ -17619,7 +17639,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-idor-resource-access/no-idor-resource-access.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/no-insecure-cookie-options",
@@ -17756,8 +17780,8 @@
         }
       ],
       "wild": {
-        "count": 4,
-        "repos": 2
+        "count": 5,
+        "repos": 3
       }
     },
     {
@@ -18058,7 +18082,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-missing-cors-check/no-missing-cors-check.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/no-missing-csrf-protection",
@@ -18175,8 +18203,8 @@
         }
       ],
       "wild": {
-        "count": 169,
-        "repos": 12
+        "count": 422,
+        "repos": 15
       }
     },
     {
@@ -18339,8 +18367,8 @@
         }
       ],
       "wild": {
-        "count": 25,
-        "repos": 8
+        "count": 65,
+        "repos": 12
       }
     },
     {
@@ -18468,8 +18496,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 4,
+        "repos": 3
       }
     },
     {
@@ -18593,8 +18621,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 6,
+        "repos": 4
       }
     },
     {
@@ -18847,8 +18875,8 @@
         }
       ],
       "wild": {
-        "count": 9,
-        "repos": 3
+        "count": 10,
+        "repos": 4
       }
     },
     {
@@ -20068,7 +20096,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/no-user-controlled-render-locals/no-user-controlled-render-locals.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/require-case-insensitive-path-guard",
@@ -20665,8 +20697,8 @@
         }
       ],
       "wild": {
-        "count": 30,
-        "repos": 2
+        "count": 45,
+        "repos": 4
       }
     },
     {
@@ -20897,7 +20929,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/require-express-body-parser-limits/require-express-body-parser-limits.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/require-helmet",
@@ -21094,8 +21130,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 7,
+        "repos": 3
       }
     },
     {
@@ -21436,7 +21472,11 @@
           "description": "",
           "file": "packages/eslint-plugin-express-security/src/rules/require-query-type-guard/require-query-type-guard.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "express-security/require-rate-limiting",
@@ -21623,8 +21663,8 @@
         }
       ],
       "wild": {
-        "count": 4,
-        "repos": 2
+        "count": 5,
+        "repos": 3
       }
     },
     {
@@ -21992,8 +22032,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 3
+        "count": 64,
+        "repos": 5
       }
     },
     {
@@ -22551,8 +22591,8 @@
         }
       ],
       "wild": {
-        "count": 136,
-        "repos": 15
+        "count": 663,
+        "repos": 32
       }
     },
     {
@@ -22745,8 +22785,8 @@
         }
       ],
       "wild": {
-        "count": 2774,
-        "repos": 37
+        "count": 4343,
+        "repos": 65
       }
     },
     {
@@ -22949,8 +22989,8 @@
         }
       ],
       "wild": {
-        "count": 133,
-        "repos": 15
+        "count": 307,
+        "repos": 28
       }
     },
     {
@@ -23008,8 +23048,8 @@
         }
       ],
       "wild": {
-        "count": 4,
-        "repos": 3
+        "count": 13,
+        "repos": 6
       }
     },
     {
@@ -23222,8 +23262,8 @@
         }
       ],
       "wild": {
-        "count": 10,
-        "repos": 8
+        "count": 25,
+        "repos": 17
       }
     },
     {
@@ -23256,8 +23296,8 @@
         }
       ],
       "wild": {
-        "count": 1553,
-        "repos": 15
+        "count": 1661,
+        "repos": 25
       }
     },
     {
@@ -23365,8 +23405,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 5,
+        "repos": 3
       }
     },
     {
@@ -23504,8 +23544,8 @@
         }
       ],
       "wild": {
-        "count": 18,
-        "repos": 8
+        "count": 70,
+        "repos": 12
       }
     },
     {
@@ -23603,8 +23643,8 @@
         }
       ],
       "wild": {
-        "count": 185,
-        "repos": 15
+        "count": 535,
+        "repos": 26
       }
     },
     {
@@ -23737,8 +23777,8 @@
         }
       ],
       "wild": {
-        "count": 38,
-        "repos": 9
+        "count": 80,
+        "repos": 16
       }
     },
     {
@@ -23861,8 +23901,8 @@
         }
       ],
       "wild": {
-        "count": 133,
-        "repos": 12
+        "count": 174,
+        "repos": 23
       }
     },
     {
@@ -24105,8 +24145,8 @@
         }
       ],
       "wild": {
-        "count": 12355,
-        "repos": 57
+        "count": 132490,
+        "repos": 95
       }
     },
     {
@@ -24204,8 +24244,8 @@
         }
       ],
       "wild": {
-        "count": 60,
-        "repos": 5
+        "count": 142,
+        "repos": 10
       }
     },
     {
@@ -24343,8 +24383,8 @@
         }
       ],
       "wild": {
-        "count": 2170,
-        "repos": 43
+        "count": 4525,
+        "repos": 74
       }
     },
     {
@@ -24497,8 +24537,8 @@
         }
       ],
       "wild": {
-        "count": 10,
-        "repos": 2
+        "count": 33,
+        "repos": 5
       }
     },
     {
@@ -24561,8 +24601,8 @@
         }
       ],
       "wild": {
-        "count": 1757,
-        "repos": 8
+        "count": 2188,
+        "repos": 15
       }
     },
     {
@@ -24650,8 +24690,8 @@
         }
       ],
       "wild": {
-        "count": 59,
-        "repos": 18
+        "count": 585,
+        "repos": 34
       }
     },
     {
@@ -24964,8 +25004,8 @@
         }
       ],
       "wild": {
-        "count": 3366,
-        "repos": 41
+        "count": 13931,
+        "repos": 73
       }
     },
     {
@@ -25093,8 +25133,8 @@
         }
       ],
       "wild": {
-        "count": 92,
-        "repos": 7
+        "count": 329,
+        "repos": 9
       }
     },
     {
@@ -25157,8 +25197,8 @@
         }
       ],
       "wild": {
-        "count": 625,
-        "repos": 3
+        "count": 630,
+        "repos": 5
       }
     },
     {
@@ -25476,8 +25516,8 @@
         }
       ],
       "wild": {
-        "count": 11539,
-        "repos": 48
+        "count": 44745,
+        "repos": 79
       }
     },
     {
@@ -25705,8 +25745,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 370,
+        "repos": 6
       }
     },
     {
@@ -25928,8 +25968,8 @@
         }
       ],
       "wild": {
-        "count": 9,
-        "repos": 4
+        "count": 15,
+        "repos": 5
       }
     },
     {
@@ -26087,8 +26127,8 @@
         }
       ],
       "wild": {
-        "count": 6818,
-        "repos": 38
+        "count": 10376,
+        "repos": 63
       }
     },
     {
@@ -26151,8 +26191,8 @@
         }
       ],
       "wild": {
-        "count": 525,
-        "repos": 20
+        "count": 698,
+        "repos": 33
       }
     },
     {
@@ -26455,8 +26495,8 @@
         }
       ],
       "wild": {
-        "count": 1944,
-        "repos": 54
+        "count": 15104,
+        "repos": 92
       }
     },
     {
@@ -26579,8 +26619,8 @@
         }
       ],
       "wild": {
-        "count": 784,
-        "repos": 19
+        "count": 3440,
+        "repos": 38
       }
     },
     {
@@ -26688,8 +26728,8 @@
         }
       ],
       "wild": {
-        "count": 10500,
-        "repos": 47
+        "count": 26241,
+        "repos": 75
       }
     },
     {
@@ -27000,7 +27040,11 @@
           "description": "",
           "file": "packages/eslint-plugin-import-next/src/tests/no-self-import.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 5,
+        "repos": 2
+      }
     },
     {
       "rule": "import-next/no-unassigned-import",
@@ -27207,8 +27251,8 @@
         }
       ],
       "wild": {
-        "count": 386,
-        "repos": 27
+        "count": 2513,
+        "repos": 47
       }
     },
     {
@@ -27326,8 +27370,8 @@
         }
       ],
       "wild": {
-        "count": 4558,
-        "repos": 62
+        "count": 15992,
+        "repos": 101
       }
     },
     {
@@ -27375,8 +27419,8 @@
         }
       ],
       "wild": {
-        "count": 2735,
-        "repos": 58
+        "count": 20303,
+        "repos": 94
       }
     },
     {
@@ -27559,8 +27603,8 @@
         }
       ],
       "wild": {
-        "count": 15,
-        "repos": 7
+        "count": 22,
+        "repos": 10
       }
     },
     {
@@ -27683,8 +27727,8 @@
         }
       ],
       "wild": {
-        "count": 842,
-        "repos": 31
+        "count": 1879,
+        "repos": 52
       }
     },
     {
@@ -27907,8 +27951,8 @@
         }
       ],
       "wild": {
-        "count": 336,
-        "repos": 20
+        "count": 1024,
+        "repos": 28
       }
     },
     {
@@ -28241,8 +28285,8 @@
         }
       ],
       "wild": {
-        "count": 1901,
-        "repos": 47
+        "count": 14419,
+        "repos": 70
       }
     },
     {
@@ -28365,8 +28409,8 @@
         }
       ],
       "wild": {
-        "count": 72,
-        "repos": 4
+        "count": 258,
+        "repos": 6
       }
     },
     {
@@ -28832,7 +28876,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/tests/coverage-dual-layer.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "jwt-security/no-decode-without-verify",
@@ -29094,8 +29142,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 4,
+        "repos": 4
       }
     },
     {
@@ -29248,8 +29296,8 @@
         }
       ],
       "wild": {
-        "count": 16,
-        "repos": 1
+        "count": 29,
+        "repos": 4
       }
     },
     {
@@ -29524,7 +29572,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "jwt-security/no-weak-secret",
@@ -29631,8 +29683,8 @@
         }
       ],
       "wild": {
-        "count": 16,
-        "repos": 1
+        "count": 19,
+        "repos": 2
       }
     },
     {
@@ -29775,8 +29827,8 @@
         }
       ],
       "wild": {
-        "count": 22,
-        "repos": 5
+        "count": 38,
+        "repos": 7
       }
     },
     {
@@ -29839,8 +29891,8 @@
         }
       ],
       "wild": {
-        "count": 23,
-        "repos": 6
+        "count": 44,
+        "repos": 9
       }
     },
     {
@@ -30008,8 +30060,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 4,
+        "repos": 4
       }
     },
     {
@@ -30060,7 +30112,11 @@
           "description": "",
           "file": "packages/eslint-plugin-jwt-security/src/rules/require-issued-at/require-issued-at.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "jwt-security/require-issuer-validation",
@@ -30122,8 +30178,8 @@
         }
       ],
       "wild": {
-        "count": 22,
-        "repos": 5
+        "count": 41,
+        "repos": 8
       }
     },
     {
@@ -30186,8 +30242,8 @@
         }
       ],
       "wild": {
-        "count": 24,
-        "repos": 7
+        "count": 46,
+        "repos": 10
       }
     },
     {
@@ -30800,8 +30856,8 @@
         }
       ],
       "wild": {
-        "count": 3,
-        "repos": 1
+        "count": 53,
+        "repos": 3
       }
     },
     {
@@ -31313,8 +31369,8 @@
         }
       ],
       "wild": {
-        "count": 21,
-        "repos": 3
+        "count": 26,
+        "repos": 5
       }
     },
     {
@@ -32027,8 +32083,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 6,
+        "repos": 2
       }
     },
     {
@@ -34423,7 +34479,11 @@
           "description": "the import appearing after the registration",
           "file": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-tool-description-injection/no-tool-description-injection.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "mcp-sdk-security/no-unvalidated-tool-args",
@@ -34765,8 +34825,8 @@
         }
       ],
       "wild": {
-        "count": 17,
-        "repos": 5
+        "count": 79,
+        "repos": 11
       }
     },
     {
@@ -34839,8 +34899,8 @@
         }
       ],
       "wild": {
-        "count": 142,
-        "repos": 24
+        "count": 586,
+        "repos": 40
       }
     },
     {
@@ -34968,8 +35028,8 @@
         }
       ],
       "wild": {
-        "count": 29,
-        "repos": 4
+        "count": 164,
+        "repos": 11
       }
     },
     {
@@ -35037,8 +35097,8 @@
         }
       ],
       "wild": {
-        "count": 4470,
-        "repos": 40
+        "count": 13535,
+        "repos": 68
       }
     },
     {
@@ -35286,8 +35346,8 @@
         }
       ],
       "wild": {
-        "count": 62,
-        "repos": 2
+        "count": 96,
+        "repos": 5
       }
     },
     {
@@ -35338,7 +35398,11 @@
           "description": "",
           "file": "packages/eslint-plugin-modularity/src/tests/ddd-value-object-immutability.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "modularity/enforce-naming",
@@ -35580,8 +35644,8 @@
         }
       ],
       "wild": {
-        "count": 472,
-        "repos": 12
+        "count": 1645,
+        "repos": 21
       }
     },
     {
@@ -35764,8 +35828,8 @@
         }
       ],
       "wild": {
-        "count": 55,
-        "repos": 8
+        "count": 74,
+        "repos": 13
       }
     },
     {
@@ -35818,8 +35882,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 62,
+        "repos": 5
       }
     },
     {
@@ -35962,8 +36026,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 1
+        "count": 41,
+        "repos": 2
       }
     },
     {
@@ -36591,8 +36655,8 @@
         }
       ],
       "wild": {
-        "count": 6,
-        "repos": 1
+        "count": 9,
+        "repos": 2
       }
     },
     {
@@ -36765,8 +36829,8 @@
         }
       ],
       "wild": {
-        "count": 4,
-        "repos": 1
+        "count": 18,
+        "repos": 2
       }
     },
     {
@@ -37219,8 +37283,8 @@
         }
       ],
       "wild": {
-        "count": 9,
-        "repos": 1
+        "count": 52,
+        "repos": 3
       }
     },
     {
@@ -37767,8 +37831,8 @@
         }
       ],
       "wild": {
-        "count": 7,
-        "repos": 1
+        "count": 25,
+        "repos": 3
       }
     },
     {
@@ -37891,8 +37955,8 @@
         }
       ],
       "wild": {
-        "count": 7,
-        "repos": 1
+        "count": 24,
+        "repos": 2
       }
     },
     {
@@ -38209,8 +38273,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 1
+        "count": 3,
+        "repos": 2
       }
     },
     {
@@ -38236,7 +38300,11 @@
           "description": "the password hidden inside a connection URL",
           "file": "packages/eslint-plugin-mysql-security/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 1
+      }
     },
     {
       "rule": "mysql-security/no-unsafe-query",
@@ -41388,8 +41456,8 @@
         }
       ],
       "wild": {
-        "count": 33,
-        "repos": 4
+        "count": 273,
+        "repos": 10
       }
     },
     {
@@ -42117,8 +42185,8 @@
         }
       ],
       "wild": {
-        "count": 28,
-        "repos": 11
+        "count": 567,
+        "repos": 14
       }
     },
     {
@@ -43156,8 +43224,8 @@
         }
       ],
       "wild": {
-        "count": 13,
-        "repos": 4
+        "count": 44,
+        "repos": 8
       }
     },
     {
@@ -43810,8 +43878,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 6,
+        "repos": 3
       }
     },
     {
@@ -44652,7 +44720,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/no-buffer-overread.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 5,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-cryptojs",
@@ -45404,8 +45476,8 @@
         }
       ],
       "wild": {
-        "count": 21,
-        "repos": 4
+        "count": 24,
+        "repos": 5
       }
     },
     {
@@ -45598,8 +45670,8 @@
         }
       ],
       "wild": {
-        "count": 2,
-        "repos": 2
+        "count": 46,
+        "repos": 3
       }
     },
     {
@@ -45665,7 +45737,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-deprecated-cipher-method/no-deprecated-cipher-method.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-dynamic-algorithm-selection",
@@ -45827,8 +45903,8 @@
         }
       ],
       "wild": {
-        "count": 3,
-        "repos": 2
+        "count": 79,
+        "repos": 3
       }
     },
     {
@@ -46249,7 +46325,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-dynamic-command-string/no-dynamic-command-string.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 2,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-dynamic-dependency-loading",
@@ -46476,8 +46556,8 @@
         }
       ],
       "wild": {
-        "count": 74,
-        "repos": 20
+        "count": 649,
+        "repos": 37
       }
     },
     {
@@ -46660,8 +46740,8 @@
         }
       ],
       "wild": {
-        "count": 43,
-        "repos": 15
+        "count": 488,
+        "repos": 28
       }
     },
     {
@@ -46762,7 +46842,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-ecb-mode/no-ecb-mode.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 14,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-env-injection",
@@ -47082,7 +47166,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-http-parser/no-insecure-http-parser.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 7,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-insecure-key-derivation",
@@ -47402,7 +47490,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-key-derivation/no-insecure-key-derivation.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 17,
+        "repos": 2
+      }
     },
     {
       "rule": "node-security/no-insecure-rsa-padding",
@@ -47467,7 +47559,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-insecure-rsa-padding/no-insecure-rsa-padding.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-math-random-crypto",
@@ -48025,8 +48121,8 @@
         }
       ],
       "wild": {
-        "count": 21,
-        "repos": 7
+        "count": 26,
+        "repos": 9
       }
     },
     {
@@ -48129,8 +48225,8 @@
         }
       ],
       "wild": {
-        "count": 25,
-        "repos": 3
+        "count": 312,
+        "repos": 8
       }
     },
     {
@@ -48548,8 +48644,8 @@
         }
       ],
       "wild": {
-        "count": 47,
-        "repos": 8
+        "count": 61,
+        "repos": 13
       }
     },
     {
@@ -49250,7 +49346,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-static-iv/no-static-iv.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 56,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-timing-unsafe-compare",
@@ -50281,8 +50381,8 @@
         }
       ],
       "wild": {
-        "count": 14,
-        "repos": 4
+        "count": 31,
+        "repos": 9
       }
     },
     {
@@ -50745,8 +50845,8 @@
         }
       ],
       "wild": {
-        "count": 82,
-        "repos": 14
+        "count": 101,
+        "repos": 21
       }
     },
     {
@@ -51019,8 +51119,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 52,
+        "repos": 4
       }
     },
     {
@@ -51788,8 +51888,8 @@
         }
       ],
       "wild": {
-        "count": 36,
-        "repos": 5
+        "count": 351,
+        "repos": 6
       }
     },
     {
@@ -52152,8 +52252,8 @@
         }
       ],
       "wild": {
-        "count": 11,
-        "repos": 4
+        "count": 33,
+        "repos": 8
       }
     },
     {
@@ -52314,7 +52414,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-weak-cipher-algorithm/no-weak-cipher-algorithm.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 13,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-weak-hash-algorithm",
@@ -52729,7 +52833,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/no-weak-hash-algorithm/no-weak-hash-algorithm.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/no-zip-slip",
@@ -53053,8 +53161,8 @@
         }
       ],
       "wild": {
-        "count": 12,
-        "repos": 3
+        "count": 38,
+        "repos": 7
       }
     },
     {
@@ -53307,8 +53415,8 @@
         }
       ],
       "wild": {
-        "count": 7,
-        "repos": 3
+        "count": 16,
+        "repos": 6
       }
     },
     {
@@ -53439,7 +53547,11 @@
           "description": "",
           "file": "packages/eslint-plugin-node-security/src/rules/require-aead-tag-verification/require-aead-tag-verification.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 6,
+        "repos": 1
+      }
     },
     {
       "rule": "node-security/require-dependency-integrity",
@@ -54201,8 +54313,8 @@
         }
       ],
       "wild": {
-        "count": 60,
-        "repos": 5
+        "count": 143,
+        "repos": 9
       }
     },
     {
@@ -54485,8 +54597,8 @@
         }
       ],
       "wild": {
-        "count": 42,
-        "repos": 3
+        "count": 89,
+        "repos": 9
       }
     },
     {
@@ -54649,8 +54761,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 3,
+        "repos": 3
       }
     },
     {
@@ -54788,8 +54900,8 @@
         }
       ],
       "wild": {
-        "count": 12,
-        "repos": 7
+        "count": 19,
+        "repos": 10
       }
     },
     {
@@ -56700,7 +56812,11 @@
           "description": "",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/no-floating-query/no-floating-query.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 4,
+        "repos": 1
+      }
     },
     {
       "rule": "postgresql-security/no-hardcoded-credentials",
@@ -59820,7 +59936,11 @@
           "description": "",
           "file": "packages/eslint-plugin-postgresql-security/src/rules/prefer-pool-query/prefer-pool-query.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 1,
+        "repos": 1
+      }
     },
     {
       "rule": "postgresql-security/prevent-double-release",
@@ -75166,8 +75286,8 @@
         }
       ],
       "wild": {
-        "count": 162,
-        "repos": 29
+        "count": 339,
+        "repos": 40
       }
     },
     {
@@ -76640,6 +76760,61 @@
         },
         {
           "kind": "TN",
+          "description": "an array read through a loop counter — 73 findings, the commonest shape",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a key read off a named property — 23 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a path segment used as a read key — 19 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TN",
+          "description": "a key taken from a field descriptor — 15 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a write through a local key — 33 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a nested write, both keys local — 28 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "copying one document into another — 25 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "lazy initialisation of a nested object — 22 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "collecting duplicates into an array — 18 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a two-level write, both keys local — 16 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TP",
+          "description": "a tag name used as a label key — 15 findings",
+          "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts"
+        },
+        {
+          "kind": "TN",
           "description": "a deep arithmetic chain on both sides",
           "file": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/write-path-branches.test.ts"
         },
@@ -76775,8 +76950,8 @@
         }
       ],
       "wild": {
-        "count": 2438,
-        "repos": 47
+        "count": 4773,
+        "repos": 74
       }
     },
     {
@@ -77067,7 +77242,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-bidi-characters/no-bidi-characters.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 1
+      }
     },
     {
       "rule": "secure-coding/no-directive-injection",
@@ -77594,8 +77773,8 @@
         }
       ],
       "wild": {
-        "count": 9,
-        "repos": 3
+        "count": 51,
+        "repos": 9
       }
     },
     {
@@ -78886,8 +79065,8 @@
         }
       ],
       "wild": {
-        "count": 35,
-        "repos": 12
+        "count": 73,
+        "repos": 21
       }
     },
     {
@@ -79655,8 +79834,8 @@
         }
       ],
       "wild": {
-        "count": 20,
-        "repos": 4
+        "count": 50,
+        "repos": 7
       }
     },
     {
@@ -80494,8 +80673,8 @@
         }
       ],
       "wild": {
-        "count": 24,
-        "repos": 7
+        "count": 37,
+        "repos": 10
       }
     },
     {
@@ -80563,8 +80742,8 @@
         }
       ],
       "wild": {
-        "count": 64,
-        "repos": 8
+        "count": 84,
+        "repos": 12
       }
     },
     {
@@ -80685,7 +80864,11 @@
           "description": "a template chunk that ends with an invisible character",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-homoglyph-identifiers/no-homoglyph-identifiers.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 12,
+        "repos": 3
+      }
     },
     {
       "rule": "secure-coding/no-improper-sanitization",
@@ -81242,8 +81425,8 @@
         }
       ],
       "wild": {
-        "count": 28,
-        "repos": 8
+        "count": 53,
+        "repos": 11
       }
     },
     {
@@ -81881,8 +82064,8 @@
         }
       ],
       "wild": {
-        "count": 778,
-        "repos": 30
+        "count": 1338,
+        "repos": 48
       }
     },
     {
@@ -82366,8 +82549,8 @@
         }
       ],
       "wild": {
-        "count": 1582,
-        "repos": 34
+        "count": 10454,
+        "repos": 52
       }
     },
     {
@@ -83105,8 +83288,8 @@
         }
       ],
       "wild": {
-        "count": 5,
-        "repos": 5
+        "count": 62,
+        "repos": 8
       }
     },
     {
@@ -83604,8 +83787,8 @@
         }
       ],
       "wild": {
-        "count": 368,
-        "repos": 14
+        "count": 2527,
+        "repos": 25
       }
     },
     {
@@ -83863,8 +84046,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 4,
+        "repos": 3
       }
     },
     {
@@ -84375,7 +84558,11 @@
           "description": "CONTROL: a production path reports",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-privilege-escalation/test-file-pattern.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 3,
+        "repos": 3
+      }
     },
     {
       "rule": "secure-coding/no-redos-vulnerable-regex",
@@ -84912,8 +85099,8 @@
         }
       ],
       "wild": {
-        "count": 63,
-        "repos": 20
+        "count": 107,
+        "repos": 31
       }
     },
     {
@@ -85706,8 +85893,8 @@
         }
       ],
       "wild": {
-        "count": 14,
-        "repos": 7
+        "count": 30,
+        "repos": 11
       }
     },
     {
@@ -86595,8 +86782,8 @@
         }
       ],
       "wild": {
-        "count": 3,
-        "repos": 1
+        "count": 4,
+        "repos": 2
       }
     },
     {
@@ -87539,8 +87726,8 @@
         }
       ],
       "wild": {
-        "count": 185,
-        "repos": 26
+        "count": 832,
+        "repos": 38
       }
     },
     {
@@ -88463,8 +88650,8 @@
         }
       ],
       "wild": {
-        "count": 7,
-        "repos": 4
+        "count": 30,
+        "repos": 11
       }
     },
     {
@@ -89052,8 +89239,8 @@
         }
       ],
       "wild": {
-        "count": 18,
-        "repos": 8
+        "count": 206,
+        "repos": 12
       }
     },
     {
@@ -89366,8 +89553,8 @@
         }
       ],
       "wild": {
-        "count": 7,
-        "repos": 7
+        "count": 35,
+        "repos": 11
       }
     },
     {
@@ -89753,7 +89940,11 @@
           "description": "",
           "file": "packages/eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/no-weak-password-recovery.test.ts"
         }
-      ]
+      ],
+      "wild": {
+        "count": 9,
+        "repos": 2
+      }
     },
     {
       "rule": "secure-coding/no-xpath-injection",
@@ -90470,8 +90661,8 @@
         }
       ],
       "wild": {
-        "count": 13,
-        "repos": 4
+        "count": 24,
+        "repos": 6
       }
     },
     {
@@ -91088,8 +91279,8 @@
         }
       ],
       "wild": {
-        "count": 25,
-        "repos": 6
+        "count": 29,
+        "repos": 8
       }
     },
     {
@@ -91427,8 +91618,8 @@
         }
       ],
       "wild": {
-        "count": 20,
-        "repos": 7
+        "count": 36,
+        "repos": 9
       }
     },
     {
@@ -91696,8 +91887,8 @@
         }
       ],
       "wild": {
-        "count": 1,
-        "repos": 1
+        "count": 17,
+        "repos": 2
       }
     },
     {

@@ -46,7 +46,7 @@ that way.
 | FP-007 | `jwt/require-issuer-validation` ×3 | minimal `jwt.verify` | — | open |
 | FP-008 | `pg/no-transaction-on-pool` | hardcoded identifier `pool` | — | open |
 | FP-009 | `no-unsafe-regex-construction` | `new RegExp(node.pattern, node.flags)` | 11 | open |
-| FP-010 | `detect-object-injection` | `obj[key] = value` | ~750 | open |
+| FP-010 | `detect-object-injection` | computed-key **write**, key locally derived | ~750 | characterised |
 
 `detect-object-injection` alone is six of the top eleven clusters. It is the
 largest single block of unexamined findings we have, and it is one rule.
@@ -81,3 +81,44 @@ Entries marked *parked* have a reproduction in
 `benchmarks/corpus/_pending-rule-fix/` and are deliberately not scored: the
 per-CWE false-positive budget is zero, and raising a budget to accept a known
 defect is how it becomes permanent.
+
+
+## FP-010 — why this one took so long, and what it actually is
+
+`detect-object-injection` resisted triage for a reason that had nothing to do
+with the rule. The case ledger files its findings under a shape signature, and
+for this rule that produced **4,286 distinct shapes**, none of which is a
+decision anybody can make: `Mem(Id[Id])` is `paths[i]`, `Assign=(Mem(Id[Id]),Id)`
+is `fields[field] = include`. Adjudicating 4,286 of those is not work, it is a
+treadmill.
+
+Running the twelve head shapes — 300 of the ~750 findings — through the rule
+answers it in one pass. The line falls exactly here:
+
+| | shape | reports |
+|---|---|---|
+| read | `paths[i]`, `current[app.name]`, `cur[parts[i]]`, `obj[field.field]` | no |
+| write | `fields[field] = …`, `self[i] = doc[i]`, `labels[tag.name] = …` | **yes** |
+
+**Every read is silent and every write reports.** That is the correct half of
+the line already: prototype pollution needs a write — reading `__proto__`
+returns the prototype, it does not replace it.
+
+So FP-010 is not 4,286 shapes and not seven decisions. It is **one**: should a
+computed-key write report without evidence that the key is attacker-controlled?
+Today it does. Every head shape has a locally derived key — a loop counter,
+`Object.keys` of a sibling object, a tag name — so every one is arguably a
+false positive, and equally every one is the exact syntax of a
+prototype-pollution write.
+
+The seven are pinned as `invalid` cases in
+`packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/wild-shapes.test.ts`,
+because that is what the rule does. Recording the position is what makes the
+question answerable: change the rule and those seven move together, on purpose,
+instead of 4,286 signatures drifting one at a time.
+
+The precedent for answering it the other way is `no-timing-unsafe-compare`,
+which was inverted to require an attacker-controlled operand and went from 27
+findings with zero real oracles to near-zero noise. Whether the same trade is
+right here is a judgement about prototype pollution, not about triage, and it
+is now the only thing standing between this entry and a verdict.
