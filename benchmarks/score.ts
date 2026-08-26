@@ -51,21 +51,46 @@ const threshold = args.includes('--threshold')
  * Run ESLint on a file and return the number of errors
  */
 function lintFile(filePath) {
-  try {
-    const result = execSync(
-      `ESLINT_USE_FLAT_CONFIG=true npx tsx node_modules/.bin/eslint --config eslint.benchmark.config.mjs --format json "${filePath}" 2>/dev/null`,
-      { encoding: 'utf-8', cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..') }
+  const run = () =>
+    execSync(
+      `ESLINT_USE_FLAT_CONFIG=true npx tsx node_modules/.bin/eslint --config eslint.benchmark.config.mjs --format json "${filePath}"`,
+      // Repo root is ONE level up from benchmarks/, not two. '../..' pointed
+      // above the checkout, where no node_modules/.bin/eslint exists, so every
+      // invocation failed — and the old `catch { return 0 }` scored that as a
+      // clean file instead of surfacing it.
+      { encoding: 'utf-8', cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..') },
     );
-    const parsed = JSON.parse(result);
-    return parsed[0]?.messages?.length || 0;
+
+  let stdout;
+  let stderr = '';
+  try {
+    stdout = run();
   } catch (err) {
-    // ESLint exits non-zero when there are errors
-    try {
-      const parsed = JSON.parse(err.stdout);
-      return parsed[0]?.messages?.length || 0;
-    } catch {
-      return 0;
-    }
+    // ESLint exits 1 when a file HAS findings — that is a normal outcome and
+    // its JSON is still on stdout. Any other failure is the harness breaking.
+    stdout = err.stdout;
+    stderr = String(err.stderr ?? '');
+  }
+
+  try {
+    const parsed = JSON.parse(stdout);
+    return parsed[0]?.messages?.length ?? 0;
+  } catch {
+    /*
+     * Do NOT return 0 here.
+     *
+     * A crashed ESLint scores every vulnerable file as a miss and every safe
+     * file as a pass, so the run reports TP=0 FP=0 and prints "Precision: 0%"
+     * as though it had measured something. That is how a broken plugin load —
+     * a stale devkit, a bad config, an unbuilt package — reads as a result
+     * instead of an outage. Measured 2026-08-26: exactly this produced
+     * TP=0 FN=69 TN=60 FP=0 with no error shown.
+     */
+    throw new Error(
+      `benchmark harness failure: ESLint produced no parseable JSON for ${filePath}.\n` +
+        `This is not a score of zero, it is a broken run — fix the harness before trusting any number.\n` +
+        (stderr.trim() ? `stderr:\n${stderr.trim().split('\n').slice(0, 12).join('\n')}` : '(no stderr captured)'),
+    );
   }
 }
 

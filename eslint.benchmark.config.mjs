@@ -9,10 +9,10 @@
 
 const secureCodingModule = await import('./packages/eslint-plugin-secure-coding/src/index.ts');
 const nodeSecurityModule = await import('./packages/eslint-plugin-node-security/src/index.ts');
-const pgModule = await import('./packages/eslint-plugin-pg/src/index.ts');
+const pgModule = await import('./packages/eslint-plugin-postgresql-security/src/index.ts');
 const expressModule = await import('./packages/eslint-plugin-express-security/src/index.ts');
 const browserModule = await import('./packages/eslint-plugin-browser-security/src/index.ts');
-const jwtModule = await import('./packages/eslint-plugin-jwt/src/index.ts');
+const jwtModule = await import('./packages/eslint-plugin-jwt-security/src/index.ts');
 const mongodbModule = await import('./packages/eslint-plugin-mongodb-security/src/index.ts');
 const nestjsModule = await import('./packages/eslint-plugin-nestjs-security/src/index.ts');
 const lambdaModule = await import('./packages/eslint-plugin-lambda-security/src/index.ts');
