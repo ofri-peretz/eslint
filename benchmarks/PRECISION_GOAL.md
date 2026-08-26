@@ -7,13 +7,17 @@
 
 | Metric | Value | Basis |
 | :--- | ---: | :--- |
-| Precision (CWE corpus) | **99%** | TP 69 · FP 1 · TN 59 · FN 0 |
+| Precision (CWE corpus) | **96%** | TP 69 · FP 3 · TN 61 · FN 0 |
 | Recall (CWE corpus) | **100%** | — |
-| F1 | **99%** | 95% CI [97.9%, 100.0%] |
+| F1 | **98%** | 95% CI [94.9%, 100.0%] |
 | Rules in the suite | **374** | across 30 plugins |
 | CWE directories | **31** | 150 fixtures total |
 
-**The headline number is not the interesting one.** 99% is measured on 129
+It was 99% before four fixtures drawn from real third-party code were added on
+2026-08-26; two of them fail today. The number went **down** because the corpus
+got more honest, which is the intended direction of travel.
+
+**The headline number is not the interesting one.** 96% is measured on 133
 hand-written samples covering 31 CWEs. It says nothing about the 374 rules, and
 nothing about real third-party code — which is where every false positive that
 has actually cost us a conversation came from.
@@ -59,7 +63,7 @@ precision data at all**, and the scorecard already flags these as `⚠️ none`.
 
 | Milestone | Target | Measure |
 | :--- | :--- | :--- |
-| **M1** | every FP verified in the wild is pinned as a fixture | ~12 known today, all from 2026-08-25 outreach scans |
+| **M1** | every FP verified in the wild is pinned as a fixture | **4 landed 2026-08-26** (otel-propagation-extract, oauth-claims-extractor, dompurify-optional-chaining, typeorm-migration-name); ~8 more known |
 | **M2** | FP budget file + CI gate live | a rule may never exceed its pinned-corpus finding budget |
 | **M3** | 100 rules with a real-world safe fixture | measured, not estimated |
 | **M4** | all 374 rules have ≥1 vulnerable + ≥1 safe fixture | closes the `⚠️ none` column entirely |

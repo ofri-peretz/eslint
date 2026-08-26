@@ -1,0 +1,867 @@
+{
+  "bench": "ILB-Juliet",
+  "benchVersion": "1.0",
+  "timestamp": "2026-08-26T00:36:58.541Z",
+  "methodologyCommit": "f183434c8297ef2c5cf6b67c8a42b2a0da9b5247",
+  "methodologyHash": "sha256:a81176710e7622fd28c6db6152abebfb5f72a80a18e66048eb29c2f54cc3d077",
+  "methodologyPaths": [
+    "benchmarks/score.ts",
+    "benchmarks/lib/history.ts",
+    "benchmarks/lib/median.ts",
+    "benchmarks/lib/methodology.ts",
+    "benchmarks/lib/preregister.ts",
+    "benchmarks/lib/stats.ts",
+    "benchmarks/lib/toolchain.ts"
+  ],
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "10.8.1",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "preregistration": {
+    "methodologyCommit": "f183434c8297ef2c5cf6b67c8a42b2a0da9b5247",
+    "methodologyHash": "sha256:a81176710e7622fd28c6db6152abebfb5f72a80a18e66048eb29c2f54cc3d077",
+    "methodologyPaths": [
+      "benchmarks/score.ts",
+      "benchmarks/lib/history.ts",
+      "benchmarks/lib/median.ts",
+      "benchmarks/lib/methodology.ts",
+      "benchmarks/lib/preregister.ts",
+      "benchmarks/lib/stats.ts",
+      "benchmarks/lib/toolchain.ts"
+    ],
+    "dirtyPaths": [
+      "benchmarks/corpus/CWE-022/safe/oauth-claims-extractor.js",
+      "benchmarks/corpus/CWE-022/safe/otel-propagation-extract.js",
+      "benchmarks/corpus/CWE-079/safe/dompurify-optional-chaining.js",
+      "benchmarks/corpus/CWE-798/safe/typeorm-migration-name.js"
+    ],
+    "capturedAt": "2026-08-26T00:36:58.541Z",
+    "paths": [
+      "benchmarks/corpus",
+      "benchmarks/suites",
+      "benchmarks/lib",
+      "benchmarks/score.mjs",
+      "scripts/ilb-wild.mjs",
+      "scripts/ilb-validate-fixtures.mjs"
+    ]
+  },
+  "cost": {},
+  "effectiveness": {
+    "f1": 0.9787234042553191,
+    "precision": 0.9583333333333334,
+    "recall": 1,
+    "ciLow": 0.9494949494949495,
+    "ciHigh": 1,
+    "ciMethod": "bootstrap"
+  },
+  "latency": {},
+  "weightedF1": 0.9767441860465117,
+  "weightedPrecision": 0.9545454545454546,
+  "weightedRecall": 1,
+  "cwes": [
+    {
+      "cwe": "CWE-020",
+      "owasp": "A03:2021",
+      "tp": 5,
+      "fn": 0,
+      "tn": 5,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "incomplete-hostname-regexp.js",
+          "incomplete-url-scheme-check.js",
+          "incorrect-suffix-check.js",
+          "missing-regexp-anchor.js",
+          "url-substring-sanitization.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "anchored-origin-regexp.js",
+          "endswith-boundary.js",
+          "escaped-anchored-hostname.js",
+          "scheme-allowlist.js",
+          "url-parse-hostname.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-022",
+      "owasp": "A01:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 4,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "path-join-user.js",
+          "readfile-concat.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "dirname-path.js",
+          "oauth-claims-extractor.js",
+          "otel-propagation-extract.js",
+          "static-path.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-073",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 1,
+      "details": {
+        "truePositives": [
+          "render-body-spread.js",
+          "render-query-spread.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "render-explicit-locals.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": [
+          "render-explicit-locals.js -> secure-coding/no-missing-authentication [CWE-287]"
+        ]
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-078",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "exec-concat.js",
+          "exec-template.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "exec-static.js",
+          "execFile-array.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-079",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 1,
+      "fpAnyRule": 1,
+      "details": {
+        "truePositives": [
+          "document-write-dynamic.js",
+          "innerhtml-user-input.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "static-innerhtml.js",
+          "textcontent-safe.js"
+        ],
+        "falsePositives": [
+          "dompurify-optional-chaining.js (browser-security/no-innerhtml)"
+        ],
+        "offCategoryFindings": []
+      },
+      "precision": 0.67,
+      "recall": 1,
+      "f1": 0.8
+    },
+    {
+      "cwe": "CWE-088",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "git-ls-remote-arg-injection.js",
+          "tar-user-args.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "literal-argv.js",
+          "separator-guard.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-089",
+      "owasp": "A03:2021",
+      "tp": 3,
+      "fn": 0,
+      "tn": 3,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "dynamic-column.js",
+          "string-concat.js",
+          "template-literal.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "parameterized.js",
+          "prepared-statement.js",
+          "static-query.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-094",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "vm-run-user-string.js",
+          "vm2-run-user-code.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "vm-literal-script.js",
+          "worker-isolation.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-099",
+      "owasp": "A03:2021",
+      "tp": 1,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "env-key-from-user.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "env-allowlisted-key.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-1007",
+      "owasp": "A07:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "cyrillic-homoglyph-identifier.js",
+          "zero-width-in-auth-string.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "ascii-identifiers.js",
+          "i18n-ui-copy.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-116",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "single-pass-replace.js",
+          "tag-filter-regexp.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "dompurify-sanitize.js",
+          "replace-until-stable.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-117",
+      "owasp": "A09:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "newline-in-log-message.js",
+          "template-literal-log.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "stripped-newlines.js",
+          "structured-logging.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-1333",
+      "owasp": "A05:2021",
+      "tp": 3,
+      "fn": 0,
+      "tn": 3,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "real-cve.js",
+          "self-loop.js",
+          "trade-off.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "atomic-equivalent.js",
+          "literal-match.js",
+          "simple-anchored.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-178",
+      "owasp": "A01:2021",
+      "tp": 1,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "case-sensitive-admin-guard.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "normalized-path-guard.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-209",
+      "owasp": "A05:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "error-object-in-json.js",
+          "stack-in-response.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "generic-error-response.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-248",
+      "owasp": "A04:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "multipart-pipe-no-handler.js",
+          "pipe-no-error-listener.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "pipe-with-error-listener.js",
+          "pipeline-promises.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-295",
+      "owasp": "A07:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "reject-unauthorized-false.js",
+          "tls-checkserveridentity-noop.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "tls-checkserveridentity-validates.js",
+          "tls-default-verification.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "tp": 4,
+      "fn": 0,
+      "tn": 3,
+      "fp": 1,
+      "fpAnyRule": 1,
+      "details": {
+        "truePositives": [
+          "gcm-decipher-no-final.js",
+          "gcm-decrypt-no-authtag.js",
+          "sign-alg-none.js",
+          "verify-allows-none.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "gcm-decrypt-verified.js",
+          "gcm-encrypt-authtag.js",
+          "sign-rs256.js"
+        ],
+        "falsePositives": [
+          "verify-allowlist.js (jwt/require-issuer-validation, jwt/require-audience-validation, jwt/require-max-age)"
+        ],
+        "offCategoryFindings": []
+      },
+      "precision": 0.8,
+      "recall": 1,
+      "f1": 0.89
+    },
+    {
+      "cwe": "CWE-346",
+      "owasp": "A01:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "iframe-wildcard.js",
+          "window-parent-wildcard.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "explicit-origin.js",
+          "self-origin.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-377",
+      "owasp": "A04:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "static-tmp-write.js",
+          "tmpdir-static-name.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "mkdtemp-write.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-409",
+      "owasp": "A05:2021",
+      "tp": 1,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "gunzip-no-limit.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "gunzip-limited.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-444",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "request-insecure-parser.js",
+          "server-insecure-parser.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "request-default-parser.js",
+          "server-default-parser.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-548",
+      "owasp": "A01:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "serve-index-root.js",
+          "static-root-dirname.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "static-public-dir.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-598",
+      "owasp": "A09:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "login-via-query.js",
+          "token-in-query.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "login-via-body-post.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-636",
+      "owasp": "A07:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "catch-returns-true.js",
+          "empty-catch-continues.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "catch-denies.js",
+          "catch-rethrows.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-640",
+      "owasp": "A07:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "reset-link-forwarded-host.js",
+          "reset-link-host-header.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "reset-link-config-origin.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-770",
+      "owasp": "A05:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "array-length-user.js",
+          "buffer-alloc-user.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "buffer-alloc-clamped.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-798",
+      "owasp": "A07:2021",
+      "tp": 5,
+      "fn": 0,
+      "tn": 4,
+      "fp": 1,
+      "fpAnyRule": 1,
+      "details": {
+        "truePositives": [
+          "api-key-in-source.js",
+          "aws-access-key-literal.js",
+          "github-token-literal.js",
+          "jwt-signing-secret-literal.js",
+          "password-in-config.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "env-credentials.js",
+          "password-label.js",
+          "provider-env-credentials.js",
+          "test-placeholder-values.js"
+        ],
+        "falsePositives": [
+          "typeorm-migration-name.js (secure-coding/no-hardcoded-credentials)"
+        ],
+        "offCategoryFindings": []
+      },
+      "precision": 0.83,
+      "recall": 1,
+      "f1": 0.91
+    },
+    {
+      "cwe": "CWE-843",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 0,
+      "fpAnyRule": 1,
+      "details": {
+        "truePositives": [
+          "query-object-spread.js",
+          "query-string-methods.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "guarded-query-type.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": [
+          "guarded-query-type.js -> secure-coding/no-missing-authentication [CWE-287]"
+        ]
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-918",
+      "owasp": "A10:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "axios-user-url.js",
+          "fetch-user-url.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "fetch-static-url.js",
+          "fetch-validated-url.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    },
+    {
+      "cwe": "CWE-943",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "fpAnyRule": 0,
+      "details": {
+        "truePositives": [
+          "user-input-in-find.js",
+          "where-string.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "explicit-eq.js",
+          "static-filter.js"
+        ],
+        "falsePositives": [],
+        "offCategoryFindings": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    }
+  ],
+  "aggregate": {
+    "tp": 69,
+    "fn": 0,
+    "tn": 61,
+    "fp": 3,
+    "precision": 0.96,
+    "recall": 1,
+    "f1": 0.98
+  }
+}
