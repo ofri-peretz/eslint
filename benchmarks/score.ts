@@ -74,7 +74,16 @@ function lintFile(filePath) {
 
   try {
     const parsed = JSON.parse(stdout);
-    return parsed[0]?.messages?.length ?? 0;
+    const messages = parsed[0]?.messages ?? [];
+    /*
+     * Every rule stamps its CWE into the message via formatLLMMessage
+     * ("🔒 CWE-208 OWASP:..."), so the finding carries its own attribution and
+     * the scorer does not need a second, hand-maintained rule->CWE table.
+     */
+    return messages.map((m) => ({
+      ruleId: m.ruleId ?? null,
+      cwe: (String(m.message ?? '').match(/CWE-(\d+)/) ?? [])[0] ?? null,
+    }));
   } catch {
     /*
      * Do NOT return 0 here.
@@ -107,14 +116,65 @@ function scoreCWE(cweDir) {
     ? JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
     : { cwe: cweName };
 
+  /*
+   * A fixture under CWE-073/safe asserts one thing: this file does not contain
+   * CWE-073. It says nothing about authentication, rate limiting, or any other
+   * category. Counting a CWE-306 finding against CWE-073's precision is a
+   * category error — and one that gets WORSE as we add rules, so the metric
+   * would punish coverage.
+   *
+   * So we score twice:
+   *   scoped   — only findings whose own CWE matches the directory. This is
+   *              the honest precision of our detection for that CWE.
+   *   anyRule  — every finding, whatever its category. Stricter, and the right
+   *              number to watch for "is our whole suite quiet on clean code".
+   * Both are reported. Neither is allowed to hide the other.
+   */
+  /*
+   * Rules emit the CWE unpadded ("CWE-73") while the corpus directories are
+   * zero-padded ("CWE-073"), so compare on the number, not the string.
+   */
+  const cweNumber = (v) => {
+    const m = String(v ?? '').match(/CWE-0*(\d+)/i);
+    return m ? m[1] : null;
+  };
+  const thisCwe = cweNumber(cweName);
+
+  /*
+   * Strict CWE-string equality is too brittle to score with. The corpus and the
+   * rules both classify correctly and still disagree, because CWE has parents,
+   * children and consequences:
+   *
+   *   corpus CWE-1333 (regex complexity)  <- no-redos-vulnerable-regex stamps CWE-400 (its parent)
+   *   corpus CWE-116  (improper encoding) <- no-improper-sanitization stamps CWE-79 (the consequence)
+   *   corpus CWE-327  (broken algorithm)  <- jwt/no-algorithm-none stamps CWE-347 (the sibling)
+   *
+   * All three are DETECTED. Scoring them as misses measures our taxonomy, not
+   * our rules. So a finding counts for this fixture when its CWE matches OR it
+   * came from a plugin the manifest already nominated in expectedPlugins —
+   * which is the corpus author's own statement of who should catch this.
+   */
+  const expected = new Set(manifest.expectedPlugins ?? []);
+  const pluginOf = (ruleId) => {
+    const prefix = String(ruleId ?? '').split('/')[0];
+    return prefix ? `eslint-plugin-${prefix}` : null;
+  };
+  const matchesCwe = (f) =>
+    (cweNumber(f.cwe) !== null && cweNumber(f.cwe) === thisCwe) ||
+    (expected.size > 0 && expected.has(pluginOf(f.ruleId)));
+
   const result: any = {
     cwe: cweName,
     owasp: manifest.owasp || 'unknown',
     tp: 0,  // True Positives: vuln files flagged
     fn: 0,  // False Negatives: vuln files missed
     tn: 0,  // True Negatives: safe files passed
-    fp: 0,  // False Positives: safe files flagged
-    details: { truePositives: [], falseNegatives: [], trueNegatives: [], falsePositives: [] },
+    fp: 0,  // False Positives: safe files flagged (scoped to this CWE)
+    fpAnyRule: 0,   // safe files flagged by ANY rule, including other categories
+    details: {
+      truePositives: [], falseNegatives: [], trueNegatives: [], falsePositives: [],
+      offCategoryFindings: [],
+    },
   };
 
   // Score vulnerable files (should produce errors)
@@ -122,8 +182,8 @@ function scoreCWE(cweDir) {
     const vulnFiles = fs.readdirSync(vulnDir).filter(f => f.endsWith('.js') || f.endsWith('.ts'));
     for (const file of vulnFiles) {
       const filePath = path.join(vulnDir, file);
-      const errorCount = lintFile(filePath);
-      if (errorCount > 0) {
+      const findings = lintFile(filePath);
+      if (findings.some(matchesCwe)) {
         result.tp++;
         result.details.truePositives.push(file);
       } else {
@@ -138,13 +198,26 @@ function scoreCWE(cweDir) {
     const safeFiles = fs.readdirSync(safeDir).filter(f => f.endsWith('.js') || f.endsWith('.ts'));
     for (const file of safeFiles) {
       const filePath = path.join(safeDir, file);
-      const errorCount = lintFile(filePath);
-      if (errorCount === 0) {
+      const findings = lintFile(filePath);
+      const inCategory = findings.filter(matchesCwe);
+      const offCategory = findings.filter((f) => !matchesCwe(f));
+
+      if (inCategory.length === 0) {
         result.tn++;
         result.details.trueNegatives.push(file);
       } else {
         result.fp++;
-        result.details.falsePositives.push(file);
+        result.details.falsePositives.push(
+          `${file} (${[...new Set(inCategory.map((f) => f.ruleId))].join(', ')})`,
+        );
+      }
+      if (findings.length > 0) {
+        result.fpAnyRule++;
+        if (offCategory.length > 0) {
+          result.details.offCategoryFindings.push(
+            `${file} -> ${[...new Set(offCategory.map((f) => `${f.ruleId} [${f.cwe ?? '?'}]`))].join(', ')}`,
+          );
+        }
       }
     }
   }
