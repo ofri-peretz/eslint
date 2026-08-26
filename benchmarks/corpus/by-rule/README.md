@@ -30,9 +30,15 @@ real third-party code — count toward the published precision figure. See
 | reason | rules | fix |
 | :--- | ---: | :--- |
 | TP extracted but did not reproduce standalone | 152 | the suite transforms code through a helper — `express-security` wraps every case with `import 'express';` so the rule sees module evidence. Reproducing these means executing the helper, not parsing it. |
-| no `invalid` case exists at all | 25 | **nothing in the suite proves these rules ever report.** Listed in `no-true-positive.json`. |
+| no `invalid` case exists at all | 2 | `import-next/no-relative-packages` and `secure-coding/no-bidi-characters`. Listed in `no-true-positive.json`. |
 
-The second row is the more serious one and is not a tooling gap.
+The second row was first reported as 25 rules. That was wrong, and the way it was
+wrong is worth recording: the extractor read only string literals and template
+literals, so every case written as `code: DRIVER + '...'` — the common way these
+suites prepend a driver import — was skipped, and the silence was read as
+absence. It is the same failure the benchmark scorer had, where a crashed run
+returned zero findings instead of an error. A tool that cannot distinguish "none"
+from "could not read" will eventually be believed.
 
 ## Provenance
 

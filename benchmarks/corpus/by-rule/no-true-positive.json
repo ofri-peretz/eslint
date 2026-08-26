@@ -1,107 +1,16 @@
 {
- "note": "Rules with no invalid RuleTester case. Nothing in the suite demonstrates that these rules ever report — a stronger gap than missing corpus coverage.",
+ "note": "Rules with no invalid RuleTester case \u2014 nothing in the suite demonstrates that they report.",
+ "correction": "An earlier version of this file listed 25 rules. That was a defect in the extractor, not the suite: it read only string literals and template literals, so every case written as a concatenation (DRIVER + the code, the common way these suites prepend a driver import) was skipped and the silence was misread as absence. With concatenation and const bindings resolved, the real number is 2.",
  "generated": "2026-08-26",
- "count": 25,
+ "count": 2,
  "rules": [
   {
-   "rule": "anthropic-security/no-browser-api-key-exposure",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "anthropic-security/no-untrusted-content-in-prompt",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "drizzle-security/no-mass-assignment",
-   "reason": "no test file"
-  },
-  {
-   "rule": "drizzle-security/no-unscoped-mutation",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "gemini-security/no-hardcoded-api-key",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "gemini-security/no-untrusted-content-in-prompt",
-   "reason": "test file has no invalid case"
-  },
-  {
    "rule": "import-next/no-relative-packages",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "knex-security/no-hardcoded-credentials",
-   "reason": "no test file"
-  },
-  {
-   "rule": "knex-security/no-mass-assignment",
-   "reason": "no test file"
-  },
-  {
-   "rule": "knex-security/no-unscoped-mutation",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "knex-security/require-tls",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "mcp-sdk-security/no-command-injection-in-tool",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "mcp-sdk-security/no-tool-description-injection",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "mcp-sdk-security/no-unvalidated-tool-args",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "mysql-security/no-hardcoded-credentials",
-   "reason": "no test file"
-  },
-  {
-   "rule": "openai-security/no-untrusted-content-in-prompt",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "prisma-security/no-mass-assignment",
-   "reason": "no test file"
-  },
-  {
-   "rule": "prisma-security/no-unscoped-mutation",
-   "reason": "test file has no invalid case"
+   "reason": "test file exists but declares no invalid case"
   },
   {
    "rule": "secure-coding/no-bidi-characters",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "sequelize-security/no-hardcoded-credentials",
-   "reason": "no test file"
-  },
-  {
-   "rule": "sequelize-security/no-mass-assignment",
-   "reason": "no test file"
-  },
-  {
-   "rule": "sequelize-security/require-tls",
-   "reason": "test file has no invalid case"
-  },
-  {
-   "rule": "typeorm-security/no-hardcoded-credentials",
-   "reason": "no test file"
-  },
-  {
-   "rule": "typeorm-security/no-mass-assignment",
-   "reason": "no test file"
-  },
-  {
-   "rule": "typeorm-security/require-tls",
-   "reason": "test file has no invalid case"
+   "reason": "test file exists but declares no invalid case"
   }
  ]
 }

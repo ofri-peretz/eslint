@@ -42,6 +42,32 @@ we are wrong. It is already observable without asking anyone:
 
 A synthetic corpus can be gamed by editing fixtures. Suppression count cannot.
 
+## Sample size is part of the claim
+
+99% of 70 findings and 99% of 5,000 are not the same statement. Today's figure
+carries a bootstrap 95% CI of **[94.9%, 100%]** — ±5 points — because it rests on
+69 true positives. Precision cannot be trusted to a point until the denominator
+is large enough for the interval to close.
+
+So the target is a pair, not a percentage:
+
+| horizon | verified TP | verified FP | what the CI buys |
+| :--- | ---: | ---: | :--- |
+| today | 69 | 1 | ±5 points — a single fixture moves the headline |
+| next | **≥ 300** | ≥ 20 | ±2 points; per-plugin numbers become meaningful |
+| goal | **≥ 1,000** | ≥ 50 | ±1 point; per-rule precision becomes reportable |
+
+**Growing FP count is progress, not regression.** A corpus with one false
+positive is not a precise suite, it is an unexamined one. Every FP found in the
+wild and pinned is a defect that can no longer return silently — and it moves
+the measured number toward the truth rather than away from it.
+
+The material for this already exists and does not need inventing: 158 cloned
+repositories, 13,146 files, and 122 of our rules firing somewhere in them
+(`benchmarks/budgets/real-world-rule-inventory.json`). What it needs is triage —
+a human verdict per finding — which is exactly the work that produced every
+false positive we know about.
+
 ## Goals
 
 ### Primary — real-world precision ≥ 98%, measured continuously
