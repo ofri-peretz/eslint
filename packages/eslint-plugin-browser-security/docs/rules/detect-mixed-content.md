@@ -32,7 +32,7 @@ Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulner
 
 Mixed content occurs when HTTPS pages load resources over HTTP. This weakens the security of the entire page, as attackers can intercept or modify the insecure resources through man-in-the-middle attacks.
 
-This rule detects `http://` strings written in a **subresource position** — `<img src>`, `<script src>`, `el.src = …`, `setAttribute('src', …)`, `importScripts(…)` and the like — which is the one shape a browser actually blocks as mixed content. Other hardcoded `http://` URLs are reported by `no-http-urls` instead, so each line draws exactly one finding.
+This rule detects `http://` strings written in a **subresource position** — `<img src>`, `<script src>`, `el.src = …`, `setAttribute('src', …)`, `importScripts(…)` and the like — which is the one shape a browser actually blocks as mixed content. Other hardcoded `http://` URLs are handled by the rule family: the URL argument of a `fetch`/`axios` call by `require-https-only`, everything else by `no-http-urls` — so each line draws exactly one finding.
 
 ### Built-in exemption: XML namespace identifiers
 
