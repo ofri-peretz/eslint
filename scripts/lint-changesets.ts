@@ -36,6 +36,11 @@
  *   CS006  conventional-prefix     — no `feat:`/`fix:`/… prefix; the badge falls
  *                                    back to the bump level, which is less precise
  *   CS007  title-too-long          — over 120 chars; the tail gets lost in the rollup
+ *   CS009  cross-package-scope     — one changeset covering several packages whose
+ *                                   body names rules owned by more than one of
+ *                                   them. Changesets writes the *same* body into
+ *                                   every listed package's CHANGELOG, so each one
+ *                                   then advertises the others' rules.
  *   CS008  duplicate-title         — two changesets with the same title, usually
  *                                    a copy-paste that will render twice
  *
@@ -229,12 +234,15 @@ export function lint(
   );
 
   const titles = new Map<string, string>();
+  const parsed: Changeset[] = [];
 
   for (const file of files) {
     const cs = parse(dir, file);
     // A file that doesn't parse is changeset-validity.test.ts's finding, not
     // ours — reporting it twice makes the real error harder to spot.
     if (!cs) continue;
+
+    parsed.push(cs);
 
     // An intentionally empty changeset (no releases, no summary) is a valid
     // "this diff needs no release" marker. Nothing to lint.
@@ -333,6 +341,91 @@ export function lint(
       });
     } else {
       titles.set(key, file);
+    }
+  }
+
+  findings.push(...checkCrossPackageScope(parsed, ruleOwners()));
+
+  return findings;
+}
+
+/**
+ * `rule-name` → owning plugin short name, for CS009.
+ *
+ * Built from the tree rather than a hand-kept list: a rule is owned by whichever
+ * `packages/eslint-plugin-<x>/src/rules/<rule-name>/` directory declares it.
+ * Names carried by more than one plugin are dropped — `no-hardcoded-secrets`
+ * exists in several, so seeing it in a body says nothing about which package a
+ * sentence is describing, and guessing would produce false positives.
+ */
+function ruleOwners(): Map<string, string> {
+  const owners = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  const root = 'packages';
+  if (!existsSync(root)) return owners;
+
+  for (const entry of readdirSync(root)) {
+    const m = /^eslint-plugin-(.+)$/.exec(entry);
+    if (!m) continue;
+    const rulesDir = join(root, entry, 'src', 'rules');
+    if (!existsSync(rulesDir)) continue;
+
+    for (const rule of readdirSync(rulesDir)) {
+      if (!existsSync(join(rulesDir, rule, 'index.ts'))) continue;
+      if (owners.has(rule) && owners.get(rule) !== m[1]) ambiguous.add(rule);
+      else owners.set(rule, m[1]);
+    }
+  }
+
+  for (const rule of ambiguous) owners.delete(rule);
+  return owners;
+}
+
+/**
+ * CS009 — a multi-package changeset whose body describes more than one package.
+ *
+ * Changesets applies a changeset's body verbatim to every package it lists. A
+ * body that names `no-decode-without-verify` (jwt-security) *and*
+ * `crypto.pseudoRandomBytes` (node-security) therefore ships both sentences to
+ * both CHANGELOGs, and each package's published release notes claim rules it
+ * does not own. That shipped once — the fix is one changeset per package, not
+ * one changeset listing several.
+ */
+export function checkCrossPackageScope(
+  changesets: Changeset[],
+  owners: Map<string, string>,
+): Finding[] {
+  const findings: Finding[] = [];
+
+  for (const cs of changesets) {
+    const listed = cs.releases
+      .map((r) => /^(?:@[^/]+\/)?eslint-plugin-(.+)$/.exec(r.name)?.[1])
+      .filter((x): x is string => Boolean(x));
+    if (listed.length < 2) continue;
+
+    // Only backticked identifiers count. Prose mentioning a rule in passing is
+    // not a claim of ownership, and matching bare words would fire on any
+    // sentence containing a common rule name.
+    const named = new Set<string>();
+    for (const [, token] of cs.body.matchAll(/`([^`]+)`/g)) {
+      const rule = token.includes('/')
+        ? token.slice(token.indexOf('/') + 1)
+        : token;
+      const owner = owners.get(rule);
+      if (owner && listed.includes(owner)) named.add(owner);
+    }
+
+    if (named.size > 1) {
+      const which = [...named].sort().join(', ');
+      findings.push({
+        rule: 'CS009',
+        level: 'error',
+        file: cs.file,
+        message:
+          `Covers ${listed.length} packages and describes rules from ${named.size} of them (${which}). ` +
+          `Changesets copies this body into every listed package's CHANGELOG, so each would ` +
+          `advertise the others' rules. Split into one changeset per package.`,
+      });
     }
   }
 
