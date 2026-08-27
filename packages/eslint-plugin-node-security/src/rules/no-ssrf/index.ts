@@ -22,6 +22,7 @@ import {
   MessageIcons,
   unwrapTypeSyntax,
   isTestFilePath,
+  readsRequestShape,
 } from '@interlace/eslint-devkit';
 import { bindingInit } from '../../utils/provenance';
 
@@ -46,35 +47,66 @@ type RuleOptions = [Options?];
 
 // HTTP client functions that make outbound requests
 const HTTP_CLIENT_FUNCTIONS = new Set([
-  'fetch',       // built-in / node-fetch
-  'got',         // got
-  'nodeFetch',   // node-fetch
-  'undici',      // undici
+  'fetch', // built-in / node-fetch
+  'got', // got
+  'nodeFetch', // node-fetch
+  'undici', // undici
 ]);
 
 // HTTP client method calls (e.g., axios.get, http.request)
 const HTTP_CLIENT_METHODS = new Set([
-  'get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'request',
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'options',
+  'request',
 ]);
 
 // Object names that are HTTP client libraries
 // `needle.get(url)` is covered here; the `needle('get', url)` verb-first form
 // is not — the URL sits in argument 1, and this rule only reads argument 0.
 const HTTP_CLIENT_OBJECTS = new Set([
-  'axios', 'got', 'superagent', 'request', 'http', 'https', 'undici', 'needle',
+  'axios',
+  'got',
+  'superagent',
+  'request',
+  'http',
+  'https',
+  'undici',
+  'needle',
 ]);
 
 // Function names that indicate URL validation
 const VALIDATION_FUNCTION_NAMES = new Set([
-  'validateUrl', 'validateURL', 'isValidUrl', 'isSafeUrl', 'isAllowed',
-  'isValidURL', 'checkUrl', 'checkURL', 'sanitizeUrl', 'sanitizeURL',
+  'validateUrl',
+  'validateURL',
+  'isValidUrl',
+  'isSafeUrl',
+  'isAllowed',
+  'isValidURL',
+  'checkUrl',
+  'checkURL',
+  'sanitizeUrl',
+  'sanitizeURL',
 ]);
 
 // Substrings in identifier names that suggest user input
 const USER_INPUT_SUBSTRINGS = [
-  'url', 'endpoint', 'uri', 'href', 'link',
-  'target', 'dest', 'source', 'host',
-  'user', 'input', 'param',
+  'url',
+  'endpoint',
+  'uri',
+  'href',
+  'link',
+  'target',
+  'dest',
+  'source',
+  'host',
+  'user',
+  'input',
+  'param',
 ];
 
 /**
@@ -82,7 +114,7 @@ const USER_INPUT_SUBSTRINGS = [
  */
 function isUserInputParamName(name: string): boolean {
   const lower = name.toLowerCase();
-  return USER_INPUT_SUBSTRINGS.some(sub => lower.includes(sub));
+  return USER_INPUT_SUBSTRINGS.some((sub) => lower.includes(sub));
 }
 
 // Object roots whose members carry attacker-controlled data in the common
@@ -99,7 +131,19 @@ const URL_OPTION_KEYS = new Set(['url', 'href', 'uri']);
  * `ctx.request.body.target`, `event.queryStringParameters.u`. Everything
  * hanging off a request is untrusted, so the root name is the whole test.
  */
-function isRequestSourced(node: TSESTree.Node): boolean {
+function isRequestSourced(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  // The SHAPE first: `inbound.query.id` is a request read whatever the
+  // parameter is called. Express never required the name `req`, and a
+  // TypeScript codebase writing `(request: Request, response: Response)` got
+  // nothing from this rule at all — measured by the rename probe.
+  if (readsRequestShape(node, sourceCode)) return true;
+
+  // The name test stays as a second chance, because it covers roots this file
+  // can see are requests but cannot see are parameters — a `ctx` closed over
+  // by a Koa middleware, for instance.
   let current: TSESTree.Node = node;
   while (current.type === AST_NODE_TYPES.MemberExpression) {
     current = current.object;
@@ -170,10 +214,14 @@ function makeCarriesUntrustedUrl(
       case AST_NODE_TYPES.MemberExpression:
         // `req.query.url` directly, or a chain whose ROOT is a local that was
         // itself read off the request (`const raw = req.body; raw.callbackUrl`).
-        return isRequestSourced(node) || carries(node.object, depth + 1);
+        return (
+          isRequestSourced(node, sourceCode) || carries(node.object, depth + 1)
+        );
 
       case AST_NODE_TYPES.TemplateLiteral:
-        return node.expressions.some((expression) => carries(expression, depth + 1));
+        return node.expressions.some((expression) =>
+          carries(expression, depth + 1),
+        );
 
       // `new URL(userUrl)` / `String(req.query.url)` — inspect the arguments.
       case AST_NODE_TYPES.CallExpression:
@@ -183,23 +231,26 @@ function makeCarriesUntrustedUrl(
       // `'https://host' + userPath`
       case AST_NODE_TYPES.BinaryExpression:
         return (
-          carries(node.left as TSESTree.Node, depth + 1) || carries(node.right, depth + 1)
+          carries(node.left as TSESTree.Node, depth + 1) ||
+          carries(node.right, depth + 1)
         );
 
       // `http.request({ url: x, host: y })` — only URL-naming keys count by
       // name; every other key still counts if its value is request-sourced.
       case AST_NODE_TYPES.ObjectExpression:
-        return node.properties.some(property => {
+        return node.properties.some((property) => {
           if (property.type !== AST_NODE_TYPES.Property) return false;
           const value = property.value as TSESTree.Node;
-          if (isRequestSourced(value)) return true;
+          if (isRequestSourced(value, sourceCode)) return true;
           const key =
             property.key.type === AST_NODE_TYPES.Identifier
               ? property.key.name
               : property.key.type === AST_NODE_TYPES.Literal
                 ? String(property.key.value)
                 : '';
-          return URL_OPTION_KEYS.has(key.toLowerCase()) && carries(value, depth + 1);
+          return (
+            URL_OPTION_KEYS.has(key.toLowerCase()) && carries(value, depth + 1)
+          );
         });
 
       default:
@@ -239,7 +290,13 @@ function nodeContainsValidation(node: TSESTree.Node): boolean {
     node.callee.property.type === AST_NODE_TYPES.Identifier
   ) {
     const method = node.callee.property.name;
-    if (method === 'includes' || method === 'has' || method === 'startsWith' || method === 'test' || method === 'some') {
+    if (
+      method === 'includes' ||
+      method === 'has' ||
+      method === 'startsWith' ||
+      method === 'test' ||
+      method === 'some'
+    ) {
       return true;
     }
   }
@@ -248,14 +305,14 @@ function nodeContainsValidation(node: TSESTree.Node): boolean {
   if (
     node.type === AST_NODE_TYPES.BinaryExpression &&
     (node.operator === '===' || node.operator === '==') &&
-    (
-      (node.left.type === AST_NODE_TYPES.MemberExpression &&
-       node.left.property.type === AST_NODE_TYPES.Identifier &&
-       (node.left.property.name === 'hostname' || node.left.property.name === 'host')) ||
+    ((node.left.type === AST_NODE_TYPES.MemberExpression &&
+      node.left.property.type === AST_NODE_TYPES.Identifier &&
+      (node.left.property.name === 'hostname' ||
+        node.left.property.name === 'host')) ||
       (node.right.type === AST_NODE_TYPES.MemberExpression &&
-       node.right.property.type === AST_NODE_TYPES.Identifier &&
-       (node.right.property.name === 'hostname' || node.right.property.name === 'host'))
-    )
+        node.right.property.type === AST_NODE_TYPES.Identifier &&
+        (node.right.property.name === 'hostname' ||
+          node.right.property.name === 'host')))
   ) {
     return true;
   }
@@ -266,13 +323,25 @@ function nodeContainsValidation(node: TSESTree.Node): boolean {
   }
 
   // Keys to skip: non-child properties that cause circular refs or aren't AST children
-  const SKIP_KEYS = new Set(['parent', 'range', 'loc', 'tokens', 'comments', 'start', 'end']);
+  const SKIP_KEYS = new Set([
+    'parent',
+    'range',
+    'loc',
+    'tokens',
+    'comments',
+    'start',
+    'end',
+  ]);
 
   // Recurse into child nodes
   for (const key of Object.keys(node)) {
     if (SKIP_KEYS.has(key)) continue;
     const value = (node as unknown as Record<string, unknown>)[key];
-    if (value && typeof value === 'object' && 'type' in (value as Record<string, unknown>)) {
+    if (
+      value &&
+      typeof value === 'object' &&
+      'type' in (value as Record<string, unknown>)
+    ) {
       if (nodeContainsValidation(value as TSESTree.Node)) return true;
     }
     if (Array.isArray(value)) {
@@ -292,12 +361,19 @@ function nodeContainsValidation(node: TSESTree.Node): boolean {
  */
 function hasValidationBefore(node: TSESTree.CallExpression): boolean {
   // Walk up to find the containing block
-  let current: TSESTree.Node | undefined = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  let current: TSESTree.Node | undefined = (
+    node as TSESTree.Node & { parent?: TSESTree.Node }
+  ).parent;
   while (current) {
-    const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    const parent: TSESTree.Node | undefined = (
+      current as TSESTree.Node & { parent?: TSESTree.Node }
+    ).parent;
     if (!parent) break;
 
-    if (parent.type === AST_NODE_TYPES.BlockStatement || parent.type === AST_NODE_TYPES.Program) {
+    if (
+      parent.type === AST_NODE_TYPES.BlockStatement ||
+      parent.type === AST_NODE_TYPES.Program
+    ) {
       const body = parent.body;
       const idx = body.indexOf(current as TSESTree.Statement);
 
@@ -370,7 +446,8 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true, reportUnresolvedUrls = false }: Options = options || {};
+    const { allowInTests = true, reportUnresolvedUrls = false }: Options =
+      options || {};
     const carriesUntrustedUrl = makeCarriesUntrustedUrl(
       context.sourceCode,
       reportUnresolvedUrls,

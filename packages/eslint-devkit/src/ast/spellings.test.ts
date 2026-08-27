@@ -12,6 +12,9 @@
  */
 import { describe, it, expect } from 'vitest';
 import { parse } from '@typescript-eslint/parser';
+import * as parser from '@typescript-eslint/parser';
+import { Linter } from 'eslint';
+import type { TSESLint } from '@typescript-eslint/utils';
 import type { TSESTree } from '@typescript-eslint/utils';
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 
@@ -21,6 +24,7 @@ import {
   propertyName,
   objectKeyName,
   memberPath,
+  readsRequestShape,
 } from './spellings';
 
 /** The first expression statement's expression, which is what each case is. */
@@ -145,5 +149,89 @@ describe('memberPath', () => {
   it('declines a root that is not a name', () => {
     expect(memberPath(expressionOf('f().b'))).toBeNull();
     expect(memberPath(expressionOf('1'))).toBeNull();
+  });
+});
+
+describe('readsRequestShape', () => {
+  /**
+   * Exercised through a real rule, because the predicate's whole job is to ask
+   * the SCOPE whether the receiver is a parameter. A hand-built scope stub
+   * would test the stub.
+   */
+  const probe = {
+    meta: { type: 'problem', schema: [], messages: { hit: 'hit' } },
+    defaultOptions: [],
+    create(context: TSESLint.RuleContext<'hit', []>) {
+      return {
+        MemberExpression(node: TSESTree.MemberExpression): void {
+          if (readsRequestShape(node, context.sourceCode)) {
+            context.report({ node, messageId: 'hit' });
+          }
+        },
+      };
+    },
+  } as unknown as Parameters<Linter['verify']>[1];
+
+  const hits = (code: string): number => {
+    const linter = new Linter();
+    const messages = linter.verify(
+      code,
+      [
+        {
+          files: ['**/*.ts'],
+          plugins: { p: { rules: { probe } } } as never,
+          languageOptions: {
+            parser: parser as never,
+            parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+          },
+          rules: { 'p/probe': 'error' },
+        },
+      ],
+      'c.ts',
+    );
+    return messages.filter((m) => m.ruleId !== null).length;
+  };
+
+  it('reads a request off a parameter whatever the parameter is called', () => {
+    expect(hits('function f(req) { g(req.query.id); }')).toBeGreaterThan(0);
+    expect(
+      hits('function f(inbound) { g(inbound.query.id); }'),
+    ).toBeGreaterThan(0);
+    expect(
+      hits('function f(request) { g(request.headers.auth); }'),
+    ).toBeGreaterThan(0);
+  });
+
+  it('declines a receiver that is not a parameter', () => {
+    // A request ARRIVES as an argument. A module-local object with a `.params`
+    // is somebody's own data structure.
+    expect(
+      hits('const config = { params: { a: 1 } }; g(config.params.a);'),
+    ).toBe(0);
+  });
+
+  it('declines a property that is not part of the request shape', () => {
+    expect(hits('function f(x) { g(x.somethingElse.a); }')).toBe(0);
+  });
+
+  it('declines a bare `body`, which every AST node also has', () => {
+    expect(hits('function visit(node) { g(node.body); }')).toBe(0);
+    expect(hits('function f(req) { g(req.body.url); }')).toBeGreaterThan(0);
+  });
+
+  it('declines a key decided at runtime, which names no shape at all', () => {
+    // `req[k]` reads SOMETHING off a request and the AST cannot say what, so
+    // there is no property to match against the shape.
+    expect(hits('function f(req, k) { g(req[k]); }')).toBe(0);
+    // And one level out: the outer `.id` is not a request property either.
+    expect(hits('function f(req, k) { g(req[k].id); }')).toBe(0);
+  });
+
+  it('declines a root that is not an identifier', () => {
+    expect(hits('function f() { g(h().query.id); }')).toBe(0);
+  });
+
+  it('declines an identifier the scope does not know', () => {
+    expect(hits('g(undeclared.query.id);')).toBe(0);
   });
 });

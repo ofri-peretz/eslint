@@ -16,7 +16,6 @@ const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
 });
 
-
 /**
  * The pre-inversion contract: a URL argument reports because its identifier is
  * NAMED like user input (`url`, `endpoint`, `targetUrl`).
@@ -33,7 +32,10 @@ describe('no-ssrf', () => {
     ruleTester.run('valid - safe requests', noSsrf, {
       valid: [
         // Literal URLs — always safe
-        { name: 'a fixed host', code: 'fetch("https://api.example.com/data");' },
+        {
+          name: 'a fixed host',
+          code: 'fetch("https://api.example.com/data");',
+        },
         { code: 'axios.get("https://api.stripe.com/charges");' },
         { code: 'needle.get("https://api.example.com/data");' },
         // Template literal without expressions — safe
@@ -179,9 +181,11 @@ describe('no-ssrf', () => {
           `,
         },
         // Same shape, no callback — the options object alone is not a URL
-        { code: "http.request({ hostname: host, port, path });" },
+        { code: 'http.request({ hostname: host, port, path });' },
         // Interpolated path built from locals — no user-input-named identifier
-        { code: 'function load(id) { return fetch(`https://api.internal/items/${id}`); }' },
+        {
+          code: 'function load(id) { return fetch(`https://api.internal/items/${id}`); }',
+        },
         // Object literal in a non-URL key holding a local
         { code: 'axios.request({ method: "GET", headers: authHeaders });' },
       ],
@@ -304,9 +308,7 @@ describe('no-ssrf', () => {
  *   git stash && npx vitest run <this file>   # expect a failure
  */
 ruleTester.run('no-ssrf-ts-cast-taint', noSsrf, {
-  valid: [
-    `const r = await fetch('https://api.example.com/health' as string);`,
-  ],
+  valid: [`const r = await fetch('https://api.example.com/health' as string);`],
   invalid: [
     {
       code: `app.get('/proxy', async (req, res) => { const r = await fetch(req.query.url as string); res.send(await r.text()); });`,

@@ -35,7 +35,7 @@
  * node type and say why in a comment — that is a position, and positions are
  * fine. Silence by omission is not.
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree, TSESLint } from '@typescript-eslint/utils';
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 
 /**
@@ -120,4 +120,85 @@ export function memberPath(node: TSESTree.Node): string[] | null {
   if (head === null) return null;
   const tail = propertyName(node);
   return tail === null ? null : [...head, tail];
+}
+
+/**
+ * The properties a web request exposes caller-supplied data on.
+ *
+ * These names ARE a contract: Express, Koa, Fastify and the Lambda proxy
+ * integration all publish them. The RECEIVER's name is not — Express never
+ * required the parameter be called `req`, and `(request, response) => …` is
+ * ordinary code.
+ */
+const REQUEST_SHAPE: ReadonlySet<string> = new Set([
+  'query',
+  'params',
+  'headers',
+  'cookies',
+  'queryStringParameters',
+  'pathParameters',
+  'multiValueHeaders',
+]);
+
+/**
+ * `body` is a request property and also the commonest property name in this
+ * ecosystem: every AST node has one, and so does every HTTP RESPONSE.
+ *
+ * `function visit(node) { … node.body … }` is an AST visitor, and treating it
+ * as a request read reported the linter's own source. So `body` qualifies only
+ * when something is read OUT of it — `x.body.url` is a request field,
+ * `x.body` on its own is as likely a statement list.
+ */
+const REQUEST_SHAPE_NEEDS_DEPTH: ReadonlySet<string> = new Set(['body']);
+
+/**
+ * Does this expression read caller-supplied data off a request?
+ *
+ * Decided from the SHAPE, not the receiver's name. Rules here matched
+ * `['req', 'request', 'ctx', 'event']` on the root identifier, so a codebase
+ * writing `(inbound, outbound) => …` — or the very common TypeScript
+ * `(request: Request, response: Response)` — got nothing at all from
+ * `no-sql-injection`, `no-ssrf` and `no-insecure-redirects`. Measured with
+ * `scripts/name-dependence-probe.mts`.
+ *
+ * The receiver must be a FUNCTION PARAMETER. That is what keeps `config.params`
+ * and `node.body` out: a request arrives as an argument, and a module-local
+ * object with a `.body` is somebody's own data structure. Requiring the
+ * parameter is a structural fact, and it is the part the old name test was
+ * standing in for.
+ *
+ * @example
+ * ```ts
+ * readsRequestShape(node, context.sourceCode); // inbound.query.id -> true
+ * ```
+ */
+export function readsRequestShape(
+  node: TSESTree.Node,
+  sourceCode: { getScope: (node: TSESTree.Node) => TSESLint.Scope.Scope },
+): boolean {
+  // Walk to the root of the member chain, remembering the property that sat
+  // directly on it — `a.query.id` asks about `query`, not `id`.
+  let current: TSESTree.Node = node;
+  let firstProperty: string | null = null;
+  let depth = 0;
+  while (current.type === AST_NODE_TYPES.MemberExpression) {
+    const name = propertyName(current);
+    if (name !== null) firstProperty = name;
+    depth += 1;
+    current = current.object;
+  }
+  if (current.type !== AST_NODE_TYPES.Identifier) return false;
+  if (firstProperty === null) return false;
+  const known = REQUEST_SHAPE.has(firstProperty);
+  const needsDepth = REQUEST_SHAPE_NEEDS_DEPTH.has(firstProperty);
+  if (!known && !needsDepth) return false;
+  if (needsDepth && depth < 2) return false;
+
+  const scope = sourceCode.getScope(current);
+  for (let s: TSESLint.Scope.Scope | null = scope; s !== null; s = s.upper) {
+    const variable = s.set.get(current.name);
+    if (variable === undefined) continue;
+    return variable.defs.some((d) => d.type === 'Parameter');
+  }
+  return false;
 }
