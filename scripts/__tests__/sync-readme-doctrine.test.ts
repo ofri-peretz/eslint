@@ -50,9 +50,9 @@ describe('spliceDoctrine', () => {
     // with substance.
     expect(content).not.toContain('## Philosophy');
     expect(content).not.toContain('**Interlace** fosters **strength through integration**.');
-    expect(content).toContain('## Why these rules are quiet');
-    expect(content).toContain('## How they decide');
-    expect(content).toContain('## What you get');
+    expect(content).toContain('- **Why** —');
+    expect(content).toContain('- **How** —');
+    expect(content).toContain('- **What** —');
     expect(content).toContain('BENCHMARK-METHODOLOGY.md');
     // The block lands between Philosophy and the rules table, not at the end.
     expect(content.indexOf('## Philosophy')).toBeLessThan(content.indexOf('DOCTRINE:START'));
@@ -101,32 +101,24 @@ describe('spliceDoctrine', () => {
     );
   }
 
-  it('carries exactly the three why/how/what beats and no other heading', () => {
-    // The golden circle is the shape, and only the shape. A fourth section is how the
-    // ~45-line version grew, one reasonable-looking addition at a time.
-    const headings = doctrineBlock().match(/^#{1,6} .*$/gm) ?? [];
-    expect(headings).toEqual([
-      '## Why these rules are quiet',
-      '## How they decide',
-      '## What you get',
-    ]);
+  it('adds no heading of its own', () => {
+    // Three `##` sections for one thought is three table-of-contents entries and three
+    // things between a reader arriving from npm and the install command. The block
+    // lives under `## Description`; it does not get sections.
+    expect(doctrineBlock()).not.toMatch(/^#{1,6} /m);
+  });
+
+  it('is exactly three why/how/what bullets, one sentence-ish each', () => {
+    const bullets = doctrineBlock().match(/^- \*\*(\w+)\*\*/gm) ?? [];
+    expect(bullets).toEqual(['- **Why**', '- **How**', '- **What**']);
   });
 
   it('stays short enough that the install command survives the fold', () => {
-    // ~26 is the current block plus headroom to rewrite it, not a target to fill. The
-    // shape this defends against is the three-section, ~45-line version that pushed
-    // Getting Started and the rule table off the first screen on all thirty READMEs.
+    // 14 is the current block plus one line of headroom, not a target to fill. Two
+    // earlier versions of this slot ran ~45 and ~16 lines; both pushed Getting Started
+    // and the rule table off the first screen on all thirty READMEs.
     const lines = doctrineBlock().trim().split('\n');
-    expect(lines.length).toBeLessThanOrEqual(30);
-  });
-
-  it('opens every beat with a bolded claim, so it survives skimming', () => {
-    const beats = doctrineBlock()
-      .split(/^## /m)
-      .slice(1)
-      .map((b) => b.split('\n').slice(1).join('\n').trim());
-    expect(beats).toHaveLength(3);
-    for (const beat of beats) expect(beat.startsWith('**')).toBe(true);
+    expect(lines.length).toBeLessThanOrEqual(14);
   });
 
   it('carries no ecosystem totals', () => {

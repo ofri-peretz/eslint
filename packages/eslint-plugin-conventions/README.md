@@ -1,9 +1,9 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
   &nbsp;&nbsp;
-  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  <a href="https://oxc.rs" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/oxlint-dark.svg"><img src="https://eslint.interlace.tools/logos/oxlint-light.svg" alt="oxlint" height="90" /></picture></a>
   &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
+  <a href="https://eslint.org" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/eslint-dark.svg"><img src="https://eslint.interlace.tools/logos/eslint-light.svg" alt="ESLint" height="90" /></picture></a>
 </p>
 
 <p align="center">
@@ -27,30 +27,17 @@ This plugin provides Project conventions: naming, file structure, and code style
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
-## Why these rules are quiet
+- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
+  than spend your attention on one that was never real.
+- **How** — evidence, not names. A rule fires on what the code *does*, resolved
+  through the AST and ESLint's own scope analysis.
+- **What** — every finding carries its fix, in prose for a human and as structured
+  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
 
-**A linter nobody reads protects nothing.** One that reports a thousand things a
-week gets switched off in a month, and the real finding goes with it. We would
-rather miss a finding than spend your attention on one that was never real.
-
-## How they decide
-
-**Evidence, not names.** A rule fires on what the code *does*, resolved through the
-AST and ESLint's own scope analysis — never on a variable that happens to be called
-`query`, or a file whose path contains `key`. Every one of those was a real false
-positive here, found by reading our own output on open-source projects and fixed
-with a test that fails on the unfixed rule.
-
-## What you get
-
-**Every finding arrives with its fix** — in prose for a human, as structured JSON
-for an agent, and, on security rules, with a CWE mapping and a CVSS score where one
-is assigned. That trade costs recall, and we measure what it costs rather than
-assuming it is free:
+That trade costs recall, and we measure it:
 [methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
-and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
-If a finding is wrong, [open an issue](https://github.com/ofri-peretz/eslint/issues) —
-a false positive is a bug here, not a tuning exercise for you.
+· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
+· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
 
@@ -186,5 +173,5 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 </p>
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>
