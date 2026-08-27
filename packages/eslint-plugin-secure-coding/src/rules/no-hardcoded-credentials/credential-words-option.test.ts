@@ -67,6 +67,11 @@ suite('no-hardcoded-credentials — the vocabulary is the project’s', () => {
         // has replaced the name vocabulary entirely. Pinned so the two paths
         // cannot be confused later.
         name: 'a vendor key format reports on its value, whatever the name',
+        // The value carries FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY because
+        // GitHub push protection blocks a plausible-looking `sk_live_` body at
+        // the remote — after the whole pre-push gate has already run. Every
+        // other fixture in this plugin uses the same marker; see the
+        // credential-fixture-shape lock.
         code: `const anything = 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456';`,
         options: [{ credentialWords: [] }],
         errors: 1,
