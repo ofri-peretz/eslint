@@ -490,7 +490,10 @@ function isRegexClone(node: TSESTree.Node): boolean {
  * its pattern is untrusted and the pattern check reports it on its own — this
  * predicate only ever silences the FLAGS finding, never the pattern one.
  */
-function isSameObjectPair(pattern: TSESTree.Node, flags: TSESTree.Node): boolean {
+function isSameObjectPair(
+  pattern: TSESTree.Node,
+  flags: TSESTree.Node,
+): boolean {
   // No `undefined` guard: the only caller runs behind `hasDynamicFlags`, which
   // already required a second argument. A check no test could reach is worse
   // than no check — it reads as defensive and is dead.

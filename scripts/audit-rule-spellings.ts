@@ -56,7 +56,13 @@ const PATTERNS: Pattern[] = [
   {
     id: 'string-literal-only',
     // `x.type === 'Literal'` — misses a no-substitution template literal.
-    match: /\.type === (?:'Literal'|AST_NODE_TYPES\.Literal)\b/g,
+    //
+    // Only when a STRING is actually in play. `value.value === null` and
+    // `=== true` are literal checks too, and no template literal is ever null
+    // or true — flagging them made the gate cry wolf on its first run, which
+    // is how a gate gets ignored.
+    match:
+      /\.type === (?:'Literal'|AST_NODE_TYPES\.Literal)\b(?=[\s\S]{0,120}?(?:typeof\s+[\w.[\]?]+\.value === 'string'|\.value === '|\.value\.startsWith|\.value\.includes|\.value\.toLowerCase))/g,
     blind:
       "a no-substitution template literal: `foo(`sha1`)` is the same string as `foo('sha1')`",
     instead:
@@ -131,8 +137,15 @@ for (const file of ruleSources()) {
   }
 }
 
-/** A site's identity, independent of the line it currently sits on. */
-const key = (s: Site): string => `${s.file}::${s.pattern}::${s.text}`;
+/**
+ * A site's identity, independent of the line it sits on AND of how prettier
+ * chose to wrap it.
+ *
+ * Keyed on raw text, a reformat read as 79 new violations on the first run
+ * after `prettier --write`. Whitespace is not the claim; the code is.
+ */
+const key = (s: Site): string =>
+  `${s.file}::${s.pattern}::${s.text.replace(/\s+/g, ' ').trim()}`;
 const current = sites.map(key).sort();
 
 const previous: string[] = fs.existsSync(BASELINE)

@@ -65,6 +65,7 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
           node.type === AST_NODE_TYPES.CallExpression &&
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          // @vocabulary Express response API
           ['send', 'json'].includes(node.callee.property.name)
         ) {
           const arg = node.arguments[0];

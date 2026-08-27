@@ -41,6 +41,21 @@ pre-commit:
       # gate, which is what actually holds the line.
       glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,packages/eslint-plugin-*/src/utils/**/*.ts}'
       run: npm run --silent rule-audit:gate -- --changed
+    key-vocabulary:
+      # An inline list of PROPERTY names compared against a key, with no option
+      # and no stated authority.
+      #
+      # `check-name-vocabulary` covers rules reading an IDENTIFIER's name via
+      # the devkit helpers. This covers the hole beside it: a rule that writes
+      # the list inline never imports those helpers, so that gate never sees
+      # it — which is how `['email','name','phone','address']` shipped with
+      # `schema: []`.
+      #
+      # The test is who defines the name. Somebody else (WHATWG, an RFC, Node,
+      # React, an SDK) -> say so in a `@vocabulary` comment. Our consumer ->
+      # give them an option that REPLACES the default.
+      glob: 'packages/eslint-plugin-*/src/**/*.ts'
+      run: npm run --silent check:key-vocabulary
     spellings:
       # A rule may not acquire a blind spot it did not already have.
       #

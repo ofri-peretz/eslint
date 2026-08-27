@@ -20,7 +20,11 @@
  * - Trusted Electron security patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule, staticString } from '@interlace/eslint-devkit';
+import {
+  createModuleEvidence,
+  createRule,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -80,18 +84,39 @@ const INSECURE_WEB_PREFERENCES: ReadonlyMap<
   string,
   { insecureValue: boolean; messageId: MessageIds }
 > = new Map([
-  ['nodeIntegration', { insecureValue: true, messageId: 'nodeIntegrationEnabled' }],
+  [
+    'nodeIntegration',
+    { insecureValue: true, messageId: 'nodeIntegrationEnabled' },
+  ],
   // Same capability, granted to a Worker or to nested frames. Both were missing
   // outright, so an app could hand the renderer `require` through a worker and
   // the rule stayed quiet.
-  ['nodeIntegrationInWorker', { insecureValue: true, messageId: 'nodeIntegrationEnabled' }],
-  ['nodeIntegrationInSubFrames', { insecureValue: true, messageId: 'nodeIntegrationEnabled' }],
-  ['contextIsolation', { insecureValue: false, messageId: 'contextIsolationDisabled' }],
+  [
+    'nodeIntegrationInWorker',
+    { insecureValue: true, messageId: 'nodeIntegrationEnabled' },
+  ],
+  [
+    'nodeIntegrationInSubFrames',
+    { insecureValue: true, messageId: 'nodeIntegrationEnabled' },
+  ],
+  [
+    'contextIsolation',
+    { insecureValue: false, messageId: 'contextIsolationDisabled' },
+  ],
   ['webSecurity', { insecureValue: false, messageId: 'webSecurityDisabled' }],
-  ['allowRunningInsecureContent', { insecureValue: true, messageId: 'insecureContentEnabled' }],
-  ['allowDisplayingInsecureContent', { insecureValue: true, messageId: 'insecureContentEnabled' }],
+  [
+    'allowRunningInsecureContent',
+    { insecureValue: true, messageId: 'insecureContentEnabled' },
+  ],
+  [
+    'allowDisplayingInsecureContent',
+    { insecureValue: true, messageId: 'insecureContentEnabled' },
+  ],
   ['sandbox', { insecureValue: false, messageId: 'missingSandbox' }],
-  ['enableRemoteModule', { insecureValue: true, messageId: 'legacyElectronFeature' }],
+  [
+    'enableRemoteModule',
+    { insecureValue: true, messageId: 'legacyElectronFeature' },
+  ],
   ['webviewTag', { insecureValue: true, messageId: 'legacyElectronFeature' }],
 ]);
 
@@ -164,7 +189,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-electron-security-issues.md',
-      description: 'Detects Electron security vulnerabilities and insecure configurations',
+      description:
+        'Detects Electron security vulnerabilities and insecure configurations',
       cwe: 'CWE-16',
     },
     messages: {
@@ -172,10 +198,12 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Node Integration Enabled',
         cwe: 'CWE-16',
-        description: 'nodeIntegration enabled allows Node.js access in renderer',
+        description:
+          'nodeIntegration enabled allows Node.js access in renderer',
         severity: 'CRITICAL',
         fix: 'Set nodeIntegration: false and use secure preload scripts',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#2-do-not-enable-nodejs-integration-for-remote-content',
+        documentationLink:
+          'https://electronjs.org/docs/tutorial/security#2-do-not-enable-nodejs-integration-for-remote-content',
       }),
       contextIsolationDisabled: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -184,16 +212,19 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         description: 'contextIsolation disabled removes security boundary',
         severity: 'CRITICAL',
         fix: 'Enable contextIsolation and use preload scripts',
-        documentationLink: 'https://electronjs.org/docs/tutorial/context-isolation',
+        documentationLink:
+          'https://electronjs.org/docs/tutorial/context-isolation',
       }),
       webSecurityDisabled: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Web Security Disabled',
         cwe: 'CWE-16',
-        description: 'webSecurity disabled removes CORS and security protections',
+        description:
+          'webSecurity disabled removes CORS and security protections',
         severity: 'HIGH',
         fix: 'Keep webSecurity enabled',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#6-define-a-content-security-policy',
+        documentationLink:
+          'https://electronjs.org/docs/tutorial/security#6-define-a-content-security-policy',
       }),
       insecureContentEnabled: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -202,7 +233,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         description: 'allowRunningInsecureContent allows mixed content',
         severity: 'MEDIUM',
         fix: 'Set allowRunningInsecureContent: false',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#5-do-not-disable-websecurity',
+        documentationLink:
+          'https://electronjs.org/docs/tutorial/security#5-do-not-disable-websecurity',
       }),
       unsafePreloadScript: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -211,7 +243,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         description: 'Preload script may expose sensitive APIs',
         severity: 'HIGH',
         fix: 'Use minimal, secure preload scripts',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#3-enable-context-isolation-for-remote-content',
+        documentationLink:
+          'https://electronjs.org/docs/tutorial/security#3-enable-context-isolation-for-remote-content',
       }),
       directNodeAccess: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -220,7 +253,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         description: 'Direct access to Node.js APIs in renderer process',
         severity: 'HIGH',
         fix: 'Access Node.js APIs only through secure IPC channels',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#3-enable-context-isolation-for-remote-content',
+        documentationLink:
+          'https://electronjs.org/docs/tutorial/security#3-enable-context-isolation-for-remote-content',
       }),
       insecureIpcPattern: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -229,7 +263,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         description: 'IPC communication lacks proper validation',
         severity: 'MEDIUM',
         fix: 'Validate IPC messages and restrict channels',
-        documentationLink: 'https://electronjs.org/docs/tutorial/security#7-do-not-use-the-ipc-transport-for-sensitive-data',
+        documentationLink:
+          'https://electronjs.org/docs/tutorial/security#7-do-not-use-the-ipc-transport-for-sensitive-data',
       }),
       missingSandbox: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -259,7 +294,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
           allowedIpcChannels: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'IPC channel names allowed without validation'
+            default: [],
+            description: 'IPC channel names allowed without validation',
           },
           trustedSanitizers: {
             type: 'array',
@@ -271,7 +307,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -316,14 +353,18 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     const isBrowserWindowCreation = (node: TSESTree.NewExpression): boolean => {
-      return node.callee.type === 'Identifier' &&
-             node.callee.name === 'BrowserWindow';
+      return (
+        node.callee.type === 'Identifier' &&
+        node.callee.name === 'BrowserWindow'
+      );
     };
 
     /**
      * Check if BrowserWindow options contain insecure settings
      */
-    const checkBrowserWindowOptions = (optionsNode: TSESTree.ObjectExpression): void => {
+    const checkBrowserWindowOptions = (
+      optionsNode: TSESTree.ObjectExpression,
+    ): void => {
       for (const prop of optionsNode.properties) {
         const key = propertyName(prop);
         if (key === null) continue;
@@ -331,7 +372,8 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         if (!setting) continue;
 
         const value = (prop as TSESTree.Property).value;
-        if (value.type !== 'Literal' || value.value !== setting.insecureValue) continue;
+        if (value.type !== 'Literal' || value.value !== setting.insecureValue)
+          continue;
 
         // FALSE POSITIVE REDUCTION
         if (safetyChecker.isSafe(prop, context)) {
@@ -357,11 +399,16 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
     const isIpcCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
-      if (callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          ['ipcMain', 'ipcRenderer'].includes(callee.object.name) &&
-          callee.property.type === 'Identifier') {
-        return ['send', 'invoke', 'handle', 'on', 'once'].includes(callee.property.name);
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        ['ipcMain', 'ipcRenderer'].includes(callee.object.name) &&
+        callee.property.type === 'Identifier'
+      ) {
+        // @vocabulary Electron ipcRenderer / ipcMain API
+        return ['send', 'invoke', 'handle', 'on', 'once'].includes(
+          callee.property.name,
+        );
       }
 
       return false;
@@ -383,7 +430,10 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         const channel = staticText2;
 
         // Check if channel is allowed
-        if (allowedIpcChannels.length > 0 && !allowedIpcChannels.includes(channel)) {
+        if (
+          allowedIpcChannels.length > 0 &&
+          !allowedIpcChannels.includes(channel)
+        ) {
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
@@ -447,14 +497,26 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         const arg = node.arguments[0];
         if (arg?.type === 'Literal' && typeof arg.value === 'string') {
           const moduleName = arg.value;
-          return ['fs', 'child_process', 'os', 'path', 'crypto', 'http', 'https'].includes(moduleName);
+          return [
+            'fs',
+            'child_process',
+            'os',
+            'path',
+            'crypto',
+            'http',
+            'https',
+          ].includes(moduleName);
         }
       }
 
       // Check for global Node.js objects
-      if (callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          ['process', 'global', '__dirname', '__filename'].includes(callee.object.name)) {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        ['process', 'global', '__dirname', '__filename'].includes(
+          callee.object.name,
+        )
+      ) {
         return true;
       }
 
@@ -487,19 +549,19 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
           // Two conditions, and the module evidence is the load-bearing one: the
           // filename says WHICH Electron file this is, the import says THAT it is one.
           if (isRendererFile() && usesElectron && isNodeApiCall(node)) {
-          if (safetyChecker.isSafe(node, context)) {
-            return;
-          }
+            if (safetyChecker.isSafe(node, context)) {
+              return;
+            }
 
-          context.report({
-            node,
-            messageId: 'directNodeAccess',
-            data: {
-              filePath: filename,
-              line: String(node.loc?.start.line ?? 0),
-            },
-          });
-        }
+            context.report({
+              node,
+              messageId: 'directNodeAccess',
+              data: {
+                filePath: filename,
+                line: String(node.loc?.start.line ?? 0),
+              },
+            });
+          }
         } catch {
           // Skip problematic nodes to avoid rule crashes
           return;
@@ -510,9 +572,11 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         try {
           // Look for preload script assignments
-          if (node.left.type === 'MemberExpression' &&
-              node.left.property.type === 'Identifier' &&
-              node.left.property.name === 'preload') {
+          if (
+            node.left.type === 'MemberExpression' &&
+            node.left.property.type === 'Identifier' &&
+            node.left.property.name === 'preload'
+          ) {
             const staticText3 = staticString(node.right);
             if (staticText3 !== null) {
               const preloadPath = staticText3;
@@ -550,7 +614,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
         } catch {
           return;
         }
-      }
+      },
     };
   },
 });

@@ -19,10 +19,24 @@
  * - JSDoc annotations (@safe, @validated)
  * - Input validation functions
  */
-import type { TSESLint, TSESTree, SecurityRuleOptions } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, createSafetyChecker } from '@interlace/eslint-devkit';
+import type {
+  TSESLint,
+  TSESTree,
+  SecurityRuleOptions,
+} from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  createSafetyChecker,
+} from '@interlace/eslint-devkit';
 import { constInitializerOf, resolveConstant } from '../../utils/const-value';
-import { bindingInit, findVariable, makeReadsTaintSource } from '../../utils/provenance';
+import {
+  bindingInit,
+  findVariable,
+  makeReadsTaintSource,
+} from '../../utils/provenance';
 
 /**
  * The Buffer read/write surface this rule bounds-checks.
@@ -38,14 +52,34 @@ import { bindingInit, findVariable, makeReadsTaintSource } from '../../utils/pro
  * fix, and this rule reports under CWE-126.
  */
 const DEFAULT_BUFFER_METHODS: readonly string[] = [
-  'readUInt8', 'readInt8',
-  'readUInt16LE', 'readUInt16BE', 'readInt16LE', 'readInt16BE',
-  'readUInt32LE', 'readUInt32BE', 'readInt32LE', 'readInt32BE',
-  'readBigUInt64LE', 'readBigUInt64BE', 'readBigInt64LE', 'readBigInt64BE',
-  'readFloatLE', 'readFloatBE', 'readDoubleLE', 'readDoubleBE',
-  'readUIntLE', 'readUIntBE', 'readIntLE', 'readIntBE',
-  'writeUInt8', 'writeUInt16LE', 'writeUInt32LE',
-  'slice', 'subarray', 'copy',
+  'readUInt8',
+  'readInt8',
+  'readUInt16LE',
+  'readUInt16BE',
+  'readInt16LE',
+  'readInt16BE',
+  'readUInt32LE',
+  'readUInt32BE',
+  'readInt32LE',
+  'readInt32BE',
+  'readBigUInt64LE',
+  'readBigUInt64BE',
+  'readBigInt64LE',
+  'readBigInt64BE',
+  'readFloatLE',
+  'readFloatBE',
+  'readDoubleLE',
+  'readDoubleBE',
+  'readUIntLE',
+  'readUIntBE',
+  'readIntLE',
+  'readIntBE',
+  'writeUInt8',
+  'writeUInt16LE',
+  'writeUInt32LE',
+  'slice',
+  'subarray',
+  'copy',
 ];
 
 /**
@@ -60,7 +94,11 @@ const DEFAULT_BUFFER_METHODS: readonly string[] = [
  * request `koaCtx`, or whose `event` is a DOM event, can say so.
  */
 const DEFAULT_UNTRUSTED_SOURCES: readonly string[] = [
-  'req', 'request', 'event', 'ctx', 'context',
+  'req',
+  'request',
+  'event',
+  'ctx',
+  'context',
 ];
 
 /**
@@ -85,7 +123,9 @@ const DEFAULT_UNTRUSTED_SOURCES: readonly string[] = [
  * and leaves only bindings this file can prove hold a Buffer.
  */
 const DEFAULT_BUFFER_PARAMETER_NAMES: readonly string[] = [
-  'buf', 'buffer', 'bytes',
+  'buf',
+  'buffer',
+  'bytes',
 ];
 
 /**
@@ -194,7 +234,6 @@ type RuleOptions = [Options?];
  */
 const VIEW_METHODS: ReadonlySet<string> = new Set(['slice', 'subarray']);
 
-
 export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   name: 'no-buffer-overread',
   meta: {
@@ -205,9 +244,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-126',
     },
     messages: {
-
       boundsCheckDisabled: formatLLMMessage({
-
         icon: MessageIcons.SECURITY,
 
         issueName: 'Buffer bounds check disabled',
@@ -219,8 +256,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         cvss: 7.5,
 
         description:
-
-          "The deprecated noAssert argument is true, which turns off the bounds check on this read. Past the end of the buffer it returns whatever memory follows instead of throwing.",
+          'The deprecated noAssert argument is true, which turns off the bounds check on this read. Past the end of the buffer it returns whatever memory follows instead of throwing.',
 
         severity: 'HIGH',
 
@@ -229,7 +265,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         fix: 'Drop the noAssert argument and let the read throw on an out-of-range offset.',
 
         documentationLink: 'https://cwe.mitre.org/data/definitions/125.html',
-
       }),
       unsafeBufferAccess: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -274,7 +309,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         description: 'Buffer slice with unvalidated indices',
         severity: 'MEDIUM',
         fix: 'Validate slice start/end indices',
-        documentationLink: 'https://nodejs.org/api/buffer.html#bufslicestart-end',
+        documentationLink:
+          'https://nodejs.org/api/buffer.html#bufslicestart-end',
       }),
     },
     schema: [
@@ -284,29 +320,39 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           bufferMethods: {
             type: 'array',
             items: { type: 'string' },
-            default: [...DEFAULT_BUFFER_METHODS], description: 'Buffer read/write methods checked for bounds'
+            default: [...DEFAULT_BUFFER_METHODS],
+            description: 'Buffer read/write methods checked for bounds',
           },
           boundsCheckFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'], description: 'Function names that count as a bounds check'
+            default: [
+              'validateIndex',
+              'checkBounds',
+              'safeIndex',
+              'validateBufferIndex',
+            ],
+            description: 'Function names that count as a bounds check',
           },
           bufferTypes: {
             type: 'array',
             items: { type: 'string' },
-            default: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'], description: 'Constructor names treated as buffer types'
+            default: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
+            description: 'Constructor names treated as buffer types',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as buffer index validators',
+            description:
+              'Additional function names to consider as buffer index validators',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           untrustedSources: {
             type: 'array',
@@ -341,7 +387,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       bufferMethods: [...DEFAULT_BUFFER_METHODS],
-      boundsCheckFunctions: ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'],
+      boundsCheckFunctions: [
+        'validateIndex',
+        'checkBounds',
+        'safeIndex',
+        'validateBufferIndex',
+      ],
       bufferTypes: ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
       trustedSanitizers: [],
       trustedAnnotations: [],
@@ -354,7 +405,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       bufferMethods = [...DEFAULT_BUFFER_METHODS],
-      boundsCheckFunctions = ['validateIndex', 'checkBounds', 'safeIndex', 'validateBufferIndex'],
+      boundsCheckFunctions = [
+        'validateIndex',
+        'checkBounds',
+        'safeIndex',
+        'validateBufferIndex',
+      ],
       bufferTypes = ['Buffer', 'Uint8Array', 'ArrayBuffer', 'DataView'],
       trustedSanitizers = [],
       trustedAnnotations = [],
@@ -382,7 +438,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       trustedOrmPatterns: [],
       strictMode,
     });
-
 
     /**
      * Was this INDEX produced by one of the project's own bounds helpers?
@@ -414,7 +469,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       // directly carried a branch no input could take.
       if (indexNode.type !== AST_NODE_TYPES.Identifier) return false;
       const init = bindingInit(sourceCode, indexNode);
-      if (init === undefined || init.type !== AST_NODE_TYPES.CallExpression) return false;
+      if (init === undefined || init.type !== AST_NODE_TYPES.CallExpression)
+        return false;
       const calleeNode = init.callee;
       if (calleeNode.type === AST_NODE_TYPES.Identifier) {
         return trustedSanitizers.includes(calleeNode.name);
@@ -491,8 +547,10 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       // spelled, and the conventional-name fallback below exists only for the
       // parameter case, where there is no initializer to look at.
       if (variable !== null && variable.defs.length > 0) {
-        return variable.defs[0].type === 'Parameter' &&
-          bufferParameterSet.has(node.name.toLowerCase());
+        return (
+          variable.defs[0].type === 'Parameter' &&
+          bufferParameterSet.has(node.name.toLowerCase())
+        );
       }
       return bufferParameterSet.has(node.name.toLowerCase());
     };
@@ -510,7 +568,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     const isWriteTarget = (node: TSESTree.Node): boolean => {
       const parent = node.parent;
       if (!parent) return false;
-      if (parent.type === AST_NODE_TYPES.AssignmentExpression) return parent.left === node;
+      if (parent.type === AST_NODE_TYPES.AssignmentExpression)
+        return parent.left === node;
       return parent.type === AST_NODE_TYPES.UpdateExpression;
     };
 
@@ -586,7 +645,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       // Reporting every one of them made the finding a property of the rule's
       // analysis depth rather than of the code.
       const variable = findVariable(sourceCode, indexNode);
-      if (variable !== null && variable.defs[0]?.type === 'Parameter') return true;
+      if (variable !== null && variable.defs[0]?.type === 'Parameter')
+        return true;
 
       const init = bindingInit(sourceCode, indexNode);
       return init !== undefined && isBoundsCheckCall(init);
@@ -644,7 +704,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       collectComparisons(enclosingBody(indexNode), guards);
       return guards.some(
         (test) =>
-          (mentions(test.left, indexNode) && readsLengthOf(test.right, buffer)) ||
+          (mentions(test.left, indexNode) &&
+            readsLengthOf(test.right, buffer)) ||
           (mentions(test.right, indexNode) && readsLengthOf(test.left, buffer)),
       );
     };
@@ -657,7 +718,10 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      * is; comparing `null === null` would otherwise make every `.length` in
      * the file a bounds check on every buffer in it.
      */
-    const sameBinding = (a: TSESTree.Identifier, b: TSESTree.Identifier): boolean => {
+    const sameBinding = (
+      a: TSESTree.Identifier,
+      b: TSESTree.Identifier,
+    ): boolean => {
       const left = findVariable(sourceCode, a);
       const right = findVariable(sourceCode, b);
       if (left === null && right === null) return a.name === b.name;
@@ -708,7 +772,10 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     };
 
     /** Does this expression mention the index (as itself or as a sub-term)? */
-    const mentions = (node: TSESTree.Node, indexNode: TSESTree.Node): boolean => {
+    const mentions = (
+      node: TSESTree.Node,
+      indexNode: TSESTree.Node,
+    ): boolean => {
       if (indexNode.type !== AST_NODE_TYPES.Identifier) return false;
       const walk = (current: TSESTree.Node): boolean => {
         if (current.type === AST_NODE_TYPES.Identifier) {
@@ -766,12 +833,19 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      * not a Literal — the one spelling a "negative index" check most needs to
      * read. The depth cap terminates `const a = a`.
      */
-    const constantNumber = (node: TSESTree.Node, depth: number): number | null => {
+    const constantNumber = (
+      node: TSESTree.Node,
+      depth: number,
+    ): number | null => {
       if (depth > 6) return null;
       if (node.type === AST_NODE_TYPES.UnaryExpression) {
         const inner = constantNumber(node.argument, depth + 1);
         if (inner === null) return null;
-        return node.operator === '-' ? -inner : node.operator === '+' ? inner : null;
+        return node.operator === '-'
+          ? -inner
+          : node.operator === '+'
+            ? inner
+            : null;
       }
       if (node.type === AST_NODE_TYPES.BinaryExpression) {
         if (node.operator !== '-' && node.operator !== '+') return null;
@@ -827,9 +901,11 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type === AST_NODE_TYPES.Identifier && node.init) {
           // Check if assigned a buffer type
-          if (node.init.type === AST_NODE_TYPES.NewExpression &&
-              node.init.callee.type === AST_NODE_TYPES.Identifier &&
-              bufferTypes.includes(node.init.callee.name)) {
+          if (
+            node.init.type === AST_NODE_TYPES.NewExpression &&
+            node.init.callee.type === AST_NODE_TYPES.Identifier &&
+            bufferTypes.includes(node.init.callee.name)
+          ) {
             addBufferVar(node.id);
           }
 
@@ -840,12 +916,17 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           }
 
           // Check if assigned from Buffer.from() or Buffer.alloc()
-          if (node.init.type === AST_NODE_TYPES.CallExpression &&
-              node.init.callee.type === AST_NODE_TYPES.MemberExpression &&
-              node.init.callee.object.type === AST_NODE_TYPES.Identifier &&
-              node.init.callee.object.name === 'Buffer' &&
-              node.init.callee.property.type === AST_NODE_TYPES.Identifier &&
-              ['from', 'alloc', 'allocUnsafe'].includes(node.init.callee.property.name)) {
+          if (
+            node.init.type === AST_NODE_TYPES.CallExpression &&
+            node.init.callee.type === AST_NODE_TYPES.MemberExpression &&
+            node.init.callee.object.type === AST_NODE_TYPES.Identifier &&
+            node.init.callee.object.name === 'Buffer' &&
+            node.init.callee.property.type === AST_NODE_TYPES.Identifier &&
+            // @vocabulary Node Buffer API
+            ['from', 'alloc', 'allocUnsafe'].includes(
+              node.init.callee.property.name,
+            )
+          ) {
             addBufferVar(node.id);
           }
 
@@ -858,11 +939,13 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           // overread in two Shopify/cli argument parsers.
           if (node.init.type === AST_NODE_TYPES.CallExpression) {
             const callee = node.init.callee;
-            if (callee.type === AST_NODE_TYPES.MemberExpression &&
-                callee.property.type === AST_NODE_TYPES.Identifier &&
-                bufferMethods.includes(callee.property.name) &&
-                callee.object.type === AST_NODE_TYPES.Identifier &&
-                isBufferType(callee.object)) {
+            if (
+              callee.type === AST_NODE_TYPES.MemberExpression &&
+              callee.property.type === AST_NODE_TYPES.Identifier &&
+              bufferMethods.includes(callee.property.name) &&
+              callee.object.type === AST_NODE_TYPES.Identifier &&
+              isBufferType(callee.object)
+            ) {
               addBufferVar(node.id);
             }
           }
@@ -902,7 +985,10 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             }
 
             // Check for user-controlled indices without validation
-            if (isUserControlledIndex(indexNode) && !isIndexValidated(indexNode)) {
+            if (
+              isUserControlledIndex(indexNode) &&
+              !isIndexValidated(indexNode)
+            ) {
               // Check if there's a bounds check in scope
               if (!hasBoundsCheck(buffer, indexNode)) {
                 if (safetyChecker.isSafe(node, context)) {
@@ -962,11 +1048,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for buffer method calls that need bounds checking
-        if (node.property.type === 'Identifier' &&
-            bufferMethods.includes(node.property.name) &&
-            node.object.type === 'Identifier' &&
-            isBufferType(node.object)) {
-
+        if (
+          node.property.type === 'Identifier' &&
+          bufferMethods.includes(node.property.name) &&
+          node.object.type === 'Identifier' &&
+          isBufferType(node.object)
+        ) {
           // This is a parent of a CallExpression, we'll check it there
         }
       },
@@ -982,18 +1069,22 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         // exactly as far past the end. It was absent from the rule entirely,
         // which meant a codebase that had followed Node's own advice to migrate
         // off `slice` silently lost the check.
-        if (callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier' &&
-            VIEW_METHODS.has(callee.property.name) &&
-            callee.object.type === 'Identifier' &&
-            isBufferType(callee.object)) {
-
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier' &&
+          VIEW_METHODS.has(callee.property.name) &&
+          callee.object.type === 'Identifier' &&
+          isBufferType(callee.object)
+        ) {
           const args = node.arguments;
 
           // Check slice arguments
           for (const arg of args) {
             if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
-              if (safetyChecker.isSafe(node, context) || passedTrustedSanitizer(arg)) {
+              if (
+                safetyChecker.isSafe(node, context) ||
+                passedTrustedSanitizer(arg)
+              ) {
                 continue;
               }
               // A guard comparing this very offset against the buffer's own
@@ -1021,19 +1112,23 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         // The view methods are excluded: the handler above already owns them,
         // and reporting both left `buf.slice(req.query.start)` with two
         // findings — one line, two message ids, one underlying fact.
-        if (callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
-            bufferMethods.includes(callee.property.name) &&
-            !VIEW_METHODS.has(callee.property.name) &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            isBufferType(callee.object)) {
-
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          bufferMethods.includes(callee.property.name) &&
+          !VIEW_METHODS.has(callee.property.name) &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          isBufferType(callee.object)
+        ) {
           const args = node.arguments;
 
           // Check offset/length arguments
           for (const arg of args) {
             if (isUserControlledIndex(arg) && !isIndexValidated(arg)) {
-              if (safetyChecker.isSafe(node, context) || passedTrustedSanitizer(arg)) {
+              if (
+                safetyChecker.isSafe(node, context) ||
+                passedTrustedSanitizer(arg)
+              ) {
                 continue;
               }
               if (hasBoundsCheck(callee.object, arg)) {
@@ -1062,7 +1157,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         if (leftText.includes('.length') || rightText.includes('.length')) {
           // This might be a bounds check - we could analyze this further
         }
-      }
+      },
     };
   },
 });

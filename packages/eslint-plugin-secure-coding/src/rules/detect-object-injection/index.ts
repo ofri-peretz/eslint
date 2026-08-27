@@ -2284,6 +2284,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         callee.object.type !== AST_NODE_TYPES.Identifier ||
         callee.object.name !== 'Object' ||
         callee.property.type !== AST_NODE_TYPES.Identifier ||
+        // @vocabulary Object statics
         !['keys', 'entries'].includes(callee.property.name)
       ) {
         return;

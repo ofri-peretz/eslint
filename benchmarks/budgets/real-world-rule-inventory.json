@@ -1966,10 +1966,7 @@
     "secure-coding/no-electron-security-issues": {
       "count": 2,
       "repos": 1,
-      "samples": [
-        "cncjs__cncjs/src/main.js:55",
-        "cncjs__cncjs/src/main.js:56"
-      ]
+      "samples": ["cncjs__cncjs/src/main.js:55", "cncjs__cncjs/src/main.js:56"]
     },
     "browser-security/no-unsafe-inline-csp": {
       "count": 2,
@@ -2065,16 +2062,12 @@
     "browser-security/no-jwt-in-storage": {
       "count": 1,
       "repos": 1,
-      "samples": [
-        "adadaptedinc__adadapted-js-sdk/src/index.js:1018"
-      ]
+      "samples": ["adadaptedinc__adadapted-js-sdk/src/index.js:1018"]
     },
     "browser-security/require-cookie-secure-attrs": {
       "count": 1,
       "repos": 1,
-      "samples": [
-        "continuedev__continue/docs/c15t-cookie-banner.js:63"
-      ]
+      "samples": ["continuedev__continue/docs/c15t-cookie-banner.js:63"]
     },
     "express-security/no-idor-resource-access": {
       "count": 1,
@@ -2149,23 +2142,17 @@
     "express-security/no-disabled-helmet-protections": {
       "count": 1,
       "repos": 1,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/server/app.js:93"
-      ]
+      "samples": ["nightscout__cgm-remote-monitor/lib/server/app.js:93"]
     },
     "browser-security/require-websocket-wss": {
       "count": 1,
       "repos": 1,
-      "samples": [
-        "nodejs__node/benchmark/websocket/simple.js:90"
-      ]
+      "samples": ["nodejs__node/benchmark/websocket/simple.js:90"]
     },
     "node-security/no-weak-hash-algorithm": {
       "count": 1,
       "repos": 1,
-      "samples": [
-        "nodejs__node/lib/internal/tls/wrap.js:1615"
-      ]
+      "samples": ["nodejs__node/lib/internal/tls/wrap.js:1615"]
     },
     "browser-security/detect-mixed-content": {
       "count": 1,

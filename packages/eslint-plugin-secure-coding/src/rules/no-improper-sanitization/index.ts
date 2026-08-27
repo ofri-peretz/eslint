@@ -502,6 +502,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             .left as TSESTree.MemberExpression;
           if (
             left.property.type === 'Identifier' &&
+            // @vocabulary WHATWG DOM
             ['innerHTML', 'outerHTML'].includes(left.property.name)
           ) {
             const literalValue = node.value;
@@ -529,6 +530,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             if (
               left.type === 'MemberExpression' &&
               left.property.type === 'Identifier' &&
+              // @vocabulary WHATWG DOM
               ['innerHTML', 'outerHTML'].includes(left.property.name)
             ) {
               isInDangerousContext = true;
@@ -539,6 +541,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             if (
               callee.type === 'MemberExpression' &&
               callee.property.type === 'Identifier' &&
+              // @vocabulary Express response API
               ['write', 'send', 'json'].includes(callee.property.name)
             ) {
               // Could be response output
