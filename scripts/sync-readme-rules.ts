@@ -480,19 +480,31 @@ const DOCTRINE_START = '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manuall
 const DOCTRINE_END = '<!-- AUTO-GENERATED:DOCTRINE:END -->';
 
 /**
- * The ecosystem doctrine, generated into every plugin README.
+ * The ecosystem doctrine — why / how / what — generated into every plugin README.
  *
  * It is ecosystem-wide, so it is generated rather than hand-copied: thirty
  * hand-maintained copies of one position drift, and a doctrine that says different
  * things in different packages is not a doctrine.
  *
- * Two paragraphs and no headings, deliberately. The first version carried three `##`
- * sections and ~45 lines, which pushed Getting Started and the rule table — the two
- * things a reader came for — below the fold on every one of thirty READMEs. The
- * reference shape is the NestJS README: badges, a short Description, a short
- * Philosophy, then Getting Started. Doctrine that costs a reader the install command
- * is not doctrine, it is an essay. The long form lives at DOCS_PHILOSOPHY.md and the
- * benchmark docs linked below; this is the paragraph that earns its place inline.
+ * Three beats — why, how, what — one short paragraph each. Headings stay explicit
+ * rather than a bare `## Why` / `## How` / `## What`: ten plugins already carry a
+ * hand-written `## Why <ecosystem>-specific?` section, and two adjacent headings both
+ * called Why is a table of contents nobody can navigate.
+ *
+ * Two earlier shapes both
+ * failed, in opposite directions:
+ *
+ *   - `## Philosophy` — "Interlace fosters strength through integration ... a
+ *     resilient fabric of code" — was identical in all thirty and told a reader
+ *     nothing they could act on or disagree with. It occupied the sell slot without
+ *     selling.
+ *   - the three-section long form that replaced it ran ~45 lines and pushed Getting
+ *     Started and the rule table below the fold on every README. A reader came for
+ *     the install command; doctrine that costs them the install command is an essay.
+ *
+ * So: the why/how/what structure of the second, at the length of a NestJS README.
+ * Each beat opens with the claim in bold so it survives skimming, and the long form
+ * lives in DOCS_PHILOSOPHY.md and the benchmark docs linked from `## What`.
  *
  * Deliberately carries NO ecosystem totals — per BENCHMARK-PUBLISHING-PLAN.md §1, rule
  * counts and benchmark figures in a plugin README read as inflated the moment someone
@@ -502,40 +514,60 @@ function renderDoctrine(): string {
   return [
     DOCTRINE_START,
     '',
-    '**Every rule here is built to be worth reading.** A linter that reports a thousand',
-    'things a week gets switched off in a month, and the real finding goes with it — so a',
-    'rule fires on what the code *does*, resolved through the AST and ESLint\'s own scope',
-    'analysis, never on an identifier that happens to contain `query` or a path that',
-    'contains `key`. Every finding carries its fix on the message, in prose for a human and',
-    'as structured JSON for an agent; security rules add a CWE mapping and, where one is',
-    'assigned, a CVSS score.',
+    '## Why these rules are quiet',
     '',
-    'That trade costs recall, and we measure what it costs rather than assuming it is free:',
-    '[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)',
+    '**A linter nobody reads protects nothing.** One that reports a thousand things a',
+    'week gets switched off in a month, and the real finding goes with it. We would',
+    'rather miss a finding than spend your attention on one that was never real.',
+    '',
+    '## How they decide',
+    '',
+    '**Evidence, not names.** A rule fires on what the code *does*, resolved through the',
+    "AST and ESLint's own scope analysis — never on a variable that happens to be called",
+    '`query`, or a file whose path contains `key`. Every one of those was a real false',
+    'positive here, found by reading our own output on open-source projects and fixed',
+    'with a test that fails on the unfixed rule.',
+    '',
+    '## What you get',
+    '',
+    '**Every finding arrives with its fix** — in prose for a human, as structured JSON',
+    'for an agent, and, on security rules, with a CWE mapping and a CVSS score where one',
+    'is assigned. That trade costs recall, and we measure what it costs rather than',
+    'assuming it is free:',
+    '[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)',
     'and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).',
-    'If a finding is wrong,',
-    '[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a',
-    'bug here, not a tuning exercise for you.',
+    'If a finding is wrong, [open an issue](https://github.com/ofri-peretz/eslint/issues) —',
+    'a false positive is a bug here, not a tuning exercise for you.',
     '',
     DOCTRINE_END,
   ].join('\n');
 }
 
 /**
- * Insert or refresh the doctrine block, immediately after `## Philosophy`.
+ * Insert or refresh the doctrine block, in place of `## Philosophy`.
  *
- * `## Philosophy` stays. It is the brand statement, and `readme-structure-lock.test.ts`
- * requires it verbatim in every package — the first version of this replaced it and
- * turned that gate red across 26 READMEs. The two say different things: Philosophy is
- * who Interlace is, the doctrine is why these rules are quiet, how they decide, and what
- * you get.
+ * `## Philosophy` is REMOVED, not preserved. It held the sell slot in all thirty
+ * READMEs with three sentences — "Interlace fosters strength through integration ... a
+ * resilient fabric of code" — that a reader could neither act on nor disagree with,
+ * directly above the doctrine that says the same thing with substance. Keeping both
+ * meant paying twice for one position. `## Why` is now the brand statement.
  *
- * Returns the README unchanged when there is no Philosophy section and no existing
- * block, rather than guessing where it belongs — a README with its own structure is not
- * something to rewrite blind.
+ * Migration is one-way and idempotent: the marker path replaces marker-to-marker, and
+ * additionally swallows a `## Philosophy` section still sitting directly above the
+ * START marker, which is the shape every README is in before this runs once.
+ *
+ * Returns the README unchanged when there is neither a marker pair nor a Philosophy
+ * section, rather than guessing where the block belongs — a README with its own
+ * structure is not something to rewrite blind.
  */
 export function spliceDoctrine(readme: string): { content: string; modified: boolean } {
   const block = renderDoctrine();
+
+  // A `## Philosophy` section ending where the next `## ` heading begins. The head
+  // slice handed to the marker path ends AT the START marker, so nothing follows
+  // Philosophy there — hence the `$` alternative, without which the lookahead never
+  // matches and the section survives the migration it was written to remove.
+  const PHILOSOPHY = /^## Philosophy\n[\s\S]*?(?=^## |(?![\s\S]))/m;
 
   const start = readme.indexOf(DOCTRINE_START);
   const end = readme.indexOf(DOCTRINE_END);
@@ -548,14 +580,14 @@ export function spliceDoctrine(readme: string): { content: string; modified: boo
     if (start === -1) throw new Error('DOCTRINE:END without a matching START');
     if (end === -1) throw new Error('DOCTRINE:START without a matching END');
     if (end < start) throw new Error('DOCTRINE:END appears before DOCTRINE:START');
-    const content = readme.slice(0, start) + block + readme.slice(end + DOCTRINE_END.length);
+    const head = readme.slice(0, start).replace(PHILOSOPHY, '');
+    const content = head + block + readme.slice(end + DOCTRINE_END.length);
     return { content, modified: content !== readme };
   }
 
-  const philosophy = readme.match(/^## Philosophy\n[\s\S]*?(?=^## )/m);
-  if (!philosophy) return { content: readme, modified: false };
+  if (!PHILOSOPHY.test(readme)) return { content: readme, modified: false };
 
-  const content = readme.replace(philosophy[0], `${philosophy[0]}${block}\n\n`);
+  const content = readme.replace(PHILOSOPHY, `${block}\n\n`);
   return { content, modified: content !== readme };
 }
 

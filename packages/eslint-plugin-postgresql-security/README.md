@@ -31,37 +31,38 @@ This plugin provides Security rules for PostgreSQL interaction in Node.js (SQL i
 
 A generic SQL injection linter can flag string concatenation wherever it appears, but it cannot know the parameterization convention for each database client. The `pg` (node-postgres) driver uses `$1, $2, …` positional placeholders with a second-argument array — a pattern no generic rule encodes. `eslint-plugin-postgresql-security` knows this contract: it only fires on `.query()` calls, it stays silent when a second argument (the values array) is present, and it tracks variable taint across assignment statements so that a split-line pattern like `const sql = "SELECT..." + id; client.query(sql)` is flagged even though the concatenation and the query call are on separate lines. The result is a rule with near-zero false positives on legitimate parameterized queries and reliable detection on the patterns that actually lead to SQL injection.
 
-## Philosophy
-
-**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
-
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
-**Every rule here is built to be worth reading.** A linter that reports a thousand
-things a week gets switched off in a month, and the real finding goes with it — so a
-rule fires on what the code *does*, resolved through the AST and ESLint's own scope
-analysis, never on an identifier that happens to contain `query` or a path that
-contains `key`. Every finding carries its fix on the message, in prose for a human and
-as structured JSON for an agent; security rules add a CWE mapping and, where one is
-assigned, a CVSS score.
+## Why these rules are quiet
 
-That trade costs recall, and we measure what it costs rather than assuming it is free:
-[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+**A linter nobody reads protects nothing.** One that reports a thousand things a
+week gets switched off in a month, and the real finding goes with it. We would
+rather miss a finding than spend your attention on one that was never real.
+
+## How they decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — never on a variable that happens to be called
+`query`, or a file whose path contains `key`. Every one of those was a real false
+positive here, found by reading our own output on open-source projects and fixed
+with a test that fails on the unfixed rule.
+
+## What you get
+
+**Every finding arrives with its fix** — in prose for a human, as structured JSON
+for an agent, and, on security rules, with a CWE mapping and a CVSS score where one
+is assigned. That trade costs recall, and we measure what it costs rather than
+assuming it is free:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
 and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
-If a finding is wrong,
-[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
-bug here, not a tuning exercise for you.
+If a finding is wrong, [open an issue](https://github.com/ofri-peretz/eslint/issues) —
+a false positive is a bug here, not a tuning exercise for you.
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
 
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
-- [가이드](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
 
 ```bash
 npm install eslint-plugin-postgresql-security --save-dev
@@ -214,5 +215,5 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 </p>
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>
 </p>

@@ -25,37 +25,38 @@
 
 This plugin provides Next-generation import sorting, validation, and architectural boundaries.
 
-## Philosophy
-
-**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
-
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
-**Every rule here is built to be worth reading.** A linter that reports a thousand
-things a week gets switched off in a month, and the real finding goes with it — so a
-rule fires on what the code *does*, resolved through the AST and ESLint's own scope
-analysis, never on an identifier that happens to contain `query` or a path that
-contains `key`. Every finding carries its fix on the message, in prose for a human and
-as structured JSON for an agent; security rules add a CWE mapping and, where one is
-assigned, a CVSS score.
+## Why these rules are quiet
 
-That trade costs recall, and we measure what it costs rather than assuming it is free:
-[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+**A linter nobody reads protects nothing.** One that reports a thousand things a
+week gets switched off in a month, and the real finding goes with it. We would
+rather miss a finding than spend your attention on one that was never real.
+
+## How they decide
+
+**Evidence, not names.** A rule fires on what the code *does*, resolved through the
+AST and ESLint's own scope analysis — never on a variable that happens to be called
+`query`, or a file whose path contains `key`. Every one of those was a real false
+positive here, found by reading our own output on open-source projects and fixed
+with a test that fails on the unfixed rule.
+
+## What you get
+
+**Every finding arrives with its fix** — in prose for a human, as structured JSON
+for an agent, and, on security rules, with a CWE mapping and a CVSS score where one
+is assigned. That trade costs recall, and we measure what it costs rather than
+assuming it is free:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
 and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).
-If a finding is wrong,
-[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a
-bug here, not a tuning exercise for you.
+If a finding is wrong, [open an issue](https://github.com/ofri-peretz/eslint/issues) —
+a false positive is a bug here, not a tuning exercise for you.
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
 
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next). 📚
-- [가이드](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next)は [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next), visita [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next). 📚
 
 ```bash
 npm install eslint-plugin-import-next --save-dev
@@ -276,5 +277,5 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 </p>
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>
 </p>

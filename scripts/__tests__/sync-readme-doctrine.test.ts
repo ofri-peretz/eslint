@@ -11,9 +11,9 @@
  *     fold on all thirty READMEs. A reader came for the install command; doctrine that
  *     costs them the install command is an essay. The line cap is the lock — prose can
  *     be rewritten freely underneath it, it just cannot grow back into an essay.
- *   - `## Philosophy` SURVIVES. It is the brand statement and `readme-structure-lock`
- *     requires it verbatim; the first version of this replaced it and turned that gate
- *     red across 26 READMEs.
+ *   - `## Philosophy` is REPLACED, not preserved. It held the sell slot in thirty
+ *     READMEs with three sentences a reader could neither act on nor disagree with,
+ *     directly above the doctrine that said the same thing with substance.
  *   - a second run is a no-op. The markers exist so re-syncing is idempotent; if it were
  *     not, every `sync-readmes` run would produce a diff and the gate would be useless.
  *   - a README with neither marker nor Philosophy is left ALONE. Guessing where the block
@@ -41,14 +41,18 @@ const withPhilosophy = [
 ].join('\n');
 
 describe('spliceDoctrine', () => {
-  it('inserts after Philosophy without removing it', () => {
+  it('replaces Philosophy rather than sitting under it', () => {
     const { content, modified } = spliceDoctrine(withPhilosophy);
 
     expect(modified).toBe(true);
-    // The structure gate requires this section verbatim — it must survive.
-    expect(content).toContain('## Philosophy');
-    expect(content).toContain('**Interlace** fosters **strength through integration**.');
-    expect(content).toContain('Every rule here is built to be worth reading');
+    // Philosophy is GONE. Keeping it meant paying twice for one slot: three sentences
+    // of "resilient fabric of code" directly above the block that says the same thing
+    // with substance.
+    expect(content).not.toContain('## Philosophy');
+    expect(content).not.toContain('**Interlace** fosters **strength through integration**.');
+    expect(content).toContain('## Why these rules are quiet');
+    expect(content).toContain('## How they decide');
+    expect(content).toContain('## What you get');
     expect(content).toContain('BENCHMARK-METHODOLOGY.md');
     // The block lands between Philosophy and the rules table, not at the end.
     expect(content.indexOf('## Philosophy')).toBeLessThan(content.indexOf('DOCTRINE:START'));
@@ -97,17 +101,32 @@ describe('spliceDoctrine', () => {
     );
   }
 
-  it('adds no headings of its own', () => {
-    // Three `##` sections is what made the first version an essay. The doctrine sits
-    // under `## Philosophy` as prose; a new heading here is a new section in the README
-    // table of contents and a new thing between the reader and `npm install`.
-    expect(doctrineBlock()).not.toMatch(/^#{1,6} /m);
+  it('carries exactly the three why/how/what beats and no other heading', () => {
+    // The golden circle is the shape, and only the shape. A fourth section is how the
+    // ~45-line version grew, one reasonable-looking addition at a time.
+    const headings = doctrineBlock().match(/^#{1,6} .*$/gm) ?? [];
+    expect(headings).toEqual([
+      '## Why these rules are quiet',
+      '## How they decide',
+      '## What you get',
+    ]);
   });
 
-  it('stays short enough to sit above the fold', () => {
-    // 24 is the current block plus headroom to rewrite it, not a target to fill.
+  it('stays short enough that the install command survives the fold', () => {
+    // ~26 is the current block plus headroom to rewrite it, not a target to fill. The
+    // shape this defends against is the three-section, ~45-line version that pushed
+    // Getting Started and the rule table off the first screen on all thirty READMEs.
     const lines = doctrineBlock().trim().split('\n');
-    expect(lines.length).toBeLessThanOrEqual(24);
+    expect(lines.length).toBeLessThanOrEqual(30);
+  });
+
+  it('opens every beat with a bolded claim, so it survives skimming', () => {
+    const beats = doctrineBlock()
+      .split(/^## /m)
+      .slice(1)
+      .map((b) => b.split('\n').slice(1).join('\n').trim());
+    expect(beats).toHaveLength(3);
+    for (const beat of beats) expect(beat.startsWith('**')).toBe(true);
   });
 
   it('carries no ecosystem totals', () => {

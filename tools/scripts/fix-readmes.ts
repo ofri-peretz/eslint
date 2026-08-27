@@ -347,7 +347,7 @@ function processPackage(pkg: string): void {
     // on a later pass; the ESLint link points at eslint.org (not an owned
     // property) so it stays un-stamped.
     output.push('<p align="center">');
-    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>`);
     output.push('  &nbsp;&nbsp;');
     output.push(`  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>`);
     output.push('</p>');
@@ -389,12 +389,11 @@ function processPackage(pkg: string): void {
     // Getting Started
     output.push('## Getting Started');
     output.push('');
-    output.push(`- To check out the [guide](${docUrl}), visit [eslint.interlace.tools](${baseUrl}). 📚`);
-    output.push(`- 要查看中文 [指南](${docUrl}), 请访问 [eslint.interlace.tools](${baseUrl}). 📚`);
-    output.push(`- [가이드](${docUrl}) 문서는 [eslint.interlace.tools](${baseUrl})에서 확인하실 수 있습니다. 📚`);
-    output.push(`- [ガイド](${docUrl})は [eslint.interlace.tools](${baseUrl})でご確認ください。 📚`);
-    output.push(`- Para ver la [guía](${docUrl}), visita [eslint.interlace.tools](${baseUrl}). 📚`);
-    output.push(`- للاطلاع على [الدليل](${docUrl})، قم بزيارة [eslint.interlace.tools](${baseUrl}). 📚`);
+    // One link, in English. The six-language block this replaces was copied from the
+    // NestJS README, but every one of its "translated" links pointed at the same
+    // English page — we ship no translations. Six links to one page is not
+    // internationalisation, it is five dead entries above the install command.
+    output.push(`- Read the [guide](${docUrl}) at [eslint.interlace.tools](${baseUrl}). 📚`);
     output.push('');
     output.push('```bash');
     output.push(`npm install ${pkg} --save-dev`);
@@ -513,7 +512,7 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
     // the per-package UTM campaign onto it in a later pass (same as the
     // header link above).
     output.push(`<p align="center">`);
-    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>`);
     output.push(`</p>`);
 
     fs.writeFileSync(readmePath, output.join('\n'));
