@@ -129,7 +129,7 @@ the single source for Node + crypto rules.
 
 ---
 
-### `eslint-plugin-jwt`
+### `eslint-plugin-jwt-security`
 
 **Our scope:** JSON Web Token correctness — algorithm pinning,
 verify-before-decode, expiration enforcement, hardcoded secret detection.
@@ -220,7 +220,7 @@ as the ecosystem matures.
 
 ---
 
-### `eslint-plugin-pg`
+### `eslint-plugin-postgresql-security`
 
 **Our scope:** PostgreSQL interaction safety — parameterized queries,
 taint tracking around `pg.query`, common SQL-injection patterns in

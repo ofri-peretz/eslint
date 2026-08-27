@@ -1,8 +1,8 @@
 /**
- * ESLint configuration for eslint-plugin-pg benchmark
+ * ESLint configuration for eslint-plugin-postgresql-security benchmark
  */
 
-import pg from '../../../dist/packages/eslint-plugin-pg/src/index.js';
+import pg from '../../../dist/packages/eslint-plugin-postgresql-security/src/index.js';
 
 export default [
   {

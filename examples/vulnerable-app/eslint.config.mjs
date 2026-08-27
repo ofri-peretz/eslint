@@ -4,9 +4,9 @@
 
 import secureCoding from 'eslint-plugin-secure-coding';
 import browserSecurity from 'eslint-plugin-browser-security';
-import pgPlugin from 'eslint-plugin-pg';
+import pgPlugin from 'eslint-plugin-postgresql-security';
 import mongoPlugin from 'eslint-plugin-mongodb-security';
-import jwtPlugin from 'eslint-plugin-jwt';
+import jwtPlugin from 'eslint-plugin-jwt-security';
 import vercelAi from 'eslint-plugin-vercel-ai-security';
 import importNext from 'eslint-plugin-import-next';
 import reactA11y from 'eslint-plugin-react-a11y';
@@ -15,9 +15,9 @@ import reactFeatures from 'eslint-plugin-react-features';
 const plugins = {
   'secure-coding':       secureCoding,
   'browser-security':    browserSecurity,
-  'pg':                  pgPlugin,
+  'postgresql-security': pgPlugin,
   'mongodb-security':    mongoPlugin,
-  'jwt':                 jwtPlugin,
+  'jwt-security':        jwtPlugin,
   'vercel-ai-security':  vercelAi,
   'import-next':         importNext,
   'react-a11y':          reactA11y,

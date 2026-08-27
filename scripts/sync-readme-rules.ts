@@ -54,6 +54,7 @@ export interface PluginEntry {
   slug: string;
   package: string;
   pillar: Pillar;
+  description: string;
 }
 
 export interface RuleMeta {
@@ -83,12 +84,14 @@ export function loadPluginRegistry(registryPath = PLUGINS_REGISTRY): PluginEntry
     throw new Error(`Could not locate PLUGINS array in ${registryPath}`);
   }
   const entries: PluginEntry[] = [];
-  const blockRegex = /\{\s*slug:\s*['"]([^'"]+)['"][\s\S]*?package:\s*['"]([^'"]+)['"][\s\S]*?pillar:\s*['"]([^'"]+)['"]/g;
+  const blockRegex =
+    /\{\s*slug:\s*['"]([^'"]+)['"][\s\S]*?package:\s*['"]([^'"]+)['"][\s\S]*?pillar:\s*['"]([^'"]+)['"][\s\S]*?description:\s*['"]([^'"]+)['"]/g;
   for (const m of arrayMatch[1].matchAll(blockRegex)) {
     entries.push({
       slug: m[1],
       package: m[2],
       pillar: m[3] as Pillar,
+      description: m[4],
     });
   }
   return entries;
@@ -366,19 +369,130 @@ export function spliceTable(readme: string, generatedTable: string): { content: 
 export interface ProcessOptions {
   dryRun: boolean;
   typeMap: Map<string, TypeStatus>;
+  /** The FULL registry, not the `--plugin` filtered subset — the ecosystem table on one
+   *  README lists every other plugin, so filtering targets must not shrink it. */
+  registry: PluginEntry[];
 }
 
+
+const ECOSYSTEM_START =
+  '<!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->';
+const ECOSYSTEM_END = '<!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->';
+const ECOSYSTEM_HEADING = '## 🔗 Related ESLint Plugins';
+
+/** Where the Related section stops. The Star CTA block precedes `## 📄 License` in 26 of
+ *  the 30 READMEs and is absent in the other four, so both are boundaries. */
+const ECOSYSTEM_STOP = /^(## |<!-- INTERLACE:STAR_CTA:START)/;
+
+/**
+ * The cross-sell table, generated into every plugin README from the docs registry
+ * (`apps/docs/src/lib/plugins.ts`) — the same source that drives the docs site nav.
+ *
+ * It used to be a hardcoded string literal in `tools/scripts/fix-readmes.ts`, a script
+ * wired into no npm script and last run before eleven plugins existed. So every README
+ * shipped the same eleven-row table, two of whose rows still *displayed*
+ * `eslint-plugin-jwt` and `eslint-plugin-pg` — names unpublished since #414 — while
+ * linking to the renamed packages. Reading the registry means a new plugin appears in
+ * twenty-nine READMEs the day it is registered, and a rename cannot survive anywhere.
+ *
+ * Split by pillar because twenty-nine undifferentiated rows is a wall, and the split is
+ * the one the docs site already makes.
+ */
+export function renderEcosystemTable(entries: PluginEntry[], selfPackage: string): string {
+  const others = entries
+    .filter((e) => e.package !== selfPackage)
+    .toSorted((a, b) => a.package.localeCompare(b.package));
+
+  const row = (e: PluginEntry): string => {
+    const npm = `https://www.npmjs.com/package/${e.package}`;
+    const badge = `https://img.shields.io/npm/dt/${e.package}.svg?style=flat-square`;
+    return `| [\`${e.package}\`](${npm}) | [![downloads](${badge})](${npm}) | ${e.description}. |`;
+  };
+
+  const group = (title: string, pillar: Pillar): string[] => {
+    const rows = others.filter((e) => e.pillar === pillar);
+    if (rows.length === 0) return [];
+    return [
+      '',
+      `**${title}**`,
+      '',
+      '| Plugin | Downloads | Description |',
+      '| :--- | :---: | :--- |',
+      ...rows.map(row),
+    ];
+  };
+
+  return [
+    ECOSYSTEM_START,
+    '',
+    ECOSYSTEM_HEADING,
+    '',
+    'Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimized error messages:',
+    ...group('Security', 'security'),
+    ...group('Code quality', 'quality'),
+    '',
+    ECOSYSTEM_END,
+  ].join('\n');
+}
+
+/**
+ * Insert or refresh the ecosystem table.
+ *
+ * On the first run per README there are no markers, only the hand-written section: the
+ * heading, its lead-in line and the stale eleven-row table. That whole span — heading to
+ * the next `## ` or Star CTA — is what gets replaced, which is also what makes the second
+ * run a no-op, since the generated span contains no `## ` of its own beyond the heading
+ * it starts with.
+ *
+ * A README with neither markers nor the heading is returned untouched rather than having
+ * the section guessed into place.
+ */
+export function spliceEcosystem(readme: string, table: string): { content: string; modified: boolean } {
+  const start = readme.indexOf(ECOSYSTEM_START);
+  const end = readme.indexOf(ECOSYSTEM_END);
+
+  if (start !== -1 && end !== -1) {
+    if (end < start) throw new Error('ECOSYSTEM_TABLE:END appears before ECOSYSTEM_TABLE:START');
+    const content = readme.slice(0, start) + table + readme.slice(end + ECOSYSTEM_END.length);
+    return { content, modified: content !== readme };
+  }
+  if (start !== -1 || end !== -1) {
+    throw new Error('ECOSYSTEM_TABLE has one marker without the other');
+  }
+
+  const lines = readme.split('\n');
+  const headingAt = lines.indexOf(ECOSYSTEM_HEADING);
+  if (headingAt === -1) return { content: readme, modified: false };
+
+  let stopAt = lines.length;
+  for (let i = headingAt + 1; i < lines.length; i++) {
+    if (ECOSYSTEM_STOP.test(lines[i])) {
+      stopAt = i;
+      break;
+    }
+  }
+
+  const content = [...lines.slice(0, headingAt), table, '', ...lines.slice(stopAt)].join('\n');
+  return { content, modified: content !== readme };
+}
 
 const DOCTRINE_START = '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->';
 const DOCTRINE_END = '<!-- AUTO-GENERATED:DOCTRINE:END -->';
 
 /**
- * The why / how / what block, generated into every plugin README.
+ * The ecosystem doctrine, generated into every plugin README.
  *
  * It is ecosystem-wide, so it is generated rather than hand-copied: thirty
  * hand-maintained copies of one position drift, and a doctrine that says different
- * things in different packages is not a doctrine. The `## Philosophy` prose it replaces
- * was already identical in every plugin and said nothing a reader could act on.
+ * things in different packages is not a doctrine.
+ *
+ * Two paragraphs and no headings, deliberately. The first version carried three `##`
+ * sections and ~45 lines, which pushed Getting Started and the rule table — the two
+ * things a reader came for — below the fold on every one of thirty READMEs. The
+ * reference shape is the NestJS README: badges, a short Description, a short
+ * Philosophy, then Getting Started. Doctrine that costs a reader the install command
+ * is not doctrine, it is an essay. The long form lives at DOCS_PHILOSOPHY.md and the
+ * benchmark docs linked below; this is the paragraph that earns its place inline.
  *
  * Deliberately carries NO ecosystem totals — per BENCHMARK-PUBLISHING-PLAN.md §1, rule
  * counts and benchmark figures in a plugin README read as inflated the moment someone
@@ -388,40 +502,20 @@ function renderDoctrine(): string {
   return [
     DOCTRINE_START,
     '',
-    '## Why these rules are quiet',
+    '**Every rule here is built to be worth reading.** A linter that reports a thousand',
+    'things a week gets switched off in a month, and the real finding goes with it — so a',
+    'rule fires on what the code *does*, resolved through the AST and ESLint\'s own scope',
+    'analysis, never on an identifier that happens to contain `query` or a path that',
+    'contains `key`. Every finding carries its fix on the message, in prose for a human and',
+    'as structured JSON for an agent; security rules add a CWE mapping and, where one is',
+    'assigned, a CVSS score.',
     '',
-    '**Noise creates apathy, and apathy is not a security posture.** A linter that reports',
-    'a thousand things a week gets switched off in a month, and the real finding goes with',
-    'it. So every rule here is built to be worth reading: we would rather miss a finding',
-    'than spend your attention on one that was never real.',
-    '',
-    'That is a trade, and it is made deliberately. It costs recall, and we measure what it',
-    'costs rather than assuming it is free.',
-    '',
-    '## How the rules decide',
-    '',
-    '**Evidence, not names.** A rule fires on what the code *does*, resolved through the',
-    "AST and ESLint's own scope analysis — not on an identifier that happens to contain",
-    '`query`, a method called `setItem`, or a file whose path contains `key`. Every one of',
-    'those was a real false positive in this ecosystem, found by reading our own output on',
-    'open-source projects and fixed with a test that fails on the unfixed rule.',
-    '',
-    'Where a rule has known false-positive shapes, its page carries a **Not a finding**',
-    'section: what it deliberately stays quiet on, and what to check first when it fires',
-    'and you disagree.',
-    '',
-    '## What you get',
-    '',
-    'The rules below. Security rules carry a CWE mapping and, where one is assigned, a',
-    'CVSS score; every rule carries a fix on its message — in prose for a human and as',
-    'structured JSON for an agent. Install it, enable',
-    '`recommended`, and read the findings. If one of them is wrong,',
-    '[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a',
-    'bug here, not a tuning exercise for you.',
-    '',
-    'How that is measured, on which projects, and where it falls short:',
+    'That trade costs recall, and we measure what it costs rather than assuming it is free:',
     '[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)',
     'and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).',
+    'If a finding is wrong,',
+    '[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a',
+    'bug here, not a tuning exercise for you.',
     '',
     DOCTRINE_END,
   ].join('\n');
@@ -527,9 +621,13 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   try {
     result = spliceTable(readme, table);
     const withDoctrine = spliceDoctrine(result.content);
+    const withEcosystem = spliceEcosystem(
+      withDoctrine.content,
+      renderEcosystemTable(opts.registry, entry.package),
+    );
     result = {
-      content: withDoctrine.content,
-      modified: result.modified || withDoctrine.modified,
+      content: withEcosystem.content,
+      modified: result.modified || withDoctrine.modified || withEcosystem.modified,
     };
   } catch (e) {
     return {
@@ -577,7 +675,7 @@ function main(): void {
   let errored = 0;
 
   for (const entry of targets) {
-    const result = processPlugin(entry, { dryRun, typeMap });
+    const result = processPlugin(entry, { dryRun, typeMap, registry });
     if (result.error) {
       console.error(`✗ ${entry.slug}: ${result.error}`);
       errored++;

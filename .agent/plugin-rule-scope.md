@@ -103,7 +103,7 @@ running.
 
 ---
 
-### `eslint-plugin-pg` — PostgreSQL client (`pg` package)
+### `eslint-plugin-postgresql-security` — PostgreSQL client (`pg` package)
 
 **What belongs here:** Patterns specific to the `pg` npm package API.
 
@@ -120,7 +120,7 @@ Same as pg — the rule fires on a specific client API call with a non-literal a
 
 ---
 
-### `eslint-plugin-jwt` — `jsonwebtoken` package
+### `eslint-plugin-jwt-security` — `jsonwebtoken` package
 
 All rules check specific `jwt.sign()` / `jwt.verify()` call shapes.
 These are purely structural — the argument position and value are

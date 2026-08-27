@@ -1,11 +1,16 @@
 /**
  * Locks for the generated doctrine block in scripts/sync-readme-rules.ts.
  *
- * The why/how/what block is ecosystem-wide, so it is generated into every plugin README
- * rather than hand-copied. Thirty hand-maintained copies of one position drift, and a
- * doctrine that says different things in different packages is not a doctrine.
+ * The doctrine is ecosystem-wide, so it is generated into every plugin README rather
+ * than hand-copied. Thirty hand-maintained copies of one position drift, and a doctrine
+ * that says different things in different packages is not a doctrine.
  *
  * What each case defends:
+ *   - the block adds NO headings and stays short. The first version carried three `##`
+ *     sections and ~45 lines, which pushed Getting Started and the rule table below the
+ *     fold on all thirty READMEs. A reader came for the install command; doctrine that
+ *     costs them the install command is an essay. The line cap is the lock — prose can
+ *     be rewritten freely underneath it, it just cannot grow back into an essay.
  *   - `## Philosophy` SURVIVES. It is the brand statement and `readme-structure-lock`
  *     requires it verbatim; the first version of this replaced it and turned that gate
  *     red across 26 READMEs.
@@ -43,12 +48,11 @@ describe('spliceDoctrine', () => {
     // The structure gate requires this section verbatim — it must survive.
     expect(content).toContain('## Philosophy');
     expect(content).toContain('**Interlace** fosters **strength through integration**.');
-    expect(content).toContain('## Why these rules are quiet');
-    expect(content).toContain('## How the rules decide');
-    expect(content).toContain('## What you get');
+    expect(content).toContain('Every rule here is built to be worth reading');
+    expect(content).toContain('BENCHMARK-METHODOLOGY.md');
     // The block lands between Philosophy and the rules table, not at the end.
-    expect(content.indexOf('## Philosophy')).toBeLessThan(content.indexOf('## Why these rules are quiet'));
-    expect(content.indexOf('## What you get')).toBeLessThan(content.indexOf('| Rule | Description |'));
+    expect(content.indexOf('## Philosophy')).toBeLessThan(content.indexOf('DOCTRINE:START'));
+    expect(content.indexOf('DOCTRINE:END')).toBeLessThan(content.indexOf('| Rule | Description |'));
     expect(content).toContain('## Description');
   });
 
@@ -83,12 +87,31 @@ describe('spliceDoctrine', () => {
     expect(() => spliceDoctrine(`# x\n\n${markers}\n\n## Rules\n`)).toThrow(expected);
   });
 
-  it('carries no ecosystem totals', () => {
+  /** The generated block only, markers excluded. */
+  function doctrineBlock(): string {
     const { content } = spliceDoctrine(withPhilosophy);
-    const block = content.slice(
-      content.indexOf('## Why these rules are quiet'),
-      content.indexOf('AUTO-GENERATED:DOCTRINE:END'),
+    const start = content.indexOf('AUTO-GENERATED:DOCTRINE:START');
+    return content.slice(
+      content.indexOf('-->', start) + 3,
+      content.indexOf('<!-- AUTO-GENERATED:DOCTRINE:END'),
     );
+  }
+
+  it('adds no headings of its own', () => {
+    // Three `##` sections is what made the first version an essay. The doctrine sits
+    // under `## Philosophy` as prose; a new heading here is a new section in the README
+    // table of contents and a new thing between the reader and `npm install`.
+    expect(doctrineBlock()).not.toMatch(/^#{1,6} /m);
+  });
+
+  it('stays short enough to sit above the fold', () => {
+    // 24 is the current block plus headroom to rewrite it, not a target to fill.
+    const lines = doctrineBlock().trim().split('\n');
+    expect(lines.length).toBeLessThanOrEqual(24);
+  });
+
+  it('carries no ecosystem totals', () => {
+    const block = doctrineBlock();
     // No bare counts — "121 rules", "76/76", "0/67" and friends.
     expect(block).not.toMatch(/\b\d+\s*\/\s*\d+\b/);
     expect(block).not.toMatch(/\b\d{2,}\s+rules\b/);

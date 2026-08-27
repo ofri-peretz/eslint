@@ -15,8 +15,8 @@
 
 | Plugin                             | Required Tags        | Example Full Tag List                       |
 | :--------------------------------- | :------------------- | :------------------------------------------ |
-| `eslint-plugin-jwt`                | `eslint`, `jwt`      | `eslint`, `jwt`, `security`, `node`         |
-| `eslint-plugin-pg`                 | `eslint`, `postgres` | `eslint`, `postgres`, `database`, `sql`     |
+| `eslint-plugin-jwt-security`                | `eslint`, `jwt`      | `eslint`, `jwt`, `security`, `node`         |
+| `eslint-plugin-postgresql-security`                 | `eslint`, `postgres` | `eslint`, `postgres`, `database`, `sql`     |
 | `eslint-plugin-secure-coding`      | `eslint`, `security` | `eslint`, `security`, `javascript`, `owasp` |
 | `eslint-plugin-vercel-ai-security` | `eslint`, `ai`       | `eslint`, `ai`, `vercel`, `llm`             |
 
@@ -48,7 +48,7 @@ Every article MUST end with this standardized CTA block to drive ecosystem cross
 ## Quick Install
 
 📦 [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding) — 75 security rules
-📦 [`eslint-plugin-pg`](https://npmjs.com/package/eslint-plugin-pg) — PostgreSQL security
+📦 [`eslint-plugin-postgresql-security`](https://npmjs.com/package/eslint-plugin-postgresql-security) — PostgreSQL security
 📦 [`eslint-plugin-node-security`](https://npmjs.com/package/eslint-plugin-node-security) — Node.js core modules incl. cryptography
 
 {% cta https://github.com/ofri-peretz/eslint %}
