@@ -34,6 +34,23 @@ type MessageIds = 'useEnvironmentVariable' | 'useSecretManager';
  * suggestions, which were themselves never reported and have been removed.
  */
 export interface Options {
+  /**
+   * The variable and property names this project uses for a credential.
+   *
+   * REPLACES `CREDENTIAL_VARIABLE_NAMES`. `ignorePatterns` already existed and
+   * is subtractive — it can silence a name we guessed wrong, and can never add
+   * one we never thought of. A project whose secret is called `sigilo`, or
+   * `clientSecretV2`, or anything in a language this list is not written in,
+   * got nothing from the rule and had no way to ask for it.
+   *
+   * Compared case-insensitively, and a trailing `s` is tried too, so listing
+   * `token` also covers `tokens`.
+   *
+   * This is the sanctioned exception to the AST-structure rule: the name is
+   * NOT a standard anybody publishes — it is this project's convention — so it
+   * has to be this project's to state.
+   */
+  credentialWords?: readonly string[];
   /** Patterns to ignore (regex strings). Default: [] */
   ignorePatterns?: string[];
 
@@ -922,6 +939,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          credentialWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...CREDENTIAL_VARIABLE_NAMES],
+            description:
+              'Variable and property names this project uses for a credential. REPLACES the default list.',
+          },
           ignorePatterns: {
             type: 'array',
             items: { type: 'string' },
@@ -1021,6 +1045,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
+    // Lower-cased once: the list is compared case-insensitively, and doing it
+    // per-lookup was the shape that made the old Set awkward to replace.
+    const credentialWords = new Set<string>(
+      (options.credentialWords ?? [...CREDENTIAL_VARIABLE_NAMES]).map((w) =>
+        w.toLowerCase(),
+      ),
+    );
     const {
       ignorePatterns = [],
       allowInTests = true,
@@ -1332,23 +1363,18 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         // `const tokens = ['Bearer sk_live_...']` bypassed credential
         // detection because `tokens` (plural) wasn't in the allowlist.
         const singular = lower.endsWith('s') ? lower.slice(0, -1) : lower;
-        if (
-          CREDENTIAL_VARIABLE_NAMES.has(lower) ||
-          CREDENTIAL_VARIABLE_NAMES.has(singular)
-        )
+        if (credentialWords.has(lower) || credentialWords.has(singular))
           return true;
-        return (
-          lower.endsWith('apikey') ||
-          lower.endsWith('apikeys') ||
-          lower.endsWith('secret') ||
-          lower.endsWith('secrets') ||
-          lower.endsWith('token') ||
-          lower.endsWith('tokens') ||
-          lower.endsWith('password') ||
-          lower.endsWith('passwords') ||
-          lower.endsWith('passwd') ||
-          lower.endsWith('credential') ||
-          lower.endsWith('credentials')
+        // A COMPOUND name: `stripeApiKey`, `dbPassword`, `refreshToken`.
+        //
+        // This was a second hard-coded list of eleven suffixes sitting behind
+        // the first, so replacing `credentialWords` silenced the exact-name
+        // path and left this one asserting the same English vocabulary. Both
+        // now read the same option — a consumer who states `sigilo` gets
+        // `clienteSigilo` for free, and a consumer who empties the list gets
+        // silence from both.
+        return [...credentialWords].some(
+          (word) => lower.endsWith(word) || lower.endsWith(`${word}s`),
         );
       };
 
