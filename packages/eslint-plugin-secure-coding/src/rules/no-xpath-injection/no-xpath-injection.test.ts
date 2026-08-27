@@ -91,6 +91,25 @@ describe('no-xpath-injection', () => {
         // `sourceCode.getText(node)`.
         `function f(req) { const s = render.text() + req.query.q; use(s); }`,
         `function f(req) { const s = base /* //user[@id] */ + req.query.q; use(s); }`,
+        // A regex literal inside an interpolation is not string content either.
+        // `.replace(/\//g, "-")` prints as `/\//g`, whose `//` read as the
+        // descendant axis when the gate regexed printed source — the blog's npm
+        // slug builder reported dangerousXpathExpression on v3.2.0, in a file
+        // with no XPath sink and no XPath package anywhere.
+        {
+          code: `const packageSeries = [...byPlugin.entries()].map(([id, daily]) => {
+  const name = live.get(id) ?? String(id);
+  return {
+    id: \`npm:\${name.replace(/^@/, "").replace(/\\//g, "-")}\`,
+  };
+});`,
+        },
+        // Same snippet with the constant-pattern sweep re-enabled: the static
+        // text is only "npm:", so even the aggressive mode has no XPath to see.
+        {
+          options: [{ reportDangerousConstructs: true }],
+          code: `const slug = \`npm:\${name.replace(/^@/, "").replace(/\\//g, "-")}\`; use(slug);`,
+        },
         // A non-string literal contributes no text.
         `function f(req) { const s = '/total: ' + 42 + req.query.n; use(s); }`,
         // Safe XPath literals

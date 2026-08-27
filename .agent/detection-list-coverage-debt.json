@@ -22,31 +22,22 @@
   "packages/eslint-plugin-conventions/src/rules/conventions/analytics-event-naming.ts#ACTION_VERBS": [
     "add",
     "cancel",
-    "click",
     "create",
     "delete",
-    "end",
     "fail",
     "generate",
     "invite",
     "remove",
-    "send",
     "start",
-    "submit",
-    "update",
-    "view"
+    "update"
   ],
   "packages/eslint-plugin-conventions/src/rules/conventions/filename-case.ts#DEFAULT_ALLOWED_UPPERCASE_FILES": [
     "AUTHORS",
-    "CHANGELOG",
     "CONTRIBUTING",
     "COPYING",
-    "LICENSE",
     "NOTICE",
     "PATENTS",
-    "README",
-    "SECURITY",
-    "VERSION"
+    "SECURITY"
   ],
   "packages/eslint-plugin-express-security/src/rules/no-exposed-debug-endpoints/index.ts#DEFAULT_DEBUG_PATHS": [
     "/__debug__",
@@ -127,38 +118,18 @@
   "packages/eslint-plugin-modularity/src/rules/ddd-anemic-domain-model.ts#DEFAULT_DOMAIN_PATHS": [
     "aggregate",
     "aggregates",
-    "domain",
-    "domains",
-    "entities",
-    "entity",
-    "model",
-    "models"
+    "domains"
   ],
   "packages/eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts#DEFAULT_HTTP_MODULES": [
-    "axios",
-    "got",
-    "http",
     "http2",
-    "https",
     "ky",
     "needle",
     "node-fetch",
     "phin",
-    "request",
-    "superagent",
-    "undici"
+    "superagent"
   ],
   "packages/eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts#DEFAULT_NETWORK_METHODS": [
-    "all",
-    "delete",
-    "fetch",
-    "get",
-    "head",
-    "options",
     "patch",
-    "post",
-    "put",
-    "request",
     "stream"
   ],
   "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-populate/index.ts#USER_INPUT_PATTERNS": [
@@ -363,15 +334,11 @@
     "zip-stream"
   ],
   "packages/eslint-plugin-react-a11y/src/rules/control-has-associated-label.ts#DEFAULT_IGNORE_ELEMENTS": [
-    "audio",
-    "canvas",
     "embed",
-    "tr",
     "video"
   ],
   "packages/eslint-plugin-react-a11y/src/rules/control-has-associated-label.ts#DEFAULT_IGNORE_ROLES": [
     "grid",
-    "listbox",
     "menu",
     "menubar",
     "radiogroup",
@@ -382,7 +349,6 @@
     "treegrid"
   ],
   "packages/eslint-plugin-react-a11y/src/rules/no-noninteractive-element-interactions.ts#INTERACTIVE_HANDLERS": [
-    "onClick",
     "onKeyDown",
     "onKeyPress",
     "onKeyUp",
@@ -390,7 +356,6 @@
     "onMouseUp"
   ],
   "packages/eslint-plugin-react-a11y/src/rules/no-static-element-interactions.ts#INTERACTIVE_HANDLERS": [
-    "onClick",
     "onKeyDown",
     "onKeyPress",
     "onKeyUp",
@@ -400,18 +365,8 @@
   "packages/eslint-plugin-react-features/src/rules/react/sort-comp.ts#DEFAULT_ORDER": [
     "everything-else",
     "instance-variables",
-    "lifecycle",
-    "render",
     "static-methods",
     "static-variables"
-  ],
-  "packages/eslint-plugin-react-features/src/rules/react/static-property-placement.ts#DEFAULT_GROUPS": [
-    "childContextTypes",
-    "contextType",
-    "contextTypes",
-    "defaultProps",
-    "propTypes",
-    "propTypes"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/detect-weak-password-validation/index.ts#PASSWORD_WORDS": [
     "passwd"

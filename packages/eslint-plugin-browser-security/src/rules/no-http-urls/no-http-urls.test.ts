@@ -297,6 +297,49 @@ ruleTester.run('no-http-urls (URL parsing base)', noHttpUrls, {
 });
 
 /**
+ * Regression lock — the spec-frozen W3C namespace identifiers.
+ *
+ * Hit in the wild on 2026-08-26 (ofri-peretz/blog PR #203, `svg-export.ts`):
+ * SVG export code passes these strings to `createElementNS`, and the 1.x line
+ * of this plugin reported every one. They are identifiers compared
+ * byte-for-byte — `http://` is their frozen spelling, nothing is ever fetched
+ * from them, and rewriting one to `https://` breaks the document. The host
+ * allowlist exempts them BEFORE `allowedHosts` is consulted; this suite pins
+ * each exact string in both shapes real code writes.
+ */
+const W3C_NAMESPACE_IDENTIFIERS = [
+  'http://www.w3.org/2000/svg',
+  'http://www.w3.org/1999/xhtml',
+  'http://www.w3.org/1999/xlink',
+  'http://www.w3.org/XML/1998/namespace',
+  'http://www.w3.org/2000/xmlns/',
+];
+
+ruleTester.run('lock: W3C namespace identifiers are never endpoints', noHttpUrls, {
+  valid: [
+    // Each as a bare literal…
+    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({ code: `const NS = '${ns}';` })),
+    // …and as the createElementNS argument, the shape from the blog hit.
+    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
+      code: `document.createElementNS('${ns}', 'svg');`,
+    })),
+    // The namespaced attribute setter takes the identifier first.
+    { code: "img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url);" },
+    // A namespaceURI comparison is how code branches on document type.
+    { code: "if (svg.namespaceURI === 'http://www.w3.org/2000/svg') { serialize(svg); }" },
+  ],
+  invalid: [
+    // POSITIVE CONTROL — a genuine http:// resource URL in the same statement
+    // shape still reports, so the valid cases above are quiet for the right
+    // reason and not because the suite lost its sink.
+    {
+      code: "const NS = 'http://cdn.acmecorp.io/asset.js';",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+  ],
+});
+
+/**
  * Regression lock — RFC 2606 reserved domains.
  *
  * `example.com` exists precisely so that nothing treats it as a real endpoint, and it was the
