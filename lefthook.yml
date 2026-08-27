@@ -41,6 +41,19 @@ pre-commit:
       # gate, which is what actually holds the line.
       glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,packages/eslint-plugin-*/src/utils/**/*.ts}'
       run: npm run --silent rule-audit:gate -- --changed
+    spellings:
+      # A rule may not acquire a blind spot it did not already have.
+      #
+      # `node.type === 'Literal'` sees 'sha1' and not `sha1`; `.property.name`
+      # sees o.k and not o['k']. Neither is a decision — it is what those
+      # expressions MEAN when the grammar allows a second spelling, and it is
+      # invisible in review because the tests are written in the same spelling
+      # as the rule. Measured: 1,113 misses across 159 of 470 rules.
+      #
+      # Ratcheted, not enforced retroactively: the existing 1,022 sites are
+      # baselined. With 700 rules coming, refusing the next one is what scales.
+      glob: 'packages/eslint-plugin-*/src/**/*.ts'
+      run: npm run --silent check:spellings
     case-registry:
       # Executed evidence, not a stored verdict. Every coverage claim in
       # benchmarks/cases/registry.json is run through the rule that makes it,

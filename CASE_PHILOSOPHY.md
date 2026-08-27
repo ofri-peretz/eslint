@@ -393,3 +393,58 @@ against rule source and the registry.
 **Every number is produced by the run that prints it.** Nothing is stored,
 nothing is quoted from memory, and a run that could not be performed reports as
 unscoreable rather than as a zero.
+
+---
+
+## 12. Scale: refuse the next one, do not remediate the last thousand
+
+The register grows with the rule count, and the rule count is going to roughly
+double. Anything in this file that costs O(rules) of hand work is a plan that
+fails at 700.
+
+So the default for a defect CLASS is a **ratchet**, not a campaign.
+
+### The measurement that forced this
+
+3,825 meaning-preserving rewrites of known true positives produced **1,113
+cases where a rule reported the original and went silent on the rewrite**,
+across 159 of 470 rules. One cause, repeated: reading one spelling of a
+construct the grammar spells two ways.
+
+Two responses were available.
+
+**Remediate.** Fix 1,113 sites. Linear in rules, and every fix is a chance to
+break a working rule — wave one cost five distinct breakages, three caught only
+by the coverage gates. At 700 rules this is not a plan.
+
+**Refuse.** Baseline every existing site, fail the build on a new one, and put
+the four devkit primitives in the authoring guide. Constant work, and the debt
+stops growing the day it lands.
+
+`scripts/audit-rule-spellings.ts` is the second. It reports 1,022 sites, and a
+new one fails with the file, the line, what it misses, and the call that
+replaces it.
+
+### What makes a ratchet honest
+
+- **It must fail on a new violation.** Verified by writing a rule the blind way
+  and watching the gate name it, then deleting it and watching the gate pass.
+  A gate nobody has seen fail is a gate nobody has tested.
+- **The baseline is a debt register, not an amnesty.** 1,022 sites are recorded
+  by content, not line number, so moving code does not launder them.
+- **An escape hatch that costs a sentence.** A rule that genuinely means "a
+  quoted literal and nothing else" says so in a comment and runs `--update`.
+  The cost is deliberate: it is cheap to justify and impossible to do by
+  accident.
+
+### The order of operations at scale
+
+1. **Measure the class**, once, with an instrument (§11 step 1).
+2. **Ratchet it**, so it stops growing.
+3. **Make the right way the easy way** — a devkit primitive, and a line in the
+   authoring guide that says which call replaces which mistake.
+4. **Remediate opportunistically**, as rules are touched for other reasons. A
+   site is cheapest to fix while you are already reading it.
+
+Step 4 is last on purpose. It is the only step that does not scale, and it is
+the only one that is optional.

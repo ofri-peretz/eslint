@@ -241,6 +241,8 @@
     "check:rule-cases": "tsx scripts/rule-case-ledger.ts --check",
     "case-registry": "tsx scripts/case-registry.mts",
     "case-registry:import": "tsx scripts/case-registry-import.mts",
+    "audit:spellings": "tsx scripts/audit-rule-spellings.ts",
+    "check:spellings": "tsx scripts/audit-rule-spellings.ts --check",
     "head-to-head": "tsx scripts/rule-head-to-head.mts",
     "head-to-head:all": "tsx scripts/rule-head-to-head.mts --all --md",
     "check:case-registry": "tsx scripts/case-registry.mts --check",
