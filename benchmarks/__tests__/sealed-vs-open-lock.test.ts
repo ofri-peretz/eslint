@@ -47,6 +47,24 @@ type Case = {
 };
 type Rule = { rule: string; cases: Case[] };
 
+/**
+ * REGENERATED, not read from the working tree.
+ *
+ * This read the committed `RULE_CASES.json`, which meant the three assertions
+ * below verified whatever was last generated rather than what the test files
+ * currently say. Add an `FN:` case in the wrong array, forget to regenerate,
+ * and the lock passes — the exact "green check that tested nothing" this
+ * repository has now produced three times.
+ *
+ * Regenerating also lets the artifact leave git: 135,000 lines of derivable
+ * JSON were making every PR that touched a rule unreviewable.
+ */
+execFileSync('npx', ['tsx', 'scripts/rule-case-ledger.ts'], {
+  cwd: ROOT,
+  encoding: 'utf8',
+  stdio: ['ignore', 'ignore', 'pipe'],
+});
+
 const db = JSON.parse(fs.readFileSync(LEDGER, 'utf8')) as {
   counts: Record<string, number>;
   rules: Rule[];

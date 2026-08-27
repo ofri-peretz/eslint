@@ -166,3 +166,31 @@ packages/*/src/**/*.d.ts
 benchmarks/.real-source-cache/
 
 benchmarks/.corpus-gh-cache.json
+
+# Derived case artifacts — regenerated, never hand-edited.
+#
+# `RULE_CASES.json` alone was 135,000 lines, and every PR that touched a rule
+# carried it. Nobody can find a nine-line behaviour change in that, so the
+# review it was supposed to enable never happened.
+#
+# What stays in git is what cannot be derived:
+#   benchmarks/cases/registry.json    hand-authored — the accountability register
+#   benchmarks/budgets/*.json         ratchet baselines — the shrink-only contract
+#   benchmarks/*_PHILOSOPHY.md, VERDICT_LEDGER.md, CASE_PHILOSOPHY.md   written
+#
+# Regenerating is also what makes the locks honest. `sealed-vs-open-lock` read
+# the COMMITTED ledger, so it verified whatever was last generated rather than
+# what the tests currently say; it now regenerates first, and a poisoned
+# artifact no longer changes its verdict.
+#
+#   npm run rule-cases          # RULE_CASES.{json,md}
+#   npm run case-registry       # CASE_REGISTRY.md
+#   npm run audit:spellings     # SPELLING_MISSES.{json,md}
+#   npm run probe:name-dependence
+benchmarks/RULE_CASES.json
+benchmarks/RULE_CASES.md
+benchmarks/SPELLING_MISSES.json
+benchmarks/SPELLING_MISSES.md
+benchmarks/NAME_DEPENDENCE.json
+benchmarks/CASE_REGISTRY.md
+benchmarks/CANDIDATES.md
