@@ -1,0 +1,2148 @@
+{
+  "probed": 2380,
+  "structural": 2023,
+  "nameDependent": [
+    {
+      "rule": "browser-security/no-incomplete-url-sanitization",
+      "description": "includes() on a hostname matches trusted.com.evil.test",
+      "before": "function isTrustedApi(url) { return url.includes('trusted.com') || url.indexOf('trusted.com') !== -1; }",
+      "after": "function foo2(foo1) { return foo1.includes('trusted.com') || foo1.indexOf('trusted.com') !== -1; }"
+    },
+    {
+      "rule": "browser-security/no-incomplete-url-sanitization",
+      "description": "",
+      "before": "function isTrustedSubdomain(hostname) { return hostname.lastIndexOf('.trusted.com') !== -1; }",
+      "after": "function foo2(foo1) { return foo1.lastIndexOf('.trusted.com') !== -1; }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect(/https:\\/\\/a\\.example$/.test(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(/https:\\/\\/a\\.example$/.test(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect(/^https:\\/\\/a\\.example/.test(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(/^https:\\/\\/a\\.example/.test(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect(/^https:\\/\\/a\\.example\\$/.test(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(/^https:\\/\\/a\\.example\\$/.test(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect(/^https:\\/\\/a.example$/.test(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(/^https:\\/\\/a.example$/.test(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "const OK = /^https:\\/\\/a\\.example$/; function h(req, res) { const t = req.query.next; res.redirect(OK.exec(t) ? t : '/'); }",
+      "after": "const foo1 = /^https:\\/\\/a\\.example$/; function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1.exec(foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "const OK = /^https:\\/\\/a\\.example$/; function h(req, res) { const t = req.query.next; res.redirect(OK['test'](t) ? t : '/'); }",
+      "after": "const foo1 = /^https:\\/\\/a\\.example$/; function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1['test'](foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect(unknownGuard(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(unknownGuard(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "const OK = 'x'; function h(req, res) { const t = req.query.next; res.redirect(OK.test(t) ? t : '/'); }",
+      "after": "const foo1 = 'x'; function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1.test(foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "let OK = /^https:\\/\\/a\\.example$/; OK = /anything/; function h(req, res) { const t = req.query.next; res.redirect(OK.test(t) ? t : '/'); }",
+      "after": "let foo1 = /^https:\\/\\/a\\.example$/; foo1 = /anything/; function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1.test(foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "const OK = buildPattern(); function h(req, res) { const t = req.query.next; res.redirect(OK.test(t) ? t : '/'); }",
+      "after": "const foo1 = buildPattern(); function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1.test(foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect(patterns.host.test(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(patterns.host.test(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect('abc'.test(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect('abc'.test(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "const isOk = 5; function h(req, res) { const t = req.query.next; res.redirect(isOk(t) ? t : '/'); }",
+      "after": "const foo1 = 5; function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1(foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "var isOk = 1; var isOk = 2; function h(req, res) { const t = req.query.next; res.redirect(isOk(t) ? t : '/'); }",
+      "after": "var foo1 = 1; var foo1 = 2; function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1(foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "declare function isOk(t: string): boolean; function h(req, res) { const t = req.query.next; res.redirect(isOk(t) ? t : '/'); }",
+      "after": "declare function isOk(foo1): boolean; function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(isOk(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "import { isOk } from './guards'; function h(req, res) { const t = req.query.next; res.redirect(isOk(t) ? t : '/'); }",
+      "after": "import { isOk } from './guards'; function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(isOk(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function isOk(t) { return; } function h(req, res) { const t = req.query.next; res.redirect(isOk(t) ? t : '/'); }",
+      "after": "function foo1(foo2) { return; } function foo5(foo3, foo4) { const foo2 = foo3.query.next; foo4.redirect(foo1(foo2) ? foo2 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res, flag) { const t = req.query.next; res.redirect(flag ? t : '/'); }",
+      "after": "function foo5(foo2, foo4, foo3) { const foo1 = foo2.query.next; foo4.redirect(foo3 ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-insecure-redirects",
+      "description": "",
+      "before": "function h(req, res) { const t = req.query.next; res.redirect(guards.isOk(t) ? t : '/'); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2.query.next; foo3.redirect(guards.isOk(foo1) ? foo1 : '/'); }"
+    },
+    {
+      "rule": "browser-security/no-sensitive-indexeddb",
+      "description": "",
+      "before": "const store = tx.objectStore('vault'); const password = form.password; store.put({ id: 1, password });",
+      "after": "const foo1 = tx.objectStore('vault'); const foo2 = form.password; foo1.put({ id: 1, foo2 });"
+    },
+    {
+      "rule": "browser-security/no-sensitive-localstorage",
+      "description": "",
+      "before": "function save(apiKey, value) { localStorage.setItem(apiKey, value); }",
+      "after": "function foo3(foo1, foo2) { localStorage.setItem(foo1, foo2); }"
+    },
+    {
+      "rule": "browser-security/no-unescaped-url-parameter",
+      "description": "",
+      "before": "export default function handler(req) { return fetch(`https://i.example.com/v1/e?m=${req.body.message}`); }",
+      "after": "export default function foo2(foo1) { return fetch(`https://i.example.com/v1/e?m=${foo1.body.message}`); }"
+    },
+    {
+      "rule": "browser-security/require-csp-headers",
+      "description": "",
+      "before": "app.get('/', (req, res) => { res.render('index'); });",
+      "after": "app.get('/', (foo2, foo1) => { foo1.render('index'); });"
+    },
+    {
+      "rule": "browser-security/require-csp-headers",
+      "description": "",
+      "before": "app.get('/', (req, reply) => { reply.render('index'); });",
+      "after": "app.get('/', (foo2, foo1) => { foo1.render('index'); });"
+    },
+    {
+      "rule": "conventions/prefer-dom-node-text-content",
+      "description": "",
+      "before": "function getText(element) { return element.innerText; }",
+      "after": "function foo2(foo1) { return foo1.innerText; }"
+    },
+    {
+      "rule": "conventions/prefer-dom-node-text-content",
+      "description": "",
+      "before": "const getText = element => element.innerText;",
+      "after": "const foo1 = foo2 => foo2.innerText;"
+    },
+    {
+      "rule": "conventions/prefer-dom-node-text-content",
+      "description": "",
+      "before": "function updateElement(el, text) { el.innerText = text; return el.innerText.length; }",
+      "after": "function foo3(foo1, foo2) { foo1.innerText = foo2; return foo1.innerText.length; }"
+    },
+    {
+      "rule": "conventions/prefer-dom-node-text-content",
+      "description": "",
+      "before": "function updateText(element, newText) { element.innerText = newText; }",
+      "after": "function foo3(foo1, foo2) { foo1.innerText = foo2; }"
+    },
+    {
+      "rule": "express-security/no-error-details-in-response",
+      "description": "",
+      "before": "function handler(err, req, res, next) { res.status(500).send(err.stack); }",
+      "after": "function foo3(foo1, foo4, foo2, foo5) { foo2.status(500).send(foo1.stack); }"
+    },
+    {
+      "rule": "express-security/no-permissive-trust-proxy",
+      "description": "trust proxy enabled in front of an IP allowlist",
+      "before": "import 'express'; const app = express(); app.enable('trust proxy'); app.use((req, res, next) => authorizeIPAddress(req.ip).then(next).catch(() => res.sendStatus(403)));",
+      "after": "import 'express'; const foo1 = express(); foo1.enable('trust proxy'); foo1.use((foo4, foo2, foo3) => authorizeIPAddress(foo4.ip).then(foo3).catch(() => foo2.sendStatus(403)));"
+    },
+    {
+      "rule": "express-security/no-static-root-exposure",
+      "description": "express.static(__dirname) serves the source tree",
+      "before": "const express = require('express'); const app = express(); app.use(express.static(__dirname)); app.get('/health', (req, res) => res.send('ok')); module.exports = app;",
+      "after": "const foo1 = require('express'); const foo2 = foo1(); foo2.use(foo1.static(__dirname)); foo2.get('/health', (foo4, foo3) => foo3.send('ok')); module.exports = foo2;"
+    },
+    {
+      "rule": "express-security/no-user-controlled-render-locals",
+      "description": "request data passed as template locals",
+      "before": "const express = require('express'); const app = express(); app.use(express.json()); app.set('view engine', 'pug'); app.post('/preview', (req, res) => { res.render('preview', req.body); }); module.expo",
+      "after": "const foo1 = require('express'); const foo2 = foo1(); foo2.use(foo1.json()); foo2.set('view engine', 'pug'); foo2.post('/preview', (foo3, foo4) => { foo4.render('preview', foo3.body); }); module.expo"
+    },
+    {
+      "rule": "express-security/no-user-controlled-render-locals",
+      "description": "",
+      "before": "const express = require('express'); const app = express(); app.set('view engine', 'ejs'); app.get('/newsletter', (req, res) => { res.render('newsletter', { ...req.query, generatedAt: Date.now() }); })",
+      "after": "const foo1 = require('express'); const foo2 = foo1(); foo2.set('view engine', 'ejs'); foo2.get('/newsletter', (foo3, foo4) => { foo4.render('newsletter', { ...foo3.query, generatedAt: Date.now() }); })"
+    },
+    {
+      "rule": "express-security/require-csrf-protection",
+      "description": "",
+      "before": "const express = require('express'); const router = express.Router(); router.post('/logout', async (req, res) => { req.session.destroy(); res.redirect('/'); });",
+      "after": "const foo1 = require('express'); const foo2 = foo1.Router(); foo2.post('/logout', async (foo3, foo4) => { foo3.session.destroy(); foo4.redirect('/'); });"
+    },
+    {
+      "rule": "express-security/require-helmet",
+      "description": "",
+      "before": "const express = require('express'); const app = express(); app.get('/', (req, res) => res.render('home'));",
+      "after": "const foo1 = require('express'); const foo2 = foo1(); foo2.get('/', (foo4, foo3) => foo3.render('home'));"
+    },
+    {
+      "rule": "express-security/require-rate-limiting",
+      "description": "",
+      "before": "import express from 'express'; const app = express(); app.post('/auth/token', issueToken); app.post('/password/reset', resetPassword);",
+      "after": "import express from 'express'; const foo1 = express(); foo1.post('/auth/token', issueToken); foo1.post('/password/reset', resetPassword);"
+    },
+    {
+      "rule": "express-security/require-rate-limiting",
+      "description": "",
+      "before": "const express = require('express'); const app = express(); app.use(cors()); app.delete('/session', destroySession);",
+      "after": "const foo1 = require('express'); const foo2 = foo1(); foo2.use(cors()); foo2.delete('/session', destroySession);"
+    },
+    {
+      "rule": "express-security/require-route-authentication",
+      "description": "",
+      "before": "function showProfile(req, res, next) { if (!ok) return next(); res.json(profile); } app.get('/profile', showProfile);",
+      "after": "function foo3(foo4, foo2, foo1) { if (!ok) return foo1(); foo2.json(profile); } app.get('/profile', foo3);"
+    },
+    {
+      "rule": "express-security/require-route-authentication",
+      "description": "",
+      "before": "app.post('/account/password', function (req, res, next) { log('requireAuth was removed'); next(); }, changePassword);",
+      "after": "app.post('/account/password', function (foo2, foo3, foo1) { log('requireAuth was removed'); foo1(); }, changePassword);"
+    },
+    {
+      "rule": "import-next/no-deprecated",
+      "description": "deprecated export specifier usage",
+      "before": "const a = 1; /** @deprecated gone for good */ export { a }; foo(a);",
+      "after": "const foo1 = 1; /** @deprecated gone for good */ export { foo1oo1 }; foo(foo1);"
+    },
+    {
+      "rule": "import-next/no-mutable-exports",
+      "description": "let exported later via specifier is flagged",
+      "before": "let mut = 1; export { mut };",
+      "after": "let foo1 = 1; export { foo11 };"
+    },
+    {
+      "rule": "lambda-security/no-exposed-error-details",
+      "description": "the stack trace goes back to the caller in the response body",
+      "before": "export const handler = async (event) => { try { await riskyOperation(); } catch (error) { return { statusCode: 500, body: JSON.stringify({ stack: error.stack }) }; } };",
+      "after": "export const foo1 = async (foo2) => { try { await riskyOperation(); } catch (error) { return { statusCode: 500, body: JSON.stringify({ stack: error.stack }) }; } };"
+    },
+    {
+      "rule": "lambda-security/no-exposed-error-details",
+      "description": "",
+      "before": "export const handler = async (event) => { try { await riskyOperation(); } catch (error) { return { statusCode: 500, body: JSON.stringify(error) }; } };",
+      "after": "export const foo1 = async (foo2) => { try { await riskyOperation(); } catch (error) { return { statusCode: 500, body: JSON.stringify(error) }; } };"
+    },
+    {
+      "rule": "lambda-security/no-exposed-error-details",
+      "description": "",
+      "before": "export const handler = async (event) => { try { await riskyOperation(); } catch (err) { return { statusCode: 500, body: JSON.stringify({ cause: err.cause }) }; } };",
+      "after": "export const foo1 = async (foo2) => { try { await riskyOperation(); } catch (err) { return { statusCode: 500, body: JSON.stringify({ cause: err.cause }) }; } };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "a handler that deletes rows without checking who asked",
+      "before": "export const handler = async (event) => { await db.query('DELETE FROM users'); };",
+      "after": "export const foo1 = async (foo2) => { await db.query('DELETE FROM users'); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await db.put({ TableName: 'users', Item: { id: '123' } }); };",
+      "after": "export const foo1 = async (foo2) => { await db.put({ TableName: 'users', Item: { id: '123' } }); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await db.delete({ TableName: 'users', Key: { id: '123' } }); };",
+      "after": "export const foo1 = async (foo2) => { await db.delete({ TableName: 'users', Key: { id: '123' } }); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await db.update({ id: '123', status: 'deleted' }); };",
+      "after": "export const foo1 = async (foo2) => { await db.update({ id: '123', status: 'deleted' }); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await client.send(new PutItemCommand(params)); };",
+      "after": "export const foo1 = async (foo2) => { await client.send(new PutItemCommand(params)); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await docClient.deleteItem({ TableName: 'users', Key: { id: '123' } }); };",
+      "after": "export const foo1 = async (foo2) => { await docClient.deleteItem({ TableName: 'users', Key: { id: '123' } }); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await s3.getObject({ Bucket: 'private', Key: 'secret.pdf' }); };",
+      "after": "export const foo1 = async (foo2) => { await s3.getObject({ Bucket: 'private', Key: 'secret.pdf' }); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await db.query('SELECT * FROM users'); await db.delete({ id: '123' }); };",
+      "after": "export const foo1 = async (foo2) => { await db.query('SELECT * FROM users'); await db.delete({ id: '123' }); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (evt) => { await db.query('SELECT * FROM users'); };",
+      "after": "export const foo1 = async (foo2) => { await db.query('SELECT * FROM users'); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async (event) => { await db.query('DELETE FROM users'); };",
+      "after": "export const foo1 = async (foo2) => { await db.query('DELETE FROM users'); };"
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "description": "",
+      "before": "export const handler = async function (event) { await db.query('DELETE FROM users'); };",
+      "after": "export const foo1 = async function (foo2) { await db.query('DELETE FROM users'); };"
+    },
+    {
+      "rule": "lambda-security/no-overly-permissive-iam-policy",
+      "description": "",
+      "before": "export const handler = async (event) => { return { principalId: 'user', policyDocument: { Statement: [{ Effect: 'Allow', Action: 'execute-api:Invoke', Resource: '*' }] } }; };",
+      "after": "export const foo1 = async (foo2) => { return { principalId: 'user', policyDocument: { Statement: [{ Effect: 'Allow', Action: 'execute-api:Invoke', Resource: '*' }] } }; };"
+    },
+    {
+      "rule": "lambda-security/no-overly-permissive-iam-policy",
+      "description": "the same code with template literals instead of quoted strings",
+      "before": "export const handler = async (event) => { return { principalId: `user`, policyDocument: { Statement: [{ Effect: `Allow`, Action: `execute-api:Invoke`, Resource: `*` }] } }; };",
+      "after": "export const foo1 = async (foo2) => { return { principalId: `user`, policyDocument: { Statement: [{ Effect: `Allow`, Action: `execute-api:Invoke`, Resource: `*` }] } }; };"
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "description": "every record processed with no bound on how many arrive",
+      "before": "export const handler = async (event) => { for (const record of event.Records) { await processRecord(record); } };",
+      "after": "export const foo1 = async (foo3) => { for (const foo2 of foo3.Records) { await processRecord(foo2); } };"
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "description": "",
+      "before": "export const handler = async (event) => { event.records.forEach(async (record) => { await processRecord(record); }); };",
+      "after": "export const foo1 = async (foo3) => { foo3.records.forEach(async (foo2) => { await processRecord(foo2); }); };"
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "description": "",
+      "before": "export const handler = async (event) => { for (const item of event.items) { await processItem(item); } };",
+      "after": "export const foo1 = async (foo3) => { for (const foo2 of foo3.items) { await processItem(foo2); } };"
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "description": "",
+      "before": "export const handler = async (event) => { for (const msg of event.messages) { await processMessage(msg); } };",
+      "after": "export const foo1 = async (foo3) => { for (const foo2 of foo3.messages) { await processMessage(foo2); } };"
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "description": "",
+      "before": "export const handler = async (evt) => { for (const record of evt.Records) { await processRecord(record); } };",
+      "after": "export const foo1 = async (foo3) => { for (const foo2 of foo3.Records) { await processRecord(foo2); } };"
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "description": "",
+      "before": "export const handler = async (event) => { for (const record of event.Records) { await processRecord(record); } };",
+      "after": "export const foo1 = async (foo3) => { for (const foo2 of foo3.Records) { await processRecord(foo2); } };"
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "description": "",
+      "before": "export const handler = async function (event) { for (const record of event.Records) { await processRecord(record); } };",
+      "after": "export const foo1 = async function (foo3) { for (const foo2 of foo3.Records) { await processRecord(foo2); } };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "",
+      "before": "exports.handler = function (e) { const x = e.body; };",
+      "after": "exports.handler = function (foo2) { const foo1 = foo2.body; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "",
+      "before": "import { S3Client } from '@aws-sdk/client-s3'; const processEvent = (event) => { const x = event.body; };",
+      "after": "import { S3Client } from '@aws-sdk/client-s3'; const foo1 = (foo3) => { const foo2 = foo3.body; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "event.body used with no schema between it and the code",
+      "before": "export const handler = async (event) => { const data = event.body; return { statusCode: 200 }; };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.body; return { statusCode: 200 }; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "",
+      "before": "export const handler = async (event) => { const params = event.queryStringParameters; return { statusCode: 200 }; };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.queryStringParameters; return { statusCode: 200 }; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "",
+      "before": "export const handler = async (event) => { const path = event.pathParameters; return { statusCode: 200 }; };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.pathParameters; return { statusCode: 200 }; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "",
+      "before": "export const handler = async (req) => { const data = req.body; return { statusCode: 200 }; };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.body; return { statusCode: 200 }; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "@aws-sdk/ subpath import",
+      "before": "import { S3Client } from '@aws-sdk/client-s3'; const run = async (event) => { const data = event.body; return data; };",
+      "after": "import { S3Client } from '@aws-sdk/client-s3'; const foo1 = async (foo3) => { const foo2 = foo3.body; return foo2; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "@middy/ subpath import",
+      "before": "import middy from '@middy/core'; const run = async (event) => { const data = event.body; return data; };",
+      "after": "import middy from '@middy/core'; const foo1 = async (foo3) => { const foo2 = foo3.body; return foo2; };"
+    },
+    {
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "description": "@aws-cdk/aws-lambda arm (gate satisfied separately)",
+      "before": "import * as cdk from '@aws-cdk/aws-lambda'; const boot = async (event, context) => cdk.Runtime; const run = async (event) => { const data = event.body; return data; };",
+      "after": "import * as cdk from '@aws-cdk/aws-lambda'; const foo1 = async (foo2, foo3) => cdk.Runtime; const foo4 = async (foo2) => { const foo5 = foo2.body; return foo5; };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "a fetch to a URL taken from the query string",
+      "before": "export const handler = async (event) => { const targetUrl = event.queryStringParameters.targetUrl; const response = await fetch(targetUrl); return { statusCode: 200 }; };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.queryStringParameters.targetUrl; const foo4 = await fetch(foo2); return { statusCode: 200 }; };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const host = event.queryStringParameters.host; await fetch(`https://${host}/api/data`); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.queryStringParameters.host; await fetch(`https://${foo2}/api/data`); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const url = event.body; await axios.get(url); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.body; await axios.get(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "import http from 'http'; export const handler = async (event) => { const targetUrl = event.queryStringParameters.url; http.request(targetUrl); };",
+      "after": "import http from 'http'; export const foo1 = async (foo3) => { const foo2 = foo3.queryStringParameters.url; http.request(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { let url = event.queryStringParameters.target; await fetch(url); };",
+      "after": "export const foo1 = async (foo3) => { let foo2 = foo3.queryStringParameters.target; await fetch(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const path = event.pathParameters.proxy; await fetch('https://internal.service/' + path); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.pathParameters.proxy; await fetch('https://internal.service/' + foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const target = event.queryStringParameters.endpoint; await axios({ url: target, method: 'GET' }); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.queryStringParameters.endpoint; await axios({ url: foo2, method: 'GET' }); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { let endpoint; endpoint = event.body; await fetch(endpoint); };",
+      "after": "export const foo1 = async (foo3) => { let foo2; foo2 = foo3.body; await fetch(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { await fetch(event.body); };",
+      "after": "export const foo1 = async (foo2) => { await fetch(foo2.body); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const url = event.rawPath; await fetch(url); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.rawPath; await fetch(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const url = event.rawQueryString; await fetch(url); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.rawQueryString; await fetch(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const target = event.queryStringParameters.url; await got(target); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.queryStringParameters.url; await got(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const url = event.body; await client.post(url, { data: 'test' }); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.body; await client.post(foo2, { data: 'test' }); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const webhookUrl = event.headers; await fetch(webhookUrl); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.headers; await fetch(foo2); };"
+    },
+    {
+      "rule": "lambda-security/no-user-controlled-requests",
+      "description": "",
+      "before": "export const handler = async (event) => { const target = event.queryStringParameters.callback; await request({ uri: target }); };",
+      "after": "export const foo1 = async (foo3) => { const foo2 = foo3.queryStringParameters.callback; await request({ uri: foo2 }); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "an outbound call with no timeout can burn the whole invocation",
+      "before": "export const handler = async (event, context) => { const data = await fetch('https://api.example.com/data'); return { statusCode: 200, body: JSON.stringify(data) }; };",
+      "after": "export const foo1 = async (foo3, foo4) => { const foo2 = await fetch('https://api.example.com/data'); return { statusCode: 200, body: JSON.stringify(foo2) }; };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { const result = await axios('https://api.example.com'); return { statusCode: 200, body: result.data }; };",
+      "after": "export const foo1 = async (foo3, foo4) => { const foo2 = await axios('https://api.example.com'); return { statusCode: 200, body: foo2.data }; };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { await client.send(new GetItemCommand(params)); };",
+      "after": "export const foo1 = async (foo2, foo3) => { await client.send(new GetItemCommand(params)); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { const result = await db.query('SELECT * FROM users'); return { statusCode: 200, body: JSON.stringify(result) }; };",
+      "after": "export const foo1 = async (foo3, foo4) => { const foo2 = await db.query('SELECT * FROM users'); return { statusCode: 200, body: JSON.stringify(foo2) }; };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { await db.execute('INSERT INTO logs VALUES (1)'); };",
+      "after": "export const foo1 = async (foo2, foo3) => { await db.execute('INSERT INTO logs VALUES (1)'); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { await db.connect(); const result = await db.query('SELECT 1'); };",
+      "after": "export const foo1 = async (foo3, foo4) => { await db.connect(); const foo2 = await db.query('SELECT 1'); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { await got('https://api.example.com'); };",
+      "after": "export const foo1 = async (foo2, foo3) => { await got('https://api.example.com'); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { await lambda.invoke({ FunctionName: 'other' }); };",
+      "after": "export const foo1 = async (foo2, foo3) => { await lambda.invoke({ FunctionName: 'other' }); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "async function handler(event, context) { await fetch('https://api.example.com'); }",
+      "after": "async function foo1(foo2, foo3) { await fetch('https://api.example.com'); }"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, lambdaContext) => { await fetch('https://api.example.com'); };",
+      "after": "export const foo1 = async (foo2, foo3) => { await fetch('https://api.example.com'); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async (event, context) => { await fetch('https://api.example.com'); };",
+      "after": "export const foo1 = async (foo2, foo3) => { await fetch('https://api.example.com'); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "export const handler = async function (event, context) { await fetch('https://api.example.com'); };",
+      "after": "export const foo1 = async function (foo2, foo3) { await fetch('https://api.example.com'); };"
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "description": "",
+      "before": "async function handler(event, context) { await fetch('https://api.example.com'); }",
+      "after": "async function foo1(foo2, foo3) { await fetch('https://api.example.com'); }"
+    },
+    {
+      "rule": "modularity/ddd-value-object-immutability",
+      "description": "a value object with a reassignable field",
+      "before": "class EmailValue { address: string; constructor(address: string) { this.address = address; } }",
+      "after": "class foo2 { address: string; constructor(foo1) { this.address = foo1; } }"
+    },
+    {
+      "rule": "modularity/ddd-value-object-immutability",
+      "description": "",
+      "before": "class NameVO { firstName: string; lastName: string; }",
+      "after": "class foo1 { firstName: string; lastName: string; }"
+    },
+    {
+      "rule": "nestjs-security/no-permissive-cors",
+      "description": "",
+      "before": "import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface'; export const corsOptions: CorsOptions = { origin: true, credentials: true };",
+      "after": "import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface'; export const foo1 = { origin: true, credentials: true };"
+    },
+    {
+      "rule": "nestjs-security/no-permissive-cors",
+      "description": "",
+      "before": "import * as common from '@nestjs/common'; export const corsOptions: common.CorsOptions = { origin: true };",
+      "after": "import * as common from '@nestjs/common'; export const foo1 = { origin: true };"
+    },
+    {
+      "rule": "nestjs-security/no-permissive-cors",
+      "description": "",
+      "before": "import { CorsOptions as Opts } from '@nestjs/common'; export const corsOptions: Opts = { origin: '*' };",
+      "after": "import { CorsOptions as Opts } from '@nestjs/common'; export const foo1 = { origin: '*' };"
+    },
+    {
+      "rule": "nestjs-security/no-permissive-cors",
+      "description": "",
+      "before": "import { CorsOptions } from '@nestjs/common'; export const corsOptions: CorsOptions = { methods: ['GET'] };",
+      "after": "import { CorsOptions } from '@nestjs/common'; export const foo1 = { methods: ['GET'] };"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: a request-derived path still reports",
+      "before": "import fs from 'fs'; export function read(req) { return fs.readFileSync(req.query.file); }",
+      "after": "import fs from 'fs'; export function foo2(foo1) { return fs.readFileSync(foo1.query.file); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: taint composed onto a literal prefix still reports",
+      "before": "import fs from 'fs'; export function read(req) { return fs.readFileSync(`/uploads/${req.query.f}`); }",
+      "after": "import fs from 'fs'; export function foo2(foo1) { return fs.readFileSync(`/uploads/${foo1.query.f}`); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "the fs/promises spelling is the same sink",
+      "before": "import { readFile } from 'fs/promises'; export async function read(req) { return readFile(req.query.f, 'utf8'); }",
+      "after": "import { readFile } from 'fs/promises'; export async function foo2(foo1) { return readFile(foo1.query.f, 'utf8'); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: koa ctx.query.file still reports",
+      "before": "import fs from 'fs'; export function download(ctx) { ctx.body = fs.readFileSync(ctx.query.file); }",
+      "after": "import fs from 'fs'; export function foo2(foo1) { foo1.body = fs.readFileSync(foo1.query.file); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: ctx.request.body composed into a path still reports",
+      "before": "import fs from 'fs'; export function save(ctx) { return fs.writeFileSync('/uploads/' + ctx.request.body.name, 'x'); }",
+      "after": "import fs from 'fs'; export function foo2(foo1) { return fs.writeFileSync('/uploads/' + foo1.request.body.name, 'x'); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: req.query.file still reports",
+      "before": "import fs from 'fs'; export function read(req) { return fs.readFileSync(req.query.file); }",
+      "after": "import fs from 'fs'; export function foo2(foo1) { return fs.readFileSync(foo1.query.file); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: a REQUEST as the base with literal suffixes still reports",
+      "before": "import fs from 'fs'; import path from 'path'; export function read(req) { return fs.readFileSync(path.join(req.body.dir, 'config.json'), 'utf8'); }",
+      "after": "import fs from 'fs'; import path from 'path'; export function foo2(foo1) { return fs.readFileSync(path.join(foo1.body.dir, 'config.json'), 'utf8'); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: env base with a NON-literal segment after it still reports",
+      "before": "import fs from 'fs'; import path from 'path'; export function read(req) { return fs.readFileSync(path.join(process.env.HOME, req.query.f), 'utf8'); }",
+      "after": "import fs from 'fs'; import path from 'path'; export function foo2(foo1) { return fs.readFileSync(path.join(process.env.HOME, foo1.query.f), 'utf8'); }"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: argv base with a request in a template segment reports",
+      "before": "import fs from 'fs'; import path from 'path'; export const read = (req) => fs.readFileSync(path.join(process.argv[2], `${req.query.f}`), 'utf8');",
+      "after": "import fs from 'fs'; import path from 'path'; export const foo1 = (foo2) => fs.readFileSync(path.join(process.argv[2], `${foo2.query.f}`), 'utf8');"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: argv base with a concatenated request segment reports",
+      "before": "import fs from 'fs'; import path from 'path'; const baseDir = process.argv[2]; export const read = (req) => fs.readFileSync(path.join(baseDir, 'a/' + req.query.f), 'utf8');",
+      "after": "import fs from 'fs'; import path from 'path'; const foo1 = process.argv[2]; export const foo2 = (foo3) => fs.readFileSync(path.join(foo1, 'a/' + foo3.query.f), 'utf8');"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "description": "CONTROL: an argv base with a REQUEST segment still reports",
+      "before": "import fs from 'fs'; import path from 'path'; const baseDir = process.argv[2]; export const read = (req) => fs.readFileSync(path.join(baseDir, req.query.f), 'utf8');",
+      "after": "import fs from 'fs'; import path from 'path'; const foo1 = process.argv[2]; export const foo2 = (foo3) => fs.readFileSync(path.join(foo1, foo3.query.f), 'utf8');"
+    },
+    {
+      "rule": "node-security/no-arbitrary-file-access",
+      "description": "",
+      "before": "function read(p) { fs.readFileSync(p); } app.get('/f', (req, res) => read(req.query.name));",
+      "after": "function foo2(foo1) { fs.readFileSync(foo1); } app.get('/f', (foo3, foo4) => foo2(foo3.query.name));"
+    },
+    {
+      "rule": "node-security/no-buffer-overread",
+      "description": "",
+      "before": "function read(buf, req) { return buf.subarray(req.query.start, req.query.end); }",
+      "after": "function foo3(foo2, foo1) { return foo2.subarray(foo1.query.start, foo1.query.end); }"
+    },
+    {
+      "rule": "node-security/no-buffer-overread",
+      "description": "",
+      "before": "function read(buf, req) { return buf.slice(req.query.start); }",
+      "after": "function foo3(foo2, foo1) { return foo2.slice(foo1.query.start); }"
+    },
+    {
+      "rule": "node-security/no-buffer-overread",
+      "description": "",
+      "before": "function h(req, bytes) { const i = req; return bytes[i]; }",
+      "after": "function foo4(foo2, foo3) { const foo1 = foo2; return foo3[foo1]; }"
+    },
+    {
+      "rule": "node-security/no-buffer-overread",
+      "description": "",
+      "before": "function h(req, bytes) { return bytes[req.query.i]; }",
+      "after": "function foo3(foo2, foo1) { return foo1[foo2.query.i]; }"
+    },
+    {
+      "rule": "node-security/no-cryptojs",
+      "description": "",
+      "before": "declare const require: (id: string) => unknown; export const c = require(\"crypto-js\");",
+      "after": "declare const foo1; export const foo2 = foo1(\"crypto-js\");"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "a request key and value written into process.env",
+      "before": "function setConfig(req, res) { const { key, value } = req.body; process.env[key] = value; res.status(204).end(); }",
+      "after": "function foo3(foo1, foo2) { const { key, value } = foo1.body; process.env[key] = value; foo2.status(204).end(); }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(req) { process.env[req.body.key] = req.body.value; }",
+      "after": "function foo2(foo1) { process.env[foo1.body.key] = foo1.body.value; }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(request) { process.env[request.query.name] = '1'; }",
+      "after": "function foo2(foo1) { process.env[foo1.query.name] = '1'; }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(ctx) { process.env[ctx.request.body.name] = '1'; }",
+      "after": "function foo2(foo1) { process.env[foo1.request.body.name] = '1'; }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(event) { process.env[event.queryStringParameters.k] = '1'; }",
+      "after": "function foo2(foo1) { process.env[foo1.queryStringParameters.k] = '1'; }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(req) { process.env[req] = '1'; }",
+      "after": "function foo2(foo1) { process.env[foo1] = '1'; }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(req) { const k = req.body.key; process.env[k] = '1'; }",
+      "after": "function foo3(foo2) { const foo1 = foo2.body.key; process.env[foo1] = '1'; }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(req) { const a = req.body.key; const b = a; process.env[b] = '1'; }",
+      "after": "function foo4(foo2) { const foo1 = foo2.body.key; const foo3 = foo1; process.env[foo3] = '1'; }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(req) { Object.assign(process.env, req.body); }",
+      "after": "function foo2(foo1) { Object.assign(process.env, foo1.body); }"
+    },
+    {
+      "rule": "node-security/no-env-injection",
+      "description": "",
+      "before": "function h(req) { Object.assign(process.env, defaults, req.body); }",
+      "after": "function foo2(foo1) { Object.assign(process.env, defaults, foo1.body); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const token = Math.random().toString(36).slice(2);",
+      "after": "const foo1 = Math.random().toString(36).slice(2);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateToken() { return Math.random().toString(36); }",
+      "after": "function foo1() { return Math.random().toString(36); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const makeToken = () => Math.random().toString(36);",
+      "after": "const foo1 = () => Math.random().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const makeToken = () => { return Math.random().toString(36); };",
+      "after": "const foo1 = () => { return Math.random().toString(36); };"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "let token = ''; for (let i = 0; i < 32; i++) { token += CHARS[Math.floor(Math.random() * CHARS.length)]; }",
+      "after": "let foo1 = ''; for (let foo2 = 0; foo2 < 32; foo2++) { foo1 += CHARS[Math.floor(Math.random() * CHARS.length)]; }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateToken(helpers, key) { helpers[key](); return Math.random().toString(36).slice(2); }",
+      "after": "function foo3(foo1, foo2) { foo1[foo2](); return Math.random().toString(36).slice(2); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateSecret() { (function warmUp() {})(); return Math.random().toString(36).slice(2); }",
+      "after": "function foo1() { (function warmUp() {})(); return Math.random().toString(36).slice(2); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateSessionId() { return Math.random().toString(36).slice(2); }",
+      "after": "function foo1() { return Math.random().toString(36).slice(2); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateRequestTokenId() { const v = Math.random().toString(36).slice(2); store(v); }",
+      "after": "function foo2() { const foo1 = Math.random().toString(36).slice(2); store(foo1); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateId() { return Math.random().toString(36).slice(2); }",
+      "after": "function foo1() { return Math.random().toString(36).slice(2); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateApiToken() { return Math.random().toString(36).slice(2); }",
+      "after": "function foo1() { return Math.random().toString(36).slice(2); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "the defaults still hold when nothing is configured",
+      "before": "const token = Math.random().toString(36);",
+      "after": "const foo1 = Math.random().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "a device pairing code built from Math.random()",
+      "before": "export function generatePairingCode(): string { return Math.random().toString(36).substring(2, 8).toUpperCase(); }",
+      "after": "export function foo1(): string { return Math.random().toString(36).substring(2, 8).toUpperCase(); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function generateToken() { const x = Math.random(); }",
+      "after": "function foo2() { const foo1 = Math.random(); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const raw = Math.random().toString(36).slice(2); const apiKey = `sk_live_${raw}`;",
+      "after": "const foo1 = Math.random().toString(36).slice(2); const foo2 = `sk_live_${foo1}`;"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function makeSessionToken() { const raw = Math.random().toString(36).slice(2); return raw; }",
+      "after": "function foo2() { const foo1 = Math.random().toString(36).slice(2); return foo1; }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "function newDownloadGrant(fileId) { const draw = Math.random(); const encoded = draw.toString(36).slice(2); const grantToken = `${fileId}.${encoded}`; return grantToken; }",
+      "after": "function foo5(foo4) { const foo1 = Math.random(); const foo2 = foo1.toString(36).slice(2); const foo3 = `${foo4}.${foo2}`; return foo3; }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const deviceToken = Math['random']().toString(36).slice(2);",
+      "after": "const foo1 = Math['random']().toString(36).slice(2);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const { floor, random } = Math; const csrfToken = floor(random() * 1e9);",
+      "after": "const { floor, random } = Math; const foo1 = floor(random() * 1e9);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const { \"random\": draw } = Math; const csrfToken = draw().toString(36);",
+      "after": "const { \"random\": draw } = Math; const foo1 = draw().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const secureRandom = Math.random; const apiKey = secureRandom().toString(36);",
+      "after": "const foo1 = Math.random; const foo2 = foo1().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "var secureRandom = Math.random; var apiKey = secureRandom().toString(36);",
+      "after": "var foo1 = Math.random; var foo2 = foo1().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const rng = { next: Math.random }; const recoveryCode = rng.next().toString(36).slice(2, 10);",
+      "after": "const foo1 = { next: Math.random }; const foo2 = foo1.next().toString(36).slice(2, 10);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const passwordish = Math.random().toString(36);",
+      "after": "const foo1 = Math.random().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const authCode = Math.floor(Math.random() * 1e6);",
+      "after": "const foo1 = Math.floor(Math.random() * 1e6);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "a token from Math.random()",
+      "before": "const token = Math.random().toString(36);",
+      "after": "const foo1 = Math.random().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const token = Math.random().toString(36);",
+      "after": "const foo1 = Math.random().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const sessionSecret = Math.random();",
+      "after": "const foo1 = Math.random();"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "export function vuln_random_token() { return Math.random().toString(36).substring(2); }",
+      "after": "export function foo1() { return Math.random().toString(36).substring(2); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "export function vuln_random_session() { return \"session_\" + Math.floor(Math.random() * 1000000); }",
+      "after": "export function foo1() { return \"session_\" + Math.floor(Math.random() * 1000000); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const iv = Math.random();",
+      "after": "const foo1 = Math.random();"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const apiKey = Math.random().toString(36);",
+      "after": "const foo1 = Math.random().toString(36);"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const encryptionSeed = Math.random();",
+      "after": "const foo1 = Math.random();"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let token = ''; for (let i = 0; i < 32; i++) { token += CHARS[Math.floor(Math.random() * CHARS.length)]; }",
+      "after": "const foo1 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let foo2 = ''; for (let foo3 = 0; foo3 < 32; foo3++) { foo2 += foo1[Math.floor(Math.random() * foo1.length)]; }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "let otp = ''; for (let i = 0; i < 6; i++) { otp = otp + String(Math.floor(Math.random() * 10)); }",
+      "after": "let foo1 = ''; for (let foo2 = 0; foo2 < 6; foo2++) { foo1 = foo1 + String(Math.floor(Math.random() * 10)); }"
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "description": "",
+      "before": "let password; password = Array.from({ length: 12 }, () => POOL[Math.floor(Math.random() * POOL.length)]).join('');",
+      "after": "let foo1; foo1 = Array.from({ length: 12 }, () => POOL[Math.floor(Math.random() * POOL.length)]).join('');"
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "description": "",
+      "before": "app.get(\"/p\", (req, res) => fetch(req.query.url));",
+      "after": "app.get(\"/p\", (foo1, foo2) => fetch(foo1.query.url));"
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "description": "",
+      "before": "app.get('/proxy', (req, res) => { const destination = req.query.target; return fetch(destination); });",
+      "after": "app.get('/proxy', (foo2, foo3) => { const foo1 = foo2.query.target; return fetch(foo1); });"
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "description": "",
+      "before": "function proxy(req) { const raw = req.body; const next = raw.callbackUrl; return got(next); }",
+      "after": "function foo4(foo2) { const foo1 = foo2.body; const foo3 = foo1.callbackUrl; return got(foo3); }"
+    },
+    {
+      "rule": "node-security/no-ssrf",
+      "description": "",
+      "before": "app.get('/proxy', async (req, res) => { const r = await fetch(req.query.url as string); res.send(await r.text()); });",
+      "after": "app.get('/proxy', async (foo2, foo3) => { const foo1 = await fetch(foo2.query.url as string); foo3.send(await foo1.text()); });"
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "description": "",
+      "before": "const presented = String(req.headers.authorization); const storedToken = await tokenStore.currentToken(); if (presented.localeCompare(storedToken) === 0) { ok(); }",
+      "after": "const foo1 = String(req.headers.authorization); const foo2 = await tokenStore.currentToken(); if (foo1.localeCompare(foo2) === 0) { ok(); }"
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "description": "",
+      "before": "const timingSafeEqual = (a, b) => a === b; const providedToken = req.headers['x-auth-token']; const storedToken = await tokenStore.current(); timingSafeEqual(providedToken, storedToken);",
+      "after": "const foo1 = (foo2, foo3) => foo2 === foo3; const foo4 = req.headers['x-auth-token']; const foo5 = await tokenStore.current(); foo1(foo4, foo5);"
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "description": "",
+      "before": "const eq = function compare(a, b) { return a === b; }; const providedToken = req.headers['x-auth-token']; const storedToken = await tokenStore.current(); eq(providedToken, storedToken);",
+      "after": "const foo1 = function compare(foo2, foo3) { return foo2 === foo3; }; const foo4 = req.headers['x-auth-token']; const foo5 = await tokenStore.current(); foo1(foo4, foo5);"
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "description": "",
+      "before": "const expected = hasher['digest']('hex'); const signature = req.headers.x; if (signature === expected) { deny(); }",
+      "after": "const foo1 = hasher['digest']('hex'); const foo2 = req.headers.x; if (foo2 === foo1) { deny(); }"
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "description": "",
+      "before": "class Signer { #compute() { return ''; } check(req) { const expected = this.#compute(); const signature = req.headers.x; if (signature === expected) { deny(); } } }",
+      "after": "class foo4 { #compute() { return ''; } check(foo3) { const foo1 = this.#compute(); const foo2 = foo3.headers.x; if (foo2 === foo1) { deny(); } } }"
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "description": "",
+      "before": "function h(req){ const casseroleToken = req.query.a; if (casseroleToken === expected) {} }",
+      "after": "function foo3(foo2){ const foo1 = foo2.query.a; if (foo1 === expected) {} }"
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "description": "",
+      "before": "function h(req){ const tokenChapter = req.query.a; if (tokenChapter === expected) {} }",
+      "after": "function foo3(foo2){ const foo1 = foo2.query.a; if (foo1 === expected) {} }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function reserve(req) { let capacity = 1024; if (req.query.capacity) { capacity = Number(req.query.capacity); } return Buffer.alloc(capacity); }",
+      "after": "function foo3(foo2) { let foo1 = 1024; if (foo2.query.capacity) { foo1 = Number(foo2.query.capacity); } return Buffer.alloc(foo1); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function reserve(req) { const a = Number(req.body.want); const b = Number(req.body.max); return Buffer.alloc(Math.min(a, b)); }",
+      "after": "function foo4(foo2) { const foo1 = Number(foo2.body.want); const foo3 = Number(foo2.body.max); return Buffer.alloc(Math.min(foo1, foo3)); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(Buffer) { return new Uint8Array(Buffer.length); }",
+      "after": "function foo2(foo1) { return new Uint8Array(foo1.length); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(chunk: Buffer) { const count = chunk.readUInt32BE(0) as number; return new Uint8Array(count); }",
+      "after": "function foo3(foo2) { const foo1 = foo2.readUInt32BE(0) as number; return new Uint8Array(foo1); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(chunk) { return new Array(chunk.readUInt32BE(0)); }",
+      "after": "function foo2(foo1) { return new Array(foo1.readUInt32BE(0)); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function buildSlots(req, res) { const n = Number(req.body.count); const slots = new Array(n).fill(null); res.json({ length: slots.length }); }",
+      "after": "function foo5(foo2, foo4) { const foo1 = Number(foo2.body.count); const foo3 = new Array(foo1).fill(null); foo4.json({ length: foo3.length }); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(payload) { return Buffer.alloc(payload.length * 2); }",
+      "after": "function foo2(foo1) { return Buffer.alloc(foo1.length * 2); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(chunk) { return new Uint8Array(chunk.readUInt16BE(0)); }",
+      "after": "function foo2(foo1) { return new Uint8Array(foo1.readUInt16BE(0)); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decodeWithLength(length, other, chunk) { if (other > MAX) throw new Error('bad'); return new Array(length); } function decode(chunk) { return decodeWithLength(readLen(chunk), 1, chunk); }",
+      "after": "function foo3(foo2, foo1, foo4) { if (foo1 > MAX) throw new Error('bad'); return new Array(foo2); } function foo5(foo4) { return foo3(readLen(foo4), 1, foo4); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decodeWithLength(length, chunk) { if (length === 0) return []; return new Array(length); } function decode(chunk) { return decodeWithLength(readLen(chunk), chunk); }",
+      "after": "function foo2(foo1, foo3) { if (foo1 === 0) return []; return new Array(foo1); } function foo4(foo3) { return foo2(readLen(foo3), foo3); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "const decodeWithLength = (chunk, length) => new Array(length); const decode = (chunk) => decodeWithLength(chunk, readLen(chunk));",
+      "after": "const foo1 = (foo3, foo2) => new Array(foo2); const foo4 = (foo3) => foo1(foo3, readLen(foo3));"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "const d = { sized(length) { return new Array(length); }, go(chunk) { return this.sized(readLen(chunk)); }, };",
+      "after": "const foo1 = { sized(foo2) { return new Array(foo2); }, go(foo3) { return this.sized(readLen(foo3)); }, };"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function sized(length, flag) { if (flag) { return new Array(length); } } function go(chunk) { return sized(readLen(chunk), true); }",
+      "after": "function foo3(foo1, foo2) { if (foo2) { return new Array(foo1); } } function foo5(foo4) { return foo3(readLen(foo4), true); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(chunk) { return new Array(1 + chunk.length); }",
+      "after": "function foo2(foo1) { return new Array(1 + foo1.length); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(chunk) { return new Array(chunk.length * 2); }",
+      "after": "function foo2(foo1) { return new Array(foo1.length * 2); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "class D { #a(chunk) { return this.#b(this.#len(0, chunk)); } #b(length) { return new Array(length); } }",
+      "after": "class foo3 { #a(foo1) { return this.#b(this.#len(0, foo1)); } #b(foo2) { return new Array(foo2); } }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function handler(req) { const chunk = req.body.raw; return new Uint8Array(chunk.length); }",
+      "after": "function foo3(foo2) { const foo1 = foo2.body.raw; return new Uint8Array(foo1.length); }"
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "description": "",
+      "before": "function decode(chunk) { return new Uint8Array(chunk.readUInt32BE(0)); }",
+      "after": "function foo2(foo1) { return new Uint8Array(foo1.readUInt32BE(0)); }"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "const certFingerprint = createHash('sha1').update(pem).digest('hex');",
+      "after": "const foo1 = createHash('sha1').update(pem).digest('hex');"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "function signRequest(body) { return md5(body); }",
+      "after": "function foo2(foo1) { return md5(foo1); }"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "function sha1(data, secret) { return crypto['createHmac']('sha1', secret).update(data).digest(); } const sessionToken = sha1(body, secret);",
+      "after": "function foo3(foo1, foo2) { return crypto['createHmac']('sha1', foo2).update(foo1).digest(); } const foo4 = foo3(body, foo2);"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "function sha1(data) { return crypto.createHash(\"sha1\").update(data).digest(); } const sessionToken = sha1(secret);",
+      "after": "function foo2(foo1) { return crypto.createHash(\"sha1\").update(foo1).digest(); } const foo3 = foo2(secret);"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "const signature = crypto.createHash('sha1').update(body).digest('hex');",
+      "after": "const foo1 = crypto.createHash('sha1').update(body).digest('hex');"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "const signRequest = (body) => md5(body);",
+      "after": "const foo1 = (foo2) => md5(foo2);"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "const certFingerprint = createHash('sha1').update(pem).digest('hex');",
+      "after": "const foo1 = createHash('sha1').update(pem).digest('hex');"
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "description": "",
+      "before": "const ALGO = `sha1`; function signRequest(body) { return createHash(ALGO).update(body).digest('hex'); }",
+      "after": "const foo1 = `sha1`; function foo3(foo2) { return createHash(foo1).update(foo2).digest('hex'); }"
+    },
+    {
+      "rule": "react-features/jsx-key",
+      "description": "unstable index key in map",
+      "before": "const a = items.map((item, i) => <div key={i} />);",
+      "after": "const foo1 = items.map((foo3, foo2) => <div key={foo2} />);"
+    },
+    {
+      "rule": "react-features/jsx-key",
+      "description": "unstable idx key in Array.from",
+      "before": "const a = Array.from(items, (item, idx) => <div key={idx} />);",
+      "after": "const foo1 = Array.from(items, (foo3, foo2) => <div key={foo2} />);"
+    },
+    {
+      "rule": "react-features/jsx-key",
+      "description": "",
+      "before": "posts.map((post, index) => ( <article key={index}> <h2>{post.title}</h2> <p>{post.excerpt}</p> <time>{post.date}</time> </article> ))",
+      "after": "posts.map((foo1, foo2) => ( <article key={foo2}> <h2>{foo1.title}</h2> <p>{foo1.excerpt}</p> <time>{foo1.date}</time> </article> ))"
+    },
+    {
+      "rule": "react-features/no-is-mounted",
+      "description": "",
+      "before": "let isMounted = false;",
+      "after": "let foo1 = false;"
+    },
+    {
+      "rule": "react-features/no-is-mounted",
+      "description": "",
+      "before": "const isMounted = true;",
+      "after": "const foo1 = true;"
+    },
+    {
+      "rule": "react-features/no-is-mounted",
+      "description": "",
+      "before": "var isMounted = false;",
+      "after": "var foo1 = false;"
+    },
+    {
+      "rule": "react-features/no-is-mounted",
+      "description": "",
+      "before": "class MyComponent extends Component { componentDidMount() { let isMounted = true; this.setState({ ready: isMounted }); } }",
+      "after": "class foo2 extends Component { componentDidMount() { let foo1 = true; this.setState({ ready: foo1 }); } }"
+    },
+    {
+      "rule": "react-features/no-is-mounted",
+      "description": "",
+      "before": "function MyComponent() { let isMounted = false; useEffect(() => { isMounted = true; }, []); }",
+      "after": "function foo2() { let foo1 = false; useEffect(() => { foo1 = true; }, []); }"
+    },
+    {
+      "rule": "react-features/no-wrapper-sub-component",
+      "description": "member-expression passthrough element is flagged",
+      "before": "const Wrapper = (props) => <Chip.Root {...props} />;",
+      "after": "const foo1 = (foo2) => <Chip.Root {...foo2} />;"
+    },
+    {
+      "rule": "react-features/no-wrapper-sub-component",
+      "description": "a wrapper that adds nothing but a spread",
+      "before": "function MyButton(props) { return <Button {...props} />; }",
+      "after": "function foo2(foo1) { return <Button {...foo1} />; }"
+    },
+    {
+      "rule": "react-features/no-wrapper-sub-component",
+      "description": "",
+      "before": "const MyButton = (props) => { return <Button {...props} />; };",
+      "after": "const foo1 = (foo2) => { return <Button {...foo2} />; };"
+    },
+    {
+      "rule": "react-features/no-wrapper-sub-component",
+      "description": "",
+      "before": "const MyButton = (props) => <Button {...props} />;",
+      "after": "const foo1 = (foo2) => <Button {...foo2} />;"
+    },
+    {
+      "rule": "react-features/no-wrapper-sub-component",
+      "description": "",
+      "before": "const MyTrigger = (props) => <Dialog.Trigger {...props} />;",
+      "after": "const foo1 = (foo2) => <Dialog.Trigger {...foo2} />;"
+    },
+    {
+      "rule": "react-features/no-wrapper-sub-component",
+      "description": "passthrough to JSXMemberExpression primitive (L57 false → L58)",
+      "before": "const Foo = (props) => <Bar.Baz {...props} />;",
+      "after": "const foo1 = (foo2) => <Bar.Baz {...foo2} />;"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "description": "for…in directly over req.body",
+      "before": "export function copy(req, target) { for (const k in req.body) { target[k] = req.body[k]; } }",
+      "after": "export function foo4(foo3, foo1) { for (const foo2 in foo3.body) { foo1[foo2] = foo3.body[foo2]; } }"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "description": "for…in over a const bound to req.body",
+      "before": "export function copy(req, target) { const source = req.body; for (const k in source) { target[k] = source[k]; } }",
+      "after": "export function foo5(foo2, foo3) { const foo1 = foo2.body; for (const foo4 in foo1) { foo3[foo4] = foo1[foo4]; } }"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "description": "the canonical shape — every caller key copied onto a target",
+      "before": "export function update(req, user) { for (const k of Object.keys(req.body)) { user[k] = req.body[k]; } }",
+      "after": "export function foo4(foo3, foo1) { for (const foo2 of Object.keys(foo3.body)) { foo1[foo2] = foo3.body[foo2]; } }"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "description": "Object.entries with array destructuring",
+      "before": "export function update(req, user) { for (const [k, v] of Object.entries(req.body)) { user[k] = v; } }",
+      "after": "export function foo3(foo2, foo1) { for (const [k, v] of Object.entries(foo2.body)) { foo1[k] = v; } }"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "description": "the write nested inside a conditional still counts",
+      "before": "export function update(req, user, ok) { for (const k of Object.keys(req.body)) { if (ok) { user[k] = req.body[k]; } } }",
+      "after": "export function foo5(foo3, foo1, foo4) { for (const foo2 of Object.keys(foo3.body)) { if (foo4) { foo1[foo2] = foo3.body[foo2]; } } }"
+    },
+    {
+      "rule": "secure-coding/detect-weak-password-validation",
+      "description": "",
+      "before": "const MIN_LENGTH = 6; export function check(password) { return password.length >= MIN_LENGTH; }",
+      "after": "const foo1 = 6; export function foo3(foo2) { return foo2.length >= foo1; }"
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "function render(formatTemplate, user) { return util.format(formatTemplate, user); }",
+      "after": "function foo3(foo1, foo2) { return util.format(foo1, foo2); }"
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "let formatString = \"%s-\" + userInput;",
+      "after": "let foo1 = \"%s-\" + userInput;"
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "function render(formatTemplate, user) { util.format(formatTemplate, user); }",
+      "after": "function foo3(foo1, foo2) { util.format(foo1, foo2); }"
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "let formatStr = userInput + \"%s\"",
+      "after": "let foo1 = userInput + \"%s\""
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "let formatStr = (\"safe\" + \"%s\") + userInput",
+      "after": "let foo1 = (\"safe\" + \"%s\") + userInput"
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "let formatStr = userInput + (\"static\" + \"%s\")",
+      "after": "let foo1 = userInput + (\"static\" + \"%s\")"
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "let formatStr = (userInput + \"prefix\") + \"%s\"",
+      "after": "let foo1 = (userInput + \"prefix\") + \"%s\""
+    },
+    {
+      "rule": "secure-coding/no-format-string-injection",
+      "description": "",
+      "before": "const req = sprintf(\"%s value\", \"static\")",
+      "after": "const foo1 = sprintf(\"%s value\", \"static\")"
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "description": "",
+      "before": "const typeDefs = `type User { id: \"${userId}\" }`;",
+      "after": "const foo1 = `type User { id: \"${userId}\" }`;"
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "description": "",
+      "before": "const schema = `interface Node { ${extraField} }`;",
+      "after": "const foo1 = `interface Node { ${extraField} }`;"
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "description": "attributed by a typeDefs binding",
+      "before": "const typeDefs = `interface Node { ${extraField} }`;",
+      "after": "const foo1 = `interface Node { ${extraField} }`;"
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "description": "attributed concatenation climbs the + chain",
+      "before": "const typeDefs = \"type User {\" + fields + \"}\";",
+      "after": "const foo1 = \"type User {\" + fields + \"}\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const privateKey = '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318';",
+      "after": "const foo1 = '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const clientSecret = '/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug';",
+      "after": "const foo1 = '/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const clientSecret = '/aB3xK9mQ2vL8';",
+      "after": "const foo1 = '/aB3xK9mQ2vL8';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const dbPassword = 'aaAA@123';",
+      "after": "const foo1 = 'aaAA@123';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const dbPassword = '__aaAA@123__';",
+      "after": "const foo1 = '__aaAA@123__';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const apiSecret = '/xK9!mQ2$vL8pR4wZ';",
+      "after": "const foo1 = '/xK9!mQ2$vL8pR4wZ';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "a password literal in source",
+      "before": "const password = \"supersecret123\";",
+      "after": "const foo1 = \"supersecret123\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const password = \"password123\";",
+      "after": "const foo1 = \"password123\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const pwd = \"admin\";",
+      "after": "const foo1 = \"admin\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const pass = \"123456\";",
+      "after": "const foo1 = \"123456\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const secret = \"dGhpcyBpcyBhIHNlY3JldCBrZXkgdGhhdCBpcyB2ZXJ5IGxvbmc=\";",
+      "after": "const foo1 = \"dGhpcyBpcyBhIHNlY3JldCBrZXkgdGhhdCBpcyB2ZXJ5IGxvbmc=\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const apiKey = \"abcdef1234567890abcdef1234567890abcdef12\";",
+      "after": "const foo1 = \"abcdef1234567890abcdef1234567890abcdef12\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const credentials = \"SuperSecretPhrase!!\";",
+      "after": "const foo1 = \"SuperSecretPhrase!!\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const secrets = [\"SuperSecretPhrase!!\"];",
+      "after": "const foo1 = [\"SuperSecretPhrase!!\"];"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "let mySecret; mySecret = \"SuperSecretPhrase!!\";",
+      "after": "let foo1; foo1 = \"SuperSecretPhrase!!\";"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const password = 'bcdfghjklmnpqrstvwxyz';",
+      "after": "const foo1 = 'bcdfghjklmnpqrstvwxyz';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const password = 'exampleton9!K';",
+      "after": "const foo1 = 'exampleton9!K';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const apiKey = '9e1e6889176fd0c795d5c659225e0fae';",
+      "after": "const foo1 = '9e1e6889176fd0c795d5c659225e0fae';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "import Bugsnag from '@bugsnag/js'; const bugsnagApiSecret = '9e1e6889176fd0c795d5c659225e0fae';",
+      "after": "import Bugsnag from '@bugsnag/js'; const foo1 = '9e1e6889176fd0c795d5c659225e0fae';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const bugsnagAuthToken = '9e1e6889176fd0c795d5c659225e0fae';",
+      "after": "const foo1 = '9e1e6889176fd0c795d5c659225e0fae';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const apiKey = '9e1e6889176fd0c795d5c659225e0fae';",
+      "after": "const foo1 = '9e1e6889176fd0c795d5c659225e0fae';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "import Bugsnag from '@bugsnag/js'; send(['9e1e6889176fd0c795d5c659225e0fae']); const secrets = ['9e1e6889176fd0c795d5c659225e0fae'];",
+      "after": "import Bugsnag from '@bugsnag/js'; send(['9e1e6889176fd0c795d5c659225e0fae']); const foo1 = ['9e1e6889176fd0c795d5c659225e0fae'];"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "",
+      "before": "const posthogApiKey = 'phx_YHtQ8fLmNvRw2XkPzB4dGjSaUeCiMoTr9';",
+      "after": "const foo1 = 'phx_YHtQ8fLmNvRw2XkPzB4dGjSaUeCiMoTr9';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "description": "DEFAULT: `fillmein` is not a built-in placeholder word",
+      "before": "const password = 'fillmein-1234abcd';",
+      "after": "const foo1 = 'fillmein-1234abcd';"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-session-tokens",
+      "description": "",
+      "before": "const sessionToken = 'abc123def456ghi789'",
+      "after": "const foo1 = 'abc123def456ghi789'"
+    },
+    {
+      "rule": "secure-coding/no-homoglyph-identifiers",
+      "description": "a fullwidth uppercase letter",
+      "before": "const ＡdminRole = 1;",
+      "after": "const foo1 = 1;"
+    },
+    {
+      "rule": "secure-coding/no-homoglyph-identifiers",
+      "description": "a fullwidth lowercase letter",
+      "before": "const admiｎ = 1;",
+      "after": "const foo1 = 1;"
+    },
+    {
+      "rule": "secure-coding/no-insecure-comparison",
+      "description": "",
+      "before": "export function insecure_noInsecureComparison(providedToken: string, expectedToken: string) { if (providedToken === expectedToken) { return true; } return false; }",
+      "after": "export function foo3(foo1, foo2) { if (foo1 === foo2) { return true; } return false; }"
+    },
+    {
+      "rule": "secure-coding/no-log-injection",
+      "description": "a local bound to a request header, one hop",
+      "before": "function auditRequest(req) { const forwardedFor = req.headers['x-forwarded-for']; logger.info(`ip=${forwardedFor}`); }",
+      "after": "function foo3(foo2) { const foo1 = foo2.headers['x-forwarded-for']; logger.info(`ip=${foo1}`); }"
+    },
+    {
+      "rule": "secure-coding/no-log-injection",
+      "description": "a one-hop binding resolved from a nested block scope",
+      "before": "function auditRequest(req) { const user = req.query.user; if (enabled) { logger.info(`user=${user}`); } }",
+      "after": "function foo3(foo2) { const foo1 = foo2.query.user; if (enabled) { logger.info(`user=${foo1}`); } }"
+    },
+    {
+      "rule": "secure-coding/no-log-injection",
+      "description": "a logger held on `this`",
+      "before": "class S { handle(req) { this.logger.warn(\"q=\" + req.query.q); } }",
+      "after": "class foo2 { handle(foo1) { this.logger.warn(\"q=\" + foo1.query.q); } }"
+    },
+    {
+      "rule": "secure-coding/no-missing-authentication",
+      "description": "",
+      "before": "const server = require(\"express\")(); server.get(\"/admin/a\", (req, res) => {});",
+      "after": "const foo1 = require(\"express\")(); foo1.get(\"/admin/a\", (foo2, foo3) => {});"
+    },
+    {
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "description": "positive control: the same sink reports when the name is not a descriptor",
+      "before": "export function f(apiKey) { console.log(apiKey); }",
+      "after": "export function foo2(foo1) { console.log(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "description": "DEFAULT: `blurb` is not a built-in descriptor segment",
+      "before": "export function f(apiKeyBlurb) { console.log(apiKeyBlurb); }",
+      "after": "export function foo2(foo1) { console.log(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "description": "FN GUARD: Shopify github-utils really does log the token",
+      "before": "export function f(source, tokenFromEnv) { console.log(`Using token from ${source}: ${tokenFromEnv}`); }",
+      "after": "export function foo3(foo1, foo2) { console.log(`Using token from ${foo1}: ${foo2}`); }"
+    },
+    {
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "description": "FN GUARD: Shopify github-utils really does log the password",
+      "before": "export function f(password) { console.log(`Using password from dev: ${password}`); }",
+      "after": "export function foo2(foo1) { console.log(`Using password from dev: ${foo1}`); }"
+    },
+    {
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "description": "FN GUARD: a secret aliased into `.message` by a local literal still reports",
+      "before": "export function f(accessToken) { const error = { message: accessToken }; console.log(`access token: ${error.message}`); }",
+      "after": "export function foo3(foo2) { const foo1 = { message: foo2 }; console.log(`access token: ${foo1.message}`); }"
+    },
+    {
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "description": "FN GUARD: the same alias through a string key",
+      "before": "export function f(apiKey) { const e = { \"message\": apiKey }; console.log(`api key: ${e.message}`); }",
+      "after": "export function foo3(foo2) { const foo1 = { \"message\": foo2 }; console.log(`api key: ${foo1.message}`); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "the sink name reached through a const",
+      "before": "import { db } from '../lib/db'; const METHOD = 'query'; export function f(req) { return db[METHOD]('SELECT * FROM users WHERE id = ' + req.params.id); }",
+      "after": "import { db } from '../lib/db'; const foo1 = 'query'; export function foo3(foo2) { return db[foo1]('SELECT * FROM users WHERE id = ' + foo2.params.id); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "String() is transparent, not sanitising",
+      "before": "import { db } from '../lib/db'; export function f(req) { return db.query('SELECT * FROM reports WHERE owner = ' + String(req.query.owner)); }",
+      "after": "import { db } from '../lib/db'; export function foo2(foo1) { return db.query('SELECT * FROM reports WHERE owner = ' + String(foo1.query.owner)); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a ternary arm carries taint",
+      "before": "import { db } from '../lib/db'; export function f(req) { const o = req.query.sort ? req.query.sort : 'id'; return db.query('SELECT * FROM users ORDER BY ' + o); }",
+      "after": "import { db } from '../lib/db'; export function foo3(foo2) { const foo1 = foo2.query.sort ? foo2.query.sort : 'id'; return db.query('SELECT * FROM users ORDER BY ' + foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a conditional reassignment from the request",
+      "before": "import { db } from '../lib/db'; export function f(req) { let name = 'anonymous'; if (req.query.name) { name = req.query.name; } return db.query(\"SELECT * FROM users WHERE name = '\" + name + \"'\"); }",
+      "after": "import { db } from '../lib/db'; export function foo3(foo2) { let foo1 = 'anonymous'; if (foo2.query.name) { foo1 = foo2.query.name; } return db.query(\"SELECT * FROM users WHERE name = '\" + foo1 + \"'\"); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a local helper named escape that escapes nothing",
+      "before": "import { db } from '../lib/db'; const escape = (v) => `'${v}'`; export function f(req) { return db.query('SELECT * FROM users WHERE name = ' + escape(req.query.name)); }",
+      "after": "import { db } from '../lib/db'; const foo1 = (foo2) => `'${foo2}'`; export function foo4(foo3) { return db.query('SELECT * FROM users WHERE name = ' + foo1(foo3.query.name)); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a private class field holding the handle",
+      "before": "import { pool } from '../infra/pool'; export class R { #db = pool; async byOwner(req) { return this.#db.query(`SELECT * FROM reports WHERE owner = '${req.query.owner}'`); } }",
+      "after": "import { pool } from '../infra/pool'; export class foo2 { #db = pool; async byOwner(foo1) { return this.#db.query(`SELECT * FROM reports WHERE owner = '${foo1.query.owner}'`); } }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a for-of binding over a request value",
+      "before": "import { db } from '../lib/db'; export async function f(req) { for (const tag of req.query.tags) { await db.execute(\"DELETE FROM logs WHERE tag = '\" + tag + \"'\"); } }",
+      "after": "import { db } from '../lib/db'; export async function foo3(foo2) { for (const foo1 of foo2.query.tags) { await db.execute(\"DELETE FROM logs WHERE tag = '\" + foo1 + \"'\"); } }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a driver name in a string does not hand the site away",
+      "before": "import { db } from '../lib/db'; export const DRIVER = 'pg'; export function f(req) { return db.query('SELECT * FROM users WHERE id = ' + req.params.id); }",
+      "after": "import { db } from '../lib/db'; export const foo1 = 'pg'; export function foo3(foo2) { return db.query('SELECT * FROM users WHERE id = ' + foo2.params.id); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "an optional-chained sink",
+      "before": "import { db } from '../lib/db'; export function f(req) { return db?.query(`SELECT * FROM users WHERE email = '${req.body.email}'`); }",
+      "after": "import { db } from '../lib/db'; export function foo2(foo1) { return db?.query(`SELECT * FROM users WHERE email = '${foo1.body.email}'`); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "an append builder assembles the statement across writes",
+      "before": "import { db } from '../lib/db'; export function f(req) { let sql = 'SELECT * FROM users WHERE 1=1'; sql += \" AND name = '\" + req.query.name + \"'\"; return db.query(sql); }",
+      "after": "import { db } from '../lib/db'; export function foo3(foo2) { let foo1 = 'SELECT * FROM users WHERE 1=1'; foo1 += \" AND name = '\" + foo2.query.name + \"'\"; return db.query(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "Array#join is concatenation",
+      "before": "import { db } from '../lib/db'; export function f(req) { const parts = ['SELECT * FROM items WHERE name =', \"'\" + req.query.term + \"'\"]; return db.query(parts.join(' ')); }",
+      "after": "import { db } from '../lib/db'; export function foo3(foo2) { const foo1 = ['SELECT * FROM items WHERE name =', \"'\" + foo2.query.term + \"'\"]; return db.query(foo1.join(' ')); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a built text in a query-config object",
+      "before": "import { db } from '../lib/db'; export function f(req) { return db.query({ text: 'SELECT * FROM reports WHERE owner = ' + req.query.owner, values: [] }); }",
+      "after": "import { db } from '../lib/db'; export function foo2(foo1) { return db.query({ text: 'SELECT * FROM reports WHERE owner = ' + foo1.query.owner, values: [] }); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a query-config object behind a binding",
+      "before": "import { db } from '../lib/db'; export function f(req) { const q = { 'text': 'SELECT * FROM reports WHERE owner = ' + req.query.owner }; return db.query(q); }",
+      "after": "import { db } from '../lib/db'; export function foo3(foo2) { const foo1 = { 'text': 'SELECT * FROM reports WHERE owner = ' + foo2.query.owner }; return db.query(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a function-declaration builder",
+      "before": "import { db } from '../lib/db'; function build(t) { return `SELECT * FROM logs WHERE tag = '${t}'`; } export function f(req) { return db.query(build(req.query.tag)); }",
+      "after": "import { db } from '../lib/db'; function foo2(foo1) { return `SELECT * FROM logs WHERE tag = '${foo1}'`; } export function foo4(foo3) { return db.query(foo2(foo3.query.tag)); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a logical default keeps the tainted arm",
+      "before": "import { db } from '../lib/db'; export function f(req) { const c = req.query.sort || 'id'; return db.query('SELECT * FROM users ORDER BY ' + c); }",
+      "after": "import { db } from '../lib/db'; export function foo3(foo2) { const foo1 = foo2.query.sort || 'id'; return db.query('SELECT * FROM users ORDER BY ' + foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "an awaited builder",
+      "before": "import { db } from '../lib/db'; const build = async (t) => `SELECT * FROM logs WHERE tag = '${t}'`; export async function f(req) { return db.query(await build(req.query.tag)); }",
+      "after": "import { db } from '../lib/db'; const foo1 = async (foo2) => `SELECT * FROM logs WHERE tag = '${foo2}'`; export async function foo4(foo3) { return db.query(await foo1(foo3.query.tag)); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a template nested in a template",
+      "before": "import { db } from '../lib/db'; export function f(req) { return db.query(`SELECT * FROM t WHERE a = '${`${req.query.a}`}'`); }",
+      "after": "import { db } from '../lib/db'; export function foo2(foo1) { return db.query(`SELECT * FROM t WHERE a = '${`${foo1.query.a}`}'`); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a request bound from an opaque value is still inbound",
+      "before": "import { db } from '../lib/db'; export function f(ctx) { const req = ctx.request; return db.query('SELECT * FROM users WHERE id = ' + req.params.id); }",
+      "after": "import { db } from '../lib/db'; export function foo3(foo2) { const foo1 = foo2.request; return db.query('SELECT * FROM users WHERE id = ' + foo1.params.id); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "a spread element in a joined array is skipped, not fatal",
+      "before": "export function f(req, bits) { const parts = ['SELECT * FROM t WHERE a =', ...bits, req.query.a]; return db.query(parts.join(' ')); }",
+      "after": "export function foo4(foo3, foo2) { const foo1 = ['SELECT * FROM t WHERE a =', ...foo2, foo3.query.a]; return db.query(foo1.join(' ')); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "the alternate arm of a ternary is read too",
+      "before": "export function f(req, flag) { const c = flag ? 'id' : req.query.sort; return db.query('SELECT * FROM users ORDER BY ' + c); }",
+      "after": "export function foo4(foo2, foo3) { const foo1 = foo3 ? 'id' : foo2.query.sort; return db.query('SELECT * FROM users ORDER BY ' + foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "description": "the right operand of a logical default is read too",
+      "before": "export function f(req) { const c = defaults.sort || req.query.sort; return db.query('SELECT * FROM users ORDER BY ' + c); }",
+      "after": "export function foo3(foo2) { const foo1 = defaults.sort || foo2.query.sort; return db.query('SELECT * FROM users ORDER BY ' + foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-template-injection",
+      "description": "DEFAULT: Handlebars.compile(req.body.tpl) reports with no options at all",
+      "before": "function f(req){ Handlebars.compile(req.body.tpl); }",
+      "after": "function foo2(foo1){ Handlebars.compile(foo1.body.tpl); }"
+    },
+    {
+      "rule": "secure-coding/no-template-injection",
+      "description": "DEFAULT: `user` states provenance, with no options at all",
+      "before": "function f(userTemplate){ Handlebars.compile(userTemplate); }",
+      "after": "function foo2(foo1){ Handlebars.compile(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "",
+      "before": "function handler(req) { const count = Number(req.query.count); for (let i = 0; i < count; i++) { const buf = Buffer.alloc(1024 * 1024); } }",
+      "after": "function foo5(foo2) { const foo1 = Number(foo2.query.count); for (let foo4 = 0; foo4 < foo1; foo4++) { const foo3 = Buffer.alloc(1024 * 1024); } }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "",
+      "before": "function handler(req) { while (req.body.more) { const arr = new Array(64); } }",
+      "after": "function foo3(foo2) { while (foo2.body.more) { const foo1 = new Array(64); } }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "",
+      "before": "function h(req) { const arr = new Array(req.body.count); }",
+      "after": "function foo3(foo2) { const foo1 = new Array(foo2.body.count); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "",
+      "before": "app.post('/cache', (req, res) => { const entry = Buffer.alloc(Number(req.body.bytes)); store.set(req.body.key, entry); });",
+      "after": "app.post('/cache', (foo2, foo3) => { const foo1 = Buffer.alloc(Number(foo2.body.bytes)); store.set(foo2.body.key, foo1); });"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "",
+      "before": "function h(input) { const arr = new Array(input.query.n); }",
+      "after": "function foo3(foo2) { const foo1 = new Array(foo2.query.n); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "",
+      "before": "function handler(req) { for (const item of req.body.items) { const b = Buffer.alloc(4096); } }",
+      "after": "function foo4(foo3) { for (const foo2 of foo3.body.items) { const foo1 = Buffer.alloc(4096); } }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "",
+      "before": "function handler(req) { for (const key in req.query) { const s = new Set(entries); } }",
+      "after": "function foo4(foo3) { for (const foo2 in foo3.query) { const foo1 = new Set(entries); } }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "computed index IS invoker-supplied",
+      "before": "function h(req) { const b = Buffer.alloc(sizes[req.body.i]); }",
+      "after": "function foo3(foo2) { const foo1 = Buffer.alloc(sizes[foo2.body.i]); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "one arm of a conditional",
+      "before": "function h(req, f) { const b = Buffer.alloc(f ? req.body.n : 16); }",
+      "after": "function foo4(foo2, foo3) { const foo1 = Buffer.alloc(foo3 ? foo2.body.n : 16); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "interpolated into a template",
+      "before": "function h(req) { const a = Array(`${req.body.n}`); }",
+      "after": "function foo3(foo2) { const foo1 = Array(`${foo2.body.n}`); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "awaited",
+      "before": "async function h(req) { const b = Buffer.alloc(await req.body.n); }",
+      "after": "async function foo3(foo2) { const foo1 = Buffer.alloc(await foo2.body.n); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "cast",
+      "before": "function h(req) { const b = Buffer.alloc(req.body.n as number); }",
+      "after": "function foo3(foo2) { const foo1 = Buffer.alloc(foo2.body.n as number); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "non-null asserted",
+      "before": "function h(req) { const b = Buffer.alloc(req.body.n!); }",
+      "after": "function foo3(foo2) { const foo1 = Buffer.alloc(foo2.body.n!); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "Number() is a size",
+      "before": "function h(req) { const b = new Buffer(Number(req.body.n)); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(Number(foo2.body.n)); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "Math.floor() is a size",
+      "before": "function h(req) { const b = new Buffer(Math.floor(req.body.n)); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(Math.floor(foo2.body.n)); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "arithmetic is a size",
+      "before": "function h(req) { const b = new Buffer(req.body.n * 2); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(foo2.body.n * 2); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "unary coercion is a size",
+      "before": "function h(req) { const b = new Buffer(+req.body.n); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(+foo2.body.n); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "bitwise-not truncation is a size",
+      "before": "function h(req) { const b = new Buffer(~req.body.n); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(~foo2.body.n); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": ".length is a size",
+      "before": "function h(req) { const b = new Buffer(req.body.chunk.length); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(foo2.body.chunk.length); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "through a local binding",
+      "before": "function h(req) { const n = Number(req.body.n); const b = new Buffer(n); }",
+      "after": "function foo4(foo2) { const foo1 = Number(foo2.body.n); const foo3 = new Buffer(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "one numeric arm of a conditional",
+      "before": "function h(req) { const b = new Buffer(f ? Number(req.body.n) : req.body.s); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(f ? Number(foo2.body.n) : foo2.body.s); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "one numeric arm of a fallback",
+      "before": "function h(req) { const b = new Buffer(Number(req.body.n) || req.body.s); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(Number(foo2.body.n) || foo2.body.s); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "a cast of a size",
+      "before": "function h(req) { const b = new Buffer(Number(req.body.n) as number); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(Number(foo2.body.n) as number); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "a non-null size",
+      "before": "function h(req) { const b = new Buffer(Number(req.body.n)!); }",
+      "after": "function foo3(foo2) { const foo1 = new Buffer(Number(foo2.body.n)!); }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "a loop with no test still reports the size",
+      "before": "function h(req) { for (;;) { const b = Buffer.alloc(req.body.n); break; } }",
+      "after": "function foo3(foo2) { for (;;) { const foo1 = Buffer.alloc(foo2.body.n); break; } }"
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "description": "do-while bounded by the request",
+      "before": "function h(req) { do { const b = Buffer.alloc(64); } while (req.body.more); }",
+      "after": "function foo3(foo2) { do { const foo1 = Buffer.alloc(64); } while (foo2.body.more); }"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "description": "",
+      "before": "app.post(\"/x\", (req, res) => { new Function(req.body); });",
+      "after": "app.post(\"/x\", (foo1, foo2) => { new Function(foo1.body); });"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "description": "",
+      "before": "function handle(req) { serialize.unserialize(req.body.payload); }",
+      "after": "function foo2(foo1) { serialize.unserialize(foo1.body.payload); }"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "description": "",
+      "before": "import * as jsYaml from \"js-yaml\"; export const ingest = (req) => jsYaml.load(String(req.body.document).trim());",
+      "after": "import * as jsYaml from \"js-yaml\"; export const foo1 = (foo2) => jsYaml.load(String(foo2.body.document).trim());"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "description": "an untrusted pattern with no flags",
+      "before": "function f(req) { return new RegExp(req.query.q); }",
+      "after": "function foo2(foo1) { return new RegExp(foo1.query.q); }"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "description": "",
+      "before": "export function f(req) { const filter = req.query.filter; return new RegExp(filter, \"i\"); }",
+      "after": "export function foo3(foo2) { const foo1 = foo2.query.filter; return new RegExp(foo1, \"i\"); }"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "description": "",
+      "before": "export function f(req) { let p = DEFAULT; if (req.query.p) { p = req.query.p; } return new RegExp(p, \"u\"); }",
+      "after": "export function foo3(foo2) { let foo1 = DEFAULT; if (foo2.query.p) { foo1 = foo2.query.p; } return new RegExp(foo1, \"u\"); }"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "description": "",
+      "before": "export class Search { #escape(v) { return v; } run(req) { return new RegExp(this.#escape(req.query.q), \"i\"); } }",
+      "after": "export class foo3 { #escape(foo1) { return foo1; } run(foo2) { return new RegExp(this.#escape(foo2.query.q), \"i\"); } }"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "description": "",
+      "before": "const Pattern = RegExp; export function f(req) { return new Pattern(req.query.filter, \"i\"); }",
+      "after": "const foo1 = RegExp; export function foo3(foo2) { return new foo1(foo2.query.filter, \"i\"); }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "a reset token from Math.random()",
+      "before": "const passwordResetToken = String(Math.random()).slice(2);",
+      "after": "const foo1 = String(Math.random()).slice(2);"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "const forgotPasswordToken = Date.now();",
+      "after": "const foo1 = Date.now();"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "function handlePasswordReset(email) { const token = makeToken(); save(email, token); }",
+      "after": "function foo3(foo2) { const foo1 = makeToken(); save(foo2, foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "function forgotPassword() { const token = makeToken(); if(token.expired) return; reset(token); }",
+      "after": "function foo2() { const foo1 = makeToken(); if(foo1.expired) return; reset(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "function resetPassword() { const token = makeToken(); checkRateLimit(); sendEmail(token); }",
+      "after": "function foo2() { const foo1 = makeToken(); checkRateLimit(); sendEmail(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "function recoverPasswordOuter() { const go = () => { const resetToken = mint(); return resetToken; }; return go; }",
+      "after": "function foo3() { const foo1 = () => { const foo2 = mint(); return foo2; }; return foo1; }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "function resetPasswordFlow() { const v = nanoid(); mail(v); }",
+      "after": "function foo2() { const foo1 = nanoid(); mail(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "function resetPasswordWithToken(resetToken) { applyReset(resetToken); }",
+      "after": "function foo2(foo1) { applyReset(foo1); }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "const passwordResetToken = Date.now() + salt;",
+      "after": "const foo1 = Date.now() + salt;"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "Math.random",
+      "before": "const resetPasswordToken = String(Math.random()).slice(2);",
+      "after": "const foo1 = String(Math.random()).slice(2);"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "Date.now",
+      "before": "const passwordResetToken = String(Date.now());",
+      "after": "const foo1 = String(Date.now());"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "new Date().getTime()",
+      "before": "const passwordResetToken = String(new Date().getTime());",
+      "after": "const foo1 = String(new Date().getTime());"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "time-based uuid v1",
+      "before": "const resetPasswordToken = uuid.v1();",
+      "after": "const foo1 = uuid.v1();"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "bare v1() import",
+      "before": "const resetPasswordToken = v1();",
+      "after": "const foo1 = v1();"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "handler with no expiry or rate limit",
+      "before": "async function forgotPassword(req, res) { const t = crypto.randomBytes(32); await mail(t); res.end(); }",
+      "after": "async function foo3(foo4, foo2) { const foo1 = crypto.randomBytes(32); await mail(foo1); foo2.end(); }"
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "description": "",
+      "before": "const passwordResetToken = zzzMint(Date.now());",
+      "after": "const foo1 = zzzMint(Date.now());"
+    },
+    {
+      "rule": "secure-coding/no-xpath-injection",
+      "description": "",
+      "before": "const xpathVar = userInput; document.evaluate(xpathVar, document);",
+      "after": "const foo1 = userInput; document.evaluate(foo1, document);"
+    },
+    {
+      "rule": "secure-coding/no-xpath-injection",
+      "description": "",
+      "before": "const xpathQuery = req.params.query; doc.evaluate(xpathQuery, doc);",
+      "after": "const foo1 = req.params.query; doc.evaluate(foo1, doc);"
+    },
+    {
+      "rule": "secure-coding/no-xpath-injection",
+      "description": "",
+      "before": "let searchPath = userInput; xpath.select(searchPath, doc);",
+      "after": "let foo1 = userInput; xpath.select(foo1, doc);"
+    },
+    {
+      "rule": "secure-coding/no-xpath-injection",
+      "description": "",
+      "before": "const xpathVar = userInput; document.evaluate(xpathVar, document);",
+      "after": "const foo1 = userInput; document.evaluate(foo1, document);"
+    },
+    {
+      "rule": "secure-coding/no-xpath-injection",
+      "description": "",
+      "before": "const userQuery = zzzWrap(req.params.id); document.evaluate(userQuery, doc);",
+      "after": "const foo1 = zzzWrap(req.params.id); document.evaluate(foo1, doc);"
+    }
+  ]
+}
