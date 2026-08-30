@@ -96,6 +96,20 @@ export const METRIC_LABEL: Record<keyof Metrics, string> = {
   files: 'file count',
 };
 
+/**
+ * Per-metric noise floor. Below it, a percentage is meaningless.
+ *
+ * Both byte metrics use the kB floor. `files` uses 0: a package with 7 files
+ * is not noise, and exempting it would defeat the metric precisely where the
+ * junk-file pattern is easiest to miss. The smallest package here ships 10
+ * files, so a kB floor would have exempted the entire bottom of the range.
+ */
+export const METRIC_FLOOR: Record<keyof Metrics, number> = {
+  unpacked: MIN_ABSOLUTE_KB,
+  tarball: MIN_ABSOLUTE_KB,
+  files: 0,
+};
+
 type Baseline = { generated: string; packages: Record<string, Metrics> };
 
 /**
@@ -132,6 +146,18 @@ export function classify(
   current: Record<string, number>,
   unbuilt: readonly string[],
   baselinePackages: Record<string, number>,
+  /**
+   * Noise floor, in the unit of the metric being classified. Defaults to the
+   * kilobyte floor because `unpacked` was the only caller when this was
+   * written — and that default is wrong for any metric not measured in kB.
+   *
+   * A file COUNT under 10 is not noise, it is a small package: the whole
+   * reason `files` exists is that a package can gain junk files without the
+   * size ratio moving, and 7 -> 9 files is exactly that pattern at small
+   * scale. Applying the kB floor to it silently exempted the packages the
+   * metric was added to protect.
+   */
+  minAbsolute: number = MIN_ABSOLUTE_KB,
 ): Diff {
   const grew: Row[] = [];
   const shrank: Row[] = [];
@@ -145,7 +171,7 @@ export function classify(
       continue;
     }
     const delta = now - was;
-    if (was < MIN_ABSOLUTE_KB && now < MIN_ABSOLUTE_KB) continue;
+    if (was < minAbsolute && now < minAbsolute) continue;
     const row = { name, was, now, delta };
     if (delta > 0 && delta / was > WARN_RATIO) grew.push(row);
     else if (delta < 0 && -delta / was > WARN_RATIO) shrank.push(row);
@@ -257,7 +283,12 @@ function main(): void {
   const byMetric = Object.fromEntries(
     METRIC_KEYS.map((key) => [
       key,
-      classify(project(current, key), unbuilt, project(baseline.packages, key)),
+      classify(
+        project(current, key),
+        unbuilt,
+        project(baseline.packages, key),
+        METRIC_FLOOR[key],
+      ),
     ]),
   ) as Record<keyof Metrics, Diff>;
 
@@ -360,19 +391,26 @@ function main(): void {
   // var (every local run) this is a no-op.
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPath) {
-    const rows = grew
-      .sort((a, b) => b.delta - a.delta)
-      .map(
-        (r) =>
-          `| \`${r.name}\` | ${r.was} kB | ${r.now} kB | +${r.delta} kB (${((r.delta / r.was) * 100).toFixed(0)}%) |`,
-      );
+    // EVERY metric, not just `unpacked`. The console report shows cross-metric
+    // movers separately because `unpacked` is its headline, but the summary is
+    // the only surface a reviewer actually sees — a package that gained forty
+    // files without gaining kilobytes has to reach the PR, or the file-count
+    // metric exists solely in a log nobody opens.
+    const rows = METRIC_KEYS.flatMap((key) =>
+      byMetric[key].grew
+        .sort((a, b) => b.delta - a.delta)
+        .map(
+          (r) =>
+            `| \`${r.name}\` | ${METRIC_LABEL[key]} | ${r.was} | ${r.now} | +${r.delta} (${((r.delta / r.was) * 100).toFixed(0)}%) |`,
+        ),
+    );
     appendFileSync(
       summaryPath,
       `\n### Artifact size\n\n` +
         `${totalNow} kB across ${Object.keys(current).length} packages ` +
         `(baseline ${baseline.generated}: ${totalWas} kB, ${totalNow >= totalWas ? '+' : ''}${pct}%)\n\n` +
         (rows.length
-          ? `| package | was | now | delta |\n|---|---|---|---|\n${rows.join('\n')}\n\n` +
+          ? `| package | metric | was | now | delta |\n|---|---|---|---|---|\n${rows.join('\n')}\n\n` +
             `Refresh in this PR if intended: \`npm run check-artifact-size -- --update\`\n`
           : `No package moved more than ${WARN_RATIO * 100}%.\n`),
     );

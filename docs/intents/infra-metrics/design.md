@@ -73,9 +73,17 @@ load-bearing and already documented in the script).
 summary. It adds no job and no build. It never fails the PR on a size number.
 
 **R5** — Tier 2 metrics ship as a `devkit-infra-metrics` script with a committed
-baseline and lock tests. `mandatory_peer_mb` and `barrel_load_kb` get tests that
-fail on regression — these are gates, because both encode incidents we have
-already paid for once.
+baseline and lock tests. `mandatoryPeers` and `barrelExternals` are **gates**:
+the script exits 1 when either gains an entry, because both encode incidents we
+have already paid for once. `barrelExports` growth stays advisory.
+
+The gate lives in the script rather than only in the lock test for a reason
+found in review: `infra-metrics-lock.test.ts` asserts the BASELINE FILE against
+the invariant, so a change that adds a mandatory peer _and_ refreshes the
+baseline passes every test — the baseline is the thing that moved. Something
+has to compare a LIVE measurement against the invariant, and only the CI step
+has a built tree to measure. Lock test and gate cover different halves; neither
+is redundant.
 
 **R6** — Every metric has a lock test asserting it is still collected. A metric
 that silently stops being emitted is the failure mode this whole intent exists

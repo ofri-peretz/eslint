@@ -31,7 +31,12 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import process from 'node:process';
@@ -86,7 +91,12 @@ export function classifyModule(
   const idx = file.lastIndexOf('/node_modules/');
   if (idx === -1) return { own: false };
   const rest = file.slice(idx + '/node_modules/'.length).split('/');
-  const name = rest[0]?.startsWith('@') ? `${rest[0]}/${rest[1]}` : rest[0];
+  // `rest[1] &&` guards the path that ends at the scope boundary. Without it a
+  // malformed `/node_modules/@scope/` yields the literal string
+  // "@scope/undefined", which would then be compared against the baseline as
+  // if it were a package name.
+  const name =
+    rest[0]?.startsWith('@') && rest[1] ? `${rest[0]}/${rest[1]}` : rest[0];
   return { own: false, external: name };
 }
 
@@ -193,31 +203,67 @@ function main(): void {
 
   const baseline = (JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) as Baseline)
     .metrics;
-  const drift: string[] = [];
   const added = (a: string[], b: string[]) => a.filter((x) => !b.includes(x));
 
+  /**
+   * Blocking drift, separated from advisory drift.
+   *
+   * These two are gates rather than reports because the lock tests cannot
+   * catch them alone: `infra-metrics-lock.test.ts` asserts the BASELINE file
+   * against the invariant, so a change that adds a mandatory peer *and*
+   * refreshes the baseline passes every test — the baseline is the thing that
+   * moved. Something has to compare LIVE measurement against the invariant,
+   * and this is the only place with a built tree to measure.
+   */
+  const blocking: string[] = [];
   for (const gained of added(current.mandatoryPeers, baseline.mandatoryPeers))
-    drift.push(
-      `mandatory peer ADDED: ${gained} — every consumer now installs it`,
+    blocking.push(
+      `mandatory peer ADDED: ${gained} — every consumer of every plugin now installs it`,
     );
   for (const gained of added(current.barrelExternals, baseline.barrelExternals))
-    drift.push(
+    blocking.push(
       `barrel now loads ${gained} at import time — lazy-loading invariant broken`,
     );
+
+  // Advisory: the barrel legitimately gains exports as devkit grows. Worth
+  // noticing (30 packages can never un-import them), not worth blocking.
+  const advisory: string[] = [];
   if (current.barrelExports > baseline.barrelExports)
-    drift.push(
-      `barrel exports ${baseline.barrelExports} → ${current.barrelExports} exports`,
+    advisory.push(
+      `barrel exports ${baseline.barrelExports} → ${current.barrelExports}`,
     );
 
-  if (drift.length) {
-    console.log('  ⚠️  drift vs baseline:');
-    for (const d of drift) console.log(`    - ${d}`);
-    console.log(
-      '\n    If intended, refresh in this PR:\n      npm run devkit:infra -- --update\n',
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryPath && (blocking.length || advisory.length)) {
+    appendFileSync(
+      summaryPath,
+      `\n### Devkit infrastructure drift\n\n` +
+        blocking.map((d) => `- ❌ ${d}`).join('\n') +
+        (blocking.length && advisory.length ? '\n' : '') +
+        advisory.map((d) => `- ⚠️ ${d}`).join('\n') +
+        `\n\nIf intended, refresh in this PR: \`npm run devkit:infra -- --update\`\n`,
     );
-  } else {
-    console.log('  No infrastructure drift.\n');
   }
+
+  if (advisory.length) {
+    console.log('  ⚠️  advisory drift:');
+    for (const d of advisory) console.log(`    - ${d}`);
+    console.log('');
+  }
+
+  if (blocking.length) {
+    console.error('  ❌ infrastructure regression:');
+    for (const d of blocking) console.error(`    - ${d}`);
+    console.error(
+      '\n    This is a cost paid by every consumer of every plugin. If it is\n' +
+        '    genuinely intended, refresh the baseline in this same PR so the\n' +
+        '    decision is reviewed next to the code that caused it:\n' +
+        '      npm run devkit:infra -- --update\n',
+    );
+    process.exit(1);
+  }
+
+  if (!advisory.length) console.log('  No infrastructure drift.\n');
   process.exit(0);
 }
 

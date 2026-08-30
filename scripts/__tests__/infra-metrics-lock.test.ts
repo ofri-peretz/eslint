@@ -16,7 +16,12 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { classify, project, METRIC_KEYS } from '../check-artifact-size.js';
+import {
+  classify,
+  project,
+  METRIC_KEYS,
+  METRIC_FLOOR,
+} from '../check-artifact-size.js';
 import { mandatoryPeers, classifyModule } from '../devkit-infra-metrics.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -83,6 +88,36 @@ describe('project', () => {
   it('feeds classify unchanged', () => {
     const diff = classify(project(packages, 'files'), [], { a: 12, b: 12 });
     expect(diff.grew.map((r) => r.name)).toEqual(['b']);
+  });
+});
+
+describe('per-metric noise floor', () => {
+  // `MIN_ABSOLUTE_KB` is 10 KILOBYTES. Applied unchanged to a FILE COUNT it
+  // exempts every package under 10 files — the bottom of the real range (the
+  // smallest package here ships 10) and exactly where a handful of junk files
+  // is hardest to spot. The floor has to follow the metric's unit.
+  it('does not apply the kB floor to file counts', () => {
+    expect(METRIC_FLOOR.files).toBe(0);
+    expect(METRIC_FLOOR.unpacked).toBeGreaterThan(0);
+  });
+
+  it('reports a small package gaining files, which the kB floor hid', () => {
+    const withFileFloor = classify(
+      { tiny: 9 },
+      [],
+      { tiny: 7 },
+      METRIC_FLOOR.files,
+    );
+    expect(withFileFloor.grew.map((r) => r.name)).toEqual(['tiny']);
+
+    // The same numbers under the byte floor vanish. That was the bug.
+    const withKbFloor = classify({ tiny: 9 }, [], { tiny: 7 }, 10);
+    expect(withKbFloor.grew).toEqual([]);
+  });
+
+  it('still treats a sub-floor byte change as noise', () => {
+    const diff = classify({ tiny: 9 }, [], { tiny: 7 }, METRIC_FLOOR.unpacked);
+    expect(diff.grew).toEqual([]);
   });
 });
 
@@ -177,5 +212,14 @@ describe('classifyModule', () => {
     expect(classifyModule('/repo/scripts/thing.js', dist)).toEqual({
       own: false,
     });
+  });
+
+  // A path ending at the scope boundary has no package segment. Without a
+  // guard the template literal produces the string "@scope/undefined", which
+  // would then be diffed against the baseline as though it were a real
+  // package that had appeared in the barrel's module graph.
+  it('does not invent "@scope/undefined" from a truncated scoped path', () => {
+    const r = classifyModule('/repo/node_modules/@scope/', dist);
+    expect(r.external).not.toContain('undefined');
   });
 });
