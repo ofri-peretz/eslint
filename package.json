@@ -264,7 +264,11 @@
     "check:intent:strict": "tsx scripts/check-intent.ts --strict",
     "check:new-rule-cases": "tsx scripts/check-new-rule-cases.ts",
     "check:new-rule-cases:strict": "tsx scripts/check-new-rule-cases.ts --strict",
-    "devkit:infra": "tsx scripts/devkit-infra-metrics.ts"
+    "devkit:infra": "tsx scripts/devkit-infra-metrics.ts",
+    "ilb:leaderboard-publish": "tsx scripts/ilb-leaderboard-publish.ts",
+    "ilb:federated-aggregate": "tsx scripts/ilb-federated-aggregate.ts",
+    "ilb:iso25010-report": "tsx scripts/ilb-iso25010-report.ts",
+    "ilb:mappings-report": "tsx scripts/ilb-mappings-report.ts"
   },
   "keywords": [
     "eslint",

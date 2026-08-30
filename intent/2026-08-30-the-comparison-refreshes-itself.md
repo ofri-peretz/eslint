@@ -57,3 +57,40 @@ rows, which is exactly enough for the habit to form.
 - `npm run check:audit-freshness` reports no stale artifact.
 - The peer leaderboard is under 30 days old and stays there without anyone
   remembering to run it.
+
+## Outcome — 2026-08-30
+
+`UNREFRESHED` went **6 → 1**, and five artifacts went from 112 days old to
+zero. But the diagnosis in the Why above was wrong, and the real cause is worth
+more than the fix.
+
+It was not a missing schedule. **Four of the six advertised a refresh command
+that did not exist.** `npm run ilb:leaderboard-publish` had no npm script behind
+it; nor did `ilb:federated-aggregate`, `ilb:iso25010-report` or
+`ilb:mappings-report`. The underlying `scripts/ilb-*.ts` were in the repo the
+whole time, unreachable by the name the gate told you to type. Anyone who tried
+to clear the staleness got `Missing script` and would reasonably conclude the
+artifact was abandoned.
+
+The constraint "verify each command runs on a stock runner BEFORE scheduling
+it" is what caught it. Scheduling first would have produced five red monthly
+jobs, which is the seventh-permanently-red-thing this intent was written to
+avoid — and the workflow would have looked like the problem.
+
+Adding the four aliases and running all five was the whole fix.
+`.github/workflows/comparison-refresh.yml` runs them monthly — the shortest TTL
+here is 30 days, so monthly beats every one with margin at a twelfth of a
+weekly job's minutes — commits what moved, and reports a failure through the
+shared `report-failure` action.
+
+`audit:stock-overlap` keeps its TTL and stays the single entry in
+`UNREFRESHED`. It needs `oxc-project/oxc` cloned to compare our rule set with
+oxlint's stock rules; automatable only by checking out a second large
+repository on a schedule, which costs more than the artifact is worth today.
+It keeps the TTL deliberately, so the staleness stays visible rather than being
+declared fine.
+
+Three rows remain stale for reasons outside this intent: the API-surface
+manifest, the CVE→rule latency audit, and the per-rule p95 budget — the last of
+which advertises a prose instruction rather than a command, so no schedule can
+ever satisfy it.

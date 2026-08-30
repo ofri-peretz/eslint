@@ -9,17 +9,17 @@
  *
  * Stage 6 of `AI_SDLC.md`. `check:audit-freshness` gives each tracked artifact
  * a TTL and reports it stale when the clock runs out. That is only useful if
- * something is actually regenerating them — and for four of them, nothing was:
+ * something is actually regenerating them — and for six of them, nothing was.
  *
- *   Peer leaderboard              112 days   `ilb:leaderboard-publish`   no workflow
- *   CWE coverage report           112 days   `docs:cwe-coverage`          no workflow
- *   Federated wild-corpus         112 days   `ilb:federated-aggregate`    no workflow
- *   Stock-corpus overlap          108 days   `audit:stock-overlap`        no workflow
+ * The cause turned out not to be a missing schedule. FOUR of the six advertised
+ * a refresh command that **did not exist**: `npm run ilb:leaderboard-publish`
+ * had no npm script behind it, and neither did three of its neighbours. The
+ * underlying `scripts/ilb-*.ts` were there the whole time, unreachable by the
+ * name the gate told you to type. Anyone who tried to clear the staleness got
+ * `Missing script` and reasonably concluded the artifact was abandoned.
  *
- * A TTL with no refresher does not produce freshness. It produces a gate that
- * is permanently red, and a permanently red gate is one everybody learns to
- * scroll past — which is worse than not having tracked the artifact at all,
- * because now the staleness is both real AND ignored.
+ * Adding the four aliases and running all five took them from 112 days old to
+ * zero, and `.github/workflows/comparison-refresh.yml` now keeps them there.
  *
  * ## What this asserts
  *
@@ -51,20 +51,12 @@ const FRESHNESS = readFileSync(
  * Shrink-only: give one a scheduled workflow and delete its line. Never add.
  */
 const UNREFRESHED: ReadonlySet<string> = new Set([
-  // Already stale when this test was written — 108 to 112 days.
-  'npm run ilb:leaderboard-publish',
-  'npm run docs:cwe-coverage',
-  'npm run ilb:federated-aggregate',
+  // Needs oxc-project/oxc cloned to compare our rule set against oxlint's
+  // stock rules. Automatable only by checking out a second large repository on
+  // a schedule, which costs more than the artifact is worth today. It keeps
+  // its TTL so the staleness stays visible rather than being declared fine.
   'npm run audit:stock-overlap',
-  // NOT stale yet, and found only because this test asks a different question
-  // than the freshness gate does. Both crosswalks carry a 180-day TTL and
-  // nothing refreshes them either, so they are not fresh — they are 112 days
-  // into a 180-day clock with no way to reset it. Counting stale artifacts
-  // would have missed them for another two months.
-  'npm run ilb:iso25010-report',
-  'npm run ilb:mappings-report',
 ]);
-
 /** Every `refreshCmd` the freshness gate advertises. */
 function refreshCommands(): string[] {
   return [
