@@ -15,7 +15,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { mean, stdev, detect, evaluate } from '../control-bands';
+import { mean, stdev, detect, evaluate, renderIntent } from '../control-bands';
+import type { BandConfig, Observation } from '../control-bands';
 
 /** n points at `base`, so σ is well defined and the mean sits where we expect. */
 const flatish = (n: number, base: number) =>
@@ -89,5 +90,55 @@ describe('evaluate', () => {
     expect(breach!.latest).toBe(60);
     expect(breach!.window).toBe(11);
     expect(breach!.sigma).toBeGreaterThan(0);
+  });
+});
+
+describe('the intent a breach writes', () => {
+  const cfg: BandConfig = {
+    id: 'cwe-corpus-f1',
+    description: 'F1 across the CWE corpus',
+    collector: 'benchmark-json',
+    window: 11,
+    worse: 'lower',
+    minPoints: 3,
+  };
+
+  /** A tight baseline, then a fall far outside it — an unambiguous rule 1 breach. */
+  const series: Observation[] = [
+    ...Array.from({ length: 10 }, (_, i) => ({
+      date: `2026-08-${String(i + 1).padStart(2, '0')}`,
+      value: i % 2 === 0 ? 0.9 : 0.91,
+    })),
+    { date: '2026-08-11', value: 0.4 },
+  ];
+
+  const breach = evaluate(cfg, series);
+  const body = renderIntent(breach!, cfg, series);
+
+  it('only renders because the series actually breached', () => {
+    expect(breach).not.toBeNull();
+  });
+
+  /**
+   * The coupling that would otherwise rot silently: Stage 6 writes a Stage 1
+   * artifact, and `intent-artifacts.lock.test.ts` is what will judge it in CI. If
+   * the schema moves and this generator does not, the watcher opens a PR that fails
+   * our own lock — during an incident, the worst possible moment to find out.
+   */
+  it('satisfies the schema the intent lock enforces', () => {
+    expect(body).toMatch(/^# Intent — \S/m);
+    expect(body).toMatch(/^\*\*Status:\*\*\s*draft/m);
+    for (const s of [
+      '## What is wanted',
+      '## Why now',
+      '## Constraints',
+      '## Success criteria',
+    ]) {
+      expect(body, `generated intent lacks ${s}`).toContain(s);
+    }
+  });
+
+  it('dates the intent by the observation, not by when the watcher happened to run', () => {
+    expect(body).toContain('**Opened:** 2026-08-11');
   });
 });

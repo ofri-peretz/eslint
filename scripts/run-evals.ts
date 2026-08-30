@@ -13,9 +13,23 @@
  *      agent-facing document resolves. A rule document that points at a moved file is
  *      a rule the agent silently cannot read, and nothing else in this repo notices.
  *   2. Task evals — real prompts with accepted outcomes, run against the current
- *      configuration. Needs ANTHROPIC_API_KEY. Without one the layer reports
- *      `skipped`, never `failed`: a fork or a secretless PR must not be blocked by an
+ *      configuration. Needs a credential; without one the layer reports `skipped`,
+ *      never `failed`, because a fork or a secretless PR must not be blocked by an
  *      eval it cannot run.
+ *
+ * CREDENTIALS — prefer the subscription token, and do not set both
+ * ---------------------------------------------------------------
+ *   CLAUDE_CODE_OAUTH_TOKEN  a one-year token from `claude setup-token`. Runs bill
+ *                            against the Claude subscription (Pro, Max, Team or
+ *                            Enterprise) — no per-token charge.
+ *   ANTHROPIC_API_KEY        a Claude Console key. Billed per token to the Console
+ *                            organisation, which is money separate from any
+ *                            subscription.
+ *
+ * `ANTHROPIC_API_KEY` OUTRANKS `CLAUDE_CODE_OAUTH_TOKEN` in Claude Code's credential
+ * precedence, so setting both silently bills the API key and the subscription token is
+ * never used. This runner reports which one it found for exactly that reason — a
+ * surprise invoice is a bad way to learn the ordering.
  *
  * See evals/README.md for the case format and how to choose cases.
  *
@@ -198,12 +212,59 @@ export function grade(output: string, expect: Expectation[]): { ok: boolean; fai
   return { ok: failed.length === 0, failed };
 }
 
+/** How a run is billed, decided from the environment alone so it can be tested. */
+export type Billing = 'none' | 'subscription' | 'api-key';
+
+/**
+ * GitHub Actions writes `ANTHROPIC_API_KEY=""` into the step env whenever the secret
+ * is absent — the variable is *present and empty*, not missing. Every credential
+ * decision here therefore tests for a non-empty value, and `evalEnv` strips the empty
+ * ones before they reach the `claude` subprocess, which has its own precedence rules
+ * and need not agree with ours about what empty means.
+ */
+export function routeCredentials(env: NodeJS.ProcessEnv): {
+  billing: Billing;
+  bothSet: boolean;
+} {
+  const key = Boolean(env.ANTHROPIC_API_KEY);
+  const token = Boolean(env.CLAUDE_CODE_OAUTH_TOKEN);
+  return {
+    billing: key ? 'api-key' : token ? 'subscription' : 'none',
+    bothSet: key && token,
+  };
+}
+
+/** The subprocess environment, with empty credential vars removed rather than passed on. */
+export function evalEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const out = { ...env };
+  for (const k of ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN']) {
+    if (!out[k]) delete out[k];
+  }
+  return out;
+}
+
 function runCase(c: EvalCase): { id: string; status: 'pass' | 'fail' | 'error'; failed: string[] } {
-  const r = spawnSync(
-    'claude',
-    ['-p', c.prompt, '--allowedTools', c.allowedTools ?? 'Read,Grep,Glob'],
-    { cwd: REPO_ROOT, encoding: 'utf8', timeout: 180_000, maxBuffer: 16 * 1024 * 1024 },
-  );
+  // On a subscription token these runs draw from the SAME five-hour and weekly
+  // allowance as interactive work, shared with Claude chat. The bill is not the risk;
+  // being rate-limited mid-task by your own CI is. So every case is bounded twice:
+  //
+  //   --max-turns   a case that cannot answer from three tool calls is a bad case,
+  //                 not a case that deserves twenty. Caps the worst run, not the mean.
+  //   --model       EVAL_MODEL overrides. Left unset it uses the Claude Code default,
+  //                 which is the point — an eval on a model nobody runs measures the
+  //                 wrong configuration. Set `claude-haiku-4-5` when protecting the
+  //                 allowance matters more than fidelity to what the team runs.
+  const args = ['-p', c.prompt, '--allowedTools', c.allowedTools ?? 'Read,Grep,Glob'];
+  args.push('--max-turns', process.env.EVAL_MAX_TURNS ?? '3');
+  if (process.env.EVAL_MODEL) args.push('--model', process.env.EVAL_MODEL);
+
+  const r = spawnSync('claude', args, {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    env: evalEnv(process.env),
+    timeout: 180_000,
+    maxBuffer: 16 * 1024 * 1024,
+  });
   if (r.error || typeof r.stdout !== 'string') {
     return { id: c.id, status: 'error', failed: [String(r.error ?? 'no output')] };
   }
@@ -228,14 +289,26 @@ function main(): void {
 
   if (configOnly) {
     console.log('\n🧪 Layer 2 — skipped (--config)\n');
-  } else if (!process.env.ANTHROPIC_API_KEY) {
+  } else if (routeCredentials(process.env).billing === 'none') {
     // Reported, never fatal. An eval that cannot run is not an eval that failed, and
     // treating it as one teaches people to delete the suite.
     console.log(
-      `\n🧪 Layer 2 — skipped: ANTHROPIC_API_KEY is not set (${cases.length} case(s) not run)\n`,
+      `\n🧪 Layer 2 — skipped: no credential (${cases.length} case(s) not run).\n` +
+        '   Set CLAUDE_CODE_OAUTH_TOKEN (subscription, no per-token charge) or\n' +
+        '   ANTHROPIC_API_KEY (Console, billed per token).\n',
     );
   } else {
-    console.log(`\n🧪 Layer 2 — ${cases.length} task eval(s)\n`);
+    const { billing, bothSet } = routeCredentials(process.env);
+    console.log(
+      `\n🧪 Layer 2 — ${cases.length} task eval(s), billing to ` +
+        `${billing === 'api-key' ? 'the Console API key (per token)' : 'the Claude subscription'}\n`,
+    );
+    if (bothSet) {
+      console.warn(
+        '   ⚠️  Both credentials are set. ANTHROPIC_API_KEY wins, so this run is\n' +
+          '      billed per token and the subscription token is ignored. Unset one.\n',
+      );
+    }
     caseResults = cases.map(runCase);
     for (const r of caseResults) {
       console.log(`  ${r.status === 'pass' ? '✓' : '✗'} ${r.id}`);
