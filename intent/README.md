@@ -1,7 +1,7 @@
 # `intent/` — Stage 1 (Plan) and Stage 2 (Design)
 
 Every substantive change starts here. See
-[AI_NATIVE_SDLC.md](../../AI_NATIVE_SDLC.md) for why.
+`AI_NATIVE_SDLC.md`, one level up from this repo, for why.
 
 ## Layout
 

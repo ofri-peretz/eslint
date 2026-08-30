@@ -267,7 +267,7 @@ function collectFromGit(cfg: BandConfig): Observation[] {
   }
 
   const out: Observation[] = [];
-  for (const rel of [...new Set(paths)]) {
+  for (const rel of new Set(paths)) {
     // The commit that introduced the file — `rev-list` is newest-first, so the
     // introducing commit is the last line.
     let sha: string;
@@ -352,7 +352,9 @@ function writeIntent(breach: Breach, cfg: BandConfig, series: Observation[]): st
   const slug = `control-band-${breach.id}`;
   const dir = path.join(INTENT_DIR, slug);
   const file = path.join(dir, 'intent.md');
-  if (fs.existsSync(file)) return file; // one open intent per band, not one per run
+  // `wx` fails if the path exists, so the "already open" case is the write itself
+  // refusing rather than a prior check that could go stale between the two calls
+  // (CodeQL `js/file-system-race`). One open intent per band, not one per run.
 
   const recent = series
     .slice(-cfg.window)
@@ -407,7 +409,11 @@ it deliberately.
 - Which commit is the first one outside the band?
 `;
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(file, body);
+  try {
+    fs.writeFileSync(file, body, { flag: 'wx' });
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+  }
   return file;
 }
 

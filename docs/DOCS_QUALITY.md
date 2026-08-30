@@ -115,7 +115,7 @@ a `workflow_dispatch` input that is empty on a cron, so it never fired unattende
 
 ### 3b. Drift, as a band rather than a boolean
 
-Stage 6 of [AI_NATIVE_SDLC.md](../../AI_NATIVE_SDLC.md). Every watcher above is
+Stage 6 of `AI_NATIVE_SDLC.md` (one level up from this repo). Every watcher above is
 pass/fail and can only see a hard break; a band sees the slow slide.
 
 | Metric | Target | Held by | Cadence |

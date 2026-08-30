@@ -104,7 +104,9 @@ bought recall loss before.
 ## How work moves: the AI-native SDLC
 
 The working model for this repo and every sibling is
-[`../AI_NATIVE_SDLC.md`](../AI_NATIVE_SDLC.md). Six stages, each handing off through a
+`AI_NATIVE_SDLC.md`, which sits one level up beside this repo rather than inside it —
+it governs every sibling repo, so it cannot live in any one of them, and a link from
+here would dangle in a standalone clone. Six stages, each handing off through a
 **committed Markdown artifact rather than a chat message**:
 
 | Stage | Artifact | Here |

@@ -53,16 +53,35 @@ export interface EvalCase {
 // Layer 1 — config checks
 // ---------------------------------------------------------------------------
 
+/** `readdirSync` that answers "gone" with an empty list rather than throwing. */
+function readDirOrEmpty(rel: string): fs.Dirent[] {
+  try {
+    return fs.readdirSync(path.join(REPO_ROOT, rel), { withFileTypes: true });
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw e;
+  }
+}
+
+/**
+ * Attempt the access and handle ENOENT rather than checking first: an
+ * `existsSync` guard acts on the result of a check, and the path can be replaced
+ * between the two calls (CodeQL `js/file-system-race`). The syscall either
+ * succeeds or says the file is gone, with no window in between.
+ */
 function agentDocs(): string[] {
   const out: string[] = [];
   for (const f of CONFIG_GLOBS) {
-    if (fs.existsSync(path.join(REPO_ROOT, f))) out.push(f);
+    try {
+      fs.accessSync(path.join(REPO_ROOT, f));
+      out.push(f);
+    } catch {
+      // not present in this repo — the doc set differs per package
+    }
   }
   for (const dir of CONFIG_DIRS) {
-    const abs = path.join(REPO_ROOT, dir);
-    if (!fs.existsSync(abs)) continue;
     const walk = (rel: string): void => {
-      for (const e of fs.readdirSync(path.join(REPO_ROOT, rel), { withFileTypes: true })) {
+      for (const e of readDirOrEmpty(rel)) {
         const child = path.join(rel, e.name);
         if (e.isDirectory()) walk(child);
         else if (e.name.endsWith('.md')) out.push(child);
@@ -138,9 +157,14 @@ function runConfigLayer(): { name: string; passed: boolean; detail: string }[] {
 // ---------------------------------------------------------------------------
 
 function loadCases(): EvalCase[] {
-  if (!fs.existsSync(CASES_DIR)) return [];
-  return fs
-    .readdirSync(CASES_DIR)
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(CASES_DIR);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw e;
+  }
+  return entries
     .filter((f) => f.endsWith('.json'))
     .sort()
     .map((f) => JSON.parse(fs.readFileSync(path.join(CASES_DIR, f), 'utf-8')) as EvalCase);
