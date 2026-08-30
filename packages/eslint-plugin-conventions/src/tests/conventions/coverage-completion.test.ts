@@ -938,13 +938,40 @@ describe('prefer-dependency-version-strategy — protocols, overrides, key shape
 
 describe('prefer-dom-node-text-content — heuristics and fix fallback', () => {
   ruleTester.run('DOM-likeness heuristics', preferDomNodeTextContent, {
-    valid: [
-      // Method call that is not a DOM query.
-      { code: 'const a = foo.bar().innerText;' },
-      // Property access that is not a known DOM property.
-      { code: 'const b = a.b.innerText;' },
-    ],
+    valid: [],
     invalid: [
+      // These two were `valid`, and passed only because the DOM-likeness gate
+      // required a DOM-ish NAME. `innerText` is defined on HTMLElement and
+      // nowhere else, so reading it from a non-element yields undefined —
+      // nobody writes that on purpose. Reporting them is correct.
+      {
+        code: 'const a = foo.bar().innerText;',
+        errors: [
+          {
+            messageId: 'preferDomNodeTextContent',
+            suggestions: [
+              {
+                messageId: 'preferDomNodeTextContent',
+                output: 'const a = foo.bar().textContent;',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'const b = a.b.innerText;',
+        errors: [
+          {
+            messageId: 'preferDomNodeTextContent',
+            suggestions: [
+              {
+                messageId: 'preferDomNodeTextContent',
+                output: 'const b = a.b.textContent;',
+              },
+            ],
+          },
+        ],
+      },
       // Identifier with a DOM-ish suffix.
       {
         code: 'const t = myElement.innerText;',

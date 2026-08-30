@@ -54,68 +54,30 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
-    function isLikelyDomElement(node: TSESTree.MemberExpression): boolean {
-      const obj = node.object;
+    /**
+     * No DOM-likeness check, deliberately.
+     *
+     * This rule fires on ONE property: `.innerText`. That property is defined
+     * on `HTMLElement` and nowhere else in the language — anything you read it
+     * from is a DOM element, or the code was already broken. The access IS the
+     * evidence, so a second test asking "does this look like an element" can
+     * only ever subtract.
+     *
+     * It subtracted plenty. The check matched a vocabulary —
+     * `^(element|el|div|span|node|ref|dom|elem)$` plus an `(Element|Node|Ref)$`
+     * suffix — and six of seven genuine DOM elements were missed for having
+     * ordinary names:
+     *
+     *     const heading = document.getElementById('x');
+     *     heading.innerText;                             // not reported
+     *
+     * My first fix resolved the binding to a `document.querySelector` call
+     * instead of matching the name. That was better and still wrong: a DOM
+     * element arriving as a function parameter or an import resolves to
+     * nothing, so it would have traded one set of misses for another. Deleting
+     * the gate is the smaller and the correct change.
+     */
 
-      // Check if it's a variable/identifier that might be a DOM element
-      if (obj.type === 'Identifier') {
-        const name = obj.name;
-        // Common DOM element variable names
-        if (name.match(/^(element|el|div|span|node|ref|dom|elem)$/i)) {
-          return true;
-        }
-        // Variables that end with common DOM suffixes
-        if (name.match(/(Element|Node|Ref)$/)) {
-          return true;
-        }
-      }
-
-      // Check for DOM method calls like document.querySelector, getElementById, etc.
-      if (
-        obj.type === 'CallExpression' &&
-        obj.callee.type === 'MemberExpression'
-      ) {
-        const methodName = (obj.callee.property as TSESTree.Identifier)?.name;
-        if (
-          methodName &&
-          [
-            'querySelector',
-            'querySelectorAll',
-            'getElementById',
-            'getElementsByClassName',
-            'getElementsByTagName',
-            'createElement',
-          ].includes(methodName)
-        ) {
-          return true;
-        }
-      }
-
-      // Check for property access on known DOM objects
-      if (obj.type === 'MemberExpression') {
-        const propName = (obj.property as TSESTree.Identifier)?.name;
-        if (
-          propName &&
-          [
-            'current',
-            'children',
-            'childNodes',
-            'parentNode',
-            'element',
-          ].includes(propName)
-        ) {
-          return true;
-        }
-      }
-
-      // NOTE: a dedicated `this.element` check used to live here, but it was
-      // unreachable: any `<obj>.element.innerText` access (including
-      // `this.element.innerText`) is already accepted by the known-DOM-object
-      // property list above ('element' is in that list).
-      return false;
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
     function isInnerTextAccess(node: TSESTree.MemberExpression): boolean {
       // Check if this is accessing .innerText property
       if (
@@ -139,7 +101,6 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         if (
           isInnerTextAccess(node) &&
-          isLikelyDomElement(node) &&
           !isInAllowedContext()
         ) {
           context.report({
