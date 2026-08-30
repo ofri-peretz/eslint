@@ -64,6 +64,28 @@ const ARTIFACTS: Artifact[] = [
     refreshCmd: 'Update lastValidated after the next ilb:flagship run',
   },
   {
+    /*
+     * The artifact that produced a false product-quality conclusion.
+     *
+     * It records which rules fire on 345,841 files of third-party code, and
+     * "scanned and never fired" is the strongest negative claim the ledger
+     * makes about a rule. It was absent from this list, went stale, and read
+     * as "270 of 470 rules never catch anything" — seven whole plugins that
+     * had simply never been run.
+     *
+     * Date staleness is only half the guard. The scan also records the hash of
+     * the ESLint config it ran with, and `rule-case-ledger.ts` refuses to
+     * print the silence count when that hash does not match the config on
+     * disk — because the file that misled everyone was NOT out of date. It
+     * carried the right date and the wrong instrument.
+     */
+    label: 'Real-source rule inventory',
+    path: 'benchmarks/budgets/real-world-rule-inventory.json',
+    anchorKey: 'generated',
+    ttlDays: 45,
+    refreshCmd: 'npx tsx scripts/real-source-scan.mts',
+  },
+  {
     label: 'Peer-plugin health snapshot',
     path: 'benchmark-results/peer-health.json',
     anchorKey: 'generatedAt',

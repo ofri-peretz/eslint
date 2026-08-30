@@ -385,6 +385,31 @@ rather than in someone's memory.
 | Sun 10:00   | `oxlint-parity`      | engine portability                  | ✅   | —      |
 | Monthly     | `resource-profile`   | memory, cold start                  | ✅   | ✅     |
 
+### What the cadence does not cover
+
+The table above is what runs. It is not the same as what stays fresh.
+`check:audit-freshness` gives eleven artifacts a TTL, and **six of them have
+nothing that regenerates them at all** — no workflow, scheduled or otherwise:
+
+| Artifact              |  Age | Refresh command           | Scheduled? |
+| --------------------- | ---: | ------------------------- | ---------- |
+| Peer leaderboard      | 112d | `ilb:leaderboard-publish` | no         |
+| CWE coverage report   | 112d | `docs:cwe-coverage`       | no         |
+| Federated wild-corpus | 112d | `ilb:federated-aggregate` | no         |
+| Stock-corpus overlap  | 108d | `audit:stock-overlap`     | no         |
+| Compliance crosswalk  | 112d | `ilb:mappings-report`     | no         |
+| ISO 25010 crosswalk   | 112d | `ilb:iso25010-report`     | no         |
+
+The last two report **fresh** — they carry a 180-day TTL, so they are 112 days
+into a clock nothing can reset. Counting stale artifacts would have missed them
+for another two months; asking "what refreshes this?" found them immediately.
+
+A TTL with no refresher does not produce freshness. It produces a gate that
+goes red and stays red, and a permanently red gate is one everybody learns to
+scroll past — worse than not tracking the artifact, because the staleness is
+now both real and ignored. `freshness-has-a-refresher.test.ts` freezes the six
+and fails on a seventh.
+
 `peer-health` was the hole. It ran every Monday for eighteen months across
 seventeen neighbours and **none of our own packages** — so it could say how
 everyone else was doing and nothing about us, and no artifact anywhere put the
