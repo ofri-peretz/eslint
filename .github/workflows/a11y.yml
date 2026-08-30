@@ -25,6 +25,15 @@ on:
       - '.github/workflows/a11y.yml'
   push:
     branches: [main]
+    # Same paths as the PR trigger above. Without them every merge ran a full
+    # axe scan — including merges that touched only scripts, workflows or
+    # plugin source, none of which can change a rendered page. The PR trigger
+    # was already filtered; this one was not, which is where most of the 17
+    # runs in a 24h sample came from.
+    paths:
+      - 'apps/docs/**'
+      - 'packages/ui/**'
+      - '.github/workflows/a11y.yml'
   workflow_dispatch:
 
 concurrency:
@@ -71,6 +80,12 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           playwright-cache: "true"
+          # The docs production build below was 78s of a 202s run — the single
+          # largest step here — rebuilt from scratch every time. Task-hash
+          # addressing lets a run that did not change docs replay it instead.
+          # Not a publishing workflow, so the supply-chain rule holds.
+          turbo-cache: "false"
+          turbo-remote-cache: "true"
           next-cache: "true"
 
       - name: Install Playwright browsers
