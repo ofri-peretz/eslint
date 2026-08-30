@@ -110,3 +110,28 @@ If the build step goes from 159s to ~10s (a warm-cache hit), Detection Recall
 falls from 194s to roughly **40s**, and the whole fast loop lands at **~40s
 wall-clock** — the next slowest job is 36s. That single fix meets the target;
 everything else is refinement.
+
+---
+
+## Stage 6 — Maintain: measured after lever 1
+
+Lever 1 shipped 2026-08-30 (filter the recall build to the 10 corpus plugins).
+Before/after on the same workflow, same branch:
+
+|                          | before (run 33324089803) | after (run 33326404636) |
+| ------------------------ | ------------------------ | ----------------------- |
+| `quality.yml` wall-clock | **194s**                 | **87s**                 |
+| Detection Recall job     | 194s                     | 87s                     |
+| └ build step             | 159s                     | 59s                     |
+| └ recall gate            | 6s                       | 6s                      |
+| packages built           | 32                       | 11                      |
+| result                   | success                  | success                 |
+
+**55% off the wall-clock, no check removed.** The 2-minute bar is met; the
+60-second target is not. What remains is almost entirely the 59s build, which
+a warm cache turns into ~10s — that is lever 2, and it needs a `TURBO_TOKEN`.
+
+Next-slowest job is now 44s (`Workflow + CI Script Locks`), so after lever 2
+the floor moves there rather than to Detection Recall. Lever 3 (consolidating
+static jobs) would RAISE that floor to ~90s and is therefore off the table
+while the target is 60s — recorded so it is not re-proposed.
