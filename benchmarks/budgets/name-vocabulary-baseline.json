@@ -10,7 +10,6 @@
     "node-security/no-env-injection",
     "node-security/no-unsafe-buffer-alloc",
     "secure-coding/detect-weak-password-validation",
-    "secure-coding/no-unsafe-regex-construction",
     "secure-coding/no-xpath-injection"
   ]
 }

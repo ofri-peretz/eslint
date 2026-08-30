@@ -36,6 +36,15 @@ type MessageIds = 'unsafeRegexConstruction' | 'escapeUserInput';
  * user to fix code that is already correct, and the only remedy on offer is
  * the escape they already applied.
  */
+/**
+ * @vocabulary `RegExp`, `RegExp.escape` and `source` are ECMAScript, and
+ * `process.argv` is Node's. Those are hardcoded deliberately: a project cannot
+ * rename them, and an option for them would never be set. The request root
+ * names below are the opposite case and are behind `requestRootNames`.
+ *
+ * @see https://tc39.es/ecma262/#sec-regexp-regular-expression-objects
+ * @see https://nodejs.org/api/process.html#processargv
+ */
 const DEFAULT_TRUSTED_ESCAPING_FUNCTIONS = [
   'escapeRegex',
   'escapeRegExp',
@@ -76,6 +85,19 @@ export interface Options {
 
   /** Maximum pattern length for dynamic regex. Default: 100 */
   maxPatternLength?: number;
+
+  /**
+   * Identifier names that SELECT a candidate inbound request. REPLACES the
+   * default.
+   *
+   * The name does not decide anything on its own — `isInboundRequestBinding`
+   * still requires the binding to be a handler parameter or a free variable,
+   * so a module-local `const request = Object.freeze({...})` is not a request
+   * whatever it is called. But the name is what puts a candidate forward, and
+   * a handler written `(inbound, outbound)` or `(payload)` never gets that
+   * far. Those words are the consumer's.
+   */
+  requestRootNames?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -104,6 +126,7 @@ type RuleOptions = [Options?];
 function taintSource(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
+  requestRoots: ReadonlySet<string>,
   depth = 0,
 ): string | null {
   if (depth > 6) return null;
@@ -116,11 +139,12 @@ function taintSource(
   // all on TypeScript Express code — the majority of its audience — while
   // passing every test, because no test in this suite was written with a cast.
   const unwrapped = unwrapTypeSyntax(node);
-  if (unwrapped !== node) return taintSource(unwrapped, scope, depth + 1);
+  if (unwrapped !== node)
+    return taintSource(unwrapped, scope, requestRoots, depth + 1);
 
   if (node.type === 'TemplateLiteral') {
     for (const expression of node.expressions) {
-      const found = taintSource(expression, scope, depth + 1);
+      const found = taintSource(expression, scope, requestRoots, depth + 1);
       if (found !== null) return found;
     }
     return null;
@@ -128,13 +152,13 @@ function taintSource(
 
   if (node.type === 'BinaryExpression' && node.operator === '+') {
     return (
-      taintSource(node.left as TSESTree.Node, scope, depth + 1) ??
-      taintSource(node.right, scope, depth + 1)
+      taintSource(node.left as TSESTree.Node, scope, requestRoots, depth + 1) ??
+      taintSource(node.right, scope, requestRoots, depth + 1)
     );
   }
 
   if (node.type === 'AwaitExpression') {
-    return taintSource(node.argument, scope, depth + 1);
+    return taintSource(node.argument, scope, requestRoots, depth + 1);
   }
 
   if (node.type === 'MemberExpression') {
@@ -148,7 +172,7 @@ function taintSource(
     }
     if (root.type === 'Identifier') {
       if (
-        REQUEST_ROOTS.has(root.name) &&
+        requestRoots.has(root.name) &&
         properties.some((p) => REQUEST_PROPERTIES.has(p)) &&
         isInboundRequestBinding(root, scope)
       ) {
@@ -177,7 +201,7 @@ function taintSource(
     }
     for (const arg of node.arguments) {
       if (arg.type === 'SpreadElement') continue;
-      const found = taintSource(arg, scope, depth + 1);
+      const found = taintSource(arg, scope, requestRoots, depth + 1);
       if (found !== null) return found;
     }
     return null;
@@ -203,7 +227,12 @@ function taintSource(
     if (!variable) return null;
     for (const reference of variable.references) {
       if (!reference.isWrite() || !reference.writeExpr) continue;
-      const found = taintSource(reference.writeExpr, scope, depth + 1);
+      const found = taintSource(
+        reference.writeExpr,
+        scope,
+        requestRoots,
+        depth + 1,
+      );
       if (found !== null) return found;
     }
     return null;
@@ -256,14 +285,21 @@ function lookupVariable(
   return undefined;
 }
 
-/** Identifier roots that denote an inbound request. */
-const REQUEST_ROOTS: ReadonlySet<string> = new Set([
+/**
+ * Identifier roots that denote an inbound request.
+ *
+ * A guess at the consumer's parameter names, and replaceable for that reason —
+ * see `requestRootNames`. Nothing publishes these: Express, Koa and Lambda all
+ * take their request POSITIONALLY, so `(inbound, outbound)` is as valid as
+ * `(req, res)` and matched none of this.
+ */
+const DEFAULT_REQUEST_ROOT_NAMES = [
   'req',
   'request',
   'ctx',
   'event',
   'message',
-]);
+];
 
 /** Properties of a request that carry caller-supplied data. */
 const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
@@ -531,6 +567,7 @@ function extractPattern(
   sourceCode: TSESLint.SourceCode,
   trustedFunctions: string[],
   scope: TSESLint.Scope.Scope,
+  requestRoots: ReadonlySet<string>,
 ): {
   patternNode: TSESTree.Node | null;
   isUserInput: boolean;
@@ -548,7 +585,7 @@ function extractPattern(
     };
   }
 
-  const taintedBy = taintSource(patternNode, scope);
+  const taintedBy = taintSource(patternNode, scope, requestRoots);
   const isUserInputValue = taintedBy !== null;
   // Default trusted functions + user configured ones.
   //
@@ -613,6 +650,13 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          requestRootNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_REQUEST_ROOT_NAMES],
+            description:
+              'Identifier names that select a candidate inbound request. Replaces the default.',
+          },
           allowLiterals: {
             type: 'boolean',
             default: true,
@@ -656,6 +700,9 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     }: Options = options;
 
     const sourceCode = context.sourceCode;
+    const requestRoots = new Set(
+      options.requestRootNames ?? DEFAULT_REQUEST_ROOT_NAMES,
+    );
 
     /**
      * Check RegExp constructor calls
@@ -683,6 +730,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         sourceCode,
         trustedEscapingFunctions,
         sourceCode.getScope(node),
+        requestRoots,
       );
 
       if (!patternNode) {
