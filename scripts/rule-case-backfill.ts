@@ -46,27 +46,48 @@ const root = process.cwd();
 const files: string[] = [];
 const walk = (d: string): void => {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-    if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue;
+    if (
+      e.name === 'node_modules' ||
+      e.name === 'dist' ||
+      e.name.startsWith('.')
+    )
+      continue;
     const f = path.join(d, e.name);
     if (e.isDirectory()) walk(f);
     else if (/\.(test|spec)\.tsx?$/.test(e.name)) files.push(f);
   }
 };
-for (const pkg of fs.readdirSync(path.join(root, 'packages')).filter((d) => d.startsWith('eslint-plugin-'))) {
+for (const pkg of fs
+  .readdirSync(path.join(root, 'packages'))
+  .filter((d) => d.startsWith('eslint-plugin-'))) {
   if (SHOW !== null && pkg !== `eslint-plugin-${SHOW}`) continue;
   const src = path.join(root, 'packages', pkg, 'src');
   if (fs.existsSync(src)) walk(src);
 }
 
-const text = (n: ts.Node): string | null => (ts.isStringLiteralLike(n) ? n.text : null);
+const text = (n: ts.Node): string | null =>
+  ts.isStringLiteralLike(n) ? n.text : null;
 const arrayIn = (n: ts.Expression): ts.ArrayLiteralExpression | null => {
   let f: ts.ArrayLiteralExpression | null = null;
-  const dig = (x: ts.Node): void => { if (f) return; if (ts.isArrayLiteralExpression(x)) { f = x; return; } ts.forEachChild(x, dig); };
-  dig(n); return f;
+  const dig = (x: ts.Node): void => {
+    if (f) return;
+    if (ts.isArrayLiteralExpression(x)) {
+      f = x;
+      return;
+    }
+    ts.forEachChild(x, dig);
+  };
+  dig(n);
+  return f;
 };
 const hasName = (el: ts.Node): boolean =>
   ts.isObjectLiteralExpression(el) &&
-  el.properties.some((p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === 'name');
+  el.properties.some(
+    (p) =>
+      ts.isPropertyAssignment(p) &&
+      ts.isIdentifier(p.name) &&
+      p.name.text === 'name',
+  );
 
 const ruleOfImport = (from: string, spec: string): string | null => {
   if (!spec.startsWith('.')) return null;
@@ -74,7 +95,9 @@ const ruleOfImport = (from: string, spec: string): string | null => {
   const marker = `${path.sep}src${path.sep}rules${path.sep}`;
   const at = resolved.indexOf(marker);
   if (at === -1) return null;
-  const pkg = path.basename(resolved.slice(0, resolved.indexOf(`${path.sep}src${path.sep}`)));
+  const pkg = path.basename(
+    resolved.slice(0, resolved.indexOf(`${path.sep}src${path.sep}`)),
+  );
   if (!pkg.startsWith('eslint-plugin-')) return null;
   return `${pkg.replace('eslint-plugin-', '')}/${path.basename(resolved.replace(/\/index$/, ''))}`;
 };
@@ -82,7 +105,7 @@ const ruleOfImport = (from: string, spec: string): string | null => {
 const done = new Set<string>();
 for (const file of files) {
   let source = fs.readFileSync(file, 'utf8');
-  let src = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+  const src = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
   const byBinding = new Map<string, string>();
   for (const st of src.statements) {
     if (!ts.isImportDeclaration(st) || !st.importClause) continue;
@@ -91,31 +114,54 @@ for (const file of files) {
     const rule = ruleOfImport(file, spec);
     if (rule === null) continue;
     const b = st.importClause.namedBindings;
-    if (b && ts.isNamedImports(b)) for (const e of b.elements) byBinding.set(e.name.text, rule);
+    if (b && ts.isNamedImports(b))
+      for (const e of b.elements) byBinding.set(e.name.text, rule);
     if (st.importClause.name) byBinding.set(st.importClause.name.text, rule);
   }
 
   type Edit = { pos: number; insert: string };
   const edits: Edit[] = [];
   const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'run' && node.arguments.length >= 3) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === 'run' &&
+      node.arguments.length >= 3
+    ) {
       const target = node.arguments[1];
-      const rule = ts.isIdentifier(target) ? byBinding.get(target.text) : undefined;
+      const rule = ts.isIdentifier(target)
+        ? byBinding.get(target.text)
+        : undefined;
       const cfg = node.arguments[2];
       const wanted =
-        rule === undefined ? undefined : OWN ? `${rule.split('/')[1]}.test.ts` : table[rule]?.file;
+        rule === undefined
+          ? undefined
+          : OWN
+            ? `${rule.split('/')[1]}.test.ts`
+            : table[rule]?.file;
       const fileOk = wanted === undefined || file.includes(wanted);
-      const wanting = rule !== undefined && (SHOW !== null || table[rule] !== undefined);
+      const wanting =
+        rule !== undefined && (SHOW !== null || table[rule] !== undefined);
       if (wanting && fileOk && ts.isObjectLiteralExpression(cfg)) {
         for (const p of cfg.properties) {
           if (!ts.isPropertyAssignment(p) || !ts.isIdentifier(p.name)) continue;
-          const kind = p.name.text === 'invalid' ? 'tp' : p.name.text === 'valid' ? 'tn' : null;
+          const kind =
+            p.name.text === 'invalid'
+              ? 'tp'
+              : p.name.text === 'valid'
+                ? 'tn'
+                : null;
           if (kind === null) continue;
           const label = SHOW === null ? table[rule][kind] : '';
           if (label === undefined || done.has(`${rule}:${kind}`)) continue;
           const arr = arrayIn(p.initializer);
           if (arr === null) continue;
-          const first = arr.elements.find((e) => !ts.isSpreadElement(e) && ts.isObjectLiteralExpression(e) && !hasName(e));
+          const first = arr.elements.find(
+            (e) =>
+              !ts.isSpreadElement(e) &&
+              ts.isObjectLiteralExpression(e) &&
+              !hasName(e),
+          );
           if (first === undefined) continue;
           if (SHOW !== null) {
             done.add(`${rule}:${kind}`);
@@ -123,7 +169,9 @@ for (const file of files) {
               .filter(ts.isPropertyAssignment)
               .find((x) => ts.isIdentifier(x.name) && x.name.text === 'code');
             console.log(`${rule} ${kind}  ${path.relative(root, file)}`);
-            console.log(`  ${code?.initializer.getText().replace(/\s+/g, ' ').slice(0, 150) ?? '(no code)'}`);
+            console.log(
+              `  ${code?.initializer.getText().replace(/\s+/g, ' ').slice(0, 150) ?? '(no code)'}`,
+            );
             continue;
           }
           // Match the indentation of the property that follows, and quote the
@@ -132,10 +180,16 @@ for (const file of files) {
           // else in it too — 56 unrelated test files churned that way once.
           const object = first as ts.ObjectLiteralExpression;
           const anchor = object.properties[0];
-          const quoted = label.includes("'") ? JSON.stringify(label) : `'${label}'`;
-          const openLine = src.getLineAndCharacterOfPosition(object.getStart()).line;
+          const quoted = label.includes("'")
+            ? JSON.stringify(label)
+            : `'${label}'`;
+          const openLine = src.getLineAndCharacterOfPosition(
+            object.getStart(),
+          ).line;
           const firstLine =
-            anchor === undefined ? openLine : src.getLineAndCharacterOfPosition(anchor.getStart()).line;
+            anchor === undefined
+              ? openLine
+              : src.getLineAndCharacterOfPosition(anchor.getStart()).line;
           const insert =
             openLine === firstLine
               ? ` name: ${quoted},`
@@ -149,7 +203,9 @@ for (const file of files) {
           const landed = (first as ts.ObjectLiteralExpression).properties
             .filter(ts.isPropertyAssignment)
             .find((x) => ts.isIdentifier(x.name) && x.name.text === 'code');
-          console.log(`    ${rule} ${kind}: ${label}\n      ↳ ${landed?.initializer.getText().replace(/\s+/g, ' ').slice(0, 110) ?? '(no code)'}`);
+          console.log(
+            `    ${rule} ${kind}: ${label}\n      ↳ ${landed?.initializer.getText().replace(/\s+/g, ' ').slice(0, 110) ?? '(no code)'}`,
+          );
         }
       }
     }
@@ -157,12 +213,16 @@ for (const file of files) {
   };
   visit(src);
   if (edits.length === 0) continue;
-  for (const e of edits.sort((a, b) => b.pos - a.pos)) source = source.slice(0, e.pos) + e.insert + source.slice(e.pos);
+  for (const e of edits.sort((a, b) => b.pos - a.pos))
+    source = source.slice(0, e.pos) + e.insert + source.slice(e.pos);
   fs.writeFileSync(file, source);
   console.log(`  ${edits.length} name(s) → ${path.relative(root, file)}`);
 }
 if (SHOW !== null) process.exit(0);
 const missed = Object.entries(table).flatMap(([r, v]) =>
-  (['tp', 'tn'] as const).filter((k) => v[k] !== undefined && !done.has(`${r}:${k}`)).map((k) => `${r}:${k}`),
+  (['tp', 'tn'] as const)
+    .filter((k) => v[k] !== undefined && !done.has(`${r}:${k}`))
+    .map((k) => `${r}:${k}`),
 );
-if (missed.length > 0) console.log(`\n  NOT APPLIED (no unnamed object case): ${missed.join(', ')}`);
+if (missed.length > 0)
+  console.log(`\n  NOT APPLIED (no unnamed object case): ${missed.join(', ')}`);

@@ -154,3 +154,9 @@ const isData = (u) => u.startsWith('data:');
 - [CWE-601: URL Redirection to Untrusted Site](https://cwe.mitre.org/data/definitions/601.html)
 - [OWASP: Unvalidated Redirects and Forwards](https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards)
 - [WHATWG URL Standard](https://url.spec.whatwg.org/)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `urlNameWords` | `string[]` | `["url","uri","href","host","origin","domain","referer","referrer","endpoint","link"]` | Substrings that say a value is a URL, host or origin, matched case-insensitively. Replaces the default. |
