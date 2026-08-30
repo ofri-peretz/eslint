@@ -62,3 +62,62 @@ read structurally rather than from a list.
 - `npm run check:name-vocabulary` stays at 0 and the probe's structural share
   rises from 85%.
 - The new figure replaces 85% in `AI_SDLC.md`.
+
+## Outcome — 2026-08-30, and a corrected target
+
+**The target in this intent was wrong.** "Rules failing the rename litmus:
+57 → under 25" counted sanctioned name-dependence as debt.
+`no-hardcoded-credentials` reads names and exposes `credentialWords`, which is
+the approved form — it is in the probe's list and always will be. Driving that
+number down would mean deleting legitimate behaviour.
+
+What measuring found instead was an instrument defect. `check:name-vocabulary`
+chose which rules to inspect with:
+
+```ts
+if (!NAME_HELPERS.some((helper) => text.includes(helper))) continue;
+```
+
+`NAME_HELPERS` is `['makeNameTest', 'identifierWords']`. Of the 25 most
+name-dependent rules in the suite, **three import those helpers and 22 do
+not** — so the gate skipped nearly everything it existed to check. Its reported
+**0** meant "no rule _using the helpers_ lacks a replaceable vocabulary", which
+reads like a far stronger claim than it is.
+
+A second static pattern would not have fixed it: `check:key-vocabulary` already
+covers inline property-name lists, and an open-coded `n === 'secret'` can be
+written a dozen ways. So the gate now reads the PROBE, which settles the
+question by experiment rather than by pattern — the litmus this intent is named
+after.
+
+The probe commits `benchmarks/budgets/name-dependence.json` with the hash of
+the script that produced it, and the gate refuses to report when that hash does
+not match. That lesson came from `real-world-rule-inventory.json`, which sat
+with the right date and the wrong instrument for four days while "270 rules
+never fire" was quoted as fact.
+
+**Corrected numbers.** Rules the probe finds name-dependent: **56**. Of those,
+**24** expose a replaceable vocabulary or cite an authority; **32** do neither.
+The gate went **0 → 32 offenders**, baselined shrink-only. That is not a
+regression — it is the first honest reading.
+
+**Corrected target: 32 → 0.** Each rule gets a replaceable option or a
+`@vocabulary` citation. Draining it is the remaining work; the ratchet now makes
+a 33rd impossible.
+
+Two limitations are stated in the script header rather than hidden. The gate
+asks "does this rule expose SOME replaceable vocabulary", not "one for the
+vocabulary it actually decided from" — found by sabotage, where renaming
+`credentialWords` out of `no-hardcoded-credentials` left it compliant because
+`placeholderWords` still matched. And one `@vocabulary` comment exempts a whole
+file. Closing either needs a map from option to governed names, which is a
+dataflow question. The gate is a floor, not a certificate.
+
+One more vacuous pass fell out of this. `freshness-has-a-refresher.test.ts`
+reduced an `npx tsx scripts/x.mts` refresh command to the literal string
+`"npx"`, which every workflow file contains — so every npx-shaped refresher
+passed without anything running it. Fixing the extraction immediately exposed
+two: the new probe artifact, and `real-source-scan.mts`, which I had added to
+the freshness gate earlier the same day. The probe now runs in the monthly
+refresh workflow; the corpus scan is baselined with its reason, because cloning
+112 repositories is not a cron job.

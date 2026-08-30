@@ -1,4 +1,37 @@
 {
   "note": "Rules that decide from an identifier name with no option to REPLACE the vocabulary. Shrink-only.",
-  "rules": []
+  "rules": [
+    "browser-security/no-incomplete-url-sanitization",
+    "browser-security/no-insecure-redirects",
+    "browser-security/no-sensitive-indexeddb",
+    "browser-security/require-csp-headers",
+    "express-security/no-error-details-in-response",
+    "express-security/no-permissive-trust-proxy",
+    "express-security/no-static-root-exposure",
+    "express-security/no-user-controlled-render-locals",
+    "express-security/require-helmet",
+    "express-security/require-rate-limiting",
+    "express-security/require-route-authentication",
+    "import-next/no-deprecated",
+    "import-next/no-mutable-exports",
+    "lambda-security/no-overly-permissive-iam-policy",
+    "lambda-security/no-unbounded-batch-processing",
+    "lambda-security/no-unvalidated-event-body",
+    "lambda-security/require-timeout-handling",
+    "nestjs-security/no-permissive-cors",
+    "node-security/no-arbitrary-file-access",
+    "node-security/no-cryptojs",
+    "node-security/no-env-injection",
+    "node-security/no-ssrf",
+    "node-security/no-unsafe-buffer-alloc",
+    "react-features/jsx-key",
+    "react-features/no-is-mounted",
+    "react-features/no-wrapper-sub-component",
+    "secure-coding/detect-weak-password-validation",
+    "secure-coding/no-graphql-injection",
+    "secure-coding/no-hardcoded-session-tokens",
+    "secure-coding/no-homoglyph-identifiers",
+    "secure-coding/no-unsafe-regex-construction",
+    "secure-coding/no-xpath-injection"
+  ]
 }

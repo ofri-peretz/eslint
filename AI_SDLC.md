@@ -33,14 +33,14 @@ Two questions this answers:
 
 ## The six stages
 
-| #   | Stage        | Artifact it owes                                                | Enforced by                                                      | Number that moves                            |
-| --- | ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------- |
-| 1   | **Plan**     | An `intent/` file — what is wanted, why, under which constraint | `check:intent`                                                   | undeclared packages (must be 0)              |
-| 2   | **Design**   | A **case** in `benchmarks/cases/registry.json` that FAILS       | `check:case-registry`, `check:new-rule-cases`                    | verified cases (grow-only)                   |
-| 3   | **Build**    | Rule using devkit spellings, not open-coded reads               | `check:spellings`, `check:key-vocabulary`, `lint:name-inference` | spelling debt (shrink-only)                  |
-| 4   | **Test**     | A sealed case per fixed FP/FN; ≥3 classified cases a side       | `check:rule-cases`, `check:per-rule-budget`                      | sealed FP+FN (grow), floor breaches (shrink) |
-| 5   | **Deploy**   | A changeset naming **every** package whose behaviour changed    | `check-changeset-coverage`                                       | uncovered packages (must be 0)               |
-| 6   | **Maintain** | A dated receipt under `benchmark-results/`                      | `check:audit-freshness`                                          | scorecard (grow-only)                        |
+| #   | Stage        | Artifact it owes                                                     | Enforced by                                                        | Number that moves                            |
+| --- | ------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------- |
+| 1   | **Plan**     | A `docs/intents/` file — what is wanted, why, under which constraint | `check:intent`                                                     | undeclared packages (must be 0)              |
+| 2   | **Design**   | A **case** in `benchmarks/cases/registry.json` that FAILS            | `check:case-registry`, `check:new-rule-cases`                      | verified cases (grow-only)                   |
+| 3   | **Build**    | Rule using devkit spellings, not open-coded reads                    | `check:spellings`, `check:key-vocabulary`, `check:name-vocabulary` | spelling debt (shrink-only)                  |
+| 4   | **Test**     | A sealed case per fixed FP/FN; ≥3 classified cases a side            | `check:rule-cases`, `check:per-rule-budget`                        | sealed FP+FN (grow), floor breaches (shrink) |
+| 5   | **Deploy**   | A changeset naming **every** package whose behaviour changed         | `check-changeset-coverage`                                         | uncovered packages (must be 0)               |
+| 6   | **Maintain** | A dated receipt under `benchmark-results/`                           | `check:audit-freshness`                                            | scorecard (grow-only)                        |
 
 ### 1 — Plan
 
@@ -53,7 +53,7 @@ on `no-zip-slip`, notices something in `no-ssrf`, and eleven plugins later
 nobody can say whether the result is the work that was asked for. A declared
 blast radius turns that from a feeling into a diff.
 
-`intent/<date>-<slug>.md` declares `packages:`, `cases:`, and four prose
+`docs/intents/<date>-<slug>.md` declares `packages:`, `cases:`, and four prose
 sections. `check:intent` refuses four things a stub cannot fake:
 
 1. An intent file was **added** on this branch, when the diff changes
@@ -72,7 +72,7 @@ with nothing to show for it.
 
 > This document declared Stage 1 a `(gap)` on 2026-08-30 and the branch it was
 > written on had run for five days with no intent file. That omission is what
-> produced the directory. `intent/2026-08-26-precision-ratchet.md` is marked as
+> produced the directory. `docs/intents/2026-08-26-precision-ratchet.md` is marked as
 > a reconstruction rather than backdated, because an intent file that pretends
 > to have come first makes the gate look satisfied and teaches nobody anything.
 
@@ -133,6 +133,32 @@ question found **1,156 sites** where a rule saw `'foo'` but not `` `foo` ``, or
 `propertyName`, `objectKeyName`, `memberPath`, `readsRequestShape` — and
 `check:spellings` refuses a **new** open-coded read while holding the existing
 841 as frozen debt.
+
+#### The vocabulary gate was nearly blind
+
+`check:name-vocabulary` asks whether a rule that decides from an identifier
+NAME lets the consumer replace the vocabulary. It reported **0** — and it chose
+which rules to look at by grepping each file for `makeNameTest` or
+`identifierWords`. Of the 25 most name-dependent rules in the suite, **three
+import those helpers and 22 do not**, so its `0` meant "no rule using the
+helpers lacks an option", not "no rule lacks one".
+
+A second static pattern would not have fixed it. It now reads the **rename
+probe** instead: `scripts/name-dependence-probe.mts` renames every local
+binding to `foo1, foo2, …` and re-runs the suites, so a rule whose verdict
+changes decided from a name. That is the litmus in `CASE_PHILOSOPHY.md`,
+settled by experiment rather than by pattern.
+
+The probe takes minutes, so it commits `benchmarks/budgets/name-dependence.json`
+with the hash of the script that produced it, and the gate refuses to report
+when that hash does not match — the lesson from the real-source inventory,
+which sat with the right date and the wrong instrument for four days.
+
+First honest reading: **56 rules decide from a name. 24 expose a replaceable
+option or cite an authority. 32 do neither**, and are baselined shrink-only.
+The gate is a floor, not a certificate — it asks whether a rule exposes SOME
+replaceable vocabulary, not one for the vocabulary it actually decided from.
+Both limitations are stated in the script header.
 
 Two rules bind what a rule is allowed to know:
 
@@ -474,7 +500,7 @@ Honest list, ranked. These are the `(gap)` rows above.
 | 3   | No adoption scan — new repos with us in their lockfile                                                | The North Star is unmeasured                                                    | Open. Point the existing ~28k-repo peer scan at our package names, weekly.                                                                                                                                                                                                                                       |
 | 4   | No activation metric                                                                                  | We cannot tell an install from a use                                            | Open. Emit a first-run event, or infer from docs `?from=cli`.                                                                                                                                                                                                                                                    |
 | 5   | The real-code inventory was stale, and nothing said so                                                | Seven plugins read as "never fires" when they were never run                    | **Half closed.** The scan records its config hash and the ledger refuses the number when it does not match. Re-running the 112-repo scan to get a true figure is still open.                                                                                                                                     |
-| 6   | Stage 1 had no artifact and no gate                                                                   | Intent lived in commit messages, unaddressable and uncheckable against the diff | **Closed.** `intent/` + `check:intent`, with a drift check that fails when work spreads past its declared radius. 12 lock assertions.                                                                                                                                                                            |
+| 6   | Stage 1 had no artifact and no gate                                                                   | Intent lived in commit messages, unaddressable and uncheckable against the diff | **Closed.** `docs/intents/` + `check:intent`, with a drift check that fails when work spreads past its declared radius. 12 lock assertions.                                                                                                                                                                      |
 | 7   | 14,935 undescribed cases                                                                              | A test that does not state its claim cannot be reviewed                         | Open. Ratchet down, as with spellings — refuse new undescribed cases.                                                                                                                                                                                                                                            |
 
 ---

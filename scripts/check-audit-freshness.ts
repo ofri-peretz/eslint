@@ -86,6 +86,25 @@ const ARTIFACTS: Artifact[] = [
     refreshCmd: 'npx tsx scripts/real-source-scan.mts',
   },
   {
+    /*
+     * The rename litmus, mechanised. `check:name-vocabulary` reads this rather
+     * than running the probe, because renaming every binding in the suite and
+     * re-running it takes minutes — not a per-PR cost. That makes the artifact
+     * load-bearing, and a load-bearing artifact with no clock is how the
+     * real-source inventory went four days stale while being quoted as fact.
+     *
+     * The gate also refuses to report when the recorded probe hash does not
+     * match the script on disk, so a stale-by-CONTENT artifact is caught
+     * immediately. This TTL catches the other kind: an artifact that is still
+     * from the current probe but no longer from the current rule set.
+     */
+    label: 'Name-dependence probe',
+    path: 'benchmarks/budgets/name-dependence.json',
+    anchorKey: 'generated',
+    ttlDays: 45,
+    refreshCmd: 'npx tsx scripts/name-dependence-probe.mts',
+  },
+  {
     label: 'Peer-plugin health snapshot',
     path: 'benchmark-results/peer-health.json',
     anchorKey: 'generatedAt',
@@ -172,7 +191,11 @@ function readJsonKey(obj: unknown, dotKey: string): unknown {
   return cur;
 }
 
-export function checkArtifact(a: Artifact, repoRoot = REPO_ROOT, now = Date.now()): FreshnessRow {
+export function checkArtifact(
+  a: Artifact,
+  repoRoot = REPO_ROOT,
+  now = Date.now(),
+): FreshnessRow {
   const full = path.join(repoRoot, a.path);
   if (!fs.existsSync(full)) {
     return {
@@ -218,7 +241,8 @@ export function checkArtifact(a: Artifact, repoRoot = REPO_ROOT, now = Date.now(
   return {
     label: a.label,
     path: a.path,
-    anchor: anchorStr ?? `(mtime: ${new Date(anchorMs).toISOString().slice(0, 10)})`,
+    anchor:
+      anchorStr ?? `(mtime: ${new Date(anchorMs).toISOString().slice(0, 10)})`,
     ageDays,
     ttlDays: a.ttlDays,
     status: ageDays > a.ttlDays ? 'stale' : 'fresh',
@@ -242,7 +266,9 @@ function main() {
     );
   }
 
-  const stale = rows.filter((r) => r.status === 'stale' || r.status === 'no-anchor');
+  const stale = rows.filter(
+    (r) => r.status === 'stale' || r.status === 'no-anchor',
+  );
   if (stale.length > 0) {
     // eslint-disable-next-line no-console
     console.error('\nStale or invalid artifacts:');

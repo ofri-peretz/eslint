@@ -56,6 +56,13 @@ const UNREFRESHED: ReadonlySet<string> = new Set([
   // a schedule, which costs more than the artifact is worth today. It keeps
   // its TTL so the staleness stays visible rather than being declared fine.
   'npm run audit:stock-overlap',
+  // Clones 112 third-party repositories and lints 345,841 files. Hours of
+  // runner time and tens of gigabytes; the artifact is worth refreshing a few
+  // times a year, by hand, not on a cron. Its TTL stays so the age is visible,
+  // and `rule-case-ledger.ts` separately refuses to print a number from it when
+  // the config hash does not match — which catches the failure that actually
+  // happened.
+  'npx tsx scripts/real-source-scan.mts',
 ]);
 /** Every `refreshCmd` the freshness gate advertises. */
 function refreshCommands(): string[] {
@@ -90,7 +97,15 @@ describe('a TTL implies something that refreshes it', () => {
       // ("Update lastValidated after…") are not automatable by definition.
       .filter((cmd) => cmd.startsWith('npm run ') || cmd.startsWith('npx '))
       .filter((cmd) => {
-        const script = cmd.replace(/^npm run /, '').split(' ')[0];
+        // `npm run x` -> "x"; `npx tsx scripts/x.mts` -> "scripts/x.mts".
+        //
+        // Taking `split(' ')[0]` for both meant an npx command reduced to the
+        // literal string "npx", which every workflow file contains — so every
+        // `npx`-shaped refresher passed this check without anything running it.
+        // Found the first time a row used one.
+        const script = cmd.startsWith('npx ')
+          ? (/(scripts\/[A-Za-z0-9._-]+)/.exec(cmd)?.[1] ?? cmd)
+          : cmd.replace(/^npm run /, '').split(' ')[0];
         return !workflows.includes(script);
       })
       .filter((cmd) => !UNREFRESHED.has(cmd));

@@ -61,12 +61,19 @@ jobs:
       - name: ISO 25010 crosswalk
         run: npm run ilb:iso25010-report
 
+      # Repo-local and offline: it renames every binding in the suite and re-runs
+      # the tests, which is minutes rather than the seconds the artifacts above
+      # take. It belongs on a schedule for exactly that reason —
+      # `check:name-vocabulary` READS its output and cannot run it per-PR.
+      - name: Name-dependence probe
+        run: npx tsx scripts/name-dependence-probe.mts
+
       - name: Commit whatever moved
         run: |
-          if [ -n "$(git status --porcelain benchmark-results/)" ]; then
+          if [ -n "$(git status --porcelain benchmark-results/ benchmarks/budgets/)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add benchmark-results/
+            git add benchmark-results/ benchmarks/budgets/
             git commit -m "chore(benchmarks): refresh the comparison artifacts
 
             Monthly regeneration of the leaderboard, CWE coverage, federated
