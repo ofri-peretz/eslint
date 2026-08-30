@@ -133,12 +133,19 @@ describe('lazy rule barrel (built artifact)', () => {
     // pins the other half of the fix, that the probe writes with
     // `process.stdout.write` rather than `console.log`. On the unfixed probe
     // the child emits ANSI codes here and this parses to NaN.
+    //
+    // NO_COLOR is DELETED rather than left to the spread. Current Node lets
+    // FORCE_COLOR win and warns that it ignored NO_COLOR, so an inherited
+    // NO_COLOR would only add stderr noise — but the precedence has not always
+    // run that way, and on a Node where NO_COLOR wins this case would go quiet
+    // and pass against the unfixed probe. Deleting the key means the child is
+    // forced to colourise on every version, so the guard cannot self-disable.
+    const { NO_COLOR: _inherited, ...envWithoutNoColor } = process.env;
     const raw = execFileSync(process.execPath, ['-e', countProbe(FULLY_LAZY)], {
       encoding: 'utf8',
-      env: { ...process.env, FORCE_COLOR: '1' },
+      env: { ...envWithoutNoColor, FORCE_COLOR: '1' },
     }).trim();
 
     expect(raw).toMatch(/^\d+$/);
-    expect(Number.isNaN(Number(raw))).toBe(false);
   });
 });
