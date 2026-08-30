@@ -38,7 +38,7 @@ const DEFAULT_TEMP_PATHS = ['/tmp', '/var/tmp', 'temp/', '/temp'];
  * `appendFile*` (an audit trail) and `createWriteStream` (an archive being
  * assembled), and those bytes are just as readable by every local account.
  */
-const FS_WRITE_FUNCTIONS = [
+const FS_WRITE_FUNCTIONS = new Set([
   'writeFile',
   'writeFileSync',
   'appendFile',
@@ -49,7 +49,7 @@ const FS_WRITE_FUNCTIONS = [
   // parent first — so guarding only the fs spelling guards none of them.
   'outputFile',
   'outputFileSync',
-];
+]);
 
 /**
  * The mitigation, as an API rather than as a spelling.
@@ -58,7 +58,7 @@ const FS_WRITE_FUNCTIONS = [
  * create the directory 0700 — so `path.join(os.tmpdir(), 'ingest-')` handed to
  * one of them is not a predictable path, it is the fix. See `flowsIntoMkdtemp`.
  */
-const FS_MKDTEMP_FUNCTIONS = ['mkdtemp', 'mkdtempSync'];
+const FS_MKDTEMP_FUNCTIONS = new Set(['mkdtemp', 'mkdtempSync']);
 
 /** Drop-in `fs` replacements, so a rule that guards fs guards them too. */
 const FS_EQUIVALENTS = { 'fs-extra': 'fs', 'graceful-fs': 'fs' } as const;
@@ -346,7 +346,7 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
     /** `fs.writeFile(path, …)` and every other spelling of "bytes land here". */
     function isFsWriteCall(node: TSESTree.CallExpression): boolean {
       const fn = fsEntryPoint(node);
-      return fn !== undefined && FS_WRITE_FUNCTIONS.includes(fn);
+      return fn !== undefined && FS_WRITE_FUNCTIONS.has(fn);
     }
 
     /**
@@ -369,7 +369,7 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
         if (parent?.type !== AST_NODE_TYPES.CallExpression) return false;
         if (parent.arguments[0] !== reference.identifier) return false;
         const fn = fsEntryPoint(parent);
-        return fn !== undefined && FS_MKDTEMP_FUNCTIONS.includes(fn);
+        return fn !== undefined && FS_MKDTEMP_FUNCTIONS.has(fn);
       });
     }
 
