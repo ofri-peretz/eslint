@@ -49,6 +49,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readBaseline } from './lib/read-baseline.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -115,9 +116,7 @@ for (const file of ruleSources()) {
 
 const key = (s: Site): string => `${s.file}::${s.text}`;
 const current = sites.map(key).sort();
-const previous: string[] = fs.existsSync(BASELINE)
-  ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { sites: string[] }).sites
-  : [];
+const previous = readBaseline(BASELINE, 'sites');
 const known = new Set(previous);
 const added = sites.filter((s) => !known.has(key(s)));
 

@@ -44,6 +44,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Linter } from 'eslint';
 import * as tsparser from '@typescript-eslint/parser';
+import { readBaseline } from './lib/read-baseline.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -405,10 +406,7 @@ for (const v of unscoreable) {
  * while silently dropping an old one keeps the same total, and that is exactly
  * the regression this register exists to make impossible.
  */
-const previous: string[] = fs.existsSync(BASELINE)
-  ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { verified: string[] })
-      .verified
-  : [];
+const previous = readBaseline(BASELINE, 'verified');
 const lost = previous.filter((id) => !verified.includes(id));
 
 if (lost.length > 0) {

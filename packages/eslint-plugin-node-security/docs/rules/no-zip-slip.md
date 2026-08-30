@@ -99,6 +99,7 @@ const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);
 | `archiveFunctions` | `string[]` | `["extract","extractAll","extractAllTo","unzip","untar","extractArchive"]` | Archive extraction functions to check |
 | `pathValidationFunctions` | `string[]` | `["validatePath","sanitizePath","checkPath","safePath"]` | Path validation functions |
 | `safeLibraries` | `string[]` | `["yauzl","safe-archive-extract","tar-stream","unzipper"]` | Libraries with safe extraction |
+| `archiveEntryFields` | `string[]` | `["name","path","fileName","entryName","relativePath","filename","pathname"]` | Property names an archive entry exposes its path on. Replaces the default. |
 | `archiveModules` | `string[]` | `["adm-zip","unzipper","yauzl","yazl","tar","tar-fs","tar-stream","extract-zip","node-stream-zip","jszip","archiver","decompress","unzip-stream","zip-stream","gunzip-maybe","7zip-min","node-7z"]` | Module specifiers that mean this file works with archives |
 | `reportWithoutArchiveContext` | `boolean` | `false` | Report entry-name and traversal shapes in files with no archive. Restores the pre-inversion behaviour. |
 

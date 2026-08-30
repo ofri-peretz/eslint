@@ -30,7 +30,7 @@
  * Run from the repo root:
  *   npx vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/credential-fixture-shape.test.ts
  */
-import { execFileSync } from 'node:child_process';
+import { globSync, readFileSync } from 'node:fs';
 import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -82,31 +82,28 @@ const FIXTURE_PATTERN = `(${SCANNED_PREFIXES.join('|')})[A-Za-z0-9_-]{6,}`;
 /**
  * Every vendor-shaped literal in a rule test, as `file:line:literal`.
  *
- * Uses ripgrep rather than a TS parse on purpose: the point is to see the file
- * the way a scanner does — as bytes — not the way the compiler does. A literal
- * assembled from concatenated halves would pass a byte scan and pass this
- * check, and that is correct: push protection would not have flagged it either.
+ * Reads the files as TEXT rather than parsing them, because that is how a
+ * scanner sees them. A literal assembled from concatenated halves would pass a
+ * byte scan and pass this check, and that is correct — push protection would
+ * not have flagged it either.
+ *
+ * Deliberately no ripgrep: `rg` is not installed on a stock GitHub runner, and
+ * a lock that throws ENOENT in CI is worse than no lock.
  */
 function vendorShapedLiterals(): string[] {
-  const out = execFileSync(
-    'rg',
-    [
-      '--no-ignore-vcs',
-      '-g',
-      '!node_modules',
-      '-g',
-      '!dist',
-      '-g',
-      '**/src/**/*.test.ts',
-      '--no-heading',
-      '--line-number',
-      '-o',
-      FIXTURE_PATTERN,
-      'packages/',
-    ],
-    { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 },
-  );
-  return out.split('\n').filter(Boolean);
+  const pattern = new RegExp(FIXTURE_PATTERN, 'g');
+  const hits: string[] = [];
+
+  for (const file of globSync('packages/*/src/**/*.test.ts', { cwd: REPO_ROOT })) {
+    const text = readFileSync(path.join(REPO_ROOT, file), 'utf8');
+    text.split('\n').forEach((line, index) => {
+      for (const match of line.matchAll(pattern)) {
+        hits.push(`packages/${file.split(path.sep).slice(1).join('/')}:${index + 1}:${match[0]}`);
+      }
+    });
+  }
+
+  return hits;
 }
 
 describe('credential fixtures identify themselves as fixtures', () => {

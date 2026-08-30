@@ -155,7 +155,12 @@ function reports(rule: unknown, code: string): number | null {
  * silently truncates the table — the `import` + call shape is the common one.
  */
 const cell = (code: string): string =>
-  `\`${code.replace(/\n/g, ' ').replace(/\|/g, '\\|')}\``;
+  `<code>${code
+    .replace(/\n/g, ' ')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\|/g, '&#124;')}</code>`;
 
 /** Right on a case: a defect fires; a decoy and a remedy do not. */
 const correct = (kind: Kind, n: number | null): boolean =>

@@ -18,6 +18,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
 
 const dir = process.argv[2] ?? '/tmp/inv';
 const ruleFilter = process.argv.includes('--rule')
@@ -124,7 +125,20 @@ for (const [i, c] of ranked.slice(0, top).entries()) {
   console.log(`      ${c.where[0]}`);
 }
 
+/**
+ * Not `/tmp`: a fixed name in a world-writable directory is one an attacker can
+ * pre-create as a symlink, so the write lands wherever they pointed it
+ * (CWE-377/CWE-379, `js/insecure-temporary-file`). `ensurePrivateDir` refuses
+ * the directory unless every component from the cache root down is ours.
+ */
+const CACHE_HOME = resolveCacheHome();
+const OUT = path.join(
+  ensurePrivateDir(path.join(CACHE_HOME, 'interlace-triage'), CACHE_HOME),
+  'triage-clusters.json',
+);
+
 fs.writeFileSync(
-  '/tmp/triage-clusters.json',
+  OUT,
   JSON.stringify(ranked.map((c) => ({ ...c, repos: [...c.repos] })), null, 1),
 );
+console.log(`\nclusters written: ${OUT}`);

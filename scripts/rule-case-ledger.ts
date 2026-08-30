@@ -61,6 +61,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { readBaseline } from './lib/read-baseline.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -765,13 +766,7 @@ const FLOOR_BASELINE = path.join(
 );
 
 if (CHECK) {
-  const floorBaseline: string[] = fs.existsSync(FLOOR_BASELINE)
-    ? (
-        JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as {
-          rules: string[];
-        }
-      ).rules
-    : [];
+  const floorBaseline = readBaseline(FLOOR_BASELINE, 'rules');
   const knownThin = new Set(floorBaseline);
   const thinned = belowFloor
     .map((e) => e.rule)
@@ -788,10 +783,7 @@ if (CHECK) {
     process.exit(1);
   }
 
-  const baseline: string[] = fs.existsSync(BASELINE)
-    ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] })
-        .rules
-    : [];
+  const baseline = readBaseline(BASELINE, 'rules');
   const known = new Set(baseline);
   const regressed = missing.map((e) => e.rule).filter((r) => !known.has(r));
   if (regressed.length > 0) {
@@ -808,10 +800,7 @@ if (CHECK) {
 }
 
 if (UPDATE) {
-  const previous: string[] = fs.existsSync(BASELINE)
-    ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] })
-        .rules
-    : [];
+  const previous = readBaseline(BASELINE, 'rules');
   const now = missing.map((e) => e.rule).sort();
   const grew = now.filter((r) => !previous.includes(r));
   if (previous.length > 0 && grew.length > 0) {
@@ -834,13 +823,7 @@ if (UPDATE) {
   );
   console.log(`  baseline written: ${previous.length} → ${now.length}`);
 
-  const previousThin: string[] = fs.existsSync(FLOOR_BASELINE)
-    ? (
-        JSON.parse(fs.readFileSync(FLOOR_BASELINE, 'utf8')) as {
-          rules: string[];
-        }
-      ).rules
-    : [];
+  const previousThin = readBaseline(FLOOR_BASELINE, 'rules');
   const nowThin = belowFloor.map((e) => e.rule).sort();
   const grewThin = nowThin.filter((r) => !previousThin.includes(r));
   if (previousThin.length > 0 && grewThin.length > 0) {

@@ -363,4 +363,4 @@ const obj = JSON.parse(userJson); // May have __proto__
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowLiterals` | `boolean` | `false` | Allow bracket notation with literal strings |
-| `dangerousProperties` | `string[]` | `["__proto__","prototype","constructor"]` | Properties to consider dangerous |
+| `dangerousProperties` | `string[]` | `["__proto__","prototype","constructor"]` | Property NAMES treated as dangerous where the name is visible in the source — `obj['__proto__'] = v`. It cannot apply to a dynamic key (`obj[k] = v`), because there is no name to compare, and it does not gate the CWE-1321 traversal check, which is a fact about the language rather than a vocabulary. Set it to [] to stop reporting literal dangerous-property writes. |

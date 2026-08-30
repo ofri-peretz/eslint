@@ -250,28 +250,12 @@ const REGISTERED: RegistryEntry[] = [
     reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
-    file: 'eslint-plugin-node-security/src/rules/no-ssrf/index.ts',
-    direction: 'report',
-    reason:
-      'USER_INPUT_SUBSTRINGS ["url","endpoint","uri","href","link","target","dest","source",' +
-      '"host","user","input","param"] substring-matched against a PARAMETER NAME to decide the ' +
-      'value is attacker-controlled. `function connect(hostname)`, `function build(params)` and ' +
-      '`function render(sourceMap)` are all tainted by spelling. This is taint analysis replaced ' +
-      'by a dictionary, and it is the highest-volume false positive source in the registry.',
-  },
-  {
     file: 'eslint-plugin-mongodb-security/src/rules/no-operator-injection/index.ts',
     direction: 'report',
     reason:
       'userInputPatterns substring-matched against the printed text of a value to decide it is ' +
-      'user input. Same defect as no-ssrf, one layer further from the AST.',
-  },
-  {
-    file: 'eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/index.ts',
-    direction: 'report',
-    reason:
-      'Three sites matching recoveryKeywords / strongRecoveryPatterns / weakPatterns against ' +
-      'printed text. The rule decides both the finding AND its own exemption from spelling.',
+      'user input. The same defect no-ssrf carried until it moved to readsRequestShape, one ' +
+      'layer further from the AST.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/no-dynamic-system-prompt/index.ts',

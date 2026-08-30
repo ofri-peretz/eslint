@@ -46,6 +46,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { readBaseline } from './lib/read-baseline.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -126,9 +127,7 @@ console.log(`  rules deciding by identifier name   ${compliant.length + offender
 console.log(`  vocabulary the consumer can replace ${compliant.length}`);
 console.log(`  hardcoded, no way to replace        ${offenders.length}`);
 
-const baseline: string[] = fs.existsSync(BASELINE)
-  ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as { rules: string[] }).rules
-  : [];
+const baseline = readBaseline(BASELINE, 'rules');
 
 if (UPDATE) {
   const grew = offenders.filter((rule) => !baseline.includes(rule));

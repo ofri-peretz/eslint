@@ -14,6 +14,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { CheckQueryParamsOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
+import { blankNonPlaceholderText } from '../../utils/sql-scan';
 
 /**
  * Methods that hand a statement plus its bound values to the server.
@@ -38,8 +39,6 @@ const SQL_SINK_METHODS: ReadonlySet<string> = new Set(['query', 'execute']);
  *   $tag$…$tag$  dollar-quoted string — a plpgsql body is FULL of `$1`-looking
  *                text that is not a placeholder, and `$$` is not one either
  */
-const NON_PLACEHOLDER_TEXT =
-  /'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|\/\*[\s\S]*?\*\/|\$([A-Za-z_]\w*)?\$[\s\S]*?\$\1\$/g;
 
 /** A bind parameter. Two digits are one placeholder, not `$1` and a zero. */
 const PLACEHOLDER = /\$(\d+)/g;
@@ -197,7 +196,7 @@ function knowableText(node: TSESTree.Node): string | null {
 
 /** The highest bind-parameter index the statement references. */
 function highestPlaceholder(text: string): number {
-  const executable = text.replace(NON_PLACEHOLDER_TEXT, ' ');
+  const executable = blankNonPlaceholderText(text);
   let highest = 0;
   for (const match of executable.matchAll(PLACEHOLDER)) {
     highest = Math.max(highest, Number.parseInt(match[1], 10));
