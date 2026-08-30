@@ -321,9 +321,16 @@ or `CANCELLED` would otherwise slip past it.
 PR=<#>
 
 # 1. Wait until every required check has a terminal state.
+#
+# `.state` is not optional here. A CHECK RUN carries `.conclusion`; a STATUS
+# CONTEXT — CodeRabbit is one — carries only `.state`. Without `.state` in the
+# fallback a finished CodeRabbit resolves to "", which this select counts as
+# pending, and the loop never terminates. It reads as a slow CI run, so the
+# usual response is to wait longer. Both jq expressions below read the same
+# three fields in the same order for exactly this reason.
 until [ "$(gh -R ofri-peretz/eslint pr view "$PR" \
   --json statusCheckRollup \
-  --jq '[.statusCheckRollup[]? | select((.conclusion // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length')" = "0" ]; do
+  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length')" = "0" ]; do
   sleep 20
 done
 
@@ -342,10 +349,24 @@ gh -R ofri-peretz/eslint pr view "$PR" --json mergeable,mergeStateStatus,statusC
 
 If `mergeStateStatus == "DIRTY"` there's a conflict with `main`. Resolve
 via `git fetch origin main && git merge origin/main`; do not rebase
-blindly across unrelated changes. If `mergeStateStatus == "BLOCKED"`
-after all checks pass, branch protection is waiting on a required review
-(see CODEOWNERS / repository ruleset) — don't `--admin` past it without
-asking the user.
+blindly across unrelated changes.
+
+If `mergeStateStatus == "BLOCKED"` **after step 2 has confirmed every check
+is `SUCCESS`**, branch protection is waiting on a required review or an
+unresolved thread (see CODEOWNERS / repository ruleset). **`--admin` is
+authorised there — always, without asking.** A green branch held up by a
+review requirement is the case the flag exists for.
+
+What `--admin` is never for:
+
+- a check reporting `FAILURE`, `CANCELLED` or `TIMED_OUT`;
+- a check still pending — which is why the `.state` fix above matters: a poll
+  that never terminates is the thing that tempts someone to skip step 2;
+- `mergeStateStatus == "BEHIND"` — merge `origin/main` first and let CI re-run
+  against what will actually land.
+
+Step 2 is the authorisation. It is not a formality before it: it is the
+entire basis on which the bypass is allowed.
 
 ### 5. Merge
 
