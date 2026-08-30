@@ -112,7 +112,7 @@
     "devto:publish": "tsx scripts/devto-publish.ts",
     "devto:sync-articles": "tsx apps/docs/scripts/update-articles-data.ts",
     "devto:update-tags": "tsx scripts/devto-update-tags.ts",
-    "oxlint": "oxlint --config .oxlintrc.json apps/ packages/ scripts/ tools/",
+    "oxlint": "oxlint --deny-warnings --config .oxlintrc.json apps/ packages/ scripts/ tools/",
     "oxlint:interlace": "oxlint --config .oxlintrc.experimental.json packages/",
     "lint:md": "markdownlint-cli2 '**/*.md' '#node_modules' '#packages/*/node_modules' '#**/dist'",
     "audit:portability": "tsx scripts/audit-rule-portability.ts",

@@ -473,6 +473,10 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       const segments = filename.toLowerCase().split(/[\\/]/).filter(Boolean);
       if (segments.length === 0) return false;
       const base = segments[segments.length - 1].replace(/\.[cm]?[jt]sx?$/, '');
+      // built per call from one
+      // filename and read twice. Allocating a Set each call to replace two
+      // `includes` over 1-3 elements is slower, not faster.
+      // eslint-disable-next-line unicorn/prefer-set-has
       const dirs = segments.slice(0, -1);
 
       return (

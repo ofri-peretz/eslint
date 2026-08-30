@@ -103,6 +103,10 @@ function corpus(): Corpus {
     } else if (endIndex === -1) {
       c.missingTitle.push(`${rel}: Unclosed frontmatter block`);
     } else {
+      // `frontmatter` is a STRING;
+      // `.includes()` here is substring search. `new Set(str)` iterates characters
+      // and would make every check below wrong. The rule mis-fires on strings.
+      // eslint-disable-next-line unicorn/prefer-set-has
       const frontmatter = content.slice(3, endIndex);
       if (!frontmatter.includes('title:')) {
         c.missingTitle.push(`${rel}: Missing 'title' in frontmatter`);
