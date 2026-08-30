@@ -352,7 +352,7 @@ interface MeteorsProps {
 }
 
 /**
- * Meteors component - Aceternity-inspired falling meteor effect
+ * Meteors component - falling meteor effect
  * Uses pure CSS animations for optimal performance (no Framer Motion)
  * Follows the project's CSS Animation Shift pattern
  * 
