@@ -329,14 +329,18 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
         code: 'useEffect(() => { const re = /abc/; re.test(""); }, []);',
       },
       {
-        name: 'stable setState and refs are skipped',
-        code: 'useEffect(() => { setCount(1); dispatch(); nodeRef.current = 1; }, []);',
+        // Rewritten: this asserted the same thing with setCount, dispatch and
+        // nodeRef UNDECLARED, so it passed only because the old implementation
+        // matched their names. It pinned the heuristic in place. They are now
+        // actually declared from hooks, which is what makes them stable.
+        name: 'stable setState, dispatch and refs are skipped',
+        code: 'function C(){const [c,setCount]=React.useState(0);const nodeRef=React.useRef(null);const [s,dispatch]=React.useReducer(f,0);React.useEffect(()=>{setCount(1);dispatch();nodeRef.current=1},[]);return null;}',
       },
     ],
     invalid: [
       {
         name: 'React.useEffect namespaced hook detects missing dep',
-        code: 'React.useEffect(() => { Render(value); }, []);',
+        code: 'function C({value}){ React.useEffect(() => { Render(value); }, []); return null; }',
         errors: [
           {
             messageId: 'missingDep',
@@ -344,7 +348,7 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
             suggestions: [
               {
                 messageId: 'suggestAddDep',
-                output: 'React.useEffect(() => { Render(value); }, [value]);',
+                output: 'function C({value}){ React.useEffect(() => { Render(value); }, [value]); return null; }',
               },
             ],
           },
@@ -357,14 +361,14 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
       },
       {
         name: 'missing dep appended after existing element',
-        code: 'useMemo(() => Compute(alpha, beta), [alpha]);',
+        code: 'function C({alpha, beta}){ return useMemo(() => Compute(alpha, beta), [alpha]); }',
         errors: [
           {
             messageId: 'missingDep',
             suggestions: [
               {
                 messageId: 'suggestAddDep',
-                output: 'useMemo(() => Compute(alpha, beta), [alpha, beta]);',
+                output: 'function C({alpha, beta}){ return useMemo(() => Compute(alpha, beta), [alpha, beta]); }',
               },
             ],
           },
@@ -454,7 +458,7 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
       },
       {
         name: 'additionalHooks pattern matches custom hook',
-        code: 'useMyThing(() => { Render(value); }, []);',
+        code: 'function C({value}){ useMyThing(() => { Render(value); }, []); return null; }',
         options: [{ additionalHooks: '^useMyThing$' }],
         errors: [
           {
@@ -463,7 +467,7 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
             suggestions: [
               {
                 messageId: 'suggestAddDep',
-                output: 'useMyThing(() => { Render(value); }, [value]);',
+                output: 'function C({value}){ useMyThing(() => { Render(value); }, [value]); return null; }',
               },
             ],
           },
@@ -471,14 +475,14 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
       },
       {
         name: 'missing dep inserted into empty array',
-        code: 'useEffect(() => { Render(value); }, []);',
+        code: 'function C({value}){ useEffect(() => { Render(value); }, []); return null; }',
         errors: [
           {
             messageId: 'missingDep',
             suggestions: [
               {
                 messageId: 'suggestAddDep',
-                output: 'useEffect(() => { Render(value); }, [value]);',
+                output: 'function C({value}){ useEffect(() => { Render(value); }, [value]); return null; }',
               },
             ],
           },
@@ -492,11 +496,21 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
             messageId: 'missingDep',
             data: {
               hookName: 'useEffect',
-              deps: 'b, nested, restObj, inner, q, w, p, first, pat',
+              // Was 'b, nested, restObj, inner, q, w, p, first, pat'. Resolving
+              // through scope removed six of the nine: pattern property keys
+              // (b, p) and callback parameters (q, w, first, pat) are local and
+              // never were dependencies.
+              //
+              // The remaining three are a KNOWN, SEPARATE false positive:
+              // bindings introduced by destructuring inside the callback are
+              // still treated as external. React reports only `source` and
+              // `list` here. Out of scope for this change, and recorded in the
+              // ledger rather than left for someone to rediscover.
+              deps: 'nested, restObj, inner',
             },
             // One add-dep suggestion per missing identifier: nested pattern
             // names are traversed (reported) but not declared (not local).
-            suggestions: ['b', 'nested', 'restObj', 'inner', 'q', 'w', 'p', 'first', 'pat'].map(
+            suggestions: ['nested', 'restObj', 'inner'].map(
               (dep) => ({
                 messageId: 'suggestAddDep' as const,
                 data: { dep },
@@ -513,12 +527,12 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
       },
       {
         name: 'function declaration id inside callback is local, outer fn is missing',
-        code: 'useEffect(() => { function localFn() { outerFn(); } localFn(); }, []);',
+        code: 'function C({outerFn}){ useEffect(() => { function localFn() { outerFn(); } localFn(); }, []); return null; }',
         errors: [
           {
             messageId: 'missingDep',
             data: { hookName: 'useEffect', deps: 'outerFn' },
-            suggestions: [{ messageId: 'suggestAddDep', output: 'useEffect(() => { function localFn() { outerFn(); } localFn(); }, [outerFn]);' }],
+            suggestions: [{ messageId: 'suggestAddDep', output: 'function C({outerFn}){ useEffect(() => { function localFn() { outerFn(); } localFn(); }, [outerFn]); return null; }' }],
           },
         ],
       },
