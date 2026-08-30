@@ -1,0 +1,35 @@
+{
+  "$comment": "Stage 6 control bands — see AI_NATIVE_SDLC.md and docs/DOCS_QUALITY.md. A band is a metric with a stable baseline, watched by scripts/control-bands.ts. Detection is deterministic; no model is involved in deciding a breach. Add a band only for a metric whose baseline is genuinely stable — a noisy metric produces noisy intents, and a watcher that cries wolf gets switched off, which is the failure this exists to prevent.",
+  "bands": [
+    {
+      "id": "cwe-corpus-f1",
+      "description": "Interlace aggregate F1 on the ILB CWE corpus",
+      "collector": "benchmark-json",
+      "suite": "ilb-cwe-corpus",
+      "jsonPath": "plugins.interlace.aggregate.f1",
+      "window": 20,
+      "minPoints": 8,
+      "worse": "lower"
+    },
+    {
+      "id": "cwe-corpus-recall",
+      "description": "Interlace aggregate recall on the ILB CWE corpus",
+      "collector": "benchmark-json",
+      "suite": "ilb-cwe-corpus",
+      "jsonPath": "plugins.interlace.aggregate.recall",
+      "window": 20,
+      "minPoints": 8,
+      "worse": "lower"
+    },
+    {
+      "id": "cwe-corpus-precision",
+      "description": "Interlace aggregate precision on the ILB CWE corpus",
+      "collector": "benchmark-json",
+      "suite": "ilb-cwe-corpus",
+      "jsonPath": "plugins.interlace.aggregate.precision",
+      "window": 20,
+      "minPoints": 8,
+      "worse": "lower"
+    }
+  ]
+}

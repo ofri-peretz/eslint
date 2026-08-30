@@ -31,11 +31,14 @@ Two corollaries, both learned the hard way in this repo:
 So a check has to satisfy three things, and the table columns are exactly these:
 it **exists**, it **runs unattended**, and a failure **reaches a human**.
 
-**Measured today: 17 scheduled workflows, 6 with no failure channel at all** —
-`codecov`, `cve-latency`, `eslint-version-matrix`, `oxlint-parity`, `quality-full`,
-`weekly-corpus-scan`. A red run there is visible only to someone who opens the
-Actions tab. Eight file an issue, one opens a PR, and CodeQL and Scorecard report to
-the Security tab, which is a channel.
+**Every scheduled workflow now has a failure channel.** Six had none — `codecov`,
+`cve-latency`, `eslint-version-matrix`, `oxlint-parity`, `quality-full`,
+`weekly-corpus-scan` — and a red run there was visible only to someone who opened the
+Actions tab. They share
+[`.github/actions/report-failure`](../.github/actions/report-failure/action.yml),
+which opens one tracking issue per title and comments on it thereafter rather than
+filing a fresh one every week. CodeQL and Scorecard report to the Security tab, which
+is also a channel.
 
 ---
 
@@ -65,8 +68,8 @@ a human, not a red merge button.
 | Metric | Target | Held by | Cadence |
 | :--- | :--- | :--- | :--- |
 | External links in MDX that resolve 2xx | 100% | `apps/docs/scripts/check-links.ts` → `check-links.yml` | weekly (Fri), files an issue + on `ready_for_review` |
-| Internal markdown links that resolve | 100% | `npm run check-links` (`scripts/check-markdown-links.ts`) | manual — **gap** |
-| Docs links carry the UTM contract | 100% | `check-utm-links.ts` | manual — **gap** |
+| Internal markdown links that resolve | 100% | `npm run check-links` | PR (`quality.yml` → `docs-integrity`) |
+| Docs links carry the UTM contract | 100% | `npm run check:utm-links` | PR (`docs-integrity`) |
 | README docs slug resolves to a real page | 100% | `plugin-name-metadata-drift.lock.test.ts` | PR |
 | Renamed docs slugs redirect, never 404 | every rename | `next.config.mjs` redirects + `remote-markdown-slug-lock.test.ts` | PR |
 | Live production surface behaves | 100% | `integration-health.yml` | weekly (Sat), files an issue |
@@ -99,16 +102,29 @@ The numbers we publish — benchmark results, peer health, download counts, cove
 | Metric | Target | Held by | Cadence |
 | :--- | :--- | :--- | :--- |
 | Benchmark snapshots refreshed | weekly | `weekly-benchmark.yml` | weekly (Mon) |
-| Peer-health snapshot refreshed | weekly | `peer-health.yml` | weekly — **was silently failing 6+ weeks** |
-| Resource profile refreshed | monthly | `resource-profile.yml` | monthly — **was silently failing 3+ months** |
-| Published claims match measured values | 100% | `npm run audit:claims` | manual — **gap** |
-| Audit snapshots not stale | age-bounded | `check-audit-freshness.ts` | manual — **gap** |
-| Coverage reported per package | 30/30 | `codecov.yml` components | PR — **19/30, gap** |
+| Peer-health snapshot refreshed | weekly | `peer-health.yml` | weekly, files an issue |
+| Resource profile refreshed | monthly | `resource-profile.yml` | monthly, files an issue |
+| Published claims match measured values | 100% | `npm run audit:claims` | PR (`docs-integrity`) |
+| Audit snapshots not stale | age-bounded | `npm run check:audit-freshness` | weekly, in `control-bands.yml` |
+| Coverage reported per package | 30/30 | `codecov.yml` components | PR — 19/30, owned by `chore/coverage-100` |
 
 **Every refresher must file an issue when it fails.** A snapshot that stops moving
 looks identical to a snapshot that has not changed. `peer-health`, `resource-profile`
 and `check-links` now do; `integration-health` already had the step but guarded it on
 a `workflow_dispatch` input that is empty on a cron, so it never fired unattended.
+
+### 3b. Drift, as a band rather than a boolean
+
+Stage 6 of [AI_NATIVE_SDLC.md](../../AI_NATIVE_SDLC.md). Every watcher above is
+pass/fail and can only see a hard break; a band sees the slow slide.
+
+| Metric | Target | Held by | Cadence |
+| :--- | :--- | :--- | :--- |
+| CWE-corpus F1 / recall / precision inside their band | no 2σ breach | `scripts/control-bands.ts` → `control-bands.yml` | weekly; a breach opens an **intent PR**, not a ticket |
+| Agent configuration still behaves | pass rate does not drop | `evals/` → `evals.yml` | on any change to `CLAUDE.md`, `AGENTS.md`, `.agent/**`, `lefthook.yml`; plus weekly |
+| Every relative link in an agent document resolves | 100% | `scripts/run-evals.ts --config` | PR (`docs-integrity`) |
+| Stage 1 / Stage 2 artifacts keep their shape | 100% | `intent-artifacts.lock.test.ts` | PR |
+| A release pauses for a human | always | `.claude/hooks/release-gate.sh` | every session |
 
 ### 4. Content
 
@@ -125,11 +141,15 @@ a `workflow_dispatch` input that is empty on a cron, so it never fired unattende
 
 ## Reading this as a scorecard
 
-Count the rows. Today: **8 gaps** — four checks that exist but run only when typed
-(`check-links`, `check:utm-links`, `audit:claims`, `check:audit-freshness`), eleven of
-thirty plugins with no codecov component (19/30), six scheduled workflows with no
-failure channel (6/17), and the two data refreshers that have to prove a green run before their column can be
-trusted again.
+Count the rows. Today: **1 gap** — eleven of thirty plugins still have no codecov
+component. That one is owned rather than unclaimed: components carry a 100% project
+and patch target, so adding one for a package below 100% would turn Codecov red
+instead of measuring anything. It belongs to the `chore/coverage-100` initiative.
+
+Everything else that was a gap now has a cadence. The four manual checks run on the
+PR gate or in the weekly maintain lane, every scheduled workflow has a failure
+channel, and the two dead refreshers are unblocked — though each still has to prove a
+green run before its row is worth believing.
 
 The number to move is **gaps → 0**, not "docs feel good". When a row moves from
 manual to a cadence, this file changes in the same PR.

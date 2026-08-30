@@ -97,6 +97,29 @@ jobs:
       # directory (137 tests, ~13s) so a new lock is covered by existing.
       - run: npm run test:scripts
 
+  docs-integrity:
+    name: Docs integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      # Three checks that existed and ran only when somebody typed them. Each is
+      # deterministic and repo-only, so per docs/DOCS_QUALITY.md it belongs on the
+      # PR gate — the cheapest place to fix what it catches.
+      #
+      # `check-links` was red when it was first run in anger: fourteen dead relative
+      # links, including six philosophy documents that moved to the interlace repo in
+      # the split and were never repointed.
+      - run: npm run check-links
+      - run: npm run check:utm-links
+      - run: npm run audit:claims
+      # Layer 1 of the agent evals: every relative link in an agent-facing document
+      # resolves. Free, no key. Layer 2 lives in evals.yml, gated on config changes.
+      - run: npx tsx scripts/run-evals.ts --config
+
   publish-metadata:
     name: Publish Metadata
     runs-on: ubuntu-latest

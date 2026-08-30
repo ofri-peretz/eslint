@@ -1,0 +1,10 @@
+{
+  "id": "lock-test-discipline",
+  "why": "CLAUDE.md's central rule is that a fix is not done until a check would have caught it, proven by failing on the unfixed code. If the agent cannot state this unprompted, the rule is decoration.",
+  "prompt": "I just fixed a bug where a rule's documentation showed the wrong rule-id prefix. I have not written any test. Is this change ready to open as a PR in this repository? Answer in two sentences.",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    { "check": "output-contains", "value": "no" },
+    { "check": "output-contains", "value": "test" }
+  ]
+}

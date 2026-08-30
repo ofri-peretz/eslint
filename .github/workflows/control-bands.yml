@@ -1,0 +1,160 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Control Bands
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 6 (MAINTAIN) — close the loop on metrics
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# A deterministic script watches the metrics and invokes the pipeline when a control
+# band is breached. No model runs in the detection path — see scripts/control-bands.ts.
+#
+# On a 2σ+ breach this opens a PR containing an `intent/<slug>/intent.md`, NOT an
+# issue. That is the whole point of the stage: an incident re-enters the pipeline as
+# a Stage 1 artifact instead of rotting in a separate ticket queue. A GitHub issue is
+# the ticket queue.
+#
+# 1σ breaches are logged in the job summary and nothing else, by contract.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    # Mon 05:10 UTC — after the Monday 06:00 corpus scan has had a week to land runs,
+    # and clear of the 04:05–04:50 cron cluster.
+    - cron: '10 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      write-intent:
+        description: 'Open an intent PR if a band is breached'
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: control-bands
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    name: 🎛️ Watch control bands
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # commit the appended series + the intent branch
+      pull-requests: write # open the intent PR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Records first: a band cannot be evaluated against history it has not ingested.
+      # `--record` is idempotent, so a re-run adds nothing.
+      - name: 📈 Record observations and evaluate bands
+        id: bands
+        continue-on-error: true
+        run: npx tsx scripts/control-bands.ts --record --write-intent --check | tee bands.log
+
+      - name: 📋 Summary
+        if: always()
+        run: |
+          {
+            echo '## 🎛️ Control bands'
+            echo
+            echo '```'
+            cat bands.log || echo '(no output)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The write-back. `--write-intent` only creates a file when a band is breached,
+      # and only one per band, so an unchanged tree here means everything is inside
+      # its band and there is nothing to open.
+      - name: 🔁 Open an intent PR for the breach
+        if: >-
+          steps.bands.outcome == 'failure' &&
+          (github.event_name != 'workflow_dispatch' || inputs.write-intent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain intent/ benchmark-results/control-band-series.json)" ]; then
+            echo "Band breached but nothing new to commit — an intent is already open for it."
+            exit 0
+          fi
+          BRANCH="intent/control-band-$(date -u +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add intent/ benchmark-results/control-band-series.json
+          git commit -m "docs(workspace): control-band breach — draft intent
+
+          A metric left its control band. scripts/control-bands.ts wrote the
+          diagnosis as a Stage 1 intent; see AI_NATIVE_SDLC.md."
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --base main --head "$BRANCH" \
+            --title "docs(workspace): control-band breach — draft intent" \
+            --body "$(printf '%s\n\n```\n%s\n```\n\n%s\n' \
+              'A control band was breached. The watcher wrote its diagnosis as a Stage 1 intent rather than an issue, so the finding re-enters the pipeline — see [AI_NATIVE_SDLC.md](../blob/main/../AI_NATIVE_SDLC.md).' \
+              "$(cat bands.log)" \
+              '**Next:** review the intent, then either turn it into a `spec.md` or record here why the band was wrong. Do not widen a band to make a breach go away.')"
+
+      # Bands that are still inside their limits produce new observations too, and the
+      # series is only useful if it accumulates.
+      - name: 📌 Commit the series when nothing breached
+        if: steps.bands.outcome == 'success'
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain benchmark-results/control-band-series.json)" ]; then
+            echo "No new observations."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add benchmark-results/control-band-series.json
+          git commit -m "chore(benchmarks): record control-band observations"
+          git push
+
+      # Freshness is a Stage 6 concern too: a band computed over a series that
+      # stopped updating looks perfectly healthy. `check:audit-freshness` age-bounds
+      # the snapshots the bands read from. It ran only when someone typed it, and the
+      # first time anyone did it was correctly red — it had been flagging the stale
+      # peer-health snapshot the whole time.
+      - name: 🕰️ Check snapshot freshness
+        id: freshness
+        continue-on-error: true
+        run: npm run --silent check:audit-freshness | tee freshness.log
+
+      - name: 🚨 Report a stale snapshot
+        if: steps.freshness.outcome == 'failure' && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'A published data snapshot has gone stale'
+          body: 'One or more benchmark snapshots are older than their freshness bound, so a control band computed over them is measuring history rather than the present.'
+          token: ${{ github.token }}
+
+      - name: 🚨 Open an issue if the watcher itself broke
+        # Distinct from a breach. A breach is a finding and becomes an intent; the
+        # watcher failing to RUN is an outage of the loop and has nowhere else to go.
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Control-band watcher is failing"
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n[Run](%s)\n' \
+            'The Stage 6 watcher did not complete, so no band was evaluated and no drift would be seen.' "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
