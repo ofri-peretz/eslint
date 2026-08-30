@@ -99,3 +99,12 @@ jobs:
               echo "and commit the budget change so it is reviewable."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Weekly corpus scan is failing'
+          body: 'The weekly corpus scan failed, so new false positives and negatives on the corpus are no longer being surfaced.'
+          token: ${{ github.token }}

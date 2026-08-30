@@ -45,6 +45,9 @@ jobs:
   coverage:
     name: Test Coverage
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # open the failure issue (.github/actions/report-failure)
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -174,3 +177,12 @@ jobs:
             packages/*/coverage/
           retention-days: 7
           if-no-files-found: ignore
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Coverage upload is failing'
+          body: 'The scheduled coverage run failed, so Codecov has no fresh data and every component badge is reporting a stale or unknown number.'
+          token: ${{ github.token }}

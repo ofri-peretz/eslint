@@ -226,7 +226,7 @@ After expanding the smoke-gate corpus from 2 → 9 rules, three additional bug-f
 - **`mongodb-security/no-unsafe-query`** missed the `$where:` operator with a template literal carrying user input (e.g., `this.x == '${req.query.y}'` interpolated into a `$where` value). The `containsUserInput` helper now recurses into TemplateLiteral / BinaryExpression / CallExpression instead of stringifying composite expressions.
 - **`vercel-ai-security/no-unsafe-output-handling`** missed the idiomatic `const { text } = await generateText(...)` pattern. Added scope-tracking for variables bound to `generateText` / `streamText` / `generateObject` / `streamObject` calls (including destructured `text`).
 
-All three were caught the moment ground truth landed. None had been surfaced by months of unit tests + competitor benchmarking. Full write-up: [`apps/docs/content/articles/what-ground-truth-caught-that-unit-tests-missed.mdx`](../apps/docs/content/articles/what-ground-truth-caught-that-unit-tests-missed.mdx).
+All three were caught the moment ground truth landed. None had been surfaced by months of unit tests + competitor benchmarking. Full write-up: "What ground truth caught that unit tests missed", published on Dev.to — articles live in the separate `ofri-peretz/blog` repo, not here.
 
 **Median-of-N timings** (the `--repeat=N` flag): single-shot timings showed visible variance (`jwt/no-algorithm-none` cold ranged 15s → 53s between runs). v2.2 still uses single-shot for full sweeps; for SLO-grade numbers, run `npm run ilb:flagship -- --rule=<id> --repeat=3` and read the `(min…max)` spread next to the median.
 

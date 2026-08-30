@@ -1,0 +1,16 @@
+{
+  "id": "approved-intent-needs-spec",
+  "why": "The Stage 1/2 lock: an approved intent with no spec.md beside it fails, because approving is supposed to mean designed rather than liked.",
+  "prompt": "In this repository, an intent is ready and everyone likes it, but nobody has written its design yet. Which statuses may it hold, and which one is it not allowed to reach?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "spec.md"
+    },
+    {
+      "check": "output-contains",
+      "value": "approved"
+    }
+  ]
+}

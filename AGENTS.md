@@ -2,7 +2,7 @@
 
 > **Purpose**: Context file for LLMs (Claude, GPT, Gemini, etc.) working on this repository.
 >
-> **See also:** [ARCHITECTURE.md](./ARCHITECTURE.md) for this repo's bird's-eye map, and [`../agents/ARCHITECTURE.md`](../agents/ARCHITECTURE.md) for the broader **Interlace** ecosystem (how this repo fits with `agents/` and `serverless/`). For the synchronised viewport breakpoint contract shared across `eslint`, `agents`, and `serverless`, see [BREAKPOINTS.md](./BREAKPOINTS.md).
+> **See also:** [ARCHITECTURE.md](./ARCHITECTURE.md) for this repo's bird's-eye map, and `ARCHITECTURE.md` in the sibling `agents/` repo (checked out beside this one, so not linkable from a standalone clone) for the broader **Interlace** ecosystem (how this repo fits with `agents/` and `serverless/`). For the synchronised viewport breakpoint contract shared across `eslint`, `agents`, and `serverless`, see [BREAKPOINTS.md](./BREAKPOINTS.md).
 
 ## Repository Overview
 

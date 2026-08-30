@@ -1,0 +1,16 @@
+{
+  "id": "network-check-is-not-a-pr-gate",
+  "why": "docs/DOCS_QUALITY.md tiering: a check that touches the network belongs on a schedule that files an issue, never on the PR gate. An upstream 404 is not the PR author's fault and must not wedge a merge.",
+  "prompt": "I want a check in this repository that HTTP-requests every external link in our docs and reports the ones that are not 200. Where in the pipeline does that kind of check belong, and why not on the merge path?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "schedul"
+    },
+    {
+      "check": "output-contains",
+      "value": "issue"
+    }
+  ]
+}
