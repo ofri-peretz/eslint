@@ -3600,7 +3600,7 @@
       "id": "ILB-0121",
       "added": "2026-08-30",
       "title": "Request object spread straight into a Mongo filter",
-      "rationale": "A caller-controlled object becomes the query document. `{\"$ne\": null}` as a password turns the lookup into 'any user', which is the canonical NoSQL authentication bypass. OPEN MISS as of 2026-08-30: `no-unsafe-query` reports 0 on this. It only fires when a request value appears as a PROPERTY inside an object literal, so the most direct form of the bug \u2014 passing the request object whole \u2014 goes unreported. Executed, not assumed.",
+      "rationale": "A caller-controlled object becomes the query document. `{\"$ne\": null}` as a password turns the lookup into 'any user', which is the canonical NoSQL authentication bypass. Missed until 2026-08-30: the rule early-returned on any first argument that was not an object literal, so the most direct form of the bug went unreported.",
       "cwe": "CWE-943",
       "severity": {
         "cvss": null,
@@ -3616,7 +3616,13 @@
       ],
       "occurrences": [],
       "code": "import { MongoClient } from 'mongodb';\nasync function f(db, req) { return db.collection('u').find(req.body); }",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "mongodb-security/no-unsafe-query",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
       "kind": "defect"
     },
     {
@@ -3652,7 +3658,7 @@
       "id": "ILB-0123",
       "added": "2026-08-30",
       "title": "A module-scope constant reported as user input",
-      "rationale": "An object built from a `const` string in the same file. Nothing here is caller-controlled. OPEN FALSE POSITIVE as of 2026-08-30: `no-unsafe-query` reports it, with the message `User input \"NAME\" is used directly`. Its model is 'any identifier inside a filter object is user input' \u2014 an inline literal is silent, any binding is not. That single heuristic produces both this false positive and the miss in ILB-0121.",
+      "rationale": "An object built from a `const` string in the same file. Nothing here is caller-controlled. Reported until 2026-08-30 with the message `User input \"NAME\" is used directly`, because any bare identifier in a filter counted as user input. That one heuristic produced this false positive and the miss in ILB-0121 together.",
       "cwe": "CWE-943",
       "severity": {
         "cvss": null,
@@ -3668,7 +3674,13 @@
       ],
       "occurrences": [],
       "code": "import { MongoClient } from 'mongodb';\nconst NAME = 'root';\nasync function f(db) { return db.collection('u').find({ name: NAME }); }",
-      "coverage": [],
+      "coverage": [
+        {
+          "rule": "mongodb-security/no-unsafe-query",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
       "kind": "decoy"
     },
     {

@@ -192,6 +192,75 @@ describe('readsRequestShape', () => {
     return messages.filter((m) => m.ruleId !== null).length;
   };
 
+  /** The same probe, with the depth rule for `body` turned off. */
+  const shallowBodyHits = (code: string): number => {
+    const shallow = {
+      meta: { type: 'problem', schema: [], messages: { hit: 'hit' } },
+      defaultOptions: [],
+      create(context: TSESLint.RuleContext<'hit', []>) {
+        return {
+          MemberExpression(node: TSESTree.MemberExpression): void {
+            if (
+              readsRequestShape(node, context.sourceCode, {
+                bodyNeedsDepth: false,
+              })
+            ) {
+              context.report({ node, messageId: 'hit' });
+            }
+          },
+        };
+      },
+    } as unknown as Parameters<Linter['verify']>[1];
+    const linter = new Linter();
+    return linter
+      .verify(
+        code,
+        [
+          {
+            files: ['**/*.ts'],
+            plugins: { p: { rules: { probe: shallow } } } as never,
+            languageOptions: {
+              parser: parser as never,
+              parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+            },
+            rules: { 'p/probe': 'error' },
+          },
+        ],
+        'c.ts',
+      )
+      .filter((m) => m.ruleId !== null).length;
+  };
+
+  describe('bodyNeedsDepth', () => {
+    // `body` is both a request property and the commonest property name in
+    // this ecosystem, so at depth 1 it is too ambiguous to act on — that is
+    // the default. A caller may turn the rule off when the POSITION already
+    // supplies the meaning: `find(req.body)` as a Mongo filter document is the
+    // canonical NoSQL authentication bypass, and nobody passes an arbitrary
+    // `.body` there by accident. See ILB-0121.
+    it('defaults to requiring depth, so a bare .body is not a request read', () => {
+      expect(hits('function f(req) { g(req.body); }')).toBe(0);
+      expect(hits('function f(req) { g(req.body.name); }')).toBeGreaterThan(0);
+    });
+
+    it('accepts a bare .body when the caller opts out', () => {
+      expect(
+        shallowBodyHits('function f(req) { g(req.body); }'),
+      ).toBeGreaterThan(0);
+    });
+
+    it('still requires the receiver to be a parameter', () => {
+      // The opt-out relaxes the DEPTH rule and nothing else. A module-local
+      // object with a `.body` is somebody's own data structure whatever the
+      // caller asked for.
+      expect(
+        shallowBodyHits(
+          'function f() { const node = { body: 1 }; g(node.body); }',
+        ),
+      ).toBe(0);
+    });
+  });
+
   it('reads a request off a parameter whatever the parameter is called', () => {
     expect(hits('function f(req) { g(req.query.id); }')).toBeGreaterThan(0);
     expect(
@@ -200,6 +269,37 @@ describe('readsRequestShape', () => {
     expect(
       hits('function f(request) { g(request.headers.auth); }'),
     ).toBeGreaterThan(0);
+  });
+
+  it("steps over Koa's nested request", () => {
+    // `ctx.request.body` and `ctx.request.query` are Koa's documented API, and
+    // `ctx.req` is the raw Node request underneath it. Reading the property
+    // nearest the root finds `request`, which is in neither shape set, so
+    // every Koa handler came back false — a miss that had nothing to do with
+    // how anything was named.
+    expect(
+      hits('function f(ctx) { g(ctx.request.query.id); }'),
+    ).toBeGreaterThan(0);
+    expect(
+      hits('function f(ctx) { g(ctx.request.body.email); }'),
+    ).toBeGreaterThan(0);
+    expect(
+      hits('function f(ctx) { g(ctx.req.headers.auth); }'),
+    ).toBeGreaterThan(0);
+  });
+
+  it('does not let the Koa hop invent a request out of nothing', () => {
+    // Stepping over the link must not weaken the two questions that follow it:
+    // the property after the hop still has to be part of the request shape,
+    // and the root still has to be a parameter.
+    expect(hits('function f(ctx) { g(ctx.request.somethingElse.a); }')).toBe(0);
+    expect(
+      hits(
+        'const ctx = { request: { query: { a: 1 } } }; g(ctx.request.query.a);',
+      ),
+    ).toBe(0);
+    // `x.request` alone is not a read of anything caller-supplied.
+    expect(hits('function f(x) { g(x.request); }')).toBe(0);
   });
 
   it('declines a receiver that is not a parameter', () => {
