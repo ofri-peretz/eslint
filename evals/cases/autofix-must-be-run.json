@@ -1,0 +1,12 @@
+{
+  "id": "autofix-must-be-run",
+  "why": "prefer-event-target was autofixable and its fix broke every file it touched. It rewrote `import { EventEmitter } from 'events'` to `import { EventTarget } from 'events'` — `events` exports no EventTarget, it is a global — and never touched the use site, leaving `extends EventEmitter` unbound. The suite was green because the tests asserted that exact damage as the expected fix.",
+  "prompt": "I am reviewing a rule in this repository that declares itself fixable and rewrites an identifier inside an import statement. Its tests assert a `fix` is offered. What is insufficient about that, and what would convince me the fix is safe?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "verifyAndFix"
+    }
+  ]
+}
