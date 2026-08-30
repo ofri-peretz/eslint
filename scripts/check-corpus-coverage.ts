@@ -39,21 +39,57 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
-const BASELINE = path.join(ROOT, 'benchmarks', 'budgets', 'corpus-coverage-baseline.json');
+const BASELINE = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'corpus-coverage-baseline.json',
+);
 const UPDATE = process.argv.includes('--update');
+
+/**
+ * Rules a per-file code corpus cannot express, and never will.
+ *
+ * The corpus is snippets of source. A rule that reports on the FILESYSTEM
+ * rather than on a syntax tree has nothing to put in it: `node-security/
+ * lock-file` fires once per project root when no `package-lock.json` /
+ * `yarn.lock` / `pnpm-lock.yaml` is present, so a vulnerable fixture would be
+ * the ABSENCE of a file, which a corpus of files cannot hold.
+ *
+ * Distinct from the baseline on purpose. The baseline is DEBT — rules that
+ * ought to have a fixture and do not, shrink-only. This is a category
+ * statement, and putting these two in the same list would let real debt hide
+ * behind "unfixturable" forever. Adding an entry here is a claim about the
+ * rule's nature, not a promise to get to it later, so each one says why.
+ */
+const NOT_FIXTURABLE: ReadonlyMap<string, string> = new Map([
+  [
+    'node-security/lock-file',
+    'Reports on the absence of a lock file at the project root. The defect is a missing FILE, not a syntax shape.',
+  ],
+]);
 
 /** Every rule the suite ships, as `<plugin-short>/<rule>`. */
 function allRules(): string[] {
   const out: string[] = [];
   const pkgDir = path.join(ROOT, 'packages');
-  for (const pkg of fs.readdirSync(pkgDir).filter((d) => d.startsWith('eslint-plugin-'))) {
+  for (const pkg of fs
+    .readdirSync(pkgDir)
+    .filter((d) => d.startsWith('eslint-plugin-'))) {
     const rulesDir = path.join(pkgDir, pkg, 'src', 'rules');
     if (!fs.existsSync(rulesDir)) continue;
     const plugin = pkg.replace('eslint-plugin-', '');
     for (const entry of fs.readdirSync(rulesDir, { withFileTypes: true })) {
-      if (entry.isDirectory() && fs.existsSync(path.join(rulesDir, entry.name, 'index.ts'))) {
+      if (
+        entry.isDirectory() &&
+        fs.existsSync(path.join(rulesDir, entry.name, 'index.ts'))
+      ) {
         out.push(`${plugin}/${entry.name}`);
-      } else if (entry.isFile() && entry.name.endsWith('.ts') && !/\.(test|spec)\./.test(entry.name)) {
+      } else if (
+        entry.isFile() &&
+        entry.name.endsWith('.ts') &&
+        !/\.(test|spec)\./.test(entry.name)
+      ) {
         out.push(`${plugin}/${entry.name.replace(/\.ts$/, '')}`);
       }
     }
@@ -71,7 +107,8 @@ const PREFIX_ALIASES: Record<string, string> = {
 };
 const canonical = (rule: string): string => {
   for (const [dirPrefix, published] of Object.entries(PREFIX_ALIASES)) {
-    if (rule.startsWith(dirPrefix)) return published + rule.slice(dirPrefix.length);
+    if (rule.startsWith(dirPrefix))
+      return published + rule.slice(dirPrefix.length);
   }
   return rule;
 };
@@ -85,7 +122,9 @@ const canonical = (rule: string): string => {
  * the harness itself broke, and that has to be loud: treated as "no rules
  * fired" it would mark every rule unmeasured and mass-widen the baseline.
  */
-function rulesWithCorpusEvidence(globs: string[] = ['benchmarks/corpus/**/*.js']): Set<string> {
+function rulesWithCorpusEvidence(
+  globs: string[] = ['benchmarks/corpus/**/*.js'],
+): Set<string> {
   let raw = '';
   try {
     raw = execFileSync(
@@ -160,14 +199,31 @@ const fired = rulesWithCorpusEvidence();
  * `firedIndependent` counts only the hand-reviewed CWE-NNN fixtures, which are
  * the ones the published precision figure is computed from.
  */
-const firedIndependent = rulesWithCorpusEvidence(['benchmarks/corpus/CWE-*/**/*.js']);
-const unmeasured = rules.map(canonical).filter((r) => !fired.has(r)).sort();
-const measured = rules.length - unmeasured.length;
-const pct = Math.round((measured / rules.length) * 100);
+const firedIndependent = rulesWithCorpusEvidence([
+  'benchmarks/corpus/CWE-*/**/*.js',
+]);
+const unmeasured = rules
+  .map(canonical)
+  .filter((r) => !fired.has(r) && !NOT_FIXTURABLE.has(r))
+  .sort();
+/*
+ * A rule that CANNOT have a fixture is neither measured nor unmeasured, so it
+ * belongs in neither the numerator nor the denominator. Leaving it in the
+ * denominator only would report it as measured and quietly inflate the
+ * percentage — the one number this file exists to state honestly.
+ */
+const fixturable = rules.length - NOT_FIXTURABLE.size;
+const measured = fixturable - unmeasured.length;
+const pct = Math.round((measured / fixturable) * 100);
 
-const independent = rules.map(canonical).filter((r) => firedIndependent.has(r)).length;
+const independent = rules
+  .map(canonical)
+  .filter((r) => firedIndependent.has(r)).length;
 console.log(
-  `\n${rules.length} rules\n` +
+  `\n${fixturable} rules can carry a corpus fixture` +
+    (NOT_FIXTURABLE.size > 0
+      ? ` (${NOT_FIXTURABLE.size} cannot — see NOT_FIXTURABLE)\n`
+      : '\n') +
     `  exercised by any fixture      : ${measured} (${pct}%)\n` +
     `  by an INDEPENDENT fixture     : ${independent} (${Math.round((independent / rules.length) * 100)}%)  <- what precision is measured on\n` +
     `  unmeasured                    : ${unmeasured.length}\n`,
@@ -188,13 +244,17 @@ if (UPDATE) {
     BASELINE,
     `${JSON.stringify({ note: 'Rules with no corpus fixture, and therefore no measured precision. May only shrink — see scripts/check-corpus-coverage.ts.', total: rules.length, measured, unmeasured }, null, 2)}\n`,
   );
-  console.log(`↻ baseline written: ${unmeasured.length} unmeasured rules recorded.`);
+  console.log(
+    `↻ baseline written: ${unmeasured.length} unmeasured rules recorded.`,
+  );
   process.exit(0);
 }
 
 const committed = readBaseline();
 if (committed === null) {
-  console.error('✗ no baseline. Run with --update to record the current state.');
+  console.error(
+    '✗ no baseline. Run with --update to record the current state.',
+  );
   process.exit(1);
 }
 
@@ -204,7 +264,9 @@ const regressed = unmeasured.filter((r) => !known.has(r));
 const improved = baseline.filter((r) => !unmeasured.includes(r));
 
 if (improved.length > 0) {
-  console.log(`✓ ${improved.length} rule(s) gained corpus evidence since the baseline:`);
+  console.log(
+    `✓ ${improved.length} rule(s) gained corpus evidence since the baseline:`,
+  );
   for (const r of improved) console.log(`    ${r}`);
   console.log(`  Run with --update to bank the progress.\n`);
 }
@@ -214,7 +276,9 @@ if (regressed.length === 0) {
   process.exit(0);
 }
 
-console.error(`✗ ${regressed.length} rule(s) have no corpus fixture and are not in the baseline:\n`);
+console.error(
+  `✗ ${regressed.length} rule(s) have no corpus fixture and are not in the baseline:\n`,
+);
 for (const r of regressed) console.error(`    ${r}`);
 console.error(
   `\n  A rule with no fixture has no measured precision — it can be wrong about real\n` +
