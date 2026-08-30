@@ -25,6 +25,7 @@ jobs:
     permissions:
       contents: write        # commit the snapshot
       pull-requests: write   # open/update the snapshot PR
+      issues: write          # open/comment the failure issue
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -55,7 +56,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add benchmark-results/peer-health.json benchmark-results/peer-health.md
-            git commit -m "chore(bench): refresh peer-health snapshot
+            git commit -m "chore(benchmarks): refresh peer-health snapshot
 
             Automated weekly refresh of the peer-plugin health metrics
             named in distribution/ECOSYSTEM_LANDSCAPE.md. Source data
@@ -63,4 +64,26 @@ jobs:
             git push
           else
             echo "No peer-health changes detected."
+          fi
+
+      # A scheduled refresher that fails notifies nobody by default. This one failed
+      # every run for months — the commit step used a scope commitlint rejected — and
+      # the snapshot it exists to refresh silently stopped moving. One issue, reopened
+      # and commented rather than a new one per run, same shape as integration-health.
+      - name: 🚨 Open an issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="peer-health snapshot refresh is failing"
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n[Run](%s)\n' \
+            "The weekly peer-health refresher failed, so `benchmark-results/peer-health.{json,md}` is now stale. Those numbers back `distribution/ECOSYSTEM_LANDSCAPE.md`." "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
           fi

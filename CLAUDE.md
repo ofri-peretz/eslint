@@ -3,7 +3,7 @@
 > **Read this first.** AI assistants (Claude, GPT, etc.) working in this repo
 > should follow the conventions below. The broader playbook is in
 > [AGENTS.md](./AGENTS.md) — release flow, branch protection, plugin scope,
-> CI gates. This file captures the *behavioral* contract on top.
+> CI gates. This file captures the _behavioral_ contract on top.
 
 ---
 
@@ -18,9 +18,11 @@ reason unrelated to the thing being tested. With the sink present, fifteen of th
 sixteen fire on benign code:
 
 ```js
-if (passengers.length >= 4) { bookGroupFare(); }   // "Password length requirement is too weak"
-console.log(device.microphoneEnabled);             // "PII in console logs"      — phone ⊂ microphone
-localStorage.getItem("recipe-casserole-draft");    // "Authentication logic in client code" — role ⊂ casserole
+if (passengers.length >= 4) {
+  bookGroupFare();
+} // "Password length requirement is too weak"
+console.log(device.microphoneEnabled); // "PII in console logs"      — phone ⊂ microphone
+localStorage.getItem('recipe-casserole-draft'); // "Authentication logic in client code" — role ⊂ casserole
 ```
 
 The protocol, every time:
@@ -41,7 +43,7 @@ Probe with `npx tsx scripts/probe-rule.mts <plugin>/<rule> -- '<code>'`.
 
 **This is the first rule in this file because it is the defect class that reaches
 users.** People run these plugins in production. A rule that fires because a
-variable is *spelled* a certain way is a false positive in a stranger's codebase,
+variable is _spelled_ a certain way is a false positive in a stranger's codebase,
 and a maintainer who gets one stops trusting the whole ecosystem — the README's
 own FP/FN section explains exactly why that is fatal: an ignored tool has zero
 recall regardless of what it detects.
@@ -49,9 +51,9 @@ recall regardless of what it detects.
 **Forbidden in any reporting path:**
 
 ```ts
-varName.includes('password')                    // no
-calleeName.includes(lib.toLowerCase())          // no
-WORDS.some((w) => identifier.includes(w))       // no — including behind a helper
+varName.includes('password'); // no
+calleeName.includes(lib.toLowerCase()); // no
+WORDS.some((w) => identifier.includes(w)); // no — including behind a helper
 ```
 
 Real findings this shipped, every one a name match reporting on evidence it did
@@ -87,7 +89,7 @@ registry entry. Both evasions have already happened, so check for them:
    to `.some(w => x.includes(w))`, which catches the shape wherever the haystack
    came from.
 2. **Writing the exception into the gate's own doc comment.** That is
-   *documenting* a defect, not mitigating it, and it is explicitly not acceptable
+   _documenting_ a defect, not mitigating it, and it is explicitly not acceptable
    here. If a site is genuinely correct, register it with its direction and reason
    — do not annotate the gate to look past it.
 
@@ -98,6 +100,45 @@ user's trust. Fix the reporting ones first.
 Every fix here needs a lock test that fails on the unfixed rule, and the CWE
 corpus recall gate re-run in the same session — precision work in this repo has
 bought recall loss before.
+
+---
+
+## How work moves: the AI-native SDLC
+
+The working model for this repo and every sibling is
+`AI_NATIVE_SDLC.md`, which sits one level up beside this repo rather than inside it —
+it governs every sibling repo, so it cannot live in any one of them, and a link from
+here would dangle in a standalone clone. Six stages, each handing off through a
+**committed Markdown artifact rather than a chat message**:
+
+| Stage | Artifact | Here |
+| :--- | :--- | :--- |
+| 1 Plan | `intent.md` — what is wanted, why, under which constraints | [`intent/`](./intent/) |
+| 2 Design | `spec.md` — requirements + design, committed beside the intent | [`intent/`](./intent/) |
+| 3 Build | plan mode, this file, skills, worktrees | — |
+| 4 Test | a one-command feedback loop, plus config evals | [`evals/`](./evals/) |
+| 5 Deploy | AI review, hooks as gates, CI/CD | `.claude/hooks/release-gate.sh` |
+| 6 Maintain | control bands; a breach writes a **new `intent.md`** | `scripts/control-bands.ts` |
+
+What this means in practice:
+
+- **Start substantive work from an `intent.md`.** See [`intent/README.md`](./intent/README.md).
+  An `approved` intent with no `spec.md` beside it fails a lock — approving means
+  designed, not liked.
+- **A control band is not a threshold.** `scripts/control-bands.ts` applies Western
+  Electric rules over a rolling mean and σ, so it sees slow drift and not just a hard
+  break. 1σ logs, 2σ diagnoses read-only, 3σ may act. **Never widen a band to clear a
+  breach** — a band widened to fit an excursion measures nothing afterwards.
+- **A breach becomes an intent, not a ticket.** That is the loop. A GitHub issue is
+  the separate queue the loop exists to avoid; issues are for a *watcher* breaking,
+  which is an outage rather than a finding.
+- **Editing `CLAUDE.md`, `AGENTS.md`, `.agent/**` or `lefthook.yml` is a configuration
+  change** and runs [`evals/`](./evals/). Treat a pass-rate drop as a review blocker.
+- **Releases ask.** `.claude/hooks/release-gate.sh` pauses a production deploy or an
+  `npm publish` for a human. `RELEASE_APPROVAL=1` pre-approves a session.
+
+What holds each column, with its cadence, is [`docs/DOCS_QUALITY.md`](./docs/DOCS_QUALITY.md).
+A claim about the docs is worth exactly as much as the check that holds it.
 
 ---
 
@@ -128,8 +169,8 @@ When you fix a bug, ask:
    in dev and stack components into the longest scroll. Reproduce at
    ~390px width before claiming a fix; re-screenshot after.
 
-The default question for every change in this repo is: *"if I revert
-the fix, would CI go red?"* If the answer is no, the fix is half-done.
+The default question for every change in this repo is: _"if I revert
+the fix, would CI go red?"_ If the answer is no, the fix is half-done.
 
 ### Why this matters here
 
@@ -165,6 +206,57 @@ making concurrent changes.
 
 If you add a new homepage section, a new external-data dependency, or
 a new visual primitive, add a matching lock in the same PR.
+
+---
+
+## Substantial work starts with an intent, not a diff
+
+Anything beyond a contained fix — new infrastructure, a cross-cutting change, a
+performance push, anything you would need a paragraph to justify — starts with a
+committed intent, in the same PR as the code.
+
+```
+docs/intents/<slug>/intent.md    what is wanted, why NOW, constraints, non-goals,
+                                 how we will know it worked
+docs/intents/<slug>/design.md    requirements, the options considered, what was
+                                 REJECTED and why, the implementation plan
+```
+
+Two existing pairs are the reference: `docs/intents/infra-metrics/` and
+`docs/intents/ci-speed/`.
+
+**The rules that make this worth doing, rather than paperwork:**
+
+1. **Measure before you design.** Every claim in an intent is a number you took,
+   with the run or command that produced it. `ci-speed/intent.md` exists because
+   a job was timed at 194s with 82% in one build step — not because CI "felt
+   slow". A design built on a guess optimises the wrong thing, expensively.
+2. **Verify against `origin/main`, not your working tree.** Reviewing a stale
+   branch produces a confident critique of code nobody runs. Cheap to avoid,
+   embarrassing to skip — check `git log origin/main` and the package version
+   before you assert anything about current behaviour.
+3. **Record what you rejected.** `ci-speed/design.md` records that consolidating
+   the small CI jobs would RAISE the wall-clock floor, so it is not proposed
+   again every quarter. A rejected option with its reason is worth as much as
+   the chosen one.
+4. **Close the loop.** When the work ships, append the measured before/after to
+   the intent. An intent with no outcome section is an unfinished thought.
+5. **New problems found while building become new intents**, not scope creep in
+   the current one. That is where `ci-speed` came from — it was noticed while
+   shipping `infra-metrics`.
+
+**Advisory vs blocking is a real distinction; keep it.** A number that
+legitimately grows (bundle size, rule count) reports and does not gate — a hard
+cap just gets raised until it means nothing. But _the absence of a measurement_
+does block: left advisory, "advisory" decays into "unmeasured", which is how
+four published plugins reached npm with no size history at all. Gate the
+instrument, not the reading.
+
+**A metric you add is a metric that can silently stop being collected.** It gets
+a lock like any other invariant, and the lock has to be able to go red — prove
+it by breaking the thing on purpose and watching it fail. See
+`scripts/__tests__/infra-metrics-lock.test.ts`, which asserts both that a
+regression trips and that a docs-only change does not.
 
 ---
 
@@ -220,7 +312,7 @@ Pre-commit hooks exist for a reason — never `--no-verify`.
 data loading in production and prefer-fresh in dev. Two specific traps:
 
 - The dev server hits live APIs while `next start` (prod build) serves
-  cached JSON. A broken-in-prod, fine-in-dev bug is the *expected*
+  cached JSON. A broken-in-prod, fine-in-dev bug is the _expected_
   failure mode here, not an exotic one.
 - Mobile breakpoints (`md:`/`lg:` boundaries) hide bugs that desktop
   scroll never touches. Resize to ~390px and walk the page before
@@ -394,8 +486,8 @@ Merging to `main` fires [`auto-deploy.yml`](.github/workflows/auto-deploy.yml).
 It computes turbo-affected workspaces against the previous main commit and
 dispatches the per-app deploy workflow for each affected app:
 
-| Affected workspace | Dispatched workflow | Production URL |
-|---|---|---|
+| Affected workspace                                                         | Dispatched workflow                                                          | Production URL                 |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------ |
 | `docs` (or any dep via `...[<sha>]`, eg `@interlace/ui`, `*PHILOSOPHY.md`) | `deploy-docs.yml` (`environment=production`, includes Playwright smoke gate) | https://eslint.interlace.tools |
 
 `docs` is the only app this repo deploys. `storybook.interlace.tools` and

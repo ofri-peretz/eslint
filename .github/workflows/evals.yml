@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Agent Evals
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 4 (TEST) — continuous evals over the agent configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# The configuration IS code: 63 agent-facing documents, a CLAUDE.md, an AGENTS.md and
+# the hooks in lefthook.yml. Until this existed, editing any of them could make every
+# agent in the repo worse and nothing would say so.
+#
+# Layer 1 is deterministic, free and always runs. Layer 2 runs real tasks against the
+# current configuration and needs ANTHROPIC_API_KEY; without the secret it reports
+# skipped rather than failing, so forks and secretless PRs are not blocked by an eval
+# they cannot run.
+#
+# See evals/README.md.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - '.agent/**'
+      - 'lefthook.yml'
+      - 'evals/**'
+      - 'scripts/run-evals.ts'
+      - '.github/workflows/evals.yml'
+  schedule:
+    # Thu 05:20 UTC — weekly, clear of the 04:05–05:10 cron cluster.
+    - cron: '20 5 * * 4'
+  workflow_dispatch:
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    name: 🧪 Evaluate agent configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write # a scheduled failure has nowhere else to go
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: 🧪 Run evals
+        id: evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npx tsx scripts/run-evals.ts | tee evals.log
+
+      - name: 📋 Summary
+        if: always()
+        run: |
+          {
+            echo '## 🧪 Agent evals'
+            echo
+            echo '```'
+            cat evals.log || echo '(no output)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 📈 Upload results for historical comparison
+        if: always() && hashFiles('evals/results/*.json') != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: eval-results
+          path: evals/results/
+          retention-days: 90
+
+      - name: 🚨 Open an issue on a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Agent evals are failing"
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n[Run](%s)\n' \
+            'The weekly agent-configuration evals failed. Either a config document drifted, or a task eval stopped passing against the current CLAUDE.md, skills and hooks.' "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi

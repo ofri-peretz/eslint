@@ -2,7 +2,7 @@
 // @author        ofri-peretz
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-08-26
-// @source        auth0/express-openid-connect api.js:2, and 110 instances across
+// @source        auth0/express-openid-connect@9cdf98448485a4e36c11429a8be8d97549ac7727 api.js:2, and 110 instances across
 //                the 158-repo scan — the largest single false-positive shape
 //                require-secure-credential-storage produced
 // @sealed        node-security/require-secure-credential-storage

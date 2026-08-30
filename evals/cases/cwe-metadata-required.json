@@ -1,0 +1,12 @@
+{
+  "id": "cwe-metadata-required",
+  "why": "Security rules carry CWE mapping and, where assigned, a CVSS score \u2014 it is the ecosystem's differentiator and the README rule tables render it.",
+  "prompt": "I am adding a new rule to a security plugin in this repository. What security metadata must the rule carry in its meta block?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "cwe"
+    }
+  ]
+}

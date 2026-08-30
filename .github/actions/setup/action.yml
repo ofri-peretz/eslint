@@ -55,6 +55,24 @@ inputs:
       (packages/*/.tsbuildinfo). Set to "true" for the whole-graph typecheck job.
     required: false
     default: "false"
+  turbo-remote-cache:
+    description: >-
+      Back Turborepo's REMOTE cache API with GitHub Actions' cache instead of
+      the `.turbo/cache` tarball. Entries are content-addressed per task hash
+      rather than keyed on a commit SHA, so a PR reuses main's entries for every
+      package it did not change — which the tarball cannot do (measured on run
+      33324089803: cache restored, all 32 tasks still missed).
+
+      DEFAULT OFF, DELIBERATELY. This runs a third-party action, and
+      `release.yml` uses this same composite four times. Enabling it by default
+      would put that action into the supply chain of every published package.
+      Turn it on per job, in PR-CI jobs only — never in a job that publishes,
+      signs, or attests.
+
+      Set `turbo-cache: "false"` alongside it: the tarball is redundant once
+      this is on, and restoring it costs ~11s for nothing.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -176,6 +194,29 @@ runs:
     # holds dist for every package, so falling back to it lets a shard replay
     # dependencies instead of rebuilding them. Order matters: own scope first
     # (most specific), then build, then the legacy `shared` name.
+    # Turborepo REMOTE cache, backed by GitHub Actions' cache service.
+    #
+    # The tarball cache below restores one ~65 MB blob keyed on a commit SHA and
+    # written only by main. A PR falls back by prefix to whatever main SHA last
+    # saved, and every task hash that moved since then misses — measured on run
+    # 33324089803: "Cache restored from key: turbo-Linux-shared-554be80a..."
+    # followed by 32 of 32 "cache miss, executing". 159s of build to serve a 6s
+    # gate. The same tree with a warm cache builds in 7.2s (FULL TURBO).
+    #
+    # A remote-cache API is addressed by TASK HASH, so a PR reuses main's entry
+    # for every package it did not touch, and entries dedupe across branches
+    # instead of being re-tarballed into 14 lineages per push (the store was
+    # 36.89 GB / 210 entries against a 10 GB budget, i.e. permanently evicting).
+    #
+    # Vercel's hosted remote cache is free on every plan and would also work.
+    # This backend was chosen over it for two reasons that outlive the price:
+    # it needs no secret, so it keeps working on pull requests from forks (which
+    # never receive secrets), and it adds no external service to the critical
+    # path of CI correctness.
+    - name: Turborepo remote cache (GitHub Actions backend)
+      if: inputs.turbo-remote-cache == 'true'
+      uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
+
     - name: Restore Turbo cache (branches — read-only)
       if: inputs.turbo-cache == 'true' && github.ref != 'refs/heads/main'
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
