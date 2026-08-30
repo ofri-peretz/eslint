@@ -179,7 +179,13 @@ runs:
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: |
-          node_modules
+          # `node_modules/**`, not `node_modules`. When a positive pattern
+          # matches a DIRECTORY, actions/cache tars that directory whole and the
+          # negations below never get a say — measured twice: the "lean" archive
+          # came back 451,028,482 bytes, then 450,980,039 after the `/**` fix,
+          # against the full archive's 451,051,181. Enumerating the files is what
+          # gives the exclusions something to subtract from.
+          node_modules/**
           packages/*/node_modules
           tools/*/node_modules
           benchmarks/node_modules
@@ -197,14 +203,14 @@ runs:
           !node_modules/recharts/**
           !node_modules/storybook/**
           !node_modules/@storybook/**
-        # `-v2-` is a manual cache-buster and has to be bumped whenever the
+        # `-v3-` is a manual cache-buster and has to be bumped whenever the
         # exclusion list above changes. The key is otherwise a function of the
         # lockfile alone, so an edited exclusion list would keep restoring the
         # archive built under the OLD list — which is exactly how v1 shipped: the
         # patterns lacked `/**`, matched nothing, and the "lean" archive came back
         # 451,028,482 bytes against the full archive's 451,051,181. A 22 kB saving
         # presented as 600 MB.
-        key: node-modules-lean-v2-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        key: node-modules-lean-v3-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
     # Only on a node_modules miss — see the setup-node note above.
     # `npm config get cache` rather than a hardcoded ~/.npm — an .npmrc or a
