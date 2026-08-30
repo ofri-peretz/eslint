@@ -32,8 +32,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SETUP = join(ROOT, '.github', 'actions', 'setup', 'action.yml');
 const SHARD_SCRIPT = join(ROOT, 'scripts', 'ci-test-shard.mts');
 
-/** The `!node_modules/<pkg>` exclusions on the lean cache step. */
-function leanExclusions(): string[] {
+/** The raw `!node_modules/<pkg>/**` patterns on the lean cache step. */
+function leanExclusionPatterns(): string[] {
   const src = readFileSync(SETUP, 'utf8');
   const start = src.indexOf('node-modules-cache-lean');
   expect(start, 'no lean cache step in the setup action').toBeGreaterThan(-1);
@@ -78,13 +78,42 @@ function workspaces(): Workspace[] {
   return out;
 }
 
+/**
+ * The same list as package NAMES — the `/**` suffix removed.
+ *
+ * Kept separate from the raw patterns on purpose. Comparing a manifest's
+ * `"next"` against the pattern `next/**` never matches, so folding the two
+ * together silently turns the collision assertions below into no-ops. That is
+ * not hypothetical: adding the `/**` suffix did exactly that, and the
+ * `@interlace/ui` sabotage that had failed four times started passing.
+ */
+function leanExcludedPackages(): string[] {
+  return leanExclusionPatterns().map((p) => p.replace(/\/\*\*$/, ''));
+}
+
 describe('lean dependency archive', () => {
-  const excluded = leanExclusions();
+  const patterns = leanExclusionPatterns();
+  const excluded = leanExcludedPackages();
   const web = new Set(webLane());
   const nodeLane = workspaces().filter((w) => !web.has(w.name));
 
   it('omits something, or the lean lane is pointless', () => {
     expect(excluded.length).toBeGreaterThan(0);
+  });
+
+  // The v1 exclusions were written as `!node_modules/next`. @actions/glob
+  // matches FILES, so that excluded the directory entry and kept every file
+  // inside it: the "lean" archive came back 451,028,482 bytes against the full
+  // archive's 451,051,181 — a 22 kB saving, silently. Nothing failed; the
+  // number just never moved. The `/**` suffix is the whole fix, so it is
+  // pinned rather than remembered.
+  it('excludes directory CONTENTS, not just the directory entry', () => {
+    const unsuffixed = patterns.filter((e) => !e.endsWith('/**'));
+    expect(
+      unsuffixed,
+      'These patterns match only the directory entry, so every file inside it ' +
+        'still ends up in the archive. Append `/**`.',
+    ).toEqual([]);
   });
 
   it('has a non-empty node lane to protect', () => {

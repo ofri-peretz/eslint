@@ -154,8 +154,11 @@ runs:
           benchmarks/node_modules
           # Recursive, and after the positive paths: workspace node_modules are
           # cached too, so root-relative exclusions missed theirs.
-          !**/node_modules/.vite
-          !**/node_modules/.vite-temp
+          # `/**` matters: @actions/glob matches FILES, so `!dir` excludes only
+          # the directory entry and keeps everything inside it. Without the
+          # suffix these two exclusions did nothing.
+          !**/node_modules/.vite/**
+          !**/node_modules/.vite-temp/**
         key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
     # Same tree minus the web dependency closure. A SEPARATE KEY, not a
@@ -180,21 +183,28 @@ runs:
           packages/*/node_modules
           tools/*/node_modules
           benchmarks/node_modules
-          !**/node_modules/.vite
-          !**/node_modules/.vite-temp
-          !node_modules/next
-          !node_modules/@next
-          !node_modules/mermaid
-          !node_modules/posthog-js
-          !node_modules/@posthog
-          !node_modules/fumadocs-ui
-          !node_modules/fumadocs-core
-          !node_modules/@base-ui
-          !node_modules/lucide-react
-          !node_modules/recharts
-          !node_modules/storybook
-          !node_modules/@storybook
-        key: node-modules-lean-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          !**/node_modules/.vite/**
+          !**/node_modules/.vite-temp/**
+          !node_modules/next/**
+          !node_modules/@next/**
+          !node_modules/mermaid/**
+          !node_modules/posthog-js/**
+          !node_modules/@posthog/**
+          !node_modules/fumadocs-ui/**
+          !node_modules/fumadocs-core/**
+          !node_modules/@base-ui/**
+          !node_modules/lucide-react/**
+          !node_modules/recharts/**
+          !node_modules/storybook/**
+          !node_modules/@storybook/**
+        # `-v2-` is a manual cache-buster and has to be bumped whenever the
+        # exclusion list above changes. The key is otherwise a function of the
+        # lockfile alone, so an edited exclusion list would keep restoring the
+        # archive built under the OLD list — which is exactly how v1 shipped: the
+        # patterns lacked `/**`, matched nothing, and the "lean" archive came back
+        # 451,028,482 bytes against the full archive's 451,051,181. A 22 kB saving
+        # presented as 600 MB.
+        key: node-modules-lean-v2-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
     # Only on a node_modules miss — see the setup-node note above.
     # `npm config get cache` rather than a hardcoded ~/.npm — an .npmrc or a
