@@ -256,24 +256,27 @@ jobs:
         env:
           ANY: ${{ needs.gate.outputs.any }}
           WEB_ANY: ${{ needs.gate.outputs.web_any }}
+          WEB_COUNT: ${{ needs.gate.outputs.web_count }}
           COUNT: ${{ needs.gate.outputs.shard_count }}
           BUILD_ANY: ${{ needs.gate.outputs.build_any }}
           HEAVY: ${{ needs.gate.outputs.heavy }}
           BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: |
           set -euo pipefail
-          if [ "$ANY" = "true" ]; then
-            headline="Unit tests ran: ${COUNT} of 10 shards held affected packages."
+          if [ "$ANY" = "true" ] || [ "$WEB_ANY" = "true" ]; then
+            headline="Unit tests ran: ${COUNT} of 10 node-lane shards and ${WEB_COUNT} of 3 web-lane shards held affected packages."
           else
-            headline="Unit tests skipped: no package source changed vs the base commit, so no shard had anything to run."
+            headline="Unit tests skipped: no package source changed vs the base commit, so no shard in either lane had anything to run."
           fi
           {
             echo "# ${headline}"
             echo ""
             echo "| Gate output | Value | Meaning |"
             echo "|---|---|---|"
-            echo "| \`any\` | ${ANY} | whether any test shard was dispatched |"
-            echo "| \`shard_count\` | ${COUNT} | shards holding at least one affected package |"
+            echo "| \`any\` | ${ANY} | whether any node-lane shard was dispatched |"
+            echo "| \`shard_count\` | ${COUNT} | node-lane shards holding at least one affected package |"
+            echo "| \`web_any\` | ${WEB_ANY} | whether any web-lane shard was dispatched |"
+            echo "| \`web_count\` | ${WEB_COUNT} | web-lane shards holding \`docs\` or \`@interlace/ui\` |"
             echo "| \`build_any\` | ${BUILD_ANY} | whether any build shard was dispatched |"
             echo "| \`heavy\` | ${HEAVY} | whether Typecheck / Portability were dispatched |"
             echo ""
@@ -652,6 +655,7 @@ jobs:
           HEAVY: ${{ needs.gate.outputs.heavy }}
           ANY: ${{ needs.gate.outputs.any }}
           BUILD_ANY: ${{ needs.gate.outputs.build_any }}
+          WEB_ANY: ${{ needs.gate.outputs.web_any }}
         run: |
           set -euo pipefail
           icon() {
