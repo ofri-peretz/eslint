@@ -20,10 +20,22 @@ const REPO_ROOT = path.resolve(
   '../..',
 );
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'ci-test-shard.mts');
-const SHARD_TOTAL = 10;
+
+/**
+ * The two lanes and their shard counts, mirroring quality-full.yml.
+ *
+ * The partition is across BOTH lanes, not within either one: a package dropped
+ * from the node lane and never picked up by the web lane is exactly the silent
+ * under-testing this file exists to catch, and a per-lane assertion would miss
+ * it. Every test below therefore works on the union.
+ */
+const LANES = [
+  { lane: 'node', total: 10 },
+  { lane: 'web', total: 3 },
+] as const;
 
 /** Run the splitter in list-only mode by reading its plan off stdout. */
-function planFor(shard: number, total = SHARD_TOTAL): string[] {
+function planFor(shard: number, total: number, lane: string): string[] {
   // The script prints "  <name>  (<task>)" per selected package before running
   // turbo. `CI_TEST_SHARD_PLAN_ONLY=1` makes it exit right after printing that
   // plan — that env var, not the shard arithmetic, is what keeps this lock from
@@ -32,21 +44,25 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
   // and tsx is not a dependency of this repo — `npx tsx` would hit the registry
   // at test time and exercise esbuild's transform instead of Node's native
   // .mts type stripping, i.e. lock a code path production does not use.
-  const out = execFileSync('node', [SCRIPT, String(shard), String(total)], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-    // CI_TEST_SHARD_ALL=1 is required, not incidental. Without it the script
-    // applies affected filtering against origin/main, so on a branch touching
-    // a few packages the plan is the FILTERED subset — and the assertions
-    // below ("covers every package exactly once", "no shard empty") would then
-    // be checking the diff rather than the partition, passing vacuously on a
-    // branch that changed nothing.
-    env: {
-      ...process.env,
-      CI_TEST_SHARD_PLAN_ONLY: '1',
-      CI_TEST_SHARD_ALL: '1',
+  const out = execFileSync(
+    'node',
+    [SCRIPT, String(shard), String(total), '--lane', lane],
+    {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      // CI_TEST_SHARD_ALL=1 is required, not incidental. Without it the script
+      // applies affected filtering against origin/main, so on a branch touching
+      // a few packages the plan is the FILTERED subset — and the assertions
+      // below ("covers every package exactly once", "no shard empty") would then
+      // be checking the diff rather than the partition, passing vacuously on a
+      // branch that changed nothing.
+      env: {
+        ...process.env,
+        CI_TEST_SHARD_PLAN_ONLY: '1',
+        CI_TEST_SHARD_ALL: '1',
+      },
     },
-  });
+  );
   // A package split with `vitest --shard` appears once PER SLICE, so the unit
   // parsed here is "name" or "name#i/n" — not just the package name. Collapsing
   // slices back to the bare name would make a MISSING slice invisible to the
@@ -62,7 +78,7 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
   // fail for the wrong reason.
   if (names.length === 0)
     throw new Error(
-      `shard ${shard}/${total}: parsed 0 packages from plan output:\n${out}`,
+      `${lane} shard ${shard}/${total}: parsed 0 packages from plan output:\n${out}`,
     );
   return names;
 }
@@ -73,10 +89,12 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
  * discovery, and a lock that derives its expectation from the code under test
  * agrees with that code by construction — including when both are wrong.
  */
-const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 6 };
+const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 3 };
 
 describe('shard partitioning', () => {
-  const shards = Array.from({ length: SHARD_TOTAL }, (_, i) => planFor(i + 1));
+  const shards = LANES.flatMap(({ lane, total }) =>
+    Array.from({ length: total }, (_, i) => planFor(i + 1, total, lane)),
+  );
   const all = shards.flat();
 
   it('assigns every package — and every slice of a split package — exactly once', () => {
@@ -116,8 +134,13 @@ describe('shard partitioning', () => {
       expect(s.length, `shard ${i + 1} is empty`).toBeGreaterThan(0);
   });
 
-  it('is deterministic across invocations', () => {
-    // Turbo cache keys depend on a package landing on the same shard each run.
-    expect(planFor(1)).toEqual(shards[0]);
-  });
+  it.each(LANES)(
+    'is deterministic across invocations ($lane lane)',
+    ({ lane, total }) => {
+      // Turbo cache keys depend on a package landing on the same shard each run.
+      const first =
+        LANES.findIndex((l) => l.lane === lane) === 0 ? 0 : LANES[0].total;
+      expect(planFor(1, total, lane)).toEqual(shards[first]);
+    },
+  );
 });

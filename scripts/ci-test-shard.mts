@@ -38,6 +38,34 @@ type Pkg = {
 };
 
 /**
+ * The two dependency worlds this monorepo actually has.
+ *
+ * `web` packages pull in the Next.js/React tree — `next` (200 MB unpacked),
+ * `@next` (86), `mermaid` (84), posthog (86), fumadocs, `@base-ui`, `shiki`,
+ * `recharts`. `node` packages — every ESLint plugin, the devkit, the
+ * formatters, the tools — pull in none of it.
+ *
+ * Before this split the two shared one shard matrix, so ANY shard might be
+ * handed a `web` package and every shard therefore had to restore the whole
+ * 451 MB `node_modules` archive. Measured on run 33337052316: 13.3s of restore
+ * per job, ten jobs, to execute 43s of tests. Eight of those ten held nothing
+ * but ESLint plugins and never opened a byte of it.
+ *
+ * Splitting the lanes is what lets the `node` lane restore a lean archive
+ * (see the `deps` input on .github/actions/setup). The membership below is not
+ * a preference: `scripts/__tests__/lane-deps-lock.test.ts` fails if a `node`
+ * lane workspace declares any dependency the lean archive omits.
+ */
+const WEB_LANE = new Set<string>(['docs', '@interlace/ui']);
+
+type Lane = 'node' | 'web';
+
+/** Which lane owns a package, by manifest name. */
+function laneOf(pkgName: string): Lane {
+  return WEB_LANE.has(pkgName) ? 'web' : 'node';
+}
+
+/**
  * Packages split across several CI shards with `vitest --shard`.
  *
  * LPT bucketing cannot produce a shard faster than the single largest item, so
@@ -59,7 +87,7 @@ type Pkg = {
  *
  * NOT applied when collecting coverage — see `wantCoverage` below.
  */
-const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 6 };
+const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 3 };
 
 /**
  * Cost proxy for balancing: number of test files in the package.
@@ -93,7 +121,7 @@ const NO_TEST_ALLOWLIST = new Set<string>(['registry']);
 
 const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
 
-function discoverPackages(): { testable: Pkg[]; untested: string[] } {
+function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
   const testable: Pkg[] = [];
   const untested: string[] = [];
   for (const wsDir of WORKSPACE_DIRS) {
@@ -104,6 +132,11 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
       if (!fs.existsSync(manifest)) continue;
       const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
       const dir = `${wsDir}/${entry}`;
+      // Before the task lookup, not after. A package in the other lane is not
+      // "untested" — it is another job's work, and the `untested` guard below
+      // would otherwise fail the node lane for every web package. The web
+      // lane's own discovery still holds that package to the same rule.
+      if (laneOf(pkg.name) !== lane) continue;
       // Prefer test:coverage so the 100% thresholds declared in each
       // vitest.config.mts are actually enforced. Fall back to plain `test` for
       // workspaces that have tests but no coverage task (docs,
@@ -165,7 +198,7 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
 // a one-package PR would acquire ten runners so nine could print "nothing to
 // do" — actively worse than not sharding. Emitting only the non-empty shards
 // keeps job count proportional to the size of the change.
-const MATRIX_MODE = process.argv[2] === '--matrix';
+const MATRIX_MODE = process.argv.includes('--matrix');
 
 /**
  * Write the shard list to GITHUB_OUTPUT (and stdout when run locally).
@@ -190,12 +223,28 @@ function emitMatrix(shardNumbers: number[], heavy = true): void {
   }
 }
 
-const shardIndex = MATRIX_MODE ? 0 : Number(process.argv[2]);
-const shardTotal = Number(process.argv[3]);
+// `--lane <node|web>` selects the dependency world; it is stripped before the
+// positional arguments are read so both call shapes keep working unchanged.
+// Defaulting to `node` is deliberate: a caller that forgets the flag gets the
+// lane with the lean dependency archive, so the failure is a loud
+// MODULE_NOT_FOUND in a web test rather than a web package silently never
+// running.
+const laneFlagAt = process.argv.indexOf('--lane');
+const LANE: Lane = laneFlagAt === -1 ? 'node' : (process.argv[laneFlagAt + 1] as Lane);
+if (LANE !== 'node' && LANE !== 'web') {
+  console.error(`--lane must be "node" or "web" (got ${JSON.stringify(process.argv[laneFlagAt + 1])})`);
+  process.exit(2);
+}
+const positional = process.argv
+  .slice(2)
+  .filter((a, i, all) => a !== '--lane' && all[i - 1] !== '--lane');
+
+const shardIndex = MATRIX_MODE ? 0 : Number(positional[0]);
+const shardTotal = Number(positional[1]);
 
 if (!MATRIX_MODE && (!Number.isInteger(shardIndex) || shardIndex < 1 || shardIndex > shardTotal)) {
-  console.error(`Usage: node scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N>`);
-  console.error(`   or: node scripts/ci-test-shard.mts --matrix <shardTotal N>`);
+  console.error(`Usage: node scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N> [--lane node|web]`);
+  console.error(`   or: node scripts/ci-test-shard.mts --matrix <shardTotal N> [--lane node|web]`);
   process.exit(2);
 }
 if (!Number.isInteger(shardTotal) || shardTotal < 1) {
@@ -204,7 +253,7 @@ if (!Number.isInteger(shardTotal) || shardTotal < 1) {
 }
 
 
-const { testable, untested } = discoverPackages();
+const { testable, untested } = discoverPackages(LANE);
 const REVERSE_DEPS = reverseDeps(testable);
 
 // Zero-selection guard. `turbo run test --filter=...[origin/main]` used to

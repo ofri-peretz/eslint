@@ -30,6 +30,25 @@ inputs:
     description: Run `npm ci` after restoring caches. Set to "false" to skip (rare).
     required: false
     default: "true"
+  deps:
+    description: >-
+      Which dependency archive to restore: "full" (everything `npm ci`
+      installs) or "lean" (everything except the Next.js/React tree).
+
+      The lean archive omits `next`, `@next`, `mermaid`, posthog, `fumadocs-*`,
+      `@base-ui`, `lucide-react`, `recharts` and `storybook` — ~600 MB unpacked
+      that no ESLint plugin, the devkit, the formatters or the tools ever load.
+      Measured on run 33337052316: the full archive is 451 MB and costs 13.3s
+      to restore, paid by every job; eight of the ten test shards held nothing
+      but plugins and never opened a byte of it.
+
+      "lean" is only safe for the `node` lane in scripts/ci-test-shard.mts.
+      `scripts/__tests__/lane-deps-lock.test.ts` fails if a node-lane workspace
+      declares anything the lean archive omits — the check that caught
+      `date-fns`, which four node-lane packages import and which is therefore
+      NOT omitted.
+    required: false
+    default: "full"
   turbo-cache:
     description: Restore + save the Turborepo task cache. Set to "false" for jobs that don't run turbo.
     required: false
@@ -122,9 +141,9 @@ runs:
         node-version: ${{ inputs.node-version }}
         package-manager-cache: false
 
-    - name: Restore node_modules cache
-      if: inputs.install == 'true'
-      id: node-modules-cache
+    - name: Restore node_modules cache (full)
+      if: inputs.install == 'true' && inputs.deps != 'lean'
+      id: node-modules-cache-full
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: |
@@ -139,17 +158,55 @@ runs:
           !**/node_modules/.vite-temp
         key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
+    # Same tree minus the web dependency closure. A SEPARATE KEY, not a
+    # variant of the one above — sharing a key would let whichever job saved
+    # first decide what every other job restores, and a lean save would then
+    # silently strip Next.js out from under the docs build.
+    #
+    # The exclusions are the ones measured as both large and web-only. The
+    # list is deliberately short: it is a deny-list over a hoisted tree, so
+    # each entry is a claim that nothing in the node lane resolves that module,
+    # and a wrong claim costs a MODULE_NOT_FOUND. `date-fns` is the standing
+    # counter-example — root-declared and web-looking, but imported by
+    # eslint-plugin-import-next, -modularity, -secure-coding and
+    # cwe-analytics-engine, so it stays.
+    - name: Restore node_modules cache (lean — no web tree)
+      if: inputs.install == 'true' && inputs.deps == 'lean'
+      id: node-modules-cache-lean
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          node_modules
+          packages/*/node_modules
+          tools/*/node_modules
+          benchmarks/node_modules
+          !**/node_modules/.vite
+          !**/node_modules/.vite-temp
+          !node_modules/next
+          !node_modules/@next
+          !node_modules/mermaid
+          !node_modules/posthog-js
+          !node_modules/@posthog
+          !node_modules/fumadocs-ui
+          !node_modules/fumadocs-core
+          !node_modules/@base-ui
+          !node_modules/lucide-react
+          !node_modules/recharts
+          !node_modules/storybook
+          !node_modules/@storybook
+        key: node-modules-lean-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
     # Only on a node_modules miss — see the setup-node note above.
     # `npm config get cache` rather than a hardcoded ~/.npm — an .npmrc or a
     # non-Linux runner can move it.
     - name: Resolve npm cache directory
-      if: inputs.install == 'true' && steps.node-modules-cache.outputs.cache-hit != 'true'
+      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
       id: npm-cache-dir
       shell: bash
       run: echo "dir=$(npm config get cache)" >> "$GITHUB_OUTPUT"
 
     - name: Restore npm registry cache (only when npm ci will run)
-      if: inputs.install == 'true' && steps.node-modules-cache.outputs.cache-hit != 'true'
+      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: ${{ steps.npm-cache-dir.outputs.dir }}
@@ -158,7 +215,7 @@ runs:
           npm-${{ runner.os }}-
 
     - name: Install dependencies
-      if: inputs.install == 'true' && steps.node-modules-cache.outputs.cache-hit != 'true'
+      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
       shell: bash
       run: npm ci --prefer-offline --no-audit --fund=false
 
