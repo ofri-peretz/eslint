@@ -1,0 +1,12 @@
+{
+  "id": "tests-encode-the-defect",
+  "why": "Four rules in one session shipped a defect that their own suites asserted as correct: prefer-event-target's tests carried `output: 'import { EventTarget } from \"events\"'` — an import of a binding that does not exist — as the expected fix; hooks-exhaustive-deps asserted setCount/dispatch/nodeRef were skipped while UNDECLARED, which passed only on a name match; prefer-dom-node-text-content had three `valid` cases that passed only because their receivers missed a vocabulary. A green suite was the reason nobody noticed.",
+  "prompt": "A rule here behaves wrongly, and I have reproduced it by hand. Its existing test suite is entirely green. Before I change the rule, what should I suspect about that suite, and what should I do with it?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "pinn"
+    }
+  ]
+}
