@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4488830,
+      "title": "My 9-Reviewer AI Gate Failed Articles It Scored 9.1",
+      "description": "A reviewer scored 10.0 and its clean bill of health parsed as a blocker. Three ways my LLM-judge gate failed work it had just praised.",
+      "url": "https://dev.to/ofri-peretz/my-9-reviewer-ai-gate-failed-articles-it-scored-91-58bk",
+      "canonical_url": "https://ofriperetz.dev/articles/llm-judge-gate-false-negatives",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fllm-judge-gate-false-negatives.jpg",
+      "published_at": "2026-08-26T00:01:20Z",
+      "readable_publish_date": "Aug 26",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "ai",
+        "webdev",
+        "testing"
+      ]
+    },
+    {
       "id": 4443062,
       "title": "I Linted My Own Design System. All 8 Breaks Were Pasted In.",
       "description": "I ran four design-system rules over 401 of my own components. 144 violations — and every color break was in code I pasted in.",
@@ -1684,7 +1704,7 @@
       ]
     }
   ],
-  "total": 82,
-  "lastUpdated": "2026-08-25T01:38:03.000Z",
+  "total": 83,
+  "lastUpdated": "2026-08-30T16:32:46.520Z",
   "source": "public"
 }
