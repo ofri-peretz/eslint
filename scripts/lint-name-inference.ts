@@ -103,7 +103,8 @@ const TOKENISED = /\.split\(/;
  * pair of method names; a list this long is a dictionary someone intends to
  * substring-match against an identifier.
  */
-const WORD_LIST = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[\s*((?:'[^']*'|"[^"]*")\s*,\s*){3,}/g;
+const WORD_LIST =
+  /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[\s*((?:'[^']*'|"[^"]*")\s*,\s*){3,}/g;
 
 /** `x.name.includes(` / `x.name.toLowerCase().includes(` — the inline form. */
 const INLINE_NAME_SUBSTRING = new RegExp(
@@ -128,10 +129,12 @@ const INLINE_NAME_SUBSTRING = new RegExp(
  * fed to `.test()` is already a vocabulary, and requiring three would have let
  * the `hooks-exhaustive-deps` list through at its original size.
  */
-const REGEX_LIST = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*\[\s*(?:\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\s*,\s*){1,}/g;
+const REGEX_LIST =
+  /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*\[\s*(?:\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\s*,\s*)+\/(?:[^/\\\n]|\\.)+\/[gimsuy]*/g;
 
 /** `/…/.test(x.name)` — a literal regex tested directly against a spelling. */
-const INLINE_NAME_REGEX = /\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\.test\(\s*[A-Za-z_$][\w$.]*\.name\b/;
+const INLINE_NAME_REGEX =
+  /\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\.test\(\s*[A-Za-z_$][\w$.]*\.name\b/;
 
 export interface Site {
   line: number;
@@ -163,8 +166,18 @@ export function findNameSubstringSites(source: string): Site[] {
     nameBindings.add(match[1]);
   }
 
+  // Identifiers are interpolated into regex sources below. `$` is legal in a
+  // TypeScript identifier and is an anchor in a regex, so an unescaped
+  // `patterns$` compiles to "patterns" followed by end-of-input and the matcher
+  // silently stops finding `patterns$.some(...)`. A gate that quietly matches
+  // nothing is worse than one that errors.
+  const escape = (id: string): string =>
+    id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
   const boundSubstring = nameBindings.size
-    ? new RegExp(`\\b(?:${[...nameBindings].join('|')})\\.(?:${SUBSTRING_METHODS})\\(`)
+    ? new RegExp(
+        `\\b(?:${[...nameBindings].map(escape).join('|')})\\.(?:${SUBSTRING_METHODS})\\(`,
+      )
     : null;
 
   // The interprocedural shape the header used to call a known blind spot, and
@@ -220,13 +233,15 @@ export function findNameSubstringSites(source: string): Site[] {
   const nameLike = `(?:${[...nameBindings, 'name'].join('|')}|[A-Za-z_$][\\w$]*Name)`;
   const vocabularyRegex = regexLists.size
     ? new RegExp(
-        `\\b(?:${[...regexLists].join('|')})\\.(?:some|find|filter|every)\\([^;\\n]*?\\.test\\(\\s*${nameLike}\\s*\\)`,
+        `\\b(?:${[...regexLists].map(escape).join('|')})\\.(?:some|find|filter|every)\\([^;\\n]*?\\.test\\(\\s*${nameLike}\\s*\\)`,
       )
     : null;
 
   // And the two-step form: `const n = node.name` then `/…/.test(n)`.
   const boundRegex = nameBindings.size
-    ? new RegExp(`\\/[^/\\n]+\\/[gimsuy]*\\.test\\(\\s*(?:${[...nameBindings].join('|')})\\b`)
+    ? new RegExp(
+        `\\/[^/\\n]+\\/[gimsuy]*\\.test\\(\\s*(?:${[...nameBindings].map(escape).join('|')})\\b`,
+      )
     : null;
 
   const sites: Site[] = [];
@@ -234,7 +249,8 @@ export function findNameSubstringSites(source: string): Site[] {
     const text = raw.trim();
     // Prose in a comment describes this pattern constantly — including in this
     // file's own header — and must never count as a site.
-    if (text.startsWith('//') || text.startsWith('*') || text.startsWith('/*')) return;
+    if (text.startsWith('//') || text.startsWith('*') || text.startsWith('/*'))
+      return;
     if (
       INLINE_NAME_SUBSTRING.test(raw) ||
       boundSubstring?.test(raw) ||
@@ -284,27 +300,32 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-conventions/src/rules/conventions/prefer-dom-node-text-content.ts',
     direction: 'report',
-    reason: 'Element-ness from a vocabulary of names (element|el|div|span|node|ref|dom|elem) and a suffix list. Needs the binding.',
+    reason:
+      'Element-ness from a vocabulary of names (element|el|div|span|node|ref|dom|elem) and a suffix list. Needs the binding.',
   },
   {
     file: 'eslint-plugin-conventions/src/rules/conventions/require-data-testid.ts',
     direction: 'suppress',
-    reason: 'JSX handler props identified by /^on[A-Z]/. The React convention, but still a spelling test.',
+    reason:
+      'JSX handler props identified by /^on[A-Z]/. The React convention, but still a spelling test.',
   },
   {
     file: 'eslint-plugin-maintainability/src/rules/maintainability/max-parameters.ts',
     direction: 'suppress',
-    reason: 'Component-vs-function told by /^[A-Z]/ on the declaration name. The JSX convention.',
+    reason:
+      'Component-vs-function told by /^[A-Z]/ on the declaration name. The JSX convention.',
   },
   {
     file: 'eslint-plugin-modularity/src/rules/ddd-anemic-domain-model.ts',
     direction: 'report',
-    reason: 'Eight .includes() calls against repository|service|api|client|dao to decide what a class is. The heaviest name inference in the ecosystem and the first to fix.',
+    reason:
+      'Eight .includes() calls against repository|service|api|client|dao to decide what a class is. The heaviest name inference in the ecosystem and the first to fix.',
   },
   {
     file: 'eslint-plugin-modularity/src/rules/no-external-api-calls-in-utils.ts',
     direction: 'report',
-    reason: 'Method list filtered by .includes(".") to split bare names from member paths. Shape, not vocabulary, but the detector cannot tell.',
+    reason:
+      'Method list filtered by .includes(".") to split bare names from member paths. Shape, not vocabulary, but the detector cannot tell.',
   },
   {
     file: 'eslint-plugin-react-features/src/rules/performance/no-unnecessary-rerenders.ts',
@@ -314,12 +335,14 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-react-features/src/rules/react/hooks-exhaustive-deps.ts',
     direction: 'suppress',
-    reason: 'Stability decided by /^set[A-Z]/, /dispatch/i, /Ref$/ — reports real refs and silently exempts reactive values. Being fixed in #733; delete this entry when that lands.',
+    reason:
+      'Stability decided by /^set[A-Z]/, /dispatch/i, /Ref$/ — reports real refs and silently exempts reactive values. Being fixed in #733; delete this entry when that lands.',
   },
   {
     file: 'eslint-plugin-react-features/src/rules/react/no-unknown-property.ts',
     direction: 'suppress',
-    reason: 'Host-vs-component by /^[a-z]/ and custom elements by a hyphen. Both are the language and HTML specs, not a vocabulary.',
+    reason:
+      'Host-vs-component by /^[a-z]/ and custom elements by a hyphen. Both are the language and HTML specs, not a vocabulary.',
   },
   {
     file: 'eslint-plugin-react-features/src/rules/react/require-optimization.ts',
@@ -350,62 +373,74 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-browser-security/src/rules/no-innerhtml/index.ts',
     direction: 'report',
-    reason: 'Document-ness matched by regex on the object name. Needs scope resolution to the DOM global.',
+    reason:
+      'Document-ness matched by regex on the object name. Needs scope resolution to the DOM global.',
   },
   {
     file: 'eslint-plugin-browser-security/src/rules/no-unsafe-inline-csp/index.ts',
     direction: 'report',
-    reason: 'JSX attribute name matched by regex. Exact membership would do — the attribute set is closed.',
+    reason:
+      'JSX attribute name matched by regex. Exact membership would do — the attribute set is closed.',
   },
   {
     file: 'eslint-plugin-lambda-security/src/rules/no-env-logging/index.ts',
     direction: 'report',
-    reason: 'Logger-ness matched by /log(ger)?/i on an identifier. Needs the import or call target as evidence.',
+    reason:
+      'Logger-ness matched by /log(ger)?/i on an identifier. Needs the import or call target as evidence.',
   },
   {
     file: 'eslint-plugin-lambda-security/src/rules/no-error-swallowing/index.ts',
     direction: 'report',
-    reason: 'Response-shape keys matched by regex. Closed set — exact membership is available.',
+    reason:
+      'Response-shape keys matched by regex. Closed set — exact membership is available.',
   },
   {
     file: 'eslint-plugin-lambda-security/src/rules/no-exposed-error-details/index.ts',
     direction: 'report',
-    reason: 'Error-ness matched by /error|err|e|exception/i — the `e` branch matches any identifier containing the letter. Needs the catch binding.',
+    reason:
+      'Error-ness matched by /error|err|e|exception/i — the `e` branch matches any identifier containing the letter. Needs the catch binding.',
   },
   {
     file: 'eslint-plugin-lambda-security/src/rules/no-secrets-in-env/index.ts',
     direction: 'report',
-    reason: 'Config-ness matched by /env|config|settings/i on a declaration name.',
+    reason:
+      'Config-ness matched by /env|config|settings/i on a declaration name.',
   },
   {
     file: 'eslint-plugin-nestjs-security/src/rules/no-exposed-private-fields/index.ts',
     direction: 'report',
-    reason: 'Class role inferred from a name suffix (Entity|Model|Schema|…). Needs the decorator as evidence.',
+    reason:
+      'Class role inferred from a name suffix (Entity|Model|Schema|…). Needs the decorator as evidence.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/no-arbitrary-file-access/index.ts',
     direction: 'suppress',
-    reason: 'Withholds on /^(safe|sanitized|validated|clean)/i. Naming a tainted variable cleanPath hides the finding — this one costs recall.',
+    reason:
+      'Withholds on /^(safe|sanitized|validated|clean)/i. Naming a tainted variable cleanPath hides the finding — this one costs recall.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/no-buffer-overread/index.ts',
     direction: 'report',
-    reason: 'Buffer methods matched by /^(?:read|write)[A-Z]/. The API surface is closed and the rule already has DEFAULT_BUFFER_METHODS — exact membership is right there.',
+    reason:
+      'Buffer methods matched by /^(?:read|write)[A-Z]/. The API surface is closed and the rule already has DEFAULT_BUFFER_METHODS — exact membership is right there.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/index.ts',
     direction: 'suppress',
-    reason: 'Withholds on /^(read|len|size|count|decode|parse)/i against a name. Costs recall the same way the file-access one does.',
+    reason:
+      'Withholds on /^(read|len|size|count|decode|parse)/i against a name. Costs recall the same way the file-access one does.',
   },
   {
     file: 'eslint-plugin-secure-coding/src/rules/detect-object-injection/index.ts',
     direction: 'suppress',
-    reason: 'A suffix vocabulary (Code|Status|Version|Kind|Mode|Type|…) withholds on the property name. The CONSTANT_CASE shape test beside it is a shape, not a vocabulary, and is the lesser half.',
+    reason:
+      'A suffix vocabulary (Code|Status|Version|Kind|Mode|Type|…) withholds on the property name. The CONSTANT_CASE shape test beside it is a shape, not a vocabulary, and is the lesser half.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/no-math-random-crypto/index.ts',
     direction: 'report',
-    reason: 'functionNameSuggestsCrypto tests CRYPTO_FUNCTION_PATTERNS against a function name — its own doc comment says "the name says this function builds a security value". Reports on a spelling; needs the call target.',
+    reason:
+      'functionNameSuggestsCrypto tests CRYPTO_FUNCTION_PATTERNS against a function name — its own doc comment says "the name says this function builds a security value". Reports on a spelling; needs the call target.',
   },
   {
     // OVER-INCLUSION from the pre-existing name-binding heuristic, not the
@@ -415,7 +450,8 @@ const REGISTERED: RegistryEntry[] = [
     // statement content, which is not this defect class.
     file: 'eslint-plugin-postgresql-security/src/rules/no-transaction-on-pool/index.ts',
     direction: 'report',
-    reason: 'NOT name inference — the patterns test SQL text, and `text` is a Property node. Registered as a known over-inclusion.',
+    reason:
+      'NOT name inference — the patterns test SQL text, and `text` is a Property node. Registered as a known over-inclusion.',
   },
   // ═══════════════════════════════════════════════════════════════════════
   // Surfaced 2026-08-16 when the vocabulary detector closed the helper blind
@@ -433,37 +469,44 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/require-audit-logging/index.ts',
     direction: 'suppress',
-    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+    reason:
+      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/require-error-handling/index.ts',
     direction: 'suppress',
-    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+    reason:
+      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/require-output-validation/index.ts',
     direction: 'suppress',
-    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+    reason:
+      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/require-rag-content-validation/index.ts',
     direction: 'suppress',
-    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+    reason:
+      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/require-request-timeout/index.ts',
     direction: 'suppress',
-    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+    reason:
+      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/require-tool-schema/index.ts',
     direction: 'suppress',
-    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+    reason:
+      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/require-validated-prompt/index.ts',
     direction: 'suppress',
-    reason: 'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
+    reason:
+      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
   },
   {
     file: 'eslint-plugin-node-security/src/rules/no-ssrf/index.ts',
@@ -501,12 +544,14 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/no-hardcoded-api-keys/index.ts',
     direction: 'suppress',
-    reason: 'providerFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
+    reason:
+      'providerFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/no-sensitive-in-prompt/index.ts',
     direction: 'suppress',
-    reason: 'aiSDKFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
+    reason:
+      'aiSDKFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
   },
   {
     file: 'eslint-plugin-vercel-ai-security/src/rules/no-unsafe-output-handling/index.ts',
@@ -534,7 +579,8 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-lambda-security/src/rules/no-hardcoded-credentials-sdk/index.ts',
     direction: 'report',
-    reason: 'node.id.name.toLowerCase().includes("credential") is the sole basis for the finding.',
+    reason:
+      'node.id.name.toLowerCase().includes("credential") is the sole basis for the finding.',
   },
   {
     file: 'eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/index.ts',
@@ -579,7 +625,8 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-express-security/src/rules/no-missing-cors-check/index.ts',
     direction: 'suppress',
-    reason: 'Same trustedLibraries suppression as its browser-security twin; the two are near-duplicates.',
+    reason:
+      'Same trustedLibraries suppression as its browser-security twin; the two are near-duplicates.',
   },
   {
     file: 'eslint-plugin-express-security/src/rules/require-csrf-protection/index.ts',
@@ -591,7 +638,8 @@ const REGISTERED: RegistryEntry[] = [
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-graphql-injection/index.ts',
     direction: 'suppress',
-    reason: 'trustedGraphqlLibraries substring-matched against a callee name to withhold a finding.',
+    reason:
+      'trustedGraphqlLibraries substring-matched against a callee name to withhold a finding.',
   },
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-directive-injection/index.ts',
@@ -635,7 +683,12 @@ export function checkNameInference(
     .filter((r) => !withSites.has(r.file))
     .map((r) => `${r.file} — no name-substring sites left; delete the entry`);
 
-  return { violations, staleRegistry, filesScanned: files.length, registered: registry.length };
+  return {
+    violations,
+    staleRegistry,
+    filesScanned: files.length,
+    registered: registry.length,
+  };
 }
 
 /**
@@ -705,7 +758,8 @@ function main(): void {
   const quiet = process.argv.includes('--quiet');
   const list = process.argv.includes('--list');
   const sources = ruleSources();
-  const { violations, staleRegistry, filesScanned, registered } = checkNameInference(sources);
+  const { violations, staleRegistry, filesScanned, registered } =
+    checkNameInference(sources);
 
   if (list) {
     for (const { file, source } of sources) {
@@ -727,24 +781,40 @@ function main(): void {
   }
 
   if (violations.length > 0) {
-    console.error(`❌ ${violations.length} rule(s) test an identifier's spelling by substring:\n`);
+    console.error(
+      `❌ ${violations.length} rule(s) test an identifier's spelling by substring:\n`,
+    );
     for (const v of violations) {
       console.error(`  - ${v.file}`);
       for (const s of v.sites) console.error(`      ${s.line}: ${s.text}`);
     }
     console.error('');
-    console.error('  A name is not a type. `propName.includes("phone")` matches `phoneBookLength`,');
-    console.error('  and `name.includes("react")` matches `preact` — a real package, and a real');
-    console.error('  finding we shipped. Resolve the identifier to an import, a call target or a');
+    console.error(
+      '  A name is not a type. `propName.includes("phone")` matches `phoneBookLength`,',
+    );
+    console.error(
+      '  and `name.includes("react")` matches `preact` — a real package, and a real',
+    );
+    console.error(
+      '  finding we shipped. Resolve the identifier to an import, a call target or a',
+    );
     console.error('  value before reporting on it.');
     console.error('');
-    console.error('  Exact membership (`NAMES.has(node.name)`) is NOT this and does not need');
-    console.error('  registering. If the substring test is genuinely correct here, add the rule to');
-    console.error('  REGISTERED in scripts/lint-name-inference.ts with its direction and the reason.\n');
+    console.error(
+      '  Exact membership (`NAMES.has(node.name)`) is NOT this and does not need',
+    );
+    console.error(
+      '  registering. If the substring test is genuinely correct here, add the rule to',
+    );
+    console.error(
+      '  REGISTERED in scripts/lint-name-inference.ts with its direction and the reason.\n',
+    );
   }
 
   if (staleRegistry.length > 0) {
-    console.error(`❌ ${staleRegistry.length} stale registry entr(ies) — the debt was paid, the record wasn't:\n`);
+    console.error(
+      `❌ ${staleRegistry.length} stale registry entr(ies) — the debt was paid, the record wasn't:\n`,
+    );
     for (const s of staleRegistry) console.error(`  - ${s}`);
     console.error('');
   }
