@@ -121,74 +121,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // Track FileReader onload handlers
-
-    /**
-     * Check if we're in a FileReader onload assignment
-     */
-    function isFileReaderOnloadAssignment(
-      node: TSESTree.AssignmentExpression,
-    ): { isHandler: boolean; eventParam: string | null } {
-      if (
-        node.left.type === AST_NODE_TYPES.MemberExpression &&
-        node.left.property.type === AST_NODE_TYPES.Identifier &&
-        (node.left.property.name === 'onload' ||
-          node.left.property.name === 'onloadend')
-      ) {
-        // No receiver-NAME heuristic here. It used to require the name to
-        // contain 'reader'/'fr'/'r', which is narrower than the resolver that
-        // now decides ownership: `const f = new FileReader()` failed the name
-        // check while the resolver still attributed the payload to filereader,
-        // so no-innerhtml skipped it and THIS rule never fired — the finding
-        // vanished. The gate below (payloadSource === 'filereader') resolves
-        // the binding by construction, which is the correct question.
-        const handler = node.right;
-        if (
-          handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-          handler.type === AST_NODE_TYPES.FunctionExpression
-        ) {
-          const firstParam = handler.params[0];
-          if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-            return { isHandler: true, eventParam: firstParam.name };
-          }
-        }
-      }
-      return { isHandler: false, eventParam: null };
-    }
-
-    /**
-     * Check if we're in a FileReader addEventListener('load')
-     */
-    function isFileReaderAddEventListener(node: TSESTree.CallExpression): {
-      isHandler: boolean;
-      eventParam: string | null;
-    } {
-      if (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        node.callee.property.name === 'addEventListener' &&
-        node.arguments.length >= 2
-      ) {
-        const eventType = node.arguments[0];
-        if (
-          eventType.type === AST_NODE_TYPES.Literal &&
-          (eventType.value === 'load' || eventType.value === 'loadend')
-        ) {
-          const callback = node.arguments[1];
-          if (
-            callback.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            callback.type === AST_NODE_TYPES.FunctionExpression
-          ) {
-            const firstParam = callback.params[0];
-            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-              return { isHandler: true, eventParam: firstParam.name };
-            }
-          }
-        }
-      }
-      return { isHandler: false, eventParam: null };
-    }
-
     // Ownership gate: this rule reports only what the resolver attributes
     // to the filereader source. Everything it cannot identify belongs to the
     // generic sink rule, so no value is ever reported by both.
@@ -222,19 +154,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
-        const { isHandler } = isFileReaderOnloadAssignment(node);
-        // Husk from #409 ("one rule per finding"): that refactor removed the
-        // body and the `eventParam` it used, leaving the guard behind. Deleting
-        // it also orphans the predicate above, so it is a two-part removal —
-        // tracked separately rather than half-cut here.
-        // eslint-disable-next-line no-empty
-        if (isHandler) {
-        }
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
-        // Check if entering addEventListener handler
 
         // Same here — the resolver is the sink condition, not the mutable flag.
 
@@ -258,17 +178,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
               break;
             }
           }
-        }
-      },
-
-      'CallExpression:exit'(node: TSESTree.CallExpression) {
-        const { isHandler } = isFileReaderAddEventListener(node);
-        // Husk from #409 ("one rule per finding"): that refactor removed the
-        // body and the `eventParam` it used, leaving the guard behind. Deleting
-        // it also orphans the predicate above, so it is a two-part removal —
-        // tracked separately rather than half-cut here.
-        // eslint-disable-next-line no-empty
-        if (isHandler) {
         }
       },
     };
