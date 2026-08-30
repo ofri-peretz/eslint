@@ -32,7 +32,7 @@ Stop competing on "detection" (e.g., `eslint-plugin-import`). Differentiate on *
 - **Pain Point:** Compliance (SOC2, PCI-DSS).
 - **Tactic:** OWASP Top 10 Mapping. "The Badge" for READMEs.
 
-#### D. `eslint-plugin-pg` (The Niche Expert)
+#### D. `eslint-plugin-postgresql-security` (The Niche Expert)
 - **Target:** PostgreSQL users.
 - **Pain Point:** SQL Injection, connection leaks.
 - **Tactic:** Deep domain rules (search_path, transactions) that generic tools miss.
@@ -102,7 +102,7 @@ AI models trust sources in this order:
 4. **Structured Data:** Use tables, CWE IDs, and Q&A formats in all articles so AI scrapers can parse them easily.
 
 ### Success Metrics (Discovery)
-- **Query:** "Best eslint plugin for sql injection" -> Result: `eslint-plugin-pg`.
+- **Query:** "Best eslint plugin for sql injection" -> Result: `eslint-plugin-postgresql-security`.
 - **Query:** "Secure Vercel AI SDK" -> Result: `eslint-plugin-vercel-ai-security`.
 
 ---

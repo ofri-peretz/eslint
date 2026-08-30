@@ -181,7 +181,7 @@ flowchart TD
 
 ```bash
 # Current version 1.1.3 is on npm, but you have feat commits since then
-gh workflow run release.yml -f package=eslint-plugin-pg -f version-specifier=minor
+gh workflow run release.yml -f package=eslint-plugin-postgresql-security -f version-specifier=minor
 # Result: Releases 1.2.0 instead of skipping
 ```
 

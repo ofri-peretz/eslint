@@ -102,12 +102,6 @@ function Meteors({
         opacity: Number(rand(OPACITY_MIN, OPACITY_MAX).toFixed(2)),
       })),
     );
-    // The flagged names (length/top/left/animationDuration/animationDelay/
-    // trail/opacity) are object-literal property keys inside the generated
-    // MeteorMeta above, not free-variable references, and `rand` is a
-    // module-level stable function — none of them are real reactive
-    // dependencies.
-    // eslint-disable-next-line react-features/hooks-exhaustive-deps
   }, [number, reduced]);
 
   if (reduced) return null;

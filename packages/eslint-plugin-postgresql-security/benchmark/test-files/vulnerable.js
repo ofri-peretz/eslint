@@ -1,5 +1,5 @@
 /**
- * Vulnerable PostgreSQL code patterns for eslint-plugin-pg benchmark
+ * Vulnerable PostgreSQL code patterns for eslint-plugin-postgresql-security benchmark
  * 
  * This file contains intentional security vulnerabilities and anti-patterns.
  * DO NOT USE THIS CODE IN PRODUCTION.

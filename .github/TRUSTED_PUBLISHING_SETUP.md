@@ -206,7 +206,7 @@ No special configuration needed for Trusted Publishing - npm handles OIDC automa
 **Cause:** Trusted Publishing (OIDC) doesn't work for unscoped packages without npm support approval
 
 **Solution:**
-1. **For unscoped packages** (e.g., `eslint-plugin-pg`, `eslint-plugin-secure-coding`):
+1. **For unscoped packages** (e.g., `eslint-plugin-postgresql-security`, `eslint-plugin-secure-coding`):
    - Contact npm support to enable Trusted Publishing for your specific unscoped packages
    - OR use `NPM_TOKEN` secret as fallback (uncomment in workflow)
    - OR move packages to a scope (e.g., `@interlace/<name>`)

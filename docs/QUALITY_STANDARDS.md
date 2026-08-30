@@ -37,7 +37,7 @@ Each plugin has a specific scope. Rules must NOT leak across boundaries.
 | ----------------------------- | --------------------------- | ---------------------------------------------- | --------------------- |
 | `eslint-plugin-secure-coding` | Framework-agnostic security | `no-sql-injection`, `no-hardcoded-credentials` | SDK-specific patterns |
 | `eslint-plugin-node-security` | Node.js core modules incl. cryptography | `no-weak-cipher-algorithm`, `no-static-iv`, `prefer-native-crypto` | Browser APIs, JWT |
-| `eslint-plugin-jwt`           | JWT token handling          | `no-algorithm-none`, `require-expiration`      | Generic crypto        |
+| `eslint-plugin-jwt-security`           | JWT token handling          | `no-algorithm-none`, `require-expiration`      | Generic crypto        |
 
 #### Framework-Specific Plugins
 
@@ -52,7 +52,7 @@ Each plugin has a specific scope. Rules must NOT leak across boundaries.
 
 | Plugin             | Scope                      | Examples                                   | ❌ NOT Allowed      |
 | ------------------ | -------------------------- | ------------------------------------------ | ------------------- |
-| `eslint-plugin-pg` | PostgreSQL (node-postgres) | `no-sql-injection`, `require-pool-release` | Generic SQL drivers |
+| `eslint-plugin-postgresql-security` | PostgreSQL (node-postgres) | `no-sql-injection`, `require-pool-release` | Generic SQL drivers |
 
 #### AI Provider-Specific Plugins
 
@@ -643,12 +643,12 @@ pluginName.configs.recommended,
 | ------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------: | --------------------------------- | :---: |
 | [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10) |  89   |
 | [`eslint-plugin-node-security`](https://npmjs.com/package/eslint-plugin-node-security)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-node-security.svg)](https://npmjs.com/package/eslint-plugin-node-security)      | Node.js core modules (incl. crypto) |  34   |
-| [`eslint-plugin-jwt`](https://npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                | JWT token handling                |  13   |
+| [`eslint-plugin-jwt-security`](https://npmjs.com/package/eslint-plugin-jwt-security)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt-security.svg)](https://npmjs.com/package/eslint-plugin-jwt-security)                | JWT token handling                |  13   |
 | [`eslint-plugin-browser-security`](https://npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser APIs & DOM                |  21   |
 | [`eslint-plugin-express-security`](https://npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)   | Express.js framework              |   9   |
 | [`eslint-plugin-nestjs-security`](https://npmjs.com/package/eslint-plugin-nestjs-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS framework                  |   5   |
 | [`eslint-plugin-lambda-security`](https://npmjs.com/package/eslint-plugin-lambda-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda & Middy                |   5   |
-| [`eslint-plugin-pg`](https://npmjs.com/package/eslint-plugin-pg)                                 |                 [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security               |  13   |
+| [`eslint-plugin-postgresql-security`](https://npmjs.com/package/eslint-plugin-postgresql-security)                                 |                 [![npm](https://img.shields.io/npm/dm/eslint-plugin-postgresql-security.svg)](https://npmjs.com/package/eslint-plugin-postgresql-security)                 | PostgreSQL security               |  13   |
 | [`eslint-plugin-vercel-ai-security`](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK                     |  19   |
 | [`eslint-plugin-import-next`](https://npmjs.com/package/eslint-plugin-import-next)               |        [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)        | High-performance import linting   |  12   |
 
