@@ -97,7 +97,6 @@ export const noGraphqlIntrospectionProduction = createRule<
         documentationLink:
           'https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html#introspection-graphiql',
       }),
-
     },
     schema: [
       {

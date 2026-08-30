@@ -42,6 +42,13 @@ import {
   isTestFilePath,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `express` is the package name on npm and the HTTP method names
+ * are the router methods Express defines. Both are published; neither is a
+ * consumer's choice.
+ *
+ * @see https://expressjs.com/en/api.html#app.METHOD
+ */
 type MessageIds = 'missingRateLimiting';
 
 export interface Options {
@@ -148,7 +155,6 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         fix: 'Add rate limiting: npm install express-rate-limit; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }))',
         documentationLink: 'https://www.npmjs.com/package/express-rate-limit',
       }),
-
     },
     schema: [
       {

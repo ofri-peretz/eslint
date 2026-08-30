@@ -121,3 +121,32 @@ two: the new probe artifact, and `real-source-scan.mts`, which I had added to
 the freshness gate earlier the same day. The probe now runs in the monthly
 refresh workflow; the corpus scan is baselined with its reason, because cloning
 112 repositories is not a cron job.
+
+## Progress — 2026-08-30, first tranche drained
+
+**32 → 26.** Six rules resolved, all of them the same way: the names they read
+turned out to be somebody else's published contract, so they earned a
+`@vocabulary` citation naming the authority rather than an option nobody would
+ever set.
+
+| Rule                                            | Names                     | Authority                                                          |
+| ----------------------------------------------- | ------------------------- | ------------------------------------------------------------------ |
+| `browser-security/no-insecure-redirects`        | `redirect`, `href`        | Express `res.redirect`, WHATWG `Response.redirect`, DOM `Location` |
+| `express-security/no-error-details-in-response` | `stack`, `message`        | ECMAScript `Error`                                                 |
+| `express-security/no-static-root-exposure`      | `__dirname`, `cwd`        | Node modules / process                                             |
+| `express-security/require-helmet`               | `helmet`, `express`       | npm package names                                                  |
+| `express-security/require-rate-limiting`        | `express`, router methods | Express `app.METHOD`                                               |
+| `import-next/no-deprecated`                     | `deprecated`              | JSDoc block tag                                                    |
+
+That is the distinction the gate exists to enforce, and it cuts both ways: an
+option for `__dirname` would be absurd, and a citation for "what this project
+calls its user object" would be a lie. Six of the 32 were the first kind.
+
+The remaining 26 look like the second. `no-user-controlled-render-locals` keys
+on `USER_SOURCE_PROPS` / `RESPONSE_NAMES` / `REQUEST_NAMES`;
+`no-incomplete-url-sanitization` on `URL_ISH_NAME`. Those are guesses at a
+consumer's own vocabulary and need replaceable options — and several would be
+better served by `readsRequestShape`, which answers the same question
+structurally, as `no-sql-injection`, `no-ssrf` and now `no-unsafe-query` do.
+
+Verified by sabotage: breaking one citation fails the gate by name.

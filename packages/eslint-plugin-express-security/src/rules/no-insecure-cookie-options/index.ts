@@ -134,8 +134,7 @@ export function checkCookieOptions(
     const property = [...node.properties]
       .reverse()
       .find((p) => propertyName(p) === 'samesite') as
-      | TSESTree.Property
-      | undefined;
+      TSESTree.Property | undefined;
     if (property === undefined) {
       // Same shorthand/spread reasoning as the boolean flags above.
       if (!hasSpread) issues.push('missing sameSite flag (prevents CSRF)');

@@ -118,7 +118,6 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
         fix: 'Use explicit path segments instead of :param+ or :param*. For example: /api/:id/details instead of /api/:path+',
         documentationLink: 'https://expressjs.com/en/guide/routing.html',
       }),
-
     },
     schema: [
       {

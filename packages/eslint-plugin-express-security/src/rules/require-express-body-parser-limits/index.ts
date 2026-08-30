@@ -118,7 +118,8 @@ const UNITS: Readonly<Record<string, number>> = {
  * a constant usually is — was invisible to this rule.
  */
 function limitInBytes(value: TSESTree.Node): number | null {
-  if (value.type === 'Literal' && typeof value.value === 'number') return value.value;
+  if (value.type === 'Literal' && typeof value.value === 'number')
+    return value.value;
   const text = staticString(value);
   if (text === null) return null;
   const parsed = /^\s*(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb)?\s*$/i.exec(text);

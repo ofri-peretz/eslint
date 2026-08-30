@@ -198,9 +198,7 @@ export const requireCaseInsensitivePathGuard = createRule<
     function isStringLiteral(
       node: TSESTree.Node,
     ): node is TSESTree.StringLiteral {
-      return (
-        staticString(node) !== null
-      );
+      return staticString(node) !== null;
     }
 
     function reportWithLowerCaseSuggestion(
