@@ -218,163 +218,179 @@ function knownCaseIds(): Set<string> {
   }
 }
 
-let mergeBase: string;
-let changedRaw: string;
-let addedRaw: string;
-try {
-  mergeBase = git(['merge-base', BASE, 'HEAD']);
-  changedRaw = git(['diff', '--name-only', `${mergeBase}...HEAD`]);
-  addedRaw = git([
-    'diff',
-    '--name-only',
-    '--diff-filter=A',
-    `${mergeBase}...HEAD`,
-  ]);
-} catch (error) {
-  fail(`git failed: ${(error as Error).message.split('\n')[0]}`);
-}
-if (!mergeBase) fail(`No merge base between ${BASE} and HEAD.`);
+/**
+ * Everything below runs the gate. It is guarded because this module also
+ * exports helpers that `scripts/__tests__/check-intent.test.ts` imports, and
+ * an import that executes the check takes the whole vitest worker down with
+ * it: the gate calls `process.exit(1)` on failure, which surfaces as
+ * `Error: process.exit unexpectedly called with "1"` and fails every test in
+ * the file — including the ones that never touched the gate.
+ *
+ * Same shape as `scripts/lint-changesets.ts`, which guards its own entry for
+ * the same reason.
+ */
+const IS_ENTRYPOINT = Boolean(process.argv[1]?.endsWith('check-intent.ts'));
 
-const changed = changedRaw.split('\n').filter(Boolean);
-const releaseRelevant = changed.filter(
-  (f) => RELEASE_RELEVANT.test(f) && !TEST_FILE.test(f),
-);
-const changedPackages = [
-  ...new Set(releaseRelevant.map((f) => f.split('/')[1])),
-].sort();
+if (IS_ENTRYPOINT) {
+  let mergeBase: string;
+  let changedRaw: string;
+  let addedRaw: string;
+  try {
+    mergeBase = git(['merge-base', BASE, 'HEAD']);
+    changedRaw = git(['diff', '--name-only', `${mergeBase}...HEAD`]);
+    addedRaw = git([
+      'diff',
+      '--name-only',
+      '--diff-filter=A',
+      `${mergeBase}...HEAD`,
+    ]);
+  } catch (error) {
+    fail(`git failed: ${(error as Error).message.split('\n')[0]}`);
+  }
+  if (!mergeBase) fail(`No merge base between ${BASE} and HEAD.`);
 
-const addedIntents = addedRaw.split('\n').filter((f) => INTENT_FILE.test(f));
-
-interface Problem {
-  file: string;
-  kind: 'syntax' | 'section' | 'placeholder' | 'unknown-case' | 'drift';
-  detail: string;
-}
-
-const problems: Problem[] = [];
-const declaredPackages = new Set<string>();
-const known = knownCaseIds();
-
-for (const file of addedIntents) {
-  const full = path.join(ROOT, file);
-  if (!existsSync(full)) continue;
-  const { frontmatter, body, errors } = parseFrontmatter(
-    readFileSync(full, 'utf8'),
+  const changed = changedRaw.split('\n').filter(Boolean);
+  const releaseRelevant = changed.filter(
+    (f) => RELEASE_RELEVANT.test(f) && !TEST_FILE.test(f),
   );
+  const changedPackages = [
+    ...new Set(releaseRelevant.map((f) => f.split('/')[1])),
+  ].sort();
 
-  for (const detail of errors) problems.push({ file, kind: 'syntax', detail });
-  for (const pkg of frontmatter.packages) declaredPackages.add(pkg);
+  const addedIntents = addedRaw.split('\n').filter((f) => INTENT_FILE.test(f));
 
-  for (const section of REQUIRED_SECTIONS) {
-    if (!body.includes(`${section}\n`)) {
+  interface Problem {
+    file: string;
+    kind: 'syntax' | 'section' | 'placeholder' | 'unknown-case' | 'drift';
+    detail: string;
+  }
+
+  const problems: Problem[] = [];
+  const declaredPackages = new Set<string>();
+  const known = knownCaseIds();
+
+  for (const file of addedIntents) {
+    const full = path.join(ROOT, file);
+    if (!existsSync(full)) continue;
+    const { frontmatter, body, errors } = parseFrontmatter(
+      readFileSync(full, 'utf8'),
+    );
+
+    for (const detail of errors)
+      problems.push({ file, kind: 'syntax', detail });
+    for (const pkg of frontmatter.packages) declaredPackages.add(pkg);
+
+    for (const section of REQUIRED_SECTIONS) {
+      if (!body.includes(`${section}\n`)) {
+        problems.push({
+          file,
+          kind: 'section',
+          detail: `missing \`${section}\``,
+        });
+      }
+    }
+
+    if (PLACEHOLDER.test(body)) {
       problems.push({
         file,
-        kind: 'section',
-        detail: `missing \`${section}\``,
+        kind: 'placeholder',
+        detail:
+          'contains TODO/TBD/FIXME/??? — a half-written intent looks satisfied',
       });
+    }
+
+    for (const id of frontmatter.cases) {
+      if (known.size > 0 && !known.has(id)) {
+        problems.push({
+          file,
+          kind: 'unknown-case',
+          detail: `\`${id}\` is not in benchmarks/cases/registry.json`,
+        });
+      }
     }
   }
 
-  if (PLACEHOLDER.test(body)) {
+  /** Packages the diff touches that no added intent declared. */
+  const undeclared =
+    addedIntents.length === 0
+      ? []
+      : changedPackages.filter((pkg) => !declaredPackages.has(pkg));
+  for (const pkg of undeclared) {
     problems.push({
-      file,
-      kind: 'placeholder',
-      detail:
-        'contains TODO/TBD/FIXME/??? — a half-written intent looks satisfied',
+      file: addedIntents[0],
+      kind: 'drift',
+      detail: `\`${pkg}\` is changed but not in any \`packages:\` list`,
     });
   }
 
-  for (const id of frontmatter.cases) {
-    if (known.size > 0 && !known.has(id)) {
-      problems.push({
-        file,
-        kind: 'unknown-case',
-        detail: `\`${id}\` is not in benchmarks/cases/registry.json`,
-      });
+  const status =
+    releaseRelevant.length === 0
+      ? 'not-needed'
+      : addedIntents.length === 0
+        ? 'missing'
+        : problems.length > 0
+          ? 'invalid'
+          : 'present';
+
+  if (JSON_OUT) {
+    console.log(
+      JSON.stringify(
+        { status, base: mergeBase, changedPackages, addedIntents, problems },
+        null,
+        2,
+      ),
+    );
+    process.exit(
+      status !== 'present' && status !== 'not-needed' && STRICT ? 1 : 0,
+    );
+  }
+
+  switch (status) {
+    case 'not-needed':
+      console.log(
+        `✅ No intent needed — nothing consumer-visible changed vs ${BASE}.`,
+      );
+      break;
+
+    case 'present':
+      console.log(
+        `✅ ${addedIntents.join(', ')} — ${changedPackages.length} changed package(s), all declared.`,
+      );
+      break;
+
+    case 'missing':
+      console.warn(
+        `⚠️  ${changedPackages.length} package(s) changed with no intent file added on this branch:`,
+      );
+      console.warn('');
+      for (const pkg of changedPackages) console.warn(`   - ${pkg}`);
+      console.warn('');
+      console.warn(
+        '   Add one under `intent/` — see intent/README.md for the template.',
+      );
+      if (STRICT) process.exit(1);
+      break;
+
+    case 'invalid': {
+      console.warn(
+        `⚠️  ${problems.length} problem(s) with this branch's intent:`,
+      );
+      console.warn('');
+      for (const p of problems)
+        console.warn(`   ${p.kind.padEnd(13)} ${p.file}: ${p.detail}`);
+      console.warn('');
+      console.warn(
+        '   `drift` means the work spread past what it said it would touch.',
+      );
+      console.warn(
+        '   Widen `packages:` deliberately, or move the extra work to its own branch.',
+      );
+      if (STRICT) process.exit(1);
+      break;
     }
   }
-}
 
-/** Packages the diff touches that no added intent declared. */
-const undeclared =
-  addedIntents.length === 0
-    ? []
-    : changedPackages.filter((pkg) => !declaredPackages.has(pkg));
-for (const pkg of undeclared) {
-  problems.push({
-    file: addedIntents[0],
-    kind: 'drift',
-    detail: `\`${pkg}\` is changed but not in any \`packages:\` list`,
-  });
-}
-
-const status =
-  releaseRelevant.length === 0
-    ? 'not-needed'
-    : addedIntents.length === 0
-      ? 'missing'
-      : problems.length > 0
-        ? 'invalid'
-        : 'present';
-
-if (JSON_OUT) {
-  console.log(
-    JSON.stringify(
-      { status, base: mergeBase, changedPackages, addedIntents, problems },
-      null,
-      2,
-    ),
-  );
-  process.exit(
-    status !== 'present' && status !== 'not-needed' && STRICT ? 1 : 0,
-  );
-}
-
-switch (status) {
-  case 'not-needed':
-    console.log(
-      `✅ No intent needed — nothing consumer-visible changed vs ${BASE}.`,
-    );
-    break;
-
-  case 'present':
-    console.log(
-      `✅ ${addedIntents.join(', ')} — ${changedPackages.length} changed package(s), all declared.`,
-    );
-    break;
-
-  case 'missing':
-    console.warn(
-      `⚠️  ${changedPackages.length} package(s) changed with no intent file added on this branch:`,
-    );
-    console.warn('');
-    for (const pkg of changedPackages) console.warn(`   - ${pkg}`);
-    console.warn('');
-    console.warn(
-      '   Add one under `intent/` — see intent/README.md for the template.',
-    );
-    if (STRICT) process.exit(1);
-    break;
-
-  case 'invalid': {
-    console.warn(
-      `⚠️  ${problems.length} problem(s) with this branch's intent:`,
-    );
-    console.warn('');
-    for (const p of problems)
-      console.warn(`   ${p.kind.padEnd(13)} ${p.file}: ${p.detail}`);
-    console.warn('');
-    console.warn(
-      '   `drift` means the work spread past what it said it would touch.',
-    );
-    console.warn(
-      '   Widen `packages:` deliberately, or move the extra work to its own branch.',
-    );
-    if (STRICT) process.exit(1);
-    break;
+  if (!existsSync(INTENT_DIR) || readdirSync(INTENT_DIR).length === 0) {
+    console.warn('   (intent/ is empty — Stage 1 has no records at all)');
   }
-}
-
-if (!existsSync(INTENT_DIR) || readdirSync(INTENT_DIR).length === 0) {
-  console.warn('   (intent/ is empty — Stage 1 has no records at all)');
 }
