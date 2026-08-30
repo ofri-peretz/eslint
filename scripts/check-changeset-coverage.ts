@@ -148,9 +148,9 @@ const changed = changedRaw.split('\n').filter(Boolean);
 // it as coverage would let it silently vouch for a `packages/*/src` change it
 // says nothing about — producing no version bump and no changelog entry, which
 // is the exact outcome the gate exists to catch.
-const releaseRelevant = changed.filter(
-  (f) => RELEASE_RELEVANT.test(f) && !TEST_FILE.test(f),
-);
+const releaseRelevant = changed
+  .filter((f) => RELEASE_RELEVANT.test(f) && !TEST_FILE.test(f))
+  .filter((f) => !isPrivate(f.split('/').slice(0, 2).join('/')));
 
 /** An added changeset, with the packages it actually vouches for. */
 interface AddedChangeset {
@@ -189,20 +189,47 @@ const vouchedFor = new Set(addedChangesets.flatMap((entry) => entry.names));
 function workspaceName(dir: string): string | null {
   try {
     return (
-      (JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
-        name?: string;
-      }).name ?? null
+      (
+        JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
+          name?: string;
+        }
+      ).name ?? null
     );
   } catch {
     return null;
   }
 }
 
+/**
+ * A workspace nobody can install.
+ *
+ * `apps/docs` is `private: true` — it is DEPLOYED, not published, so there is
+ * no version to bump and no npm changelog for a changeset to write into. Its
+ * release record is the deploy log. `lint-changesets` already exempts private
+ * workspaces from the breaking-change rules for exactly this reason; the
+ * coverage question has the same answer.
+ *
+ * Found the day this gate started naming packages: a refresh of the cached
+ * tweet JSON under `apps/docs/src/data/` demanded a changeset for a workspace
+ * that has never been published.
+ */
+function isPrivate(dir: string): boolean {
+  try {
+    return (
+      (
+        JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
+          private?: boolean;
+        }
+      ).private === true
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Workspaces with consumer-visible changes that NO added changeset names. */
 const uncovered = [
-  ...new Set(
-    releaseRelevant.map((f) => f.split('/').slice(0, 2).join('/')),
-  ),
+  ...new Set(releaseRelevant.map((f) => f.split('/').slice(0, 2).join('/'))),
 ]
   .map((dir) => ({ dir, name: workspaceName(dir) }))
   .filter(({ name }) => name !== null && !vouchedFor.has(name))
@@ -238,7 +265,9 @@ if (JSON_OUT) {
       2,
     ),
   );
-  process.exit((status === 'missing' || status === 'partial') && STRICT ? 1 : 0);
+  process.exit(
+    (status === 'missing' || status === 'partial') && STRICT ? 1 : 0,
+  );
 }
 
 switch (status) {

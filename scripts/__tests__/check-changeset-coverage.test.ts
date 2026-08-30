@@ -157,6 +157,29 @@ describe('a changeset covers the packages it NAMES, not the whole diff', () => {
     expect(status).toBe(0);
   });
 
+  it('a private workspace needs no changeset — nobody installs it', () => {
+    // `apps/docs` is deployed, not published. There is no version to bump and
+    // no npm changelog to write into, so demanding a changeset for it is a
+    // demand nobody can satisfy meaningfully. Caught in the wild by a refresh
+    // of a cached JSON file under `apps/docs/src/data/`.
+    write(
+      'apps/site/package.json',
+      '{"name":"site","version":"1.0.0","private":true}',
+    );
+    write('apps/site/src/index.ts', 'export const s = 1;\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'add private app');
+    git('branch', '-f', 'base-ref');
+
+    write('apps/site/src/index.ts', 'export const s = 2;\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change private app');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(out).toContain('No changeset needed');
+    expect(status).toBe(0);
+  });
+
   it('a test-only change under src/ needs no changeset', () => {
     // `files` publishes dist/ only, so a test cannot reach a consumer. The
     // pattern used to match `src/**` wholesale and demanded a changeset for
