@@ -192,11 +192,18 @@ jobs:
             exit 0
           fi
           CHANGED=$(git diff --name-only "$BASE_SHA"...HEAD)
-          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|\.github/workflows/quality-full\.yml)$'; then
+          # `packages/[^/]+/src/` is in this list because the job no longer only
+          # loads benchmark configs — it also carries the artifact-size and
+          # devkit-infra metrics, and those measure SHIPPED BYTES. Gating them on
+          # manifest changes alone meant a PR that adds a rule (the most common
+          # change in this repo) skipped measurement entirely while the workflow
+          # comment claimed feedback was merely "slightly delayed". Source is
+          # exactly what moves the number, so source has to open the gate.
+          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|packages/[^/]+/src/.*|scripts/(check-artifact-size|devkit-infra-metrics)\.ts|\.agent/(artifact-size-baseline|devkit-infra-baseline)\.json|\.github/workflows/quality-full\.yml)$'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No benchmark config, benchmark dependency or package manifest touched — skipping the config-load check."
+            echo "::notice::No benchmark config, package source/manifest or size-metric input touched — skipping the config-load + size-metrics job."
           fi
 
   # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
@@ -259,9 +266,18 @@ jobs:
       # that, or would silently measure 10 of 31 packages, which is worse than
       # not measuring — a partial run reports the other 21 as UNMEASURED.
       #
-      # The trade: size feedback arrives at ready_for_review rather than on
-      # every push. Still before merge, still on the PR, and the alternative
-      # is paying a full build on every push to get it slightly earlier.
+      # The trade, stated precisely: size feedback arrives at
+      # ready_for_review, and only on a PR that touches package source, a
+      # package manifest, a benchmark config, or the metric scripts/baselines
+      # themselves — that is what the `bench_configs` gate above selects for.
+      # A docs-only or workflow-only PR gets no size report, which is correct:
+      # it ships no bytes.
+      #
+      # An earlier revision of this comment claimed feedback was merely
+      # "slightly delayed". That was wrong while the gate keyed on manifests
+      # alone — a PR adding a rule shipped bytes and was never measured. The
+      # gate now includes `packages/*/src/`; this comment and that pattern
+      # have to stay true together.
       #
       # Growth stays advisory; the step fails only when a PUBLISHED package
       # has no baseline at all — a hole in the instrument, not a judgement

@@ -223,3 +223,104 @@ describe('classifyModule', () => {
     expect(r.external).not.toContain('undefined');
   });
 });
+
+describe('bench_configs gate — the metrics must actually fire', () => {
+  const workflow = readFileSync(
+    join(ROOT, '.github', 'workflows', 'quality-full.yml'),
+    'utf8',
+  );
+
+  /** The grep pattern the gate uses to decide whether bench-configs runs. */
+  function gatePattern(): RegExp {
+    const m = workflow.match(/grep -qE '\^\((.+?)\)\$'/);
+    if (!m) throw new Error('bench_configs gate pattern not found');
+    return new RegExp(`^(${m[1]})$`);
+  }
+
+  /**
+   * The artifact-size and devkit-infra steps live in `bench-configs`, so this
+   * gate decides whether shipped bytes get measured at all. It keyed on
+   * package MANIFESTS only, which meant a PR adding a rule — the most common
+   * change in this repo — shipped bytes and was never measured, while the
+   * job's own comment claimed feedback was merely delayed.
+   */
+  it('opens for a package source change', () => {
+    expect(
+      gatePattern().test(
+        'packages/eslint-plugin-node-security/src/rules/some-rule.ts',
+      ),
+    ).toBe(true);
+  });
+
+  it('still opens for a manifest and a benchmark config', () => {
+    const re = gatePattern();
+    expect(re.test('packages/eslint-plugin-node-security/package.json')).toBe(
+      true,
+    );
+    expect(
+      re.test('benchmarks/suites/ilb-arena/configs/interlace.config.js'),
+    ).toBe(true);
+  });
+
+  it('opens when the metric scripts or their baselines change', () => {
+    const re = gatePattern();
+    expect(re.test('scripts/check-artifact-size.ts')).toBe(true);
+    expect(re.test('scripts/devkit-infra-metrics.ts')).toBe(true);
+    expect(re.test('.agent/artifact-size-baseline.json')).toBe(true);
+  });
+
+  // The gate has to stay a gate: a docs-only PR ships no bytes and should not
+  // pay for a full build. A pattern that matched everything would "fix" the
+  // bug above while quietly making the job unconditional.
+  it('stays closed for a change that ships no bytes', () => {
+    const re = gatePattern();
+    expect(re.test('README.md')).toBe(false);
+    expect(re.test('docs/intents/infra-metrics/intent.md')).toBe(false);
+  });
+});
+
+describe('turbo remote cache is kept out of the publish path', () => {
+  const WORKFLOW_DIR = join(ROOT, '.github', 'workflows');
+  const setup = readFileSync(
+    join(ROOT, '.github', 'actions', 'setup', 'action.yml'),
+    'utf8',
+  );
+
+  /**
+   * Workflows that publish, sign, or attest. A third-party action in their
+   * dependency chain is a supply-chain path into every package we ship, which
+   * is a different class of risk from making a PR check faster.
+   */
+  const PUBLISHING = ['release.yml', 'supply-chain-attestation.yml'];
+
+  it('defaults to off in the shared composite', () => {
+    // `release.yml` uses this composite four times. The default is what
+    // decides whether it inherits the action.
+    const block = setup.slice(setup.indexOf('turbo-remote-cache:'));
+    const dflt = block
+      .slice(0, block.indexOf('runs:'))
+      .match(/default:\s*"(\w+)"/);
+    expect(dflt?.[1]).toBe('false');
+  });
+
+  it('is not enabled by any publishing workflow', () => {
+    for (const name of PUBLISHING) {
+      const p = join(WORKFLOW_DIR, name);
+      if (!existsSync(p)) continue;
+      expect(
+        readFileSync(p, 'utf8'),
+        `${name} must not enable turbo-remote-cache`,
+      ).not.toContain('turbo-remote-cache');
+    }
+  });
+
+  // Pinned by commit SHA, like every other third-party action here. A moving
+  // tag is the whole attack.
+  it('pins the third-party action by SHA', () => {
+    const m = setup.match(/uses:\s*rharkor\/caching-for-turbo@([a-f0-9]{40})/);
+    expect(
+      m,
+      'caching-for-turbo must be pinned to a 40-char commit SHA',
+    ).not.toBeNull();
+  });
+});

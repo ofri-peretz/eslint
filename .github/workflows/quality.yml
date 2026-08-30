@@ -148,7 +148,18 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      # Remote cache instead of the `.turbo/cache` tarball: this job's build is
+      # `quality.yml`'s critical path, and the tarball demonstrably does not
+      # hit on a PR (see the setup action for the measurement). `turbo-cache`
+      # off because the two are redundant and restoring the tarball costs ~11s.
+      #
+      # Scoped to this job rather than defaulted in the composite on purpose —
+      # `release.yml` uses the same composite, and a third-party action has no
+      # business in the publish path.
       - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       # Guards the half a precision number cannot see. A sweep in August 2026
       # cut false positives from 10 to 3 on this corpus and took recall from
       # 73.9% to 50.7% at the same time — 16 labelled vulnerabilities silently
