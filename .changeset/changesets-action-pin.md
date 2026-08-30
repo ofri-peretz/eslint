@@ -1,23 +1,28 @@
 ---
 ---
 
-fix(ci): the Version PR stopped refreshing — changesets/action drifted to v2 again
+fix(ci): the Version PR stopped refreshing — action major and input names drifted apart
 
-`changesets/action` is pinned to v1.9.0 deliberately: v2 requires Changesets CLI
-v3 and this repo is on `@changesets/cli ^2.31.1`. A grouped Actions update moved
-the SHA across that major while the comment still read `v1.9.0`.
+`changesets/action` moved to v2.1.1 in a grouped update without its inputs. v2
+renamed all three (`version` → `version-script`, `commit` → `commit-message`,
+`title` → `pr-title`) and hard-errors on the old names, so the Version PR stopped
+refreshing and `main` carried a red check.
 
-This is the second time. The first (#579) was silent — the Version PR simply
-stopped being created, which is indistinguishable from "nothing to release", and
-two customer-facing fixes sat unpublishable behind it. This time v2's renamed
-inputs made the step hard-error instead, which is luckier rather than safer:
-releases were blocked either way, and `main` carried a red check.
+v2 is the _correct_ major: `package-lock.json` resolves `@changesets/cli` to
+3.0.1. The bump was right; only the inputs were missing.
 
-Renaming the inputs would not be the fix — that leaves v2 running against a CLI
-it does not support. The pin goes back to v1.9.0.
+The comment above the pin said the opposite — that the repo was on CLI ^2.31.1
+and the action must stay on v1.9.0. That was true when written and stopped being
+true when the CLI moved to v3. Left stale, it read as an instruction, and the
+first attempt at this fix followed it and pinned _back_ to v1.9.0 — which would
+have paired a v1 action with a v3 CLI and kept releases broken while looking
+deliberate.
 
-Both times the only guard was a comment asking the next bump to confront the
-constraint, and both times a grouped update sailed past it. Two mechanisms
-replace it: dependabot now ignores major bumps for this action, and a lock test
-asserts the SHA, the v1 input names, and the dependabot entry. Bumping it back
-to v2 fails two of those assertions.
+So the guard is no longer prose. A lock test asserts the _pairing_: the action
+major, the input names that major accepts, and the CLI major in the lockfile. It
+fails on both drift directions — a v1 SHA against CLI v3, and the v2 SHA with v1
+input names that caused this outage. Dependabot also stops carrying this action
+across a major inside a group.
+
+Upgrading is now a deliberate three-line change, and the test says so if any one
+of them is forgotten.
