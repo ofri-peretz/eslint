@@ -13,9 +13,23 @@
  *      agent-facing document resolves. A rule document that points at a moved file is
  *      a rule the agent silently cannot read, and nothing else in this repo notices.
  *   2. Task evals — real prompts with accepted outcomes, run against the current
- *      configuration. Needs ANTHROPIC_API_KEY. Without one the layer reports
- *      `skipped`, never `failed`: a fork or a secretless PR must not be blocked by an
+ *      configuration. Needs a credential; without one the layer reports `skipped`,
+ *      never `failed`, because a fork or a secretless PR must not be blocked by an
  *      eval it cannot run.
+ *
+ * CREDENTIALS — prefer the subscription token, and do not set both
+ * ---------------------------------------------------------------
+ *   CLAUDE_CODE_OAUTH_TOKEN  a one-year token from `claude setup-token`. Runs bill
+ *                            against the Claude subscription (Pro, Max, Team or
+ *                            Enterprise) — no per-token charge.
+ *   ANTHROPIC_API_KEY        a Claude Console key. Billed per token to the Console
+ *                            organisation, which is money separate from any
+ *                            subscription.
+ *
+ * `ANTHROPIC_API_KEY` OUTRANKS `CLAUDE_CODE_OAUTH_TOKEN` in Claude Code's credential
+ * precedence, so setting both silently bills the API key and the subscription token is
+ * never used. This runner reports which one it found for exactly that reason — a
+ * surprise invoice is a bad way to learn the ordering.
  *
  * See evals/README.md for the case format and how to choose cases.
  *
@@ -228,14 +242,26 @@ function main(): void {
 
   if (configOnly) {
     console.log('\n🧪 Layer 2 — skipped (--config)\n');
-  } else if (!process.env.ANTHROPIC_API_KEY) {
+  } else if (!process.env.CLAUDE_CODE_OAUTH_TOKEN && !process.env.ANTHROPIC_API_KEY) {
     // Reported, never fatal. An eval that cannot run is not an eval that failed, and
     // treating it as one teaches people to delete the suite.
     console.log(
-      `\n🧪 Layer 2 — skipped: ANTHROPIC_API_KEY is not set (${cases.length} case(s) not run)\n`,
+      `\n🧪 Layer 2 — skipped: no credential (${cases.length} case(s) not run).\n` +
+        '   Set CLAUDE_CODE_OAUTH_TOKEN (subscription, no per-token charge) or\n' +
+        '   ANTHROPIC_API_KEY (Console, billed per token).\n',
     );
   } else {
-    console.log(`\n🧪 Layer 2 — ${cases.length} task eval(s)\n`);
+    const viaKey = Boolean(process.env.ANTHROPIC_API_KEY);
+    console.log(
+      `\n🧪 Layer 2 — ${cases.length} task eval(s), billing to ` +
+        `${viaKey ? 'the Console API key (per token)' : 'the Claude subscription'}\n`,
+    );
+    if (viaKey && process.env.CLAUDE_CODE_OAUTH_TOKEN) {
+      console.warn(
+        '   ⚠️  Both credentials are set. ANTHROPIC_API_KEY wins, so this run is\n' +
+          '      billed per token and the subscription token is ignored. Unset one.\n',
+      );
+    }
     caseResults = cases.map(runCase);
     for (const r of caseResults) {
       console.log(`  ${r.status === 'pass' ? '✓' : '✗'} ${r.id}`);

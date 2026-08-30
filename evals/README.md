@@ -16,9 +16,24 @@ is really there. A broken pointer in a rule document is a rule the agent silentl
 cannot read.
 
 **Layer 2 — task evals.** Real tasks with accepted outcomes, run non-interactively
-against the current configuration. Needs `ANTHROPIC_API_KEY`; the suite reports
-`skipped` without one rather than failing, so a fork or a PR without secrets is not
-blocked.
+against the current configuration. Reports `skipped` without a credential rather than
+failing, so a fork or a PR without secrets is not blocked.
+
+Two credentials work, and they cost very different things:
+
+| Secret | Billing |
+| :--- | :--- |
+| `CLAUDE_CODE_OAUTH_TOKEN` | the Claude subscription (Pro, Max, Team, Enterprise) — **no per-token charge**. Generate with `claude setup-token`; valid one year. |
+| `ANTHROPIC_API_KEY` | a Claude Console key, **billed per token** — money separate from any subscription. |
+
+**Set one, not both.** `ANTHROPIC_API_KEY` outranks `CLAUDE_CODE_OAUTH_TOKEN` in Claude
+Code's credential precedence, so with both present every run is billed per token and
+the subscription token is never used. The runner prints which credential it used and
+warns when it finds both.
+
+The OAuth token is tied to the subscription of whoever ran `claude setup-token`, and it
+can only make model requests — no Remote Control, no claude.ai connectors. Neither
+limitation matters here.
 
 ## A case
 
