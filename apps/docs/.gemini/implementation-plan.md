@@ -10,13 +10,13 @@
 
 ## Executive Summary
 
-This document outlines the architecture and implementation roadmap for the Interlace ESLint Documentation Portal using a **Fumadocs-first** approach. The strategy prioritizes native Fumadocs components, layouts, and patterns while reserving custom components (MagicUI) for specific homepage enhancements only.
+This document outlines the architecture and implementation roadmap for the Interlace ESLint Documentation Portal using a **Fumadocs-first** approach. The strategy prioritizes native Fumadocs components, layouts, and patterns while reserving custom decorative components for specific homepage enhancements only.
 
 **Core Principles:**
 
 1. **Use Fumadocs Native** - Layouts, components, and styling from Fumadocs UI
 2. **100% Remote Content** - All documentation fetched from GitHub at runtime via `@fumadocs/mdx-remote`
-3. **Minimal Custom Code** - Only MagicUI components for homepage visual effects
+3. **Minimal Custom Code** - Only decorative motion components for homepage visual effects
 4. **Framework Alignment** - Follow Fumadocs conventions for all configurations
 
 ---
@@ -48,8 +48,8 @@ PHASE 4: Enhanced Markdown ◄────────────────�
          ├── 4.2 Twoslash TypeScript                               │
          └── 4.3 Math (KaTeX) [Optional]                           │
                  │                                                  │
-PHASE 5: Homepage & MagicUI ◄──────────────────────────────────────┤
-         ├── 5.1 Install MagicUI Components                        │
+PHASE 5: Homepage & Motion   ◄──────────────────────────────────────┤
+         ├── 5.1 Install motion components                        │
          ├── 5.2 Homepage Layout                                   │
          └── 5.3 Dev.to Articles Integration                       │
                  │                                                  │
@@ -186,11 +186,11 @@ npm install remark-math rehype-katex katex  # Optional
 
 ---
 
-### PHASE 5: Homepage & MagicUI
+### PHASE 5: Homepage & Motion  
 
 | Task    | Description                               | Effort | Dependencies |
 | ------- | ----------------------------------------- | ------ | ------------ |
-| **5.1** | Install MagicUI components via shadcn CLI | 20 min | None         |
+| **5.1** | Install motion components via shadcn CLI | 20 min | None         |
 | **5.2** | Build homepage with HomeLayout            | 1.5 hr | 5.1          |
 | **5.3** | Integrate Dev.to articles API             | 1 hr   | Phase 2      |
 
@@ -198,9 +198,9 @@ npm install remark-math rehype-katex katex  # Optional
 
 ```bash
 npx shadcn@latest init
-npx shadcn@latest add "https://magicui.design/r/shimmer-button"
-npx shadcn@latest add "https://magicui.design/r/number-ticker"
-npx shadcn@latest add "https://magicui.design/r/border-beam"
+npx shadcn@latest add "<registry>/r/shimmer-button"
+npx shadcn@latest add "<registry>/r/number-ticker"
+npx shadcn@latest add "<registry>/r/border-beam"
 ```
 
 **Files to create:**
@@ -211,7 +211,7 @@ npx shadcn@latest add "https://magicui.design/r/border-beam"
 
 **Acceptance Criteria:**
 
-- [ ] Homepage displays with MagicUI effects
+- [ ] Homepage displays with motion effects
 - [ ] Statistics animate on scroll
 - [ ] Dev.to articles load and filter by plugin relevance
 
@@ -369,11 +369,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
 ---
 
-### Adding Custom Components (MagicUI) - Native Fumadocs Pattern
+### Adding Custom Components - Native Fumadocs Pattern
 
 Reference: [fumadocs.dev/docs/ui/component-library](https://www.fumadocs.dev/docs/ui/component-library)
 
-Fumadocs uses Radix UI by default. External component libraries like MagicUI can be integrated natively through the `mdx-components.tsx` pattern.
+Fumadocs uses Radix UI by default. External component libraries can be integrated natively through the `mdx-components.tsx` pattern.
 
 #### Step 1: Configure Component Library (Optional)
 
@@ -386,19 +386,19 @@ If using Fumadocs CLI for component customization, create a `cli.json`:
 }
 ```
 
-#### Step 2: Install MagicUI Components via Shadcn CLI
+#### Step 2: Install motion components via Shadcn CLI
 
-MagicUI components are distributed via the Shadcn CLI registry:
+The motion components are distributed via the Shadcn CLI registry:
 
 ```bash
 # Initialize shadcn (if not already done)
 npx shadcn@latest init
 
-# Install MagicUI components
-npx shadcn@latest add "https://magicui.design/r/shimmer-button"
-npx shadcn@latest add "https://magicui.design/r/border-beam"
-npx shadcn@latest add "https://magicui.design/r/number-ticker"
-npx shadcn@latest add "https://magicui.design/r/flickering-grid"
+# Install motion components
+npx shadcn@latest add "<registry>/r/shimmer-button"
+npx shadcn@latest add "<registry>/r/border-beam"
+npx shadcn@latest add "<registry>/r/number-ticker"
+npx shadcn@latest add "<registry>/r/flickering-grid"
 ```
 
 This installs components to `src/components/ui/` following Shadcn conventions.
@@ -412,7 +412,7 @@ Make components available in MDX without per-file imports:
 import type { MDXComponents } from 'mdx/types';
 import defaultComponents from 'fumadocs-ui/mdx';
 
-// MagicUI components (installed via shadcn CLI)
+// Motion components (installed via shadcn CLI)
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { NumberTicker } from '@/components/ui/number-ticker';
@@ -423,7 +423,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     // Spread Fumadocs default components first
     ...defaultComponents,
 
-    // Register MagicUI components (available globally in MDX)
+    // Register motion components (available globally in MDX)
     ShimmerButton,
     BorderBeam,
     NumberTicker,
@@ -483,22 +483,22 @@ export default function HomePage() {
 }
 ```
 
-### MagicUI Components (Homepage Only)
+### Motion Components (Homepage Only)
 
 | Component          | Source           | Use Case              | Install Command                                                    |
 | ------------------ | ---------------- | --------------------- | ------------------------------------------------------------------ |
-| **ShimmerButton**  | `magicui.design` | Primary CTA buttons   | `npx shadcn@latest add "https://magicui.design/r/shimmer-button"`  |
-| **BorderBeam**     | `magicui.design` | Animated card borders | `npx shadcn@latest add "https://magicui.design/r/border-beam"`     |
-| **NumberTicker**   | `magicui.design` | Animated statistics   | `npx shadcn@latest add "https://magicui.design/r/number-ticker"`   |
-| **FlickeringGrid** | `magicui.design` | Hero background       | `npx shadcn@latest add "https://magicui.design/r/flickering-grid"` |
-| **Particles**      | `magicui.design` | Ambient effects       | `npx shadcn@latest add "https://magicui.design/r/particles"`       |
+| **ShimmerButton**  | `(external registry)` | Primary CTA buttons   | `npx shadcn@latest add "<registry>/r/shimmer-button"`  |
+| **BorderBeam**     | `(external registry)` | Animated card borders | `npx shadcn@latest add "<registry>/r/border-beam"`     |
+| **NumberTicker**   | `(external registry)` | Animated statistics   | `npx shadcn@latest add "<registry>/r/number-ticker"`   |
+| **FlickeringGrid** | `(external registry)` | Hero background       | `npx shadcn@latest add "<registry>/r/flickering-grid"` |
+| **Particles**      | `(external registry)` | Ambient effects       | `npx shadcn@latest add "<registry>/r/particles"`       |
 
 ### File Structure After Setup
 
 ```
 src/
 ├── components/
-│   ├── ui/                          # Shadcn + MagicUI components
+│   ├── ui/                          # Shadcn + motion components
 │   │   ├── shimmer-button.tsx       # Installed via shadcn CLI
 │   │   ├── border-beam.tsx
 │   │   ├── number-ticker.tsx

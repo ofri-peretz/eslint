@@ -9,19 +9,19 @@
  */
 
 @theme inline {
-  /* MagicUI: shimmer-button */
+  /* shimmer-button */
   --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite
     alternate;
   --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
 
-  /* MagicUI: animated-gradient-text */
+  /* animated-gradient-text */
   --animate-gradient: gradient 8s linear infinite;
 
-  /* MagicUI: marquee */
+  /* marquee */
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
 
-  /* Aceternity: background-gradient-animation */
+  /* background-gradient-animation */
   --animate-first: moveVertical 30s ease infinite;
   --animate-second: moveInCircle 20s reverse infinite;
   --animate-third: moveInCircle 40s linear infinite;
@@ -125,7 +125,7 @@
   }
 }
 
-/* Border Beam — pure CSS animation, used by @interlace/ui/magicui/border-beam */
+/* Border Beam — pure CSS animation, used by @interlace/ui/effects/border-beam */
 @keyframes border-beam {
   0% {
     offset-distance: var(--border-beam-initial, 0%);

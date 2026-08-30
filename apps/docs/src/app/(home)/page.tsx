@@ -15,15 +15,15 @@ import {
   FileCheck,
   Repeat,
 } from 'lucide-react';
-import { BorderBeam } from '@interlace/ui/magicui/border-beam';
-import { NumberTicker } from '@interlace/ui/magicui/number-ticker';
+import { BorderBeam } from '@interlace/ui/effects/border-beam';
+import { NumberTicker } from '@interlace/ui/effects/number-ticker';
 import { Section } from '@interlace/ui/section';
 import { SectionHeader } from '@interlace/ui/blocks/section-header';
 import { TweetCard } from '#interlace/components/marketing/tweet-card';
 import { DevToCard } from '#interlace/components/marketing/devto-card';
 import { createTweetFetcher } from '#interlace/lib/tweet-loader';
 import { createDevToFetcher } from '#interlace/lib/devto-loader';
-import { ShimmerButton } from '@interlace/ui/magicui/shimmer-button';
+import { ShimmerButton } from '@interlace/ui/effects/shimmer-button';
 import { getDisplayStats } from '@/lib/stats-loader';
 import { getGitHubStars } from '@/lib/github-stars';
 import { HeroSection } from '@/components/home/hero-section';

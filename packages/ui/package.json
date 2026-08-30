@@ -209,13 +209,13 @@
       "types": "./dist/fumadocs/edit-on-github.d.ts",
       "default": "./dist/fumadocs/edit-on-github.js"
     },
-    "./magicui/*": {
-      "types": "./dist/magicui/*.d.ts",
-      "default": "./dist/magicui/*.js"
+    "./effects/*": {
+      "types": "./dist/effects/*.d.ts",
+      "default": "./dist/effects/*.js"
     },
-    "./aceternity/*": {
-      "types": "./dist/aceternity/*.d.ts",
-      "default": "./dist/aceternity/*.js"
+    "./ambient/*": {
+      "types": "./dist/ambient/*.d.ts",
+      "default": "./dist/ambient/*.js"
     },
     "./styles/tokens.css": "./styles/tokens.css",
     "./styles/foundation.css": "./styles/foundation.css",

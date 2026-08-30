@@ -1,11 +1,8 @@
 /**
  * BackgroundBeamsWithCollision Component Tests
  *
- * Tests for the Aceternity UI BackgroundBeamsWithCollision component.
+ * Tests for the BackgroundBeamsWithCollision component.
  * Validates component structure, props, collision mechanics, and theme support.
- *
- * These tests ensure the component matches the official Aceternity UI specification:
- * https://ui.aceternity.com/components/background-beams-with-collision
  *
  * CRITICAL: These tests lock the animation behavior, collision mechanics, and theme integration.
  */
@@ -19,12 +16,12 @@ import { join, resolve } from 'node:path';
 const REPO_ROOT = resolve(__dirname, '../../../..');
 
 // =========================================
-// ACETERNITY UI SPECIFICATION
-// Official default values from the component
+// COMPONENT SPECIFICATION
+// Locked default values from the component
 // =========================================
 
 /**
- * Default beam configurations from Aceternity UI spec
+ * Default beam configurations
  * Each beam has unique position, timing, and styling
  */
 const DEFAULT_BEAMS_SPEC = [
@@ -68,7 +65,7 @@ const EXPLOSION_DURATION_MS = 2000;
 // TEST SUITES
 // =========================================
 
-describe('BackgroundBeamsWithCollision: Aceternity UI Specification Compliance', () => {
+describe('BackgroundBeamsWithCollision: Specification Compliance', () => {
   describe('Default Beam Configuration', () => {
     it('has 7 default beams', () => {
       expect(DEFAULT_BEAMS_SPEC.length).toBe(7);
@@ -151,7 +148,7 @@ describe('BackgroundBeamsWithCollision: Aceternity UI Specification Compliance',
 describe('BackgroundBeamsWithCollision: Source File Integrity', () => {
   const componentPath = join(
     REPO_ROOT,
-    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    'packages/ui/src/ambient/background-beams-with-collision.tsx'
   );
 
   it('component file exists', () => {
@@ -303,7 +300,7 @@ describe('BackgroundBeamsWithCollision: Source File Integrity', () => {
 describe('BackgroundBeamsWithCollision: Container Structure', () => {
   const componentPath = join(
     REPO_ROOT,
-    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    'packages/ui/src/ambient/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -378,7 +375,7 @@ describe('BackgroundBeamsWithCollision: Container Structure', () => {
 describe('BackgroundBeamsWithCollision: Theme Support', () => {
   const componentPath = join(
     REPO_ROOT,
-    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    'packages/ui/src/ambient/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -454,7 +451,7 @@ describe('BackgroundBeamsWithCollision: Theme Support', () => {
 describe('BackgroundBeamsWithCollision: Collision Mechanism', () => {
   const componentPath = join(
     REPO_ROOT,
-    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    'packages/ui/src/ambient/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -560,7 +557,7 @@ describe('BackgroundBeamsWithCollision: Collision Mechanism', () => {
 describe('BackgroundBeamsWithCollision: Beam Animation', () => {
   const componentPath = join(
     REPO_ROOT,
-    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    'packages/ui/src/ambient/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -669,7 +666,7 @@ describe('BackgroundBeamsWithCollision: Beam Animation', () => {
 describe('BackgroundBeamsWithCollision: Explosion Effect', () => {
   const componentPath = join(
     REPO_ROOT,
-    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    'packages/ui/src/ambient/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -800,7 +797,7 @@ describe('BackgroundBeamsWithCollision: Explosion Effect', () => {
 describe('BackgroundBeamsWithCollision: hideCollisionSurface Prop', () => {
   const componentPath = join(
     REPO_ROOT,
-    'packages/ui/src/aceternity/background-beams-with-collision.tsx'
+    'packages/ui/src/ambient/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -861,7 +858,7 @@ describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
     });
 
     it('imports from the correct path', () => {
-      expect(articlesSource).toContain('@interlace/ui/aceternity/background-beams-with-collision');
+      expect(articlesSource).toContain('@interlace/ui/ambient/background-beams-with-collision');
     });
 
     it('does NOT import StarsBackground or ShootingStars', () => {
