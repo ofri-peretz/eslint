@@ -1,0 +1,16 @@
+{
+  "id": "legacy-brand-mark",
+  "why": "The README structure gate rejects the pre-migration /icon-*.svg mark. All thirty READMEs shipped it under a /logos/ header row until it was caught.",
+  "prompt": "Which Interlace mark asset should the closing footer of a plugin README in this repository use? Give the path.",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "logos/interlace"
+    },
+    {
+      "check": "output-omits",
+      "value": "icon-light.svg\" alt"
+    }
+  ]
+}

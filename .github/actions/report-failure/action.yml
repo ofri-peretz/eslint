@@ -1,0 +1,43 @@
+name: Report scheduled failure
+description: >-
+  Open (or comment on) a single tracking issue when a scheduled workflow fails.
+  A red cron notifies nobody by default; this is the channel.
+
+# Six scheduled workflows had no failure channel at all, and two that did had been
+# red for months without anyone noticing. Rather than paste the same twenty lines a
+# seventh time, every cron calls this.
+#
+# One issue per title, reopened and commented — not a new issue every week, which is
+# how a channel becomes noise and then gets muted.
+
+inputs:
+  title:
+    description: 'Issue title. Stable, because it is the deduplication key.'
+    required: true
+  body:
+    description: 'What broke and why it matters, in a sentence or two.'
+    required: true
+  token:
+    description: 'Token with issues:write.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        TITLE: ${{ inputs.title }}
+        BODY: ${{ inputs.body }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        set -euo pipefail
+        EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+          --json number,title --jq '[.[] | select(.title == env.TITLE)][0].number // empty')
+        FULL=$(printf '%s\n\n[Run](%s)\n' "$BODY" "$RUN_URL")
+        if [ -n "$EXISTING" ]; then
+          gh issue comment "$EXISTING" --body "$FULL"
+          echo "Commented on #$EXISTING"
+        else
+          gh issue create --title "$TITLE" --body "$FULL"
+        fi

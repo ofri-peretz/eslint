@@ -84,7 +84,7 @@ reported identically to one on a request path. See the `reachability` axis in
 To the pattern's text: a literal, a `const` binding one hop away, `String.raw`,
 a template literal with no interpolation, and concatenation of static parts.
 A pattern assembled from interpolated runtime values has **no fixed automaton**,
-so no oracle can decide it — [L1](../../ANALYSIS-LIMITS.md).
+so no oracle can decide it — [L1](../../../ANALYSIS-LIMITS.md).
 
 ## 4. Guard — what makes it safe
 
@@ -134,7 +134,7 @@ pattern.
 6. `const RegExp = (p) => p` — a local shadow
 
 **Known gaps, stated up front:** patterns assembled at runtime are undecidable
-([L1](../../ANALYSIS-LIMITS.md)); reachability is not established at all; and
+([L1](../../../ANALYSIS-LIMITS.md)); reachability is not established at all; and
 the oracle is an optional peer, so a consumer without it gets the heuristic's
 answer, which is strictly noisier.
 

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-26",
+  "generated": "2026-08-30",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",
@@ -33,6 +33,7 @@
     ],
     "secure-coding/no-hardcoded-credentials": [
       "duplicate-coverage",
+      "nominal-inference-suppress",
       "unguarded-recursion"
     ],
     "secure-coding/no-hardcoded-session-tokens": [

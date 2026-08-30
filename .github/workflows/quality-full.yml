@@ -36,8 +36,14 @@ on:
     # still skips drafts unless they carry the `run-full-ci` label.
     types: [opened, reopened, ready_for_review, labeled, synchronize]
   workflow_dispatch:
+  # A merge queue builds `refs/heads/gh-readonly-queue/...` and waits for the
+  # REQUIRED checks to report on this event. Without this trigger the check
+  # never reports and every queued merge blocks forever with no error — a worse
+  # failure than the amplification the queue exists to fix. See
+  # docs/intents/merge-latency/design.md; this ships BEFORE the queue is enabled.
+  merge_group:
   schedule:
-    - cron: "0 4 * * 0"
+    - cron: '0 4 * * 0'
 
 concurrency:
   group: quality-full-${{ github.ref }}
@@ -60,7 +66,7 @@ env:
   # whose inputs are unchanged replay from cache instead of rebuilding. The
   # filter bought nothing the cache wasn't already giving us, and cost the
   # correctness of every check that used it.
-  TURBO_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:
   gate:
@@ -119,8 +125,8 @@ jobs:
       - uses: ./.github/actions/setup
         if: steps.decide.outputs.run == 'true'
         with:
-          turbo-cache: "false"
-          install: "false"
+          turbo-cache: 'false'
+          install: 'false'
       - id: matrix
         if: steps.decide.outputs.run == 'true'
         env:
@@ -192,11 +198,18 @@ jobs:
             exit 0
           fi
           CHANGED=$(git diff --name-only "$BASE_SHA"...HEAD)
-          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|\.github/workflows/quality-full\.yml)$'; then
+          # `packages/[^/]+/src/` is in this list because the job no longer only
+          # loads benchmark configs — it also carries the artifact-size and
+          # devkit-infra metrics, and those measure SHIPPED BYTES. Gating them on
+          # manifest changes alone meant a PR that adds a rule (the most common
+          # change in this repo) skipped measurement entirely while the workflow
+          # comment claimed feedback was merely "slightly delayed". Source is
+          # exactly what moves the number, so source has to open the gate.
+          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|packages/[^/]+/src/.*|scripts/(check-artifact-size|devkit-infra-metrics)\.ts|\.agent/(artifact-size-baseline|devkit-infra-baseline)\.json|\.github/workflows/quality-full\.yml)$'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No benchmark config, benchmark dependency or package manifest touched — skipping the config-load check."
+            echo "::notice::No benchmark config, package source/manifest or size-metric input touched — skipping the config-load + size-metrics job."
           fi
 
   # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
@@ -236,7 +249,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Remote cache, not the `.turbo/cache` tarball. This workflow's `Quality
+      # (Full) Gate` is a REQUIRED check, so its duration is merge latency for
+      # every PR in the repo. Measured on run 33330044192: `Benchmark configs
+      # load` was 153s of which 114s was the build, and the same pattern in
+      # quality.yml went 159s -> 2s once the cache was addressed by task hash
+      # instead of by commit SHA.
+      #
+      # Dropping the tarball here also stops the churn behind it: these four
+      # jobs are most of the ~14 lineages that were re-tarballed at ~65 MB per
+      # main push, against a 10 GB budget the store had already blown past
+      # (36.89 GB / 210 entries), evicting the very entries a PR needed.
       - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       # Same filter the weekly benchmark uses, for the same reason: the configs
       # import plugins by package name and resolve through `exports` to dist/.
       - name: Build plugins (dist/ is what the configs load)
@@ -250,6 +277,39 @@ jobs:
       # itself by construction.
       - name: Severity labels must agree with the CVSS band they render
         run: npm run --silent lint:severity-consistency
+
+      # Both metric steps live here rather than in quality.yml's fast loop
+      # because they need EVERY package built, and this job is the only one
+      # that already builds every package. The fast loop deliberately builds
+      # only the ten plugins its corpus gate imports (159s -> a fraction of
+      # it); running these there would drag the full build back in and undo
+      # that, or would silently measure 10 of 31 packages, which is worse than
+      # not measuring — a partial run reports the other 21 as UNMEASURED.
+      #
+      # The trade, stated precisely: size feedback arrives at
+      # ready_for_review, and only on a PR that touches package source, a
+      # package manifest, a benchmark config, or the metric scripts/baselines
+      # themselves — that is what the `bench_configs` gate above selects for.
+      # A docs-only or workflow-only PR gets no size report, which is correct:
+      # it ships no bytes.
+      #
+      # An earlier revision of this comment claimed feedback was merely
+      # "slightly delayed". That was wrong while the gate keyed on manifests
+      # alone — a PR adding a rule shipped bytes and was never measured. The
+      # gate now includes `packages/*/src/`; this comment and that pattern
+      # have to stay true together.
+      #
+      # Growth stays advisory; the step fails only when a PUBLISHED package
+      # has no baseline at all — a hole in the instrument, not a judgement
+      # about a number.
+      - name: Artifact size report
+        run: npx tsx scripts/check-artifact-size.ts
+
+      # Consumer-facing cost of the layer 30 packages depend on: which peers it
+      # forces on them, and whether importing the barrel drags in a native
+      # binary or a compiler. Exits 1 if either regresses.
+      - name: Devkit infrastructure metrics
+        run: npx tsx scripts/devkit-infra-metrics.ts
 
   # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
   # so splitting inside a package would make each shard an uncacheable slice of
@@ -295,7 +355,8 @@ jobs:
           # Own lineage per shard. Sharing one key made the shards race to save
           # it on main, so only one shard's outputs were ever banked and the
           # rest ran cold every time (`Cached: 0 cached, 8 total`).
-          turbo-cache-scope: test-shard-${{ matrix.shard }}
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       - name: Run shard ${{ matrix.shard }} of 10
         env:
           # Affected-filter on PRs; run the full battery everywhere else.
@@ -344,7 +405,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
         with:
-          next-cache: "true"
+          next-cache: 'true'
           # One lineage PER BUILD SHARD. A single `build` scope meant all four
           # shards raced to save the same key on main — GitHub reserves a cache
           # key atomically, so the first writer won and the other three were
@@ -353,7 +414,8 @@ jobs:
           # N always holds the same packages, so its lineage is exactly the set
           # it needs. The `turbo-<os>-build-` restore-key prefix still lets a
           # shard fall back to any sibling's lineage on a cold start.
-          turbo-cache-scope: build-${{ matrix.shard }}
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       - name: Build via Turbo (affected only)
         env:
           # Same affected filter as the test shards; main / cron / dispatch
@@ -365,7 +427,7 @@ jobs:
           # it always failed and every PR silently ran the full matrix.
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
           CI_BUILD_SHARD: ${{ matrix.shard }}
-          CI_BUILD_SHARD_TOTAL: "4"
+          CI_BUILD_SHARD_TOTAL: '4'
         run: node scripts/ci-build.mts
       # Runs here because the artifacts already exist — no extra runner, no
       # second build, ~5s. Reads the emitted JS for module-scope requires of
@@ -423,8 +485,9 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
         with:
-          turbo-cache-scope: typecheck
-          tsbuildinfo-cache: "true"
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
+          tsbuildinfo-cache: 'true'
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
         # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster
@@ -444,13 +507,16 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run audit:portability
 
   # Aggregate gate so a single PR check status surfaces the heavy-half result.
   quality-full-gate:
     name: Quality (Full) Gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # open the failure issue (.github/actions/report-failure)
     timeout-minutes: 2
     needs: [gate, test, scripts-tests, build, typecheck, portability]
     # `needs.gate.outputs.run` alone is not enough. If `gate` itself fails that
@@ -558,3 +624,12 @@ jobs:
 
           $all_pass || { echo "::error::One or more heavy quality gates failed"; exit 1; }
           echo "All heavy quality gates passed."
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Scheduled full quality gate is failing'
+          body: 'The scheduled run of the full quality gate failed. main may be broken in a way the per-PR gates do not cover.'
+          token: ${{ github.token }}

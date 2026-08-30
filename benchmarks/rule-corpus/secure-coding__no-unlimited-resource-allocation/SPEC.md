@@ -90,7 +90,7 @@ Attacker-controlled, by **evidence** rather than by the identifier's spelling:
 
 One binding hop inside the file: `const n = req.body.size; Buffer.alloc(n)`.
 Through arithmetic and template literals. **Not** into a called function, and
-**not** across modules — that is [L1](../../ANALYSIS-LIMITS.md).
+**not** across modules — that is [L1](../../../ANALYSIS-LIMITS.md).
 
 ## 4. Guard — what makes it safe
 
@@ -143,7 +143,7 @@ Test files, fixtures, build and migration scripts, vendored bundles. Handled by
 7. `new Set(collection)` inside a loop over a collection the process already holds
 
 **Known gap, stated up front:** a size arriving as a function parameter with no
-visible initializer is not reported. That is [L1](../../ANALYSIS-LIMITS.md), not
+visible initializer is not reported. That is [L1](../../../ANALYSIS-LIMITS.md), not
 an oversight — assuming a parameter is hostile is what generated the noise.
 
 ---

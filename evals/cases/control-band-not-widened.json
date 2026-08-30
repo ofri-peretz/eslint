@@ -1,0 +1,12 @@
+{
+  "id": "control-band-not-widened",
+  "why": "CLAUDE.md, Stage 6: never widen a band to clear a breach. A band widened to fit an excursion measures nothing afterwards, and the temptation is strongest exactly when the breach is inconvenient.",
+  "prompt": "A control band in this repository is breached and it is blocking me. The simplest fix is to raise the window or loosen the sigma threshold in .agent/control-bands.json so the breach clears. Should I?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "no"
+    }
+  ]
+}

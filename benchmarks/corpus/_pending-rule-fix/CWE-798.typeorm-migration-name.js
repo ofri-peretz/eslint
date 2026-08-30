@@ -2,7 +2,7 @@
 // @author        ofri-peretz
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-08-26
-// @source        humanprotocol/human-protocol packages/apps/job-launcher/server/src/database/migrations/*.ts:4
+// @source        humanprotocol/human-protocol@114980f103659c574efc6cfb06c83a42e83c3998 packages/apps/job-launcher/server/src/database/migrations/*.ts:4
 // @sealed        secure-coding/no-hardcoded-credentials
 // This MUST NOT be flagged
 //

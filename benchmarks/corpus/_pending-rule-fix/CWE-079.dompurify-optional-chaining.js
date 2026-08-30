@@ -2,7 +2,7 @@
 // @author        ofri-peretz
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-08-26
-// @source        aemdemos/lundbeck-vyepti blocks/embed/embed.js:60,65,81
+// @source        aemdemos/lundbeck-vyepti@323f9ce87219a802695df123826a6eed40773e19 blocks/embed/embed.js:60,65,81
 // @sealed        browser-security/no-innerhtml
 // This MUST NOT be flagged
 //

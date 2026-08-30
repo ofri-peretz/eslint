@@ -487,4 +487,4 @@ Industry references consulted while drafting this philosophy. Use these to re-ve
 ### Internal references
 - [memory/competitive-landscape.md](.) — top-20 ESLint plugin landscape (Feb 2026)
 - [memory/benchmark-baselines.md](.) — pointer to BASELINE_MATRIX + LEADERSHIP_ROADMAP
-- [PAGINATION_PHILOSOPHY.md](PAGINATION_PHILOSOPHY.md) / [URL_PHILOSOPHY.md](URL_PHILOSOPHY.md) / [MOTION_PHILOSOPHY.md](MOTION_PHILOSOPHY.md) / [LOADING_PHILOSOPHY.md](LOADING_PHILOSOPHY.md) — sibling philosophy docs at repo root
+- [PAGINATION_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/PAGINATION_PHILOSOPHY.md) / [URL_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/URL_PHILOSOPHY.md) / [MOTION_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/MOTION_PHILOSOPHY.md) / [LOADING_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/LOADING_PHILOSOPHY.md) — sibling philosophy docs at repo root

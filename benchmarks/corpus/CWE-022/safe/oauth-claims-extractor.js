@@ -2,7 +2,7 @@
 // @author        ofri-peretz
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-08-26
-// @source        vitemcp/server src/auth/OAuthProxy.ts:879
+// @source        vitemcp/server@d438700eaa1f4341f6c5655d2665d6807315cf5b src/auth/OAuthProxy.ts:879
 // @sealed        node-security/no-zip-slip
 // This MUST NOT be flagged
 //

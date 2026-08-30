@@ -34,6 +34,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # A merge queue builds `refs/heads/gh-readonly-queue/...` and waits for the
+  # REQUIRED checks to report on this event. Without this trigger the check
+  # never reports and every queued merge blocks forever with no error — a worse
+  # failure than the amplification the queue exists to fix. See
+  # docs/intents/merge-latency/design.md; this ships BEFORE the queue is enabled.
+  merge_group:
 
 concurrency:
   group: quality-${{ github.ref }}
@@ -43,7 +49,7 @@ permissions:
   contents: read
 
 env:
-  TURBO_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:
   oxlint:
@@ -54,7 +60,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run oxlint
 
   markdown:
@@ -65,7 +71,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:md
 
   changelog:
@@ -76,7 +82,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run audit:changelogs
 
   workflows:
@@ -87,7 +93,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:workflows
       # scripts/__tests__/ held five lock files but only oxlint-export-lock ran
       # in CI, via a `test:oxlint-exports` script that names a single file and
@@ -97,6 +103,29 @@ jobs:
       # directory (137 tests, ~13s) so a new lock is covered by existing.
       - run: npm run test:scripts
 
+  docs-integrity:
+    name: Docs integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      # Three checks that existed and ran only when somebody typed them. Each is
+      # deterministic and repo-only, so per docs/DOCS_QUALITY.md it belongs on the
+      # PR gate — the cheapest place to fix what it catches.
+      #
+      # `check-links` was red when it was first run in anger: fourteen dead relative
+      # links, including six philosophy documents that moved to the interlace repo in
+      # the split and were never repointed.
+      - run: npm run check-links
+      - run: npm run check:utm-links
+      - run: npm run audit:claims
+      # Layer 1 of the agent evals: every relative link in an agent-facing document
+      # resolves. Free, no key. Layer 2 lives in evals.yml, gated on config changes.
+      - run: npx tsx scripts/run-evals.ts --config
+
   publish-metadata:
     name: Publish Metadata
     runs-on: ubuntu-latest
@@ -105,7 +134,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:publish
 
   taxonomy:
@@ -116,7 +145,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:taxonomy
       # Same job rather than its own: both gates answer "is this rule allowed
       # to claim what it claims", both are pure static reads of the same rule
@@ -182,7 +211,18 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      # Remote cache instead of the `.turbo/cache` tarball: this job's build is
+      # `quality.yml`'s critical path, and the tarball demonstrably does not
+      # hit on a PR (see the setup action for the measurement). `turbo-cache`
+      # off because the two are redundant and restoring the tarball costs ~11s.
+      #
+      # Scoped to this job rather than defaulted in the composite on purpose —
+      # `release.yml` uses the same composite, and a third-party action has no
+      # business in the publish path.
       - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       # Guards the half a precision number cannot see. A sweep in August 2026
       # cut false positives from 10 to 3 on this corpus and took recall from
       # 73.9% to 50.7% at the same time — 16 labelled vulnerabilities silently
@@ -196,8 +236,34 @@ jobs:
       # it unresolvable. The benchmark refuses to score in that state rather than
       # reporting zero findings — which is why this job failed in 18s on its first
       # run instead of silently passing with a perfect record.
+      # The step name is literal: build the plugins the corpus config imports,
+      # not every package in the repo.
+      #
+      # This built all 32 packages until 2026-08-30. Measured on run
+      # 33324089803: 159s of a 194s job — 82% — to serve a gate that takes 6s,
+      # and `quality.yml`'s wall-clock is this job. The corpus config
+      # (benchmarks/suites/ilb-arena/configs/interlace.config.js) imports TEN
+      # plugins. Turbo still builds `@interlace/eslint-devkit` because the
+      # `...` suffix pulls each plugin's dependencies — that is the correct
+      # reason for it to build, rather than because the glob happened to
+      # include it.
+      #
+      # `scripts/__tests__/corpus-build-filter-lock.test.ts` fails if this list
+      # and the config's plugin list drift apart, so a plugin added to the
+      # corpus cannot silently go unbuilt here.
       - name: Build the plugins the corpus config imports
-        run: npx turbo build --filter='./packages/*'
+        run: |
+          npx turbo build \
+            --filter=eslint-plugin-browser-security... \
+            --filter=eslint-plugin-express-security... \
+            --filter=eslint-plugin-jwt-security... \
+            --filter=eslint-plugin-lambda-security... \
+            --filter=eslint-plugin-mongodb-security... \
+            --filter=eslint-plugin-nestjs-security... \
+            --filter=eslint-plugin-node-security... \
+            --filter=eslint-plugin-postgresql-security... \
+            --filter=eslint-plugin-secure-coding... \
+            --filter=eslint-plugin-vercel-ai-security...
 
       - name: Every CWE must still detect what it used to
         run: npx tsx scripts/recall-gate.ts
@@ -298,7 +364,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run check:benchmark-results-size
 
   # Aggregate gate so branch protection has a single required check to gate on.
@@ -307,7 +373,19 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [oxlint, markdown, changelog, workflows, taxonomy, publish-metadata, lockfile, supply-chain, recall, bench-size]
+    needs:
+      [
+        oxlint,
+        markdown,
+        changelog,
+        workflows,
+        taxonomy,
+        publish-metadata,
+        lockfile,
+        supply-chain,
+        recall,
+        bench-size,
+      ]
     if: always()
     steps:
       - name: Render gate report
