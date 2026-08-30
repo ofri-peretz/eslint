@@ -279,3 +279,88 @@ describe("the repo's own changesets", () => {
     expect(errors, JSON.stringify(errors, null, 2)).toEqual([]);
   });
 });
+
+describe('CS009 — cross-package scope', () => {
+  // These cases use real plugin and rule names on purpose. CS009's whole
+  // question is "who owns this rule", and ownership is read from the actual
+  // `packages/` tree — a synthetic `eslint-plugin-published` owns nothing, so a
+  // fixture built from the names the rest of this file uses could never fire
+  // and would pass no matter how broken the check was.
+  const JWT = 'eslint-plugin-jwt-security';
+  const NODE = 'eslint-plugin-node-security';
+
+  it('reports one changeset describing rules from two of its packages', () => {
+    // The shape that shipped: both CHANGELOGs got both paragraphs, so each
+    // package advertised the other's rules.
+    write(
+      'cross.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: two detections we were missing\n\n' +
+        '`crypto.pseudoRandomBytes()` is now reported by `no-math-random-crypto`.\n\n' +
+        '`no-decode-without-verify` and `require-expiration` skip test files.',
+    );
+    expect(rules(lint(dir, PRIVACY))).toContain('CS009');
+  });
+
+  it('allows a multi-package changeset that names no rules', () => {
+    write(
+      'shared.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: point meta.docs.url at documentation that exists\n\n' +
+        'The URL ESLint hands to editors was wrong across the plugins.',
+    );
+    expect(rules(lint(dir, PRIVACY))).not.toContain('CS009');
+  });
+
+  it('allows a multi-package changeset naming rules from only one of them', () => {
+    // A shared infrastructure change where only one package's behaviour moved
+    // is accurately described by the same body in both changelogs.
+    write(
+      'one-sided.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: shared resolver change\n\n' +
+        'Only `no-decode-without-verify` changed behaviour; the other package ' +
+        'picks up the new resolver.',
+    );
+    expect(rules(lint(dir, PRIVACY))).not.toContain('CS009');
+  });
+
+  it('never reports a single-package changeset, whatever it names', () => {
+    // One package cannot contaminate another, so naming a foreign rule here is
+    // a cross-reference, not a mis-scope.
+    write(
+      'single.md',
+      `'${JWT}': patch`,
+      'fix: three rules tightened\n\n' +
+        '`no-decode-without-verify`, `require-expiration` and ' +
+        '`no-math-random-crypto`.',
+    );
+    expect(rules(lint(dir, PRIVACY))).not.toContain('CS009');
+  });
+
+  it('sees scoped, fully-qualified rule references', () => {
+    // `@scope/eslint-plugin-x/rule` has two slashes. Splitting on the first
+    // yielded `eslint-plugin-x/rule`, which matches no bare rule key — the
+    // check saw an empty set and passed a genuinely cross-scoped changeset.
+    write(
+      'scoped.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: two detections we were missing\n\n' +
+        'Adds `@interlace/eslint-plugin-node-security/no-math-random-crypto` and ' +
+        'relaxes `@interlace/eslint-plugin-jwt-security/no-decode-without-verify`.',
+    );
+    expect(rules(lint(dir, PRIVACY))).toContain('CS009');
+  });
+
+  it('ignores rule names that are not in backticks', () => {
+    // Prose mentioning a rule in passing is not a claim of ownership; matching
+    // bare words would fire on ordinary sentences.
+    write(
+      'prose.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: wording\n\n' +
+        'Mentions no-math-random-crypto and no-decode-without-verify as prose.',
+    );
+    expect(rules(lint(dir, PRIVACY))).not.toContain('CS009');
+  });
+});

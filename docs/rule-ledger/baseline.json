@@ -1,12 +1,13 @@
 {
-  "generated": "2026-08-22",
+  "generated": "2026-08-26",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",
       "dynamic-regexp"
     ],
     "secure-coding/detect-object-injection": [
-      "dynamic-regexp"
+      "dynamic-regexp",
+      "nominal-inference-suppress"
     ],
     "secure-coding/detect-weak-password-validation": [],
     "secure-coding/no-bidi-characters": [
@@ -104,9 +105,11 @@
     ],
     "node-security/no-arbitrary-file-access": [
       "duplicate-coverage",
+      "nominal-inference-suppress",
       "textual-matching"
     ],
     "node-security/no-buffer-overread": [
+      "nominal-inference-report",
       "textual-matching",
       "unconfigurable-vocabulary"
     ],
@@ -143,6 +146,7 @@
       "unconfigurable-vocabulary"
     ],
     "node-security/no-math-random-crypto": [
+      "nominal-inference-report",
       "unconfigurable-vocabulary"
     ],
     "node-security/no-self-signed-certs": [],
@@ -168,6 +172,7 @@
       "unconfigurable-vocabulary"
     ],
     "node-security/no-unsafe-buffer-alloc": [
+      "nominal-inference-suppress",
       "unconfigurable-vocabulary",
       "unguarded-recursion"
     ],
@@ -242,7 +247,8 @@
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-innerhtml": [
-      "duplicate-coverage"
+      "duplicate-coverage",
+      "nominal-inference-report"
     ],
     "browser-security/no-insecure-redirects": [
       "unconfigurable-vocabulary"
@@ -304,7 +310,8 @@
       "unconfigurable-vocabulary"
     ],
     "browser-security/no-unsafe-inline-csp": [
-      "duplicate-coverage"
+      "duplicate-coverage",
+      "nominal-inference-report"
     ],
     "browser-security/no-unvalidated-deeplinks": [
       "unconfigurable-vocabulary"

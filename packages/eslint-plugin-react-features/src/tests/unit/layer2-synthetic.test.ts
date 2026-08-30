@@ -77,7 +77,21 @@ describe('hooks-exhaustive-deps (layer 2, synthetic AST)', () => {
   });
 
   it('traverses duplicated references, non-node children, and null callees without duplicating deps', () => {
-    const { listeners, reports } = createWithMockContext(hooksExhaustiveDeps);
+    // A scope containing the identifier, declared in the component's own scope.
+    // The rule resolves stability through the scope manager rather than by name,
+    // so the default EMPTY mock scope now makes every identifier look like an
+    // unresolved global — non-reactive, and nothing to report. Supplying the
+    // binding is what makes this case exercise the traversal it is named for.
+    const { listeners, reports } = createWithMockContext(hooksExhaustiveDeps, {
+      scope: {
+        type: 'function',
+        upper: null,
+        variables: [
+          { name: 'sharedDep', defs: [], scope: { type: 'function' } },
+          { name: 'objRoot', defs: [], scope: { type: 'function' } },
+        ],
+      },
+    });
     const sharedIdent: AnyNode = { type: 'Identifier', name: 'sharedDep' };
     const body: AnyNode = {
       type: 'SynthBlockA',
