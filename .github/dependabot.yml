@@ -87,6 +87,22 @@ updates:
     commit-message:
       prefix: "chore(ci)"
       include: "scope"
+    ignore:
+      # changesets/action is pinned to v1.9.0 deliberately: v2 requires
+      # Changesets CLI v3 and this repo is on @changesets/cli ^2.31.1.
+      #
+      # It has been auto-bumped across that major TWICE. The first time
+      # (#579) the Version PR silently stopped being created — a missing PR
+      # looks exactly like "nothing to release" — and two customer-facing
+      # fixes sat unpublishable behind it. The second time v2's renamed
+      # inputs made the step hard-error instead, which was only luckier, not
+      # safer: releases were blocked either way.
+      #
+      # A comment asking the next bump to "confront the constraint" did not
+      # survive either group update. This does.
+      - dependency-name: "changesets/action"
+        update-types:
+          - "version-update:semver-major"
     groups:
       # Create a single PR for all GitHub Actions
       all-actions:

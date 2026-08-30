@@ -138,7 +138,17 @@ jobs:
         # Moving to v2 means upgrading the CLI to v3 first. Until then this stays
         # on v1.9.0, and the comment states the constraint so the next bump has to
         # confront it rather than sail past it.
-        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+        #
+        # It happened a second time. The SHA was on v2.1.1 again while this
+        # comment said v1.9.0, and v2 renamed three inputs (`version` →
+        # `version-script`, `commit` → `commit-message`, `title` → `pr-title`).
+        # The action hard-errors on the old names, so the step failed outright
+        # rather than silently — the one mercy — but the Version PR still stopped
+        # refreshing, which blocks every release behind it.
+        #
+        # Renaming the inputs would NOT be the fix: it would leave v2 running
+        # against CLI v2.31.1, which it does not support. The pin goes back.
+        uses: changesets/action@3841a0683d3cfa6dae0f9bb335290003010fe3f0 # v1.9.0
         with:
           # `version` runs `npm run changeset:version`, which bumps versions
           # AND regenerates the lockfile so the PR diff is complete.
