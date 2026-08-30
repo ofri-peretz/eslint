@@ -37,7 +37,7 @@ on:
     types: [opened, reopened, ready_for_review, labeled, synchronize]
   workflow_dispatch:
   schedule:
-    - cron: "0 4 * * 0"
+    - cron: '0 4 * * 0'
 
 concurrency:
   group: quality-full-${{ github.ref }}
@@ -60,7 +60,7 @@ env:
   # whose inputs are unchanged replay from cache instead of rebuilding. The
   # filter bought nothing the cache wasn't already giving us, and cost the
   # correctness of every check that used it.
-  TURBO_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:
   gate:
@@ -119,8 +119,8 @@ jobs:
       - uses: ./.github/actions/setup
         if: steps.decide.outputs.run == 'true'
         with:
-          turbo-cache: "false"
-          install: "false"
+          turbo-cache: 'false'
+          install: 'false'
       - id: matrix
         if: steps.decide.outputs.run == 'true'
         env:
@@ -192,11 +192,18 @@ jobs:
             exit 0
           fi
           CHANGED=$(git diff --name-only "$BASE_SHA"...HEAD)
-          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|\.github/workflows/quality-full\.yml)$'; then
+          # `packages/[^/]+/src/` is in this list because the job no longer only
+          # loads benchmark configs — it also carries the artifact-size and
+          # devkit-infra metrics, and those measure SHIPPED BYTES. Gating them on
+          # manifest changes alone meant a PR that adds a rule (the most common
+          # change in this repo) skipped measurement entirely while the workflow
+          # comment claimed feedback was merely "slightly delayed". Source is
+          # exactly what moves the number, so source has to open the gate.
+          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|packages/[^/]+/src/.*|scripts/(check-artifact-size|devkit-infra-metrics)\.ts|\.agent/(artifact-size-baseline|devkit-infra-baseline)\.json|\.github/workflows/quality-full\.yml)$'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No benchmark config, benchmark dependency or package manifest touched — skipping the config-load check."
+            echo "::notice::No benchmark config, package source/manifest or size-metric input touched — skipping the config-load + size-metrics job."
           fi
 
   # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
@@ -250,6 +257,39 @@ jobs:
       # itself by construction.
       - name: Severity labels must agree with the CVSS band they render
         run: npm run --silent lint:severity-consistency
+
+      # Both metric steps live here rather than in quality.yml's fast loop
+      # because they need EVERY package built, and this job is the only one
+      # that already builds every package. The fast loop deliberately builds
+      # only the ten plugins its corpus gate imports (159s -> a fraction of
+      # it); running these there would drag the full build back in and undo
+      # that, or would silently measure 10 of 31 packages, which is worse than
+      # not measuring — a partial run reports the other 21 as UNMEASURED.
+      #
+      # The trade, stated precisely: size feedback arrives at
+      # ready_for_review, and only on a PR that touches package source, a
+      # package manifest, a benchmark config, or the metric scripts/baselines
+      # themselves — that is what the `bench_configs` gate above selects for.
+      # A docs-only or workflow-only PR gets no size report, which is correct:
+      # it ships no bytes.
+      #
+      # An earlier revision of this comment claimed feedback was merely
+      # "slightly delayed". That was wrong while the gate keyed on manifests
+      # alone — a PR adding a rule shipped bytes and was never measured. The
+      # gate now includes `packages/*/src/`; this comment and that pattern
+      # have to stay true together.
+      #
+      # Growth stays advisory; the step fails only when a PUBLISHED package
+      # has no baseline at all — a hole in the instrument, not a judgement
+      # about a number.
+      - name: Artifact size report
+        run: npx tsx scripts/check-artifact-size.ts
+
+      # Consumer-facing cost of the layer 30 packages depend on: which peers it
+      # forces on them, and whether importing the barrel drags in a native
+      # binary or a compiler. Exits 1 if either regresses.
+      - name: Devkit infrastructure metrics
+        run: npx tsx scripts/devkit-infra-metrics.ts
 
   # Sharded by package, not by `vitest --shard`: Turbo caches per package-task,
   # so splitting inside a package would make each shard an uncacheable slice of
@@ -344,7 +384,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
         with:
-          next-cache: "true"
+          next-cache: 'true'
           # One lineage PER BUILD SHARD. A single `build` scope meant all four
           # shards raced to save the same key on main — GitHub reserves a cache
           # key atomically, so the first writer won and the other three were
@@ -365,7 +405,7 @@ jobs:
           # it always failed and every PR silently ran the full matrix.
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
           CI_BUILD_SHARD: ${{ matrix.shard }}
-          CI_BUILD_SHARD_TOTAL: "4"
+          CI_BUILD_SHARD_TOTAL: '4'
         run: node scripts/ci-build.mts
       # Runs here because the artifacts already exist — no extra runner, no
       # second build, ~5s. Reads the emitted JS for module-scope requires of
@@ -424,7 +464,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           turbo-cache-scope: typecheck
-          tsbuildinfo-cache: "true"
+          tsbuildinfo-cache: 'true'
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
         # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster
@@ -444,7 +484,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run audit:portability
 
   # Aggregate gate so a single PR check status surfaces the heavy-half result.

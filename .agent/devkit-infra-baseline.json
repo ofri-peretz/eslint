@@ -1,0 +1,12 @@
+{
+  "generated": "2026-08-30",
+  "metrics": {
+    "mandatoryPeers": [
+      "eslint"
+    ],
+    "barrelOwnFiles": 45,
+    "barrelOwnKb": 180,
+    "barrelExternals": [],
+    "barrelExports": 234
+  }
+}
