@@ -61,7 +61,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { readBaseline } from './lib/read-baseline.ts';
+import { readBaseline, readBaselineRecord } from './lib/read-baseline.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -152,6 +152,8 @@ type Inventory = {
   withoutMaterial: string[];
   filesLinted: number;
   reposScanned: number;
+  /** Hash of the ESLint config the scan ran with. Absent on pre-2026-08-30 files. */
+  configHash?: string;
 };
 const INVENTORY_FILE = path.join(
   ROOT,
@@ -165,6 +167,35 @@ try {
 } catch {
   inventory = null;
 }
+
+/**
+ * Whether the inventory describes the config we would run today.
+ *
+ * "Scanned and never fired" is the strongest negative claim this ledger makes
+ * about a rule — it says the rule has never been shown a candidate in 345,841
+ * files of other people's code. That claim is worth nothing if the scan did
+ * not actually ask the rule, and for seven whole plugins it did not: the
+ * committed inventory predates `eslint.real-source.config.mjs`, so react-a11y,
+ * react-features, conventions, maintainability, reliability, operability and
+ * nestjs-security are recorded as silent when they were never run.
+ *
+ * A number that cannot be vouched for is not printed as a number.
+ */
+const CONFIG_FILE = path.join(ROOT, 'eslint.real-source.config.mjs');
+const currentConfigHash = (() => {
+  try {
+    return createHash('sha256')
+      .update(fs.readFileSync(CONFIG_FILE))
+      .digest('hex')
+      .slice(0, 16);
+  } catch {
+    return null;
+  }
+})();
+const inventoryIsCurrent =
+  inventory !== null &&
+  inventory.configHash !== undefined &&
+  inventory.configHash === currentConfigHash;
 
 /**
  * Every rule the suite ships. `src/rules` nests in several plugins
@@ -750,12 +781,20 @@ const silent = entries.filter(
   (e) => e.wild === undefined && scanned.has(published(e.rule)),
 );
 const unscanned = entries.filter((e) => !scanned.has(published(e.rule)));
-if (inventory !== null) {
+if (inventory !== null && inventoryIsCurrent) {
   console.log(
     `  fires on real code                      ${fires.length}   (${inventory.reposScanned} repos, ${inventory.filesLinted} files)`,
   );
   console.log(`  scanned and never fired                 ${silent.length}`);
   console.log(`  never scanned                           ${unscanned.length}`);
+} else if (inventory !== null) {
+  console.log(
+    `  real-code inventory                     STALE — produced by a different` +
+      `\n                                          eslint.real-source.config.mjs, so` +
+      `\n                                          "never fired" cannot be distinguished` +
+      `\n                                          from "never ran". Re-run:` +
+      `\n                                          npx tsx scripts/real-source-scan.mts`,
+  );
 }
 
 const FLOOR_BASELINE = path.join(
@@ -764,6 +803,33 @@ const FLOOR_BASELINE = path.join(
   'budgets',
   'rule-case-floor-baseline.json',
 );
+
+const DESCRIPTION_BASELINE = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'rule-case-description-baseline.json',
+);
+
+/**
+ * Undescribed cases per rule.
+ *
+ * A case with no `name` runs, passes, and says nothing. It proves the rule
+ * does *something* on that input; it does not say what the rule is claiming,
+ * so nobody — reviewer or agent — can tell a deliberate assertion from a
+ * fixture somebody pasted. 14,935 of them is not a backlog anyone will clear,
+ * which is exactly the situation the ratchet pattern exists for: the count is
+ * frozen PER RULE and may only fall.
+ *
+ * Per rule, not in total, on purpose. A single total lets one rule add two
+ * hundred undescribed cases as long as another rule happens to describe two
+ * hundred that week, and the number that moved would tell you nothing.
+ */
+const undescribedByRule: Record<string, number> = {};
+for (const entry of entries) {
+  const n = entry.cases.filter((c) => !c.description).length;
+  if (n > 0) undescribedByRule[entry.rule] = n;
+}
 
 if (CHECK) {
   const floorBaseline = readBaseline(FLOOR_BASELINE, 'rules');
@@ -779,6 +845,22 @@ if (CHECK) {
     console.error(
       `\n  A rule needs ${CASE_FLOOR} things it must catch and ${CASE_FLOOR} it must leave alone.` +
         '\n  One case proves it matches one string.',
+    );
+    process.exit(1);
+  }
+
+  const describedBaseline = readBaselineRecord(DESCRIPTION_BASELINE, 'rules');
+  const describedRegressed = Object.entries(undescribedByRule)
+    .filter(([rule, n]) => n > (describedBaseline[rule] ?? 0))
+    .map(([rule, n]) => `${rule}  ${describedBaseline[rule] ?? 0} → ${n}`);
+  if (describedRegressed.length > 0) {
+    console.error(
+      `\n  ⛔ ${describedRegressed.length} rule(s) gained an undescribed case:`,
+    );
+    for (const line of describedRegressed) console.error(`     ${line}`);
+    console.error(
+      '\n  A case with no `name` proves behaviour without saying what behaviour.' +
+        '\n  Name it after the claim it makes, or run --update if a rule genuinely shrank.',
     );
     process.exit(1);
   }
@@ -822,6 +904,42 @@ if (UPDATE) {
     )}\n`,
   );
   console.log(`  baseline written: ${previous.length} → ${now.length}`);
+
+  const previousDescribed = readBaselineRecord(DESCRIPTION_BASELINE, 'rules');
+  const grewDescribed = Object.entries(undescribedByRule).filter(
+    ([rule, n]) =>
+      Object.keys(previousDescribed).length > 0 &&
+      n > (previousDescribed[rule] ?? 0),
+  );
+  if (grewDescribed.length > 0) {
+    console.error(
+      `\n  ⛔ refusing to grow the description baseline for ${grewDescribed.length} rule(s): ` +
+        grewDescribed.map(([rule]) => rule).join(', '),
+    );
+    process.exit(1);
+  }
+  fs.writeFileSync(
+    DESCRIPTION_BASELINE,
+    `${JSON.stringify(
+      {
+        note: 'Cases that run without a `name`, per rule. Shrink-only: a rule may never gain one.',
+        rules: Object.fromEntries(
+          Object.entries(undescribedByRule).sort(([a], [b]) =>
+            a.localeCompare(b),
+          ),
+        ),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  const totalUndescribed = Object.values(undescribedByRule).reduce(
+    (a, b) => a + b,
+    0,
+  );
+  console.log(
+    `  description baseline written: ${Object.keys(undescribedByRule).length} rule(s), ${totalUndescribed} undescribed case(s)`,
+  );
 
   const previousThin = readBaseline(FLOOR_BASELINE, 'rules');
   const nowThin = belowFloor.map((e) => e.rule).sort();

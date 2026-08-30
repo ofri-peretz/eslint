@@ -112,7 +112,7 @@ sealed against real code (FP+FN)          55
 open misses, documented not sealed         2
 rules under 3 classified cases a side      3
 fires on real code                       200   (112 repos, 345,841 files)
-scanned and never fired                  270
+real-code inventory                      STALE — see below
 ```
 
 `FP 22 / FN 33` are **not** open bugs. They are _sealed_ — every one is a
@@ -213,18 +213,40 @@ Every option appears in its rule's Options table
 fix. This is not decoration: an LLM reading a lint message is now a primary
 consumer, and a message that says "unsafe usage" gives it nothing to act on.
 
-### The uncomfortable number
+### The uncomfortable number, and why it was not the one we thought
 
-**270 of 470 rules were scanned across 345,841 files in 112 repositories and
-never fired once.** Some are correct — a rare defect is still worth catching.
-Some are dead. We do not currently know which, and **13 rules** have any case
-drawn from real code at all.
+The ledger used to print **"270 of 470 rules scanned and never fired"** and we
+read it as a product-quality finding: 57% of our rules never observed catching
+anything in 345,841 files of other people's code.
 
-That is the highest-value open question about product quality in this repo, and
-it is deliberately printed by `check:rule-cases` on every run rather than
-buried.
+It was an instrument artifact.
 
----
+Seven whole plugins — `react-a11y`, `react-features`, `conventions`,
+`maintainability`, `reliability`, `operability`, `nestjs-security` — fired
+**zero** rules between them. The corpus contains MUI, chakra-ui, shadcn/ui,
+storybook and react-router, so "react-a11y never fires" was never credible. It
+was never run: the scan's old config matched `**/*.js` with no TypeScript
+parser, so 214,855 TypeScript files were walked, handed to ESLint, and matched
+by no config block.
+
+`eslint.real-source.config.mjs` fixed that on 2026-08-26 at 07:24. The
+inventory was committed at 21:23 the same day — **still carrying the pre-fix
+numbers**. Under the current config, a ten-line JSX file produces eight
+`react-a11y` findings.
+
+Nothing about the stale file looked stale, which is the whole problem. So the
+scan now records the **hash of the config it ran with**, and the ledger refuses
+to print the silence count when that hash does not match the config on disk:
+
+```
+real-code inventory   STALE — produced by a different
+                      eslint.real-source.config.mjs, so "never fired"
+                      cannot be distinguished from "never ran".
+```
+
+A number that cannot be vouched for is not printed as a number. The real
+figure is unknown until the scan is re-run, and the ledger now says so instead
+of guessing.
 
 ## How we measure acquisition
 
@@ -331,15 +353,15 @@ without a measurement is a documentation regression.
 
 Honest list, ranked. These are the `(gap)` rows above.
 
-| #   | Gap                                                                                                   | Cost of leaving it                                      | Status                                                                                                                                                                                                                                                                                                           |
-| --- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `check-changeset-coverage` checked that _a_ changeset exists, not that it names every changed package | 18 packages nearly shipped unversioned on this branch   | **Closed.** Compares changed workspaces against the packages added changesets actually name, matching on the _published_ name so scoped packages are not permanently uncovered. Tests under `src/` are excluded — `files` publishes `dist/` only, so a test cannot reach a consumer. Locked by 3 new assertions. |
-| 2   | `peer-health` tracked 17 neighbours and none of ours                                                  | No artifact anywhere put the two side by side           | **Closed.** Our published plugins are discovered from the workspace, tagged `ours`, and rendered as a head-to-head with a download-to-star table.                                                                                                                                                                |
-| 3   | No adoption scan — new repos with us in their lockfile                                                | The North Star is unmeasured                            | Open. Point the existing ~28k-repo peer scan at our package names, weekly.                                                                                                                                                                                                                                       |
-| 4   | No activation metric                                                                                  | We cannot tell an install from a use                    | Open. Emit a first-run event, or infer from docs `?from=cli`.                                                                                                                                                                                                                                                    |
-| 5   | 270 rules never observed firing                                                                       | We cannot distinguish a rare rule from a dead one       | Open. Widen the real-source corpus; require a `@source` case for flagship rules.                                                                                                                                                                                                                                 |
-| 6   | No `check:intent`                                                                                     | Stage 1 has no artifact                                 | Open. A short `intent` file per initiative, referenced by case id.                                                                                                                                                                                                                                               |
-| 7   | 14,935 undescribed cases                                                                              | A test that does not state its claim cannot be reviewed | Open. Ratchet down, as with spellings — refuse new undescribed cases.                                                                                                                                                                                                                                            |
+| #   | Gap                                                                                                   | Cost of leaving it                                           | Status                                                                                                                                                                                                                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `check-changeset-coverage` checked that _a_ changeset exists, not that it names every changed package | 18 packages nearly shipped unversioned on this branch        | **Closed.** Compares changed workspaces against the packages added changesets actually name, matching on the _published_ name so scoped packages are not permanently uncovered. Tests under `src/` are excluded — `files` publishes `dist/` only, so a test cannot reach a consumer. Locked by 3 new assertions. |
+| 2   | `peer-health` tracked 17 neighbours and none of ours                                                  | No artifact anywhere put the two side by side                | **Closed.** Our published plugins are discovered from the workspace, tagged `ours`, and rendered as a head-to-head with a download-to-star table.                                                                                                                                                                |
+| 3   | No adoption scan — new repos with us in their lockfile                                                | The North Star is unmeasured                                 | Open. Point the existing ~28k-repo peer scan at our package names, weekly.                                                                                                                                                                                                                                       |
+| 4   | No activation metric                                                                                  | We cannot tell an install from a use                         | Open. Emit a first-run event, or infer from docs `?from=cli`.                                                                                                                                                                                                                                                    |
+| 5   | The real-code inventory was stale, and nothing said so                                                | Seven plugins read as "never fires" when they were never run | **Half closed.** The scan records its config hash and the ledger refuses the number when it does not match. Re-running the 112-repo scan to get a true figure is still open.                                                                                                                                     |
+| 6   | No `check:intent`                                                                                     | Stage 1 has no artifact                                      | Open. A short `intent` file per initiative, referenced by case id.                                                                                                                                                                                                                                               |
+| 7   | 14,935 undescribed cases                                                                              | A test that does not state its claim cannot be reviewed      | Open. Ratchet down, as with spellings — refuse new undescribed cases.                                                                                                                                                                                                                                            |
 
 ---
 

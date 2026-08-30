@@ -43,3 +43,26 @@ export function readBaseline(file: string, key: string): string[] {
   }
   return (JSON.parse(raw) as Record<string, string[]>)[key] ?? [];
 }
+
+/**
+ * The recorded map under `key`, or `{}` when the baseline does not exist.
+ *
+ * The array form answers "is this entry known debt". Some ratchets need "how
+ * MUCH debt does this entry carry" — a per-rule count that may shrink but
+ * never grow — and a list of 14,935 identical strings is not that.
+ */
+export function readBaselineRecord(
+  file: string,
+  key: string,
+): Record<string, number> {
+  let raw: string;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {};
+    throw error;
+  }
+  return (
+    (JSON.parse(raw) as Record<string, Record<string, number>>)[key] ?? {}
+  );
+}

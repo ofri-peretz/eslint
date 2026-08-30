@@ -33,6 +33,7 @@
  */
 
 import { execFileSync, fork } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -298,6 +299,27 @@ if (SHARD === null) {
   process.exit(0);
 }
 
+/**
+ * The content hash of the config this run used.
+ *
+ * A scan result is a statement about the RULES only if you know which rules
+ * were asked. `eslint.real-source.config.mjs` was introduced on 2026-08-26
+ * because the previous config matched `**\/*.js` with no TypeScript parser and
+ * never linted a single `.tsx` file — and the inventory committed fourteen
+ * hours AFTER that fix still carried the pre-fix numbers. So `react-a11y` read
+ * as "37 rules that never fire on real code" when the truth was "37 rules
+ * nobody ran": the current config produces eight react-a11y findings from a
+ * ten-line JSX file.
+ *
+ * Nothing about the stale file looked stale. Recording the hash is what makes
+ * that state detectable — a reader compares it against the config on disk and
+ * knows whether the numbers describe the instrument they are holding.
+ */
+const CONFIG_HASH = createHash('sha256')
+  .update(fs.readFileSync(path.join(ROOT, 'eslint.real-source.config.mjs')))
+  .digest('hex')
+  .slice(0, 16);
+
 const eslint = new ESLint({
   // NOT the benchmark config: that one matches `**/*.js` with no TypeScript
   // parser, so a run over 345,841 files produced findings from `.js` only —
@@ -404,6 +426,7 @@ function writeInventory(
       'of that script. Inline eslint-disable comments in the scanned source are ignored, and files over ' +
       '200KB are skipped as generated.',
     generated: STAMP,
+    configHash: CONFIG_HASH,
   };
 
   fs.writeFileSync(OUT, `${JSON.stringify(inventory, null, 2)}\n`);
