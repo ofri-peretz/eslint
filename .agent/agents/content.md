@@ -57,7 +57,7 @@ cover_image: https://...
 
 Link to these in articles:
 
-- **npm**: `eslint-plugin-secure-coding`, `eslint-plugin-pg`, `eslint-plugin-vercel-ai-security`
+- **npm**: `eslint-plugin-secure-coding`, `eslint-plugin-postgresql-security`, `eslint-plugin-vercel-ai-security`
 - **GitHub**: https://github.com/ofri-peretz/eslint
 - **Benchmark results**: Reference from `benchmark/README.md`
 

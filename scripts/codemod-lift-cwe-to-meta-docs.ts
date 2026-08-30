@@ -26,7 +26,7 @@
  * Usage:
  *   tsx scripts/codemod-lift-cwe-to-meta-docs.ts                          # dry-run (default)
  *   tsx scripts/codemod-lift-cwe-to-meta-docs.ts --apply                  # write changes
- *   tsx scripts/codemod-lift-cwe-to-meta-docs.ts --apply --plugin=eslint-plugin-jwt
+ *   tsx scripts/codemod-lift-cwe-to-meta-docs.ts --apply --plugin=eslint-plugin-jwt-security
  */
 
 import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';

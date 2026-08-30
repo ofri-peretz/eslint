@@ -10,7 +10,7 @@
 
 - [ ] Create `packages/<package-name>/` directory (must match the `apps/* | packages/* | tools/* | benchmarks` workspace globs in root `package.json`)
 - [ ] Create `package.json` — see §3 below for required fields
-- [ ] Create `tsconfig.json` and `tsconfig.lib.json` (copy from a similar package — `eslint-plugin-pg` is a good template)
+- [ ] Create `tsconfig.json` and `tsconfig.lib.json` (copy from a similar package — `eslint-plugin-postgresql-security` is a good template)
 - [ ] Create `turbo.json` if the package needs custom build/test config (otherwise root `turbo.json` defaults apply)
 - [ ] Create `README.md` following [`docs/QUALITY_STANDARDS.md`](../../docs/QUALITY_STANDARDS.md) §4 (Documentation)
 - [ ] Create `CHANGELOG.md` (required for published packages)
@@ -50,7 +50,7 @@ Apply [`ARCHITECTURE.md` § "Plugin organization"](../../ARCHITECTURE.md#plugin-
 | Naming | Example | Auth at release time |
 | :--- | :--- | :--- |
 | **Scoped** (`@interlace/<name>`) | `@interlace/eslint-devkit`, `@interlace/eslint-formatter` | Trusted Publishing (OIDC) — no token needed |
-| **Unscoped** (`<name>`) | `eslint-plugin-pg`, `eslint-plugin-secure-coding` | `NPM_TOKEN` (Granular Access Token) |
+| **Unscoped** (`<name>`) | `eslint-plugin-postgresql-security`, `eslint-plugin-secure-coding` | `NPM_TOKEN` (Granular Access Token) |
 
 The release workflow detects which path applies based on the package name and publishes accordingly. There is no separate scoped/unscoped workflow file — `release.yml` handles both.
 

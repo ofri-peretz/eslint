@@ -257,37 +257,37 @@
 
 ## 🐘 Education Series: PostgreSQL Security (Dev.to)
 
-> **Package:** [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)  
-> **Docs Base:** `https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-pg/docs/rules`  
+> **Package:** [`eslint-plugin-postgresql-security`](https://www.npmjs.com/package/eslint-plugin-postgresql-security)  
+> **Docs Base:** `https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-postgresql-security/docs/rules`  
 > **CTA Pattern:** Each article shows vulnerable code → fixed code → one-line install.
 
 ### Security Rules (6 articles)
 
 | #   | Title                                                                    | Rule                       | Docs                                                                                                                     | CTA Example                                                   |
 | --- | ------------------------------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| P1  | **"SQL Injection in node-postgres: The Pattern Everyone Gets Wrong"**    | `no-unsafe-query`          | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-query.md)          | `client.query('SELECT * FROM users WHERE id = $1', [userId])` |
-| P2  | **"Why You Should Never Disable SSL in PostgreSQL"**                     | `no-insecure-ssl`          | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-insecure-ssl.md)          | `ssl: { rejectUnauthorized: true }`                           |
-| P3  | **"Hardcoded Database Passwords: The #1 PostgreSQL Mistake"**            | `no-hardcoded-credentials` | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-hardcoded-credentials.md) | `process.env.DATABASE_PASSWORD`                               |
-| P4  | **"search_path Hijacking: The PostgreSQL Attack You've Never Heard Of"** | `no-unsafe-search-path`    | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-search-path.md)    | Static search_path example                                    |
-| P5  | **"COPY FROM Exploits: When PostgreSQL Reads Your Filesystem"**          | `no-unsafe-copy-from`      | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-copy-from.md)      | Parameterized COPY example                                    |
-| P6  | **"Transaction Race Conditions: Why BEGIN on Pool Breaks Everything"**   | `no-transaction-on-pool`   | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-transaction-on-pool.md)   | `pool.connect()` → transaction pattern                        |
+| P1  | **"SQL Injection in node-postgres: The Pattern Everyone Gets Wrong"**    | `no-unsafe-query`          | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-unsafe-query.md)          | `client.query('SELECT * FROM users WHERE id = $1', [userId])` |
+| P2  | **"Why You Should Never Disable SSL in PostgreSQL"**                     | `no-insecure-ssl`          | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-insecure-ssl.md)          | `ssl: { rejectUnauthorized: true }`                           |
+| P3  | **"Hardcoded Database Passwords: The #1 PostgreSQL Mistake"**            | `no-hardcoded-credentials` | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-hardcoded-credentials.md) | `process.env.DATABASE_PASSWORD`                               |
+| P4  | **"search_path Hijacking: The PostgreSQL Attack You've Never Heard Of"** | `no-unsafe-search-path`    | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-unsafe-search-path.md)    | Static search_path example                                    |
+| P5  | **"COPY FROM Exploits: When PostgreSQL Reads Your Filesystem"**          | `no-unsafe-copy-from`      | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-unsafe-copy-from.md)      | Parameterized COPY example                                    |
+| P6  | **"Transaction Race Conditions: Why BEGIN on Pool Breaks Everything"**   | `no-transaction-on-pool`   | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-transaction-on-pool.md)   | `pool.connect()` → transaction pattern                        |
 
 ### Resource Management (3 articles)
 
 | #   | Title                                                               | Rule                        | Docs                                                                                                                      | CTA Example                        |
 | --- | ------------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| P7  | **"The Connection Leak That Took Down Our Production Database"**    | `no-missing-client-release` | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-missing-client-release.md) | `try/finally { client.release() }` |
-| P8  | **"Double Release: The Silent PostgreSQL Pool Killer"**             | `prevent-double-release`    | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/prevent-double-release.md)    | Release tracking pattern           |
-| P9  | **"Floating Queries: The Unhandled Promise in Your Database Code"** | `no-floating-query`         | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-floating-query.md)         | `await client.query()`             |
+| P7  | **"The Connection Leak That Took Down Our Production Database"**    | `no-missing-client-release` | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-missing-client-release.md) | `try/finally { client.release() }` |
+| P8  | **"Double Release: The Silent PostgreSQL Pool Killer"**             | `prevent-double-release`    | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/prevent-double-release.md)    | Release tracking pattern           |
+| P9  | **"Floating Queries: The Unhandled Promise in Your Database Code"** | `no-floating-query`         | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-floating-query.md)         | `await client.query()`             |
 
 ### Performance & Quality (4 articles)
 
 | #   | Title                                                     | Rule                   | Docs                                                                                                                 | CTA Example                 |
 | --- | --------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| P10 | **"Parameter Mismatch: The $1 $2 Bug That Wastes Hours"** | `check-query-params`   | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/check-query-params.md)   | Matching placeholder count  |
-| P11 | **"SELECT \* is Killing Your PostgreSQL Performance"**    | `no-select-all`        | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-select-all.md)        | Explicit column selection   |
-| P12 | **"pool.query() vs pool.connect(): When to Use Each"**    | `prefer-pool-query`    | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/prefer-pool-query.md)    | Simple query pattern        |
-| P13 | **"The N+1 Insert Loop That Slowed Our API to a Crawl"**  | `no-batch-insert-loop` | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-batch-insert-loop.md) | Bulk insert with `unnest()` |
+| P10 | **"Parameter Mismatch: The $1 $2 Bug That Wastes Hours"** | `check-query-params`   | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/check-query-params.md)   | Matching placeholder count  |
+| P11 | **"SELECT \* is Killing Your PostgreSQL Performance"**    | `no-select-all`        | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-select-all.md)        | Explicit column selection   |
+| P12 | **"pool.query() vs pool.connect(): When to Use Each"**    | `prefer-pool-query`    | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/prefer-pool-query.md)    | Simple query pattern        |
+| P13 | **"The N+1 Insert Loop That Slowed Our API to a Crawl"**  | `no-batch-insert-loop` | [docs](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-batch-insert-loop.md) | Bulk insert with `unnest()` |
 
 ### Summary
 
