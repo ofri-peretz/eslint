@@ -47,25 +47,25 @@ describe('Homepage: Structure Lock', () => {
     // of quieter sections. Lock asserts they are NOT re-introduced.
     it('does NOT re-import BackgroundLines (retired in 2026-05 home-page diet)', () => {
       expect(homepageSource).not.toContain(
-        "from '@interlace/ui/aceternity/background-lines'",
+        "from '@interlace/ui/ambient/background-lines'",
       );
     });
 
     it('does NOT re-import Marquee (retired in 2026-05 home-page diet)', () => {
       expect(homepageSource).not.toContain(
-        "from '@interlace/ui/magicui/marquee'",
+        "from '@interlace/ui/effects/marquee'",
       );
     });
 
     it('imports BorderBeam component', () => {
       expect(homepageSource).toContain(
-        "import { BorderBeam } from '@interlace/ui/magicui/border-beam'",
+        "import { BorderBeam } from '@interlace/ui/effects/border-beam'",
       );
     });
 
     it('imports NumberTicker component', () => {
       expect(homepageSource).toContain(
-        "import { NumberTicker } from '@interlace/ui/magicui/number-ticker'",
+        "import { NumberTicker } from '@interlace/ui/effects/number-ticker'",
       );
     });
 
@@ -215,7 +215,7 @@ describe('Homepage: Structure Lock', () => {
 describe('HeroSection: Structure Lock', () => {
   // The hero is composed of: the app's hero-section.tsx (branded copy + CTAs),
   // the @interlace/ui/patterns/hero-cosmic preset (theme-aware atmospheric
-  // shell + structural skeleton), and the @interlace/ui/aceternity/daylight-
+  // shell + structural skeleton), and the @interlace/ui/ambient/daylight-
   // background primitive (sun + clouds + sky for light theme). Lock-tests
   // assert against all three as one logical unit.
   const heroPath = join(process.cwd(), 'src/components/home/hero-section.tsx');
@@ -225,7 +225,7 @@ describe('HeroSection: Structure Lock', () => {
   );
   const daylightPath = join(
     process.cwd(),
-    '../../packages/ui/src/aceternity/daylight-background.tsx',
+    '../../packages/ui/src/ambient/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -234,7 +234,7 @@ describe('HeroSection: Structure Lock', () => {
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
       readFileSync(cosmicPath, 'utf-8') +
-      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      '\n\n/* --- @interlace/ui/ambient/daylight-background --- */\n\n' +
       readFileSync(daylightPath, 'utf-8');
   });
 
@@ -255,13 +255,13 @@ describe('HeroSection: Structure Lock', () => {
       expect(heroSource).toContain('ShootingStars');
     });
 
-    it('imports from the @interlace/ui aceternity stars-background', () => {
+    it('imports from the @interlace/ui ambient stars-background', () => {
       // The hero-cosmic preset re-uses stars-background via a relative
-      // package path (`../aceternity/stars-background.js`); the app-side
+      // package path (`../ambient/stars-background.js`); the app-side
       // hero-section can also import from the public `@interlace/ui/...`
       // subpath. Either is a valid wiring of the same module.
       expect(heroSource).toMatch(
-        /(@interlace\/ui\/aceternity\/stars-background|\.\.\/aceternity\/stars-background)/,
+        /(@interlace\/ui\/ambient\/stars-background|\.\.\/ambient\/stars-background)/,
       );
     });
 
@@ -482,7 +482,7 @@ describe('Homepage: Accessibility Lock', () => {
   );
   const daylightPath = join(
     process.cwd(),
-    '../../packages/ui/src/aceternity/daylight-background.tsx',
+    '../../packages/ui/src/ambient/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -491,7 +491,7 @@ describe('Homepage: Accessibility Lock', () => {
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
       readFileSync(cosmicPath, 'utf-8') +
-      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      '\n\n/* --- @interlace/ui/ambient/daylight-background --- */\n\n' +
       readFileSync(daylightPath, 'utf-8');
   });
 
@@ -585,7 +585,7 @@ describe('HeroSection: Meteors Lock', () => {
   );
   const daylightPath = join(
     process.cwd(),
-    '../../packages/ui/src/aceternity/daylight-background.tsx',
+    '../../packages/ui/src/ambient/daylight-background.tsx',
   );
   let heroSource: string;
 
@@ -594,7 +594,7 @@ describe('HeroSection: Meteors Lock', () => {
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
       readFileSync(cosmicPath, 'utf-8') +
-      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      '\n\n/* --- @interlace/ui/ambient/daylight-background --- */\n\n' +
       readFileSync(daylightPath, 'utf-8');
   });
 
@@ -672,7 +672,7 @@ describe('HeroSection: Daylight Surface Lock', () => {
   );
   const daylightPath = join(
     process.cwd(),
-    '../../packages/ui/src/aceternity/daylight-background.tsx',
+    '../../packages/ui/src/ambient/daylight-background.tsx',
   );
   let heroSource: string;
   let daylightSource: string;
@@ -683,11 +683,11 @@ describe('HeroSection: Daylight Surface Lock', () => {
       readFileSync(heroPath, 'utf-8') +
       '\n\n/* --- @interlace/ui/patterns/hero-cosmic --- */\n\n' +
       readFileSync(cosmicPath, 'utf-8') +
-      '\n\n/* --- @interlace/ui/aceternity/daylight-background --- */\n\n' +
+      '\n\n/* --- @interlace/ui/ambient/daylight-background --- */\n\n' +
       daylightSource;
   });
 
-  describe('Primitives exist in the @interlace/ui aceternity surface', () => {
+  describe('Primitives exist in the @interlace/ui ambient surface', () => {
     it('daylight-background.tsx file exists', () => {
       expect(existsSync(daylightPath)).toBe(true);
     });
@@ -712,9 +712,9 @@ describe('HeroSection: Daylight Surface Lock', () => {
   });
 
   describe('Wiring — HeroCosmic mounts the daylight layer behind the dark:hidden gate', () => {
-    it('hero-cosmic.tsx imports DaylightBackground from the aceternity surface', () => {
+    it('hero-cosmic.tsx imports DaylightBackground from the ambient surface', () => {
       expect(heroSource).toMatch(
-        /import\s+\{\s*DaylightBackground\s*\}\s+from\s+['"]\.\.\/aceternity\/daylight-background\.js['"]/,
+        /import\s+\{\s*DaylightBackground\s*\}\s+from\s+['"]\.\.\/ambient\/daylight-background\.js['"]/,
       );
     });
 

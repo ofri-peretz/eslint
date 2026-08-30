@@ -301,7 +301,7 @@ Ensure these labels exist in the repository:
 
 ```bash
 # Run compatibility tests for a specific plugin
-cd packages/eslint-plugin-pg
+cd packages/eslint-plugin-postgresql-security
 npm vitest run src/__compatibility__/**/*.spec.ts --reporter=verbose
 
 # Install latest SDK and test

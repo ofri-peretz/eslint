@@ -220,6 +220,25 @@ export function testTextFor(file: string): string {
       if (owns(entry.name)) text += fs.readFileSync(path.join(d, entry.name), 'utf8');
     }
   }
+
+  // Central-layout packages keep every suite under `src/tests/**`, away from
+  // the rule file — ten packages, all invisible to the two lookups above.
+  // Same ownership contract as the flat case: only a file carrying the rule's
+  // own basename counts, so a sibling rule's test in the shared tree cannot
+  // mark this rule's entries covered.
+  let src = dir;
+  while (path.basename(src) !== 'src' && path.dirname(src) !== src) src = path.dirname(src);
+  if (path.basename(src) === 'src') {
+    const readOwnedUnder = (d: string) => {
+      if (!fs.existsSync(d)) return;
+      for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, entry.name);
+        if (entry.isDirectory()) readOwnedUnder(full);
+        else if (owns(entry.name)) text += fs.readFileSync(full, 'utf8');
+      }
+    };
+    readOwnedUnder(path.join(src, 'tests'));
+  }
   return text;
 }
 

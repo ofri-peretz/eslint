@@ -266,8 +266,8 @@ Use consistent patterns AI can recognize:
 ### 4.2 Call-to-Action Buttons
 
 ```markdown
-{% cta https://npmjs.com/package/eslint-plugin-pg %}
-📦 Install eslint-plugin-pg
+{% cta https://npmjs.com/package/eslint-plugin-postgresql-security %}
+📦 Install eslint-plugin-postgresql-security
 {% endcta %}
 ```
 
@@ -399,8 +399,8 @@ The same vulnerability appears in 80% of them."
 ```markdown
 ---
 
-📦 [npm: eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)
-📖 [Documentation](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-pg)
+📦 [npm: eslint-plugin-postgresql-security](https://www.npmjs.com/package/eslint-plugin-postgresql-security)
+📖 [Documentation](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-postgresql-security)
 
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
@@ -436,7 +436,7 @@ For getting-started articles, link each rule to its GitHub documentation:
 ```markdown
 | Rule                                                                                                                           | CWE    | What it catches |
 | ------------------------------------------------------------------------------------------------------------------------------ | ------ | --------------- |
-| [`no-sql-injection`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-sql-injection.md) | CWE-89 | SQL injection   |
+| [`no-sql-injection`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-sql-injection.md) | CWE-89 | SQL injection   |
 ```
 
 ### 7.3 Who Is This For Section

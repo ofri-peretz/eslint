@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@interlace/ui/cn';
 import { motion, AnimatePresence } from 'motion/react';
-import { BackgroundBeamsWithCollision } from '@interlace/ui/aceternity/background-beams-with-collision';
+import { BackgroundBeamsWithCollision } from '@interlace/ui/ambient/background-beams-with-collision';
 
 const SEARCH_DEBOUNCE_MS = 250;
 

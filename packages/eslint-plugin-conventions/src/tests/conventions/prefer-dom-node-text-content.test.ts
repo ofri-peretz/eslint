@@ -41,12 +41,25 @@ describe('prefer-dom-node-text-content', () => {
         {
           code: 'const innerText = "not a DOM property";',
         },
-        // Non-element objects
-        {
-          code: 'const text = obj.innerText;',
-        },
       ],
       invalid: [
+        // Was `valid`, and passed only because `obj` did not match the DOM-name
+        // vocabulary. `.innerText` exists on HTMLElement alone, so this is a
+        // DOM access whatever the receiver is called.
+        {
+          code: 'const text = obj.innerText;',
+          errors: [
+            {
+              messageId: 'preferDomNodeTextContent',
+              suggestions: [
+                {
+                  messageId: 'preferDomNodeTextContent',
+                  output: 'const text = obj.textContent;',
+                },
+              ],
+            },
+          ],
+        },
         // Direct innerText access
         {
           code: 'const text = element.innerText;',
