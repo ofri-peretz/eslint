@@ -6,7 +6,6 @@
     "import-next/no-mutable-exports",
     "lambda-security/no-unbounded-batch-processing",
     "lambda-security/no-unvalidated-event-body",
-    "lambda-security/require-timeout-handling",
     "nestjs-security/no-permissive-cors",
     "node-security/no-env-injection",
     "node-security/no-ssrf",
