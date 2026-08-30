@@ -40,6 +40,32 @@ const built = (pkg: string): string | null => {
   return existsSync(entry) ? readFileSync(entry, 'utf8') : null;
 };
 
+/** Counts the rule modules a plugin pulls into require.cache on load. */
+const countProbe = (pkg: string): string => `
+  const path = ${JSON.stringify(entryFor(pkg))};
+  require(path);
+  process.stdout.write(String(
+    Object.keys(require.cache).filter((f) => f.includes('/dist/src/rules/')).length,
+  ));
+`;
+
+/**
+ * Runs a probe in a child node and returns its raw stdout.
+ *
+ * Both halves of this are load-bearing, and both defend the same failure.
+ * Node colourises `console.log(<number>)` when FORCE_COLOR is set — which
+ * modern terminals and some CI runners set globally — even with stdout piped,
+ * so the child emitted `\x1b[33m0\x1b[39m` and `Number()` gave NaN. The
+ * numeric locks below then failed for a reason that had nothing to do with
+ * the built artifact. `process.stdout.write` never colourises, and the pinned
+ * env stops an inherited FORCE_COLOR from reaching the child at all.
+ */
+const runProbe = (source: string): string =>
+  execFileSync(process.execPath, ['-e', source], {
+    encoding: 'utf8',
+    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+  }).trim();
+
 /**
  * How many rule modules a plugin pulls in purely by being `require`d.
  *
@@ -50,18 +76,8 @@ const built = (pkg: string): string | null => {
  * patterns unmatchable. The lock kept passing while testing nothing. What
  * actually matters is how many modules load, and that survives any formatting.
  */
-const rulesLoadedOnRequire = (pkg: string): number => {
-  const probe = `
-    const path = ${JSON.stringify(entryFor(pkg))};
-    require(path);
-    console.log(
-      Object.keys(require.cache).filter((f) => f.includes('/dist/src/rules/')).length,
-    );
-  `;
-  return Number(
-    execFileSync(process.execPath, ['-e', probe], { encoding: 'utf8' }).trim(),
-  );
-};
+const rulesLoadedOnRequire = (pkg: string): number =>
+  Number(runProbe(countProbe(pkg)));
 
 describe('lazy rule barrel (built artifact)', () => {
   it('loads no rule module when a fully-lazy plugin is required', () => {
@@ -92,7 +108,7 @@ describe('lazy rule barrel (built artifact)', () => {
       const afterEnumerate = ruleModules();
       const first = plugin.rules[names[0]];
       const again = plugin.rules[names[0]];
-      console.log(JSON.stringify({
+      process.stdout.write(JSON.stringify({
         total: names.length,
         afterLoad,
         afterEnumerate,
@@ -101,9 +117,7 @@ describe('lazy rule barrel (built artifact)', () => {
         stableIdentity: first === again,
       }));
     `;
-    const result = JSON.parse(
-      execFileSync(process.execPath, ['-e', probe], { encoding: 'utf8' }),
-    );
+    const result = JSON.parse(runProbe(probe));
 
     expect(result.total).toBeGreaterThan(10);
     expect(result.afterLoad).toBe(0);
@@ -111,5 +125,20 @@ describe('lazy rule barrel (built artifact)', () => {
     expect(result.afterAccess).toBe(1); // reading one rule loads exactly one
     expect(result.isRule).toBe(true);
     expect(result.stableIdentity).toBe(true);
+  });
+
+  it('reads a number back even when the environment forces colour', () => {
+    if (built(FULLY_LAZY) === null) return;
+    // Deliberately does NOT pass the FORCE_COLOR=0 guard from runProbe: this
+    // pins the other half of the fix, that the probe writes with
+    // `process.stdout.write` rather than `console.log`. On the unfixed probe
+    // the child emits ANSI codes here and this parses to NaN.
+    const raw = execFileSync(process.execPath, ['-e', countProbe(FULLY_LAZY)], {
+      encoding: 'utf8',
+      env: { ...process.env, FORCE_COLOR: '1' },
+    }).trim();
+
+    expect(raw).toMatch(/^\d+$/);
+    expect(Number.isNaN(Number(raw))).toBe(false);
   });
 });
