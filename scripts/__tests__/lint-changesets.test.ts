@@ -338,6 +338,20 @@ describe('CS009 — cross-package scope', () => {
     expect(rules(lint(dir, PRIVACY))).not.toContain('CS009');
   });
 
+  it('sees scoped, fully-qualified rule references', () => {
+    // `@scope/eslint-plugin-x/rule` has two slashes. Splitting on the first
+    // yielded `eslint-plugin-x/rule`, which matches no bare rule key — the
+    // check saw an empty set and passed a genuinely cross-scoped changeset.
+    write(
+      'scoped.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: two detections we were missing\n\n' +
+        'Adds `@interlace/eslint-plugin-node-security/no-math-random-crypto` and ' +
+        'relaxes `@interlace/eslint-plugin-jwt-security/no-decode-without-verify`.',
+    );
+    expect(rules(lint(dir, PRIVACY))).toContain('CS009');
+  });
+
   it('ignores rule names that are not in backticks', () => {
     // Prose mentioning a rule in passing is not a claim of ownership; matching
     // bare words would fire on ordinary sentences.

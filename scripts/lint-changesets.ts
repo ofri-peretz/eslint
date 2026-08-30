@@ -408,9 +408,11 @@ export function checkCrossPackageScope(
     // sentence containing a common rule name.
     const named = new Set<string>();
     for (const [, token] of cs.body.matchAll(/`([^`]+)`/g)) {
-      const rule = token.includes('/')
-        ? token.slice(token.indexOf('/') + 1)
-        : token;
+      // Last slash, not the first. A scoped, fully-qualified reference like
+      // `@interlace/eslint-plugin-jwt-security/no-decode-without-verify` has
+      // two: splitting on the first leaves `eslint-plugin-…/no-decode-…`,
+      // which matches no bare rule key, and the check silently sees nothing.
+      const rule = token.slice(token.lastIndexOf('/') + 1);
       const owner = owners.get(rule);
       if (owner && listed.includes(owner)) named.add(owner);
     }
