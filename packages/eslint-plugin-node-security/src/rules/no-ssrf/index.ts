@@ -23,6 +23,7 @@ import {
   unwrapTypeSyntax,
   isTestFilePath,
   readsRequestShape,
+  isModuleBinding,
 } from '@interlace/eslint-devkit';
 import { bindingInit } from '../../utils/provenance';
 
@@ -45,6 +46,17 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * @vocabulary `fetch` is WHATWG's, the method names are HTTP's (RFC 9110) and
+ * the ones those client libraries publish, and `URL` / `hostname` / `host` are
+ * the WHATWG URL interface. None is a name a consumer chose.
+ *
+ * The MODULE list below is a different matter and is not cited — see there.
+ *
+ * @see https://fetch.spec.whatwg.org/
+ * @see https://www.rfc-editor.org/rfc/rfc9110#name-methods
+ * @see https://url.spec.whatwg.org/#url-class
+ */
 // HTTP client functions that make outbound requests
 const HTTP_CLIENT_FUNCTIONS = new Set([
   'fetch', // built-in / node-fetch
@@ -65,19 +77,41 @@ const HTTP_CLIENT_METHODS = new Set([
   'request',
 ]);
 
-// Object names that are HTTP client libraries
-// `needle.get(url)` is covered here; the `needle('get', url)` verb-first form
-// is not — the URL sits in argument 1, and this rule only reads argument 0.
-const HTTP_CLIENT_OBJECTS = new Set([
+/**
+ * The MODULES that are HTTP clients — matched by resolving the import, not by
+ * the local name.
+ *
+ * These are package names, so they look citable. They are not: the rule was
+ * comparing them against the LOCAL BINDING, which is the consumer's choice.
+ * `import axiosClient from 'axios'` or `const https = require('node:https')`
+ * aliased to anything else matched nothing at all, and a local variable that
+ * happened to be called `request` matched everything.
+ *
+ * `isModuleBinding` asks the structural question — does this expression
+ * resolve to an import of that module — so the package names stay published
+ * and the naming stops being our guess.
+ *
+ * The old name set is GONE rather than kept as a fallback. The only case a
+ * fallback would have covered is `http.request` with no import, and `http` is
+ * not a global in Node — you have to require it. Keeping it would have
+ * preserved the false positive it causes: a local `const request = {...}`
+ * reported as an outbound HTTP call.
+ *
+ * `needle.get(url)` is covered here; the `needle('get', url)` verb-first form
+ * is not — the URL sits in argument 1, and this rule only reads argument 0.
+ */
+const HTTP_CLIENT_MODULES = [
   'axios',
   'got',
   'superagent',
   'request',
   'http',
   'https',
+  'node:http',
+  'node:https',
   'undici',
   'needle',
-]);
+] as const;
 
 // Function names that indicate URL validation
 const VALIDATION_FUNCTION_NAMES = new Set([
@@ -474,8 +508,14 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          HTTP_CLIENT_OBJECTS.has(node.callee.object.name) &&
-          HTTP_CLIENT_METHODS.has(node.callee.property.name)
+          HTTP_CLIENT_METHODS.has(node.callee.property.name) &&
+          HTTP_CLIENT_MODULES.some((mod) =>
+            isModuleBinding(
+              (node.callee as TSESTree.MemberExpression).object,
+              context.sourceCode.getScope(node),
+              mod,
+            ),
+          )
         ) {
           isHttpCall = true;
         }

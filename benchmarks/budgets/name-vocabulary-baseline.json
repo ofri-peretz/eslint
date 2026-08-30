@@ -8,7 +8,6 @@
     "lambda-security/no-unvalidated-event-body",
     "nestjs-security/no-permissive-cors",
     "node-security/no-env-injection",
-    "node-security/no-ssrf",
     "node-security/no-unsafe-buffer-alloc",
     "secure-coding/detect-weak-password-validation",
     "secure-coding/no-unsafe-regex-construction",

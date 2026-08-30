@@ -468,7 +468,7 @@
     "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::bare-object-key-only::? property.key.name",
     "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::dotted-property-only::(node.left.property.name === 'hostname' ||",
     "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::dotted-property-only::(node.right.property.name === 'hostname' ||",
-    "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::dotted-property-only::HTTP_CLIENT_METHODS.has(node.callee.property.name)",
+    "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::dotted-property-only::HTTP_CLIENT_METHODS.has(node.callee.property.name) &&",
     "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::dotted-property-only::const method = node.callee.property.name;",
     "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::dotted-property-only::node.left.property.name === 'host')) ||",
     "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts::dotted-property-only::node.right.property.name === 'host')))",
