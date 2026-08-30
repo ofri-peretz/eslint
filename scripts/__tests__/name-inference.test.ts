@@ -89,13 +89,26 @@ describe('findNameSubstringSites', () => {
     expect(sites).toEqual([]);
   });
 
-  it('does NOT flag anchored tests', () => {
-    // startsWith/endsWith are anchored; they cannot match mid-identifier.
+  it('flags anchored tests too — they are still a name deciding a type', () => {
+    // This reverses an earlier decision, deliberately. Anchoring solves
+    // *precision*: `endsWith('Request')` will not match `Requestor` mid-word
+    // the way `includes` did. It does not touch the doctrine this gate exists
+    // for — "a name is not a type". `endsWith('Dto')` exempts `OrderDto`
+    // whatever the class contains, and renaming it changes the verdict.
+    //
+    // The evidence that settled it: #737 changed `className.includes(p)` to
+    // `className.endsWith(p)` — a real fix — and thereby moved the code out of
+    // this gate's range. The inference stayed; the gate stopped seeing it. A
+    // gate a fix can walk out of is worse than no gate, because the green tick
+    // reads as a verdict.
+    //
+    // Legitimate anchored tests (`aria-`, JSX `on*`) are not exceptions to the
+    // rule; they are registered in REGISTERED with the reason they are sound.
     const sites = findNameSubstringSites(`
       const varName = node.id.name;
       if (varName.startsWith('is') || varName.endsWith('Handler')) return true;
     `);
-    expect(sites).toEqual([]);
+    expect(sites).toHaveLength(1);
   });
 });
 

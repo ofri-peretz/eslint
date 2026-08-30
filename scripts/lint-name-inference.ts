@@ -71,8 +71,22 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PACKAGES_DIR = path.join(REPO_ROOT, 'packages');
 
-/** Substring-ish string methods. `startsWith`/`endsWith` are anchored and excluded. */
-const SUBSTRING_METHODS = 'includes|indexOf|search|match';
+/**
+ * String methods that decide something from a *fragment* of a spelling.
+ *
+ * `startsWith`/`endsWith` belong here for the same reason the others do, and
+ * their absence was a hole a fix could walk straight through: PR #737 changed
+ * `className.includes(pattern)` to `className.endsWith(pattern)` — a genuine
+ * improvement, since `Requestor` no longer matched `Request` — and in doing so
+ * moved the code out of this gate's range. The inference did not go away; the
+ * gate stopped seeing it.
+ *
+ * A prefix or suffix test is still a name deciding a type. `endsWith('Dto')`
+ * exempts `OrderDto` whatever it contains, and renaming the class changes the
+ * verdict — the same failure the `includes` cases have, minus the mid-word
+ * collisions.
+ */
+const SUBSTRING_METHODS = 'includes|indexOf|search|match|startsWith|endsWith';
 
 /**
  * `const varName = node.id.name…;` — a binding holding an identifier's spelling.
@@ -283,6 +297,82 @@ interface RegistryEntry {
  * about it.
  */
 const REGISTERED: RegistryEntry[] = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // Surfaced when `startsWith`/`endsWith` joined SUBSTRING_METHODS. A prefix or
+  // suffix test is a name deciding a type just as much as `includes` is; the
+  // list simply never named them, so these sites predate this gate rather than
+  // regress against it.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // --- The spelling IS the specification. Not a heuristic. ---
+  {
+    file: 'eslint-plugin-react-a11y/src/rules/aria-props.ts',
+    direction: 'report',
+    reason:
+      'startsWith("aria-") is the ARIA specification, not a guess: an attribute spelled aria-* IS an ARIA attribute by definition. Renaming it makes it a different attribute.',
+  },
+  {
+    file: 'eslint-plugin-react-a11y/src/rules/aria-unsupported-elements.ts',
+    direction: 'report',
+    reason:
+      'Same ARIA prefix as aria-props: the spelling defines the attribute.',
+  },
+  {
+    file: 'eslint-plugin-react-a11y/src/rules/role-supports-aria-props.ts',
+    direction: 'report',
+    reason:
+      'Same ARIA prefix as aria-props: the spelling defines the attribute.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/react/jsx-handler-names.ts',
+    direction: 'report',
+    reason:
+      'A naming-convention rule. The name is the subject, not evidence for something else, so inferring from it is the entire point.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/performance/react-no-inline-functions.ts',
+    direction: 'suppress',
+    reason:
+      'startsWith("on") identifies a JSX event prop, which is the React convention for exactly that. Renaming makes it not an event prop.',
+  },
+  {
+    file: 'eslint-plugin-jwt-security/src/utils/index.ts',
+    direction: 'report',
+    reason:
+      'startsWith("@") and startsWith("npm:") parse a MODULE SPECIFIER, not an identifier. Scope and protocol prefixes are npm grammar. The gate cannot tell the two apart from the shape of the call.',
+  },
+  {
+    file: 'eslint-plugin-nestjs-security/src/utils/project-context.ts',
+    direction: 'report',
+    reason:
+      'startsWith(".") is a dotfile check on a DIRECTORY ENTRY, not an identifier spelling. Filesystem convention, not inference.',
+  },
+
+  // --- Real debt: a name deciding a type. ---
+  {
+    file: 'eslint-plugin-maintainability/src/rules/error-handling/no-missing-error-context.ts',
+    direction: 'report',
+    reason:
+      'endsWith("Error") decides a class is an error type from its spelling. A class named Error-something need not extend Error, and one that does need not say so. Wants the binding.',
+  },
+  {
+    file: 'eslint-plugin-reliability/src/rules/error-handling/no-missing-error-context.ts',
+    direction: 'report',
+    reason: 'Same endsWith("Error") inference as the maintainability copy.',
+  },
+  {
+    file: 'eslint-plugin-modularity/src/rules/ddd-value-object-immutability.ts',
+    direction: 'suppress',
+    reason:
+      'endsWith over a configured suffix list decides value-object-ness by name. A suppression, so each miss costs a real finding. Same shape as ddd-anemic-domain-model.',
+  },
+  {
+    file: 'eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts',
+    direction: 'suppress',
+    reason:
+      'endsWith("label"|"labels"|"name"|"placeholder") suppresses on the spelling of the surrounding key. A credential assigned to a key ending in "name" is still a credential.',
+  },
+
   // ═══════════════════════════════════════════════════════════════════════
   // Surfaced 2026-08-25 when the scanner stopped reading only
   // `<rule>/index.ts`. 207 rule files had never been opened — nearly half the

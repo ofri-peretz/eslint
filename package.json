@@ -246,7 +246,8 @@
     "ilb:corpus-truth": "tsx benchmarks/suites/ilb-corpus-truth/run.ts",
     "ilb:corpus-truth:baseline": "tsx benchmarks/suites/ilb-corpus-truth/run.ts --update-baseline",
     "ilb:preset-budget": "tsx benchmarks/suites/ilb-preset-budget/run.ts",
-    "ilb:preset-budget:baseline": "tsx benchmarks/suites/ilb-preset-budget/run.ts --update-baseline"
+    "ilb:preset-budget:baseline": "tsx benchmarks/suites/ilb-preset-budget/run.ts --update-baseline",
+    "devkit:infra": "tsx scripts/devkit-infra-metrics.ts"
   },
   "keywords": [
     "eslint",
