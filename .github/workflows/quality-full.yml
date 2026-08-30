@@ -77,6 +77,7 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
       shards: ${{ steps.matrix.outputs.shards }}
       any: ${{ steps.matrix.outputs.any }}
+      shard_count: ${{ steps.matrix.outputs.count }}
       heavy: ${{ steps.matrix.outputs.heavy }}
       build_shards: ${{ steps.build_matrix.outputs.build_shards }}
       build_any: ${{ steps.build_matrix.outputs.build_any }}
@@ -211,6 +212,56 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No benchmark config, package source/manifest or size-metric input touched — skipping the config-load + size-metrics job."
           fi
+
+  # A skipped job leaves NO row in the PR's checks list. That makes an
+  # affected-filtered matrix that legitimately selected nothing look identical
+  # to a matrix step that broke: in both cases the "Unit Tests + Coverage"
+  # checks are simply absent, and the aggregate gate is green either way. The
+  # absence was read as a regression by a reviewer ("how come we run no unit
+  # tests now") — correct behaviour is not the same as visible behaviour.
+  #
+  # This job always runs and puts the decision in the checks list BY NAME, so
+  # the PR page states which of the two happened without anyone opening a log.
+  # It does no work: no checkout, no install, one echo. ~5s of a runner buys
+  # the difference between "verified nothing was affected" and "verified
+  # nothing".
+  test-scope:
+    name: "${{ needs.gate.outputs.any == 'true' && format('Unit tests — {0} of 10 shards affected', needs.gate.outputs.shard_count) || 'Unit tests SKIPPED — no package sources changed' }}"
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Report what the gate selected
+        env:
+          ANY: ${{ needs.gate.outputs.any }}
+          COUNT: ${{ needs.gate.outputs.shard_count }}
+          BUILD_ANY: ${{ needs.gate.outputs.build_any }}
+          HEAVY: ${{ needs.gate.outputs.heavy }}
+          BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: |
+          set -euo pipefail
+          if [ "$ANY" = "true" ]; then
+            headline="Unit tests ran: ${COUNT} of 10 shards held affected packages."
+          else
+            headline="Unit tests skipped: no package source changed vs the base commit, so no shard had anything to run."
+          fi
+          {
+            echo "# ${headline}"
+            echo ""
+            echo "| Gate output | Value | Meaning |"
+            echo "|---|---|---|"
+            echo "| \`any\` | ${ANY} | whether any test shard was dispatched |"
+            echo "| \`shard_count\` | ${COUNT} | shards holding at least one affected package |"
+            echo "| \`build_any\` | ${BUILD_ANY} | whether any build shard was dispatched |"
+            echo "| \`heavy\` | ${HEAVY} | whether Typecheck / Portability were dispatched |"
+            echo ""
+            echo "Affected packages are computed against \`${BASE}\` by"
+            echo "\`scripts/ci-test-shard.mts --matrix 10\`. \`scripts/__tests__\` is outside every"
+            echo "workspace and runs unconditionally in **Script & Repo-Config Locks**, so a"
+            echo "skip here never means *nothing* was verified."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::${headline}"
 
   # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
   # tools/*, benchmarks), so turbo has no task for it and `turbo run test` never
