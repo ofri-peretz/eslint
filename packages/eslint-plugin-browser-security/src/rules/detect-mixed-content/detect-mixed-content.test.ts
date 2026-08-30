@@ -235,6 +235,49 @@ jsxRuleTester.run('detect-mixed-content (jsx)', detectMixedContent, {
   ],
 });
 
+/**
+ * Regression lock — the spec-frozen W3C namespace identifiers.
+ *
+ * Hit in the wild on 2026-08-26 (ofri-peretz/blog PR #203): SVG export code
+ * and its test passed these strings to `createElementNS`, and the 1.x line of
+ * this plugin reported them as mixed content. Nothing is ever fetched from a
+ * namespace identifier, so CWE-311 cannot apply; under the subresource-position
+ * predicate they are structurally out of reach, and this suite pins each exact
+ * string in both shapes real code writes so a predicate change cannot quietly
+ * reclaim them.
+ */
+const W3C_NAMESPACE_IDENTIFIERS = [
+  'http://www.w3.org/2000/svg',
+  'http://www.w3.org/1999/xhtml',
+  'http://www.w3.org/1999/xlink',
+  'http://www.w3.org/XML/1998/namespace',
+  'http://www.w3.org/2000/xmlns/',
+];
+
+ruleTester.run('lock: W3C namespace identifiers are never mixed content', detectMixedContent, {
+  valid: [
+    // Each as a bare literal…
+    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({ code: `const NS = '${ns}';` })),
+    // …and as the createElementNS argument, the shape from the blog hit.
+    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
+      code: `document.createElementNS('${ns}', 'svg');`,
+    })),
+    // The namespaced attribute setter takes the identifier first.
+    { code: "img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url);" },
+    // A namespaceURI comparison is how code branches on document type.
+    { code: "if (svg.namespaceURI === 'http://www.w3.org/2000/svg') { serialize(svg); }" },
+  ],
+  invalid: [
+    // POSITIVE CONTROL — a genuine http:// subresource load still reports, so
+    // the valid cases above are quiet for the right reason and not because the
+    // suite lost its sink.
+    {
+      code: "el.src = 'http://cdn.acmecorp.io/analytics.js';",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});
+
 /*
  * ── REGRESSION: `<link>` needs its `rel` read ────────────────────────────────
  *

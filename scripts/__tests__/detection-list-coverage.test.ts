@@ -183,4 +183,24 @@ describe('testTextFor', () => {
 
     expect(testTextFor(path.join(dir, 'mine.ts'))).toContain('COVERAGE_TOKEN');
   });
+
+  it('reads a central `src/tests/**` suite by the rule\'s own basename', () => {
+    // Ten packages keep every suite under `src/tests/**` — before this
+    // lookup, their rules read as having no tests at all, and a genuinely
+    // locked entry (conventions' `copy`) failed the gate as uncovered.
+    // Ownership is still by basename: the sibling's test in the same shared
+    // tree must NOT flatter this rule's coverage.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dlc-'));
+    const rules = path.join(root, 'src', 'rules', 'conventions');
+    const tests = path.join(root, 'src', 'tests', 'conventions');
+    fs.mkdirSync(rules, { recursive: true });
+    fs.mkdirSync(tests, { recursive: true });
+    fs.writeFileSync(path.join(rules, 'mine.ts'), '');
+    fs.writeFileSync(path.join(tests, 'mine.test.ts'), 'CENTRAL_TOKEN');
+    fs.writeFileSync(path.join(tests, 'other.test.ts'), 'OTHER_TOKEN');
+
+    const text = testTextFor(path.join(rules, 'mine.ts'));
+    expect(text).toContain('CENTRAL_TOKEN');
+    expect(text).not.toContain('OTHER_TOKEN');
+  });
 });

@@ -5,6 +5,19 @@ All notable changes to `eslint-plugin-anthropic-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.2
+
+### Patch Changes
+
+- **📚 Docs** — the four AI-security plugins are documented on the site at last
+
+  Their /plugins cards 404ed and their 13 rules' `meta.docs.url` pointed at a
+  package that does not exist. Each plugin now has overview/changelog/rule pages
+  generated from its existing package docs, is registered in the devkit's
+  category map, and stamps canonical site URLs on export.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`
+
 ## 0.3.1
 
 ### Patch Changes

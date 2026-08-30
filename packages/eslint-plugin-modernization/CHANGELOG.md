@@ -5,6 +5,80 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.0
+
+### Major Changes
+
+- **💥 Breaking** — `prefer-event-target` is no longer autofixable — its fix broke the program
+
+  The fixers rewrote the **binding name and nothing else**:
+  `import { EventEmitter } from 'events'` became
+  `import { EventTarget } from 'events'`, and the `require` form the same.
+
+  Two things were wrong with that. `events` exports no `EventTarget` — it is a
+  global in Node 15+ — so the rewritten import resolved to `undefined`. And the
+  fix never touched the use site, leaving `class Bus extends EventEmitter` bound
+  to a name that was no longer imported. Running `--fix` over working code
+  produced a file that cannot run:
+
+  ```js
+  import { EventTarget } from 'events'; // undefined
+  export class Bus extends EventEmitter {} // unbound identifier
+  ```
+
+  `EventEmitter` → `EventTarget` is a semantic migration — `.on()`/`.emit()`
+  against `.addEventListener()`/`.dispatchEvent()`, different error semantics,
+  and a breaking change for any exported class. No mechanical rewrite is
+  correct, so the rule now reports and leaves the decision to you.
+
+  **Reporting is unchanged.** This removes a fix that damaged source; it does not
+  weaken detection. Marked major because `--fix` behaviour changes for anyone who
+  had it enabled.
+
+  ## Migration
+
+  Nothing to change in your config — the rule id, severity and messages are the
+  same. What changes is that `eslint --fix` no longer edits these sites.
+
+  If a previous `--fix` run already rewrote your imports, the damage looks like
+  this and needs reverting by hand:
+
+  ```js
+  // Broken by the old fixer — `events` has no EventTarget export
+  import { EventTarget } from 'events';
+  export class Bus extends EventEmitter {}
+
+  // Correct: either keep EventEmitter…
+  import { EventEmitter } from 'events';
+  export class Bus extends EventEmitter {}
+
+  // …or migrate deliberately, using the global EventTarget and its API
+  export class Bus extends EventTarget {}
+  ```
+
+  Search for `from "events"` / `require("events")` alongside a named
+  `EventTarget` import — that combination is always wrong and only the old fixer
+  produced it.
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-at` no longer suggests `.at()` where the element is being written
+
+  `.at()` returns a value, not a reference, so `arr.at(-1) = 5` is a syntax
+  error — as are the compound assignment, `++`/`--` and `delete` forms. The rule
+  reported on all of them, which is worse than noise: the fix it suggested did
+  not compile.
+
+  Found by a census of the rule's findings on the pinned corpus. One line in
+  Shopify's CLI produced two findings —
+  `durationStack[durationStack.length - 1] = (durationStack[...] ?? 0) + d` — one
+  for the read and one for the assignment target. The read is correct; the target
+  never was.
+
+  Reads are unaffected.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`
+
 ## 2.2.0
 
 ### Minor Changes

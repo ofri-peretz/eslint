@@ -316,7 +316,7 @@ test.describe('Visual Regression Tests', () => {
       '/stats',
       '/scorecard',
       '/docs/getting-started',
-      '/docs/security/plugin-jwt/rules/no-algorithm-none',
+      '/docs/security/plugin-jwt-security/rules/no-algorithm-none',
     ];
 
     for (const path of PAGES) {

@@ -16,7 +16,7 @@
  * - `category` and `object` are lowercase snake_case identifiers.
  * - `action` is one of a fixed verb list (present tense): click, submit,
  *   view, add, remove, start, end, generate, send, cancel, fail, create,
- *   delete, update, invite.
+ *   delete, update, invite, copy.
  * - Vendor reserved events starting with `$` (e.g. PostHog `$pageview`,
  *   `$set`) are exempt.
  * - Template-literal event names are forbidden — they make the catalog
@@ -59,6 +59,7 @@ const ACTION_VERBS = [
   'delete',
   'update',
   'invite',
+  'copy',
 ].join('|');
 
 const EVENT_NAME_RE = new RegExp(
@@ -83,7 +84,7 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
         description:
           'Event "{{name}}" does not match category:object_action grammar (lowercase snake_case, action from fixed verb list).',
         severity: 'HIGH',
-        fix: 'Rename to match `<category>:<object>_<verb>` where verb ∈ {click, submit, view, add, remove, start, end, generate, send, cancel, fail, create, delete, update, invite}. Vendor reserved events ($pageview, $set, …) are exempt.',
+        fix: 'Rename to match `<category>:<object>_<verb>` where verb ∈ {click, submit, view, add, remove, start, end, generate, send, cancel, fail, create, delete, update, invite, copy}. Vendor reserved events ($pageview, $set, …) are exempt.',
         documentationLink:
           'https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/ANALYTICS_PHILOSOPHY.md',
       }),

@@ -42,8 +42,8 @@ Axis definitions:
     `eslint-plugin-browser-security`, `eslint-plugin-node-security`,
     `eslint-plugin-express-security`, `eslint-plugin-lambda-security`,
     `eslint-plugin-mongodb-security`, `eslint-plugin-nestjs-security`,
-    `eslint-plugin-vercel-ai-security`, `eslint-plugin-jwt`,
-    `eslint-plugin-pg`) declare `"license": "MIT"` in their npm `package.json`
+    `eslint-plugin-vercel-ai-security`, `eslint-plugin-jwt-security`,
+    `eslint-plugin-postgresql-security`) declare `"license": "MIT"` in their npm `package.json`
     and ship the MIT text; repo license: MIT
     (<https://github.com/ofri-peretz/eslint>, retrieved 2026-07-31). ESLint
     plugins execute inside the local ESLint process; no account, network, or

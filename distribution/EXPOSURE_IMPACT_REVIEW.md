@@ -49,12 +49,12 @@ Downloads are **heavily concentrated on release days** (Dec 30 spike across all 
 | ---------------------------------- | --------- | --------------- | ---------------- |
 | `eslint-plugin-secure-coding`      | 1,881     | Dec 8, 2025     | 🛡️ Core Security |
 | `eslint-plugin-vercel-ai-security` | 976       | Dec 13, 2025    | 🤖 AI Security   |
-| `eslint-plugin-pg`                 | 696       | Dec 21, 2025    | 🐘 PostgreSQL    |
+| `eslint-plugin-postgresql-security`                 | 696       | Dec 21, 2025    | 🐘 PostgreSQL    |
 | `eslint-plugin-browser-security`   | 567       | Dec 30, 2025    | 🌐 Browser       |
 | `eslint-plugin-lambda-security`    | 561       | Dec 30, 2025    | ☁️ Serverless    |
 | `eslint-plugin-express-security`   | 559       | Dec 30, 2025    | 🚂 Express       |
 | `eslint-plugin-crypto`             | 558       | Dec 29, 2025    | 🔐 Crypto        |
-| `eslint-plugin-jwt`                | 551       | Dec 29, 2025    | 🎫 JWT           |
+| `eslint-plugin-jwt-security`                | 551       | Dec 29, 2025    | 🎫 JWT           |
 | `eslint-plugin-import-next`        | 446       | Dec 30, 2025    | ⚡ Performance   |
 | `eslint-plugin-nestjs-security`    | 428       | Dec 30, 2025    | 🏗️ NestJS        |
 | **TOTAL**                          | **7,223** | —               | —                |
@@ -115,9 +115,9 @@ All 10 packages spiked simultaneously on Dec 30, 2025:
 | eslint-plugin-browser-security   | 511              |
 | eslint-plugin-crypto             | 447              |
 | eslint-plugin-vercel-ai-security | 444              |
-| eslint-plugin-jwt                | 427              |
+| eslint-plugin-jwt-security                | 427              |
 | eslint-plugin-import-next        | 408              |
-| eslint-plugin-pg                 | 407              |
+| eslint-plugin-postgresql-security                 | 407              |
 | eslint-plugin-nestjs-security    | 404              |
 
 **Interpretation**: This synchronized spike indicates:
@@ -219,7 +219,7 @@ Use these commands to re-run this analysis:
 
 ```bash
 # Monthly summary (all packages)
-curl -s "https://api.npmjs.org/downloads/point/last-month/eslint-plugin-secure-coding,eslint-plugin-import-next,eslint-plugin-pg,eslint-plugin-jwt,eslint-plugin-crypto,eslint-plugin-browser-security,eslint-plugin-vercel-ai-security,eslint-plugin-express-security,eslint-plugin-lambda-security,eslint-plugin-nestjs-security" | jq
+curl -s "https://api.npmjs.org/downloads/point/last-month/eslint-plugin-secure-coding,eslint-plugin-import-next,eslint-plugin-postgresql-security,eslint-plugin-jwt-security,eslint-plugin-crypto,eslint-plugin-browser-security,eslint-plugin-vercel-ai-security,eslint-plugin-express-security,eslint-plugin-lambda-security,eslint-plugin-nestjs-security" | jq
 
 # Daily breakdown (single package)
 curl -s "https://api.npmjs.org/downloads/range/last-month/eslint-plugin-secure-coding" | jq

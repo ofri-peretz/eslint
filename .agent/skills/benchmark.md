@@ -36,7 +36,7 @@ For `eslint-plugin-secure-coding`:
 - Benchmark should detect issues in `vulnerable.js`
 - No false positives on `safe-patterns.js`
 
-For `eslint-plugin-pg`:
+For `eslint-plugin-postgresql-security`:
 
 - **13 rules** for PostgreSQL security
 - Focus on SQL injection, connection security, error handling

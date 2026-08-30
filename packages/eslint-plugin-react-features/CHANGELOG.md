@@ -5,6 +5,40 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.4.0
+
+### Minor Changes
+
+- **🐛 Fix** — `no-unknown-property` stops reporting on custom elements and `xmlns`
+
+  A census of all 65 findings on the pinned corpus found **65 false positives** in
+  two classes.
+
+  **Custom elements.** The rule skipped custom _components_ by their capital
+  letter, but a web component is lowercase — `<altcha-widget>` — so it looked
+  like a host element and every one of its attributes was reported. React passes
+  attributes to custom elements through verbatim, and the HTML spec requires a
+  hyphen in the name, which is the signal that was missing.
+
+  **XML namespace attributes.** `xmlns` and `xmlnsXlink` on `<svg>` are valid
+  React attributes and are emitted by every icon exporter.
+
+  The message also read _"Unknown DOM property detected"_ without naming the
+  property, which is unactionable even when the finding is right. It now reads
+  `` `flooble` is not a DOM property of `<div>` ``.
+
+  The rule keeps its job: `class` instead of `className`, and unknown attributes
+  on ordinary tags, still report.
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unknown-property` reported `loading`, `decoding`, and `fetchPriority` — three standard React DOM props for `<img>` (and `<iframe>`/`<link>`/`<script>` where applicable). `loading` and `decoding` have been valid React props for years; `fetchPriority` is the React 19 camelCase form. All three are in upstream eslint-plugin-react's known-property list; ours was missing them, so every lazy-loaded image in a consumer codebase produced three false positives.
+
+  The lowercase HTML form `fetchpriority` still reports (positive-control test
+  locks both directions).
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.3`
+
 ## 1.3.1
 
 ### Patch Changes
