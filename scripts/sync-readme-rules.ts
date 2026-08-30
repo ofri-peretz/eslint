@@ -480,31 +480,28 @@ const DOCTRINE_START = '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manuall
 const DOCTRINE_END = '<!-- AUTO-GENERATED:DOCTRINE:END -->';
 
 /**
- * The ecosystem doctrine — why / how / what — generated into every plugin README.
+ * The ecosystem position — why, how, what — generated into every plugin README.
  *
  * It is ecosystem-wide, so it is generated rather than hand-copied: thirty
- * hand-maintained copies of one position drift, and a doctrine that says different
- * things in different packages is not a doctrine.
+ * hand-maintained copies of one position drift, and a position that says different
+ * things in different packages is not a position.
  *
- * Three beats — why, how, what — one short paragraph each. Headings stay explicit
- * rather than a bare `## Why` / `## How` / `## What`: ten plugins already carry a
- * hand-written `## Why <ecosystem>-specific?` section, and two adjacent headings both
- * called Why is a table of contents nobody can navigate.
+ * THREE LINES. Not three sections. The reference is the NestJS npm README, which
+ * spends a tagline and a short Description and then gets out of the way — a reader
+ * arriving from npm wants the install command, and everything above it is rent.
+ * Three shapes have been tried in this slot and only this one is cheap enough:
  *
- * Two earlier shapes both
- * failed, in opposite directions:
+ *   1. `## Philosophy` — "Interlace fosters strength through integration ... a
+ *      resilient fabric of code". Short, but said nothing a reader could act on or
+ *      disagree with. It held the sell slot without selling.
+ *   2. three `##` sections, ~45 lines. Said something, but pushed Getting Started
+ *      and the rule table below the fold on all thirty READMEs.
+ *   3. three `##` sections at ~16 lines. Still three entries in the table of
+ *      contents for what is one thought.
  *
- *   - `## Philosophy` — "Interlace fosters strength through integration ... a
- *     resilient fabric of code" — was identical in all thirty and told a reader
- *     nothing they could act on or disagree with. It occupied the sell slot without
- *     selling.
- *   - the three-section long form that replaced it ran ~45 lines and pushed Getting
- *     Started and the rule table below the fold on every README. A reader came for
- *     the install command; doctrine that costs them the install command is an essay.
- *
- * So: the why/how/what structure of the second, at the length of a NestJS README.
- * Each beat opens with the claim in bold so it survives skimming, and the long form
- * lives in DOCS_PHILOSOPHY.md and the benchmark docs linked from `## What`.
+ * So: a bulleted why/how/what and one line of links, under no heading of its own.
+ * Each bullet is one sentence; the argument behind each lives in DOCS_PHILOSOPHY.md
+ * and the benchmark docs. If a bullet needs a second sentence, it belongs there.
  *
  * Deliberately carries NO ecosystem totals — per BENCHMARK-PUBLISHING-PLAN.md §1, rule
  * counts and benchmark figures in a plugin README read as inflated the moment someone
@@ -514,30 +511,17 @@ function renderDoctrine(): string {
   return [
     DOCTRINE_START,
     '',
-    '## Why these rules are quiet',
+    '- **Why** — a linter nobody reads protects nothing. We would rather miss a finding',
+    '  than spend your attention on one that was never real.',
+    '- **How** — evidence, not names. A rule fires on what the code *does*, resolved',
+    "  through the AST and ESLint's own scope analysis.",
+    '- **What** — every finding carries its fix, in prose for a human and as structured',
+    '  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.',
     '',
-    '**A linter nobody reads protects nothing.** One that reports a thousand things a',
-    'week gets switched off in a month, and the real finding goes with it. We would',
-    'rather miss a finding than spend your attention on one that was never real.',
-    '',
-    '## How they decide',
-    '',
-    '**Evidence, not names.** A rule fires on what the code *does*, resolved through the',
-    "AST and ESLint's own scope analysis — never on a variable that happens to be called",
-    '`query`, or a file whose path contains `key`. Every one of those was a real false',
-    'positive here, found by reading our own output on open-source projects and fixed',
-    'with a test that fails on the unfixed rule.',
-    '',
-    '## What you get',
-    '',
-    '**Every finding arrives with its fix** — in prose for a human, as structured JSON',
-    'for an agent, and, on security rules, with a CWE mapping and a CVSS score where one',
-    'is assigned. That trade costs recall, and we measure what it costs rather than',
-    'assuming it is free:',
+    'That trade costs recall, and we measure it:',
     '[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)',
-    'and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).',
-    'If a finding is wrong, [open an issue](https://github.com/ofri-peretz/eslint/issues) —',
-    'a false positive is a bug here, not a tuning exercise for you.',
+    '· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)',
+    '· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).',
     '',
     DOCTRINE_END,
   ].join('\n');
