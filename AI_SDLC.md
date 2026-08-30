@@ -98,6 +98,28 @@ cleared.
 `check:case-registry` ratchets the verified **set** by id — not the count — so
 a case cannot be quietly swapped for an easier one.
 
+#### The hole in this stage, and what closed it
+
+The contract said the case comes first. Nothing enforced it. `check:rule-cases`
+requires three RuleTester cases a side — which proves a rule matches some
+strings, not that anyone stated what defect it exists to catch — and
+`check:case-registry` ratchets the verified set, so it cannot notice a rule
+that never had a case at all.
+
+The measurable consequence: **27 of 470 rules carry a registry case.** The
+stage the whole case-first method rests on held for 6% of the suite.
+
+`check:new-rule-cases` closes it forward. It diffs the generated rule manifest
+between the merge base and HEAD — the manifest and not the filesystem, because
+a rule directory also holds helpers and a helper is not a rule — and refuses a
+newly-exported rule id that no case names in its `coverage[]`. A rename counts
+as new, which is exactly when someone should restate what the rule catches.
+
+Ratchet, not retrofit. Writing 443 registry entries is not work anybody
+finishes; this asks that rule 471 arrives with one. An absent manifest at the
+base reads as "nothing to compare", never as "no rules" — the second would mark
+every rule in the suite as new and the gate would be switched off within a day.
+
 ### 3 — Build: the reads are primitives, not hand-rolled
 
 The compounding defect in a 470-rule codebase is not a wrong rule, it is the

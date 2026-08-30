@@ -352,6 +352,16 @@ jobs:
             echo "::warning::$(jq -r '.uncovered | length' coverage.json) changed package(s) are named by no changeset: $(jq -r '.uncovered | join(", ")' coverage.json)"
           fi
 
+      # Stage 2 of AI_SDLC.md. A NEW rule arrives with the case that states
+      # the defect it exists to catch. Ratchet, not retrofit: 27 of 470 rules
+      # carry a registry case and this gate says nothing about the other 443 —
+      # it guards rule 471. Lives in THIS job rather than Plugin Taxonomy
+      # because it needs a merge base, and that job checks out shallow.
+      - name: Check new rules carry a case
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: npx tsx scripts/check-new-rule-cases.ts --since="$BASE_SHA" --strict
+
       # Stage 1 of AI_SDLC.md. Advisory like the coverage check above, and for
       # the same reason: intent is a judgement the author makes, and it must
       # never be the thing that stops a branch. `drift` is the interesting
