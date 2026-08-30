@@ -114,9 +114,9 @@ function changedRules(): string[] {
 }
 
 function main(): void {
-  const args = process.argv.slice(2);
+  const args = new Set(process.argv.slice(2));
 
-  if (args.includes('--update')) {
+  if (args.has('--update')) {
     const baseline: Baseline = { generated: new Date().toISOString().slice(0, 10), rules: currentRules() };
     fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
     fs.writeFileSync(BASELINE, JSON.stringify(baseline, null, 2) + '\n');
@@ -135,7 +135,7 @@ function main(): void {
   // A rule absent from the baseline is NEW, and a new rule is held to the
   // current standard rather than grandfathered — that is the "force better
   // quality" half of the ratchet.
-  const scope = args.includes('--changed') ? changedRules() : null;
+  const scope = args.has('--changed') ? changedRules() : null;
   if (scope && scope.length === 0) {
     // Say what was NOT done. This exits 0 having audited nothing, and read as a
     // bare green it is indistinguishable from a clean full run — two agents in

@@ -449,9 +449,9 @@ function writeIntent(breach: Breach, cfg: BandConfig, series: Observation[]): st
 // ---------------------------------------------------------------------------
 
 function main(): void {
-  const args = process.argv.slice(2);
-  if (args.includes('--record') || args.includes('--backfill-git')) {
-    const fromGit = args.includes('--backfill-git');
+  const args = new Set(process.argv.slice(2));
+  if (args.has('--record') || args.has('--backfill-git')) {
+    const fromGit = args.has('--backfill-git');
     console.log(fromGit ? '📈 Recording + backfilling from git history' : '📈 Recording observations');
     record(fromGit);
   }
@@ -482,7 +482,7 @@ function main(): void {
     breaches.push({ breach, cfg });
   }
 
-  if (args.includes('--write-intent')) {
+  if (args.has('--write-intent')) {
     for (const { breach, cfg } of breaches) {
       const file = writeIntent(breach, cfg, series[breach.id] ?? []);
       console.log(`  📝 ${path.relative(REPO_ROOT, file)}`);
@@ -494,7 +494,7 @@ function main(): void {
   console.log(
     `\n${breaches.length} breach(es), ${actionable.length} at 2σ or above.\n`,
   );
-  if (args.includes('--check') && actionable.length > 0) process.exit(1);
+  if (args.has('--check') && actionable.length > 0) process.exit(1);
 }
 
 if (require.main === module) main();
