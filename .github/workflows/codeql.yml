@@ -20,15 +20,27 @@ on:
   # Scorecard's SAST check measures — it reported 25 of 30 commits analysed.
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-    types: [ready_for_review, labeled, synchronize]
   workflow_dispatch:
   schedule:
-    # Weekly Monday 03:17 UTC — runs on a steady cadence regardless of activity,
-    # so the security tab stays warm even on quiet weeks. Off-peak time keeps
-    # us out of cron storms at the top of the hour.
-    - cron: "17 3 * * 1"
+    # NIGHTLY, 03:17 UTC. Was weekly; a full scan is ~212s and this repo is
+    # public, so Actions minutes are free — there is no reason to analyse a
+    # security surface once a week when it can be analysed once a day. Off-peak
+    # minute keeps us out of cron storms at the top of the hour.
+    - cron: "17 3 * * *"
+
+# The `pull_request` trigger was REMOVED on 2026-08-30, deliberately.
+#
+# CodeQL averaged 212s per run and gated nothing — it is not a required check,
+# so it never blocked a merge; it only competed for runners and lengthened the
+# PR page. The trigger's own note above described it as "a fast-feedback
+# convenience" that "cannot stand alone", and that remains the accurate reading:
+# every commit that lands on main is still analysed by the `push` trigger, which
+# is also what Scorecard's SAST check measures.
+#
+# What is genuinely traded away: a finding now surfaces just after a PR merges
+# rather than just before. Analysis time is the tool's, not ours — it cannot be
+# made 3x faster — so the only lever on a 60s CI target was when it runs. The
+# nightly cadence above is the compensating half of that trade.
 
 concurrency:
   # Keyed on the SHA for push, the ref for everything else. Two merges landing
