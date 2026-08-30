@@ -103,7 +103,7 @@ beforeEach(() => {
   git('config', 'commit.gpgsign', 'false');
 
   mkdirSync(join(repo, 'intent'), { recursive: true });
-  write('intent/README.md', '# intent\n');
+  write('docs/intents/README.md', '# intent\n');
   write(
     'packages/x/package.json',
     '{"name":"eslint-plugin-x","version":"1.0.0"}',
@@ -129,7 +129,7 @@ describe('the declared blast radius is checked against the diff', () => {
     // touched two, and without this nobody finds out until review.
     write('packages/x/src/index.ts', 'export const a = 2;\n');
     write('packages/y/src/index.ts', 'export const b = 2;\n');
-    write('intent/probe.md', intent(['x']));
+    write('docs/intents/probe.md', intent(['x']));
     git('add', '-A');
     git('commit', '-q', '-m', 'change both');
 
@@ -143,7 +143,7 @@ describe('the declared blast radius is checked against the diff', () => {
   it('passes when every changed package is declared', () => {
     write('packages/x/src/index.ts', 'export const a = 2;\n');
     write('packages/y/src/index.ts', 'export const b = 2;\n');
-    write('intent/probe.md', intent(['x', 'y']));
+    write('docs/intents/probe.md', intent(['x', 'y']));
     git('add', '-A');
     git('commit', '-q', '-m', 'change both');
 
@@ -175,12 +175,12 @@ describe('the declared blast radius is checked against the diff', () => {
   it('editing an existing intent is not new intent', () => {
     // Only ADDED files count, exactly as with changesets: an edit to an old
     // initiative's file would otherwise vouch for unrelated new work.
-    write('intent/old.md', intent(['x']));
+    write('docs/intents/old.md', intent(['x']));
     git('add', '-A');
     git('commit', '-q', '-m', 'old intent');
     git('branch', '-f', 'base-ref');
 
-    write('intent/old.md', `${intent(['x'])}\nA later thought.\n`);
+    write('docs/intents/old.md', `${intent(['x'])}\nA later thought.\n`);
     write('packages/x/src/index.ts', 'export const a = 2;\n');
     git('add', '-A');
     git('commit', '-q', '-m', 'edit');
@@ -193,7 +193,7 @@ describe('the declared blast radius is checked against the diff', () => {
   it('refuses a placeholder', () => {
     write('packages/x/src/index.ts', 'export const a = 2;\n');
     write(
-      'intent/probe.md',
+      'docs/intents/probe.md',
       intent(['x']).replace('A probe found it.', 'TODO'),
     );
     git('add', '-A');
@@ -207,7 +207,7 @@ describe('the declared blast radius is checked against the diff', () => {
   it('refuses a missing prose section', () => {
     write('packages/x/src/index.ts', 'export const a = 2;\n');
     write(
-      'intent/probe.md',
+      'docs/intents/probe.md',
       intent(['x']).replace('## Constraints', '## Notes'),
     );
     git('add', '-A');
