@@ -298,12 +298,6 @@ const REGISTERED: RegistryEntry[] = [
   // to decide what a class IS.
   // ═══════════════════════════════════════════════════════════════════════
   {
-    file: 'eslint-plugin-conventions/src/rules/conventions/prefer-dom-node-text-content.ts',
-    direction: 'report',
-    reason:
-      'Element-ness from a vocabulary of names (element|el|div|span|node|ref|dom|elem) and a suffix list. Needs the binding.',
-  },
-  {
     file: 'eslint-plugin-conventions/src/rules/conventions/require-data-testid.ts',
     direction: 'suppress',
     reason:
