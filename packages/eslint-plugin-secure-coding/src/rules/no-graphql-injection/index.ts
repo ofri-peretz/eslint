@@ -22,7 +22,11 @@
  * - Input validation functions
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { resolvedReference } from '../../utils/resolve-reference';
 import {
@@ -30,6 +34,13 @@ import {
   type SecurityRuleOptions,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `query`, `mutation`, `fragment` and the schema keywords are the
+ * GraphQL language, and `gql`/`graphql` are the tag names its tooling
+ * defines. All are published grammar, not consumer conventions.
+ *
+ * @see https://spec.graphql.org/October2021/
+ */
 type MessageIds =
   | 'graphqlInjection'
   | 'introspectionQuery'

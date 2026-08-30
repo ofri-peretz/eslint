@@ -152,11 +152,25 @@ for (const file of ruleSources()) {
 }
 
 /**
- * A site's identity, independent of the line it sits on AND of how prettier
- * chose to wrap it.
+ * A site's identity, independent of the line it sits on.
  *
  * Keyed on raw text, a reformat read as 79 new violations on the first run
  * after `prettier --write`. Whitespace is not the claim; the code is.
+ *
+ * KNOWN LIMITATION, measured 2026-08-30: this survives re-INDENTATION but not
+ * re-WRAPPING. Prettier moved a `) {` onto its own line and the key went from
+ *
+ *   init.callee.property.name === 'basename') {
+ *   init.callee.property.name === 'basename'
+ *
+ * which reads as one site fixed and one new. The counts stay balanced, so the
+ * ratchet does not wrongly fail — it reports `fixed 3 · NEW 3` and asks for a
+ * `--update` that changes nothing but the text.
+ *
+ * The fix is to key on the MATCHED EXPRESSION rather than the whole line,
+ * which is stable under any wrapping. Not done here because it rebaselines all
+ * 841 entries in one go, and that belongs in its own change where the diff can
+ * be read as "the keys moved" rather than hidden inside a rule edit.
  */
 const key = (s: Site): string =>
   `${s.file}::${s.pattern}::${s.text.replace(/\s+/g, ' ').trim()}`;

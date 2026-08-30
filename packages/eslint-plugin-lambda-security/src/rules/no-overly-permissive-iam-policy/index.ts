@@ -23,6 +23,13 @@ import {
   staticString,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `Effect`, `Action`, `Resource` and `*` are the IAM policy
+ * grammar AWS publishes. A policy that spells them differently is not a
+ * policy.
+ *
+ * @see https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
+ */
 type MessageIds = 'permissivePolicy';
 
 export interface Options {
@@ -62,7 +69,6 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege',
       }),
-
     },
     schema: [
       {
