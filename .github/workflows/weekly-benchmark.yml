@@ -382,7 +382,7 @@ jobs:
           # Body built via heredoc into a file: an inline multi-line -m
           # would dedent out of this YAML block scalar and break parsing.
           {
-            echo "chore(bench): weekly benchmark refresh $(date -u +%Y-%m-%d)"
+            echo "chore(benchmarks): weekly benchmark refresh $(date -u +%Y-%m-%d)"
             echo
             echo "Automated run of ilb:headline + ilb:flagship against the"
             echo "shallow-cloned OOS corpus. Verified publishable by"
@@ -403,7 +403,7 @@ jobs:
           # an already-open PR simply updates in place.
           git push --force origin HEAD:bench/weekly-refresh
           if gh pr create --base main --head bench/weekly-refresh \
-               --title "chore(bench): weekly benchmark refresh $(date -u +%Y-%m-%d)" \
+               --title "chore(benchmarks): weekly benchmark refresh $(date -u +%Y-%m-%d)" \
                --body-file /tmp/bench-commit-msg.txt 2>/tmp/pr-err.txt; then
             echo "Opened the refresh PR."
           elif grep -qi "already exists" /tmp/pr-err.txt; then
