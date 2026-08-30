@@ -344,6 +344,34 @@ jobs:
           if [ "$status" = "missing" ]; then
             echo "::warning::PR changes consumer-visible source but has no changeset."
           fi
+          # `partial` did not exist until 2026-08-30. Before it, one changeset
+          # naming one package vouched for a diff that changed twenty, and this
+          # job reported green — 18 plugins nearly shipped with no version bump
+          # and no changelog entry.
+          if [ "$status" = "partial" ]; then
+            echo "::warning::$(jq -r '.uncovered | length' coverage.json) changed package(s) are named by no changeset: $(jq -r '.uncovered | join(", ")' coverage.json)"
+          fi
+
+      # Stage 1 of AI_SDLC.md. Advisory like the coverage check above, and for
+      # the same reason: intent is a judgement the author makes, and it must
+      # never be the thing that stops a branch. `drift` is the interesting
+      # signal — work that spread past the radius it declared.
+      - name: Check intent
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          set -euo pipefail
+          if echo ",$LABELS," | grep -q ',skip-intent,'; then
+            echo "Label 'skip-intent' present — passing."
+            exit 0
+          fi
+          npx tsx scripts/check-intent.ts --since="$BASE_SHA" --json > intent.json
+          npx tsx scripts/check-intent.ts --since="$BASE_SHA"
+          drift=$(jq -r '[.problems[]? | select(.kind == "drift")] | length' intent.json)
+          if [ "$drift" != "0" ]; then
+            echo "::warning::$drift package(s) changed that no intent file declared."
+          fi
 
       # Unlike the coverage advisory above, this one blocks. A breaking change
       # published without an upgrade path cannot be taken back — npm has no

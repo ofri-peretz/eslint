@@ -249,7 +249,9 @@
     "head-to-head:all": "tsx scripts/rule-head-to-head.mts --all --md",
     "check:case-registry": "tsx scripts/case-registry.mts --check",
     "check:name-vocabulary": "tsx scripts/check-name-vocabulary.ts",
-    "rule-cases": "tsx scripts/rule-case-ledger.ts"
+    "rule-cases": "tsx scripts/rule-case-ledger.ts",
+    "check:intent": "tsx scripts/check-intent.ts",
+    "check:intent:strict": "tsx scripts/check-intent.ts --strict"
   },
   "keywords": [
     "eslint",

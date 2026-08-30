@@ -33,27 +33,48 @@ Two questions this answers:
 
 ## The six stages
 
-| #   | Stage        | Artifact it owes                                             | Enforced by                                                      | Number that moves                            |
-| --- | ------------ | ------------------------------------------------------------ | ---------------------------------------------------------------- | -------------------------------------------- |
-| 1   | **Plan**     | `intent` — what is wanted, why, under which constraint       | `(gap)`                                                          | —                                            |
-| 2   | **Design**   | A **case** in `benchmarks/cases/registry.json` that FAILS    | `check:case-registry`                                            | verified cases (grow-only)                   |
-| 3   | **Build**    | Rule using devkit spellings, not open-coded reads            | `check:spellings`, `check:key-vocabulary`, `lint:name-inference` | spelling debt (shrink-only)                  |
-| 4   | **Test**     | A sealed case per fixed FP/FN; ≥3 classified cases a side    | `check:rule-cases`, `check:per-rule-budget`                      | sealed FP+FN (grow), floor breaches (shrink) |
-| 5   | **Deploy**   | A changeset naming **every** package whose behaviour changed | `check-changeset-coverage`                                       | uncovered packages (must be 0)               |
-| 6   | **Maintain** | A dated receipt under `benchmark-results/`                   | `check:audit-freshness`                                          | scorecard (grow-only)                        |
+| #   | Stage        | Artifact it owes                                                | Enforced by                                                      | Number that moves                            |
+| --- | ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------- |
+| 1   | **Plan**     | An `intent/` file — what is wanted, why, under which constraint | `check:intent`                                                   | undeclared packages (must be 0)              |
+| 2   | **Design**   | A **case** in `benchmarks/cases/registry.json` that FAILS       | `check:case-registry`                                            | verified cases (grow-only)                   |
+| 3   | **Build**    | Rule using devkit spellings, not open-coded reads               | `check:spellings`, `check:key-vocabulary`, `lint:name-inference` | spelling debt (shrink-only)                  |
+| 4   | **Test**     | A sealed case per fixed FP/FN; ≥3 classified cases a side       | `check:rule-cases`, `check:per-rule-budget`                      | sealed FP+FN (grow), floor breaches (shrink) |
+| 5   | **Deploy**   | A changeset naming **every** package whose behaviour changed    | `check-changeset-coverage`                                       | uncovered packages (must be 0)               |
+| 6   | **Maintain** | A dated receipt under `benchmark-results/`                      | `check:audit-freshness`                                          | scorecard (grow-only)                        |
 
 ### 1 — Plan
 
 The AI-native part of planning is that **intent must survive the session**. A
-prompt is not an artifact; the agent that picks the work up next week has only
-what is in the repo.
+prompt is not an artifact; the agent that picks the work up next week, and the
+human reviewing a 45,000-line diff, have only what is in the repo.
 
-Today the "why" of a rule change lives in its commit message, which is not
-addressable and not checkable. What is owed is a short, version-controlled
-statement — what is wanted, why, what it must not break, and which case id it
-answers.
+The failure mode this aims at is **drift**. An agent given a broad task starts
+on `no-zip-slip`, notices something in `no-ssrf`, and eleven plugins later
+nobody can say whether the result is the work that was asked for. A declared
+blast radius turns that from a feeling into a diff.
 
-`(gap)` — no `check:intent` exists. See [What is missing](#what-is-missing).
+`intent/<date>-<slug>.md` declares `packages:`, `cases:`, and four prose
+sections. `check:intent` refuses four things a stub cannot fake:
+
+1. An intent file was **added** on this branch, when the diff changes
+   consumer-visible source. Editing an old one is not new intent.
+2. **`packages:` is a superset of what the diff touches.** The substantive
+   one — work that spreads past its declared radius fails, naming the packages
+   nobody declared.
+3. Every id in `cases:` **exists** in the registry. Intent that cannot name a
+   case it answers is a wish.
+4. **No placeholders.** `TODO` in a required field looks satisfied and is not.
+
+The frontmatter parser is hand-written and deliberately strict — neither
+`yaml` nor `js-yaml` is a declared dependency here, and a lenient parser that
+silently dropped a `packages:` entry would turn the drift check into a no-op
+with nothing to show for it.
+
+> This document declared Stage 1 a `(gap)` on 2026-08-30 and the branch it was
+> written on had run for five days with no intent file. That omission is what
+> produced the directory. `intent/2026-08-26-precision-ratchet.md` is marked as
+> a reconstruction rather than backdated, because an intent file that pretends
+> to have come first makes the gate look satisfied and teaches nobody anything.
 
 ### 2 — Design: the case comes before the code
 
@@ -353,15 +374,15 @@ without a measurement is a documentation regression.
 
 Honest list, ranked. These are the `(gap)` rows above.
 
-| #   | Gap                                                                                                   | Cost of leaving it                                           | Status                                                                                                                                                                                                                                                                                                           |
-| --- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `check-changeset-coverage` checked that _a_ changeset exists, not that it names every changed package | 18 packages nearly shipped unversioned on this branch        | **Closed.** Compares changed workspaces against the packages added changesets actually name, matching on the _published_ name so scoped packages are not permanently uncovered. Tests under `src/` are excluded — `files` publishes `dist/` only, so a test cannot reach a consumer. Locked by 3 new assertions. |
-| 2   | `peer-health` tracked 17 neighbours and none of ours                                                  | No artifact anywhere put the two side by side                | **Closed.** Our published plugins are discovered from the workspace, tagged `ours`, and rendered as a head-to-head with a download-to-star table.                                                                                                                                                                |
-| 3   | No adoption scan — new repos with us in their lockfile                                                | The North Star is unmeasured                                 | Open. Point the existing ~28k-repo peer scan at our package names, weekly.                                                                                                                                                                                                                                       |
-| 4   | No activation metric                                                                                  | We cannot tell an install from a use                         | Open. Emit a first-run event, or infer from docs `?from=cli`.                                                                                                                                                                                                                                                    |
-| 5   | The real-code inventory was stale, and nothing said so                                                | Seven plugins read as "never fires" when they were never run | **Half closed.** The scan records its config hash and the ledger refuses the number when it does not match. Re-running the 112-repo scan to get a true figure is still open.                                                                                                                                     |
-| 6   | No `check:intent`                                                                                     | Stage 1 has no artifact                                      | Open. A short `intent` file per initiative, referenced by case id.                                                                                                                                                                                                                                               |
-| 7   | 14,935 undescribed cases                                                                              | A test that does not state its claim cannot be reviewed      | Open. Ratchet down, as with spellings — refuse new undescribed cases.                                                                                                                                                                                                                                            |
+| #   | Gap                                                                                                   | Cost of leaving it                                                              | Status                                                                                                                                                                                                                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `check-changeset-coverage` checked that _a_ changeset exists, not that it names every changed package | 18 packages nearly shipped unversioned on this branch                           | **Closed.** Compares changed workspaces against the packages added changesets actually name, matching on the _published_ name so scoped packages are not permanently uncovered. Tests under `src/` are excluded — `files` publishes `dist/` only, so a test cannot reach a consumer. Locked by 3 new assertions. |
+| 2   | `peer-health` tracked 17 neighbours and none of ours                                                  | No artifact anywhere put the two side by side                                   | **Closed.** Our published plugins are discovered from the workspace, tagged `ours`, and rendered as a head-to-head with a download-to-star table.                                                                                                                                                                |
+| 3   | No adoption scan — new repos with us in their lockfile                                                | The North Star is unmeasured                                                    | Open. Point the existing ~28k-repo peer scan at our package names, weekly.                                                                                                                                                                                                                                       |
+| 4   | No activation metric                                                                                  | We cannot tell an install from a use                                            | Open. Emit a first-run event, or infer from docs `?from=cli`.                                                                                                                                                                                                                                                    |
+| 5   | The real-code inventory was stale, and nothing said so                                                | Seven plugins read as "never fires" when they were never run                    | **Half closed.** The scan records its config hash and the ledger refuses the number when it does not match. Re-running the 112-repo scan to get a true figure is still open.                                                                                                                                     |
+| 6   | Stage 1 had no artifact and no gate                                                                   | Intent lived in commit messages, unaddressable and uncheckable against the diff | **Closed.** `intent/` + `check:intent`, with a drift check that fails when work spreads past its declared radius. 12 lock assertions.                                                                                                                                                                            |
+| 7   | 14,935 undescribed cases                                                                              | A test that does not state its claim cannot be reviewed                         | Open. Ratchet down, as with spellings — refuse new undescribed cases.                                                                                                                                                                                                                                            |
 
 ---
 
