@@ -128,10 +128,47 @@ Before/after on the same workflow, same branch:
 | result                   | success                  | success                 |
 
 **55% off the wall-clock, no check removed.** The 2-minute bar is met; the
-60-second target is not. What remains is almost entirely the 59s build, which
-a warm cache turns into ~10s — that is lever 2, and it needs a `TURBO_TOKEN`.
+60-second target is not. What remains is almost entirely the 59s build.
 
 Next-slowest job is now 44s (`Workflow + CI Script Locks`), so after lever 2
 the floor moves there rather than to Detection Recall. Lever 3 (consolidating
 static jobs) would RAISE that floor to ~90s and is therefore off the table
 while the target is 60s — recorded so it is not re-proposed.
+
+## Stage 6 — Maintain: measured after lever 2
+
+Lever 2 shipped the same day: Turborepo's remote-cache API backed by GitHub
+Actions' cache (`rharkor/caching-for-turbo`, SHA-pinned), replacing the
+`.turbo/cache` tarball on the recall job.
+
+| run                                         | build step | Detection Recall | `quality.yml` wall-clock |
+| ------------------------------------------- | ---------- | ---------------- | ------------------------ |
+| 33324089803 — before any lever              | 159s       | 194s             | **194s**                 |
+| 33326404636 — lever 1 (11 packages, not 32) | 59s        | 87s              | **87s**                  |
+| 33328036367 — lever 2, cold (populating)    | 62s        | 86s              | 86s                      |
+| 33328203701 — lever 2, warm                 | **2s**     | **28s**          | **37s**                  |
+
+**194s → 37s: 81% off the wall-clock, no check removed, run green.**
+
+The build step is 2 seconds because a PR now reuses main's entry for every
+package it did not touch — the thing the SHA-keyed tarball could never do.
+
+Detection Recall is no longer the critical path. The floor is now `Workflow +
+CI Script Locks` at 37s, and roughly 12-16s of every remaining job is checkout
+plus `npm ci`/cache hydration. Further gains are in setup cost, not in any
+single check — which makes lever 3 (consolidating jobs) actively wrong: it
+would serialise checks that each cost ~20s behind one setup and raise the floor.
+
+### Why not Vercel's hosted remote cache
+
+It is free on every plan and would have worked. The GitHub-Actions backend was
+chosen for two reasons that outlive the price:
+
+- **No secret.** `TURBO_TOKEN` is not exposed to `pull_request` runs from
+  forks, so external contributors would get cold builds. This backend uses the
+  Actions cache, which fork PRs can read.
+- **No external service in the critical path** of CI correctness.
+
+It is enabled per job and defaults to off, because `release.yml` uses the same
+composite four times and a third-party action does not belong in the publish
+path. That invariant is locked in `scripts/__tests__/infra-metrics-lock.test.ts`.
