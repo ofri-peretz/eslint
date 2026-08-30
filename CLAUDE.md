@@ -302,16 +302,28 @@ EOF
 
 ### 4. Wait for the CI gate to go green
 
-Required checks on this repo (the workflow names visible on a PR):
+**Branch protection requires exactly two contexts.** Not six, and not the
+ones this file listed until 2026-08-30 — five of those six names had never
+existed as job names at all, so an agent polling for `Playwright (e2e + a11y)`
+waited for something that could not arrive:
 
 ```text
-✅ oxlint (fast pass)
-✅ Prettier (format check)
-✅ TypeScript (typecheck)
-✅ Vitest (unit + lock tests)
-✅ Playwright (e2e + a11y)
-✅ Build (apps/docs)
+oxlint (fast pass)     — the cheap loop, every push
+Quality (Full) Gate    — the heavy gate, and the one that actually blocks
 ```
+
+`Quality (Full) Gate` is the important one, because of **when it runs**:
+`pull_request: types: [ready_for_review, labeled, synchronize]`. A DRAFT PR
+without the `run-full-ci` label never receives it, so the PR sits `BLOCKED`
+forever on a check nobody is running. Mark the PR ready for review, or add the
+label. This is also why `main` can be red without any PR having gone red —
+see the note in `quality-full.yml`.
+
+Everything else on the PR — `Plugin Taxonomy`, `Unit Tests + Coverage (N/10)`,
+`Build (N/4)`, `Typecheck (whole-graph tsgo)`, `Script & Repo-Config Locks`,
+`CodeQL`, `CodeRabbit` and the rest — is informative, not required. They still
+have to be green before merging: step 2 below refuses on *any* non-success
+check, which is stricter than branch protection and deliberately so.
 
 Poll until every check finishes, **then verify every one reports
 `SUCCESS`** — the poll only ensures nothing is still pending; a `FAILURE`

@@ -144,6 +144,32 @@ Two rules bind what a rule is allowed to know:
   possible. `check:key-vocabulary` and `check:name-vocabulary` both sit at
   **0** — that debt is fully paid, and the gates exist to keep it there.
 
+#### Institutional knowledge drifts too
+
+The gates above check the CODE. Nothing checked whether the documents that
+describe how this repo works still describe this repo — and `CLAUDE.md`, which
+every agent reads first, had gone badly out of date.
+
+It listed six required checks. **Five of the six names had never existed as job
+names**: `Prettier (format check)`, `TypeScript (typecheck)`,
+`Vitest (unit + lock tests)`, `Playwright (e2e + a11y)`, `Build (apps/docs)`.
+The real jobs are spelled `Typecheck (whole-graph tsgo)`,
+`Unit Tests + Coverage (N/10)`, `Build (N/4)`, `axe-core strict scan`. An agent
+polling for one of the phantoms waits for something that cannot arrive — the
+same failure as the `.state` poll bug, approached from the other side.
+
+Worse, branch protection requires exactly two contexts and the list omitted the
+one that blocks: **`Quality (Full) Gate`**, which runs on
+`ready_for_review, labeled, synchronize`. A draft PR without the `run-full-ci`
+label never receives it, so the PR sits `BLOCKED` with every visible check
+green and nothing to click.
+
+`claude-md-contract.test.ts` now asserts that every check the document presents
+as required is a real workflow job, that the heavy gate is named and its draft
+behaviour explained, and that every lock test, npm script and workflow file it
+cites exists. Job names rather than the live branch-protection API, so it runs
+offline and never flakes.
+
 ### 4 — Test: the gates are the eval suite
 
 There is no separate "eval". CI is it, and it reports what is true today:
