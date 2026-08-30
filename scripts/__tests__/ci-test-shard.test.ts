@@ -15,7 +15,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
+const REPO_ROOT = path.resolve(
+  path.dirname(url.fileURLToPath(import.meta.url)),
+  '../..',
+);
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'ci-test-shard.mts');
 const SHARD_TOTAL = 10;
 
@@ -38,21 +41,45 @@ function planFor(shard: number, total = SHARD_TOTAL): string[] {
     // below ("covers every package exactly once", "no shard empty") would then
     // be checking the diff rather than the partition, passing vacuously on a
     // branch that changed nothing.
-    env: { ...process.env, CI_TEST_SHARD_PLAN_ONLY: '1', CI_TEST_SHARD_ALL: '1' },
+    env: {
+      ...process.env,
+      CI_TEST_SHARD_PLAN_ONLY: '1',
+      CI_TEST_SHARD_ALL: '1',
+    },
   });
-  const names = [...out.matchAll(/^ {2}(\S+) {2}\((?:test|test:coverage), \d+ test files\)$/gm)].map((m) => m[1]);
+  // A package split with `vitest --shard` appears once PER SLICE, so the unit
+  // parsed here is "name" or "name#i/n" — not just the package name. Collapsing
+  // slices back to the bare name would make a MISSING slice invisible to the
+  // duplicate and coverage assertions below, and a missing slice is silently
+  // untested files behind a green check.
+  const names = [
+    ...out.matchAll(
+      /^ {2}(\S+)(?: \[slice (\d+)\/(\d+)\])? {2}\((?:test|test:coverage), ~?\d+ test files\)$/gm,
+    ),
+  ].map((m) => (m[2] ? `${m[1]}#${m[2]}/${m[3]}` : m[1]));
   // Fail loudly rather than returning [] if the plan format changes — an empty
   // parse would make "no duplicates" and "covers everything" trivially pass or
   // fail for the wrong reason.
-  if (names.length === 0) throw new Error(`shard ${shard}/${total}: parsed 0 packages from plan output:\n${out}`);
+  if (names.length === 0)
+    throw new Error(
+      `shard ${shard}/${total}: parsed 0 packages from plan output:\n${out}`,
+    );
   return names;
 }
+
+/**
+ * Mirror of `SPLIT_ACROSS_SHARDS` in scripts/ci-test-shard.mts. Deliberately
+ * duplicated rather than imported: importing the .mts would run its top-level
+ * discovery, and a lock that derives its expectation from the code under test
+ * agrees with that code by construction — including when both are wrong.
+ */
+const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 6 };
 
 describe('shard partitioning', () => {
   const shards = Array.from({ length: SHARD_TOTAL }, (_, i) => planFor(i + 1));
   const all = shards.flat();
 
-  it('assigns every testable package to exactly one shard', () => {
+  it('assigns every package — and every slice of a split package — exactly once', () => {
     const dupes = all.filter((p, i) => all.indexOf(p) !== i);
     expect(dupes).toEqual([]);
   });
@@ -66,7 +93,18 @@ describe('shard partitioning', () => {
         const manifest = path.join(abs, entry, 'package.json');
         if (!fs.existsSync(manifest)) continue;
         const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
-        if (pkg.scripts?.['test:coverage'] || pkg.scripts?.test) expected.push(pkg.name);
+        if (pkg.scripts?.['test:coverage'] || pkg.scripts?.test) {
+          // Mirrors SPLIT_ACROSS_SHARDS in the script. A package listed there
+          // must contribute all N slices — this is what catches a slice that
+          // stopped being emitted.
+          const slices = SPLIT_ACROSS_SHARDS[pkg.name] ?? 1;
+          if (slices > 1) {
+            for (let i = 1; i <= slices; i++)
+              expected.push(`${pkg.name}#${i}/${slices}`);
+          } else {
+            expected.push(pkg.name);
+          }
+        }
       }
     }
     expect([...all].sort()).toEqual(expected.sort());
@@ -74,7 +112,8 @@ describe('shard partitioning', () => {
 
   it('leaves no shard empty', () => {
     // An empty shard is a job that reports success having tested nothing.
-    for (const [i, s] of shards.entries()) expect(s.length, `shard ${i + 1} is empty`).toBeGreaterThan(0);
+    for (const [i, s] of shards.entries())
+      expect(s.length, `shard ${i + 1} is empty`).toBeGreaterThan(0);
   });
 
   it('is deterministic across invocations', () => {
