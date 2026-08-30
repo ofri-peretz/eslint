@@ -184,6 +184,24 @@ fires on real code                       200   (112 repos, 345,841 files)
 real-code inventory                      STALE — see below
 ```
 
+#### A gate that does not run is not a gate
+
+Three of the gates named in the table above ran **only in the pre-commit
+hook** until 2026-08-30: `check:spellings`, `check:key-vocabulary` and
+`check:case-registry` — two thirds of Build's enforcement and all of Design's.
+
+A hook is a convenience, not a gate. It is absent in a fresh worktree, absent
+for a commit made through the GitHub web UI, and absent for anyone who has not
+run `lefthook install`. Those stages were enforced on the machines that
+happened to be configured for it, which is not enforcement.
+
+All three now run in the cheap CI job — 0.9s, 0.7s and 7.0s, no build and no
+network. `gates-run-in-ci.test.ts` asserts that every gate the stage table
+names is run by some workflow, and deliberately does **not** accept a lefthook
+entry as coverage: this repo already forbids `--no-verify` precisely because
+the hook is skippable, and a gate whose only home is a skippable mechanism is
+one skip away from absent.
+
 `FP 22 / FN 33` are **not** open bugs. They are _sealed_ — every one is a
 false positive or a miss we found on real code, fixed, and pinned with a case
 that fails on the unfixed rule. The count going **up** is the system working.

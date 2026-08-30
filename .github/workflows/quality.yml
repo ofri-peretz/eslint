@@ -128,6 +128,20 @@ jobs:
       # each one. #659 added twelve credential spellings and three reached the
       # PR with no test — removing them from the rule left the suite green.
       - run: npm run lint:detection-list-coverage
+      # Three gates that ran ONLY in the pre-commit hook until 2026-08-30.
+      #
+      # AI_SDLC.md names all three as the enforcement for a stage — spellings
+      # and key-vocabulary for Build, case-registry for Design — and none of
+      # them ran in CI. A hook is a convenience, not a gate: it is absent in a
+      # fresh worktree, absent for a commit made through the GitHub UI, and
+      # absent for anyone who has not run `lefthook install`. The stage was
+      # enforced on the machines that happened to be configured for it.
+      #
+      # 0.9s + 0.7s + 7.0s locally, no build and no network, so they belong in
+      # the cheap job rather than behind the heavy gate.
+      - run: npm run check:spellings
+      - run: npm run check:key-vocabulary
+      - run: npm run check:case-registry
       # And the same question one layer out, on the LEDGER rather than the
       # rule: a triage verdict above a handful of findings has to say how
       # much of it was actually looked at. no-cycle carried "the DETECTION
