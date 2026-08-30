@@ -212,6 +212,37 @@ export function grade(output: string, expect: Expectation[]): { ok: boolean; fai
   return { ok: failed.length === 0, failed };
 }
 
+/** How a run is billed, decided from the environment alone so it can be tested. */
+export type Billing = 'none' | 'subscription' | 'api-key';
+
+/**
+ * GitHub Actions writes `ANTHROPIC_API_KEY=""` into the step env whenever the secret
+ * is absent — the variable is *present and empty*, not missing. Every credential
+ * decision here therefore tests for a non-empty value, and `evalEnv` strips the empty
+ * ones before they reach the `claude` subprocess, which has its own precedence rules
+ * and need not agree with ours about what empty means.
+ */
+export function routeCredentials(env: NodeJS.ProcessEnv): {
+  billing: Billing;
+  bothSet: boolean;
+} {
+  const key = Boolean(env.ANTHROPIC_API_KEY);
+  const token = Boolean(env.CLAUDE_CODE_OAUTH_TOKEN);
+  return {
+    billing: key ? 'api-key' : token ? 'subscription' : 'none',
+    bothSet: key && token,
+  };
+}
+
+/** The subprocess environment, with empty credential vars removed rather than passed on. */
+export function evalEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const out = { ...env };
+  for (const k of ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN']) {
+    if (!out[k]) delete out[k];
+  }
+  return out;
+}
+
 function runCase(c: EvalCase): { id: string; status: 'pass' | 'fail' | 'error'; failed: string[] } {
   // On a subscription token these runs draw from the SAME five-hour and weekly
   // allowance as interactive work, shared with Claude chat. The bill is not the risk;
@@ -230,6 +261,7 @@ function runCase(c: EvalCase): { id: string; status: 'pass' | 'fail' | 'error'; 
   const r = spawnSync('claude', args, {
     cwd: REPO_ROOT,
     encoding: 'utf8',
+    env: evalEnv(process.env),
     timeout: 180_000,
     maxBuffer: 16 * 1024 * 1024,
   });
@@ -257,7 +289,7 @@ function main(): void {
 
   if (configOnly) {
     console.log('\n🧪 Layer 2 — skipped (--config)\n');
-  } else if (!process.env.CLAUDE_CODE_OAUTH_TOKEN && !process.env.ANTHROPIC_API_KEY) {
+  } else if (routeCredentials(process.env).billing === 'none') {
     // Reported, never fatal. An eval that cannot run is not an eval that failed, and
     // treating it as one teaches people to delete the suite.
     console.log(
@@ -266,12 +298,12 @@ function main(): void {
         '   ANTHROPIC_API_KEY (Console, billed per token).\n',
     );
   } else {
-    const viaKey = Boolean(process.env.ANTHROPIC_API_KEY);
+    const { billing, bothSet } = routeCredentials(process.env);
     console.log(
       `\n🧪 Layer 2 — ${cases.length} task eval(s), billing to ` +
-        `${viaKey ? 'the Console API key (per token)' : 'the Claude subscription'}\n`,
+        `${billing === 'api-key' ? 'the Console API key (per token)' : 'the Claude subscription'}\n`,
     );
-    if (viaKey && process.env.CLAUDE_CODE_OAUTH_TOKEN) {
+    if (bothSet) {
       console.warn(
         '   ⚠️  Both credentials are set. ANTHROPIC_API_KEY wins, so this run is\n' +
           '      billed per token and the subscription token is ignored. Unset one.\n',
