@@ -26,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       filter:
-        description: "Turbo filter (e.g. eslint-plugin-pg). Empty = all packages."
+        description: "Turbo filter (e.g. eslint-plugin-postgresql-security). Empty = all packages."
         required: false
         type: string
         default: ""

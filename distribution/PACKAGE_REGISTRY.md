@@ -16,8 +16,8 @@
 | **eslint-plugin-secure-coding**      | `3.1.0` | 26    | Core security (OWASP Top 10 + Mobile Top 10)                 | [📦](https://npmjs.com/package/eslint-plugin-secure-coding)      |
 | **eslint-plugin-vercel-ai-security** | `1.3.0` | 22    | Vercel AI SDK security (OWASP LLM Top 10)                    | [📦](https://npmjs.com/package/eslint-plugin-vercel-ai-security) |
 | **eslint-plugin-mongodb-security**   | `8.2.0` | 19    | MongoDB & Mongoose security                                  | [📦](https://npmjs.com/package/eslint-plugin-mongodb-security)   |
-| **eslint-plugin-pg**                 | `1.4.0` | 15    | PostgreSQL/node-postgres security                            | [📦](https://npmjs.com/package/eslint-plugin-pg)                 |
-| **eslint-plugin-jwt**                | `2.2.0` | 13    | JWT security (Algorithm confusion, secrets)                  | [📦](https://npmjs.com/package/eslint-plugin-jwt)                |
+| **eslint-plugin-postgresql-security**                 | `1.4.0` | 15    | PostgreSQL/node-postgres security                            | [📦](https://npmjs.com/package/eslint-plugin-postgresql-security)                 |
+| **eslint-plugin-jwt-security**                | `2.2.0` | 13    | JWT security (Algorithm confusion, secrets)                  | [📦](https://npmjs.com/package/eslint-plugin-jwt-security)                |
 | **eslint-plugin-lambda-security**    | `1.2.0` | 16    | AWS Lambda & Middy security                                  | [📦](https://npmjs.com/package/eslint-plugin-lambda-security)    |
 | **eslint-plugin-express-security**   | `1.2.0` | 14    | Express.js security (Cookies, CORS, ReDoS)                   | [📦](https://npmjs.com/package/eslint-plugin-express-security)   |
 | **eslint-plugin-nestjs-security**    | `1.2.0` | 10    | NestJS security (Guards, Validation)                         | [📦](https://npmjs.com/package/eslint-plugin-nestjs-security)    |
@@ -178,7 +178,7 @@
 
 ---
 
-### eslint-plugin-pg (13 rules)
+### eslint-plugin-postgresql-security (13 rules)
 
 > **Version**: 1.1.3 | **Specialization**: PostgreSQL/node-postgres
 
@@ -212,7 +212,7 @@
 
 ---
 
-### eslint-plugin-jwt (13 rules)
+### eslint-plugin-jwt-security (13 rules)
 
 > **Version**: 2.0.3 | **CVE Coverage**: CVE-2022-23540 (Algorithm Confusion)
 
@@ -518,7 +518,7 @@ When writing articles that cover broad topics (e.g., OWASP mapping, security aud
 ```javascript
 // eslint.config.js - Complete Injection Protection
 import secureCoding from 'eslint-plugin-secure-coding';
-import pg from 'eslint-plugin-pg';
+import pg from 'eslint-plugin-postgresql-security';
 import browserSecurity from 'eslint-plugin-browser-security';
 
 export default [

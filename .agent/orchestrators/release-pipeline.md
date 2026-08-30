@@ -13,7 +13,7 @@ Multi-step orchestration for releasing npm packages.
 ## Usage
 
 ```
-/pipeline release: Release eslint-plugin-pg version 1.0.1
+/pipeline release: Release eslint-plugin-postgresql-security version 1.0.1
 ```
 
 ## Pipeline Steps
@@ -83,7 +83,7 @@ git tag -d v<version>
 - Currently at v2.2.x
 - 89 rules, 8 OWASP categories
 
-### eslint-plugin-pg
+### eslint-plugin-postgresql-security
 
 - Currently at v1.0.x
 - 13 rules for PostgreSQL

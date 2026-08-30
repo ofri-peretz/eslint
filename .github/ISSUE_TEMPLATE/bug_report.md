@@ -35,7 +35,7 @@ Steps to reproduce the behavior:
 
 ## Environment
 
-- **Package**: <!-- e.g. eslint-plugin-pg, eslint-plugin-secure-coding, @interlace/eslint-devkit -->
+- **Package**: <!-- e.g. eslint-plugin-postgresql-security, eslint-plugin-secure-coding, @interlace/eslint-devkit -->
 - **Plugin family**: <!-- security / quality / formatter / mcp / tooling -->
 - **Version**: <!-- e.g. 0.0.3-rc.5 -->
 - **Node.js**: <!-- output of `node --version` -->

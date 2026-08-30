@@ -55,10 +55,10 @@ compiled `.js` files. The shim patches module resolution to load from `dist/`:
 ```
 oxlint → loads ./tools/oxlint-plugins/interlace-pg.cjs
          → patches require('@interlace/eslint-devkit') → dist/packages/eslint-devkit/
-         → loads dist/packages/eslint-plugin-pg/
+         → loads dist/packages/eslint-plugin-postgresql-security/
 ```
 
-**Prerequisite:** `npx turbo run build --filter=eslint-plugin-pg` must run before `oxlint:interlace`.
+**Prerequisite:** `npx turbo run build --filter=eslint-plugin-postgresql-security` must run before `oxlint:interlace`.
 
 ## Oxlint JS Plugin API Compatibility
 
@@ -81,12 +81,12 @@ oxlint → loads ./tools/oxlint-plugins/interlace-pg.cjs
 
 | Plugin | JS Plugin Compatible | Blockers |
 |---|---|---|
-| `eslint-plugin-pg` | ✅ Yes | None — pure AST pattern matching |
+| `eslint-plugin-postgresql-security` | ✅ Yes | None — pure AST pattern matching |
 | `eslint-plugin-secure-coding` | ✅ Yes | None |
 | `eslint-plugin-node-security` | ✅ Yes | None |
 | `eslint-plugin-express-security` | ✅ Yes | None |
 | `eslint-plugin-import-next` | ⚠️ Partial | Uses `oxc-resolver` (native) — should work |
-| `eslint-plugin-jwt` | ⚠️ Untested | Uses `@typescript-eslint/utils` |
+| `eslint-plugin-jwt-security` | ⚠️ Untested | Uses `@typescript-eslint/utils` |
 | `eslint-plugin-conventions` | ⚠️ Untested | Some rules may need type info |
 
 ## Recommended CI Pipeline
@@ -100,7 +100,7 @@ jobs:
       - run: npm run oxlint
 
       # Tier 2: Interlace security rules (< 2s)
-      - run: npx turbo run build --filter=eslint-plugin-pg
+      - run: npx turbo run build --filter=eslint-plugin-postgresql-security
       - run: npm run oxlint:interlace
 
       # Tier 3: Full ESLint (type-aware, only if needed)
@@ -145,7 +145,7 @@ issue TBD), the shim layer becomes unnecessary. At that point:
 
 ```json
 {
-  "jsPlugins": ["eslint-plugin-pg"],
+  "jsPlugins": ["eslint-plugin-postgresql-security"],
   "rules": { "pg/no-unsafe-query": "error" }
 }
 ```

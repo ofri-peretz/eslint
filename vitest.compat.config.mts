@@ -20,7 +20,7 @@ import { defineConfig } from 'vitest/config';
  * Timeouts here are sized off the observed cold numbers, not the warm ones.
  *
  *   npm run test:compat                                  # every SDK
- *   npm run test:compat -- packages/eslint-plugin-pg      # one plugin
+ *   npm run test:compat -- packages/eslint-plugin-postgresql-security      # one plugin
  */
 export default defineConfig({
   test: {

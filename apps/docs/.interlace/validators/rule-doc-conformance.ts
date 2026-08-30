@@ -23,7 +23,7 @@
  * Designed to be called from the consumer's `__tests__/` Vitest suite:
  *
  *   const findings = await validateRuleDocConformance({
- *     rulesRoot: resolve(__dirname, '../../../../packages/eslint-plugin-pg/docs/rules'),
+ *     rulesRoot: resolve(__dirname, '../../../../packages/eslint-plugin-postgresql-security/docs/rules'),
  *   });
  *   expect(findings).toEqual([]);
  *

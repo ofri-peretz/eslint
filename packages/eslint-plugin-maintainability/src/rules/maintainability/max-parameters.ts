@@ -38,7 +38,19 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Count function parameters
+ * Count function parameters, excluding TypeScript's `this`.
+ *
+ * `function f(this: Window, a, b, c, d)` takes FOUR arguments. The `this`
+ * parameter is a type annotation for the calling context — it is erased before
+ * emit and no caller ever passes it — so counting it inflates the arity by one
+ * and reports a function that is exactly at the limit.
+ *
+ * This matches `@typescript-eslint/max-params`, whose `countVoidThis` option
+ * defaults to false for the same reason. A TypeScript-aware rule that diverges
+ * from that is reporting on syntax rather than on the signature a caller sees.
+ *
+ * It can only be the FIRST parameter — TypeScript rejects it anywhere else — so
+ * checking the head is sufficient rather than filtering the whole list.
  */
 function countParameters(
   node:
@@ -46,7 +58,9 @@ function countParameters(
     | TSESTree.FunctionExpression
     | TSESTree.ArrowFunctionExpression,
 ): number {
-  return node.params.length;
+  const [first] = node.params;
+  const hasThisParam = first?.type === 'Identifier' && first.name === 'this';
+  return node.params.length - (hasThisParam ? 1 : 0);
 }
 
 export const maxParameters = createRule<RuleOptions, MessageIds>({
