@@ -1,6 +1,8 @@
-# Spec: `<short title>`
+# Design — `<short title>`
 
-Intent: [`intent.md`](./intent.md). Status: draft.
+Intent: [`intent.md`](./intent.md). **Status:** draft.
+
+---
 
 ## Requirements
 
@@ -15,10 +17,11 @@ How it works. The shape of the change, the files it touches, the order to do it 
 The feedback loop: the one command that exits non-zero when this is wrong, and the
 check that would have caught the original problem. Name the test file.
 
-## Risks and rejected alternatives
+## Rejected alternatives
 
-What could go wrong, and what we chose not to do — with the reason. The rejected
-option is the part a future reader cannot reconstruct.
+What we chose not to do, with the reason. Per CLAUDE.md rule 3, this is the section a
+future reader cannot reconstruct from the diff — and the one that stops the same
+option being proposed again every quarter.
 
 ## Out of scope
 

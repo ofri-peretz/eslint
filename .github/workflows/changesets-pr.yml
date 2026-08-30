@@ -151,6 +151,16 @@ jobs:
           pr-title: 'chore(release): version packages'
           commit-message: 'chore(release): version packages'
           # No `publish:` — release.yml does that on merge.
+          #
+          # The token goes here as an INPUT, not as a GITHUB_TOKEN env var.
+          # v2.1.1 hard-errors when the env var is set and differs from this
+          # input — "The GITHUB_TOKEN environment variable is set and does not
+          # match the github-token input" — and the input defaults to the plain
+          # `github.token`, so passing a PAT via env produced exactly that
+          # mismatch. The job then failed on every push to main, no Version PR
+          # was opened, versions never bumped, and release.yml correctly found
+          # nothing to publish. Ten changesets were queued behind it.
+          github-token: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || secrets.GITHUB_TOKEN }}
         env:
           # The SAME token chain the approve step below uses, and for a sharper
           # reason: this is the push that decides whether the Version PR ever
@@ -172,7 +182,9 @@ jobs:
           # which re-triggers its workflows. Note that EVERY later merge to main
           # force-pushes this branch again and resets the checks to zero, so the
           # close/reopen has to be the last action before merging.
-          GITHUB_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN was HERE and is deliberately gone — see `github-token`
+          # above. The token chain is unchanged; only where it is passed moved.
+          #
           # changesets/action runs `git commit` + `git push origin
           # HEAD:changeset-release/main` to open the Version PR. CI installs
           # lefthook git hooks (npm ci → prepare), and the pre-push `changelog`
