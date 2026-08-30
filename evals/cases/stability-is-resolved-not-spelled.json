@@ -1,0 +1,16 @@
+{
+  "id": "stability-is-resolved-not-spelled",
+  "why": "hooks-exhaustive-deps matched three patterns against an identifier to decide whether a React value was stable. It reported real useRef bindings whose names did not fit — savedCallback, nextJwtToken, frame, timeout — and silently exempted reactive values whose names did, so a missing dependency called setUpValue was dropped without a word. A design-system author had already written six lines of explanation and a disable directive to silence the first half.",
+  "prompt": "I am adding a check to a React rule that must know whether a hook value keeps the same identity between renders. My plan is to match the identifier against a short list of regular expressions. Is that the approach this repository wants, and if not, what does it want instead?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "evidence"
+    },
+    {
+      "check": "output-omits",
+      "value": "matching the name is fine"
+    }
+  ]
+}

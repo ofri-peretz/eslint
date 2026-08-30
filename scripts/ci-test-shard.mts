@@ -181,7 +181,11 @@ function emitMatrix(shardNumbers: number[], heavy = true): void {
   if (process.env.GITHUB_OUTPUT) {
     fs.appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `shards=${json}\nany=${shardNumbers.length > 0}\nheavy=${heavy}\n`,
+      // `count` exists purely so the workflow can NAME the decision. A skipped
+      // job leaves no row in the PR's checks list, so "0 shards affected" and
+      // "the matrix step broke" look identical from outside — see the
+      // `test-scope` job in quality-full.yml.
+      `shards=${json}\nany=${shardNumbers.length > 0}\ncount=${shardNumbers.length}\nheavy=${heavy}\n`,
     );
   }
 }
