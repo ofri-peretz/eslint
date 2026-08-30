@@ -61,6 +61,9 @@ jobs:
   matrix:
     name: ${{ matrix.bench }} · node24 · eslint-${{ matrix.eslint }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # open the failure issue (.github/actions/report-failure)
     timeout-minutes: 15
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -135,3 +138,12 @@ jobs:
           name: ilb-${{ matrix.bench }}-node24-eslint${{ matrix.eslint }}-${{ github.run_number }}
           path: benchmarks/results/ilb-${{ matrix.bench }}/*.json
           retention-days: 14
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'ESLint version matrix is failing'
+          body: 'The scheduled ESLint version matrix failed. Support for one of the declared ESLint majors may be broken, or the matrix itself is.'
+          token: ${{ github.token }}

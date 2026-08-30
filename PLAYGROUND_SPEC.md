@@ -7,7 +7,7 @@ dev-tool docs site.
 This document fixes scope, architecture, and a phased rollout. It is
 not a discussion of *whether* to build it — that decision is made
 by UX_PHILOSOPHY.md #9 (the docs site is the showcase) and by
-[CODE_EXAMPLE_PHILOSOPHY.md](./CODE_EXAMPLE_PHILOSOPHY.md) (runnable
+[CODE_EXAMPLE_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/CODE_EXAMPLE_PHILOSOPHY.md) (runnable
 examples are the strongest illustration of a rule).
 
 ---

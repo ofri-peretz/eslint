@@ -78,7 +78,7 @@ and **not** a template literal whose interpolations are all statically known.
 
 One binding hop, `String.raw`, template literals with static parts, and
 concatenation. Beyond that — a parameter with no visible initializer —
-[L1](../../ANALYSIS-LIMITS.md).
+[L1](../../../ANALYSIS-LIMITS.md).
 
 ## 4. Guard
 

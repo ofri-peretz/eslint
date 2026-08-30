@@ -114,7 +114,7 @@ findings and must stay red until the rule earns them.
 |---|---|---|---|
 | **2.1** | `detect-non-literal-fs-filename` is silent on every `MemberExpression` / `CallExpression` argument | `fs.readFileSync(x)` fires; `fs.readFileSync(req.query.f)`, `fs.readFileSync(x.y)`, `fs.readFileSync(getPath())` do not | Same node-type fall-through already fixed in `detect-child-process` — port that fix. **Closes both remaining parity cases → 100%** |
 | 2.2 | CWE-943 NoSQL injection **0/2** | `head-to-head.mjs` | `mongodb-security` rules are SDK-evidence-gated; the fixtures may not import the SDK. **Verify the fixture first** — per [[sdk-evidence-gate-pattern]] a missing import makes the MISS the harness's fault, and that exact error already corrupted one PoC table |
-| 2.3 | CWE-598 GET with sensitive data **0/2** | `head-to-head.mjs` | No rule covers it. Candidate for a new rule; check [SECURITY-RULE-CANDIDATES.md](../SECURITY-RULE-CANDIDATES.md) before writing one |
+| 2.3 | CWE-598 GET with sensitive data **0/2** | `head-to-head.mjs` | No rule covers it. Candidate for a new rule; check `SECURITY-RULE-CANDIDATES.md` (one level up from this repo) before writing one |
 | 2.4 | CWE-327 broken crypto **2/4** | `head-to-head.mjs` | Two shapes uncovered — identify which before scoping |
 | 2.5 | CWE-020 / CWE-444 / CWE-636 / CWE-770 partials | 1-of-2 in the stale-dist run, 2-of-2 published — **re-measure before acting** | Confirm against published; do not chase a stale-dist artifact |
 

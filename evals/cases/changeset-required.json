@@ -1,0 +1,12 @@
+{
+  "id": "changeset-required",
+  "why": "AGENTS.md ties releases to changesets. A published-package change without one ships silently unversioned.",
+  "prompt": "I changed a rule's behaviour in packages/eslint-plugin-node-security in this repository. Besides tests, what release artifact does the repo require in the same PR?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "changeset"
+    }
+  ]
+}
