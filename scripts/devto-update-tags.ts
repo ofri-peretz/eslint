@@ -20,12 +20,12 @@ const RATE_LIMIT_DELAY_MS = 1000;
 // Plugin tag mapping - these are the tags that should be added for related articles
 const _PLUGIN_TAGS = [
   'eslint',        // Core - MUST be on all ESLint articles
-  'jwt',           // eslint-plugin-jwt
+  'jwt',           // eslint-plugin-jwt-security
   'mongodb',       // eslint-plugin-mongodb-security
   'express',       // eslint-plugin-express-security
   'nestjs',        // eslint-plugin-nestjs-security
   'lambda',        // eslint-plugin-lambda-security
-  'postgres',      // eslint-plugin-pg (using postgres as tag)
+  'postgres',      // eslint-plugin-postgresql-security (using postgres as tag)
   'react',         // eslint-plugin-react-a11y, eslint-plugin-react-features
   'accessibility', // eslint-plugin-react-a11y
   'vercel',        // eslint-plugin-vercel-ai-security

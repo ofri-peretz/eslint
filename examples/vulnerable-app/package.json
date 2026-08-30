@@ -11,9 +11,9 @@
   "devDependencies": {
     "eslint-plugin-browser-security": "*",
     "eslint-plugin-import-next": "*",
-    "eslint-plugin-jwt": "*",
+    "eslint-plugin-jwt-security": "*",
     "eslint-plugin-mongodb-security": "*",
-    "eslint-plugin-pg": "*",
+    "eslint-plugin-postgresql-security": "*",
     "eslint-plugin-react-a11y": "*",
     "eslint-plugin-react-features": "*",
     "eslint-plugin-secure-coding": "*",

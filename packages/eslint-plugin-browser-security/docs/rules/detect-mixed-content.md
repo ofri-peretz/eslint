@@ -32,7 +32,11 @@ Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulner
 
 Mixed content occurs when HTTPS pages load resources over HTTP. This weakens the security of the entire page, as attackers can intercept or modify the insecure resources through man-in-the-middle attacks.
 
-This rule detects any string literal starting with `http://`.
+This rule detects `http://` strings written in a **subresource position** — `<img src>`, `<script src>`, `el.src = …`, `setAttribute('src', …)`, `importScripts(…)` and the like — which is the one shape a browser actually blocks as mixed content. Other hardcoded `http://` URLs are handled by the rule family: the URL argument of a `fetch`/`axios` call by `require-https-only`, everything else by `no-http-urls` — so each line draws exactly one finding.
+
+### Built-in exemption: XML namespace identifiers
+
+XML namespace URIs — `http://www.w3.org/2000/svg`, `http://www.w3.org/1999/xhtml`, `http://www.w3.org/1999/xlink`, `http://www.w3.org/XML/1998/namespace`, `http://www.w3.org/2000/xmlns/` — are never reported, whether written as a bare constant, an `xmlns` attribute, or a `createElementNS` / `setAttributeNS` argument. They are opaque identifiers compared byte-for-byte; nothing is ever fetched from them, so no mixed-content load exists, and rewriting one to `https://` breaks the document.
 
 ## Examples
 

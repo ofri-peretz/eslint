@@ -20,7 +20,7 @@
  *   <GitHubContent
  *     owner="ofri-peretz"
  *     repo="eslint"
- *     path="packages/eslint-plugin-jwt/README.md"
+ *     path="packages/eslint-plugin-jwt-security/README.md"
  *   />
  *
  *   // Or with the type/plugin shortcut (consumer supplies the template map):

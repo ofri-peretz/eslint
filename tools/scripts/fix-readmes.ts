@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { loadPluginRegistry, renderEcosystemTable } from '../../scripts/sync-readme-rules';
 
 const packagesDir = path.join(process.cwd(), 'packages');
 const docsDir = path.join(process.cwd(), 'apps/docs/content/docs');
@@ -126,23 +127,17 @@ const PHILOSOPHY_TEXT = `## Philosophy
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.`;
 
-const ECOSYSTEM_TABLE = `## 🔗 Related ESLint Plugins
-
-Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
-
-| Plugin | Downloads | Description |
-| :--- | :---: | :--- |
-| [\`eslint-plugin-secure-coding\`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
-| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-postgresql-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-postgresql-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-postgresql-security) | PostgreSQL security & best practices. |
-| [\`eslint-plugin-node-security\`](https://www.npmjs.com/package/eslint-plugin-node-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-node-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-node-security) | Node.js core-module security (fs, child_process, vm, crypto, Buffer). |
-| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt-security) | JWT security & best practices. |
-| [\`eslint-plugin-browser-security\`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
-| [\`eslint-plugin-express-security\`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
-| [\`eslint-plugin-lambda-security\`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
-| [\`eslint-plugin-nestjs-security\`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
-| [\`eslint-plugin-mongodb-security\`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
-| [\`eslint-plugin-vercel-ai-security\`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
-| [\`eslint-plugin-import-next\`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |`;
+// The Related-plugins table is generated from the docs registry by the canonical
+// generator (`scripts/sync-readme-rules.ts`), not hand-written here. The literal that
+// used to sit at this spot listed eleven plugins and still *displayed*
+// `eslint-plugin-jwt` and `eslint-plugin-pg` — names unpublished since #414 — because
+// this script is wired into no npm script and was last run before nineteen of the
+// current plugins existed.
+// Lazy, not module-scope: this file must stay side-effect-free on import (the header
+// comment on `main()` records why), and `loadPluginRegistry` reads from disk.
+let ecosystemRegistry: ReturnType<typeof loadPluginRegistry> | null = null;
+const getEcosystemRegistry = (): ReturnType<typeof loadPluginRegistry> =>
+    (ecosystemRegistry ??= loadPluginRegistry());
 
 // Categories for specific plugins
 const CATEGORIES: Record<string, Record<string, string[]>> = {
@@ -352,7 +347,7 @@ function processPackage(pkg: string): void {
     // on a later pass; the ESLint link points at eslint.org (not an owned
     // property) so it stays un-stamped.
     output.push('<p align="center">');
-    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="90" /></a>`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>`);
     output.push('  &nbsp;&nbsp;');
     output.push(`  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/eslint-logo.svg" alt="ESLint" height="90" /></a>`);
     output.push('</p>');
@@ -394,12 +389,11 @@ function processPackage(pkg: string): void {
     // Getting Started
     output.push('## Getting Started');
     output.push('');
-    output.push(`- To check out the [guide](${docUrl}), visit [eslint.interlace.tools](${baseUrl}). 📚`);
-    output.push(`- 要查看中文 [指南](${docUrl}), 请访问 [eslint.interlace.tools](${baseUrl}). 📚`);
-    output.push(`- [가이드](${docUrl}) 문서는 [eslint.interlace.tools](${baseUrl})에서 확인하실 수 있습니다. 📚`);
-    output.push(`- [ガイド](${docUrl})は [eslint.interlace.tools](${baseUrl})でご確認ください。 📚`);
-    output.push(`- Para ver la [guía](${docUrl}), visita [eslint.interlace.tools](${baseUrl}). 📚`);
-    output.push(`- للاطلاع على [الدليل](${docUrl})، قم بزيارة [eslint.interlace.tools](${baseUrl}). 📚`);
+    // One link, in English. The six-language block this replaces was copied from the
+    // NestJS README, but every one of its "translated" links pointed at the same
+    // English page — we ship no translations. Six links to one page is not
+    // internationalisation, it is five dead entries above the install command.
+    output.push(`- Read the [guide](${docUrl}) at [eslint.interlace.tools](${baseUrl}). 📚`);
     output.push('');
     output.push('```bash');
     output.push(`npm install ${pkg} --save-dev`);
@@ -499,7 +493,7 @@ function processPackage(pkg: string): void {
     }
 
     // Ecosystem
-    output.push(ECOSYSTEM_TABLE);
+    output.push(renderEcosystemTable(getEcosystemRegistry(), pkg));
     output.push('');
 
     // License
@@ -518,7 +512,7 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
     // the per-package UTM campaign onto it in a later pass (same as the
     // header link above).
     output.push(`<p align="center">`);
-    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>`);
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>`);
     output.push(`</p>`);
 
     fs.writeFileSync(readmePath, output.join('\n'));

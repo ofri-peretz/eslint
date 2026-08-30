@@ -89,6 +89,26 @@ flowchart TD
 | 🚀 **Injection**     | Attackers inject malicious scripts | Enforce HSTS and secure protocol selection |
 | 🔒 **Compliance**    | GDPR/App Store security violations | Ensure all endpoints are served over HTTPS |
 
+## Built-in Exemptions
+
+### XML namespace identifiers
+
+XML namespace URIs are opaque identifiers compared byte-for-byte, never fetched — `http://` is their spec-frozen spelling, and rewriting one to `https://` breaks the document. The rule exempts them before `allowedHosts` is consulted, on two independent signals:
+
+- **A registered namespace authority host** (exact hostname match, not substring): `www.w3.org`, `schemas.xmlsoap.org`, `purl.org`, `ns.adobe.com`, and other hosts that exist to mint identifiers. This covers all the well-known W3C namespaces — `http://www.w3.org/2000/svg`, `http://www.w3.org/1999/xhtml`, `http://www.w3.org/1999/xlink`, `http://www.w3.org/XML/1998/namespace`, `http://www.w3.org/2000/xmlns/` — whether written as a bare constant or passed to `createElementNS` / `setAttributeNS`.
+- **An `xmlns` / `xmlns:*` attribute or property position**, whatever the host — the XML spec's own declaration syntax makes the value an identifier by position.
+
+A URL merely *containing* `w3.org` in its path is still a real endpoint and still reports.
+
+```javascript
+// ✅ Exempt — identifiers, nothing is ever fetched from them
+const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url);
+
+// ❌ Still reported — a real host whose PATH mentions w3.org
+const lib = 'http://cdn.example-corp.com/w3.org/lib.js';
+```
+
 ## Configuration
 
 This rule has no configuration options in the current version.

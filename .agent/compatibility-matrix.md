@@ -190,8 +190,8 @@ All plugins in both tiers share the same compatibility:
 - `eslint-plugin-nestjs-security`
 - `eslint-plugin-lambda-security`
 - `eslint-plugin-mongodb-security`
-- `eslint-plugin-pg`
-- `eslint-plugin-jwt`
+- `eslint-plugin-postgresql-security`
+- `eslint-plugin-jwt-security`
 - `eslint-plugin-vercel-ai-security`
 
 ### Quality & Governance Suite (9 plugins)

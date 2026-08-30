@@ -1,5 +1,5 @@
 {
-    "name": "eslint-plugin-pg-benchmark",
+    "name": "eslint-plugin-postgresql-security-benchmark",
     "version": "1.0.0",
     "private": true,
     "type": "module",
@@ -8,6 +8,6 @@
     },
     "dependencies": {
         "eslint": "^9.0.0",
-        "eslint-plugin-pg": "*"
+        "eslint-plugin-postgresql-security": "*"
     }
 }

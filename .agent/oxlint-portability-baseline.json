@@ -35,7 +35,7 @@
       "fixDegraded": 20,
       "typeAware": 3
     },
-    "eslint-plugin-jwt": {
+    "eslint-plugin-jwt-security": {
       "ruleCount": 13,
       "ready": 13,
       "blocked": 0,
@@ -98,7 +98,7 @@
       "fixDegraded": 1,
       "typeAware": 0
     },
-    "eslint-plugin-pg": {
+    "eslint-plugin-postgresql-security": {
       "ruleCount": 13,
       "ready": 13,
       "blocked": 0,
