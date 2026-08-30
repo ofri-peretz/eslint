@@ -238,9 +238,12 @@ export function findNameSubstringSites(source: string): Site[] {
     : null;
 
   // And the two-step form: `const n = node.name` then `/…/.test(n)`.
+  // Same escaped-character atom REGEX_LIST uses, not `[^/\n]+`. A regex literal
+  // may contain an escaped slash — `/foo\/bar/` — and the simpler class stops
+  // at it, so the literal ends early and the site goes undetected.
   const boundRegex = nameBindings.size
     ? new RegExp(
-        `\\/[^/\\n]+\\/[gimsuy]*\\.test\\(\\s*(?:${[...nameBindings].map(escape).join('|')})\\b`,
+        `\\/(?:[^/\\\\\\n]|\\\\.)+\\/[gimsuy]*\\.test\\(\\s*(?:${[...nameBindings].map(escape).join('|')})\\b`,
       )
     : null;
 
