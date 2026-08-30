@@ -249,7 +249,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Remote cache, not the `.turbo/cache` tarball. This workflow's `Quality
+      # (Full) Gate` is a REQUIRED check, so its duration is merge latency for
+      # every PR in the repo. Measured on run 33330044192: `Benchmark configs
+      # load` was 153s of which 114s was the build, and the same pattern in
+      # quality.yml went 159s -> 2s once the cache was addressed by task hash
+      # instead of by commit SHA.
+      #
+      # Dropping the tarball here also stops the churn behind it: these four
+      # jobs are most of the ~14 lineages that were re-tarballed at ~65 MB per
+      # main push, against a 10 GB budget the store had already blown past
+      # (36.89 GB / 210 entries), evicting the very entries a PR needed.
       - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       # Same filter the weekly benchmark uses, for the same reason: the configs
       # import plugins by package name and resolve through `exports` to dist/.
       - name: Build plugins (dist/ is what the configs load)
@@ -341,7 +355,8 @@ jobs:
           # Own lineage per shard. Sharing one key made the shards race to save
           # it on main, so only one shard's outputs were ever banked and the
           # rest ran cold every time (`Cached: 0 cached, 8 total`).
-          turbo-cache-scope: test-shard-${{ matrix.shard }}
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       - name: Run shard ${{ matrix.shard }} of 10
         env:
           # Affected-filter on PRs; run the full battery everywhere else.
@@ -399,7 +414,8 @@ jobs:
           # N always holds the same packages, so its lineage is exactly the set
           # it needs. The `turbo-<os>-build-` restore-key prefix still lets a
           # shard fall back to any sibling's lineage on a cold start.
-          turbo-cache-scope: build-${{ matrix.shard }}
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
       - name: Build via Turbo (affected only)
         env:
           # Same affected filter as the test shards; main / cron / dispatch
@@ -469,7 +485,8 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
         with:
-          turbo-cache-scope: typecheck
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
           tsbuildinfo-cache: 'true'
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
