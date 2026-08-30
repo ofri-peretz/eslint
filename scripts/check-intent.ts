@@ -57,7 +57,7 @@ import process from 'node:process';
  * in a consumer's checkout it would have quietly passed.
  */
 const ROOT = process.cwd();
-const INTENT_DIR = path.join(ROOT, 'intent');
+const INTENT_DIR = path.join(ROOT, 'docs', 'intents');
 const REGISTRY = path.join(ROOT, 'benchmarks', 'cases', 'registry.json');
 
 /** Paths whose change is observable by someone installing. Mirrors check-changeset-coverage. */
@@ -67,7 +67,11 @@ const RELEASE_RELEVANT = /^packages\/[^/]+\/(src\/|package\.json$)/;
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)__tests__\//;
 
 /** An intent file. The directory's own README is not one. */
-const INTENT_FILE = /^intent\/(?!README\.md$)[^/]+\.md$/;
+// `docs/intents/`, not `intent/` — main renamed the directory. Matches a
+// record at the top level and one inside a per-initiative folder, since the
+// tree carries both shapes.
+const INTENT_FILE =
+  /^docs\/intents\/(?!README\.md$|_template\/)(?:[^/]+\/)?[^/]+\.md$/;
 
 const PLACEHOLDER = /\b(TODO|TBD|FIXME|\?\?\?|XXX)\b/;
 
@@ -366,7 +370,7 @@ if (IS_ENTRYPOINT) {
       for (const pkg of changedPackages) console.warn(`   - ${pkg}`);
       console.warn('');
       console.warn(
-        '   Add one under `intent/` — see intent/README.md for the template.',
+        '   Add one under `docs/intents/` — see docs/intents/README.md for the template.',
       );
       if (STRICT) process.exit(1);
       break;
@@ -391,6 +395,6 @@ if (IS_ENTRYPOINT) {
   }
 
   if (!existsSync(INTENT_DIR) || readdirSync(INTENT_DIR).length === 0) {
-    console.warn('   (intent/ is empty — Stage 1 has no records at all)');
+    console.warn('   (docs/intents/ is empty — Stage 1 has no records at all)');
   }
 }
