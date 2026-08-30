@@ -5,7 +5,6 @@
     "browser-security/no-sensitive-indexeddb",
     "browser-security/require-csp-headers",
     "express-security/no-permissive-trust-proxy",
-    "express-security/no-user-controlled-render-locals",
     "express-security/require-route-authentication",
     "import-next/no-mutable-exports",
     "lambda-security/no-overly-permissive-iam-policy",
