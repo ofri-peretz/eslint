@@ -1,32 +1,160 @@
 {
-  "generated": "2026-08-04",
+  "generated": "2026-08-30",
   "packages": {
-    "@interlace/eslint-devkit": 369,
-    "eslint-plugin-browser-security": 353,
-    "eslint-plugin-conventions": 221,
-    "eslint-plugin-drizzle-security": 22,
-    "eslint-plugin-express-security": 314,
-    "eslint-plugin-import-next": 646,
-    "eslint-plugin-jwt-security": 122,
-    "eslint-plugin-knex-security": 22,
-    "eslint-plugin-lambda-security": 151,
-    "eslint-plugin-maintainability": 162,
-    "eslint-plugin-modernization": 44,
-    "eslint-plugin-modularity": 96,
-    "eslint-plugin-mongodb-security": 182,
-    "eslint-plugin-mysql-security": 22,
-    "eslint-plugin-nestjs-security": 124,
-    "eslint-plugin-node-security": 550,
-    "eslint-plugin-operability": 78,
-    "eslint-plugin-postgresql-security": 114,
-    "eslint-plugin-prisma-security": 22,
-    "eslint-plugin-react-a11y": 211,
-    "eslint-plugin-react-features": 493,
-    "eslint-plugin-reliability": 134,
-    "eslint-plugin-secure-coding": 610,
-    "eslint-plugin-sequelize-security": 24,
-    "eslint-plugin-sqlite-security": 22,
-    "eslint-plugin-typeorm-security": 22,
-    "eslint-plugin-vercel-ai-security": 167
+    "@interlace/eslint-devkit": {
+      "unpacked": 378,
+      "tarball": 100,
+      "files": 101
+    },
+    "eslint-plugin-anthropic-security": {
+      "unpacked": 25,
+      "tarball": 6,
+      "files": 10
+    },
+    "eslint-plugin-browser-security": {
+      "unpacked": 300,
+      "tarball": 63,
+      "files": 69
+    },
+    "eslint-plugin-conventions": {
+      "unpacked": 85,
+      "tarball": 21,
+      "files": 23
+    },
+    "eslint-plugin-drizzle-security": {
+      "unpacked": 29,
+      "tarball": 8,
+      "files": 13
+    },
+    "eslint-plugin-express-security": {
+      "unpacked": 187,
+      "tarball": 40,
+      "files": 41
+    },
+    "eslint-plugin-gemini-security": {
+      "unpacked": 26,
+      "tarball": 7,
+      "files": 10
+    },
+    "eslint-plugin-import-next": {
+      "unpacked": 250,
+      "tarball": 49,
+      "files": 67
+    },
+    "eslint-plugin-jwt-security": {
+      "unpacked": 83,
+      "tarball": 18,
+      "files": 23
+    },
+    "eslint-plugin-knex-security": {
+      "unpacked": 31,
+      "tarball": 9,
+      "files": 14
+    },
+    "eslint-plugin-lambda-security": {
+      "unpacked": 94,
+      "tarball": 20,
+      "files": 22
+    },
+    "eslint-plugin-maintainability": {
+      "unpacked": 84,
+      "tarball": 19,
+      "files": 21
+    },
+    "eslint-plugin-mcp-sdk-security": {
+      "unpacked": 38,
+      "tarball": 9,
+      "files": 12
+    },
+    "eslint-plugin-modernization": {
+      "unpacked": 35,
+      "tarball": 9,
+      "files": 12
+    },
+    "eslint-plugin-modularity": {
+      "unpacked": 50,
+      "tarball": 13,
+      "files": 14
+    },
+    "eslint-plugin-mongodb-security": {
+      "unpacked": 91,
+      "tarball": 17,
+      "files": 27
+    },
+    "eslint-plugin-mysql-security": {
+      "unpacked": 28,
+      "tarball": 8,
+      "files": 12
+    },
+    "eslint-plugin-nestjs-security": {
+      "unpacked": 102,
+      "tarball": 25,
+      "files": 22
+    },
+    "eslint-plugin-node-security": {
+      "unpacked": 346,
+      "tarball": 74,
+      "files": 56
+    },
+    "eslint-plugin-openai-security": {
+      "unpacked": 25,
+      "tarball": 6,
+      "files": 10
+    },
+    "eslint-plugin-operability": {
+      "unpacked": 40,
+      "tarball": 10,
+      "files": 15
+    },
+    "eslint-plugin-postgresql-security": {
+      "unpacked": 113,
+      "tarball": 23,
+      "files": 24
+    },
+    "eslint-plugin-prisma-security": {
+      "unpacked": 30,
+      "tarball": 8,
+      "files": 13
+    },
+    "eslint-plugin-react-a11y": {
+      "unpacked": 133,
+      "tarball": 24,
+      "files": 46
+    },
+    "eslint-plugin-react-features": {
+      "unpacked": 221,
+      "tarball": 43,
+      "files": 70
+    },
+    "eslint-plugin-reliability": {
+      "unpacked": 68,
+      "tarball": 16,
+      "files": 17
+    },
+    "eslint-plugin-secure-coding": {
+      "unpacked": 413,
+      "tarball": 89,
+      "files": 45
+    },
+    "eslint-plugin-sequelize-security": {
+      "unpacked": 31,
+      "tarball": 9,
+      "files": 13
+    },
+    "eslint-plugin-sqlite-security": {
+      "unpacked": 25,
+      "tarball": 7,
+      "files": 10
+    },
+    "eslint-plugin-typeorm-security": {
+      "unpacked": 30,
+      "tarball": 8,
+      "files": 13
+    },
+    "eslint-plugin-vercel-ai-security": {
+      "unpacked": 102,
+      "tarball": 20,
+      "files": 30
+    }
   }
 }

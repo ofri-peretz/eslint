@@ -1,15 +1,25 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * check-artifact-size.ts — reports how each published package's unpacked size
- * has moved against a committed baseline.
+ * check-artifact-size.ts — reports how each published package's artifact has
+ * moved against a committed baseline, across three metrics: unpacked size,
+ * gzipped tarball size, and file count. All three come from the one
+ * `npm pack --dry-run --json` call this already made for unpacked size.
  *
- * ADVISORY BY DEFAULT. It exits 0 even when a package grows a lot, because
+ * GROWTH IS ADVISORY. It exits 0 even when a package grows a lot, because
  * bundles legitimately get bigger as rules are added — a hard cap would just
  * get raised on every release until it meant nothing. The point is that growth
  * becomes a *noticed decision* instead of a surprise discovered months later
  * on npm. (Source maps, AGENTS.md, and JSDoc all shipped for months exactly
  * that way; see scripts/check-published-artifacts.ts.)
+ *
+ * MISSING MEASUREMENT IS NOT. A package that is publishable AND built AND
+ * absent from the baseline exits 1. That is not a judgement about a number —
+ * it is a hole in the instrument, and left advisory "advisory" decays into
+ * "unmeasured". While this ran only at release under `continue-on-error`,
+ * four plugins (anthropic-, gemini-, mcp-sdk-, openai-security) reached npm
+ * with no size history at all. Unbuilt-in-this-tree stays advisory; that
+ * distinction is load-bearing and lives in `classify`.
  *
  * A package with no dist/package.json is UNMEASURED, not removed. Conflating
  * the two reported five live, published plugins as gone from the ecosystem
@@ -21,10 +31,15 @@
  * Pass --strict to make regressions exit 1 — for a deliberate audit, not CI.
  *
  * Usage:
- *   tsx scripts/check-artifact-size.ts              # report, always exit 0
+ *   tsx scripts/check-artifact-size.ts              # report; exit 1 only if unbaselined
  *   tsx scripts/check-artifact-size.ts --update     # rewrite the baseline
- *   tsx scripts/check-artifact-size.ts --strict     # exit 1 on regression
+ *   tsx scripts/check-artifact-size.ts --strict     # also exit 1 on growth
  *   tsx scripts/check-artifact-size.ts --json
+ *
+ * In CI it runs in quality.yml's `recall` job, which already builds every
+ * package — measuring costs seconds there and a whole extra build anywhere else.
+ * When `GITHUB_STEP_SUMMARY` is set it also writes a markdown table, so growth
+ * shows up on the PR rather than in a release log nobody reads.
  *
  * Baseline: .agent/artifact-size-baseline.json — commit it. Refresh with
  * --update in the same PR that intentionally grows a package, so the diff
@@ -32,7 +47,13 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import process from 'node:process';
@@ -55,7 +76,41 @@ const WARN_RATIO = 0.15;
 /** Below this, percentages are noise — a 2 kB package doubling means nothing. */
 const MIN_ABSOLUTE_KB = 10;
 
-type Baseline = { generated: string; packages: Record<string, number> };
+/**
+ * The three numbers `npm pack --dry-run --json` already returns for every
+ * package. Recording all three costs no extra subprocess.
+ *
+ * `files` earns its place from history rather than theory: source maps,
+ * AGENTS.md and JSDoc each shipped for months unnoticed. Every one of those is
+ * a file-count anomaly before it is a size anomaly — a package can gain forty
+ * junk files without moving `unpacked` past the warn ratio.
+ */
+export type Metrics = { unpacked: number; tarball: number; files: number };
+
+/** Metric keys in report order. `unpacked` stays the headline. */
+export const METRIC_KEYS = ['unpacked', 'tarball', 'files'] as const;
+
+export const METRIC_LABEL: Record<keyof Metrics, string> = {
+  unpacked: 'unpacked kB',
+  tarball: 'tarball kB (gzip)',
+  files: 'file count',
+};
+
+type Baseline = { generated: string; packages: Record<string, Metrics> };
+
+/**
+ * Pull one metric out of the per-package records so it can go through
+ * `classify` unchanged. Reusing one comparison for three metrics is the whole
+ * reason `classify` keeps its `Record<string, number>` signature.
+ */
+export function project<K extends keyof Metrics>(
+  packages: Record<string, Metrics>,
+  key: K,
+): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(packages).map(([name, m]) => [name, m[key]]),
+  );
+}
 
 export type Row = { name: string; was: number; now: number; delta: number };
 export type Diff = {
@@ -110,8 +165,8 @@ export function classify(
   };
 }
 
-function collect(): { current: Record<string, number>; unbuilt: string[] } {
-  const current: Record<string, number> = {};
+function collect(): { current: Record<string, Metrics>; unbuilt: string[] } {
+  const current: Record<string, Metrics> = {};
   const unbuilt: string[] = [];
 
   for (const dir of readdirSync(PACKAGES_DIR)) {
@@ -136,9 +191,18 @@ function collect(): { current: Record<string, number>; unbuilt: string[] } {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
       }),
-    )[0] as { name: string; unpackedSize: number };
+    )[0] as {
+      name: string;
+      unpackedSize: number;
+      size: number;
+      entryCount: number;
+    };
 
-    current[meta.name] = Math.round(meta.unpackedSize / 1024);
+    current[meta.name] = {
+      unpacked: Math.round(meta.unpackedSize / 1024),
+      tarball: Math.round(meta.size / 1024),
+      files: meta.entryCount,
+    };
   }
 
   return { current, unbuilt };
@@ -170,7 +234,7 @@ function main(): void {
       packages: Object.fromEntries(Object.entries(current).sort()),
     };
     writeFileSync(BASELINE_PATH, JSON.stringify(next, null, 2) + '\n');
-    const total = Object.values(current).reduce((a, b) => a + b, 0);
+    const total = Object.values(current).reduce((a, m) => a + m.unpacked, 0);
     console.log(
       `  Baseline updated: ${Object.keys(current).length} packages, ${total} kB total.`,
     );
@@ -186,11 +250,18 @@ function main(): void {
   }
 
   const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) as Baseline;
-  const { grew, shrank, added, removed, unmeasured } = classify(
-    current,
-    unbuilt,
-    baseline.packages,
-  );
+
+  // One comparison, three metrics. `unpacked` drives the headline and the
+  // exit code; the other two ride along so a change that moves only the
+  // gzipped size or only the file count still shows up.
+  const byMetric = Object.fromEntries(
+    METRIC_KEYS.map((key) => [
+      key,
+      classify(project(current, key), unbuilt, project(baseline.packages, key)),
+    ]),
+  ) as Record<keyof Metrics, Diff>;
+
+  const { grew, shrank, added, removed, unmeasured } = byMetric.unpacked;
 
   if (JSON_OUT) {
     console.log(
@@ -203,6 +274,7 @@ function main(): void {
           added,
           removed,
           unmeasured,
+          byMetric,
         },
         null,
         2,
@@ -211,11 +283,11 @@ function main(): void {
     process.exit(STRICT && grew.length ? 1 : 0);
   }
 
-  const totalNow = Object.values(current).reduce((a, b) => a + b, 0);
+  const totalNow = Object.values(current).reduce((a, m) => a + m.unpacked, 0);
   // Compare like with like: an unbuilt package must not read as a shrink.
   const totalWas = Object.entries(baseline.packages)
     .filter(([name]) => name in current)
-    .reduce((a, [, kB]) => a + kB, 0);
+    .reduce((a, [, m]) => a + m.unpacked, 0);
   const pct = (((totalNow - totalWas) / totalWas) * 100).toFixed(1);
 
   console.log(
@@ -244,6 +316,26 @@ function main(): void {
       console.log(line(r, '-'));
     console.log('');
   }
+  // Metrics that moved on their own. `unpacked` is already the headline above,
+  // so only the other two are worth a line here — and only when they disagree
+  // with it, which is exactly the interesting case (forty new files, no size
+  // change; or a size change that vanishes once gzipped).
+  for (const key of METRIC_KEYS) {
+    if (key === 'unpacked') continue;
+    const extra = byMetric[key].grew.filter(
+      (r) => !grew.some((g) => g.name === r.name),
+    );
+    if (!extra.length) continue;
+    console.log(
+      `  ⚠️  ${extra.length} package(s) grew in ${METRIC_LABEL[key]} without tripping unpacked size:`,
+    );
+    for (const r of extra.sort((a, b) => b.delta - a.delta))
+      console.log(
+        `    ${r.name.padEnd(34)} ${String(r.was).padStart(6)} → ${String(r.now).padStart(6)}  +${r.delta} (${((r.delta / r.was) * 100).toFixed(0)}%)`,
+      );
+    console.log('');
+  }
+
   if (added.length) console.log(`  + new: ${added.join(', ')}\n`);
   if (removed.length) console.log(`  - gone: ${removed.join(', ')}\n`);
   if (unmeasured.length) {
@@ -263,7 +355,45 @@ function main(): void {
     console.log('  No package moved more than ' + WARN_RATIO * 100 + '%.\n');
   }
 
-  // Advisory: only --strict turns growth into a failure.
+  // A GitHub job summary costs no token and no PR-write permission, which is
+  // why the report surfaces there rather than as a bot comment. Absent the env
+  // var (every local run) this is a no-op.
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryPath) {
+    const rows = grew
+      .sort((a, b) => b.delta - a.delta)
+      .map(
+        (r) =>
+          `| \`${r.name}\` | ${r.was} kB | ${r.now} kB | +${r.delta} kB (${((r.delta / r.was) * 100).toFixed(0)}%) |`,
+      );
+    appendFileSync(
+      summaryPath,
+      `\n### Artifact size\n\n` +
+        `${totalNow} kB across ${Object.keys(current).length} packages ` +
+        `(baseline ${baseline.generated}: ${totalWas} kB, ${totalNow >= totalWas ? '+' : ''}${pct}%)\n\n` +
+        (rows.length
+          ? `| package | was | now | delta |\n|---|---|---|---|\n${rows.join('\n')}\n\n` +
+            `Refresh in this PR if intended: \`npm run check-artifact-size -- --update\`\n`
+          : `No package moved more than ${WARN_RATIO * 100}%.\n`),
+    );
+  }
+
+  // The one blocking condition, and it is not a judgement about a number: a
+  // package that is publishable AND built AND absent from the baseline is a
+  // hole in the instrument. Left advisory, "advisory" quietly decays into
+  // "unmeasured" — which is how four plugins reached npm with no size history.
+  // Unbuilt stays advisory; that distinction is load-bearing (see `classify`).
+  if (added.length) {
+    console.error(
+      `  ❌ ${added.length} published package(s) have no size baseline:\n` +
+        added.map((n) => `    ${n}`).join('\n') +
+        '\n\n    Add them in this PR:\n' +
+        '      npm run check-artifact-size -- --update\n',
+    );
+    process.exit(1);
+  }
+
+  // Growth itself stays advisory: only --strict turns it into a failure.
   process.exit(STRICT && grew.length ? 1 : 0);
 }
 

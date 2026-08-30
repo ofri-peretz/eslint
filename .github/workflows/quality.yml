@@ -43,7 +43,7 @@ permissions:
   contents: read
 
 env:
-  TURBO_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:
   oxlint:
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run oxlint
 
   markdown:
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:md
 
   changelog:
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run audit:changelogs
 
   workflows:
@@ -87,7 +87,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:workflows
       # scripts/__tests__/ held five lock files but only oxlint-export-lock ran
       # in CI, via a `test:oxlint-exports` script that names a single file and
@@ -105,7 +105,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:publish
 
   taxonomy:
@@ -116,7 +116,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run lint:taxonomy
       # Same job rather than its own: both gates answer "is this rule allowed
       # to claim what it claims", both are pure static reads of the same rule
@@ -167,6 +167,26 @@ jobs:
 
       - name: Every CWE must still detect what it used to
         run: npx tsx scripts/recall-gate.ts
+
+      # These ride here rather than in a job of their own because they need a
+      # fully built tree and nothing else, and this job already has one. A
+      # dedicated job would mean a second `turbo build --filter='./packages/*'`
+      # — minutes of Actions time to re-derive a tree that already exists.
+      #
+      # Size growth stays advisory (the report is the point, not a gate), but
+      # the step fails when a *published* package has no baseline at all: that
+      # is a hole in the instrument, not a judgement about a number. Four
+      # plugins reached npm with no size history while this ran only at
+      # release, under continue-on-error.
+      - name: Artifact size report
+        run: npx tsx scripts/check-artifact-size.ts
+
+      # Consumer-facing cost of the layer 30 packages depend on: which peers it
+      # forces on them, and whether importing the barrel drags in a native
+      # binary or a compiler. Both were invariants defended by comments until
+      # this measured them.
+      - name: Devkit infrastructure metrics
+        run: npx tsx scripts/devkit-infra-metrics.ts
 
   lockfile:
     name: Lockfile Sync
@@ -252,7 +272,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       - run: npm run check:benchmark-results-size
 
   # Aggregate gate so branch protection has a single required check to gate on.
@@ -261,7 +281,19 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    needs: [oxlint, markdown, changelog, workflows, taxonomy, publish-metadata, lockfile, supply-chain, recall, bench-size]
+    needs:
+      [
+        oxlint,
+        markdown,
+        changelog,
+        workflows,
+        taxonomy,
+        publish-metadata,
+        lockfile,
+        supply-chain,
+        recall,
+        bench-size,
+      ]
     if: always()
     steps:
       - name: Render gate report
