@@ -63,7 +63,7 @@ describe('every exports subpath resolves to a real source file', () => {
   const checks: { subpath: string; target: string }[] = [];
 
   for (const [subpath, value] of entries) {
-    // Wildcard subpaths (`./magicui/*`) resolve per-import; assert the
+    // Wildcard subpaths (`./effects/*`) resolve per-import; assert the
     // directory exists rather than trying to enumerate every consumer's usage.
     if (subpath.includes('*')) continue;
     if (typeof value === 'string') checks.push({ subpath, target: value });
