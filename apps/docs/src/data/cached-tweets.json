@@ -1,6 +1,6 @@
 {
   "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
-  "_lastUpdated": "2026-08-21T18:14:28.865Z",
+  "_lastUpdated": "2026-08-30T16:25:48.190Z",
   "tweets": {
     "2006790779537121585": {
       "__typename": "Tweet",
@@ -64,7 +64,7 @@
           "photo_image_full_size_large": {
             "image_value": {
               "height": 419,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=800x419",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=800x419",
               "width": 800
             },
             "type": "IMAGE"
@@ -72,7 +72,7 @@
           "thumbnail_image": {
             "image_value": {
               "height": 168,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=400x400",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=400x400",
               "width": 400
             },
             "type": "IMAGE"
@@ -88,7 +88,7 @@
           "thumbnail_image_large": {
             "image_value": {
               "height": 320,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=800x320_1",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=800x320_1",
               "width": 762
             },
             "type": "IMAGE"
@@ -96,7 +96,7 @@
           "summary_photo_image_small": {
             "image_value": {
               "height": 202,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=386x202",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=386x202",
               "width": 386
             },
             "type": "IMAGE"
@@ -104,7 +104,7 @@
           "thumbnail_image_original": {
             "image_value": {
               "height": 420,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=orig",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=orig",
               "width": 1000
             },
             "type": "IMAGE"
@@ -120,7 +120,7 @@
           "photo_image_full_size_small": {
             "image_value": {
               "height": 202,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=386x202",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=386x202",
               "width": 386
             },
             "type": "IMAGE"
@@ -128,7 +128,7 @@
           "summary_photo_image_large": {
             "image_value": {
               "height": 419,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=800x419",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=800x419",
               "width": 800
             },
             "type": "IMAGE"
@@ -136,7 +136,7 @@
           "thumbnail_image_small": {
             "image_value": {
               "height": 60,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=144x144",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=144x144",
               "width": 144
             },
             "type": "IMAGE"
@@ -151,7 +151,7 @@
           "thumbnail_image_x_large": {
             "image_value": {
               "height": 420,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=png&name=2048x2048_2_exp",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=png&name=2048x2048_2_exp",
               "width": 1000
             },
             "type": "IMAGE"
@@ -159,7 +159,7 @@
           "photo_image_full_size_original": {
             "image_value": {
               "height": 420,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=orig",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=orig",
               "width": 1000
             },
             "type": "IMAGE"
@@ -172,7 +172,7 @@
           "photo_image_full_size": {
             "image_value": {
               "height": 314,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=600x314",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=600x314",
               "width": 600
             },
             "type": "IMAGE"
@@ -278,7 +278,7 @@
           "summary_photo_image_x_large": {
             "image_value": {
               "height": 420,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=png&name=2048x2048_2_exp",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=png&name=2048x2048_2_exp",
               "width": 1000
             },
             "type": "IMAGE"
@@ -286,7 +286,7 @@
           "summary_photo_image": {
             "image_value": {
               "height": 314,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=600x314",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=600x314",
               "width": 600
             },
             "type": "IMAGE"
@@ -341,7 +341,7 @@
           "photo_image_full_size_x_large": {
             "image_value": {
               "height": 420,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=png&name=2048x2048_2_exp",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=png&name=2048x2048_2_exp",
               "width": 1000
             },
             "type": "IMAGE"
@@ -354,7 +354,7 @@
           "summary_photo_image_original": {
             "image_value": {
               "height": 420,
-              "url": "https://pbs.twimg.com/card_img/2090240927218483200/iUVcuF0v?format=jpg&name=orig",
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=orig",
               "width": 1000
             },
             "type": "IMAGE"
@@ -363,7 +363,7 @@
       },
       "isEdited": false,
       "isStaleEdit": false,
-      "_cachedAt": "2026-08-21T18:14:28.362Z"
+      "_cachedAt": "2026-08-30T16:25:47.684Z"
     }
   }
 }
