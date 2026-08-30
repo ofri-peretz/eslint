@@ -36,6 +36,12 @@ on:
     # still skips drafts unless they carry the `run-full-ci` label.
     types: [opened, reopened, ready_for_review, labeled, synchronize]
   workflow_dispatch:
+  # A merge queue builds `refs/heads/gh-readonly-queue/...` and waits for the
+  # REQUIRED checks to report on this event. Without this trigger the check
+  # never reports and every queued merge blocks forever with no error — a worse
+  # failure than the amplification the queue exists to fix. See
+  # docs/intents/merge-latency/design.md; this ships BEFORE the queue is enabled.
+  merge_group:
   schedule:
     - cron: '0 4 * * 0'
 
