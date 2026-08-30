@@ -55,9 +55,15 @@ const packages = fs
 // relative order. Optional sections (FAQ, Supported Libraries, Test Coverage,
 // AI-Optimized Messages, etc.) are not asserted by this gate; they're allowed
 // anywhere between Configuration Presets and Rules per the structure rule.
+//
+// The why/how/what bullets replaced `## Philosophy`, and add NO heading of their
+// own — they are three lines between the DOCTRINE markers, under `## Description`.
+// Philosophy said nothing a reader could act on; the section-shaped replacements
+// that followed cost three table-of-contents entries for one thought. The reference
+// is the NestJS npm README: tagline, short Description, then the install command.
+// `scripts/sync-readme-rules.ts` generates them, so they cannot drift across packages.
 const REQUIRED_ORDER = [
   '## Description',
-  '## Philosophy',
   '## Getting Started',
   '## ⚙️ Configuration Presets',
   '## 📦 Compatibility',
@@ -66,8 +72,16 @@ const REQUIRED_ORDER = [
   '## 📄 License',
 ];
 
-const PHILOSOPHY_FINGERPRINT =
-  'Interlace** fosters **strength through integration';
+// A line from each generated beat, enough to catch a hand-edited or half-migrated
+// block without pinning prose that is meant to be rewritable.
+const DOCTRINE_FINGERPRINTS = [
+  '- **Why** — a linter nobody reads protects nothing.',
+  '- **How** — evidence, not names.',
+  '- **What** — every finding carries its fix',
+];
+
+/** The Philosophy block the doctrine replaced. Must not come back. */
+const RETIRED_PHILOSOPHY = 'Interlace** fosters **strength through integration';
 
 interface Violation {
   pkg: string;
@@ -113,9 +127,18 @@ function checkPlugin(pkg: string): Violation | null {
   // vendor's mark, between Interlace and oxlint. All marks are served from
   // /logos/*.svg — normalised to a shared 120x90 canvas so the row aligns on
   // one baseline regardless of whether a mark is a square icon or a wordmark.
+  // Theme-aware marks: each is a <picture> with a dark <source> and a -light <img>
+  // fallback, so GitHub dark gets the light-ink artwork and npm — which renders on
+  // white and may strip <source> — falls back to the dark-ink one. A bare
+  // `/logos/<mark>.svg` here is the pre-variant form.
   for (const file of ['interlace', 'oxlint', 'eslint']) {
-    if (!content.includes(`/logos/${file}.svg`)) {
-      reasons.push(`missing \`/logos/${file}.svg\` in prelude logo row`);
+    for (const surface of ['light', 'dark']) {
+      if (!content.includes(`/logos/${file}-${surface}.svg`)) {
+        reasons.push(`missing \`/logos/${file}-${surface}.svg\` in prelude logo row`);
+      }
+    }
+    if (new RegExp(`/logos/${file}\\.svg`).test(content)) {
+      reasons.push(`uses the theme-agnostic \`/logos/${file}.svg\` — use the -light/-dark pair`);
     }
   }
   const eco = ECOSYSTEM_LOGO[pkg];
@@ -154,10 +177,32 @@ function checkPlugin(pkg: string): Violation | null {
     }
   }
 
-  // 2b. Closing footer: a standalone Interlace mark (icon-light.svg,
+  // 2b. Closing footer: a standalone Interlace mark (/logos/interlace.svg,
   // height=70) as the very last element (item 15 in readme-structure.md).
-  if (!content.includes('icon-light.svg" alt="Interlace" height="70"')) {
+  //
+  // The asset matters, not just its presence. The header migrated to the
+  // normalised `/logos/*.svg` set; the footer kept pointing at the pre-migration
+  // `/icon-light.svg` in all thirty READMEs, so one page shipped two generations
+  // of the same mark on different canvases. `/logos/interlace.svg` is what the
+  // header and the root README already use.
+  if (!content.includes('/logos/interlace-light.svg" alt="Interlace" height="70"')) {
     reasons.push('missing closing Interlace mark footer (item 15 in readme-structure.md)');
+  }
+  if (content.includes('/icon-light.svg') || content.includes('/icon-dark.svg')) {
+    reasons.push('uses the legacy /icon-*.svg mark — use /logos/interlace.svg');
+  }
+
+  // 2c. Getting Started carries ONE guide link. The six-language block copied from
+  // the NestJS README pointed all six at the same English page — we ship no
+  // translations, so it was five dead entries between the reader and `npm install`.
+  for (const marker of ['要查看中文', '가이드', 'ガイド', 'Para ver la', 'الدليل']) {
+    if (content.includes(marker)) {
+      reasons.push(
+        'carries the retired multilingual guide links — every one pointed at the ' +
+          'same English page; keep one link (item 6 in readme-structure.md)',
+      );
+      break;
+    }
   }
   if (
     !content.includes('img.shields.io/npm/v/') ||
@@ -166,9 +211,14 @@ function checkPlugin(pkg: string): Violation | null {
     reasons.push('missing standard NPM/License badges in prelude');
   }
 
-  // 3. Philosophy paragraph matches the canonical text.
-  if (!content.includes(PHILOSOPHY_FINGERPRINT)) {
-    reasons.push('Philosophy paragraph does not match the canonical Interlace text');
+  // 3. The why/how/what beats match the generated text.
+  for (const fingerprint of DOCTRINE_FINGERPRINTS) {
+    if (!content.includes(fingerprint)) {
+      reasons.push(`doctrine drift — missing \`${fingerprint}\` (run \`npm run sync-readmes\`)`);
+    }
+  }
+  if (content.includes(RETIRED_PHILOSOPHY)) {
+    reasons.push('carries the retired `## Philosophy` block — run `npm run sync-readmes`');
   }
 
   // 4. Exactly one canonical 11-column rule-data table under `## Rules`.
@@ -263,13 +313,16 @@ function checkNonPlugin(pkg: string): Violation | null {
   if (!fs.existsSync(readmePath)) return { pkg, reasons: ['README.md missing'] };
   const content = fs.readFileSync(readmePath, 'utf8');
   const reasons: string[] = [];
+  // Same theme-aware <picture> pair as the plugin row — see the note in checkPlugin.
   const marks = ['interlace', 'oxlint', 'eslint'];
   for (const m of marks) {
-    if (!content.includes(`/logos/${m}.svg`)) {
-      reasons.push(`missing \`/logos/${m}.svg\` in logo row`);
+    for (const surface of ['light', 'dark']) {
+      if (!content.includes(`/logos/${m}-${surface}.svg`)) {
+        reasons.push(`missing \`/logos/${m}-${surface}.svg\` in logo row`);
+      }
     }
   }
-  const pos = marks.map((m) => content.indexOf(`/logos/${m}.svg`));
+  const pos = marks.map((m) => content.indexOf(`/logos/${m}-light.svg`));
   if (pos.every((i) => i !== -1) && !pos.every((v, i) => i === 0 || pos[i - 1] < v)) {
     reasons.push('logo row is out of canonical order (expected: Interlace → oxlint → ESLint)');
   }

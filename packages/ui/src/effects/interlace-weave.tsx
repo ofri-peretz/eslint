@@ -58,7 +58,7 @@ import { cn } from '../lib/cn.js';
  *
  * ## API parity (R17)
  *
- * Mirrors the house decorative-overlay shape (magicui `BorderBeam`):
+ * Mirrors the house decorative-overlay shape (effects `BorderBeam`):
  * absolutely positioned, `aria-hidden`, `pointer-events-none` (R23
  * decorative-chrome rule). Radius follows the host via a rect `rx` that
  * matches the DS card radius token scale.

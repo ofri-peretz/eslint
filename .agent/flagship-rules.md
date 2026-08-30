@@ -97,10 +97,10 @@ the two rules) at error level:
 ```js
 // eslint.config.mjs
 import importNext from 'eslint-plugin-import-next';
-import pg from 'eslint-plugin-pg';
+import pg from 'eslint-plugin-postgresql-security';
 import secureCoding from 'eslint-plugin-secure-coding';
 import mongodb from 'eslint-plugin-mongodb-security';
-import jwt from 'eslint-plugin-jwt';
+import jwt from 'eslint-plugin-jwt-security';
 import browserSecurity from 'eslint-plugin-browser-security';
 import reactFeatures from 'eslint-plugin-react-features';
 import reactA11y from 'eslint-plugin-react-a11y';
@@ -120,7 +120,7 @@ export default [
 ```
 
 Take only the plugins you need — a repo with no Postgres has no reason to install
-`eslint-plugin-pg`. There is deliberately no meta-config package to install: ESLint
+`eslint-plugin-postgresql-security`. There is deliberately no meta-config package to install: ESLint
 config is composed per repository from the individual plugins.
 
 Structural lock: [`scripts/__tests__/ecosystem-presets.test.ts`](../scripts/__tests__/ecosystem-presets.test.ts) pins the flagship array against the 10-rule list in this file (criterion: a change to either side fails CI). It composes the presets from a test fixture, not from a shipped package — there is no Interlace meta-config, and none is published or recommended to consumers.

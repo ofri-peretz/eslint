@@ -3,7 +3,7 @@
 /**
  * @interlace/ui — Meteors (decorative animation primitive)
  *
- * Aceternity-style falling-meteor effect with per-meteor variety: viewport-
+ * Falling-meteor effect with per-meteor variety: viewport-
  * distributed origins (some above the fold), trail lengths randomized
  * between 50–140px, opacities 0.45–1.0, durations 3–9s. The variety is the
  * difference between "meteors" and "looks like a CSS animation" — a flat
@@ -102,12 +102,6 @@ function Meteors({
         opacity: Number(rand(OPACITY_MIN, OPACITY_MAX).toFixed(2)),
       })),
     );
-    // The flagged names (length/top/left/animationDuration/animationDelay/
-    // trail/opacity) are object-literal property keys inside the generated
-    // MeteorMeta above, not free-variable references, and `rand` is a
-    // module-level stable function — none of them are real reactive
-    // dependencies.
-    // eslint-disable-next-line react-features/hooks-exhaustive-deps
   }, [number, reduced]);
 
   if (reduced) return null;

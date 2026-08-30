@@ -8,7 +8,10 @@
  * having checked nothing.
  */
 import { describe, expect, it } from 'vitest';
-import { checkNameInference, findNameSubstringSites } from '../lint-name-inference';
+import {
+  checkNameInference,
+  findNameSubstringSites,
+} from '../lint-name-inference';
 
 describe('findNameSubstringSites', () => {
   it('flags a substring test on an identifier name', () => {
@@ -18,6 +21,18 @@ describe('findNameSubstringSites', () => {
     `);
     expect(sites).toHaveLength(1);
     expect(sites[0].text).toContain("varName.includes('password')");
+  });
+
+  it('flags a bound regex literal whose only content is an escaped slash', () => {
+    // `[^/\n]+` cannot span `\/`. `/foo\/bar/` still matched — the engine
+    // backtracks and finds `/bar/` as a valid literal — so the obvious example
+    // proves nothing. `/\//` has no such fallback: the old class matched it
+    // nowhere, and the site went undetected.
+    const sites = findNameSubstringSites(`
+      const n = node.id.name;
+      if (/\\//.test(n)) report(node);
+    `);
+    expect(sites).toHaveLength(1);
   });
 
   it('flags the inline form without a binding', () => {
@@ -88,7 +103,10 @@ describe('checkNameInference', () => {
   const offending = `const n = node.id.name.toLowerCase();\nif (n.includes('secret')) report(node);`;
 
   it('fails an unregistered rule — the gate is not vacuous', () => {
-    const report = checkNameInference([{ file: 'p/src/rules/new-rule/index.ts', source: offending }], []);
+    const report = checkNameInference(
+      [{ file: 'p/src/rules/new-rule/index.ts', source: offending }],
+      [],
+    );
     expect(report.violations).toHaveLength(1);
     expect(report.violations[0].file).toBe('p/src/rules/new-rule/index.ts');
   });
@@ -96,7 +114,13 @@ describe('checkNameInference', () => {
   it('passes a registered rule', () => {
     const report = checkNameInference(
       [{ file: 'p/src/rules/known/index.ts', source: offending }],
-      [{ file: 'p/src/rules/known/index.ts', direction: 'report', reason: 'known debt' }],
+      [
+        {
+          file: 'p/src/rules/known/index.ts',
+          direction: 'report',
+          reason: 'known debt',
+        },
+      ],
     );
     expect(report.violations).toEqual([]);
     expect(report.staleRegistry).toEqual([]);
@@ -104,8 +128,19 @@ describe('checkNameInference', () => {
 
   it('fails a registry entry whose sites are gone — the debt list cannot rot', () => {
     const report = checkNameInference(
-      [{ file: 'p/src/rules/fixed/index.ts', source: 'const ok = NAMES.has(node.name);' }],
-      [{ file: 'p/src/rules/fixed/index.ts', direction: 'report', reason: 'was debt' }],
+      [
+        {
+          file: 'p/src/rules/fixed/index.ts',
+          source: 'const ok = NAMES.has(node.name);',
+        },
+      ],
+      [
+        {
+          file: 'p/src/rules/fixed/index.ts',
+          direction: 'report',
+          reason: 'was debt',
+        },
+      ],
     );
     expect(report.violations).toEqual([]);
     expect(report.staleRegistry).toHaveLength(1);

@@ -156,8 +156,8 @@ src/
 ├── patterns/                # Full-page presets (HeroCosmic, ...)
 ├── mdx/                     # MDX-author components (Mermaid)
 ├── fumadocs/                # Fumadocs-ecosystem helpers (RemoteMarkdown, ...)
-├── magicui/                 # MagicUI-derived decorative motion
-└── aceternity/              # Aceternity-derived backgrounds
+├── effects/                 # Decorative motion (BorderBeam, Marquee, ...)
+└── ambient/                 # Full-bleed backgrounds (StarsBackground, ...)
 ```
 
 The path tells the consumer the level of opinion.

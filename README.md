@@ -1,9 +1,9 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=monorepo" target="_blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="90" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=monorepo" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
   &nbsp;&nbsp;
-  <a href="https://oxc.rs" target="_blank"><img src="https://eslint.interlace.tools/logos/oxlint.svg" alt="oxlint" height="90" /></a>
+  <a href="https://oxc.rs" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/oxlint-dark.svg"><img src="https://eslint.interlace.tools/logos/oxlint-light.svg" alt="oxlint" height="90" /></picture></a>
   &nbsp;&nbsp;
-  <a href="https://eslint.org" target="_blank"><img src="https://eslint.interlace.tools/logos/eslint.svg" alt="ESLint" height="90" /></a>
+  <a href="https://eslint.org" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/eslint-dark.svg"><img src="https://eslint.interlace.tools/logos/eslint-light.svg" alt="ESLint" height="90" /></picture></a>
 </p>
 
 <p align="center">
@@ -116,14 +116,14 @@ that match your stack; ignore the other twenty-eight.
 | [`eslint-plugin-postgresql-security`](https://www.npmjs.com/package/eslint-plugin-postgresql-security) |    13 | Detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL                                                                                                                                           | [docs](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-postgresql-security?style=flat-square&label=) |
 | [`eslint-plugin-knex-security`](https://www.npmjs.com/package/eslint-plugin-knex-security)             |     5 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-knex-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-knex-security?style=flat-square&label=)       |
 | [`eslint-plugin-drizzle-security`](https://www.npmjs.com/package/eslint-plugin-drizzle-security)       |     4 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-drizzle-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-drizzle-security?style=flat-square&label=)    |
-| [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security)       |     4 | Catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell                                             | [readme](./packages/eslint-plugin-mcp-sdk-security)                                                                                         | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mcp-sdk-security?style=flat-square&label=)    |
+| [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security)       |     4 | Catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell                                             | [docs](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mcp-sdk-security?style=flat-square&label=)    |
 | [`eslint-plugin-prisma-security`](https://www.npmjs.com/package/eslint-plugin-prisma-security)         |     4 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-prisma-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-prisma-security?style=flat-square&label=)     |
 | [`eslint-plugin-sequelize-security`](https://www.npmjs.com/package/eslint-plugin-sequelize-security)   |     4 | Detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials | [docs](https://eslint.interlace.tools/docs/security/plugin-sequelize-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-sequelize-security?style=flat-square&label=)  |
 | [`eslint-plugin-typeorm-security`](https://www.npmjs.com/package/eslint-plugin-typeorm-security)       |     4 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-typeorm-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-typeorm-security?style=flat-square&label=)    |
-| [`eslint-plugin-anthropic-security`](https://www.npmjs.com/package/eslint-plugin-anthropic-security)   |     3 | Catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input                                                                                             | [readme](./packages/eslint-plugin-anthropic-security)                                                                                       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-anthropic-security?style=flat-square&label=)  |
-| [`eslint-plugin-gemini-security`](https://www.npmjs.com/package/eslint-plugin-gemini-security)         |     3 | Catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input                                                                                                                     | [readme](./packages/eslint-plugin-gemini-security)                                                                                          | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-gemini-security?style=flat-square&label=)     |
+| [`eslint-plugin-anthropic-security`](https://www.npmjs.com/package/eslint-plugin-anthropic-security)   |     3 | Catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input                                                                                             | [docs](https://eslint.interlace.tools/docs/security/plugin-anthropic-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-anthropic-security?style=flat-square&label=)  |
+| [`eslint-plugin-gemini-security`](https://www.npmjs.com/package/eslint-plugin-gemini-security)         |     3 | Catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input                                                                                                                     | [docs](https://eslint.interlace.tools/docs/security/plugin-gemini-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-gemini-security?style=flat-square&label=)     |
 | [`eslint-plugin-mysql-security`](https://www.npmjs.com/package/eslint-plugin-mysql-security)           |     3 | Detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials                                         | [docs](https://eslint.interlace.tools/docs/security/plugin-mysql-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mysql-security?style=flat-square&label=)      |
-| [`eslint-plugin-openai-security`](https://www.npmjs.com/package/eslint-plugin-openai-security)         |     3 | Catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input                                                                                                                                      | [readme](./packages/eslint-plugin-openai-security)                                                                                          | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-openai-security?style=flat-square&label=)     |
+| [`eslint-plugin-openai-security`](https://www.npmjs.com/package/eslint-plugin-openai-security)         |     3 | Catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input                                                                                                                                      | [docs](https://eslint.interlace.tools/docs/security/plugin-openai-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-openai-security?style=flat-square&label=)     |
 | [`eslint-plugin-sqlite-security`](https://www.npmjs.com/package/eslint-plugin-sqlite-security)         |     1 | Detects SQL injection in raw queries built with string concatenation or template literals                                                                                                                                                   | [docs](https://eslint.interlace.tools/docs/security/plugin-sqlite-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-sqlite-security?style=flat-square&label=)     |
 
 ### 🏗️ Security — application frameworks
@@ -233,10 +233,10 @@ assumed.
 **Severity — what ESLint does when a rule fires.** You set it per rule in your
 config, and our presets set it for you:
 
-| Severity | In your config | What happens |
-| :------- | :------------- | :----------- |
-| **`error`** | `'error'` or `2` | Reported as an error and **`eslint` exits non-zero — your build fails.** |
-| **`warn`** | `'warn'` or `1` | Reported, but the exit code stays 0. Your build passes; you see it and decide. |
+| Severity         | In your config                            | What happens                                                                                         |
+| :--------------- | :---------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| **`error`**      | `'error'` or `2`                          | Reported as an error and **`eslint` exits non-zero — your build fails.**                             |
+| **`warn`**       | `'warn'` or `1`                           | Reported, but the exit code stays 0. Your build passes; you see it and decide.                       |
 | **off / opt-in** | `'off'`, `0`, or simply not in the preset | The rule does not run at all. Ours are still shipped and documented — you turn them on deliberately. |
 
 That is why a severity is a promise: `error` interrupts you and `warn` does not.
@@ -249,20 +249,20 @@ the two that matter:
 - **FN** (false negative) — the code was vulnerable and the rule stayed quiet. A miss.
 - **TN** — the code was fine and the rule stayed quiet. Correct silence.
 
-**Precision** = TP / (TP + FP). *Of the findings you are shown, what share are
-real?* This is the number that decides whether you keep the tool on. **Recall** =
-TP / (TP + FN) — *of the real problems, what share did we catch?* You cannot
+**Precision** = TP / (TP + FP). _Of the findings you are shown, what share are
+real?_ This is the number that decides whether you keep the tool on. **Recall** =
+TP / (TP + FN) — _of the real problems, what share did we catch?_ You cannot
 maximise both, which is the tradeoff section below.
 
 **`n` — the sample size.** How many individual findings we pulled out of real
-repositories and read one at a time, labelling each TP, FP, or *undecidable*. `n
+repositories and read one at a time, labelling each TP, FP, or _undecidable_. `n
 = 20` means twenty findings judged by hand. It matters because a percentage from
 a small `n` is mostly luck: at `n = 4`, reclassifying one finding moves precision
 by 25 points.
 
-**Sampled precision vs fixture precision.** *Fixture* precision is measured on
+**Sampled precision vs fixture precision.** _Fixture_ precision is measured on
 test files we wrote — it is a regression gate and says nothing about your code.
-*Sampled* precision is measured on open-source repositories we did not write.
+_Sampled_ precision is measured on open-source repositories we did not write.
 Only the second one predicts your afternoon, and it is the only one the bars below
 use.
 
@@ -272,12 +272,12 @@ Nobody in this space publishes a precision bar, so we set ours and publish where
 sit against it. A severity is a **promise about your triage time**, and it is the
 only part of a lint finding a consumer plans around:
 
-| Tier                         | Promise to you                                              | Bar                             |
-| :--------------------------- | :---------------------------------------------------------- | :------------------------------ |
-| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable.      | **≤ 5%** effective false positives |
-| **`warn`** in `recommended`  | Fix these, but not today. Same accuracy, lower urgency.       | **≤ 5%** effective false positives |
-| **Off by default** (opt-in)  | A paranoid sweep. You asked for it; expect to triage.         | No floor — **but the rate is published** |
-| **The preset, as a whole**   | What you actually install.                                    | **≤ 5%** across every rule it enables |
+| Tier                         | Promise to you                                           | Bar                                      |
+| :--------------------------- | :------------------------------------------------------- | :--------------------------------------- |
+| **`error`** in `recommended` | Act on every one. Failing a build on this is reasonable. | **≤ 5%** effective false positives       |
+| **`warn`** in `recommended`  | Fix these, but not today. Same accuracy, lower urgency.  | **≤ 5%** effective false positives       |
+| **Off by default** (opt-in)  | A paranoid sweep. You asked for it; expect to triage.    | No floor — **but the rate is published** |
+| **The preset, as a whole**   | What you actually install.                               | **≤ 5%** across every rule it enables    |
 
 **Severity signals urgency, not confidence.** `warn` used to carry a lower
 accuracy bar here — 70%, i.e. three wrong findings in ten. That was incoherent:
@@ -299,7 +299,7 @@ switch it off. We take the fleet average rather than the ceiling because we are
 asking you to enable a preset you did not tune.
 
 **Effective** is the load-bearing word, also Google's. A finding counts against
-us when it is wrong — *and* when it is right but you would not act on it: the
+us when it is wrong — _and_ when it is right but you would not act on it: the
 message did not explain itself, or the issue was too trivial to be worth the
 interruption. A correct finding nobody understands costs a reader exactly what a
 wrong one costs. That makes message quality a precision property, not polish.
@@ -330,10 +330,10 @@ expression — is the lever the commercial tools pulled to cut alert volume by a
 reported 92–95%, and it is the difference between the two contracts a rule can
 have:
 
-| Contract | Behaviour | Result |
-| :--- | :--- | :--- |
-| *Report unless proven safe* | the final branch returns "report" | every unprovable case is a finding |
-| *Report only when reachable* | the final branch returns "quiet" | an unprovable case is silence |
+| Contract                     | Behaviour                         | Result                             |
+| :--------------------------- | :-------------------------------- | :--------------------------------- |
+| _Report unless proven safe_  | the final branch returns "report" | every unprovable case is a finding |
+| _Report only when reachable_ | the final branch returns "quiet"  | an unprovable case is silence      |
 
 The first is not a stricter version of the second — it is a different product.
 `detect-object-injection` ships the first contract and produces **14,696**
@@ -357,12 +357,12 @@ correct and still be unscoreable.
 So a rule whose whole output on the corpus is smaller than the `n` its tier
 requires is scored a different way, and it is a **stricter** test, not a waiver:
 
-| | ratio criterion | census criterion |
-| :--- | :--- | :--- |
-| Applies when | findings ≥ required `n` | findings < required `n` |
-| What is judged | a stratified **sample** | **every finding**, no sampling |
-| Passing | the tier's percentage | **zero false positives** |
-| Published | the rate and its `n` | the finding count and the labels |
+|                | ratio criterion         | census criterion                 |
+| :------------- | :---------------------- | :------------------------------- |
+| Applies when   | findings ≥ required `n` | findings < required `n`          |
+| What is judged | a stratified **sample** | **every finding**, no sampling   |
+| Passing        | the tier's percentage   | **zero false positives**         |
+| Published      | the rate and its `n`    | the finding count and the labels |
 
 Sampling lets a rule hide its worst findings behind the ones you happened to
 draw. A census cannot: one false positive anywhere in the output fails it. That
@@ -378,19 +378,19 @@ decides, and the count is published beside the verdict.
 A percentage from 20 findings is not evidence for a 95% claim. If you read 20
 findings and all 20 are real, the true rate could still be 85% and you got a good
 draw. So the bars carry a required `n`, derived from the **Wilson score interval** —
-the standard statistical answer to *"given what we saw, what is the worst the true
-rate plausibly is?"*, at 95% confidence. That worst case is the number we hold
+the standard statistical answer to _"given what we saw, what is the worst the true
+rate plausibly is?"_, at 95% confidence. That worst case is the number we hold
 ourselves to, not the raw percentage.
 
 With a **perfect** sample — every finding a true positive:
 
-| Sample size    |  n=20 |  n=50 | **n=73** | n=100 |
-| :------------- | ----: | ----: | -------: | ----: |
+| Sample size          |  n=20 |  n=50 |  **n=73** | n=100 |
+| :------------------- | ----: | ----: | --------: | ----: |
 | Defensible precision | 83.9% | 92.9% | **95.1%** | 96.3% |
 
 So the `error` bar needs **n ≥ 73 with zero false positives**, or n ≥ 150 with one.
-`n ≥ 20` — §A2's minimum — is enough to *publish a rate*, never enough to *clear the
-`error` bar*. We got this wrong when the contract was first written and are saying so
+`n ≥ 20` — §A2's minimum — is enough to _publish a rate_, never enough to _clear the
+`error` bar_. We got this wrong when the contract was first written and are saying so
 rather than quietly restating it.
 
 ### What these bars cost — the tradeoffs
@@ -440,17 +440,17 @@ It is not independent review, and we do not call it that.
 
 Honest status, because a published bar with no scoreboard is marketing:
 
-| Rule                             | Ships at     | Sampled precision      | Meets bar     |
-| :------------------------------- | :----------- | :--------------------- | :------------ |
-| `no-redos-vulnerable-regex`      | `error`      | ≥4/22 TP, 18 unclassified | **unscored** |
-| `detect-non-literal-fs-filename` | `warn`       | **1/1 — census, all 1 finding labelled** | **yes** (census criterion) |
-| `detect-object-injection`        | opt-in       | 0/13                    | n/a (opt-in)  |
-| `detect-non-literal-regexp`      | opt-in       | 3/10                    | n/a (opt-in)  |
-| **the other 117 rules**          | various      | **not yet measured**    | **unscored**  |
+| Rule                             | Ships at | Sampled precision                        | Meets bar                  |
+| :------------------------------- | :------- | :--------------------------------------- | :------------------------- |
+| `no-redos-vulnerable-regex`      | `error`  | ≥4/22 TP, 18 unclassified                | **unscored**               |
+| `detect-non-literal-fs-filename` | `warn`   | **1/1 — census, all 1 finding labelled** | **yes** (census criterion) |
+| `detect-object-injection`        | opt-in   | 0/13                                     | n/a (opt-in)               |
+| `detect-non-literal-regexp`      | opt-in   | 3/10                                     | n/a (opt-in)               |
+| **the other 117 rules**          | various  | **not yet measured**                     | **unscored**               |
 
 That table is the current state of a programme, not a boast. Four rules have been
 through per-rule measurement on real code; 117 have not. The ReDoS row says
-*unscored* rather than a percentage because the generic timing sweep that produced
+_unscored_ rather than a percentage because the generic timing sweep that produced
 it can **confirm** a slow pattern and cannot **prove** a fast one — two patterns it
 called flat were 167 ms and 956 ms under a crafted input. A method that only errs
 one way does not get to report a precision figure.
@@ -491,12 +491,12 @@ RuleTester suite**, which they wrote to define their own true positives.
 And on 20 open-source projects (21,146 files, 3.04M LOC), sampled and hand-labelled on both
 sides, `recommended` vs `recommended`:
 
-|                                  |  Interlace | eslint-plugin-security |
-| :------------------------------- | ---------: | ---------------------: |
-| Findings                         |      1,059 |                 22,530 |
-| Findings per 1,000 LOC           |    **0.3** |                    7.4 |
-| Measured precision (n=24/side)   |  **28.6%** |                  13.0% |
-| Findings you read per real issue |    **3.5** |                    7.7 |
+|                                  | Interlace | eslint-plugin-security |
+| :------------------------------- | --------: | ---------------------: |
+| Findings                         |     1,059 |                 22,530 |
+| Findings per 1,000 LOC           |   **0.3** |                    7.4 |
+| Measured precision (n=24/side)   | **28.6%** |                  13.0% |
+| Findings you read per real issue |   **3.5** |                    7.7 |
 
 **28.6% is not a good number and we are not going to dress it up.** Roughly two in
 three of our findings on real code are wrong. It beats the incumbent by 2.2× and that
@@ -510,8 +510,8 @@ did not get worse.
 
 The noise is **concentrated, not diffuse**, which is the actionable part:
 `no-unlimited-resource-allocation` scored 0 TP / 5 FP and is the loudest rule in
-`recommended`; `no-toctou-vulnerability` scored 0 TP / 4 FP and never names the *check*
-its reported *use* races. Two rules, most of the noise. Every finding is labelled with
+`recommended`; `no-toctou-vulnerability` scored 0 TP / 4 FP and never names the _check_
+its reported _use_ races. Two rules, most of the noise. Every finding is labelled with
 its reason in
 [SAMPLED-FP-2026-08-17.md](./benchmarks/suites/ilb-real-source/SAMPLED-FP-2026-08-17.md),
 including the ones that embarrass us.
@@ -697,7 +697,7 @@ Browse it at **[storybook.interlace.tools](https://storybook.interlace.tools/?ut
 MIT © [Ofri Peretz](https://github.com/ofri-peretz) — see [LICENSE](LICENSE).
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=monorepo" target="_blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=monorepo" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>
 <p align="center">
   <sub>Made with ❤️ from lessons learned in the trenches</sub>

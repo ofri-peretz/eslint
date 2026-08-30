@@ -54,6 +54,7 @@ export interface PluginEntry {
   slug: string;
   package: string;
   pillar: Pillar;
+  description: string;
 }
 
 export interface RuleMeta {
@@ -83,12 +84,14 @@ export function loadPluginRegistry(registryPath = PLUGINS_REGISTRY): PluginEntry
     throw new Error(`Could not locate PLUGINS array in ${registryPath}`);
   }
   const entries: PluginEntry[] = [];
-  const blockRegex = /\{\s*slug:\s*['"]([^'"]+)['"][\s\S]*?package:\s*['"]([^'"]+)['"][\s\S]*?pillar:\s*['"]([^'"]+)['"]/g;
+  const blockRegex =
+    /\{\s*slug:\s*['"]([^'"]+)['"][\s\S]*?package:\s*['"]([^'"]+)['"][\s\S]*?pillar:\s*['"]([^'"]+)['"][\s\S]*?description:\s*['"]([^'"]+)['"]/g;
   for (const m of arrayMatch[1].matchAll(blockRegex)) {
     entries.push({
       slug: m[1],
       package: m[2],
       pillar: m[3] as Pillar,
+      description: m[4],
     });
   }
   return entries;
@@ -366,19 +369,139 @@ export function spliceTable(readme: string, generatedTable: string): { content: 
 export interface ProcessOptions {
   dryRun: boolean;
   typeMap: Map<string, TypeStatus>;
+  /** The FULL registry, not the `--plugin` filtered subset — the ecosystem table on one
+   *  README lists every other plugin, so filtering targets must not shrink it. */
+  registry: PluginEntry[];
 }
 
+
+const ECOSYSTEM_START =
+  '<!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->';
+const ECOSYSTEM_END = '<!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->';
+const ECOSYSTEM_HEADING = '## 🔗 Related ESLint Plugins';
+
+/** Where the Related section stops. The Star CTA block precedes `## 📄 License` in 26 of
+ *  the 30 READMEs and is absent in the other four, so both are boundaries. */
+const ECOSYSTEM_STOP = /^(## |<!-- INTERLACE:STAR_CTA:START)/;
+
+/**
+ * The cross-sell table, generated into every plugin README from the docs registry
+ * (`apps/docs/src/lib/plugins.ts`) — the same source that drives the docs site nav.
+ *
+ * It used to be a hardcoded string literal in `tools/scripts/fix-readmes.ts`, a script
+ * wired into no npm script and last run before eleven plugins existed. So every README
+ * shipped the same eleven-row table, two of whose rows still *displayed*
+ * `eslint-plugin-jwt` and `eslint-plugin-pg` — names unpublished since #414 — while
+ * linking to the renamed packages. Reading the registry means a new plugin appears in
+ * twenty-nine READMEs the day it is registered, and a rename cannot survive anywhere.
+ *
+ * Split by pillar because twenty-nine undifferentiated rows is a wall, and the split is
+ * the one the docs site already makes.
+ */
+export function renderEcosystemTable(entries: PluginEntry[], selfPackage: string): string {
+  const others = entries
+    .filter((e) => e.package !== selfPackage)
+    .toSorted((a, b) => a.package.localeCompare(b.package));
+
+  const row = (e: PluginEntry): string => {
+    const npm = `https://www.npmjs.com/package/${e.package}`;
+    const badge = `https://img.shields.io/npm/dt/${e.package}.svg?style=flat-square`;
+    return `| [\`${e.package}\`](${npm}) | [![downloads](${badge})](${npm}) | ${e.description}. |`;
+  };
+
+  const group = (title: string, pillar: Pillar): string[] => {
+    const rows = others.filter((e) => e.pillar === pillar);
+    if (rows.length === 0) return [];
+    return [
+      '',
+      `**${title}**`,
+      '',
+      '| Plugin | Downloads | Description |',
+      '| :--- | :---: | :--- |',
+      ...rows.map(row),
+    ];
+  };
+
+  return [
+    ECOSYSTEM_START,
+    '',
+    ECOSYSTEM_HEADING,
+    '',
+    'Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimized error messages:',
+    ...group('Security', 'security'),
+    ...group('Code quality', 'quality'),
+    '',
+    ECOSYSTEM_END,
+  ].join('\n');
+}
+
+/**
+ * Insert or refresh the ecosystem table.
+ *
+ * On the first run per README there are no markers, only the hand-written section: the
+ * heading, its lead-in line and the stale eleven-row table. That whole span — heading to
+ * the next `## ` or Star CTA — is what gets replaced, which is also what makes the second
+ * run a no-op, since the generated span contains no `## ` of its own beyond the heading
+ * it starts with.
+ *
+ * A README with neither markers nor the heading is returned untouched rather than having
+ * the section guessed into place.
+ */
+export function spliceEcosystem(readme: string, table: string): { content: string; modified: boolean } {
+  const start = readme.indexOf(ECOSYSTEM_START);
+  const end = readme.indexOf(ECOSYSTEM_END);
+
+  if (start !== -1 && end !== -1) {
+    if (end < start) throw new Error('ECOSYSTEM_TABLE:END appears before ECOSYSTEM_TABLE:START');
+    const content = readme.slice(0, start) + table + readme.slice(end + ECOSYSTEM_END.length);
+    return { content, modified: content !== readme };
+  }
+  if (start !== -1 || end !== -1) {
+    throw new Error('ECOSYSTEM_TABLE has one marker without the other');
+  }
+
+  const lines = readme.split('\n');
+  const headingAt = lines.indexOf(ECOSYSTEM_HEADING);
+  if (headingAt === -1) return { content: readme, modified: false };
+
+  let stopAt = lines.length;
+  for (let i = headingAt + 1; i < lines.length; i++) {
+    if (ECOSYSTEM_STOP.test(lines[i])) {
+      stopAt = i;
+      break;
+    }
+  }
+
+  const content = [...lines.slice(0, headingAt), table, '', ...lines.slice(stopAt)].join('\n');
+  return { content, modified: content !== readme };
+}
 
 const DOCTRINE_START = '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->';
 const DOCTRINE_END = '<!-- AUTO-GENERATED:DOCTRINE:END -->';
 
 /**
- * The why / how / what block, generated into every plugin README.
+ * The ecosystem position — why, how, what — generated into every plugin README.
  *
  * It is ecosystem-wide, so it is generated rather than hand-copied: thirty
- * hand-maintained copies of one position drift, and a doctrine that says different
- * things in different packages is not a doctrine. The `## Philosophy` prose it replaces
- * was already identical in every plugin and said nothing a reader could act on.
+ * hand-maintained copies of one position drift, and a position that says different
+ * things in different packages is not a position.
+ *
+ * THREE LINES. Not three sections. The reference is the NestJS npm README, which
+ * spends a tagline and a short Description and then gets out of the way — a reader
+ * arriving from npm wants the install command, and everything above it is rent.
+ * Three shapes have been tried in this slot and only this one is cheap enough:
+ *
+ *   1. `## Philosophy` — "Interlace fosters strength through integration ... a
+ *      resilient fabric of code". Short, but said nothing a reader could act on or
+ *      disagree with. It held the sell slot without selling.
+ *   2. three `##` sections, ~45 lines. Said something, but pushed Getting Started
+ *      and the rule table below the fold on all thirty READMEs.
+ *   3. three `##` sections at ~16 lines. Still three entries in the table of
+ *      contents for what is one thought.
+ *
+ * So: a bulleted why/how/what and one line of links, under no heading of its own.
+ * Each bullet is one sentence; the argument behind each lives in DOCS_PHILOSOPHY.md
+ * and the benchmark docs. If a bullet needs a second sentence, it belongs there.
  *
  * Deliberately carries NO ecosystem totals — per BENCHMARK-PUBLISHING-PLAN.md §1, rule
  * counts and benchmark figures in a plugin README read as inflated the moment someone
@@ -388,60 +511,47 @@ function renderDoctrine(): string {
   return [
     DOCTRINE_START,
     '',
-    '## Why these rules are quiet',
+    '- **Why** — a linter nobody reads protects nothing. We would rather miss a finding',
+    '  than spend your attention on one that was never real.',
+    '- **How** — evidence, not names. A rule fires on what the code *does*, resolved',
+    "  through the AST and ESLint's own scope analysis.",
+    '- **What** — every finding carries its fix, in prose for a human and as structured',
+    '  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.',
     '',
-    '**Noise creates apathy, and apathy is not a security posture.** A linter that reports',
-    'a thousand things a week gets switched off in a month, and the real finding goes with',
-    'it. So every rule here is built to be worth reading: we would rather miss a finding',
-    'than spend your attention on one that was never real.',
-    '',
-    'That is a trade, and it is made deliberately. It costs recall, and we measure what it',
-    'costs rather than assuming it is free.',
-    '',
-    '## How the rules decide',
-    '',
-    '**Evidence, not names.** A rule fires on what the code *does*, resolved through the',
-    "AST and ESLint's own scope analysis — not on an identifier that happens to contain",
-    '`query`, a method called `setItem`, or a file whose path contains `key`. Every one of',
-    'those was a real false positive in this ecosystem, found by reading our own output on',
-    'open-source projects and fixed with a test that fails on the unfixed rule.',
-    '',
-    'Where a rule has known false-positive shapes, its page carries a **Not a finding**',
-    'section: what it deliberately stays quiet on, and what to check first when it fires',
-    'and you disagree.',
-    '',
-    '## What you get',
-    '',
-    'The rules below. Security rules carry a CWE mapping and, where one is assigned, a',
-    'CVSS score; every rule carries a fix on its message — in prose for a human and as',
-    'structured JSON for an agent. Install it, enable',
-    '`recommended`, and read the findings. If one of them is wrong,',
-    '[open an issue](https://github.com/ofri-peretz/eslint/issues) — a false positive is a',
-    'bug here, not a tuning exercise for you.',
-    '',
-    'How that is measured, on which projects, and where it falls short:',
-    '[benchmark methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)',
-    'and [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md).',
+    'That trade costs recall, and we measure it:',
+    '[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)',
+    '· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)',
+    '· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).',
     '',
     DOCTRINE_END,
   ].join('\n');
 }
 
 /**
- * Insert or refresh the doctrine block, immediately after `## Philosophy`.
+ * Insert or refresh the doctrine block, in place of `## Philosophy`.
  *
- * `## Philosophy` stays. It is the brand statement, and `readme-structure-lock.test.ts`
- * requires it verbatim in every package — the first version of this replaced it and
- * turned that gate red across 26 READMEs. The two say different things: Philosophy is
- * who Interlace is, the doctrine is why these rules are quiet, how they decide, and what
- * you get.
+ * `## Philosophy` is REMOVED, not preserved. It held the sell slot in all thirty
+ * READMEs with three sentences — "Interlace fosters strength through integration ... a
+ * resilient fabric of code" — that a reader could neither act on nor disagree with,
+ * directly above the doctrine that says the same thing with substance. Keeping both
+ * meant paying twice for one position. `## Why` is now the brand statement.
  *
- * Returns the README unchanged when there is no Philosophy section and no existing
- * block, rather than guessing where it belongs — a README with its own structure is not
- * something to rewrite blind.
+ * Migration is one-way and idempotent: the marker path replaces marker-to-marker, and
+ * additionally swallows a `## Philosophy` section still sitting directly above the
+ * START marker, which is the shape every README is in before this runs once.
+ *
+ * Returns the README unchanged when there is neither a marker pair nor a Philosophy
+ * section, rather than guessing where the block belongs — a README with its own
+ * structure is not something to rewrite blind.
  */
 export function spliceDoctrine(readme: string): { content: string; modified: boolean } {
   const block = renderDoctrine();
+
+  // A `## Philosophy` section ending where the next `## ` heading begins. The head
+  // slice handed to the marker path ends AT the START marker, so nothing follows
+  // Philosophy there — hence the `$` alternative, without which the lookahead never
+  // matches and the section survives the migration it was written to remove.
+  const PHILOSOPHY = /^## Philosophy\n[\s\S]*?(?=^## |(?![\s\S]))/m;
 
   const start = readme.indexOf(DOCTRINE_START);
   const end = readme.indexOf(DOCTRINE_END);
@@ -454,14 +564,14 @@ export function spliceDoctrine(readme: string): { content: string; modified: boo
     if (start === -1) throw new Error('DOCTRINE:END without a matching START');
     if (end === -1) throw new Error('DOCTRINE:START without a matching END');
     if (end < start) throw new Error('DOCTRINE:END appears before DOCTRINE:START');
-    const content = readme.slice(0, start) + block + readme.slice(end + DOCTRINE_END.length);
+    const head = readme.slice(0, start).replace(PHILOSOPHY, '');
+    const content = head + block + readme.slice(end + DOCTRINE_END.length);
     return { content, modified: content !== readme };
   }
 
-  const philosophy = readme.match(/^## Philosophy\n[\s\S]*?(?=^## )/m);
-  if (!philosophy) return { content: readme, modified: false };
+  if (!PHILOSOPHY.test(readme)) return { content: readme, modified: false };
 
-  const content = readme.replace(philosophy[0], `${philosophy[0]}${block}\n\n`);
+  const content = readme.replace(PHILOSOPHY, `${block}\n\n`);
   return { content, modified: content !== readme };
 }
 
@@ -527,9 +637,13 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   try {
     result = spliceTable(readme, table);
     const withDoctrine = spliceDoctrine(result.content);
+    const withEcosystem = spliceEcosystem(
+      withDoctrine.content,
+      renderEcosystemTable(opts.registry, entry.package),
+    );
     result = {
-      content: withDoctrine.content,
-      modified: result.modified || withDoctrine.modified,
+      content: withEcosystem.content,
+      modified: result.modified || withDoctrine.modified || withEcosystem.modified,
     };
   } catch (e) {
     return {
@@ -577,7 +691,7 @@ function main(): void {
   let errored = 0;
 
   for (const entry of targets) {
-    const result = processPlugin(entry, { dryRun, typeMap });
+    const result = processPlugin(entry, { dryRun, typeMap, registry });
     if (result.error) {
       console.error(`✗ ${entry.slug}: ${result.error}`);
       errored++;

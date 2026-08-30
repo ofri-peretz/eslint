@@ -38,13 +38,13 @@ Must be one of the following **lowercase** types:
 
 ### 2. Scope (OPTIONAL but validated)
 
-- Wrap in parentheses: `feat(eslint-plugin-pg): ...`
+- Wrap in parentheses: `feat(eslint-plugin-postgresql-security): ...`
 - **MUST match Nx project name** exactly (if provided)
-- Valid package scopes: `eslint-devkit`, `eslint-plugin-pg`, `eslint-plugin-jwt`, `eslint-plugin-node-security`, etc.
+- Valid package scopes: `eslint-devkit`, `eslint-plugin-postgresql-security`, `eslint-plugin-jwt-security`, `eslint-plugin-node-security`, etc.
 - Special scopes: `ci`, `deps`, `release`, `docs`, `workspace`
 - Can be omitted for workspace-wide changes: `chore: update dependencies`
 
-> ⚠️ **CRITICAL**: Use the **full project name** (e.g., `eslint-plugin-pg`), not abbreviations like `pg`.
+> ⚠️ **CRITICAL**: Use the **full project name** (e.g., `eslint-plugin-postgresql-security`), not abbreviations like `pg`.
 > Nx Release matches commits by scope to determine version bumps.
 
 ### 3. Subject (REQUIRED)

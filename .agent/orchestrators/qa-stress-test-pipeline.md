@@ -19,8 +19,8 @@ agents:
 ## Usage
 
 ```
-/pipeline qa-stress: Run full QA for eslint-plugin-pg
-/pipeline qa-stress: FP audit for eslint-plugin-jwt
+/pipeline qa-stress: Run full QA for eslint-plugin-postgresql-security
+/pipeline qa-stress: FP audit for eslint-plugin-jwt-security
 /pipeline qa-stress: Performance benchmark eslint-plugin-secure-coding
 /pipeline qa-stress: FN discovery for eslint-plugin-node-security
 ```
@@ -32,8 +32,8 @@ agents:
 | Plugin                             | Rules | Domain            | Priority |
 | ---------------------------------- | ----- | ----------------- | -------- |
 | `eslint-plugin-secure-coding`      | 75    | Core Security     | P0       |
-| `eslint-plugin-pg`                 | 13    | PostgreSQL        | P0       |
-| `eslint-plugin-jwt`                | 12    | Token Security    | P0       |
+| `eslint-plugin-postgresql-security`                 | 13    | PostgreSQL        | P0       |
+| `eslint-plugin-jwt-security`                | 12    | Token Security    | P0       |
 | `eslint-plugin-node-security`      | 34    | Node.js + Cryptography | P0  |
 | `eslint-plugin-browser-security`   | 21    | Browser/DOM       | P1       |
 | `eslint-plugin-vercel-ai-security` | 15    | AI/LLM Safety     | P1       |
@@ -289,10 +289,10 @@ After running all phases, generate a comprehensive report:
 
 ```bash
 # Full QA for a specific plugin
-/pipeline qa-stress: Run full QA for eslint-plugin-pg
+/pipeline qa-stress: Run full QA for eslint-plugin-postgresql-security
 
 # FP-focused audit
-/pipeline qa-stress: FP audit for eslint-plugin-jwt
+/pipeline qa-stress: FP audit for eslint-plugin-jwt-security
 
 # FN discovery only
 /pipeline qa-stress: FN discovery for eslint-plugin-node-security
@@ -368,8 +368,8 @@ qa-stress-test:
   strategy:
     matrix:
       plugin:
-        - eslint-plugin-pg
-        - eslint-plugin-jwt
+        - eslint-plugin-postgresql-security
+        - eslint-plugin-jwt-security
         - eslint-plugin-node-security
   steps:
     - uses: actions/checkout@v4

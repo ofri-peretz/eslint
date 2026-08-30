@@ -17,7 +17,7 @@ Develop and execute marketing strategy to promote your npm packages.
 
 ```
 /pipeline distribute: eslint-plugin-secure-coding
-/pipeline distribute: Launch campaign for eslint-plugin-pg v1.0
+/pipeline distribute: Launch campaign for eslint-plugin-postgresql-security v1.0
 ```
 
 ---
@@ -178,7 +178,7 @@ npm info eslint-plugin-secure-coding
 ### Content Generation
 
 ```
-/pipeline article: Write announcement for eslint-plugin-pg launch
+/pipeline article: Write announcement for eslint-plugin-postgresql-security launch
 /pipeline article: Create comparison vs eslint-plugin-security
 ```
 
@@ -193,11 +193,11 @@ npm info eslint-plugin-secure-coding
 - **Key stats**: 89 rules, 8 OWASP categories
 - **Benchmark**: [results](file:///Users/ofri/repos/ofriperetz.dev/eslint/packages/eslint-plugin-secure-coding/benchmark/README.md)
 
-### eslint-plugin-pg
+### eslint-plugin-postgresql-security
 
-- **npm**: https://www.npmjs.com/package/eslint-plugin-pg
+- **npm**: https://www.npmjs.com/package/eslint-plugin-postgresql-security
 - **Key stats**: 13 rules for PostgreSQL security
-- **Benchmark**: [results](file:///Users/ofri/repos/ofriperetz.dev/eslint/packages/eslint-plugin-pg/benchmark/README.md)
+- **Benchmark**: [results](file:///Users/ofri/repos/ofriperetz.dev/eslint/packages/eslint-plugin-postgresql-security/benchmark/README.md)
 
 ### eslint-plugin-vercel-ai-security
 

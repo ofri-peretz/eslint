@@ -46,7 +46,7 @@ Treat these as inventory for **specific product-explanation moments**, not blank
 
 ## Decision rule for adding motion
 
-Before importing a magicui or aceternity component, answer all four:
+Before importing a decorative `effects` or `ambient` component, answer all four:
 
 1. **What does this motion explain about the product?** If the answer is "nothing, it's just visual interest" — don't add it.
 2. **Does the page already have motion?** If yes (count current instances), the new motion has to displace something or earn it on top of an existing budget.
@@ -55,7 +55,7 @@ Before importing a magicui or aceternity component, answer all four:
 
 ## When in doubt
 
-Use a shadcn primitive (`button`, `card`, `dialog`, `tooltip`, …) instead of a magicui/aceternity equivalent. The primitive does the job without the motion budget cost. Motion is the exception, not the default.
+Use a shadcn primitive (`button`, `card`, `dialog`, `tooltip`, …) instead of an `effects`/`ambient` equivalent. The primitive does the job without the motion budget cost. Motion is the exception, not the default.
 
 ## Cross-product alignment
 

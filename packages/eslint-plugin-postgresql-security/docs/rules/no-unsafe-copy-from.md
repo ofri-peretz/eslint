@@ -99,7 +99,7 @@ Allow hardcoded file paths. Use for admin scripts or migrations where server-sid
 export default [
   {
     rules: {
-      'pg/no-unsafe-copy-from': ['error', { allowHardcodedPaths: true }],
+      'postgresql-security/no-unsafe-copy-from': ['error', { allowHardcodedPaths: true }],
     },
   },
 ];
@@ -117,7 +117,7 @@ Allow specific file paths matching regex patterns.
 export default [
   {
     rules: {
-      'pg/no-unsafe-copy-from': [
+      'postgresql-security/no-unsafe-copy-from': [
         'error',
         {
           allowedPaths: [

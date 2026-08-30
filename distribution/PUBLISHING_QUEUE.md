@@ -44,14 +44,14 @@ Articles are organized into **3 phases** for maximum impact:
 | 10  | Dec 31, 2025 | Security Engineer Interview Cheat Sheet                     | career        |
 | 11  | Dec 31, 2025 | The 30-Minute Security Audit                                | strategic     |
 | 12  | Dec 31, 2025 | Mapping Your Codebase to OWASP Top 10                       | strategic     |
-| 13  | Dec 31, 2025 | Getting Started with eslint-plugin-pg                       | pg            |
+| 13  | Dec 31, 2025 | Getting Started with eslint-plugin-postgresql-security                       | pg            |
 | 14  | Dec 31, 2025 | Getting Started with eslint-plugin-secure-coding            | secure-coding |
 | 15  | Dec 31, 2025 | The Connection Leak That Took Down Production               | pg            |
 | 16  | Dec 31, 2025 | Transaction Race Conditions                                 | pg            |
 | 17  | Dec 31, 2025 | Getting Started with eslint-plugin-vercel-ai-security       | vercel-ai     |
 | 18  | Jan 2, 2026  | Getting Started with eslint-plugin-import-next              | import-next   |
 | 19† | Jan 2, 2026  | eslint-plugin-import Spends 148s Finding Circular Deps in 5,000 Files. import-next Does It in 2.7s. | benchmarks |
-| 21  | Jan 2, 2026  | Getting Started with eslint-plugin-jwt                      | jwt           |
+| 21  | Jan 2, 2026  | Getting Started with eslint-plugin-jwt-security                      | jwt           |
 | 22  | Jan 2, 2026  | Getting Started with eslint-plugin-browser-security         | browser       |
 | 23  | Jan 2, 2026  | Getting Started with eslint-plugin-express-security         | express       |
 | 24  | Jan 2, 2026  | Getting Started with eslint-plugin-lambda-security          | lambda        |
@@ -69,7 +69,7 @@ _Publish all "Getting Started" guides first to establish the ecosystem foundatio
 | 3       | `vercel-ai-security/00-getting-started.md` | Getting Started with eslint-plugin-vercel-ai-security  | vercel-ai         | ✅     |
 | 4       | `import-next/00-getting-started.md`        | Getting Started with eslint-plugin-import-next         | import-next       | ✅     |
 | 5†      | `import-next/02-benchmark-showdown.md`     | eslint-plugin-import Spends 148s Finding Circular Deps in 5,000 Files. import-next Does It in 2.7s. | ESLint Benchmarks | ✅     |
-| 7       | `jwt/00-getting-started.md`                | Getting Started with eslint-plugin-jwt                 | jwt               | ✅     |
+| 7       | `jwt/00-getting-started.md`                | Getting Started with eslint-plugin-jwt-security                 | jwt               | ✅     |
 | 8       | `browser-security/00-getting-started.md`   | Getting Started with eslint-plugin-browser-security    | browser           | ✅     |
 | 9       | `express-security/00-getting-started.md`   | Getting Started with eslint-plugin-express-security    | express           | ✅     |
 | 10      | `lambda-security/00-getting-started.md`    | Getting Started with eslint-plugin-lambda-security     | lambda            | ✅     |

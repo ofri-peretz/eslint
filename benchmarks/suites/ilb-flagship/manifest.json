@@ -15,7 +15,7 @@
     },
     {
       "id": "pg/no-unsafe-query",
-      "ours": { "plugin": "eslint-plugin-pg", "rule": "no-unsafe-query" },
+      "ours": { "plugin": "eslint-plugin-postgresql-security", "rule": "no-unsafe-query" },
       "competitor": null,
       "oxlintNative": null,
       "repo": "supabase",
@@ -55,7 +55,7 @@
     },
     {
       "id": "jwt/no-algorithm-none",
-      "ours": { "plugin": "eslint-plugin-jwt", "rule": "no-algorithm-none" },
+      "ours": { "plugin": "eslint-plugin-jwt-security", "rule": "no-algorithm-none" },
       "competitor": null,
       "oxlintNative": null,
       "repo": "supabase",
