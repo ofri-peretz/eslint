@@ -322,6 +322,10 @@ describe('no-redos-vulnerable-regex', () => {
     ruleTester.run('valid - linear runtime-built patterns', noRedosVulnerableRegex, {
       valid: [
         'const indent = new RegExp(`^(?: {${indentSize}})+`);',
+        // deliberate: the fixture
+        // contains both backticks and `${}`, so String.raw is concatenated with a
+        // quoted segment to get the escaping right. Collapsing it is unreadable.
+        // eslint-disable-next-line no-useless-concat
         String.raw`const tag = new RegExp(` + '`^${prefix}\\\\d+${separator}(\\\\.\\\\d+)*$`' + ');',
         'const domain = new RegExp(`^[\\\\w.+-]+@${allowed}(\\\\.[a-z]{2,63})*$`);',
       ],

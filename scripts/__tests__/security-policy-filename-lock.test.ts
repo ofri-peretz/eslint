@@ -48,12 +48,12 @@ const REPO_ROOT = resolve(__dirname, '../..');
  * actually falls back to — the directory prefixes in Scorecard's list
  * (`.github/`, `docs/`) constrain step 1 but not step 2.
  */
-const POLICY_BASENAMES = [
+const POLICY_BASENAMES = new Set([
   'security.md',
   'security.markdown',
   'security.adoc',
   'security.rst',
-];
+]);
 
 /** Scorecard's own patterns, copied verbatim from `collectPolicyHits`. */
 const RE_URL = /(http|https):\/\/[a-zA-Z0-9./?=_%:-]*/;
@@ -67,7 +67,7 @@ const trackedFiles = (): string[] =>
 describe('OpenSSF Scorecard security-policy resolution', () => {
   it('has exactly one file whose basename Scorecard reads as a security policy', () => {
     const candidates = trackedFiles().filter((file) =>
-      POLICY_BASENAMES.includes(basename(file).toLowerCase()),
+      POLICY_BASENAMES.has(basename(file).toLowerCase()),
     );
 
     // Asserting on the full list rather than a count: when this fails, the
