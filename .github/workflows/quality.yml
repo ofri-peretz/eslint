@@ -34,6 +34,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # A merge queue builds `refs/heads/gh-readonly-queue/...` and waits for the
+  # REQUIRED checks to report on this event. Without this trigger the check
+  # never reports and every queued merge blocks forever with no error — a worse
+  # failure than the amplification the queue exists to fix. See
+  # docs/intents/merge-latency/design.md; this ships BEFORE the queue is enabled.
+  merge_group:
 
 concurrency:
   group: quality-${{ github.ref }}
