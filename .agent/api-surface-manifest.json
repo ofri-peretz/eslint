@@ -22,7 +22,7 @@
       "notes": "Coverage focuses on the high-frequency-misuse exports (`fs.readFile`/`writeFile`, `child_process.exec`, `crypto.create*`, `vm.runInThisContext`). The 30% gap is mostly low-traffic APIs where misuse is exceedingly rare."
     },
     {
-      "plugin": "eslint-plugin-pg",
+      "plugin": "eslint-plugin-postgresql-security",
       "surface": "node-postgres — pg.Client / pg.Pool / pg.Query callable surface",
       "surfaceVersion": "pg@8.x",
       "callableApis_total": 14,
@@ -54,7 +54,7 @@
       "notes": "Coverage spans the high-frequency query construction surface (find, update, delete, $where). bulkWrite + aggregate need expanded coverage; both already detected."
     },
     {
-      "plugin": "eslint-plugin-jwt",
+      "plugin": "eslint-plugin-jwt-security",
       "surface": "jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues",
       "surfaceVersion": "jsonwebtoken@9.x, jose@5.x",
       "callableApis_total": 11,

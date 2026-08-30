@@ -32,31 +32,22 @@ if (!fs.existsSync(PACKAGES_DIR)) {
   );
 }
 
-// List of valid plugin names in the Interlace ecosystem.
-// Deprecated / removed plugins are intentionally excluded — their docs hygiene is enforced
-// separately and they are not recommended in cross-plugin docs.
-// See `no-deprecated-plugin-references.test.ts`.
-const VALID_PLUGINS = [
-  'eslint-plugin-browser-security',
-  'eslint-plugin-conventions',
-  'eslint-plugin-express-security',
-  'eslint-plugin-import-next',
-  'eslint-plugin-jwt',
-  'eslint-plugin-lambda-security',
-  'eslint-plugin-maintainability',
-  'eslint-plugin-modernization',
-  'eslint-plugin-modularity',
-  'eslint-plugin-mongodb-security',
-  'eslint-plugin-nestjs-security',
-  'eslint-plugin-node-security',
-  'eslint-plugin-operability',
-  'eslint-plugin-pg',
-  'eslint-plugin-react-a11y',
-  'eslint-plugin-react-features',
-  'eslint-plugin-reliability',
-  'eslint-plugin-secure-coding',
-  'eslint-plugin-vercel-ai-security',
-];
+// Valid plugin names in the Interlace ecosystem, read from `packages/` rather
+// than hand-listed. The hand-maintained list drifted: it still named
+// `eslint-plugin-jwt` and `eslint-plugin-pg` after #414 renamed them to
+// `-jwt-security` / `-postgresql-security`, and never gained the eleven
+// plugins added since — so every one of those was silently unchecked.
+// Deprecated / removed plugins are enforced separately, in
+// `no-deprecated-plugin-references.test.ts`.
+const VALID_PLUGINS = fs
+  .readdirSync(PACKAGES_DIR, { withFileTypes: true })
+  .filter((e) => e.isDirectory() && e.name.startsWith('eslint-plugin-'))
+  .map((e) => e.name)
+  .sort();
+
+if (VALID_PLUGINS.length === 0) {
+  throw new Error(`No eslint-plugin-* packages found under ${PACKAGES_DIR}.`);
+}
 
 // Non-existent plugins that should not be referenced
 const INVALID_PLUGINS = [

@@ -188,10 +188,14 @@ clearly permit it.
 
 **Naming: every security plugin is `eslint-plugin-<ecosystem>-security`.** The suffix is
 what tells a consumer the package is protective rather than stylistic, and it keeps the
-family scannable on npm. No exceptions for new packages. `eslint-plugin-pg`,
-`eslint-plugin-jwt` and `eslint-plugin-secure-coding` predate the convention and are
-grandfathered — renaming a published package is a separate decision with its own cost
-(npm deprecate + republish, every config example, the live awesome-list entries).
+family scannable on npm. No exceptions. `eslint-plugin-pg` and `eslint-plugin-jwt`
+predated it and were renamed to `eslint-plugin-postgresql-security` /
+`eslint-plugin-jwt-security` in #414; the old names stay published and deprecated on npm,
+and their pre-rename plugin keys (`pg/`, `jwt/`) stay registered as aliases so existing
+configs keep resolving. `eslint-plugin-secure-coding` is the one remaining exception — it
+is cross-cutting rather than per-ecosystem, so the `<ecosystem>` slot has nothing to hold.
+Renaming a published package costs npm deprecate + republish, every config example and
+the live awesome-list entries, so it is a decision, not a cleanup.
 
 When creating or reviewing rules, ensure they're in the correct plugin:
 
@@ -264,7 +268,7 @@ fails the gate.
 | If the rule...                                                  | It belongs in...                   |
 | --------------------------------------------------------------- | ---------------------------------- |
 | Fires with no dependency installed — pure language semantics    | `eslint-plugin-secure-coding`      |
-| Needs a SQL driver or ORM (`.query()`, `.raw()`, `.execute()`)  | `eslint-plugin-pg` + the per-driver plugins |
+| Needs a SQL driver or ORM (`.query()`, `.raw()`, `.execute()`)  | `eslint-plugin-postgresql-security` + the per-driver plugins |
 | Checks Vercel AI SDK patterns (`generateText`, `streamText`)    | `eslint-plugin-vercel-ai-security` |
 | Checks OpenAI SDK patterns (`openai.chat.completions`)          | `eslint-plugin-openai-security`    |
 | Detects agentic patterns (tools, autonomous agents) across SDKs | `eslint-plugin-agentic-security`   |

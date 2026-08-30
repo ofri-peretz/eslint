@@ -85,8 +85,8 @@ async function setupInterlace() {
   const plugins = await Promise.all([
     ['secure-coding', 'eslint-plugin-secure-coding'],
     ['node-security', 'eslint-plugin-node-security'],
-    ['pg', 'eslint-plugin-pg'],
-    ['jwt', 'eslint-plugin-jwt'],
+    ['pg', 'eslint-plugin-postgresql-security'],
+    ['jwt', 'eslint-plugin-jwt-security'],
     ['browser-security', 'eslint-plugin-browser-security'],
     ['mongodb-security', 'eslint-plugin-mongodb-security'],
     ['express-security', 'eslint-plugin-express-security'],

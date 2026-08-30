@@ -41,7 +41,7 @@ Zero hard-required type-aware rules. Every rule we ship runs in oxlint's JS-plug
 | `eslint-plugin-conventions` | 10 | 10 | 0 | 0 | 0 |
 | `eslint-plugin-express-security` | 10 | 10 | 0 | 0 | 0 |
 | `eslint-plugin-import-next` | 55 | 52 | 0 | **3** | 0 |
-| `eslint-plugin-jwt` | 13 | 13 | 0 | 0 | 0 |
+| `eslint-plugin-jwt-security` | 13 | 13 | 0 | 0 | 0 |
 | `eslint-plugin-lambda-security` | 14 | 14 | 0 | 0 | 0 |
 | `eslint-plugin-maintainability` | 12 | 12 | 0 | 0 | 0 |
 | `eslint-plugin-modernization` | 3 | 3 | 0 | 0 | 0 |
@@ -50,7 +50,7 @@ Zero hard-required type-aware rules. Every rule we ship runs in oxlint's JS-plug
 | `eslint-plugin-nestjs-security` | 6 | 6 | 0 | 0 | 0 |
 | `eslint-plugin-node-security` | 33 | 33 | 0 | 0 | 0 |
 | `eslint-plugin-operability` | 6 | 6 | 0 | 0 | 0 |
-| `eslint-plugin-pg` | 13 | 13 | 0 | 0 | 0 |
+| `eslint-plugin-postgresql-security` | 13 | 13 | 0 | 0 | 0 |
 | `eslint-plugin-react-a11y` | 37 | 37 | 0 | 0 | 0 |
 | `eslint-plugin-react-features` | 53 | 53 | 0 | 0 | 0 |
 | `eslint-plugin-reliability` | 9 | 9 | 0 | 0 | 0 |
