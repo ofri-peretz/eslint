@@ -10,7 +10,7 @@ DOM elements were missed** for having ordinary names:
 
 ```js
 const heading = document.getElementById('x');
-heading.innerText;   // not reported
+heading.innerText; // not reported
 ```
 
 `innerText` is defined on `HTMLElement` and nowhere else in the language, so

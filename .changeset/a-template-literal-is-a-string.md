@@ -22,8 +22,8 @@
 **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
 
 A rule that matched `require('child_process')` did not match
-`` require(`child_process`) ``. A rule that matched `res.headers['x-api-key']`
-did not match `` res.headers[`x-api-key`] ``. Nothing about the two spellings
+``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
 differs at runtime, and no consumer chose one on purpose — which is exactly
 why the miss was invisible: the rule looked correct in its own tests, because
 its tests were written in the same spelling as its implementation.

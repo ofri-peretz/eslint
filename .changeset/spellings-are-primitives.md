@@ -13,11 +13,11 @@ Five primitives, each replacing one open-coded read:
 
 ```ts
 import {
-  staticString,   // 'foo' | `foo` | 'fo' + 'o'  →  "foo"
+  staticString, // 'foo' | `foo` | 'fo' + 'o'  →  "foo"
   isStaticString, // the predicate form
-  propertyName,   // o.foo | o['foo']            →  "foo"
-  objectKeyName,  // { foo: 1 } | { 'foo': 1 } | { ['foo']: 1 }
-  memberPath,     // a.b.c | a['b'].c            →  "a.b.c"
+  propertyName, // o.foo | o['foo']            →  "foo"
+  objectKeyName, // { foo: 1 } | { 'foo': 1 } | { ['foo']: 1 }
+  memberPath, // a.b.c | a['b'].c            →  "a.b.c"
   readsRequestShape,
 } from '@interlace/eslint-devkit';
 ```

@@ -121,6 +121,19 @@ for (const file of ruleSources()) {
   const lines = source.split('\n');
   for (const pattern of PATTERNS) {
     lines.forEach((text, index) => {
+      // A comment is not code.
+      //
+      // This gate's own message tells you to explain a deliberate spelling in
+      // a comment — and then flagged the comment, because it scans raw text.
+      // Writing `// propertyName and not callee.property.name` created a new
+      // violation, so the documented way to resolve a finding produced one.
+      //
+      // WHOLE-LINE comments only. Stripping a trailing `// …` off a code line
+      // would also strip a `//` inside a string literal and could hide a real
+      // site, and hiding one is the failure that matters here; a trailing
+      // comment that trips the scan is merely noisy.
+      if (/^\s*(\/\/|\*|\/\*)/.test(text)) return;
+
       // A line that already routes through the devkit is not a site.
       if (
         /staticString\(|propertyName\(|objectKeyName\(|memberPath\(/.test(text)
