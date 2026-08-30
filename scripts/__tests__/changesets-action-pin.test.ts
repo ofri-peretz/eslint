@@ -112,3 +112,45 @@ describe('changesets/action ↔ CLI pairing', () => {
     expect(dependabot).toContain('version-update:semver-major');
   });
 });
+
+describe('changesets/action token wiring', () => {
+  const wf = readFileSync(WORKFLOW, 'utf8');
+
+  /** The `- name: Open / refresh Version PR` step, up to the next step. */
+  function versionPrStep(): string {
+    const start = wf.indexOf('name: Open / refresh Version PR');
+    expect(start, 'the Version PR step was renamed or removed').toBeGreaterThan(
+      -1,
+    );
+    const rest = wf.slice(start);
+    const next = rest.indexOf('\n      - name:', 1);
+    return next === -1 ? rest : rest.slice(0, next);
+  }
+
+  /**
+   * v2.1.1 hard-errors when a GITHUB_TOKEN env var is set on this step and
+   * differs from the `github-token` input — and the input defaults to the plain
+   * `github.token`, so passing a PAT via env is exactly that mismatch.
+   *
+   * The blast radius is silent and total: the step fails on every push to main,
+   * no Version PR opens, versions never bump, and release.yml then correctly
+   * finds nothing to publish. On 2026-08-30 ten changesets were queued behind
+   * it while every workflow that anyone looked at was green.
+   */
+  it('passes the token as an input, never as a GITHUB_TOKEN env var', () => {
+    const step = versionPrStep();
+    expect(step, 'token must be passed as the github-token input').toMatch(
+      /github-token:\s*\$\{\{/,
+    );
+    expect(
+      /^\s+GITHUB_TOKEN:/m.test(step),
+      'GITHUB_TOKEN must NOT be set on this step — it conflicts with github-token',
+    ).toBe(false);
+  });
+
+  it('still disables lefthook for the bot push', () => {
+    // Unrelated to the token, but it lives in the same env block and removing
+    // the env var wholesale would silently take this with it.
+    expect(versionPrStep()).toMatch(/LEFTHOOK:\s*'0'/);
+  });
+});

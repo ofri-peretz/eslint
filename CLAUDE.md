@@ -113,8 +113,8 @@ here would dangle in a standalone clone. Six stages, each handing off through a
 
 | Stage | Artifact | Here |
 | :--- | :--- | :--- |
-| 1 Plan | `intent.md` — what is wanted, why, under which constraints | [`intent/`](./intent/) |
-| 2 Design | `spec.md` — requirements + design, committed beside the intent | [`intent/`](./intent/) |
+| 1 Plan | `intent.md` — what is wanted, why, under which constraints | [`docs/intents/`](./docs/intents/) |
+| 2 Design | `design.md` — requirements + design, committed beside the intent | [`docs/intents/`](./docs/intents/) |
 | 3 Build | plan mode, this file, skills, worktrees | — |
 | 4 Test | a one-command feedback loop, plus config evals | [`evals/`](./evals/) |
 | 5 Deploy | AI review, hooks as gates, CI/CD | `.claude/hooks/release-gate.sh` |
@@ -122,8 +122,10 @@ here would dangle in a standalone clone. Six stages, each handing off through a
 
 What this means in practice:
 
-- **Start substantive work from an `intent.md`.** See [`intent/README.md`](./intent/README.md).
-  An `approved` intent with no `spec.md` beside it fails a lock — approving means
+- **Start substantive work from an `intent.md`.** See
+  [`docs/intents/README.md`](./docs/intents/README.md) and the section below, which is
+  the same convention described twice: one directory, `docs/intents/<slug>/`.
+  An `approved` intent with no `design.md` beside it fails a lock — approving means
   designed, not liked.
 - **A control band is not a threshold.** `scripts/control-bands.ts` applies Western
   Electric rules over a rolling mean and σ, so it sees slow drift and not just a hard
