@@ -105,11 +105,18 @@ function stripCode(text: string): string {
 }
 
 /**
- * Relative markdown links that point at nothing.
+ * Relative markdown links that point at nothing **from a standalone checkout**.
  *
  * Anchors, URLs and mailto are skipped, as are absolute `file:` paths — those name a
- * machine, not this tree, and cannot be resolved from a checkout. A link to a
- * directory counts as resolved; several rule docs deliberately point at a folder.
+ * machine, not this tree. A link to a directory counts as resolved; several rule docs
+ * deliberately point at a folder.
+ *
+ * A target that escapes the repository root is reported even when it exists on disk.
+ * This repo sits beside its siblings (`../agents/`, `../interlace/`) and one level
+ * below the documents that govern all of them, so `../agents/ARCHITECTURE.md` resolves
+ * on a maintainer's machine and dangles in CI — which is a standalone clone, and so is
+ * every reader's. Judging by local existence made the check pass here and fail there,
+ * twice, which is worse than not having it.
  */
 export function brokenLinks(docs: string[], root = REPO_ROOT): string[] {
   const LINK = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
@@ -126,7 +133,12 @@ export function brokenLinks(docs: string[], root = REPO_ROOT): string[] {
       const target = raw.split('#')[0];
       if (!target) continue;
       const abs = path.resolve(path.dirname(path.join(root, doc)), target);
-      if (!fs.existsSync(abs)) broken.push(`${doc} → ${raw}`);
+      const escapes = path.relative(root, abs).startsWith('..');
+      if (escapes) {
+        broken.push(`${doc} → ${raw} (outside the repository — dangles in a clone)`);
+      } else if (!fs.existsSync(abs)) {
+        broken.push(`${doc} → ${raw}`);
+      }
     }
   }
   return broken;
