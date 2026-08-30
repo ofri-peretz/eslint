@@ -96,3 +96,36 @@ gh -R ofri-peretz/eslint run list --workflow=quality-full.yml --limit 100 \
 
 Baseline: **84 runs / ~12 merges in 24h**. Target: at or near one gate run per
 merged PR, with no check removed.
+
+---
+
+## Finding, 2026-08-30 — step 1 was incomplete, and the lock said otherwise
+
+Step 1 ("every required check triggers on `merge_group`") was verified against
+a hand-written list of **two** contexts. Branch protection actually requires
+**three**:
+
+```
+$ gh api repos/ofri-peretz/eslint/branches/main/protection/required_status_checks
+{"contexts":["oxlint (fast pass)","Quality (Full) Gate","review"],"strict":true}
+```
+
+`review` is CodeRabbit — posted by an installed app, not by any workflow in
+`.github/workflows` (confirmed by grep, and by PR #770 where it reported in
+1m30s from a run no workflow file declares). Apps subscribe to `pull_request`;
+`refs/heads/gh-readonly-queue/main/...` is not a pull request, so the app never
+posts a status on a queued merge. Enabling the queue today would have hung
+**every** merge on a context that cannot arrive, with no error message — the
+precise failure `merge-queue-readiness-lock.test.ts` exists to prevent, while
+that lock was green.
+
+The lock now classifies each required check by `source`. Workflow-provided
+checks keep the `merge_group:` assertion; app-provided ones are asserted to be
+genuinely app-provided (so a mislabel cannot excuse a fixable blocker) and are
+named as blockers by a separate verdict test.
+
+**Step 1 is therefore not met, and step 3 must not be taken.** The queue is
+unblocked by exactly one decision, which is the user's to make: whether `review`
+stays a *required* context. Dropping it from branch protection (CodeRabbit still
+reviews every PR; it just stops being a merge gate) removes the only blocker,
+and the verdict test flips on its own once `REQUIRED_CHECKS` follows.
