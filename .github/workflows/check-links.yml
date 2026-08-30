@@ -21,6 +21,7 @@ concurrency:
 permissions:
   contents: read
   pull-requests: write
+  issues: write
 
 jobs:
   gate:
@@ -118,3 +119,25 @@ jobs:
         run: |
           echo "❌ Link check failed. See report for details."
           exit 1
+
+      # On a PR the failure is visible: the job goes red and the step above comments
+      # the report. On the weekly cron nobody is looking, so a broken link would sit
+      # in a red run until someone happened to open the Actions tab. One issue,
+      # reopened and commented rather than a new one per week.
+      - name: 🚨 Open an issue on a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Link integrity check failed"
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n[Run](%s) — the full report is the `link-report` artifact.\n' \
+            "The weekly link check found broken or insecure links in the docs content." "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
