@@ -46,6 +46,12 @@ jobs:
       pull-requests: write # open the intent PR
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: `--backfill-git` reads dated result files that have since
+          # been pruned from the tree. On the default shallow clone `git log --all`
+          # finds nothing and the backfill returns zero observations silently — the
+          # bands would simply never reach minPoints and nobody would know why.
+          fetch-depth: 0
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
@@ -55,11 +61,13 @@ jobs:
       - run: npm ci
 
       # Records first: a band cannot be evaluated against history it has not ingested.
-      # `--record` is idempotent, so a re-run adds nothing.
+      # `--backfill-git` also recovers runs that `check:benchmark-results-size` has
+      # since pruned from the tree — git holds four times the history the working
+      # directory does. Idempotent, so a re-run adds nothing.
       - name: 📈 Record observations and evaluate bands
         id: bands
         continue-on-error: true
-        run: npx tsx scripts/control-bands.ts --record --write-intent --check | tee bands.log
+        run: npx tsx scripts/control-bands.ts --backfill-git --write-intent --check | tee bands.log
 
       - name: 📋 Summary
         if: always()

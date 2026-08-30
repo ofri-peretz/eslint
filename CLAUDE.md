@@ -101,6 +101,43 @@ bought recall loss before.
 
 ---
 
+## How work moves: the AI-native SDLC
+
+The working model for this repo and every sibling is
+[`../AI_NATIVE_SDLC.md`](../AI_NATIVE_SDLC.md). Six stages, each handing off through a
+**committed Markdown artifact rather than a chat message**:
+
+| Stage | Artifact | Here |
+| :--- | :--- | :--- |
+| 1 Plan | `intent.md` — what is wanted, why, under which constraints | [`intent/`](./intent/) |
+| 2 Design | `spec.md` — requirements + design, committed beside the intent | [`intent/`](./intent/) |
+| 3 Build | plan mode, this file, skills, worktrees | — |
+| 4 Test | a one-command feedback loop, plus config evals | [`evals/`](./evals/) |
+| 5 Deploy | AI review, hooks as gates, CI/CD | `.claude/hooks/release-gate.sh` |
+| 6 Maintain | control bands; a breach writes a **new `intent.md`** | `scripts/control-bands.ts` |
+
+What this means in practice:
+
+- **Start substantive work from an `intent.md`.** See [`intent/README.md`](./intent/README.md).
+  An `approved` intent with no `spec.md` beside it fails a lock — approving means
+  designed, not liked.
+- **A control band is not a threshold.** `scripts/control-bands.ts` applies Western
+  Electric rules over a rolling mean and σ, so it sees slow drift and not just a hard
+  break. 1σ logs, 2σ diagnoses read-only, 3σ may act. **Never widen a band to clear a
+  breach** — a band widened to fit an excursion measures nothing afterwards.
+- **A breach becomes an intent, not a ticket.** That is the loop. A GitHub issue is
+  the separate queue the loop exists to avoid; issues are for a *watcher* breaking,
+  which is an outage rather than a finding.
+- **Editing `CLAUDE.md`, `AGENTS.md`, `.agent/**` or `lefthook.yml` is a configuration
+  change** and runs [`evals/`](./evals/). Treat a pass-rate drop as a review blocker.
+- **Releases ask.** `.claude/hooks/release-gate.sh` pauses a production deploy or an
+  `npm publish` for a human. `RELEASE_APPROVAL=1` pre-approves a session.
+
+What holds each column, with its cadence, is [`docs/DOCS_QUALITY.md`](./docs/DOCS_QUALITY.md).
+A claim about the docs is worth exactly as much as the check that holds it.
+
+---
+
 ## Regressions are the issue. Lock everything you fix.
 
 A fix is **not done** until a test would have caught the bug pre-deploy.

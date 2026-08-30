@@ -36,10 +36,12 @@
  *   tsx scripts/control-bands.ts --check         # exit 1 on a 2σ+ breach
  *   tsx scripts/control-bands.ts --write-intent  # draft intent/<slug>/intent.md per breach
  *   tsx scripts/control-bands.ts --record        # append today's observations to the series
+ *   tsx scripts/control-bands.ts --backfill-git  # also recover pruned runs from git history
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const CONFIG = path.join(REPO_ROOT, '.agent/control-bands.json');
@@ -236,6 +238,69 @@ function collectBenchmark(cfg: BandConfig): Observation[] {
   return out;
 }
 
+/**
+ * Every dated result file that has EVER existed for a suite, read out of git.
+ *
+ * The suites keep only the last few runs on disk — `check:benchmark-results-size`
+ * prunes them — so the tree holds three observations per suite while git holds
+ * twelve. A band needs eight before it can say anything, so without this the loop
+ * would sit silent for two months waiting to relearn history it already has.
+ *
+ * Deleted files are the point, which is why this walks `--diff-filter=A` over
+ * `--all` rather than the current tree.
+ */
+function collectFromGit(cfg: BandConfig): Observation[] {
+  if (!cfg.suite || !cfg.jsonPath) return [];
+  const glob = `benchmarks/results/${cfg.suite}/????-??-??.json`;
+  let paths: string[];
+  try {
+    paths = execFileSync(
+      'git',
+      ['log', '--all', '--diff-filter=A', '--name-only', '--format=', '--', glob],
+      { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 },
+    )
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.endsWith('.json'));
+  } catch {
+    return [];
+  }
+
+  const out: Observation[] = [];
+  for (const rel of [...new Set(paths)]) {
+    // The commit that introduced the file — `rev-list` is newest-first, so the
+    // introducing commit is the last line.
+    let sha: string;
+    try {
+      const revs = execFileSync('git', ['rev-list', '--all', '--', rel], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        maxBuffer: 8 * 1024 * 1024,
+      })
+        .trim()
+        .split('\n')
+        .filter(Boolean);
+      if (revs.length === 0) continue;
+      sha = revs[revs.length - 1];
+    } catch {
+      continue;
+    }
+    try {
+      const blob = execFileSync('git', ['show', `${sha}:${rel}`], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      });
+      const value = pick(JSON.parse(blob), cfg.jsonPath);
+      const date = path.basename(rel).replace('.json', '');
+      if (value !== null) out.push({ date, value });
+    } catch {
+      continue; // a historical run in a different shape is not a reason to lose the rest
+    }
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Series store — the accumulated history, committed so bands survive a fresh clone.
 // ---------------------------------------------------------------------------
@@ -255,11 +320,11 @@ function loadConfig(): BandConfig[] {
 }
 
 /** Append observations per band, de-duplicated by date. Idempotent. */
-function record(): void {
+function record(fromGit = false): void {
   const series = loadSeries();
   for (const cfg of loadConfig()) {
     if (cfg.collector !== 'benchmark-json') continue;
-    const collected = collectBenchmark(cfg);
+    const collected = [...collectBenchmark(cfg), ...(fromGit ? collectFromGit(cfg) : [])];
     if (collected.length === 0) {
       console.warn(`  ⚠️  ${cfg.id}: collector produced nothing`);
       continue;
@@ -350,9 +415,10 @@ it deliberately.
 
 function main(): void {
   const args = process.argv.slice(2);
-  if (args.includes('--record')) {
-    console.log('📈 Recording observations');
-    record();
+  if (args.includes('--record') || args.includes('--backfill-git')) {
+    const fromGit = args.includes('--backfill-git');
+    console.log(fromGit ? '📈 Recording + backfilling from git history' : '📈 Recording observations');
+    record(fromGit);
   }
 
   const series = loadSeries();
