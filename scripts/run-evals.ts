@@ -213,11 +213,26 @@ export function grade(output: string, expect: Expectation[]): { ok: boolean; fai
 }
 
 function runCase(c: EvalCase): { id: string; status: 'pass' | 'fail' | 'error'; failed: string[] } {
-  const r = spawnSync(
-    'claude',
-    ['-p', c.prompt, '--allowedTools', c.allowedTools ?? 'Read,Grep,Glob'],
-    { cwd: REPO_ROOT, encoding: 'utf8', timeout: 180_000, maxBuffer: 16 * 1024 * 1024 },
-  );
+  // On a subscription token these runs draw from the SAME five-hour and weekly
+  // allowance as interactive work, shared with Claude chat. The bill is not the risk;
+  // being rate-limited mid-task by your own CI is. So every case is bounded twice:
+  //
+  //   --max-turns   a case that cannot answer from three tool calls is a bad case,
+  //                 not a case that deserves twenty. Caps the worst run, not the mean.
+  //   --model       EVAL_MODEL overrides. Left unset it uses the Claude Code default,
+  //                 which is the point — an eval on a model nobody runs measures the
+  //                 wrong configuration. Set `claude-haiku-4-5` when protecting the
+  //                 allowance matters more than fidelity to what the team runs.
+  const args = ['-p', c.prompt, '--allowedTools', c.allowedTools ?? 'Read,Grep,Glob'];
+  args.push('--max-turns', process.env.EVAL_MAX_TURNS ?? '3');
+  if (process.env.EVAL_MODEL) args.push('--model', process.env.EVAL_MODEL);
+
+  const r = spawnSync('claude', args, {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    timeout: 180_000,
+    maxBuffer: 16 * 1024 * 1024,
+  });
   if (r.error || typeof r.stdout !== 'string') {
     return { id: c.id, status: 'error', failed: [String(r.error ?? 'no output')] };
   }

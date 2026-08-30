@@ -35,6 +35,23 @@ The OAuth token is tied to the subscription of whoever ran `claude setup-token`,
 can only make model requests — no Remote Control, no claude.ai connectors. Neither
 limitation matters here.
 
+### It spends your allowance, not your wallet
+
+On the subscription token these runs draw from the **same five-hour and weekly
+allowance as interactive work**, shared with Claude chat. There is no per-token
+charge, so the risk is not money — it is being rate-limited by your own CI in the
+middle of something.
+
+Every case is bounded twice:
+
+| Knob | Default | Why |
+| :--- | :--- | :--- |
+| `EVAL_MAX_TURNS` | `3` | A case that cannot answer in three tool calls is a bad case, not one that deserves twenty. Caps the worst run. |
+| `EVAL_MODEL` | unset — Claude Code's default | An eval on a model nobody runs measures the wrong configuration. Set `claude-haiku-4-5` when protecting the allowance matters more than that fidelity. |
+
+If you turn on **usage credits** to work past the plan limit, CI draws on them too —
+and those *are* billed. Set a monthly spend limit before enabling them.
+
 ## A case
 
 `evals/cases/<id>.json`:
