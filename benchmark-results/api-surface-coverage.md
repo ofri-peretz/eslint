@@ -24,9 +24,9 @@
 | Plugin | Surface | Total APIs | Out of scope | In scope | Covered | Coverage % | Rule count | At/above floor? |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
 | `eslint-plugin-node-security` | Node.js core modules — fs, child_process, crypto, vm, dns, http(s) | 47 | 0 | 47 | 33 | 70% | 33 | ✅ |
-| `eslint-plugin-pg` | node-postgres — pg.Client / pg.Pool / pg.Query callable surface | 14 | 1 | 13 | 13 | 100% | 13 | ✅ |
+| `eslint-plugin-postgresql-security` | node-postgres — pg.Client / pg.Pool / pg.Query callable surface | 14 | 1 | 13 | 13 | 100% | 13 | ✅ |
 | `eslint-plugin-mongodb-security` | mongodb driver — Collection / Db / cursor query methods | 26 | 0 | 26 | 19 | 73% | 16 | ✅ |
-| `eslint-plugin-jwt` | jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues | 11 | 0 | 11 | 11 | 100% | 13 | ✅ |
+| `eslint-plugin-jwt-security` | jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues | 11 | 0 | 11 | 11 | 100% | 13 | ✅ |
 | `eslint-plugin-express-security` | Express — router methods, middleware patterns, common response sinks | 22 | 0 | 22 | 14 | 64% | 10 | ✅ |
 | `eslint-plugin-lambda-security` | AWS Lambda — handler signatures, env-var access, callback / context patterns, AWS SDK client misuse | 18 | 0 | 18 | 13 | 72% | 14 | ✅ |
 | `eslint-plugin-nestjs-security` | NestJS — Controllers, Providers, Guards, Decorators, Pipes | 16 | 0 | 16 | 10 | 63% | 6 | ✅ |
@@ -52,7 +52,7 @@
   - node:http.Agent — TLS config patterns are covered, agent reuse less so
   - node:tls.createSecureContext — partially covered via require-secure-context
 
-### `eslint-plugin-pg` (100%)
+### `eslint-plugin-postgresql-security` (100%)
 
 - **Target surface:** node-postgres — pg.Client / pg.Pool / pg.Query callable surface (pg@8.x)
 - **Notes:** Complete coverage of the query-construction surface: all 13 in-scope APIs have at least one rule. The 14th public API, type-parser registration, is a result-coercion hook rather than a statement-construction sink and is excluded from the denominator with a written reason.
@@ -68,7 +68,7 @@
   - Db.command — raw command pass-through, low-frequency
   - Collection.aggregate — stage pipeline checks, only the most common stages
 
-### `eslint-plugin-jwt` (100%)
+### `eslint-plugin-jwt-security` (100%)
 
 - **Target surface:** jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues (jsonwebtoken@9.x, jose@5.x)
 - **Notes:** Full coverage of the public sign/verify/decode surface across the three dominant JWT libraries.

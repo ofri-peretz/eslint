@@ -175,27 +175,65 @@ const REQUEST_SHAPE_NEEDS_DEPTH: ReadonlySet<string> = new Set(['body']);
  * readsRequestShape(node, context.sourceCode); // inbound.query.id -> true
  * ```
  */
+export interface RequestShapeOptions {
+  /**
+   * Whether a bare `.body` needs a second level before it counts. Default
+   * `true`.
+   *
+   * `body` is both a request property and the commonest property name in this
+   * ecosystem — `node.body`, `response.body`, `message.body` — so at depth 1
+   * it is too ambiguous to act on, and every caller so far wanted the strict
+   * reading.
+   *
+   * A caller may turn it off when the POSITION already supplies the meaning.
+   * `db.collection('u').find(req.body)` is one: the whole request body used as
+   * a Mongo filter document is the canonical NoSQL authentication bypass
+   * (`{"$ne": null}` as a password matches every user), and nobody passes an
+   * arbitrary `.body` there by accident. See ILB-0121.
+   */
+  bodyNeedsDepth?: boolean;
+}
+
 export function readsRequestShape(
   node: TSESTree.Node,
   sourceCode: { getScope: (node: TSESTree.Node) => TSESLint.Scope.Scope },
+  options: RequestShapeOptions = {},
 ): boolean {
   // Walk to the root of the member chain, remembering the property that sat
   // directly on it — `a.query.id` asks about `query`, not `id`.
   let current: TSESTree.Node = node;
   let firstProperty: string | null = null;
+  let secondProperty: string | null = null;
   let depth = 0;
   while (current.type === AST_NODE_TYPES.MemberExpression) {
     const name = propertyName(current);
-    if (name !== null) firstProperty = name;
+    if (name !== null) {
+      secondProperty = firstProperty;
+      firstProperty = name;
+    }
     depth += 1;
     current = current.object;
   }
   if (current.type !== AST_NODE_TYPES.Identifier) return false;
   if (firstProperty === null) return false;
+
+  // Koa nests the real request one level down: `ctx.request.body` and
+  // `ctx.request.query` are its documented API, and `ctx.req` is the raw Node
+  // request. Stopping at the property nearest the root reads `request` there,
+  // which is in neither set, so every Koa handler in the corpus came back
+  // false — a false negative that has nothing to do with how anything was
+  // named. Step over that one link and ask the same question of what follows.
+  if (
+    (firstProperty === 'request' || firstProperty === 'req') &&
+    secondProperty !== null
+  ) {
+    firstProperty = secondProperty;
+    depth -= 1;
+  }
   const known = REQUEST_SHAPE.has(firstProperty);
   const needsDepth = REQUEST_SHAPE_NEEDS_DEPTH.has(firstProperty);
   if (!known && !needsDepth) return false;
-  if (needsDepth && depth < 2) return false;
+  if (needsDepth && (options.bodyNeedsDepth ?? true) && depth < 2) return false;
 
   const scope = sourceCode.getScope(current);
   for (let s: TSESLint.Scope.Scope | null = scope; s !== null; s = s.upper) {

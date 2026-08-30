@@ -49,21 +49,33 @@ import { requireTlsConnection } from './rules/require-tls-connection/index';
  */
 // A SIDE-EFFECT import: satisfies the gate without reserving any binding, so
 // fixtures that already declare `mongoose`/`db` do not redeclare.
-const asMongo = (code: string): string => `import 'mongoose';\n${code}`;
+//
+// The handler wrapper is not decoration. `no-unsafe-query` decides whether a
+// value came from a request STRUCTURALLY — the receiver has to be a function
+// parameter, because a request arrives as an argument and a module-local
+// object with a `.body` is somebody's own data structure. These fixtures used
+// a free-floating `req`, which is not something real Express code contains and
+// which the old string-matching model could not tell apart from a parameter.
+// Wrapping here rather than editing each fixture keeps the guarantee the
+// comment above already claims: one cannot be left behind.
+const asMongo = (code: string): string =>
+  `import 'mongoose';\nexport function handler(req, request, ctx) {\n${code}\n}`;
 type MongoSuggestion = { output?: string | null };
 type MongoCase = {
   code: string;
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -98,19 +110,26 @@ const xmo = <T,>(cases: T[]): T[] =>
 const MONGO_PROGRAM_NO_TOKENS = {
   type: 'Program',
   body: [
-    { type: 'ImportDeclaration', specifiers: [], source: { type: 'Literal', value: 'mongoose' } },
+    {
+      type: 'ImportDeclaration',
+      specifiers: [],
+      source: { type: 'Literal', value: 'mongoose' },
+    },
   ],
 };
 
 const MONGO_PROGRAM = {
   type: 'Program',
   body: [
-    { type: 'ImportDeclaration', specifiers: [], source: { type: 'Literal', value: 'mongoose' } },
+    {
+      type: 'ImportDeclaration',
+      specifiers: [],
+      source: { type: 'Literal', value: 'mongoose' },
+    },
   ],
   tokens: [],
   comments: [],
 };
-
 
 const ruleTester = new RuleTester();
 
@@ -127,27 +146,35 @@ ruleTester.run('no-bypass-middleware (coverage gaps)', noBypassMiddleware, {
   invalid: [],
 });
 
-ruleTester.run('no-hardcoded-connection-string (coverage gaps)', noHardcodedConnectionString, {
-  valid: xmo([
-    // Template literal whose first quasi does not match the MongoDB URI pattern.
-    'const greeting = `hello ${name}`;',
-  ]),
-  invalid: [],
-});
+ruleTester.run(
+  'no-hardcoded-connection-string (coverage gaps)',
+  noHardcodedConnectionString,
+  {
+    valid: xmo([
+      // Template literal whose first quasi does not match the MongoDB URI pattern.
+      'const greeting = `hello ${name}`;',
+    ]),
+    invalid: [],
+  },
+);
 
-ruleTester.run('no-hardcoded-credentials (coverage gaps)', noHardcodedCredentials, {
-  valid: xmo([
-    // Computed key (BinaryExpression) — keyName resolves to null, no report.
-    `const opts = { ['pass' + 'word']: 'secret123' };`,
-  ]),
-  invalid: xmo([
-    // String-literal key — resolved via the Literal branch and reported.
-    {
-      code: `const opts = { 'password': 'secret123' };`,
-      errors: [{ messageId: 'hardcodedCredentials' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'no-hardcoded-credentials (coverage gaps)',
+  noHardcodedCredentials,
+  {
+    valid: xmo([
+      // Computed key (BinaryExpression) — keyName resolves to null, no report.
+      `const opts = { ['pass' + 'word']: 'secret123' };`,
+    ]),
+    invalid: xmo([
+      // String-literal key — resolved via the Literal branch and reported.
+      {
+        code: `const opts = { 'password': 'secret123' };`,
+        errors: [{ messageId: 'hardcodedCredentials' }],
+      },
+    ]),
+  },
+);
 
 ruleTester.run('no-operator-injection (coverage gaps)', noOperatorInjection, {
   valid: xmo([
@@ -163,67 +190,71 @@ ruleTester.run('no-operator-injection (coverage gaps)', noOperatorInjection, {
   ]),
 });
 
-ruleTester.run('no-select-sensitive-fields (coverage gaps)', noSelectSensitiveFields, {
-  valid: xmo([
-    // Native driver: inclusion projection without sensitive fields is safe.
-    `db.users.find({}, { projection: { name: 1 } });`,
-    // Spread inside the projection object is skipped; inclusion still counts.
-    `db.users.find({}, { projection: { ...base, name: 1 } });`,
-    // String-literal key naming a sensitive field, explicitly excluded with 0.
-    `db.users.find({}, { projection: { 'password': 0, name: 1 } });`,
-    // Numeric-literal key resolves to null keyName and is skipped.
-    `db.users.find({}, { projection: { 1: 1, name: 1 } });`,
-    // Boolean exclusion (false) and boolean inclusion (true).
-    `db.users.find({}, { projection: { password: false, name: true } });`,
-    // Computed member access — methodName is null, not a query method.
-    `db.users['find']({});`,
-    // `.select` accessed but never called — the grandparent is not a CallExpression.
-    `User.find({}).select;`,
-    // `.select()` called with no arguments.
-    `User.find({}).select();`,
-    // `.select(identifier)` — non-literal argument is not inspected.
-    `User.find({}).select(fields);`,
-    // `.select('-password')` — sensitive field present but exclusion-prefixed.
-    `User.find({}).select('-password');`,
-  ]),
-  invalid: xmo([
-    // Second argument is not an object — projection cannot be proven safe.
-    {
-      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, "name");`,
-      errors: [{ messageId: 'selectSensitiveFields' }],
-    },
-    // Options object without a projection property.
-    {
-      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { sort: { a: 1 } });`,
-      errors: [{ messageId: 'selectSensitiveFields' }],
-    },
-    // projection value is not an object literal.
-    {
-      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: req.query.p });`,
-      errors: [{ messageId: 'selectSensitiveFields' }],
-    },
-    // Sensitive field explicitly included.
-    {
-      code: `db.users.find({}, { projection: { password: 1 } });`,
-      errors: [{ messageId: 'selectSensitiveFields' }],
-    },
-    // Sensitive field with a non-literal value — cannot prove exclusion.
-    {
-      code: `db.users.find({}, { projection: { secret: req.query.x } });`,
-      errors: [{ messageId: 'selectSensitiveFields' }],
-    },
-    // Exclusion-only projection (no inclusion) is not treated as safe.
-    {
-      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 0 } });`,
-      errors: [{ messageId: 'selectSensitiveFields' }],
-    },
-    // Non-boolean/non-numeric projection value never sets hasInclusion.
-    {
-      code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 'x' } });`,
-      errors: [{ messageId: 'selectSensitiveFields' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'no-select-sensitive-fields (coverage gaps)',
+  noSelectSensitiveFields,
+  {
+    valid: xmo([
+      // Native driver: inclusion projection without sensitive fields is safe.
+      `db.users.find({}, { projection: { name: 1 } });`,
+      // Spread inside the projection object is skipped; inclusion still counts.
+      `db.users.find({}, { projection: { ...base, name: 1 } });`,
+      // String-literal key naming a sensitive field, explicitly excluded with 0.
+      `db.users.find({}, { projection: { 'password': 0, name: 1 } });`,
+      // Numeric-literal key resolves to null keyName and is skipped.
+      `db.users.find({}, { projection: { 1: 1, name: 1 } });`,
+      // Boolean exclusion (false) and boolean inclusion (true).
+      `db.users.find({}, { projection: { password: false, name: true } });`,
+      // Computed member access — methodName is null, not a query method.
+      `db.users['find']({});`,
+      // `.select` accessed but never called — the grandparent is not a CallExpression.
+      `User.find({}).select;`,
+      // `.select()` called with no arguments.
+      `User.find({}).select();`,
+      // `.select(identifier)` — non-literal argument is not inspected.
+      `User.find({}).select(fields);`,
+      // `.select('-password')` — sensitive field present but exclusion-prefixed.
+      `User.find({}).select('-password');`,
+    ]),
+    invalid: xmo([
+      // Second argument is not an object — projection cannot be proven safe.
+      {
+        code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, "name");`,
+        errors: [{ messageId: 'selectSensitiveFields' }],
+      },
+      // Options object without a projection property.
+      {
+        code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { sort: { a: 1 } });`,
+        errors: [{ messageId: 'selectSensitiveFields' }],
+      },
+      // projection value is not an object literal.
+      {
+        code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: req.query.p });`,
+        errors: [{ messageId: 'selectSensitiveFields' }],
+      },
+      // Sensitive field explicitly included.
+      {
+        code: `db.users.find({}, { projection: { password: 1 } });`,
+        errors: [{ messageId: 'selectSensitiveFields' }],
+      },
+      // Sensitive field with a non-literal value — cannot prove exclusion.
+      {
+        code: `db.users.find({}, { projection: { secret: req.query.x } });`,
+        errors: [{ messageId: 'selectSensitiveFields' }],
+      },
+      // Exclusion-only projection (no inclusion) is not treated as safe.
+      {
+        code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 0 } });`,
+        errors: [{ messageId: 'selectSensitiveFields' }],
+      },
+      // Non-boolean/non-numeric projection value never sets hasInclusion.
+      {
+        code: `const userSchema = new Schema({ email: String, password: String });\ndb.users.find({}, { projection: { name: 'x' } });`,
+        errors: [{ messageId: 'selectSensitiveFields' }],
+      },
+    ]),
+  },
+);
 
 ruleTester.run('no-unbounded-find (coverage gaps)', noUnboundedFind, {
   valid: xmo([
@@ -237,10 +268,17 @@ ruleTester.run('no-unbounded-find (coverage gaps)', noUnboundedFind, {
     // Native-driver options object present but without a `limit` property.
     {
       code: `db.users.find({}, { skip: 5 });`,
-      errors: [{
-        messageId: 'unboundedFind',
-        suggestions: [{ messageId: 'suggestionAddLimit', output: `db.users.find({}, { skip: 5 }).limit(100);` }],
-      }],
+      errors: [
+        {
+          messageId: 'unboundedFind',
+          suggestions: [
+            {
+              messageId: 'suggestionAddLimit',
+              output: `db.users.find({}, { skip: 5 }).limit(100);`,
+            },
+          ],
+        },
+      ],
     },
   ]),
 });
@@ -267,12 +305,40 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     `find({ name: req.body.name });`,
     // Computed member access — methodName is null.
     `User['find']({ name: req.body.name });`,
-    // Query argument is not an object literal.
-    `User.find(req.body);`,
+
+    // No arguments at all. The identically-spelled fixture a few hundred lines
+    // below belongs to `no-unsafe-regex-query`, so this guard in
+    // `no-unsafe-query` had never been exercised by anything.
+    {
+      name: 'a query method called with no arguments',
+      code: `User.find();`,
+    },
+    // A SPREAD as the whole first argument. `find(...args)` has no query
+    // document to inspect at all — the guard exists so the request-shape check
+    // below never sees a SpreadElement, which is not an expression.
+    {
+      name: 'a spread as the whole first argument',
+      code: `User.find(...args);`,
+    },
     // Spread element inside the query object is skipped.
     `User.find({ ...filters });`,
     // Template literal whose expression is a plain identifier — no user input.
     'User.find({ name: `${localName}` });',
+    // FP: a bare identifier value. This was in `invalid` until 2026-08-30 with
+    // the note "reported with an $eq-wrapping suggestion", which pinned the
+    // false positive rather than a finding — every `const` in a filter was
+    // reported as "user input". Nothing here is caller-controlled. ILB-0123.
+    {
+      name: 'FP: a bare identifier value is not evidence of user input',
+      code: `User.findOne({ username: username });`,
+    },
+    // FP: a STRING LITERAL that happens to read `'req.body'`, with a property
+    // off it. The old model compared printed source against the literal text
+    // `req.body`, so quoting it was enough to trip the rule.
+    {
+      name: 'FP: a string literal whose text reads like a request path',
+      code: `User.find({ name: 'req.body'.x });`,
+    },
     // Binary expression with a non-"+" operator is not unsafe.
     `User.find({ age: total - 1 });`,
     // Concatenation of a literal and a plain identifier — no user input, not
@@ -280,16 +346,21 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     `User.find({ name: 'a' + suffix });`,
   ]),
   invalid: xmo([
-    // Bare identifier value — reported with an $eq-wrapping suggestion.
+    // FN: the whole request object as the filter document. This sat in `valid`
+    // until 2026-08-30 under the note "query argument is not an object
+    // literal" — which described the implementation, not the intent. It is the
+    // canonical NoSQL authentication bypass: `{"$ne": null}` as a password
+    // matches every user. ILB-0121.
     {
-      code: `User.findOne({ username: username });`,
+      name: 'FN: the whole request object used as the filter document',
+      code: `User.find(req.body);`,
       errors: [
         {
           messageId: 'unsafeQuery',
           suggestions: [
             {
               messageId: 'suggestionUseEq',
-              output: `User.findOne({ username: { $eq: username } });`,
+              output: `User.find({ $eq: req.body });`,
             },
           ],
         },
@@ -334,7 +405,8 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
           suggestions: [
             {
               messageId: 'suggestionUseEq',
-              output: 'User.find({ name: { $eq: `${sanitize(req.body.name)}` } });',
+              output:
+                'User.find({ name: { $eq: `${sanitize(req.body.name)}` } });',
             },
           ],
         },
@@ -364,7 +436,8 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
           suggestions: [
             {
               messageId: 'suggestionUseEq',
-              output: 'User.find({ name: { $eq: `${fn(...args, req.body.x)}` } });',
+              output:
+                'User.find({ name: { $eq: `${fn(...args, req.body.x)}` } });',
             },
           ],
         },
@@ -380,22 +453,6 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
             {
               messageId: 'suggestionUseEq',
               output: `User.find({ name: { $eq: req.body['x'] } });`,
-            },
-          ],
-        },
-      ],
-    },
-    // Member expression rooted at a string literal — Literal branch of
-    // getNodeSource stringifies it to the tainted pattern.
-    {
-      code: `User.find({ name: 'req.body'.x });`,
-      errors: [
-        {
-          messageId: 'unsafeQuery',
-          suggestions: [
-            {
-              messageId: 'suggestionUseEq',
-              output: `User.find({ name: { $eq: 'req.body'.x } });`,
             },
           ],
         },
@@ -492,32 +549,36 @@ ruleTester.run('require-projection (coverage gaps)', requireProjection, {
   invalid: [],
 });
 
-ruleTester.run('require-schema-validation (coverage gaps)', requireSchemaValidation, {
-  valid: xmo([
-    // No schema argument.
-    `new Schema();`,
-    // Schema argument is not an object literal.
-    `new Schema(config);`,
-    // Spread-only schema definition — no Property fields to check.
-    `new Schema({ ...base });`,
-    // Object-style field without a `type` property is skipped.
-    `new Schema({ name: { required: true } });`,
-  ]),
-  invalid: xmo([
-    // Spread inside the field definition is skipped by both scans; the field
-    // has a type but no validation.
-    {
-      code: `new Schema({ name: { ...base, type: String } });`,
-      errors: [{ messageId: 'requireSchemaValidation' }],
-    },
-    // String-literal 'required' key is not recognized as validation
-    // (Identifier keys only), so the field is reported.
-    {
-      code: `new Schema({ name: { type: String, 'required': true } });`,
-      errors: [{ messageId: 'requireSchemaValidation' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'require-schema-validation (coverage gaps)',
+  requireSchemaValidation,
+  {
+    valid: xmo([
+      // No schema argument.
+      `new Schema();`,
+      // Schema argument is not an object literal.
+      `new Schema(config);`,
+      // Spread-only schema definition — no Property fields to check.
+      `new Schema({ ...base });`,
+      // Object-style field without a `type` property is skipped.
+      `new Schema({ name: { required: true } });`,
+    ]),
+    invalid: xmo([
+      // Spread inside the field definition is skipped by both scans; the field
+      // has a type but no validation.
+      {
+        code: `new Schema({ name: { ...base, type: String } });`,
+        errors: [{ messageId: 'requireSchemaValidation' }],
+      },
+      // String-literal 'required' key is not recognized as validation
+      // (Identifier keys only), so the field is reported.
+      {
+        code: `new Schema({ name: { type: String, 'required': true } });`,
+        errors: [{ messageId: 'requireSchemaValidation' }],
+      },
+    ]),
+  },
+);
 
 ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
   valid: xmo([
@@ -537,18 +598,32 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     // Spread-only options — tls cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,
-      errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { ...opts, tls: true });` }],
-      }],
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect(uri, { ...opts, tls: true });`,
+            },
+          ],
+        },
+      ],
     },
     // A quoted key that is NOT true still reports, and is repairable in place.
     {
       code: `mongoose.connect(uri, { 'tls': false });`,
-      errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { 'tls': true });` }],
-      }],
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect(uri, { 'tls': true });`,
+            },
+          ],
+        },
+      ],
     },
   ]),
 });
@@ -563,8 +638,14 @@ describe('no-hardcoded-connection-string — synthetic AST (Layer 2)', () => {
       noHardcodedConnectionString as unknown as RuleLike,
       { ast: MONGO_PROGRAM },
     );
-    const templateLiteralListener = listeners.TemplateLiteral as (node: unknown) => void;
-    templateLiteralListener({ type: 'TemplateLiteral', quasis: [], expressions: [] });
+    const templateLiteralListener = listeners.TemplateLiteral as (
+      node: unknown,
+    ) => void;
+    templateLiteralListener({
+      type: 'TemplateLiteral',
+      quasis: [],
+      expressions: [],
+    });
     expect(reports).toHaveLength(0);
   });
 });
@@ -575,7 +656,9 @@ describe('no-unbounded-find — synthetic AST (Layer 2)', () => {
       noUnboundedFind as unknown as RuleLike,
       { ast: MONGO_PROGRAM },
     );
-    const callExpressionListener = listeners.CallExpression as (node: unknown) => void;
+    const callExpressionListener = listeners.CallExpression as (
+      node: unknown,
+    ) => void;
     const node = {
       type: 'CallExpression',
       callee: {
@@ -590,7 +673,9 @@ describe('no-unbounded-find — synthetic AST (Layer 2)', () => {
     };
     callExpressionListener(node);
     expect(reports).toHaveLength(1);
-    expect((reports[0] as { messageId: string }).messageId).toBe('unboundedFind');
+    expect((reports[0] as { messageId: string }).messageId).toBe(
+      'unboundedFind',
+    );
   });
 });
 
@@ -664,7 +749,10 @@ describe('no-select-sensitive-fields — null sensitiveFields option (Layer 2)',
     );
     const listener = listeners.CallExpression as (node: unknown) => void;
     listener(
-      makeQueryNode('find', [{ type: 'ObjectExpression', properties: [] }, projection([{ key: 'name', value: 1 }])]),
+      makeQueryNode('find', [
+        { type: 'ObjectExpression', properties: [] },
+        projection([{ key: 'name', value: 1 }]),
+      ]),
     );
     expect(reports).toHaveLength(0);
   });
@@ -682,7 +770,9 @@ describe('no-select-sensitive-fields — null sensitiveFields option (Layer 2)',
       ]),
     );
     expect(reports).toHaveLength(1);
-    expect((reports[0] as { messageId: string }).messageId).toBe('selectSensitiveFields');
+    expect((reports[0] as { messageId: string }).messageId).toBe(
+      'selectSensitiveFields',
+    );
   });
 
   it('falls back to the DEFAULT list in .select() scans: selecting `password` reports on the select call', () => {
@@ -746,7 +836,8 @@ describe('eslint-plugin-mongodb-security/oxlint sub-export', () => {
 
   it('re-exports the plugin object (meta + rules at top level)', async () => {
     const oxlintModule = await import('./oxlint.js');
-    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
+    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin })
+      .default;
     expect(oxlintPlugin).toBeDefined();
     expect(oxlintPlugin.meta?.name).toBe('eslint-plugin-mongodb-security');
     expect(oxlintPlugin.rules).toBeDefined();
@@ -754,7 +845,8 @@ describe('eslint-plugin-mongodb-security/oxlint sub-export', () => {
 
   it('exposes the same rule names as the main entry (no rules dropped)', async () => {
     const oxlintModule = await import('./oxlint.js');
-    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
+    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin })
+      .default;
     expect(Object.keys(oxlintPlugin.rules || {}).toSorted()).toEqual(
       Object.keys(mainPlugin.rules || {}).toSorted(),
     );
@@ -762,7 +854,8 @@ describe('eslint-plugin-mongodb-security/oxlint sub-export', () => {
 
   it('exposes the same rule references (pass-through, not a copy)', async () => {
     const oxlintModule = await import('./oxlint.js');
-    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin }).default;
+    const oxlintPlugin = (oxlintModule as unknown as { default: Plugin })
+      .default;
     for (const ruleName of Object.keys(mainPlugin.rules || {})) {
       expect(oxlintPlugin.rules?.[ruleName]).toBe(
         (mainPlugin.rules as Record<string, unknown>)[ruleName],
