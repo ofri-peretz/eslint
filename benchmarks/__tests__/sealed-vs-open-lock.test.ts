@@ -114,6 +114,16 @@ describe('a seal and an admission are different rows', () => {
       'tests',
       '__coherence-probe.test.ts',
     );
+    // Remove any orphan BEFORE writing, not only after.
+    //
+    // The `finally` below is not enough: if the process is killed between the
+    // write and the cleanup — a worker crash, a cancelled CI job, ^C — the
+    // probe survives, and from then on EVERY run of the ledger throws on it.
+    // The symptom is "the extractor is broken", several steps from the cause,
+    // and it takes the pre-commit hook down with it. Cleaning up front makes
+    // an orphan self-healing on the next run instead of a wedge.
+    fs.rmSync(probe, { force: true });
+
     fs.writeFileSync(
       probe,
       [

@@ -111,14 +111,14 @@ it governs every sibling repo, so it cannot live in any one of them, and a link 
 here would dangle in a standalone clone. Six stages, each handing off through a
 **committed Markdown artifact rather than a chat message**:
 
-| Stage | Artifact | Here |
-| :--- | :--- | :--- |
-| 1 Plan | `intent.md` — what is wanted, why, under which constraints | [`intent/`](./intent/) |
-| 2 Design | `spec.md` — requirements + design, committed beside the intent | [`intent/`](./intent/) |
-| 3 Build | plan mode, this file, skills, worktrees | — |
-| 4 Test | a one-command feedback loop, plus config evals | [`evals/`](./evals/) |
-| 5 Deploy | AI review, hooks as gates, CI/CD | `.claude/hooks/release-gate.sh` |
-| 6 Maintain | control bands; a breach writes a **new `intent.md`** | `scripts/control-bands.ts` |
+| Stage      | Artifact                                                       | Here                            |
+| :--------- | :------------------------------------------------------------- | :------------------------------ |
+| 1 Plan     | `intent.md` — what is wanted, why, under which constraints     | [`intent/`](./intent/)          |
+| 2 Design   | `spec.md` — requirements + design, committed beside the intent | [`intent/`](./intent/)          |
+| 3 Build    | plan mode, this file, skills, worktrees                        | —                               |
+| 4 Test     | a one-command feedback loop, plus config evals                 | [`evals/`](./evals/)            |
+| 5 Deploy   | AI review, hooks as gates, CI/CD                               | `.claude/hooks/release-gate.sh` |
+| 6 Maintain | control bands; a breach writes a **new `intent.md`**           | `scripts/control-bands.ts`      |
 
 What this means in practice:
 
@@ -130,7 +130,7 @@ What this means in practice:
   break. 1σ logs, 2σ diagnoses read-only, 3σ may act. **Never widen a band to clear a
   breach** — a band widened to fit an excursion measures nothing afterwards.
 - **A breach becomes an intent, not a ticket.** That is the loop. A GitHub issue is
-  the separate queue the loop exists to avoid; issues are for a *watcher* breaking,
+  the separate queue the loop exists to avoid; issues are for a _watcher_ breaking,
   which is an outage rather than a finding.
 - **Editing `CLAUDE.md`, `AGENTS.md`, `.agent/**` or `lefthook.yml` is a configuration
   change** and runs [`evals/`](./evals/). Treat a pass-rate drop as a review blocker.
@@ -411,10 +411,25 @@ forever on a check nobody is running. Mark the PR ready for review, or add the
 label. This is also why `main` can be red without any PR having gone red —
 see the note in `quality-full.yml`.
 
+### After the merge
+
+`Quality (Full)` also runs on **push to `main`**, and a failure there opens a
+tracking issue titled `main is red — the full quality gate failed after a
+merge`. That trigger is the difference between "broken for one merge" and
+"broken until Sunday": the heavy gate is PR-scoped for cost, so before it
+existed a merge could land broken and sit red until the weekly cron.
+
+It is not theoretical. PR #745 landed having edited two rule `.md` sources
+without re-running the generator, failed `rule-docs-sync-drift` on main's tip,
+and was found four days later by accident — after every branch cut in between
+had inherited it.
+
+If you see that issue, the merge that caused it is the head of `main`.
+
 Everything else on the PR — `Plugin Taxonomy`, `Unit Tests + Coverage (N/10)`,
 `Build (N/4)`, `Typecheck (whole-graph tsgo)`, `Script & Repo-Config Locks`,
 `CodeQL`, `CodeRabbit` and the rest — is informative, not required. They still
-have to be green before merging: step 2 below refuses on *any* non-success
+have to be green before merging: step 2 below refuses on _any_ non-success
 check, which is stricter than branch protection and deliberately so.
 
 Poll until every check finishes, **then verify every one reports

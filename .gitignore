@@ -194,3 +194,9 @@ benchmarks/SPELLING_MISSES.md
 benchmarks/NAME_DEPENDENCE.json
 benchmarks/CASE_REGISTRY.md
 benchmarks/CANDIDATES.md
+
+# The sabotage fixture written by benchmarks/__tests__/sealed-vs-open-lock.test.ts.
+# It is deleted in a `finally`, but a killed process leaves it behind — and it
+# deliberately contains a contradictory FN marker, so committing it would wedge
+# the ledger for everyone. Ignored so `git add -A` cannot pick it up.
+packages/*/src/tests/__coherence-probe.test.ts

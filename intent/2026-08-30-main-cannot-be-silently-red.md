@@ -54,3 +54,34 @@ main.
   contexts, and `claude-md-contract.test.ts` asserts it still says so.
 - Median time from a bad merge to somebody knowing: **under one merge cycle**,
   measured against the four days #745 took.
+
+## Outcome — 2026-08-30
+
+**Mostly delivered by someone else, concurrently.** #754 landed on this branch
+while the intent was being written and added `push: branches: [main]` to
+`quality-full.yml`, plus a shared `.github/actions/report-failure` that six
+scheduled workflows now call. Two of the four Done-when conditions were already
+met by the time this was picked up.
+
+One gap remained, and it was the half that mattered. The failure report fired
+on `github.event_name == 'schedule'` only, so the **push** trigger — the thing
+that turns "broken until Sunday" into "broken for one merge" — had no channel
+to a human. Immediate detection producing a red square in a tab nobody has open
+is the weekly cron's outcome with extra Actions minutes spent.
+
+Closed with a second report, under a SEPARATE title because the title is the
+deduplication key and the two situations are different: a push failure names
+the merge that caused it and is actionable now; a schedule failure means main
+has been broken for up to a week. Sharing one issue would let the second hide
+inside the first.
+
+`CLAUDE.md` gained an "After the merge" section, and
+`claude-md-contract.test.ts` asserts three things — that the section says the
+gate runs on push to main, that it names the issue title a reader would search
+for, and that **the workflow actually reports on push**. The last is the one
+that matters: documentation of a channel that does not exist is worse than
+silence. Verified by sabotage.
+
+Not done, and deliberately: no measurement of median time-to-detection. It
+needs a broken main to measure and manufacturing one to produce a number would
+be absurd. The next real occurrence is the measurement.

@@ -102,6 +102,40 @@ describe('CLAUDE.md describes checks that exist', () => {
   });
 });
 
+describe('CLAUDE.md explains what happens after a merge', () => {
+  // The heavy gate is PR-scoped for cost, so post-merge behaviour is the part
+  // a reader cannot infer from the PR checks in front of them — and it is the
+  // part that decides how long a broken main stays broken.
+  it('says the heavy gate also runs on push to main', () => {
+    const section = DOC.slice(DOC.indexOf('### After the merge'));
+    expect(
+      section.length,
+      'CLAUDE.md has no "After the merge" section',
+    ).toBeGreaterThan(0);
+    expect(section).toMatch(/push to `main`/);
+  });
+
+  it('names the issue a broken main opens', () => {
+    // A signal nobody can search for is not a signal. The title is the
+    // deduplication key in .github/actions/report-failure, so it is a fact
+    // about the system, not a turn of phrase.
+    const section = DOC.slice(DOC.indexOf('### After the merge'));
+    expect(section).toContain('main is red');
+  });
+
+  it('the workflow actually reports on push, not only on schedule', () => {
+    // The documentation above is worth nothing if the channel is missing. This
+    // was the whole gap: `push: [main]` shipped without a failure report, so
+    // immediate detection produced a red square nobody was told about.
+    const workflow = readFileSync(
+      join(ROOT, '.github', 'workflows', 'quality-full.yml'),
+      'utf8',
+    );
+    expect(workflow).toMatch(/github\.event_name == 'push'/);
+    expect(workflow).toContain('main is red');
+  });
+});
+
 describe('CLAUDE.md points at things that are there', () => {
   it('every lock test it cites exists', () => {
     // The "Tested locks in this repo (extend, don't bypass)" section is a

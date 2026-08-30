@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+
 # `intent/` — what we set out to do, before we did it
 
 Stage 1 of [`AI_SDLC.md`](../AI_SDLC.md). One file per initiative, written
@@ -77,7 +78,8 @@ Checkable conditions. "The ratchet moved from N to M", not "the rule is better".
   and honest. Silently exceeding it is what the gate exists to stop.
 - **Never delete one.** They are the record of what we meant, including the
   times we were wrong about it.
-=======
+  \=======
+
 # `intent/` — Stage 1 (Plan) and Stage 2 (Design)
 
 Every substantive change starts here. See
@@ -114,13 +116,13 @@ referenced from PRs, commits and later intents.
 
 ## Status values
 
-| Status | Means | Requires `spec.md` |
-| :--- | :--- | :---: |
-| `draft` | being written | no |
-| `review` | awaiting a human read | no |
-| `approved` | designed and cleared for build | **yes** |
-| `shipped` | merged | **yes** |
-| `dropped` | deliberately not doing it — keep the file, it is a record | no |
+| Status     | Means                                                     | Requires `spec.md` |
+| :--------- | :-------------------------------------------------------- | :----------------: |
+| `draft`    | being written                                             |         no         |
+| `review`   | awaiting a human read                                     |         no         |
+| `approved` | designed and cleared for build                            |      **yes**       |
+| `shipped`  | merged                                                    |      **yes**       |
+| `dropped`  | deliberately not doing it — keep the file, it is a record |         no         |
 
 ## Where intents come from
 
@@ -130,4 +132,5 @@ Two sources, and the second is the one that makes this a loop:
 - **A control-band breach.** `scripts/control-bands.ts` watches metrics and, on a
   breach, writes its diagnosis here as an `intent.md` in exactly this format. An
   incident re-enters the pipeline instead of rotting in a ticket queue.
->>>>>>> origin/main
+
+> > > > > > > origin/main
