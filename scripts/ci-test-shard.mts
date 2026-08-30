@@ -27,7 +27,39 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 /** Workspace globs that can hold testable packages. */
 const WORKSPACE_DIRS = ['packages', 'apps', 'tools'];
 
-type Pkg = { name: string; dir: string; task: 'test:coverage' | 'test'; cost: number; deps: string[] };
+type Pkg = {
+  name: string;
+  dir: string;
+  task: 'test:coverage' | 'test';
+  cost: number;
+  deps: string[];
+  /** Set when this entry is one slice of a package split across CI shards. */
+  split?: { i: number; n: number };
+};
+
+/**
+ * Packages split across several CI shards with `vitest --shard`.
+ *
+ * LPT bucketing cannot produce a shard faster than the single largest item, so
+ * while a package is one indivisible unit it is a floor on the whole gate. On
+ * 2026-08-30 `docs` was that floor: 144s against 19-47s for every other shard,
+ * and it alone was the critical path of the REQUIRED `Quality (Full) Gate`.
+ * Rebalancing could not have helped — only splitting the item can.
+ *
+ * Slice count is chosen against the partition floor, not minimised. Total test
+ * work is ~375s over 10 shards, so no bucketing can beat ~37s average however
+ * finely anything is split — the goal is only to get the largest item BELOW
+ * that floor so LPT can actually reach it. At 6 slices `docs` contributes ~24s
+ * per slice, comfortably under. Splitting further buys nothing: each extra
+ * shard pays ~12-16s to acquire a runner, and the gate is then bounded by
+ * `Build` (45s) and `Benchmark configs load` (50s) regardless.
+ *
+ * The repo is public, so Actions minutes are free — the constraint here is the
+ * concurrent-job cap and per-runner startup, not billing.
+ *
+ * NOT applied when collecting coverage — see `wantCoverage` below.
+ */
+const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 6 };
 
 /**
  * Cost proxy for balancing: number of test files in the package.
@@ -59,6 +91,8 @@ function countTestFiles(dir: string): number {
  */
 const NO_TEST_ALLOWLIST = new Set<string>(['registry']);
 
+const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
+
 function discoverPackages(): { testable: Pkg[]; untested: string[] } {
   const testable: Pkg[] = [];
   const untested: string[] = [];
@@ -79,7 +113,7 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
       // roughly doubles vitest's cost for a number nobody reads per-PR, and
       // codecov.yml now collects it on a daily cron instead. Set
       // CI_TEST_SHARD_COVERAGE=1 to opt back in (that daily job does).
-      const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
+      // (also consulted above for SPLIT_ACROSS_SHARDS)
       const task = wantCoverage && pkg.scripts?.['test:coverage']
         ? 'test:coverage'
         : pkg.scripts?.test
@@ -87,14 +121,37 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
           : pkg.scripts?.['test:coverage']
             ? 'test:coverage'
             : null;
-      if (task) testable.push({ name: pkg.name, dir, task, cost: countTestFiles(path.join(abs, entry)), deps: manifestDeps(pkg) });
+      if (task) {
+        const cost = countTestFiles(path.join(abs, entry));
+        const deps = manifestDeps(pkg);
+        // Splitting hides files from each slice, so per-slice coverage would
+        // sit far below the 100% thresholds and fail. The daily codecov job
+        // sets CI_TEST_SHARD_COVERAGE=1 and must see whole packages.
+        const slices = wantCoverage ? 1 : (SPLIT_ACROSS_SHARDS[pkg.name] ?? 1);
+        if (slices > 1) {
+          for (let i = 1; i <= slices; i++) {
+            testable.push({
+              name: pkg.name, dir, task,
+              cost: Math.ceil(cost / slices), deps,
+              split: { i, n: slices },
+            });
+          }
+        } else {
+          testable.push({ name: pkg.name, dir, task, cost, deps });
+        }
+      }
       else if (!NO_TEST_ALLOWLIST.has(pkg.name)) untested.push(pkg.name);
     }
   }
   // Sort by cost desc, name asc as tiebreak. Descending order is what makes the
   // LPT bucketing below effective, and the name tiebreak keeps it deterministic
   // so a package keeps its shard (and therefore its Turbo cache key) run to run.
-  testable.sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
+  testable.sort(
+    (a, b) =>
+      b.cost - a.cost ||
+      a.name.localeCompare(b.name) ||
+      (a.split?.i ?? 0) - (b.split?.i ?? 0),
+  );
   return { testable, untested };
 }
 
@@ -253,7 +310,10 @@ console.log(
     `${loads[shardIndex - 1]} of ${loads.reduce((a, b) => a + b, 0)} test files ` +
     `(balance: ${Math.min(...loads)}–${Math.max(...loads)}) — running ${filterNote}`,
 );
-for (const p of mine) console.log(`  ${p.name}  (${p.task}, ${p.cost} test files)`);
+for (const p of mine)
+  console.log(
+    `  ${p.name}${p.split ? ` [slice ${p.split.i}/${p.split.n}]` : ''}  (${p.task}, ~${p.cost} test files)`,
+  );
 
 // An empty *bucket* means shardTotal exceeds what the partition can fill — a
 // job that reports success having tested nothing. Still fatal.
@@ -296,13 +356,31 @@ for (const task of ['test:coverage', 'test'] as const) {
   // plain `vitest run` does not instrument. `test:coverage` passes `--coverage`
   // on the CLI, which overrides the config — that is how the daily codecov job
   // still collects it. No flag needed here.
-  const args = ['turbo', 'run', task, ...group.map(spec), '--', '--reporter=dot'];
-  console.log(`\n$ npx ${args.join(' ')}\n`);
-  try {
-    execFileSync('npx', args, { cwd: REPO_ROOT, stdio: 'inherit' });
-  } catch {
-    // Keep going so one failing group still reports the other's result.
-    failed = true;
+  // A sliced package needs its OWN invocation: `--shard` after `--` reaches
+  // every package in the command, so batching a slice with whole packages
+  // would silently run only a fraction of each of them — a green check over
+  // untested files, which is the exact failure class this script exists to
+  // prevent. Whole packages still batch into one call.
+  const sliced = group.filter((p) => p.split);
+  const whole = group.filter((p) => !p.split);
+
+  const invocations: string[][] = [];
+  if (whole.length) {
+    invocations.push(['turbo', 'run', task, ...whole.map(spec), '--', '--reporter=dot']);
+  }
+  for (const p of sliced) {
+    const { i, n } = p.split as { i: number; n: number };
+    invocations.push(['turbo', 'run', task, spec(p), '--', '--reporter=dot', `--shard=${i}/${n}`]);
+  }
+
+  for (const args of invocations) {
+    console.log(`\n$ npx ${args.join(' ')}\n`);
+    try {
+      execFileSync('npx', args, { cwd: REPO_ROOT, stdio: 'inherit' });
+    } catch {
+      // Keep going so one failing group still reports the other's result.
+      failed = true;
+    }
   }
 }
 
