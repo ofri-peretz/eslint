@@ -213,8 +213,7 @@
     "sign-up",
     "signin",
     "signup",
-    "totp",
-    "verification"
+    "totp"
   ],
   "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts#DEFAULT_TAINT_SOURCES": [
     "ctx",
@@ -288,8 +287,6 @@
   ],
   "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts#DEFAULT_NON_SECRET_TAILS": [
     "addresses",
-    "cost",
-    "endpoints",
     "hostname",
     "limits",
     "origin",
@@ -321,7 +318,6 @@
   "packages/eslint-plugin-node-security/src/rules/no-zip-slip/index.ts#DEFAULT_ARCHIVE_MODULES": [
     "7zip-min",
     "archiver",
-    "decompress",
     "extract-zip",
     "gunzip-maybe",
     "jszip",

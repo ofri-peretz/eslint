@@ -134,14 +134,24 @@ const AMBIGUOUS_EXTRACTORS: ReadonlySet<string> = new Set([
  * `archiveEntryFields` can replace it wholesale for a library nobody here has
  * heard of.
  */
+/**
+ * @vocabulary Each name is the property a published archive library exposes an
+ * entry's path on. Every entry cites its library, because a name we cannot
+ * attribute is a guess, and a guess in a DEFAULT is an assertion about
+ * somebody else's dependency list.
+ *
+ * `relativePath` and `pathname` were in this list until 2026-08-30 with no
+ * library behind either, and no test exercised them —
+ * `lint:detection-list-coverage` is what surfaced that. `pathname` is a URL
+ * property, not an archive one. A consumer whose library really does spell it
+ * that way sets `archiveEntryFields`.
+ */
 const DEFAULT_ARCHIVE_ENTRY_FIELDS = [
-  'name',
-  'path',
-  'fileName',
-  'entryName',
-  'relativePath',
-  'filename',
-  'pathname',
+  'name', // node-stream-zip
+  'path', // unzipper, tar, decompress
+  'fileName', // yauzl
+  'entryName', // adm-zip
+  'filename', // unzip-stream
 ] as const;
 
 const DEFAULT_ARCHIVE_MODULES = [
