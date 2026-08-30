@@ -1,8 +1,13 @@
-# Intent: CWE-089 corpus predates evidence-gated detection
+# Intent — CWE-089 corpus predates evidence-gated detection
 
-Author: O. Peretz (with Claude). Status: review.
+> Stage 1 artifact of the AI-native SDLC. Opened while carrying #414's rename into
+> the flagship benchmark, which made a long-standing false number visible.
 
-## Problem
+**Status:** review · **Opened:** 2026-08-26 · **Owner:** @ofri-peretz
+
+---
+
+## Why now
 
 All six fixtures in `benchmarks/corpus/CWE-089/{safe,vulnerable}/` call a bare,
 undeclared `db.query(...)` with no driver import. Measured side by side on identical
@@ -24,7 +29,7 @@ frozen pre-rename package and published **F1 = 1.00 for something we do not ship
 Pointing the benchmark at the shipped package made the number honest and turned the
 row red.
 
-## Proposed outcome
+## What is wanted
 
 The CWE-089 corpus exercises what the shipped rule is built to detect, and the
 published number is true of the package a user installs. Whatever we choose, the
@@ -44,6 +49,16 @@ Downstream: `BENCHMARK-RESULTS.md` and every published claim derived from it.
   has to be re-derived, per `article_integrity_bugs` discipline.
 - Do not weaken `no-unsafe-query` back to name-based matching. The FP reduction was
   the point, and the doctrine in every README now promises it.
+
+## Success criteria
+
+- `npm run ilb:flagship:smoke` is green on `pg/no-unsafe-query` for a reason that is
+  written down, not because the assertion was loosened.
+- Every CWE corpus has been checked for the same shape, and each one either carries
+  driver evidence or is recorded here as a documented known-miss.
+- `BENCHMARK-RESULTS.md` and any published article citing a CWE-089 number are
+  re-derived from the shipped package, with the old number and its replacement both
+  stated.
 
 ## Open questions
 
