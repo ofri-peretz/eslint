@@ -42,6 +42,12 @@ cases:
   - ILB-0042
 ---
 
+<!--
+`packages: []` and `cases: []` are valid and mean "none" — a scheduled
+workflow, a script or a measurement touches no package. Omitting the key would
+say the same thing ambiguously: "none" and "I forgot" look identical.
+-->
+
 ## What
 
 One paragraph. The change a consumer would notice.

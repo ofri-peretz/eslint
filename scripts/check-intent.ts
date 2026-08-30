@@ -176,9 +176,21 @@ export function parseFrontmatter(text: string): {
     const [, key, rest] = pair;
     const value = rest.trim();
     if (key === 'packages' || key === 'cases') {
+      // `key: []` — an explicit empty list, and the ONLY inline form accepted.
+      //
+      // Work that touches no package is normal: a scheduled workflow, a
+      // script, a measurement. Omitting the key would express it too, but
+      // ambiguously — "none" and "I forgot" would look identical, and this
+      // file exists to make intent explicit. The first three intents written
+      // under this gate hit it immediately: two of them legitimately touch no
+      // package and the parser had no way for them to say so.
+      if (value === '[]') {
+        listKey = null;
+        continue;
+      }
       if (value !== '') {
         errors.push(
-          `line ${index + 1}: \`${key}\` takes a list, not an inline value`,
+          `line ${index + 1}: \`${key}\` takes a list, or \`[]\` for none — not an inline value`,
         );
         continue;
       }

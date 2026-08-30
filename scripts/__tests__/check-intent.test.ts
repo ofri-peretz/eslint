@@ -234,6 +234,27 @@ describe('the hand-written frontmatter parser refuses what it cannot read', () =
     expect(frontmatter.cases).toEqual(['ILB-0001']);
   });
 
+  it('accepts `[]` as an explicit empty list', () => {
+    // Work that touches no package is normal. The first three intents written
+    // under this gate included two, and the parser rejected both.
+    const { frontmatter, errors } = parseFrontmatter(
+      '---\nslug: a\npackages: []\ncases: []\n---\n\nbody\n',
+    );
+    expect(errors).toEqual([]);
+    expect(frontmatter.packages).toEqual([]);
+    expect(frontmatter.cases).toEqual([]);
+  });
+
+  it('does not let `[]` leak into the next key list', () => {
+    // `packages: []` must CLOSE the list, not leave it open for `cases`
+    // items to land in.
+    const { frontmatter } = parseFrontmatter(
+      '---\npackages: []\ncases:\n  - ILB-0001\n---\n\nbody\n',
+    );
+    expect(frontmatter.packages).toEqual([]);
+    expect(frontmatter.cases).toEqual(['ILB-0001']);
+  });
+
   it('errors on an inline list rather than silently reading none', () => {
     // `packages: [x, y]` is valid YAML and this parser cannot read it. The
     // dangerous outcome is not the error — it is returning `[]`, which makes
