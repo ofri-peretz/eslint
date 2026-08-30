@@ -3,7 +3,7 @@
 **Date:** 2026-05-10
 **Page:** `/` — [apps/docs/src/app/(home)/page.tsx](src/app/%28home%29/page.tsx)
 **Status:** Open
-**Audits against:** [LAYOUT_PHILOSOPHY.md](../../LAYOUT_PHILOSOPHY.md)
+**Audits against:** [LAYOUT_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/LAYOUT_PHILOSOPHY.md)
 **Companion to:** [LAYOUT_AUDIT_REPORT.md](./LAYOUT_AUDIT_REPORT.md) (historical, docs-page-focused, resolved)
 
 ---
@@ -13,7 +13,7 @@
 The homepage works visually, but it is built without a layout system.
 Nine `<section>` blocks each open-code their own wrapper, padding,
 container width, and dividers. The result is the exact drift
-[LAYOUT_PHILOSOPHY.md](../../LAYOUT_PHILOSOPHY.md) was written to
+[LAYOUT_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/LAYOUT_PHILOSOPHY.md) was written to
 prevent: arbitrary-looking spacing rhythm, inconsistent inner widths,
 zero responsive horizontal-padding scale, and six near-identical
 "section header" blocks copy-pasted by hand.
@@ -42,7 +42,7 @@ which is full-bleed by design and not subject to container rules
 | 5 | #3 | line 57 (`mb-12`), 108 (`mb-12`), 152 (`mb-12`), 214 (`mb-16`), 285 (`mb-16`) | `mb-12` and `mb-16` interleaved between section headers | `<SectionHeader>` owns the bottom-margin token |
 | 6 | #3 | line 116 (`gap-6`), 165 (`gap-6`), 223 (`gap-8`), 46 (`gap-8`) | Card-grid gaps drift `6` ↔ `8` with no rhythm | `gap-4 md:gap-6 lg:gap-8` (token `sm → md → md`), uniformly |
 | 7 | #5 | every section uses `px-4` with no `sm:` / `lg:` | Mobile padding shipped to all viewports | `px-4 sm:px-6 lg:px-8`, owned by `<Container>` |
-| 8 | #6 | line 167–168 (TweetCard), 172–173 (DevToCard) | Async slots inside `flex justify-center h-full` with no `min-h-*` reservation | Each card slot needs `min-h-[420px]` (or matching skeleton) — see [LOADING_PHILOSOPHY.md](../../LOADING_PHILOSOPHY.md) |
+| 8 | #6 | line 167–168 (TweetCard), 172–173 (DevToCard) | Async slots inside `flex justify-center h-full` with no `min-h-*` reservation | Each card slot needs `min-h-[420px]` (or matching skeleton) — see [LOADING_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/LOADING_PHILOSOPHY.md) |
 | 9 | #8 | line 44 (`bg-fd-card/50`), 106 (`bg-fd-background/50`), 283 (`bg-fd-card/30`) | Three different section tones, no semantic difference | `<Section tone="muted\|inset">` — two values, picked deliberately |
 | 10 | #8 | line 44 (`border-y`), 106 (`border-y`), 150 (`border-t`), 283 (`border-t`) | Dividers expressed inline, mix of `border-t` / `border-y` | `<Section divider="top\|bottom\|both">` |
 | 11 | #1 | 6 section-header blocks at lines 57–64, 108–114, 152–163, 214–221, 285–292, plus the final CTA's 337–342 | "text-center mb-12 + h2 + tagline" pattern duplicated 6× | One `<SectionHeader>` import |
@@ -132,7 +132,7 @@ became *intent* rather than *coordinates*.
 - **Color tokens.** Orange / purple / violet usage on the page is
   consistent with the brand chrome; that's a separate document.
 - **Motion.** Hover transforms, gradient animation on the hero, and
-  `<BorderBeam>` are governed by [MOTION_PHILOSOPHY.md](../../MOTION_PHILOSOPHY.md).
+  `<BorderBeam>` are governed by [MOTION_PHILOSOPHY.md](https://github.com/ofri-peretz/interlace/blob/main/docs/philosophies/MOTION_PHILOSOPHY.md).
 - **Copy / IA.** The headlines, taglines, and CTA wording are
   product decisions, not layout.
 - **Hero internals.** `<HeroCosmic>` is a full-bleed pattern; its

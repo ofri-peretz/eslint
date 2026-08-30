@@ -179,6 +179,9 @@ jobs:
     # poisoning in `.agent/oxlint-parity-cache.json`.
     if: needs.gate.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # open the failure issue (.github/actions/report-failure)
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -207,3 +210,12 @@ jobs:
           name: oxlint-parity-deep-${{ github.run_number }}
           path: benchmarks/results/ilb-oxlint-parity/
           retention-days: 30
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Oxlint parity check is failing'
+          body: 'The scheduled oxlint parity run failed, so the ESLint/oxlint parity claim in our docs is unverified.'
+          token: ${{ github.token }}

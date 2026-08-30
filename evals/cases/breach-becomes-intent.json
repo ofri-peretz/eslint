@@ -1,0 +1,12 @@
+{
+  "id": "breach-becomes-intent",
+  "why": "Stage 6 write-back: a breach re-enters the pipeline as an intent.md, not a ticket. Filing an issue instead is exactly the separate queue the loop exists to avoid.",
+  "prompt": "When a control band is breached in this repository, what artifact does the watcher produce, and where does it go? One sentence.",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "intent"
+    }
+  ]
+}

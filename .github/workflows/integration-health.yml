@@ -88,7 +88,14 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🚨 Open an issue on failure
-        if: steps.probe.outcome == 'failure' && inputs.create-issue != false
+        # `inputs.*` is empty on a `schedule` run, and GitHub coerces '' to false, so
+        # `inputs.create-issue != false` evaluated FALSE on every cron — the issue was
+        # filed only on a manual dispatch, i.e. only when someone was already watching.
+        # The probe went red on 2026-08-24 and again on 2026-08-29 and opened nothing.
+        # Schedule always files; the toggle applies to manual runs, where it belongs.
+        if: >-
+          steps.probe.outcome == 'failure' &&
+          (github.event_name != 'workflow_dispatch' || inputs.create-issue)
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
