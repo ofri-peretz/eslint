@@ -36,6 +36,7 @@
  *   npx tsx scripts/name-dependence-probe.mts [--rule <substring>]
  */
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Linter } from 'eslint';
@@ -278,16 +279,83 @@ console.log(`  ${structural} still report — the verdict came from structure`);
 console.log(
   `  ${nameDependent.length} go silent across ${byRule.size} rules — the verdict came from a name\n`,
 );
-for (const [rule, list] of [...byRule.entries()]
-  .sort((a, b) => b[1].length - a[1].length)
-  .slice(0, 25)) {
+const ranked = [...byRule.entries()].sort((a, b) => b[1].length - a[1].length);
+
+// The detailed head, with a worked example each.
+const DETAIL = 25;
+for (const [rule, list] of ranked.slice(0, DETAIL)) {
   console.log(`  ${String(list.length).padStart(3)}  ${rule}`);
   console.log(
     `       reports: ${JSON.stringify(list[0].before).slice(0, 110)}`,
   );
   console.log(`       silent : ${JSON.stringify(list[0].after).slice(0, 110)}`);
 }
+
+// ...and then the rest, compactly. This used to stop at 25 with no mention
+// that it had, so the printed list looked like the whole population while a
+// third of it was invisible — the same silent cap the case registry is careful
+// not to have. A number you cannot enumerate is one you cannot work down.
+if (ranked.length > DETAIL) {
+  console.log(
+    `\n  the remaining ${ranked.length - DETAIL} rule(s), count first:\n`,
+  );
+  for (const [rule, list] of ranked.slice(DETAIL)) {
+    console.log(`  ${String(list.length).padStart(3)}  ${rule}`);
+  }
+}
 fs.writeFileSync(
   path.join(ROOT, 'benchmarks', 'NAME_DEPENDENCE.json'),
   `${JSON.stringify({ probed, structural, nameDependent }, null, 2)}\n`,
+);
+
+/*
+ * The committed half.
+ *
+ * The file above is the full finding set — every renamed binding, before and
+ * after — and it is gitignored, because it is large and regenerable. But
+ * `check:name-vocabulary` needs the CONCLUSION, and it cannot run this probe:
+ * renaming every binding in the suite and re-running it takes minutes, which
+ * is not a per-PR cost.
+ *
+ * So the conclusion is committed, small, and stamped. The stamp is the hash of
+ * this script, and the gate refuses to report a number when it does not match.
+ * That lesson is expensive: `real-world-rule-inventory.json` sat with the right
+ * date and the wrong instrument for four days, and "270 rules never fire" was
+ * read as a fact about the rules when seven plugins had simply never been run.
+ * An artifact that cannot say what produced it will eventually be believed
+ * about something it never measured.
+ */
+const stamp = createHash('sha256')
+  .update(fs.readFileSync(fileURLToPath(import.meta.url)))
+  .digest('hex')
+  .slice(0, 16);
+
+const rules = Object.fromEntries(
+  [...byRule.entries()]
+    .map(([rule, list]) => [rule, list.length] as const)
+    .sort(([a], [b]) => a.localeCompare(b)),
+);
+
+fs.writeFileSync(
+  path.join(ROOT, 'benchmarks', 'budgets', 'name-dependence.json'),
+  `${JSON.stringify(
+    {
+      note:
+        'Rules whose verdict changed when every local binding was renamed to foo1, foo2, … ' +
+        'The rename litmus, mechanised: a rule listed here decided from a NAME. That is only a ' +
+        'defect when the consumer cannot replace the vocabulary — see scripts/check-name-vocabulary.ts. ' +
+        'Regenerate with `npx tsx scripts/name-dependence-probe.mts`.',
+      generated: new Date().toISOString().slice(0, 10),
+      probeStamp: stamp,
+      probed,
+      structural,
+      nameDependent: nameDependent.length,
+      rules,
+    },
+    null,
+    2,
+  )}\n`,
+);
+console.log(
+  `\n  wrote benchmarks/budgets/name-dependence.json (${Object.keys(rules).length} rules, stamp ${stamp})`,
 );
