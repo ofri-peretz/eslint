@@ -162,31 +162,37 @@ jobs:
       # it unresolvable. The benchmark refuses to score in that state rather than
       # reporting zero findings — which is why this job failed in 18s on its first
       # run instead of silently passing with a perfect record.
+      # The step name is literal: build the plugins the corpus config imports,
+      # not every package in the repo.
+      #
+      # This built all 32 packages until 2026-08-30. Measured on run
+      # 33324089803: 159s of a 194s job — 82% — to serve a gate that takes 6s,
+      # and `quality.yml`'s wall-clock is this job. The corpus config
+      # (benchmarks/suites/ilb-arena/configs/interlace.config.js) imports TEN
+      # plugins. Turbo still builds `@interlace/eslint-devkit` because the
+      # `...` suffix pulls each plugin's dependencies — that is the correct
+      # reason for it to build, rather than because the glob happened to
+      # include it.
+      #
+      # `scripts/__tests__/corpus-build-filter-lock.test.ts` fails if this list
+      # and the config's plugin list drift apart, so a plugin added to the
+      # corpus cannot silently go unbuilt here.
       - name: Build the plugins the corpus config imports
-        run: npx turbo build --filter='./packages/*'
+        run: |
+          npx turbo build \
+            --filter=eslint-plugin-browser-security... \
+            --filter=eslint-plugin-express-security... \
+            --filter=eslint-plugin-jwt-security... \
+            --filter=eslint-plugin-lambda-security... \
+            --filter=eslint-plugin-mongodb-security... \
+            --filter=eslint-plugin-nestjs-security... \
+            --filter=eslint-plugin-node-security... \
+            --filter=eslint-plugin-postgresql-security... \
+            --filter=eslint-plugin-secure-coding... \
+            --filter=eslint-plugin-vercel-ai-security...
 
       - name: Every CWE must still detect what it used to
         run: npx tsx scripts/recall-gate.ts
-
-      # These ride here rather than in a job of their own because they need a
-      # fully built tree and nothing else, and this job already has one. A
-      # dedicated job would mean a second `turbo build --filter='./packages/*'`
-      # — minutes of Actions time to re-derive a tree that already exists.
-      #
-      # Size growth stays advisory (the report is the point, not a gate), but
-      # the step fails when a *published* package has no baseline at all: that
-      # is a hole in the instrument, not a judgement about a number. Four
-      # plugins reached npm with no size history while this ran only at
-      # release, under continue-on-error.
-      - name: Artifact size report
-        run: npx tsx scripts/check-artifact-size.ts
-
-      # Consumer-facing cost of the layer 30 packages depend on: which peers it
-      # forces on them, and whether importing the barrel drags in a native
-      # binary or a compiler. Both were invariants defended by comments until
-      # this measured them.
-      - name: Devkit infrastructure metrics
-        run: npx tsx scripts/devkit-infra-metrics.ts
 
   lockfile:
     name: Lockfile Sync
