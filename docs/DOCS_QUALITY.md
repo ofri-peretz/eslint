@@ -121,7 +121,7 @@ pass/fail and can only see a hard break; a band sees the slow slide.
 | Metric | Target | Held by | Cadence |
 | :--- | :--- | :--- | :--- |
 | CWE-corpus F1 / recall / precision inside their band | no 2σ breach | `scripts/control-bands.ts` → `control-bands.yml` | weekly; a breach opens an **intent PR**, not a ticket |
-| Agent configuration still behaves | pass rate does not drop | `evals/` → `evals.yml` | on any change to `CLAUDE.md`, `AGENTS.md`, `.agent/**`, `lefthook.yml`; plus weekly |
+| Agent configuration still behaves | pass rate does not drop | `evals/` → `evals.yml` | on any change to `CLAUDE.md`, `AGENTS.md`, `.agent/**`, `lefthook.yml`; plus weekly. **Needs `CLAUDE_CODE_OAUTH_TOKEN`** (subscription, no per-token charge) — skipped until then |
 | Every relative link in an agent document resolves | 100% | `scripts/run-evals.ts --config` | PR (`docs-integrity`) |
 | Stage 1 / Stage 2 artifacts keep their shape | 100% | `intent-artifacts.lock.test.ts` | PR |
 | A release pauses for a human | always | `.claude/hooks/release-gate.sh` | every session |

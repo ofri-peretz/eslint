@@ -10,9 +10,18 @@ name: Agent Evals
 # agent in the repo worse and nothing would say so.
 #
 # Layer 1 is deterministic, free and always runs. Layer 2 runs real tasks against the
-# current configuration and needs ANTHROPIC_API_KEY; without the secret it reports
-# skipped rather than failing, so forks and secretless PRs are not blocked by an eval
-# they cannot run.
+# current configuration and needs a credential; without one it reports skipped rather
+# than failing, so forks and secretless PRs are not blocked by an eval they cannot run.
+#
+# BILLING — prefer CLAUDE_CODE_OAUTH_TOKEN.
+#   CLAUDE_CODE_OAUTH_TOKEN  one-year token from `claude setup-token`; runs bill against
+#                            the Claude subscription, with no per-token charge.
+#   ANTHROPIC_API_KEY        Console key, billed per token — money separate from any
+#                            subscription.
+# Both are passed here so either secret works, but ANTHROPIC_API_KEY OUTRANKS the OAuth
+# token in Claude Code's credential precedence: if both secrets exist, every run is
+# billed per token and the subscription token is never used. Set one, not both. The
+# runner prints which credential it used and warns when both are present.
 #
 # See evals/README.md.
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -61,6 +70,7 @@ jobs:
       - name: 🧪 Run evals
         id: evals
         env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: npx tsx scripts/run-evals.ts | tee evals.log
 
