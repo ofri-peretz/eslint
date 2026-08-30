@@ -333,12 +333,6 @@ const REGISTERED: RegistryEntry[] = [
     reason: 'Component-ness from /^[A-Z]/. The JSX convention.',
   },
   {
-    file: 'eslint-plugin-react-features/src/rules/react/hooks-exhaustive-deps.ts',
-    direction: 'suppress',
-    reason:
-      'Stability decided by /^set[A-Z]/, /dispatch/i, /Ref$/ — reports real refs and silently exempts reactive values. Being fixed in #733; delete this entry when that lands.',
-  },
-  {
     file: 'eslint-plugin-react-features/src/rules/react/no-unknown-property.ts',
     direction: 'suppress',
     reason:
