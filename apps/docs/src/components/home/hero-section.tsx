@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { HeroCosmic } from '@interlace/ui/patterns/hero-cosmic';
-import { ShimmerButton } from '@interlace/ui/magicui/shimmer-button';
+import { ShimmerButton } from '@interlace/ui/effects/shimmer-button';
 import { track } from '../../lib/analytics';
 
 /**
@@ -21,7 +21,7 @@ import { track } from '../../lib/analytics';
  * otherwise.
  *
  * The contract in three lines:
- *  - Both CTAs use magicui `<ShimmerButton>` (sibling parity, #3).
+ *  - Both CTAs use the `<ShimmerButton>` effect (sibling parity, #3).
  *  - Primary keeps defaults: `shimmer` + `highlight` truthy (animation
  *    budget per #8 — one animated CTA per surface).
  *  - Secondary passes `shimmer={false} highlight={false}` — same pill

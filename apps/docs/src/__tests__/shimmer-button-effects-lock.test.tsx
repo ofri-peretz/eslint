@@ -28,9 +28,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { ShimmerButton } from '@interlace/ui/magicui/shimmer-button';
+import { ShimmerButton } from '@interlace/ui/effects/shimmer-button';
 
-// Class fragments unique to each decorative layer in the magicui source.
+// Class fragments unique to each decorative layer in the effects source.
 // If the upstream class strings change, these constants are the single
 // place to update — keeping the test resilient to incidental refactors
 // while still pinning the behavioral contract.
