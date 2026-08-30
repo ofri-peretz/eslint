@@ -78,3 +78,72 @@ and compare the three numbers.
 - The merge queue, which attacks run *amplification* across PRs rather than
   latency within one. Blocked separately on
   [`../merge-latency/design.md`](../merge-latency/design.md).
+
+---
+
+## Root cause, 2026-08-30 — `setup` is one 451 MB download, ten times
+
+"Setup 133s" is not a serial wait. It is **13.3s × 10 jobs**, and that 13.3s is
+almost entirely a single operation. From the shard-5 job log:
+
+```
+21:43:41.28  Cache hit for: node-modules-Linux-ab918328…
+21:43:42.84  Received 0 of 451051181 (0.0%)
+21:43:49.72  Received 451051181 of 451051181 (100.0%), 54.6 MBs/sec
+21:43:55.63  Cache restored successfully
+```
+
+**7s to download 451 MB, 6s to unpack it.** Nothing else in `setup` is
+measurable — `npm ci` is skipped on the cache hit, and `package-manager-cache`
+is already off.
+
+So the gate moves **~4.5 GB of `node_modules` per run to execute 43 seconds of
+tests.** There are exactly two levers: fewer restores, or a smaller archive.
+
+### The archive has no fat to cut
+
+Root `node_modules` is 1732 MB unpacked. The top entries are the docs site's:
+`next` 200 MB, `@next` 86, `mermaid` 84, `@posthog` + `posthog-js` 86,
+`gpt-tokenizer` 55, `lucide-react` 40, `fumadocs-*` 36, `@base-ui` 19,
+`date-fns` 27, `storybook` 23 — roughly 650 MB that a plugin unit test never
+loads.
+
+Checked for genuinely dead weight; there is none. `mermaid`, `shiki`,
+`recharts`, `storybook` and `gpt-tokenizer` have zero matches for a direct
+`from '<pkg>'` import, but all five are really used — through `apps/docs`
+components, `next.config.mjs`, a vitest config, or a benchmark runner. Deleting
+any of them breaks the docs build. (One genuine defect surfaced and is
+unrelated to size: `packages/eslint-devkit` declares `gpt-tokenizer` as a
+devDependency and imports it nowhere — the two runners that use it live in the
+`benchmarks` workspace.)
+
+### Why every shard carries Next.js
+
+`SPLIT_ACROSS_SHARDS = { docs: 6 }` puts `apps/docs`'s tests **inside the
+plugin shard matrix**. Any shard may be a docs slice, so every shard has to be
+able to build and run the docs app — which means every shard restores the docs
+app's entire dependency tree, including on the eight runs where it holds only
+`eslint-plugin-*` packages.
+
+That is the root cause of both symptoms. It also explains the shard-count
+problem: `docs` is the single largest item (144s cold, per this file's own
+earlier note), so it sets the partition floor that ten shards exist to work
+around.
+
+### The fix, and why it is not "just use fewer shards"
+
+Separate the two populations:
+
+1. Move `docs` out of the plugin shard matrix into its own job, restoring the
+   full `node_modules`.
+2. Give the plugin shards a **lean** dependency restore — the app tree is not
+   in their closure once `docs` is gone.
+3. *Then* reduce the shard count. With the 144s item removed, the remaining
+   work is uniform and small, and the LPT floor is no longer set by one package.
+
+Order matters: step 3 alone is unsafe. Every timing in this document is from a
+**warm** turbo cache, where the ten `Run shard N of 10` steps summed to 43s. The
+`SPLIT_ACROSS_SHARDS` comment records `docs` at 144s and total test work at
+~375s under colder conditions. Cutting 10 → 4 against the warm number, while
+`docs` is still the largest indivisible item, risks a cold shard far worse than
+today's. Step 1 is what makes step 3 safe, which is why it goes first.
