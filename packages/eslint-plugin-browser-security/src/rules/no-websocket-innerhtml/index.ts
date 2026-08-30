@@ -183,6 +183,11 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
 
       'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
         const { isHandler } = isWsOnmessageAssignment(node);
+        // Husk from #409 ("one rule per finding"): that refactor removed the
+        // body and the `eventParam` it used, leaving the guard behind. Deleting
+        // it also orphans the predicate above, so it is a two-part removal —
+        // tracked separately rather than half-cut here.
+        // eslint-disable-next-line no-empty
         if (isHandler) {
         }
       },
@@ -218,6 +223,11 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
 
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         const { isHandler } = isWsAddEventListener(node);
+        // Husk from #409 ("one rule per finding"): that refactor removed the
+        // body and the `eventParam` it used, leaving the guard behind. Deleting
+        // it also orphans the predicate above, so it is a two-part removal —
+        // tracked separately rather than half-cut here.
+        // eslint-disable-next-line no-empty
         if (isHandler) {
         }
       },

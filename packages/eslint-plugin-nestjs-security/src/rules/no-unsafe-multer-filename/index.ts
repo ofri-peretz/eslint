@@ -167,6 +167,10 @@ export const noUnsafeMulterFilename = createRule<RuleOptions, MessageIds>({
           'file.originalname is the filename the client put in the multipart body — multer passes it through unchanged, so it can contain path separators and ../ segments. A timestamp or random prefix does not help: the traversal is in the part that follows it, and multer joins the result onto the destination directory. An upload named ../../../../app/dist/main.js overwrites the running server',
         severity: 'HIGH',
         compliance: ['SOC2', 'PCI-DSS'],
+        // this is the
+        // remediation SHOWN to the user; the `${}` is example code in prose,
+        // not an un-interpolated template.
+        // eslint-disable-next-line no-template-curly-in-string
         fix: 'Build the stored name yourself and take only the extension from the client: cb(null, `${randomUUID()}${extname(file.originalname)}`)',
         documentationLink: 'https://cwe.mitre.org/data/definitions/22.html',
       }),
