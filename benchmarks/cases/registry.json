@@ -107,7 +107,7 @@
       "id": "ILB-0004",
       "added": "2026-08-26",
       "title": "Array append written as a self-indexed length",
-      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists — a case that cannot fail is not evidence.",
+      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists \u2014 a case that cannot fail is not evidence.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -197,7 +197,7 @@
       "id": "ILB-0007",
       "added": "2026-08-26",
       "title": "A merge helper guarded by Object.hasOwn",
-      "rationale": "NOT a defect — it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
+      "rationale": "NOT a defect \u2014 it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -359,7 +359,7 @@
     {
       "id": "ILB-0013",
       "added": "2026-08-26",
-      "title": "a named const through a type assertion — 33% of findings, with the arithmetic case",
+      "title": "a named const through a type assertion \u2014 33% of findings, with the arithmetic case",
       "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw packages/excalidraw/colors.ts:17) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -419,7 +419,7 @@
     {
       "id": "ILB-0015",
       "added": "2026-08-26",
-      "title": "a coordinate pair — 39% of findings, the largest class",
+      "title": "a coordinate pair \u2014 39% of findings, the largest class",
       "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw examples/.../initialData.tsx:64) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -698,7 +698,7 @@
     {
       "id": "ILB-0024",
       "added": "2026-08-26",
-      "title": "a describe block — 1,415 findings in the wild",
+      "title": "a describe block \u2014 1,415 findings in the wild",
       "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (nwutils/getter tests/specs/request.test.js:10) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -758,7 +758,7 @@
     {
       "id": "ILB-0026",
       "added": "2026-08-26",
-      "title": "addListener — `addEventListener` was on the old host list and this was not",
+      "title": "addListener \u2014 `addEventListener` was on the old host list and this was not",
       "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/background.ts:217) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -898,7 +898,7 @@
     {
       "id": "ILB-0031",
       "added": "2026-08-26",
-      "title": "a promise passed as an argument — the nested call is skipped",
+      "title": "a promise passed as an argument \u2014 the nested call is skipped",
       "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
       "cwe": null,
       "severity": {
@@ -1158,7 +1158,7 @@
     {
       "id": "ILB-0041",
       "added": "2026-08-26",
-      "title": "an AST discriminant is not a credential — 11 findings in the wild",
+      "title": "an AST discriminant is not a credential \u2014 11 findings in the wild",
       "rationale": "Looks like a node-security/no-timing-unsafe-compare finding and is not. We reported it in real code (flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1232,7 +1232,7 @@
     {
       "id": "ILB-0044",
       "added": "2026-08-26",
-      "title": "OpenTelemetry context propagation is not an archive — 6 findings in the wild",
+      "title": "OpenTelemetry context propagation is not an archive \u2014 6 findings in the wild",
       "rationale": "Looks like a node-security/no-zip-slip finding and is not. We reported it in real code (diia-open-source/be-diia-app src/grpc/grpcService.ts:280) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1287,7 +1287,7 @@
     {
       "id": "ILB-0046",
       "added": "2026-08-26",
-      "title": "an algorithm name — 110 findings in the wild came from this shape",
+      "title": "an algorithm name \u2014 110 findings in the wild came from this shape",
       "rationale": "Looks like a node-security/require-secure-credential-storage finding and is not. We reported it in real code (auth0/express-openid-connect api.js:2) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1317,7 +1317,7 @@
     {
       "id": "ILB-0047",
       "added": "2026-08-26",
-      "title": "minify — the Vite, Rollup and esbuild spelling of the same setting",
+      "title": "minify \u2014 the Vite, Rollup and esbuild spelling of the same setting",
       "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
       "cwe": null,
       "severity": {
@@ -1750,7 +1750,7 @@
     {
       "id": "ILB-0061",
       "added": "2026-08-26",
-      "title": "an error code is not a credential — 69 findings in the wild",
+      "title": "an error code is not a credential \u2014 69 findings in the wild",
       "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (moleculerjs/moleculer utils.js:289) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1785,7 +1785,7 @@
     {
       "id": "ILB-0062",
       "added": "2026-08-26",
-      "title": "a filename is not a credential — 71 findings, the largest shape",
+      "title": "a filename is not a credential \u2014 71 findings, the largest shape",
       "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (IGNF/cartes.gouv.fr-entree-carto) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -3389,7 +3389,7 @@
       "id": "ILB-0114",
       "added": "2026-08-26",
       "title": "execFile with a caller-chosen argument",
-      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible \u2014 but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -3420,7 +3420,7 @@
       "id": "ILB-0115",
       "added": "2026-08-26",
       "title": "spawn with a caller-chosen argument",
-      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible \u2014 but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -3508,6 +3508,576 @@
         }
       ],
       "batteryId": "R01"
+    },
+    {
+      "id": "ILB-0118",
+      "added": "2026-08-30",
+      "title": "Cross-document message broadcast to any origin",
+      "rationale": "`'*'` tells the browser to deliver the message to whatever document currently occupies the frame. If the frame has navigated, or was navigated by an attacker, the payload lands in their document. MDN names this the primary security concern of the API.",
+      "cwe": "CWE-346",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "MDN Window.postMessage",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "window.parent.postMessage({ token: t }, '*');",
+      "coverage": [
+        {
+          "rule": "browser-security/no-postmessage-wildcard-origin",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0119",
+      "added": "2026-08-30",
+      "title": "A concrete target origin",
+      "rationale": "The same call with an origin the browser must match before delivering. Looks identical in shape to the defect and must stay quiet \u2014 this is the form the fix takes.",
+      "cwe": "CWE-346",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "MDN Window.postMessage",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "window.parent.postMessage({ token: t }, 'https://app.example.com');",
+      "coverage": [
+        {
+          "rule": "browser-security/no-postmessage-wildcard-origin",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0120",
+      "added": "2026-08-30",
+      "title": "A wildcard string that is not a target origin",
+      "rationale": "`'*'` appearing as the message BODY rather than the origin argument. A rule matching the literal without regard to argument position reports this.",
+      "cwe": "CWE-346",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "MDN Window.postMessage",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "window.parent.postMessage('*', 'https://app.example.com');",
+      "coverage": [
+        {
+          "rule": "browser-security/no-postmessage-wildcard-origin",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0121",
+      "added": "2026-08-30",
+      "title": "Request object spread straight into a Mongo filter",
+      "rationale": "A caller-controlled object becomes the query document. `{\"$ne\": null}` as a password turns the lookup into 'any user', which is the canonical NoSQL authentication bypass. OPEN MISS as of 2026-08-30: `no-unsafe-query` reports 0 on this. It only fires when a request value appears as a PROPERTY inside an object literal, so the most direct form of the bug \u2014 passing the request object whole \u2014 goes unreported. Executed, not assumed.",
+      "cwe": "CWE-943",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP NoSQL Injection",
+          "url": "https://owasp.org/www-community/Injection_Flaws",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { MongoClient } from 'mongodb';\nasync function f(db, req) { return db.collection('u').find(req.body); }",
+      "coverage": [],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0122",
+      "added": "2026-08-30",
+      "title": "The same lookup with the value pinned to a string",
+      "rationale": "Coercing to a primitive removes the operator surface entirely. The fix, and it must stay quiet.",
+      "cwe": "CWE-943",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP NoSQL Injection",
+          "url": "https://owasp.org/www-community/Injection_Flaws",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { MongoClient } from 'mongodb';\nasync function f(db, req) { return db.collection('u').find({ name: String(req.body.name) }); }",
+      "coverage": [
+        {
+          "rule": "mongodb-security/no-unsafe-query",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0123",
+      "added": "2026-08-30",
+      "title": "A module-scope constant reported as user input",
+      "rationale": "An object built from a `const` string in the same file. Nothing here is caller-controlled. OPEN FALSE POSITIVE as of 2026-08-30: `no-unsafe-query` reports it, with the message `User input \"NAME\" is used directly`. Its model is 'any identifier inside a filter object is user input' \u2014 an inline literal is silent, any binding is not. That single heuristic produces both this false positive and the miss in ILB-0121.",
+      "cwe": "CWE-943",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP NoSQL Injection",
+          "url": "https://owasp.org/www-community/Injection_Flaws",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { MongoClient } from 'mongodb';\nconst NAME = 'root';\nasync function f(db) { return db.collection('u').find({ name: NAME }); }",
+      "coverage": [],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0124",
+      "added": "2026-08-30",
+      "title": "A vendor secret key committed as a literal",
+      "rationale": "`sk_live_` is Stripe's published prefix for a live secret key. The name of the binding is irrelevant \u2014 the FORMAT is somebody else's contract, so the finding does not depend on what a project calls its variables.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const anything = 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456';",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0125",
+      "added": "2026-08-30",
+      "title": "The same key read from the environment",
+      "rationale": "The literal is gone; the name is unchanged. A rule keying on the NAME still reports this, which is the false positive the format check exists to avoid.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const apiKey = process.env.STRIPE_SECRET_KEY;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0126",
+      "added": "2026-08-30",
+      "title": "A publishable key, which is meant to be in the bundle",
+      "rationale": "`pk_live_` is the half Stripe documents as safe to ship to a browser. Reporting it teaches consumers to disable the rule.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const publishable = 'pk_live_FAKE_PUBLISHABLE_KEY_FOR_TESTING_ONLY_123456';",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0127",
+      "added": "2026-08-30",
+      "title": "Nested quantifier over an overlapping character class",
+      "rationale": "`(a+)+$` is the textbook catastrophic backtrack: the inner and outer quantifiers can partition the same input exponentially many ways, so a non-matching string of length n costs 2^n steps.",
+      "cwe": "CWE-1333",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1333",
+          "url": "https://cwe.mitre.org/data/definitions/1333.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const re = /^(a+)+$/;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-redos-vulnerable-regex",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0128",
+      "added": "2026-08-30",
+      "title": "The same intent written without nesting",
+      "rationale": "One quantifier over one class matches the same language in linear time.",
+      "cwe": "CWE-1333",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1333",
+          "url": "https://cwe.mitre.org/data/definitions/1333.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const re = /^a+$/;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-redos-vulnerable-regex",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0129",
+      "added": "2026-08-30",
+      "title": "Nested quantifiers over DISJOINT classes",
+      "rationale": "`(a+b+)+` nests, but the classes cannot overlap, so there is only one way to partition any input and no backtracking explosion. A rule matching the SHAPE rather than the ambiguity reports it.",
+      "cwe": "CWE-1333",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1333",
+          "url": "https://cwe.mitre.org/data/definitions/1333.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const re = /^(a+b+)+$/;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-redos-vulnerable-regex",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0130",
+      "added": "2026-08-30",
+      "title": "A reactive value missing from the dependency array",
+      "rationale": "The effect closes over `userId` and declares no dependency on it, so it keeps the value from the render in which it first ran. React's own docs call this the stale-closure bug; the symptom is a screen that silently shows another user's data after navigation.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "React: useEffect dependencies",
+          "url": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { useEffect } from 'react';\nexport function C({ userId }) { useEffect(() => { load(userId); }, []); return null; }",
+      "coverage": [
+        {
+          "rule": "react-features/hooks-exhaustive-deps",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0131",
+      "added": "2026-08-30",
+      "title": "The same effect with the value declared",
+      "rationale": "Adding the dependency is the whole fix, and it must stay quiet.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "React: useEffect dependencies",
+          "url": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { useEffect } from 'react';\nexport function C({ userId }) { useEffect(() => { load(userId); }, [userId]); return null; }",
+      "coverage": [
+        {
+          "rule": "react-features/hooks-exhaustive-deps",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0132",
+      "added": "2026-08-30",
+      "title": "A ref read inside an effect that declares nothing",
+      "rationale": "`useRef` returns a stable object, so React explicitly tells you NOT to list it. A rule treating every closed-over binding as reactive reports this, and reporting it teaches consumers to add a dependency React documents as wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "React: useEffect dependencies",
+          "url": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { useEffect, useRef } from 'react';\nexport function C() { const r = useRef(null); useEffect(() => { look(r.current); }, []); return null; }",
+      "coverage": [
+        {
+          "rule": "react-features/hooks-exhaustive-deps",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0133",
+      "added": "2026-08-30",
+      "title": "Model output written straight into the DOM",
+      "rationale": "A model's text is attacker-influenced whenever any part of the prompt is. Writing it to `innerHTML` makes prompt injection into stored XSS \u2014 OWASP's LLM02 in its shortest form.",
+      "cwe": "CWE-79",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP LLM02 Insecure Output Handling",
+          "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { generateText } from 'ai';\nasync function f(el, prompt) { const { text } = await generateText({ model: m, prompt }); el.innerHTML = text; }",
+      "coverage": [
+        {
+          "rule": "vercel-ai-security/no-unsafe-output-handling",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0134",
+      "added": "2026-08-30",
+      "title": "The same output assigned as text",
+      "rationale": "`textContent` cannot introduce markup. The fix, and it must stay quiet.",
+      "cwe": "CWE-79",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP LLM02 Insecure Output Handling",
+          "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { generateText } from 'ai';\nasync function f(el, prompt) { const { text } = await generateText({ model: m, prompt }); el.textContent = text; }",
+      "coverage": [
+        {
+          "rule": "vercel-ai-security/no-unsafe-output-handling",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0135",
+      "added": "2026-08-30",
+      "title": "A local string written to innerHTML in a file that also calls a model",
+      "rationale": "The sink is real but the value never touched the model. A rule keying on 'this file imports the AI SDK and something reaches innerHTML' reports it.",
+      "cwe": "CWE-79",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP LLM02 Insecure Output Handling",
+          "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { generateText } from 'ai';\nasync function f(el) { const label = 'Loading\u2026'; el.innerHTML = label; }",
+      "coverage": [
+        {
+          "rule": "vercel-ai-security/no-unsafe-output-handling",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0136",
+      "added": "2026-08-30",
+      "title": "Two modules importing each other",
+      "rationale": "`a` imports `b`, `b` imports `a`. At runtime one of them observes the other half-initialised, so a `const` is `undefined` at module-evaluation time and the failure appears far from its cause. Needs real files: a cycle is a property of the module GRAPH, so a single source string cannot express one \u2014 the fixture pair under benchmarks/cases/fixtures/cycle exists for that reason.",
+      "cwe": "CWE-1047",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1047",
+          "url": "https://cwe.mitre.org/data/definitions/1047.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { b } from './b';\nexport const a = b;\n",
+      "coverage": [
+        {
+          "rule": "import-next/no-cycle",
+          "expect": "report",
+          "filename": "benchmarks/cases/fixtures/cycle/a.ts",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0137",
+      "added": "2026-08-30",
+      "title": "The same import, to a module that imports nothing back",
+      "rationale": "Structurally identical at the import site \u2014 same syntax, same directory, same resolver work. Only the far end differs, which is what makes it the decoy: a rule that reports on 'this file imports a sibling' rather than on the graph reports this too.",
+      "cwe": "CWE-1047",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1047",
+          "url": "https://cwe.mitre.org/data/definitions/1047.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { leaf } from './leaf';\nexport const a = leaf;\n",
+      "coverage": [
+        {
+          "rule": "import-next/no-cycle",
+          "expect": "silent",
+          "filename": "benchmarks/cases/fixtures/cycle/a.ts",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
     }
   ]
 }

@@ -72,3 +72,43 @@ every claim in it is an executed case rather than an assertion.
   number of new cases rather than staying flat.
 - Each new case's `defect` fires and its `decoy` and `remedy` stay quiet, shown
   by the registry runner rather than asserted here.
+
+## Outcome — 2026-08-30
+
+Met. Rules with a registry case **27 → 34**; flagship coverage **2/9 → 9/9**;
+verified cases **115 → 133**.
+
+Three things the work found that the plan did not anticipate:
+
+**`import-next/no-cycle` needed real files.** A cycle is a property of the
+module GRAPH, so no single source string can express one. The case lints its
+`code` under a `filename` inside `benchmarks/cases/fixtures/cycle/`, where a
+sibling `b.ts` imports back. Verified non-vacuous by breaking that import: the
+case regresses by name and recovers when it is restored. A cycle case that
+passes because the resolver found nothing would have been the worst possible
+addition to this registry.
+
+**`mongodb-security/no-unsafe-query` is wrong in both directions**, and it is a
+flagship rule. Executed:
+
+```
+0  find(req.body)                          ← MISSED
+1  find({ name: req.body.name })           ← reported
+0  findOne(req.query)                      ← MISSED
+1  find({ name: NAME })  const NAME='root' ← REPORTED as "user input"
+0  find({ name: 'root' })                  ← silent
+```
+
+Its model is "any identifier inside a filter object is user input", which
+produces the miss and the false positive from one heuristic. Recorded as
+ILB-0121 and ILB-0123 with **no coverage claim** — we do not get to assert a
+rule handles what it does not — so open misses went 2 → 4. That is the number
+getting more honest, not worse. The fix has its own intent,
+`no-unsafe-query-decides-from-a-binding`, per the constraint that a
+case-writing branch may not also change rules.
+
+**Two of the nine rules are not security rules**, so `cwe` is null on their
+cases and the rationale carries the argument instead. `hooks-exhaustive-deps`
+earns its place through a stale closure showing another user's data;
+`no-cycle` through a `const` that is `undefined` at module-evaluation time. A
+CWE invented to fill the field would have been worse than an empty one.

@@ -36,7 +36,7 @@ Two questions this answers:
 | #   | Stage        | Artifact it owes                                                | Enforced by                                                      | Number that moves                            |
 | --- | ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------- |
 | 1   | **Plan**     | An `intent/` file — what is wanted, why, under which constraint | `check:intent`                                                   | undeclared packages (must be 0)              |
-| 2   | **Design**   | A **case** in `benchmarks/cases/registry.json` that FAILS       | `check:case-registry`                                            | verified cases (grow-only)                   |
+| 2   | **Design**   | A **case** in `benchmarks/cases/registry.json` that FAILS       | `check:case-registry`, `check:new-rule-cases`                    | verified cases (grow-only)                   |
 | 3   | **Build**    | Rule using devkit spellings, not open-coded reads               | `check:spellings`, `check:key-vocabulary`, `lint:name-inference` | spelling debt (shrink-only)                  |
 | 4   | **Test**     | A sealed case per fixed FP/FN; ≥3 classified cases a side       | `check:rule-cases`, `check:per-rule-budget`                      | sealed FP+FN (grow), floor breaches (shrink) |
 | 5   | **Deploy**   | A changeset naming **every** package whose behaviour changed    | `check-changeset-coverage`                                       | uncovered packages (must be 0)               |
@@ -106,8 +106,10 @@ strings, not that anyone stated what defect it exists to catch — and
 `check:case-registry` ratchets the verified set, so it cannot notice a rule
 that never had a case at all.
 
-The measurable consequence: **27 of 470 rules carry a registry case.** The
-stage the whole case-first method rests on held for 6% of the suite.
+The measurable consequence: **34 of 470 rules carry a registry case**, up from 27 — and all nine
+flagship rules now have one, up from two. The stage the whole case-first method
+rests on still holds for 7% of the suite; the rules it holds for are now the
+ones we lead with.
 
 `check:new-rule-cases` closes it forward. It diffs the generated rule manifest
 between the merge base and HEAD — the manifest and not the filesystem, because
@@ -130,7 +132,7 @@ question found **1,156 sites** where a rule saw `'foo'` but not `` `foo` ``, or
 `@interlace/eslint-devkit` exports the five spellings — `staticString`,
 `propertyName`, `objectKeyName`, `memberPath`, `readsRequestShape` — and
 `check:spellings` refuses a **new** open-coded read while holding the existing
-843 as frozen debt.
+841 as frozen debt.
 
 Two rules bind what a rule is allowed to know:
 
