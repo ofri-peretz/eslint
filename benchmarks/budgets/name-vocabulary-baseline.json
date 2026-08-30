@@ -1,7 +1,6 @@
 {
   "note": "Rules that decide from an identifier name with no option to REPLACE the vocabulary. Shrink-only.",
   "rules": [
-    "browser-security/no-sensitive-indexeddb",
     "express-security/no-permissive-trust-proxy",
     "express-security/require-route-authentication",
     "import-next/no-mutable-exports",
@@ -13,7 +12,6 @@
     "node-security/no-ssrf",
     "node-security/no-unsafe-buffer-alloc",
     "secure-coding/detect-weak-password-validation",
-    "secure-coding/no-hardcoded-session-tokens",
     "secure-coding/no-unsafe-regex-construction",
     "secure-coding/no-xpath-injection"
   ]
