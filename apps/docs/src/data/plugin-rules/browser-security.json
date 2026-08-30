@@ -9,7 +9,7 @@
       "cvss": "",
       "description": "Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.",
       "typeStatus": "unaware",
-      "recommended": false,
+      "recommended": true,
       "warns": false,
       "fixable": false,
       "hasSuggestions": false,
@@ -22,7 +22,7 @@
       "cwe": "CWE-295",
       "owasp": "",
       "cvss": "",
-      "description": "Prevents disabling App Transport Security (ATS) by detecting allowArbitraryLoads: true in configuration.",
+      "description": "Prevents disabling App Transport Security (ATS) by detecting NSAllowsArbitraryLoads: true in an Expo/React…",
       "typeStatus": "unaware",
       "recommended": true,
       "warns": false,
@@ -459,7 +459,7 @@
       "cvss": "",
       "description": "Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)",
       "typeStatus": "unaware",
-      "recommended": false,
+      "recommended": true,
       "warns": false,
       "fixable": false,
       "hasSuggestions": false,
@@ -694,5 +694,5 @@
     }
   ],
   "totalRules": 46,
-  "lastSynced": "2026-08-15T18:33:15.699Z"
+  "lastSynced": "2026-08-30T16:32:45.726Z"
 }

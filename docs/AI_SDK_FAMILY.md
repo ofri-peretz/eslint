@@ -32,8 +32,8 @@ Applies beyond this family. The per-driver plugins from the `no-sql-injection` c
 take it too — `eslint-plugin-orm-security`, `eslint-plugin-mysql-security`,
 `eslint-plugin-sqlite-security` (all free on npm as of 2026-08-02).
 
-> **Three published packages predate the convention:** `eslint-plugin-pg`,
-> `eslint-plugin-jwt` and `eslint-plugin-secure-coding` are all security-domain without the
+> **Three published packages predate the convention:** `eslint-plugin-postgresql-security`,
+> `eslint-plugin-jwt-security` and `eslint-plugin-secure-coding` are all security-domain without the
 > suffix. Renaming a published package is a real break — npm deprecate + republish, every
 > docs page and config example rewritten, and the awesome-eslint listings (live since
 > 2026-08-02) point at the current names. Recorded here as a known inconsistency; renaming

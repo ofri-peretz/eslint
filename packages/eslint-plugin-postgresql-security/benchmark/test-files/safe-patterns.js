@@ -1,5 +1,5 @@
 /**
- * Safe PostgreSQL code patterns for eslint-plugin-pg benchmark
+ * Safe PostgreSQL code patterns for eslint-plugin-postgresql-security benchmark
  * 
  * This file contains correct, secure patterns that should NOT trigger any rules.
  * Used to verify 0 false positives.

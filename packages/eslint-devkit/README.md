@@ -553,5 +553,5 @@ See [CHANGELOG.md](./CHANGELOG.md) for a list of changes and version history.
 </p>
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-devkit" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>
 </p>

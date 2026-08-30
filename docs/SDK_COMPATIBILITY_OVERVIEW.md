@@ -33,8 +33,8 @@ Our ESLint plugins depend on third-party SDK APIs:
 
 | Plugin                             | SDK Dependencies                     |
 | ---------------------------------- | ------------------------------------ |
-| `eslint-plugin-pg`                 | `pg` (node-postgres)                 |
-| `eslint-plugin-jwt`                | `jsonwebtoken`, `jose`, `jwt-decode` |
+| `eslint-plugin-postgresql-security`                 | `pg` (node-postgres)                 |
+| `eslint-plugin-jwt-security`                | `jsonwebtoken`, `jose`, `jwt-decode` |
 | `eslint-plugin-vercel-ai-security` | `ai` (Vercel AI SDK)                 |
 | `eslint-plugin-express-security`   | `express`, `helmet`, `cors`          |
 | `eslint-plugin-nestjs-security`    | `@nestjs/common`, `class-validator`  |
@@ -116,7 +116,7 @@ On failure, the workflow generates a structured report:
 
 ## Summary
 
-The eslint-plugin-pg interface compatibility tests have FAILED.
+The eslint-plugin-postgresql-security interface compatibility tests have FAILED.
 
 ## Version Information
 
@@ -229,16 +229,16 @@ it('exports Query class', () => {
 npm vitest run packages/*/src/__compatibility__/*.spec.ts
 
 # Run specific plugin
-npm vitest run packages/eslint-plugin-pg/src/__compatibility__/*.spec.ts
+npm vitest run packages/eslint-plugin-postgresql-security/src/__compatibility__/*.spec.ts
 
 # With verbose output
-npm vitest run packages/eslint-plugin-pg/src/__compatibility__/*.spec.ts --reporter=verbose
+npm vitest run packages/eslint-plugin-postgresql-security/src/__compatibility__/*.spec.ts --reporter=verbose
 ```
 
 **Expected Output:**
 
 ```
-✓ packages/eslint-plugin-pg/src/__compatibility__/pg-interface.spec.ts
+✓ packages/eslint-plugin-postgresql-security/src/__compatibility__/pg-interface.spec.ts
   ✓ pg Interface Compatibility
     ✓ Core Exports
       ✓ exports Client class
@@ -259,7 +259,7 @@ npm vitest run packages/eslint-plugin-pg/src/__compatibility__/*.spec.ts --repor
 ### Step 1: Identify the Failure
 
 ```
-❌ packages/eslint-plugin-pg/src/__compatibility__/pg-interface.spec.ts
+❌ packages/eslint-plugin-postgresql-security/src/__compatibility__/pg-interface.spec.ts
   ✓ pg Interface Compatibility
     ✓ Core Exports
       ❌ exports Query class (AssertionError: expected undefined to be defined)

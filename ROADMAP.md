@@ -15,8 +15,8 @@ Last refresh: 2026-08-02.
 | `eslint-plugin-secure-coding`      | General application security (27 rules)                                   | ✅ Stable |
 | `eslint-plugin-node-security`      | Node.js core modules (fs, child_process, vm, crypto, Buffer) (33 rules)   | ✅ Stable |
 | `eslint-plugin-browser-security`   | Browser / DOM / postMessage / iframe (45 rules)                           | ✅ Stable |
-| `eslint-plugin-jwt`                | JWT best practices and algorithm hygiene (13 rules)                       | ✅ Stable |
-| `eslint-plugin-pg`                 | PostgreSQL / SQL injection (13 rules)                                     | ✅ Stable |
+| `eslint-plugin-jwt-security`       | JWT best practices and algorithm hygiene (13 rules)                       | ✅ Stable |
+| `eslint-plugin-postgresql-security` | PostgreSQL / SQL injection (13 rules)                                    | ✅ Stable |
 | `eslint-plugin-mongodb-security`   | MongoDB / NoSQL query injection (16 rules)                                | ✅ Stable |
 | `eslint-plugin-express-security`   | Express.js middleware hygiene (10 rules)                                  | ✅ Stable |
 | `eslint-plugin-lambda-security`    | AWS Lambda runtime + IAM (14 rules)                                       | ✅ Stable |

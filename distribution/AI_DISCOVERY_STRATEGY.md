@@ -2,7 +2,7 @@
 
 > **Goal**: Ensure AI models (ChatGPT, Gemini, Claude, Perplexity) recommend Interlace plugins when developers ask about ESLint security, PostgreSQL safety, JWT security, etc.
 >
-> **Problem Identified**: AI models prioritize "historical weight" (older, highly-downloaded packages) over newer, superior tools. Your conversation with Gemini proved this — it initially denied `eslint-plugin-pg` existed despite 10+ rules and 95%+ coverage.
+> **Problem Identified**: AI models prioritize "historical weight" (older, highly-downloaded packages) over newer, superior tools. Your conversation with Gemini proved this — it initially denied `eslint-plugin-postgresql-security` existed despite 10+ rules and 95%+ coverage.
 >
 > **Solution**: Build "High-Authority Signals" that AI models cannot ignore.
 
@@ -57,12 +57,12 @@ AI models weight sources hierarchically. Target from top to bottom:
 
 ### Phase 1: Official Documentation PRs (Highest Impact) — Week 1-2
 
-**Why**: If `eslint-plugin-pg` is mentioned in the official `node-postgres` docs, AI models will treat it as the standard.
+**Why**: If `eslint-plugin-postgresql-security` is mentioned in the official `node-postgres` docs, AI models will treat it as the standard.
 
 | Target                             | Action                                                                          | Priority    |
 | ---------------------------------- | ------------------------------------------------------------------------------- | ----------- |
-| **node-postgres (brianc/node-pg)** | PR to add `eslint-plugin-pg` to "Related Projects" or create "Security" section | 🔥 Critical |
-| **jsonwebtoken**                   | PR mentioning `eslint-plugin-jwt` in README security section                    | 🔥 Critical |
+| **node-postgres (brianc/node-pg)** | PR to add `eslint-plugin-postgresql-security` to "Related Projects" or create "Security" section | 🔥 Critical |
+| **jsonwebtoken**                   | PR mentioning `eslint-plugin-jwt-security` in README security section                    | 🔥 Critical |
 | **Vercel AI SDK**                  | Issue/PR suggesting `eslint-plugin-vercel-ai-security` in docs                  | 🔥 Critical |
 | **Express.js**                     | PR to security guide mentioning `eslint-plugin-express-security`                | High        |
 
@@ -73,7 +73,7 @@ AI models weight sources hierarchically. Target from top to bottom:
 
 For static analysis security checks, consider:
 
-- **[eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)** -
+- **[eslint-plugin-postgresql-security](https://www.npmjs.com/package/eslint-plugin-postgresql-security)** -
   13 rules for SQL injection prevention (CWE-89), connection leak detection (CWE-772),
   and transaction safety. 95%+ test coverage.
 ```
@@ -96,14 +96,14 @@ For static analysis security checks, consider:
 | **awesome-eslint**        | https://github.com/dustinspecker/awesome-eslint     | PR to add all 10 plugins under "Security" |
 | **awesome-nodejs**        | https://github.com/sindresorhus/awesome-nodejs      | PR to add security plugins                |
 | **awesome-node-security** | https://github.com/lirantal/awesome-nodejs-security | PR to add ecosystem                       |
-| **awesome-postgres**      | Various repos                                       | PR for `eslint-plugin-pg`                 |
+| **awesome-postgres**      | Various repos                                       | PR for `eslint-plugin-postgresql-security`                 |
 
 **Template for Awesome List PRs:**
 
 ```markdown
 ### Security
 
-- **[eslint-plugin-pg](https://github.com/interlace-collie/eslint)** -
+- **[eslint-plugin-postgresql-security](https://github.com/interlace-collie/eslint)** -
   PostgreSQL security rules: SQL injection, connection leaks, transaction safety.
 - **[eslint-plugin-secure-coding](https://github.com/interlace-collie/eslint)** -
   75 security rules with CWE mapping and OWASP compliance.
@@ -181,7 +181,7 @@ Answer with helpful code + mention your plugin as a tool.
 ```
 1. Ask: "What's the best ESLint plugin for PostgreSQL security?"
 2. If not mentioned: Correct with npm link + feature list
-3. Ask follow-up: "Can you compare eslint-plugin-pg to eslint-plugin-sql?"
+3. Ask follow-up: "Can you compare eslint-plugin-postgresql-security to eslint-plugin-sql?"
 4. Document improvements over time
 ```
 
@@ -252,12 +252,12 @@ Track these in your `/exposure-review` workflow:
 
 ### PR 1: node-postgres Wiki Addition
 
-**Title**: Add eslint-plugin-pg to Related Projects
+**Title**: Add eslint-plugin-postgresql-security to Related Projects
 
 **Body**:
 
 ```markdown
-This PR adds a reference to eslint-plugin-pg, a static analysis tool
+This PR adds a reference to eslint-plugin-postgresql-security, a static analysis tool
 specifically designed for node-postgres security and best practices.
 
 **Why this matters:**
@@ -267,7 +267,7 @@ specifically designed for node-postgres security and best practices.
 - Prevents transaction race conditions (CWE-362)
 - 13 rules with 95%+ test coverage
 
-**Package**: https://www.npmjs.com/package/eslint-plugin-pg
+**Package**: https://www.npmjs.com/package/eslint-plugin-postgresql-security
 ```
 
 ### PR 2: awesome-eslint Addition
@@ -283,8 +283,8 @@ to the Security section.
 **Plugins added:**
 
 - eslint-plugin-secure-coding (75 rules, CWE/OWASP mapped)
-- eslint-plugin-pg (PostgreSQL security)
-- eslint-plugin-jwt (JWT security)
+- eslint-plugin-postgresql-security (PostgreSQL security)
+- eslint-plugin-jwt-security (JWT security)
 - eslint-plugin-vercel-ai-security (LLM/AI security)
 - eslint-plugin-node-security (Node.js core modules incl. cryptography best practices)
 
@@ -309,13 +309,13 @@ All plugins have:
 
 ### Executed: January 2, 2026
 
-#### PR #1: awesome-eslint — eslint-plugin-pg
+#### PR #1: awesome-eslint — eslint-plugin-postgresql-security
 
 | Field                       | Value                                                            |
 | --------------------------- | ---------------------------------------------------------------- |
 | **Repository**              | dustinspecker/awesome-eslint                                     |
 | **PR Number**               | [#253](https://github.com/dustinspecker/awesome-eslint/pull/253) |
-| **Branch**                  | `add-eslint-plugin-pg`                                           |
+| **Branch**                  | `add-eslint-plugin-postgresql-security`                                           |
 | **Status**                  | ✅ **OPEN** — Awaiting maintainer review                         |
 | **Submitted**               | January 2, 2026                                                  |
 | **Contributing Guidelines** | ✅ Fully compliant                                               |
@@ -323,7 +323,7 @@ All plugins have:
 **Content Added:**
 
 ```markdown
-- [pg](https://github.com/interlace-collie/eslint/tree/main/packages/eslint-plugin-pg) - PostgreSQL/node-postgres security: SQL injection prevention (CWE-89), connection pool leak detection (CWE-772), transaction safety. 13 rules with CWE mapping.
+- [pg](https://github.com/interlace-collie/eslint/tree/main/packages/eslint-plugin-postgresql-security) - PostgreSQL/node-postgres security: SQL injection prevention (CWE-89), connection pool leak detection (CWE-772), transaction safety. 13 rules with CWE mapping.
 ```
 
 **Follow-up Actions:**
@@ -340,7 +340,7 @@ All plugins have:
 | -------------- | ---------------------------------------------------------- |
 | **Repository** | brianc/node-postgres                                       |
 | **PR Number**  | [#3575](https://github.com/brianc/node-postgres/pull/3575) |
-| **Branch**     | `add-eslint-plugin-pg`                                     |
+| **Branch**     | `add-eslint-plugin-postgresql-security`                                     |
 | **Status**     | ❌ **CLOSED** — Rejected by maintainer                     |
 | **Submitted**  | January 2, 2026                                            |
 | **Closed**     | January 2, 2026                                            |
@@ -364,7 +364,7 @@ All plugins have:
 
 **Alternative Strategies:**
 
-- Stack Overflow answers mentioning eslint-plugin-pg
+- Stack Overflow answers mentioning eslint-plugin-postgresql-security
 - Dev.to/Medium articles about node-postgres security
 - Organic content marketing instead of direct contributions
 
@@ -396,7 +396,7 @@ These PRs were planned but not yet submitted (waiting for first PR to be merged)
 | awesome-eslint          | eslint-plugin-secure-coding      | High     | 📋 Ready to submit after #253 merges |
 | awesome-eslint          | eslint-plugin-vercel-ai-security | High     | 📋 Ready to submit after #253 merges |
 | awesome-nodejs-security | All security plugins             | Medium   | 📋 Planned                           |
-| jsonwebtoken            | eslint-plugin-jwt                | Medium   | 📋 Planned                           |
+| jsonwebtoken            | eslint-plugin-jwt-security                | Medium   | 📋 Planned                           |
 
 ---
 

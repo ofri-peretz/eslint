@@ -59,13 +59,13 @@ graph TB
 | `secure-coding`                | `eslint-plugin-secure-coding`      |     ✅ Published     |         28         |
 | `node-security`                | `eslint-plugin-node-security`      |     ✅ Published     |         36         |
 | `browser-security`             | `eslint-plugin-browser-security`   |     ✅ Published     |         45         |
-| `jwt`                          | `eslint-plugin-jwt`                |     ✅ Published     |         13         |
+| `jwt`                          | `eslint-plugin-jwt-security`                |     ✅ Published     |         13         |
 | `vercel-ai-security`           | `eslint-plugin-vercel-ai-security` |     ✅ Published     |         19         |
 | `lambda-security`              | `eslint-plugin-lambda-security`    |     ✅ Published     |         14         |
 | `express-security`             | `eslint-plugin-express-security`   |     ✅ Published     |         10         |
 | `nestjs-security`              | `eslint-plugin-nestjs-security`    |     ✅ Published     |         6          |
 | `mongodb-security`             | `eslint-plugin-mongodb-security`   |     ✅ Published     |         16         |
-| `pg`                           | `eslint-plugin-pg`                 |     ✅ Published     |         13         |
+| `pg`                           | `eslint-plugin-postgresql-security`                 |     ✅ Published     |         13         |
 | **Quality & Governance Suite** |                                    |                      |                    |
 | `maintainability`              | `eslint-plugin-maintainability`    |     ✅ Published     |         8          |
 | `reliability`                  | `eslint-plugin-reliability`        |     ✅ Published     |         8          |

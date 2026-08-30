@@ -30,7 +30,7 @@ import type { TSESLint } from '@typescript-eslint/utils';
 /**
  * Documentation URL resolver function type
  */
-type DocsUrl = (ruleName: string) => string;
+type DocsUrl = (ruleName: string) => string | undefined;
 
 /**
  * Check if the variable contains an object strictly rejecting arrays
@@ -392,14 +392,20 @@ export function createRuleCreator<PluginDocs = unknown>(urlCreator: DocsUrl) {
 }
 
 /**
- * Default rule creator with a generic documentation URL pattern
+ * Default rule creator. Mints NO documentation URL.
  *
- * This can be used directly if you don't need custom URL generation
+ * This factory cannot know which plugin a rule belongs to, so any URL it builds is a
+ * guess. It used to guess `packages/eslint-plugin/docs/rules/<name>.md` — a package
+ * that has never existed in this repo — which every plugin then had to scrub on export
+ * via {@link withCanonicalDocsUrls}. That worked only for slugs registered in
+ * {@link PLUGIN_DOCS_CATEGORY}: a rule authored before its plugin was registered kept
+ * the placeholder and shipped a "see docs" link that 404s in every IDE, CI report and
+ * SARIF file.
+ *
+ * Omitting the URL makes that gap silent-but-correct instead of silently wrong, and
+ * {@link withCanonicalDocsUrls} warns when a slug is missing so it gets noticed.
  */
-export const createRule = RuleCreator(
-  (name) =>
-    `https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
-);
+export const createRule = RuleCreator(() => undefined);
 
 /**
  * Drop-in replacement for the `ESLintUtils` namespace this module used to
@@ -481,6 +487,18 @@ export const docsUrlFor = (
 export function withCanonicalDocsUrls<
   T extends Record<string, TSESLint.RuleModule<string, readonly unknown[]>>,
 >(pluginSlug: string, rules: T): T {
+  if (!PLUGIN_DOCS_CATEGORY[pluginSlug]) {
+    // The one path that used to fail silently: a plugin exports rules before its slug is
+    // registered, `docsUrlFor` returns null for every rule, and the whole plugin ships
+    // without docs links. Warn rather than throw — a missing link must never break a
+    // consumer's lint run over a documentation defect.
+    console.warn(
+      `[eslint-devkit] withCanonicalDocsUrls('${pluginSlug}'): slug is not registered in ` +
+        `PLUGIN_DOCS_CATEGORY, so no rule in this plugin gets a meta.docs.url. Register it ` +
+        `in packages/eslint-devkit/src/rule-creation/rule-creator.ts.`,
+    );
+  }
+
   // `Object.entries` READS every property, and a plugin barrel's properties are
   // getters: the build defers each rule module behind one so `require('the-plugin')`
   // does not load 42 rule files a consumer never enables. Reading them all here undid

@@ -34,8 +34,8 @@ flags:
   eslint-plugin-import-next:
     paths: [packages/eslint-plugin-import-next/]
     carryforward: true
-  eslint-plugin-jwt:
-    paths: [packages/eslint-plugin-jwt/]
+  eslint-plugin-jwt-security:
+    paths: [packages/eslint-plugin-jwt-security/]
     carryforward: true
   eslint-plugin-lambda-security:
     paths: [packages/eslint-plugin-lambda-security/]
@@ -61,8 +61,8 @@ flags:
   eslint-plugin-operability:
     paths: [packages/eslint-plugin-operability/]
     carryforward: true
-  eslint-plugin-pg:
-    paths: [packages/eslint-plugin-pg/]
+  eslint-plugin-postgresql-security:
+    paths: [packages/eslint-plugin-postgresql-security/]
     carryforward: true
   eslint-plugin-react-a11y:
     paths: [packages/eslint-plugin-react-a11y/]
@@ -117,20 +117,20 @@ component_management:
         - type: patch
           target: 100%
 
-    - component_id: eslint-plugin-jwt
-      name: 'eslint-plugin-jwt'
+    - component_id: eslint-plugin-jwt-security
+      name: 'eslint-plugin-jwt-security'
       paths:
-        - packages/eslint-plugin-jwt/**
+        - packages/eslint-plugin-jwt-security/**
       statuses:
         - type: project
           target: 100%
         - type: patch
           target: 100%
 
-    - component_id: eslint-plugin-pg
-      name: 'eslint-plugin-pg'
+    - component_id: eslint-plugin-postgresql-security
+      name: 'eslint-plugin-postgresql-security'
       paths:
-        - packages/eslint-plugin-pg/**
+        - packages/eslint-plugin-postgresql-security/**
       statuses:
         - type: project
           target: 100%

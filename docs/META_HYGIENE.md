@@ -21,7 +21,7 @@ Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` 
 
 | Plugin | Rules | Score | type | description | url | **cwe** | cvss | fixable | hasSuggestions |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `eslint-plugin-jwt` | 13 | 100% | 100% | 100% | 100% | 13/13 | 100% | 92% | 100% |
+| `eslint-plugin-jwt-security` | 13 | 100% | 100% | 100% | 100% | 13/13 | 100% | 92% | 100% |
 | `eslint-plugin-mongodb-security` | 16 | 93% | 100% | 100% | 100% | 16/16 | 100% | 0% | 100% |
 | `eslint-plugin-lambda-security` | 14 | 93% | 100% | 100% | 100% | 14/14 | 100% | 7% | 86% |
 | `eslint-plugin-nestjs-security` | 6 | 92% | 100% | 100% | 100% | 6/6 | 100% | 0% | 83% |
@@ -38,7 +38,7 @@ Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` 
 | `eslint-plugin-vercel-ai-security` | 19 | 87% | 100% | 100% | 100% | 19/19 | 100% | 0% | 0% |
 | `eslint-plugin-operability` | 6 | 86% | 100% | 100% | 100% | 5/6 | 83% | 17% | 33% |
 | `eslint-plugin-secure-coding` | 28 | 85% | 100% | 100% | 100% | 28/28 | 46% | 14% | 68% |
-| `eslint-plugin-pg` | 13 | 81% | 100% | 100% | 100% | 11/13 (+2 embedded) | 69% | 0% | 0% |
+| `eslint-plugin-postgresql-security` | 13 | 81% | 100% | 100% | 100% | 11/13 (+2 embedded) | 69% | 0% | 0% |
 | `eslint-plugin-react-a11y` | 37 | 76% | 100% | 100% | 100% | 21/37 | 57% | 3% | 5% |
 | `eslint-plugin-reliability` | 9 | 75% | 100% | 100% | 100% | 3/9 | 33% | 0% | 89% |
 | `eslint-plugin-import-next` | 55 | 73% | 100% | 100% | 100% | 17/55 | 31% | 27% | 40% |
@@ -58,8 +58,8 @@ None — every rule has the three core meta fields. ✅
 
 | Plugin | Rule |
 | :--- | :--- |
-| `eslint-plugin-pg` | `no-missing-client-release` |
-| `eslint-plugin-pg` | `prefer-pool-query` |
+| `eslint-plugin-postgresql-security` | `no-missing-client-release` |
+| `eslint-plugin-postgresql-security` | `prefer-pool-query` |
 
 ## Fully-decorated rules (have type + description + url + cwe)
 

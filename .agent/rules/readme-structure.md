@@ -16,8 +16,10 @@ PRELUDE  (everything above the first `## ` heading — uses HTML, not markdown)
 
 BODY  (markdown, may contain shields.io badges in tables)
   4.  ## Description
-  5.  ## Philosophy                       (verbatim "Interlace" block)
-  6.  ## Getting Started                  (multilingual links + npm install)
+  5.  ## Why these rules are quiet        ┐
+      ## How they decide                  ├ generated, between DOCTRINE markers
+      ## What you get                     ┘
+  6.  ## Getting Started                  (one guide link + npm install)
   7.  ## ⚙️ Configuration Presets
   8.  ## 📚 Supported Libraries           (lib-specific plugins only)
   9.  ## 🤖 AI-Optimized Messages         (security plugins only)
@@ -132,19 +134,44 @@ Required set: NPM Version, NPM Downloads, License, Codecov, Since-date. All cent
 
 3–5 sentences. State the value proposition; don't repeat the tagline verbatim.
 
-### 5. Philosophy
+### 5. Why / How / What
 
-Identical across all plugins:
+**Generated — never hand-edit.** `scripts/sync-readme-rules.ts` writes these three
+sections between `<!-- AUTO-GENERATED:DOCTRINE:START -->` and `:END`; run
+`npm run sync-readmes` to refresh them. The gate rejects a hand-edited block.
 
 ```markdown
-## Philosophy
-
-**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+## Why these rules are quiet
+## How they decide
+## What you get
 ```
+
+One short paragraph each, opening with the claim in bold so it survives skimming.
+This is the one slot in the README that has to sell, so it carries the ecosystem's
+position: why we trade recall for silence, what a rule fires on, and what a finding
+gives you.
+
+It replaced `## Philosophy` — three sentences ("**Interlace** fosters **strength
+through integration** ... a resilient fabric of code") that were identical in all
+thirty READMEs and told a reader nothing they could act on or disagree with. That
+text must not come back; the gate fails on its fingerprint.
+
+Keep it short. The long form that first replaced Philosophy ran three sections and
+~45 lines, and pushed Getting Started and the rule table below the fold on every
+package. A reader came for the install command.
+
+A plugin may still carry its own hand-written `## Why <ecosystem>-specific?` above
+this block — that is the per-plugin why, and it is why these headings are explicit
+rather than a bare `## Why`.
 
 ### 6. Getting Started
 
-Six multilingual doc links (en, zh, ko, ja, es, ar) + a fenced `npm install` block. Pattern in any existing README is the canonical form — copy from a peer.
+One English guide link + a fenced `npm install` block.
+
+Not six. The six-language block this replaced was copied from the NestJS README,
+but every "translated" link pointed at the same English page — we ship no
+translations. Six links to one page is five dead entries above the install
+command.
 
 ### 7. ⚙️ Configuration Presets
 
@@ -263,13 +290,18 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 ```markdown
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/icon-light.svg" alt="Interlace" height="70" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/logos/interlace.svg" alt="Interlace" height="70" /></a>
 </p>
 ```
 
 Interlace mark only — the ESLint mark pairing lives in the header (1), not
-here. Same light-pair asset as the header, smaller (~70px). Must be the very
-last element. No content below.
+here. **The same `/logos/interlace.svg` asset as the header**, smaller (~70px).
+Must be the very last element. No content below.
+
+Not `/icon-light.svg`. That is the pre-`/logos/` artwork — same drawing, but on a
+raw 100×100 canvas instead of the normalised 120×90 one every other mark uses, so a
+README that mixed them shipped two generations of one mark on one page. The gate
+fails on any `/icon-light.svg` or `/icon-dark.svg` reference.
 
 ---
 
