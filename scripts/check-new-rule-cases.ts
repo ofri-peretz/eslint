@@ -104,69 +104,86 @@ function rulesWithACase(): Set<string> {
   return out;
 }
 
-let mergeBase: string;
-try {
-  mergeBase = git(['merge-base', BASE, 'HEAD']);
-} catch {
-  console.error(
-    `❌ No merge base with ${BASE} — cannot tell which rules are new.`,
-  );
-  console.error(
-    `   Try \`git fetch origin ${BASE.replace(/^origin\//, '')}\`.`,
-  );
-  process.exit(1);
-}
-
-const before = manifestAt(mergeBase);
-const after = manifestAt('HEAD');
-
-if (before === null || after === null) {
-  console.log(
-    `✅ No rule manifest at ${before === null ? mergeBase.slice(0, 8) : 'HEAD'} — nothing to compare.`,
-  );
-  process.exit(0);
-}
-
-const covered = rulesWithACase();
-const existing = ruleIds(before);
-const added = [...ruleIds(after)].filter((r) => !existing.has(r)).sort();
-const uncovered = added.filter((r) => !covered.has(r));
-
-if (JSON_OUT) {
-  console.log(
-    JSON.stringify(
-      { base: mergeBase, added, uncovered, covered: covered.size },
-      null,
-      2,
-    ),
-  );
-  process.exit(uncovered.length > 0 && STRICT ? 1 : 0);
-}
-
-if (added.length === 0) {
-  console.log('✅ No new rules on this branch.');
-} else if (uncovered.length === 0) {
-  console.log(`✅ ${added.length} new rule(s), each with a registry case.`);
-} else {
-  console.warn(
-    `⚠️  ${uncovered.length} new rule(s) arrived with no registry case:`,
-  );
-  console.warn('');
-  for (const rule of uncovered) console.warn(`   - ${rule}`);
-  console.warn('');
-  console.warn(
-    '   A rule needs a case that states the defect it exists to catch —',
-  );
-  console.warn(
-    '   an `ILB-nnnn` entry in benchmarks/cases/registry.json naming this rule',
-  );
-  console.warn(
-    '   in its `coverage[]`, verified FAILING before the rule was written.',
-  );
-  console.warn('   See CASE_PHILOSOPHY.md.');
-  if (STRICT) process.exit(1);
-}
-
-console.log(
-  `   (${covered.size} of the suite's rules carry a registry case — this gate only guards new ones)`,
+/**
+ * Everything below runs the gate. It is guarded because this module also
+ * exports helpers that `scripts/__tests__/check-new-rule-cases.test.ts` imports, and
+ * an import that executes the check takes the whole vitest worker down with
+ * it: the gate calls `process.exit(1)` on failure, which surfaces as
+ * `Error: process.exit unexpectedly called with "1"` and fails every test in
+ * the file — including the ones that never touched the gate.
+ *
+ * Same shape as `scripts/lint-changesets.ts`, which guards its own entry for
+ * the same reason.
+ */
+const IS_ENTRYPOINT = Boolean(
+  process.argv[1]?.endsWith('check-new-rule-cases.ts'),
 );
+
+if (IS_ENTRYPOINT) {
+  let mergeBase: string;
+  try {
+    mergeBase = git(['merge-base', BASE, 'HEAD']);
+  } catch {
+    console.error(
+      `❌ No merge base with ${BASE} — cannot tell which rules are new.`,
+    );
+    console.error(
+      `   Try \`git fetch origin ${BASE.replace(/^origin\//, '')}\`.`,
+    );
+    process.exit(1);
+  }
+
+  const before = manifestAt(mergeBase);
+  const after = manifestAt('HEAD');
+
+  if (before === null || after === null) {
+    console.log(
+      `✅ No rule manifest at ${before === null ? mergeBase.slice(0, 8) : 'HEAD'} — nothing to compare.`,
+    );
+    process.exit(0);
+  }
+
+  const covered = rulesWithACase();
+  const existing = ruleIds(before);
+  const added = [...ruleIds(after)].filter((r) => !existing.has(r)).sort();
+  const uncovered = added.filter((r) => !covered.has(r));
+
+  if (JSON_OUT) {
+    console.log(
+      JSON.stringify(
+        { base: mergeBase, added, uncovered, covered: covered.size },
+        null,
+        2,
+      ),
+    );
+    process.exit(uncovered.length > 0 && STRICT ? 1 : 0);
+  }
+
+  if (added.length === 0) {
+    console.log('✅ No new rules on this branch.');
+  } else if (uncovered.length === 0) {
+    console.log(`✅ ${added.length} new rule(s), each with a registry case.`);
+  } else {
+    console.warn(
+      `⚠️  ${uncovered.length} new rule(s) arrived with no registry case:`,
+    );
+    console.warn('');
+    for (const rule of uncovered) console.warn(`   - ${rule}`);
+    console.warn('');
+    console.warn(
+      '   A rule needs a case that states the defect it exists to catch —',
+    );
+    console.warn(
+      '   an `ILB-nnnn` entry in benchmarks/cases/registry.json naming this rule',
+    );
+    console.warn(
+      '   in its `coverage[]`, verified FAILING before the rule was written.',
+    );
+    console.warn('   See CASE_PHILOSOPHY.md.');
+    if (STRICT) process.exit(1);
+  }
+
+  console.log(
+    `   (${covered.size} of the suite's rules carry a registry case — this gate only guards new ones)`,
+  );
+}
