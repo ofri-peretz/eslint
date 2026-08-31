@@ -91,8 +91,16 @@ ruleTester.run('detect-weak-password-validation', detectWeakPasswordValidation, 
 
   invalid: [
     {
+      // Covers `passwd` in DEFAULT_PASSWORD_WORDS specifically: `password`
+      // does not reach it, and dropping the entry must fail this case.
+      name: 'the abbreviated spelling `passwd`',
+      code: `if (passwd.length < 6) { reject(); }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
       // FN: a computed key reaches the same property as a dotted one, and the
       // dotted-only test missed every codebase that writes it this way.
+      // @found spelling gate
       name: 'FN: the credential reached by a computed key',
       code: `if (body['password'].length < 6) { reject(); }`,
       errors: [{ messageId: 'violationDetected' }],

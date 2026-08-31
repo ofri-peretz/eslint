@@ -151,6 +151,7 @@ describe('no-user-controlled-render-locals', () => {
           // `(inbound, outbound)` is ordinary code and matched none of
           // ['req','request','ctx'] / ['res','response','reply'], so this rule
           // was silent on it entirely until the check became structural.
+          // @found rename litmus
           name: 'FN: a handler whose parameters are named nothing in particular',
           code: `app.post('/x', (inbound, outbound) => { outbound.render('v', inbound.body); });`,
           errors: [{ messageId: 'unsafeRenderLocals' }],

@@ -141,7 +141,7 @@ const SIZED_ALLOCATORS: ReadonlySet<string> = new Set([
  */
 function looksNumeric(
   node: TSESTree.Node,
-  sizeNames: ReadonlySet<string>,
+  countNames: ReadonlySet<string>,
 ): boolean {
   switch (node.type) {
     case AST_NODE_TYPES.Literal:
@@ -151,14 +151,14 @@ function looksNumeric(
         node.operator,
       );
     case AST_NODE_TYPES.Identifier:
-      return sizeNames.has(node.name.toLowerCase());
+      return countNames.has(node.name.toLowerCase());
     case AST_NODE_TYPES.MemberExpression: {
       // `propertyName` rather than `.property.name`: `o.length`,
       // `o['length']` and `` o[`length`] `` are the same property, and a
       // minifier or a non-identifier key writes the second. Reading only the
       // dotted spelling is a blind spot nobody chose.
       const prop = propertyName(node);
-      return prop !== null && sizeNames.has(prop.toLowerCase());
+      return prop !== null && countNames.has(prop.toLowerCase());
     }
     case AST_NODE_TYPES.CallExpression: {
       // `Math.min(length, MAX)` is the clamped spelling of a size; it has to
@@ -205,7 +205,7 @@ export interface Options {
    * (`length`, `len`, `size`, `count`, `n`, `num`, `total`, `capacity`,
    * `bytelength`).
    */
-  sizeNames?: readonly string[];
+  countNames?: readonly string[];
 }
 
 type RuleOptions = [Options?];
@@ -586,16 +586,22 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [...WIRE_NAMES],
+            description:
+              'Binding names that carry bytes off the wire. Replaces the default; pass [] to turn the name arm off.',
           },
           requestRootNames: {
             type: 'array',
             items: { type: 'string' },
             default: [...REQUEST_ROOTS],
+            description:
+              'Root identifiers treated as a request. Replaces the default.',
           },
-          sizeNames: {
+          countNames: {
             type: 'array',
             items: { type: 'string' },
             default: [...COUNT_NAMES],
+            description:
+              'Identifiers that hold an allocation size rather than a payload. Replaces the default.',
           },
         },
         additionalProperties: false,
@@ -619,7 +625,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     const vocab = {
       wireNames: toLowerSet(options.wireNames ?? [...WIRE_NAMES]),
       requestRoots: toLowerSet(options.requestRootNames ?? [...REQUEST_ROOTS]),
-      sizeNames: toLowerSet(options.sizeNames ?? [...COUNT_NAMES]),
+      countNames: toLowerSet(options.countNames ?? [...COUNT_NAMES]),
     };
 
     // ── CWE-789: allocation sized by a length field off the wire ──────────
@@ -912,7 +918,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         SIZED_ALLOCATORS.has(callee.name)
       ) {
         // `new Uint8Array(bytes)` copies; `new Uint8Array(n)` allocates.
-        return looksNumeric(size, vocab.sizeNames) ? size : null;
+        return looksNumeric(size, vocab.countNames) ? size : null;
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&

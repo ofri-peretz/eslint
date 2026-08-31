@@ -55,6 +55,22 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: nest([
+    // One case per DEFAULT_ENVIRONMENT_HINT_NAMES entry no other case reaches.
+    `
+      if (devMode) {
+        app.enableCors({ origin: '*', credentials: true });
+      }
+    `,
+    `
+      if (isLocal) {
+        app.enableCors({ origin: '*', credentials: true });
+      }
+    `,
+    `
+      if (isTest) {
+        app.enableCors({ origin: '*', credentials: true });
+      }
+    `,
     // nest-framework/packages/core/nest-application.ts:130 — NestJS's own
     // implementation of the API this rule watches. An application holds the
     // app in a binding; a `this` receiver means the class *is* the app.

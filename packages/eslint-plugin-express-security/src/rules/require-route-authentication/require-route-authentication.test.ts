@@ -197,6 +197,7 @@ describe('require-route-authentication', () => {
       // `server.post('/account/password')` was invisible here while
       // `server.set('trust proxy')` next to it was judged.
       {
+        // @found vocabulary drift between sibling rules
         name: 'FN: a credential route on a receiver named `server`',
         code: `server.post('/account/password', changePassword);`,
         errors: [{ messageId: 'missingAuthentication' as const }],

@@ -64,11 +64,11 @@ ruleTester.run(
         options: [{ requestRootNames: [], wireNames: [] }],
       },
 
-      // Replacing sizeNames with a list that excludes `capacity` stops the
+      // Replacing countNames with a list that excludes `capacity` stops the
       // size reading as a count at all.
       {
         code: `function f(chunk) { const capacity = chunk.readUInt32BE(0); return Buffer.alloc(capacity); }`,
-        options: [{ sizeNames: ['length'], wireNames: [] }],
+        options: [{ countNames: ['length'], wireNames: [] }],
       },
 
       // A member read that is not request-shaped. `cfg.size` is somebody's own

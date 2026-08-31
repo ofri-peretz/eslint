@@ -78,7 +78,6 @@
     "export",
     "mfa",
     "migrate",
-    "private",
     "refund",
     "restore",
     "role",
@@ -146,9 +145,6 @@
     "findByIdAndUpdate",
     "findOneAndReplace",
     "updateMany"
-  ],
-  "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-query/index.ts#USER_INPUT_PATTERNS": [
-    "ctx.params"
   ],
   "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-regex-query/index.ts#USER_INPUT_PATTERNS": [
     "ctx.params",
@@ -363,9 +359,6 @@
     "instance-variables",
     "static-methods",
     "static-variables"
-  ],
-  "packages/eslint-plugin-secure-coding/src/rules/detect-weak-password-validation/index.ts#PASSWORD_WORDS": [
-    "passwd"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/index.ts#DEFAULT_USER_INPUT_ALIASES": [
     "userparam",
