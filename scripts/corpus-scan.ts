@@ -51,7 +51,13 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { SCAN_IGNORES } from './lib/corpus-scan-ignores.ts';
 import { ensurePrivateDir, resolveCacheHome } from './lib/private-cache-dir.ts';
@@ -99,13 +105,28 @@ const PLUGINS = [
 // Advancing a pin is now a deliberate commit that shows up in review, which is
 // the same standard `--update` already applies to the budget itself.
 const TARGETS: ReadonlyArray<{ repo: string; ref: string }> = [
-  { repo: 'okta/okta-auth-js', ref: '17efe6a87db904c7bf8de9abb8e5961580f6a30c' },
-  { repo: 'auth0/express-openid-connect', ref: '94a08dd6c214a5a427a70110898e0e2099e5daab' },
+  {
+    repo: 'okta/okta-auth-js',
+    ref: '17efe6a87db904c7bf8de9abb8e5961580f6a30c',
+  },
+  {
+    repo: 'auth0/express-openid-connect',
+    ref: '94a08dd6c214a5a427a70110898e0e2099e5daab',
+  },
   { repo: 'stripe/stripe-js', ref: '16f79edb92e1e74c8da01c975cf85520b8f14c5b' },
-  { repo: 'twilio/twilio-node', ref: 'c8a4c27de84ec3838726da878cb9ca04a438ec59' },
+  {
+    repo: 'twilio/twilio-node',
+    ref: 'c8a4c27de84ec3838726da878cb9ca04a438ec59',
+  },
   { repo: 'redis/ioredis', ref: 'c0cd66cad8bc3d6fb02e2021f32ae2a88506ee97' },
-  { repo: 'paypal/paypal-checkout-components', ref: '861ab38f819840054eaed903bfc1ce32eb9b535f' },
-  { repo: 'okta/okta-signin-widget', ref: '0fec2f240ae83e5303c2e5e822989e7f82a3eaec' },
+  {
+    repo: 'paypal/paypal-checkout-components',
+    ref: '861ab38f819840054eaed903bfc1ce32eb9b535f',
+  },
+  {
+    repo: 'okta/okta-signin-widget',
+    ref: '0fec2f240ae83e5303c2e5e822989e7f82a3eaec',
+  },
   { repo: 'Shopify/cli', ref: 'cdcb458232c1482f13ae502b72112afb827f9135' },
 ];
 
@@ -190,12 +211,16 @@ function unmeasurableRules(targetsInstalled: boolean): ReadonlySet<string> {
 // change fixes — so they are gone rather than left as a second way to pin.
 
 function lockedVersion(name: string): string {
-  const lock = JSON.parse(readFileSync(path.join(ROOT, 'package-lock.json'), 'utf-8')) as {
+  const lock = JSON.parse(
+    readFileSync(path.join(ROOT, 'package-lock.json'), 'utf-8'),
+  ) as {
     packages: Record<string, { version?: string } | undefined>;
   };
   const version = lock.packages[`node_modules/${name}`]?.version;
   if (!version) {
-    throw new Error(`no resolved version for ${name} in package-lock.json — cannot pin the scan rig`);
+    throw new Error(
+      `no resolved version for ${name} in package-lock.json — cannot pin the scan rig`,
+    );
   }
   return version;
 }
@@ -313,6 +338,74 @@ interface Budget {
   triage?: Record<string, string>;
 }
 
+/**
+ * npm registry propagation is not instant, and this scan installs the versions
+ * a release *just published*.
+ *
+ * Every open PR runs `Scan pinned corpus`, and it resolves the published plugin
+ * versions from the lockfile. Publish six packages and, for the minute or two
+ * before the registry serves them everywhere, that install 404s — so a green
+ * release turns the whole PR queue red at once. Observed five times in one
+ * evening; every pinned dependency resolved by hand minutes later.
+ *
+ * The cost of no retry is not the red run, it is the habit: a required check
+ * that cries wolf gets re-run reflexively, and the day it fails for a real
+ * reason — a corpus regression, a genuinely missing version — nobody reads it.
+ *
+ * Deliberately narrow. Only a *resolution* failure is retried, because that is
+ * the one with a known transient cause. A dependency conflict, a bad lockfile
+ * or an ENOSPC fails on the first attempt exactly as before; retrying those
+ * would be the wolf-crying this exists to prevent.
+ */
+const REGISTRY_PROPAGATION_RETRIES = 3;
+const REGISTRY_RETRY_DELAY_MS = 10_000;
+
+/** Does this npm failure look like "published, not visible yet"? */
+function looksLikePropagationLag(output: string): boolean {
+  return (
+    /\bE404\b/.test(output) ||
+    /No matching version found for/i.test(output) ||
+    /is not in this registry/i.test(output) ||
+    /ETARGET/.test(output)
+  );
+}
+
+/** `sh`, retried only while npm says it cannot yet see a version. */
+function shWithRegistryRetry(
+  cmd: string,
+  args: string[],
+  cwd?: string,
+): string {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return sh(cmd, args, cwd);
+    } catch (error) {
+      const err = error as {
+        stdout?: string;
+        stderr?: string;
+        message?: string;
+      };
+      const output = `${err.stdout ?? ''}${err.stderr ?? ''}${err.message ?? ''}`;
+      if (
+        attempt >= REGISTRY_PROPAGATION_RETRIES ||
+        !looksLikePropagationLag(output)
+      ) {
+        throw error;
+      }
+      log(
+        `  npm could not resolve a pinned version (attempt ${attempt}/${REGISTRY_PROPAGATION_RETRIES}). ` +
+          `A release may still be propagating; retrying in ${REGISTRY_RETRY_DELAY_MS / 1000}s.`,
+      );
+      Atomics.wait(
+        new Int32Array(new SharedArrayBuffer(4)),
+        0,
+        0,
+        REGISTRY_RETRY_DELAY_MS,
+      );
+    }
+  }
+}
+
 function sh(cmd: string, args: string[], cwd?: string): string {
   return execFileSync(cmd, args, {
     cwd,
@@ -390,7 +483,11 @@ function scanTarget(dir: string, configPath: string): Map<string, number> {
   }
 
   for (const file of JSON.parse(raw) as Array<{
-    messages: Array<{ ruleId: string | null; message: string; fatal?: boolean }>;
+    messages: Array<{
+      ruleId: string | null;
+      message: string;
+      fatal?: boolean;
+    }>;
   }>) {
     for (const message of file.messages) {
       if (!message.ruleId || message.fatal) continue;
@@ -478,7 +575,10 @@ function main(): number {
   // the runtime. The plugins are taken from this checkout, so the scan
   // measures the code in the PR rather than the last published release.
   ensurePrivateDir(RIG, CACHE_HOME);
-  writeFileSync(path.join(RIG, 'package.json'), JSON.stringify({ name: 'rig', private: true }));
+  writeFileSync(
+    path.join(RIG, 'package.json'),
+    JSON.stringify({ name: 'rig', private: true }),
+  );
   // Wipe the rig when the set of versions under test changes.
   //
   // The rig installs the PUBLISHED plugins, so what it measures is what users
@@ -507,7 +607,9 @@ function main(): number {
   // the previous one while reporting a number against the new code.
   const fingerprint = [
     ...PLUGINS.map((plugin) =>
-      local ? `${plugin}:local:${distHash(plugin)}` : `${plugin}@${publishedVersion(plugin)}`,
+      local
+        ? `${plugin}:local:${distHash(plugin)}`
+        : `${plugin}@${publishedVersion(plugin)}`,
     ),
     ...(local ? [`eslint-devkit:local:${distHash('eslint-devkit')}`] : []),
   ].join('\n');
@@ -531,13 +633,12 @@ function main(): number {
     rmSync(NPM_CACHE, { recursive: true, force: true });
   }
 
-
   log(
     local
       ? 'Installing scan rig — LOCAL WORKING TREE (not shipped behaviour)…'
       : 'Installing scan rig — published plugin versions…',
   );
-  sh(
+  shWithRegistryRetry(
     'npm',
     [
       'install',
@@ -589,7 +690,9 @@ function main(): number {
       // to the measurement.
       `oxc-resolver@${lockedVersion('oxc-resolver')}`,
       ...PLUGINS.map((p) =>
-        local ? `${p}@file:${path.join(ROOT, 'packages', p)}` : `${p}@${publishedVersion(p)}`,
+        local
+          ? `${p}@file:${path.join(ROOT, 'packages', p)}`
+          : `${p}@${publishedVersion(p)}`,
       ),
       // The devkit, from the working tree, in LOCAL mode only.
       //
@@ -666,8 +769,24 @@ function main(): number {
         // scratch-space lock test asserts every directory here goes via it.
         ensurePrivateDir(dir, CACHE_HOME);
         sh('git', ['-C', dir, 'init', '--quiet']);
-        sh('git', ['-C', dir, 'remote', 'add', 'origin', `https://github.com/${repo}.git`]);
-        sh('git', ['-C', dir, 'fetch', '--depth', '1', '--quiet', 'origin', ref]);
+        sh('git', [
+          '-C',
+          dir,
+          'remote',
+          'add',
+          'origin',
+          `https://github.com/${repo}.git`,
+        ]);
+        sh('git', [
+          '-C',
+          dir,
+          'fetch',
+          '--depth',
+          '1',
+          '--quiet',
+          'origin',
+          ref,
+        ]);
         sh('git', ['-C', dir, 'checkout', '--quiet', 'FETCH_HEAD']);
       }
       if (installTargets) installTargetDependencies(dir, repo);
@@ -685,12 +804,16 @@ function main(): number {
   // headline — the most dangerous possible output, because zero findings is
   // also what a perfect result looks like. Refuse to report at all instead.
   if (scanned === 0) {
-    console.error('::error::every target failed to scan — no findings were measured');
+    console.error(
+      '::error::every target failed to scan — no findings were measured',
+    );
     for (const f of failed) console.error(`  ${f}`);
     return 3;
   }
   if (failed.length > 0) {
-    console.error(`::warning::${failed.length} of ${TARGETS.length} targets failed to scan`);
+    console.error(
+      `::warning::${failed.length} of ${TARGETS.length} targets failed to scan`,
+    );
     for (const f of failed) console.error(`  ${f}`);
   }
 
@@ -719,7 +842,9 @@ function main(): number {
     return 2;
   }
 
-  const budget: Budget = JSON.parse(readFileSync(BUDGET_FILE, 'utf-8')) as Budget;
+  const budget: Budget = JSON.parse(
+    readFileSync(BUDGET_FILE, 'utf-8'),
+  ) as Budget;
 
   // A PARTIAL scan must never rewrite the budget. Running `--update` while the
   // rig was busy once reduced 27 entries to 4: the targets that failed simply
@@ -752,7 +877,9 @@ function main(): number {
       ...(budget.triage ? { triage: budget.triage } : {}),
     };
     writeFileSync(BUDGET_FILE, `${JSON.stringify(next, null, 2)}\n`);
-    log(`Wrote ${Object.keys(next.budgets).length} budgets to ${path.relative(ROOT, BUDGET_FILE)}`);
+    log(
+      `Wrote ${Object.keys(next.budgets).length} budgets to ${path.relative(ROOT, BUDGET_FILE)}`,
+    );
     return 0;
   }
 

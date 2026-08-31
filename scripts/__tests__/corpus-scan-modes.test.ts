@@ -58,8 +58,17 @@ describe('corpus-scan modes', () => {
     // cannot identify the code — npm would serve the previous build from cache
     // and the run would silently measure something else. This exact bug cost a
     // day: no-magic-numbers read 1,635 against a fresh 1,421.
-    expect(SOURCE).toMatch(/local \? `\$\{plugin\}:local:\$\{distHash\(plugin\)\}`/);
-    expect(SOURCE).toContain('`${plugin}@${publishedVersion(plugin)}`');
+    //
+    // Matched whitespace-insensitively. The first version of this assertion
+    // pinned the ternary's single-line layout, so it broke the moment an
+    // unrelated edit made the file long enough for prettier to wrap it across
+    // three lines — a lock failing on formatting says nothing about the
+    // behaviour it names, and trains people to reformat until it passes.
+    const collapsed = SOURCE.replace(/\s+/g, ' ');
+    expect(collapsed).toContain(
+      'local ? `${plugin}:local:${distHash(plugin)}`',
+    );
+    expect(collapsed).toContain('`${plugin}@${publishedVersion(plugin)}`');
   });
 
   it('installs the devkit FROM THE WORKING TREE in local mode', () => {
@@ -85,7 +94,9 @@ describe('corpus-scan modes', () => {
     // Hashing only the plugins left a devkit-only change stamped as unchanged,
     // so the rig kept its stale copy. Adding an export made it loud; changing
     // an existing one is silent.
-    expect(SOURCE).toContain("`eslint-devkit:local:${distHash('eslint-devkit')}`");
+    expect(SOURCE).toContain(
+      "`eslint-devkit:local:${distHash('eslint-devkit')}`",
+    );
   });
 
   it('gives the rig a private npm cache and drops it on rebuild', () => {
@@ -106,15 +117,21 @@ describe('corpus-scan modes', () => {
     expect(SOURCE).toContain("'--install-targets'");
     expect(SOURCE).toContain("'--ignore-scripts'");
     // Off by default: it costs minutes and gigabytes and the gate runs per PR.
-    expect(SOURCE).toMatch(/installTargets = process\.argv\.includes\('--install-targets'\)/);
+    expect(SOURCE).toMatch(
+      /installTargets = process\.argv\.includes\('--install-targets'\)/,
+    );
   });
 
   it('stops excluding the dependency-dependent rules once targets are installed', () => {
     // Without an install, `no-unresolved` answers a question about the clone.
     // With one, it answers a question about the rule — measured on
     // auth0/express-openid-connect, 86 findings went to 0.
-    expect(SOURCE).toContain('function unmeasurableRules(targetsInstalled: boolean)');
-    expect(SOURCE).toMatch(/targetsInstalled \? new Set<string>\(\) : DEPENDENCY_DEPENDENT_RULES/);
+    expect(SOURCE).toContain(
+      'function unmeasurableRules(targetsInstalled: boolean)',
+    );
+    expect(SOURCE).toMatch(
+      /targetsInstalled \? new Set<string>\(\) : DEPENDENCY_DEPENDENT_RULES/,
+    );
     expect(SOURCE).toContain("'import-next/no-unresolved'");
   });
 
@@ -136,9 +153,10 @@ describe('corpus-scan modes', () => {
     // before and after an install. It was excluded by association with
     // `no-unresolved` and 3,147 findings were invisible to this gate for no
     // reason. An exclusion needs the same evidence as a budget.
-    const excluded = /DEPENDENCY_DEPENDENT_RULES: ReadonlySet<string> = new Set\(\[([\s\S]*?)\]\)/.exec(
-      SOURCE,
-    );
+    const excluded =
+      /DEPENDENCY_DEPENDENT_RULES: ReadonlySet<string> = new Set\(\[([\s\S]*?)\]\)/.exec(
+        SOURCE,
+      );
     expect(excluded).not.toBeNull();
     expect(excluded?.[1]).not.toContain('no-extraneous-dependencies');
   });
@@ -147,6 +165,8 @@ describe('corpus-scan modes', () => {
     // Several targets are pnpm or yarn workspaces whose tree npm cannot always
     // reproduce. The run still has something true to say about every rule that
     // does not depend on it.
-    expect(SOURCE).toMatch(/failed to install; its dependency-dependent findings/);
+    expect(SOURCE).toMatch(
+      /failed to install; its dependency-dependent findings/,
+    );
   });
 });
