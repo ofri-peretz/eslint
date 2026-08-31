@@ -214,3 +214,35 @@ anywhere else.
 corpora: _"they must travel with the repo (CI cannot regenerate them)"_. The
 case fixtures are the same kind and for a sharper reason — a claim that cannot
 be checked from a fresh clone is not a claim. Allow-listed and committed.
+
+## Closed — 2026-08-30
+
+**Offenders 32 → 0.** Every one of the 53 rules the probe finds name-dependent
+now either exposes a vocabulary the consumer can replace, or cites the
+authority the name comes from. `check:name-vocabulary` reports
+`hardcoded, no way to replace  0`, baselined shrink-only, so a 54th cannot
+enter without the ratchet failing.
+
+The number this intent opened with — "57 → under 25" — was never reached and
+should not have been. It counted `no-math-random-crypto` and
+`no-hardcoded-credentials` as debt for reading names they are entitled to read,
+and driving it down would have meant deleting working detection.
+`Math.random()` assigned to `foo1` is not a detectable defect; the name is the
+only signal there is.
+
+What replaced it is the distinction the gate now enforces: **a name somebody
+else publishes may be hardcoded and must cite them; a guess at what the
+consumer calls their own binding must be replaceable.** 53 rules still decide
+by name, and that is fine — every one of them can now be told it is wrong.
+
+Two instrument defects were found on the way and both are fixed: the gate
+inspected only rules importing two named helpers, so it skipped 22 of the 25
+most name-dependent rules while reporting `0`; and the probe printed its top 25
+and cut the rest with no mention, so a third of its own work list was
+invisible.
+
+**Remaining, and deliberately not folded in here:** 323 of 2,393 renamed
+bindings still change a verdict. That is the softer number — those rules are
+name-dependent _by declared position_ now, not by accident. Driving it further
+is `the-spelling-debt-shrinks` and `precision-is-measured-not-asserted`, which
+attack the two halves of it separately.
