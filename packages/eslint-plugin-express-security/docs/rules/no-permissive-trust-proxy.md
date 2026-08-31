@@ -69,6 +69,7 @@ The rule offers one editor suggestion (no auto-fix): **trust exactly `hopCount` 
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `appReceiverNames` | `string[]` | `["app","server","router","express","api","apiRouter","routes"]` | Identifiers that hold the Express app or a router. Replaces the default. |
 | `hopCount` | `number` | — | Number of reverse proxies used in the suggested fix |
 
 ```json

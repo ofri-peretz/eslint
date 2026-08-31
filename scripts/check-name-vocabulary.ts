@@ -164,6 +164,75 @@ function ruleModules(): { rule: string; file: string }[] {
 }
 
 /** Option names declared in the rule's `meta.schema`. */
+/**
+ * The option names a shared schema fragment contributes.
+ *
+ * A rule that spreads `...HANDLER_PARAM_SCHEMA` into its `properties` exposes
+ * every option that object holds, but the spread is a SpreadAssignment and not
+ * a PropertyAssignment, so reading only the latter made those options
+ * invisible. That punished exactly the right pattern: three lambda rules had
+ * already been given a shared, replaceable `eventParamNames` and this gate
+ * still counted one of them as having no way to replace anything.
+ */
+function fragmentOptions(source: ts.SourceFile, name: string): string[] {
+  // Where the fragment comes from — the same file, or a relative import.
+  let specifier: string | null = null;
+  const findImport = (node: ts.Node): void => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.importClause?.namedBindings !== undefined &&
+      ts.isNamedImports(node.importClause.namedBindings) &&
+      node.importClause.namedBindings.elements.some(
+        (element) => element.name.text === name,
+      )
+    ) {
+      specifier = node.moduleSpecifier.text;
+    }
+    ts.forEachChild(node, findImport);
+  };
+  findImport(source);
+
+  let declaring = source;
+  if (specifier !== null) {
+    if (!(specifier as string).startsWith('.')) return [];
+    const base = path.resolve(path.dirname(source.fileName), specifier);
+    const file = ['.ts', '.mts', '/index.ts']
+      .map((extension) => `${base}${extension}`)
+      .find((candidate) => fs.existsSync(candidate));
+    if (file === undefined) return [];
+    declaring = ts.createSourceFile(
+      file,
+      fs.readFileSync(file, 'utf8'),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+  }
+
+  const keys: string[] = [];
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === name &&
+      node.initializer !== undefined &&
+      ts.isObjectLiteralExpression(node.initializer)
+    ) {
+      for (const property of node.initializer.properties) {
+        if (
+          ts.isPropertyAssignment(property) &&
+          (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+        ) {
+          keys.push(property.name.text);
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(declaring);
+  return keys;
+}
+
 function schemaOptions(source: ts.SourceFile): string[] {
   const keys: string[] = [];
   const visit = (node: ts.Node): void => {
@@ -179,6 +248,11 @@ function schemaOptions(source: ts.SourceFile): string[] {
           (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
         ) {
           keys.push(property.name.text);
+        } else if (
+          ts.isSpreadAssignment(property) &&
+          ts.isIdentifier(property.expression)
+        ) {
+          keys.push(...fragmentOptions(source, property.expression.text));
         }
       }
     }

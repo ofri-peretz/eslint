@@ -1,9 +1,6 @@
 {
   "note": "Rules that decide from an identifier name with no option to REPLACE the vocabulary. Shrink-only.",
   "rules": [
-    "express-security/no-permissive-trust-proxy",
-    "express-security/require-route-authentication",
-    "lambda-security/no-unbounded-batch-processing",
     "lambda-security/no-unvalidated-event-body",
     "nestjs-security/no-permissive-cors",
     "node-security/no-unsafe-buffer-alloc",
