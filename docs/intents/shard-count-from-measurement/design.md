@@ -159,6 +159,24 @@ selected). Run [33345687707](https://github.com/ofri-peretz/eslint/actions/runs/
 The job start spread — the queueing that was ~80% of the original 261s —
 collapsed from **186s to 25s**. Every job now starts in one wave.
 
+That 86s was measured with the lanes and the lean archive in place but the node
+lane still at **ten** shards. The cut to four could not be re-measured the same
+way: the next run took 164s wall, and **27 workflow runs started in its
+four-minute window** — its `Gate` job waited 62s for a runner before it began.
+That number says nothing about four versus ten.
+
+What is comparable is the per-lane cost, same work, same lane, both warm:
+
+| node lane | test work | checkout+setup | jobs |
+|---|---|---|---|
+| 10 shards | 24s | **141s** | 10 |
+| 4 shards | 13s | **60s** | 4 |
+
+Overhead down 57% for the same suite. The cut is justified on that, not on a
+wall clock taken against a busy account — and the fact that the wall clock was
+unmeasurable at 27 concurrent runs is itself the argument for the
+`concurrency-budget` intent below.
+
 Three changes got there, in the order the design required:
 
 1. **Lanes.** `docs` and `@interlace/ui` moved to their own 3-shard matrix, so
