@@ -57,6 +57,18 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
   valid: lambda([
+    // A hand-written checker: `check` is not one of the schema-library verbs
+    // we guessed, so the handler read as unvalidated.
+    {
+      name: 'a validation method the consumer named',
+      code: `
+        export const handler = async (event) => {
+          const data = check(event.body);
+          return { statusCode: 200 };
+        };
+      `,
+      options: [{ validationMethodNames: ['check'] }],
+    },
     // Validation with Zod
     {
       name: 'the body is parsed through a zod schema',
@@ -176,6 +188,19 @@ ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
     },
   ]),
   invalid: lambda([
+    {
+      name: 'the default validation verbs replaced away',
+      code: `
+        import { z } from 'zod';
+        const schema = z.object({ name: z.string() });
+        export const handler = async (event) => {
+          const data = schema.parse(JSON.parse(event.body));
+          return { statusCode: 200 };
+        };
+      `,
+      options: [{ validationMethodNames: ['check'] }],
+      errors: [{ messageId: 'unvalidatedInput' }],
+    },
     // Direct use of event.body in variable assignment
     {
       name: 'event.body used with no schema between it and the code',

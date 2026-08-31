@@ -185,6 +185,17 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     },
   ]),
   invalid: nest([
+    // A guard with no identifiers in it at all — the environment-word scan
+    // has nothing to scan, and a constant condition is not an excuse.
+    {
+      name: 'a constant guard mentions no environment',
+      code: `
+        if (1 < 2) {
+          app.enableCors({ origin: '*', credentials: true });
+        }
+      `,
+      errors: [{ messageId: 'wildcardOrigin' }],
+    },
     // The documented Fastify spelling puts the options object third, so
     // reading `arguments[1]` found the adapter and gave up.
     {
@@ -534,8 +545,33 @@ ruleTester.run(
   'no-permissive-cors (computed key collision)',
   noPermissiveCors,
   {
-    valid: [],
+    valid: [
+    // `STAGE` is this project's environment flag; the default list has never
+    // heard of it, so the guard was invisible and a dev-only CORS opening was
+    // reported as if it shipped.
+    {
+      name: 'an environment flag the consumer named',
+      code: `
+        if (process.env.STAGE === 'development') {
+          app.enableCors({ origin: '*', credentials: true });
+        }
+      `,
+      options: [{ environmentHintNames: ['STAGE'] }],
+    },
+  ],
     invalid: nest([
+      // The mirror: replacing the list drops `NODE_ENV`, so the guard the
+      // default would have accepted stops being an excuse.
+      {
+        name: 'the default environment words replaced away',
+        code: `
+        if (process.env.NODE_ENV === 'development') {
+          app.enableCors({ origin: '*', credentials: true });
+        }
+      `,
+        options: [{ environmentHintNames: ['STAGE'] }],
+        errors: [{ messageId: 'wildcardOrigin' }],
+      },
       {
         code: `
         const origin = 'credentials';

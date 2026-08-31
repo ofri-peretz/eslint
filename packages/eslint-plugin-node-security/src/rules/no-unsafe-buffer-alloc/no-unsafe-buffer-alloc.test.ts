@@ -15,6 +15,13 @@ const ruleTester = new RuleTester({
 describe('no-unsafe-buffer-alloc', () => {
   ruleTester.run('no-unsafe-buffer-alloc', noUnsafeBufferAlloc, {
     valid: [
+    // `new Uint8Array(bytes)` copies and `new Uint8Array(n)` allocates, and
+    // the only thing separating them is the name. `nbytes` is not one of our
+    // guessed spellings, so this reads as a copy and is not judged.
+    {
+      name: 'a size spelled outside the default vocabulary',
+      code: 'function reserve(req) { const nbytes = Number(req.body.n); return new Uint8Array(nbytes); }',
+    },
       // The safe allocator.
       { name: 'alloc zeroes it', code: 'Buffer.alloc(1024)' },
       { code: 'Buffer.from("hello")' },
@@ -91,6 +98,18 @@ describe('no-unsafe-buffer-alloc', () => {
       },
     ],
     invalid: [
+    {
+      // FN: `header['length']` is the same property as `header.length`.
+      name: 'FN: a size reached by a computed key',
+      code: "function reserve(req) { const header = JSON.parse(req.body.h); return new Uint8Array(header['length']); }",
+      errors: [{ messageId: 'unboundedAllocation' }],
+    },
+    {
+      name: 'a size name the consumer supplied',
+      code: 'function reserve(req) { const nbytes = Number(req.body.n); return new Uint8Array(nbytes); }',
+      options: [{ sizeNames: ['nbytes'] }],
+      errors: [{ messageId: 'unboundedAllocation' }],
+    },
       {
         name: 'allocUnsafe hands back whatever was in that memory',
         code: 'const buf = Buffer.allocUnsafe(1024);',

@@ -49,17 +49,33 @@
  * `type: 'suggestion'` and not a taint analysis.
  */
 
-import { createRule, formatLLMMessage, MessageIcons, nameHasAnyWord } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, nameHasAnyWord, propertyName } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+export interface Options {
+  /**
+   * Words that mark a value as a credential. REPLACES the default.
+   *
+   * `password|passphrase|passwd|pwd|pass` is OUR guess at how a codebase spells
+   * it, not a specification — a project whose field is `secret`, `kennwort` or
+   * `motDePasse` matched none of it and the rule silently judged nothing.
+   */
+  passwordWords?: string[];
+}
 
 type RuleOptions = [Options?];
 
 /**
+ * @vocabulary The eight-character floor is NIST SP 800-63B, section 5.1.1.2:
+ * "Verifiers SHALL require subscriber-chosen memorized secrets to be at least
+ * 8 characters in length." It is a published requirement, not a preference, so
+ * it is cited rather than made configurable.
+ *
+ * @see https://pages.nist.gov/800-63-3/sp800-63b.html#memsecret
+ *
  * NIST SP 800-63B's floor. A policy enforcing fewer characters than this is the
  * finding; a policy enforcing this many or more is not.
  */
@@ -76,7 +92,13 @@ const SMALLEST_MEANINGFUL_MINIMUM = 2;
  * Words that identify a credential. Whole-word membership, never substring —
  * see the file header and `@interlace/eslint-devkit`'s `identifier-words`.
  */
-const PASSWORD_WORDS: readonly string[] = ['password', 'passphrase', 'passwd', 'pwd', 'pass'];
+const DEFAULT_PASSWORD_WORDS: readonly string[] = [
+  'password',
+  'passphrase',
+  'passwd',
+  'pwd',
+  'pass',
+];
 
 /**
  * The minimum length a comparison enforces, or `null` when it enforces none.
@@ -146,7 +168,10 @@ function resolveThreshold(
  * "Left side's object is not a plain Identifier", documenting the miss instead
  * of closing it.
  */
-function measuresPasswordLength(node: TSESTree.Node): boolean {
+function measuresPasswordLength(
+  node: TSESTree.Node,
+  words: readonly string[],
+): boolean {
   // `req.body?.password?.length >= 6` wraps the whole access in a
   // ChainExpression. Optional links change nothing about which value is being
   // measured, and the shape is the norm once the request body is not guaranteed.
@@ -161,7 +186,7 @@ function measuresPasswordLength(node: TSESTree.Node): boolean {
     return false;
   }
 
-  return namesPassword(access.object as TSESTree.Node);
+  return namesPassword(access.object as TSESTree.Node, words);
 }
 
 /**
@@ -173,28 +198,35 @@ function measuresPasswordLength(node: TSESTree.Node): boolean {
  * which value is under discussion. Stopping at the CallExpression meant the
  * commonest spelling of a weak policy was invisible.
  */
-function namesPassword(node: TSESTree.Node, depth = 0): boolean {
+function namesPassword(
+  node: TSESTree.Node,
+  words: readonly string[],
+  depth = 0,
+): boolean {
   // A transformation chain longer than this is not real validation code.
   if (depth > 4) {
     return false;
   }
 
   if (node.type === 'Identifier') {
-    return nameHasAnyWord(node.name, PASSWORD_WORDS);
+    return nameHasAnyWord(node.name, words);
   }
   if (node.type === 'ChainExpression') {
-    return namesPassword(node.expression as TSESTree.Node, depth + 1);
+    return namesPassword(node.expression as TSESTree.Node, words, depth + 1);
   }
   // A method call on the value: ask about the receiver.
   if (node.type === 'CallExpression') {
     return (
       node.callee.type === 'MemberExpression' &&
       !node.callee.computed &&
-      namesPassword(node.callee.object as TSESTree.Node, depth + 1)
+      namesPassword(node.callee.object as TSESTree.Node, words, depth + 1)
     );
   }
-  if (node.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier') {
-    return nameHasAnyWord(node.property.name, PASSWORD_WORDS);
+  if (node.type === 'MemberExpression') {
+    // `body['password'].length < 6` reaches the same property as
+    // `body.password.length < 6`.
+    const property = propertyName(node);
+    return property !== null && nameHasAnyWord(property, words);
   }
   return false;
 }
@@ -220,14 +252,29 @@ export const detectWeakPasswordValidation = createRule<RuleOptions, MessageIds>(
         documentationLink: 'https://cwe.mitre.org/data/definitions/521.html',
       })
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          passwordWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_PASSWORD_WORDS],
+            description:
+              'Words that mark a value as a credential. Replaces the default.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [{}],
+  create(context, [options]) {
+    const words = (options as Options).passwordWords ?? DEFAULT_PASSWORD_WORDS;
     return {
       BinaryExpression(node: TSESTree.BinaryExpression) {
         // 1. Is this a length comparison at all? Structural, no names involved.
-        if (!measuresPasswordLength(node.left as TSESTree.Node)) {
+        if (!measuresPasswordLength(node.left as TSESTree.Node, words)) {
           return;
         }
 

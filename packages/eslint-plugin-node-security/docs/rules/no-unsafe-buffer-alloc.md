@@ -165,6 +165,11 @@ send(copy);
 
 ## Options
 
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sizeNames` | `string[]` | `["length","len","size","count","n","num","total","capacity","bytelength"]` | Identifiers that hold an allocation size rather than a payload. Replaces the default. |
+
+
 None. The rule takes no configuration.
 
 ## Error Message Format

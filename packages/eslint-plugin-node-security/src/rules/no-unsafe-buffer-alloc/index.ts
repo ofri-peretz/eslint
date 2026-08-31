@@ -76,6 +76,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   unwrapTypeSyntax,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   resolveConstant,
@@ -85,6 +86,17 @@ import { findVariable } from '../../utils/provenance';
 
 type MessageIds =
   'unsafeAlloc' | 'unsafeAllocSlow' | 'useSafeAlloc' | 'unboundedAllocation';
+
+export interface Options {
+  /**
+   * Identifiers that hold an allocation SIZE rather than a payload. REPLACES
+   * the default — see `DEFAULT_SIZE_NAMES` for why the spelling is the
+   * consumer's and not an API's.
+   */
+  sizeNames?: string[];
+}
+
+type RuleOptions = [Options?];
 
 /** The two uninitialized-memory allocators on `Buffer`. */
 const UNSAFE_ALLOCATORS = new Set(['allocUnsafe', 'allocUnsafeSlow']);
@@ -137,7 +149,10 @@ const SIZED_ALLOCATORS: ReadonlySet<string> = new Set([
  *
  * `Buffer.alloc(x)` needs no such test: its argument is a size by definition.
  */
-function looksNumeric(node: TSESTree.Node): boolean {
+function looksNumeric(
+  node: TSESTree.Node,
+  sizeNames: ReadonlySet<string>,
+): boolean {
   switch (node.type) {
     case AST_NODE_TYPES.Literal:
       return typeof node.value === 'number';
@@ -146,13 +161,12 @@ function looksNumeric(node: TSESTree.Node): boolean {
         node.operator,
       );
     case AST_NODE_TYPES.Identifier:
-      return COUNT_NAMES.has(node.name.toLowerCase());
-    case AST_NODE_TYPES.MemberExpression:
-      return (
-        !node.computed &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        COUNT_NAMES.has(node.property.name.toLowerCase())
-      );
+      return sizeNames.has(node.name.toLowerCase());
+    case AST_NODE_TYPES.MemberExpression: {
+      // `header['length']` reaches the same property as `header.length`.
+      const property = propertyName(node);
+      return property !== null && sizeNames.has(property.toLowerCase());
+    }
     case AST_NODE_TYPES.CallExpression: {
       // `Math.min(length, MAX)` is the clamped spelling of a size; it has to
       // read as numeric here or `isClamped` below is unreachable.
@@ -171,8 +185,14 @@ function looksNumeric(node: TSESTree.Node): boolean {
   }
 }
 
-/** Names that hold a count, not a payload. */
-const COUNT_NAMES: ReadonlySet<string> = new Set([
+/**
+ * Names that hold a count, not a payload.
+ *
+ * OUR guess at how a size is spelled, not an API's — nothing in Node blesses
+ * `len` over `nbytes`. A codebase that writes `chunkBytes` matched none of it,
+ * so the allocation it sized went unjudged. Replaceable via `sizeNames`.
+ */
+const DEFAULT_SIZE_NAMES: readonly string[] = [
   'length',
   'len',
   'size',
@@ -182,7 +202,7 @@ const COUNT_NAMES: ReadonlySet<string> = new Set([
   'total',
   'capacity',
   'bytelength',
-]);
+];
 
 /** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.allocUnsafeSlow`. */
 const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
@@ -486,7 +506,7 @@ function declaredName(node: TSESTree.Node): string | null {
   return null;
 }
 
-export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
+export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-buffer-alloc',
   meta: {
     type: 'problem',
@@ -539,10 +559,29 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/789.html',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          sizeNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_SIZE_NAMES],
+            description:
+              'Identifiers that hold an allocation size rather than a payload. Replaces the default.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [{}],
+  create(context, [options]) {
+    const sizeNames: ReadonlySet<string> = new Set(
+      ((options as Options).sizeNames ?? DEFAULT_SIZE_NAMES).map((name) =>
+        name.toLowerCase(),
+      ),
+    );
     const sourceCode = context.sourceCode;
 
     // ── CWE-789: allocation sized by a length field off the wire ──────────
@@ -820,7 +859,7 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         SIZED_ALLOCATORS.has(callee.name)
       ) {
         // `new Uint8Array(bytes)` copies; `new Uint8Array(n)` allocates.
-        return looksNumeric(size) ? size : null;
+        return looksNumeric(size, sizeNames) ? size : null;
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&

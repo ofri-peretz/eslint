@@ -1,9 +1,4 @@
 {
   "note": "Rules that decide from an identifier name with no option to REPLACE the vocabulary. Shrink-only.",
-  "rules": [
-    "lambda-security/no-unvalidated-event-body",
-    "nestjs-security/no-permissive-cors",
-    "node-security/no-unsafe-buffer-alloc",
-    "secure-coding/detect-weak-password-validation"
-  ]
+  "rules": []
 }
