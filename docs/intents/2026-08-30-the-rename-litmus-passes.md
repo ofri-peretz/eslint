@@ -150,3 +150,67 @@ better served by `readsRequestShape`, which answers the same question
 structurally, as `no-sql-injection`, `no-ssrf` and now `no-unsafe-query` do.
 
 Verified by sabotage: breaking one citation fails the gate by name.
+
+## Progress — 2026-08-30, second tranche
+
+**9 offenders left (10 → 9).** One rule drained, and it needed both halves of
+the distinction this intent draws, which is the useful part: the same rule was
+guessing in one place and citing a real contract in another.
+
+`node-security/no-unsafe-buffer-alloc` was the largest offender by blast radius
+— 18 renamed true positives went silent. It carried three hardcoded lists:
+
+| List                                                  | What it really was                                       | Resolution             |
+| ----------------------------------------------------- | -------------------------------------------------------- | ---------------------- |
+| `REQUEST_ROOTS` = `req, request, ctx, event`          | the exact list `readsRequestShape` was written to retire | **structural**         |
+| `WIRE_NAMES` = `chunk, payload, raw, message, msg, …` | a guess at the consumer's decoder vocabulary             | **replaceable option** |
+| `COUNT_NAMES` = `length, len, size, n, capacity, …`   | same                                                     | **replaceable option** |
+
+The first was not a vocabulary problem at all. `readsWire` walked a member
+chain to its root and compared the root's spelling, so
+`Number(foo2.query.capacity)` came back false while `.query.capacity` sat in
+plain sight one link up. Asking `readsRequestShape` before the walk answers it
+structurally — the same move `no-sql-injection`, `no-ssrf` and `no-unsafe-query`
+already make. That took the rule from 18 silences to 15 and the suite from 56
+rules to 55.
+
+The remaining 15 are the decoder vocabulary, and they are the second kind: for
+a socket decoder the binding's name genuinely is the only signal, because a
+frame looks like any other Buffer. So `wireNames`, `requestRootNames` and
+`countNames` now **replace** their defaults, and `wireNames: []` turns the name
+arm off outright — the only honest way to let a project whose `message` is a
+log line disagree with a vocabulary we invented.
+
+Sealed as ILB-0138 (the renamed handler, was a miss) and ILB-0139 (a `message`
+that is a log line, was a false positive). Sabotage-verified in both
+directions: removing the structural arm fails 3 assertions, and emptying
+`REQUEST_ROOTS` still fails 1 — which is why the list stayed rather than being
+deleted as redundant.
+
+Precision did not fall: node-security 2,881 tests pass at 100% coverage, the
+registry is clean at 137 verified / 0 regressed, and the probe's structural
+share rose from 2,063/2,393 (86.2%) to 2,073/2,400 (86.4%).
+
+### A blind spot the gate caught on the way past
+
+Making `countNames` replaceable meant touching the line that reads a property
+name, and `check:spellings` immediately flagged it: `.property.name` sees
+`o.length` and not `o['length']`, though both reach the same property. Switched
+to the devkit's `propertyName`, which resolves all three spellings. Baseline
+841, **fixed 1, new 0** — the gate's whole point is that a rule may not acquire
+a blind spot it did not already have, and here it also removed one.
+
+### One thing the clean worktree found
+
+ILB-0136 — the `import-next/no-cycle` case — **regressed on every fresh
+checkout and nobody could see it.** A cycle is a property of the module graph,
+so the case lints its source under a `filename` inside
+`benchmarks/cases/fixtures/cycle/`, where a sibling `b.ts` imports back. That
+directory was matched by `fixtures/` in `benchmarks/.gitignore`, so the case
+verified only on machines that happened to have built it once and failed
+anywhere else.
+
+`benchmarks/.gitignore` already carried the precedent, for the ILB-Arena
+corpora: _"they must travel with the repo (CI cannot regenerate them)"_. The
+case fixtures are the same kind and for a sharper reason — a claim that cannot
+be checked from a fresh clone is not a claim. Allow-listed and committed.

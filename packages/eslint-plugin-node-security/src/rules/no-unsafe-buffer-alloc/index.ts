@@ -75,8 +75,9 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  unwrapTypeSyntax,
   propertyName,
+  readsRequestShape,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import {
   resolveConstant,
@@ -86,17 +87,6 @@ import { findVariable } from '../../utils/provenance';
 
 type MessageIds =
   'unsafeAlloc' | 'unsafeAllocSlow' | 'useSafeAlloc' | 'unboundedAllocation';
-
-export interface Options {
-  /**
-   * Identifiers that hold an allocation SIZE rather than a payload. REPLACES
-   * the default — see `DEFAULT_SIZE_NAMES` for why the spelling is the
-   * consumer's and not an API's.
-   */
-  sizeNames?: string[];
-}
-
-type RuleOptions = [Options?];
 
 /** The two uninitialized-memory allocators on `Buffer`. */
 const UNSAFE_ALLOCATORS = new Set(['allocUnsafe', 'allocUnsafeSlow']);
@@ -151,7 +141,7 @@ const SIZED_ALLOCATORS: ReadonlySet<string> = new Set([
  */
 function looksNumeric(
   node: TSESTree.Node,
-  sizeNames: ReadonlySet<string>,
+  countNames: ReadonlySet<string>,
 ): boolean {
   switch (node.type) {
     case AST_NODE_TYPES.Literal:
@@ -161,11 +151,14 @@ function looksNumeric(
         node.operator,
       );
     case AST_NODE_TYPES.Identifier:
-      return sizeNames.has(node.name.toLowerCase());
+      return countNames.has(node.name.toLowerCase());
     case AST_NODE_TYPES.MemberExpression: {
-      // `header['length']` reaches the same property as `header.length`.
-      const property = propertyName(node);
-      return property !== null && sizeNames.has(property.toLowerCase());
+      // `propertyName` rather than `.property.name`: `o.length`,
+      // `o['length']` and `` o[`length`] `` are the same property, and a
+      // minifier or a non-identifier key writes the second. Reading only the
+      // dotted spelling is a blind spot nobody chose.
+      const prop = propertyName(node);
+      return prop !== null && countNames.has(prop.toLowerCase());
     }
     case AST_NODE_TYPES.CallExpression: {
       // `Math.min(length, MAX)` is the clamped spelling of a size; it has to
@@ -186,13 +179,39 @@ function looksNumeric(
 }
 
 /**
- * Names that hold a count, not a payload.
- *
- * OUR guess at how a size is spelled, not an API's — nothing in Node blesses
- * `len` over `nbytes`. A codebase that writes `chunkBytes` matched none of it,
- * so the allocation it sized went unjudged. Replaceable via `sizeNames`.
+ * A vocabulary option, normalised. Lower-cased once so the hot path compares
+ * against a set rather than re-casing on every identifier.
  */
-const DEFAULT_SIZE_NAMES: readonly string[] = [
+function toLowerSet(names: readonly string[]): ReadonlySet<string> {
+  return new Set(names.map((n) => n.toLowerCase()));
+}
+
+export interface Options {
+  /**
+   * Binding names that carry bytes off the wire. **Replaces** the default
+   * (`chunk`, `chunks`, `buffer`, `buf`, `payload`, `frame`, `packet`, `raw`,
+   * `message`, `msg`). Pass `[]` to disable the name arm entirely.
+   */
+  wireNames?: readonly string[];
+  /**
+   * Root identifiers treated as a request. **Replaces** the default (`req`,
+   * `request`, `ctx`, `event`). Most projects need not set this: a
+   * request-shaped read off a parameter is recognised structurally regardless
+   * of spelling, and this list only covers a bare root used as wire data.
+   */
+  requestRootNames?: readonly string[];
+  /**
+   * Names that hold a count rather than a payload. **Replaces** the default
+   * (`length`, `len`, `size`, `count`, `n`, `num`, `total`, `capacity`,
+   * `bytelength`).
+   */
+  countNames?: readonly string[];
+}
+
+type RuleOptions = [Options?];
+
+/** Names that hold a count, not a payload. */
+const COUNT_NAMES: ReadonlySet<string> = new Set([
   'length',
   'len',
   'size',
@@ -202,7 +221,7 @@ const DEFAULT_SIZE_NAMES: readonly string[] = [
   'total',
   'capacity',
   'bytelength',
-];
+]);
 
 /** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.allocUnsafeSlow`. */
 const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
@@ -563,12 +582,20 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
-          sizeNames: {
+          wireNames: {
             type: 'array',
             items: { type: 'string' },
-            default: [...DEFAULT_SIZE_NAMES],
-            description:
-              'Identifiers that hold an allocation size rather than a payload. Replaces the default.',
+            default: [...WIRE_NAMES],
+          },
+          requestRootNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...REQUEST_ROOTS],
+          },
+          countNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...COUNT_NAMES],
           },
         },
         additionalProperties: false,
@@ -576,13 +603,24 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context, [options]) {
-    const sizeNames: ReadonlySet<string> = new Set(
-      ((options as Options).sizeNames ?? DEFAULT_SIZE_NAMES).map((name) =>
-        name.toLowerCase(),
-      ),
-    );
+  create(context, [options = {}]) {
     const sourceCode = context.sourceCode;
+
+    // Three name lists decide part of this rule's verdict, and all three are
+    // guesses at what somebody else calls their own bindings — `message` and
+    // `raw` are in WIRE_NAMES, and `n` is in COUNT_NAMES. A project whose
+    // `message` is a log line, or whose `raw` is a template string, cannot
+    // make the rule stop, and an additive option would not help: it can grow
+    // the list, never remove the word we guessed wrong about.
+    //
+    // So each REPLACES its default. Passing `wireNames: []` turns that arm off
+    // entirely, which is the only honest way to let a consumer disagree with a
+    // vocabulary we invented.
+    const vocab = {
+      wireNames: toLowerSet(options.wireNames ?? [...WIRE_NAMES]),
+      requestRoots: toLowerSet(options.requestRootNames ?? [...REQUEST_ROOTS]),
+      countNames: toLowerSet(options.countNames ?? [...COUNT_NAMES]),
+    };
 
     // ── CWE-789: allocation sized by a length field off the wire ──────────
     //
@@ -655,7 +693,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
             if (bound.defs[0].type === 'ImportBinding') return false;
           }
           const lower = node.name.toLowerCase();
-          if (WIRE_NAMES.has(lower) || REQUEST_ROOTS.has(lower)) {
+          if (vocab.wireNames.has(lower) || vocab.requestRoots.has(lower)) {
             // A name is evidence only where the ORIGIN is invisible — a
             // parameter, or a binding this file never declares. When the
             // identifier resolves to a local variable the initializer is right
@@ -709,6 +747,21 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           return lastWrite !== undefined && readsWire(lastWrite, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression:
+          // Ask the SHAPE before walking to the root. `REQUEST_ROOTS` below is
+          // the list `readsRequestShape` was written to retire — `req`,
+          // `request`, `ctx`, `event` — and it fires only when the root is
+          // spelled one of those four. A handler written `(inbound, outbound)`,
+          // or the very common TypeScript `(request: Request, res: Response)`
+          // renamed on the way in, walked all the way down to an identifier in
+          // no list and came back false, while `.query.capacity` sat in plain
+          // sight one link up.
+          //
+          // Same question the rule already asks, answered from structure: is
+          // this a read of `.query` / `.params` / `.headers` / `.cookies` /
+          // `.body` — or the Lambda spellings — off a binding that ARRIVED as a
+          // parameter. The name arm stays for the wire-decoder vocabulary it
+          // was actually built for.
+          if (readsRequestShape(node, sourceCode)) return true;
           return readsWire(node.object, depth + 1);
         // `new URL(req.url, base)` is a request that has been through a
         // constructor; the searchParams read off it are still the peer's.
@@ -859,7 +912,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         SIZED_ALLOCATORS.has(callee.name)
       ) {
         // `new Uint8Array(bytes)` copies; `new Uint8Array(n)` allocates.
-        return looksNumeric(size, sizeNames) ? size : null;
+        return looksNumeric(size, vocab.countNames) ? size : null;
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&

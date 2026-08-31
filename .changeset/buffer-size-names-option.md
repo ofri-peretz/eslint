@@ -1,15 +1,11 @@
 ---
-'@interlace/eslint-plugin-node-security': minor
+'@interlace/eslint-plugin-node-security': patch
 ---
 
-`no-unsafe-buffer-alloc` takes `sizeNames`
+`no-unsafe-buffer-alloc` has fixtures for the `countNames` option
 
-The name of the first argument is what separates `new Uint8Array(bytes)` — a
-copy — from `new Uint8Array(n)` — an allocation. The rule matched that against
-`length|len|size|count|n|num|total|capacity|byteLength`, which is our guess, so
-a codebase spelling it `nbytes` had its allocations read as copies and went
-unjudged. `sizeNames` replaces the list.
-
-It also compared `node.property.name` directly, so a size reached by a computed
-key (`header['length']`) was invisible. It now resolves the property through
-`propertyName`.
+`countNames` is what separates `new Uint8Array(bytes)` — a copy — from
+`new Uint8Array(n)` — an allocation, so a codebase spelling its size `nbytes`
+had its allocations read as copies. The option now has the pair that proves it:
+one fixture where the default vocabulary misses the allocation, and one where
+naming the spelling reaches it.
