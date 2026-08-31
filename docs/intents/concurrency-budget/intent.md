@@ -37,12 +37,49 @@ runners. That is the intended backstop; it is also 4× the target.
 
 Two further facts bound what is possible:
 
-1. **Job count drives queueing, and queueing dominates.** On the one clean
-   measurement (run 33345687707) the job start spread was 25s and the run was
-   86s; on a contended one it was 186s and 261s. Compute barely moved.
+1. **Job count drives queueing, and queueing dominates *on PRs*.** On the one
+   clean measurement (run 33345687707) the job start spread was 25s and the run
+   was 86s; on a contended one it was 186s and 261s. Compute barely moved.
 2. **The critical path is no longer the tests.** All tests execute in ~22s.
    `Benchmark configs load` is 42s warm and, by its own comment, 153s cold with
    a 114s build. `Gate` is 13s before anything else can start.
+
+### Correction, 2026-08-31 — the main-push cause is NOT queueing
+
+The paragraph above was written from PR data and then applied to main pushes.
+Measuring an actual main push (run 33350704383, 340s wall) shows something
+else: the jobs start within 76s of each other, the same as a PR, and then each
+one takes **3–10× longer at identical work**.
+
+| job | PR run | main push |
+|---|---|---|
+| `Unit Tests — node lane (1/4)` | 17s | **172s** |
+| `Benchmark configs load` | 45s | **165s** |
+| `Typecheck` | 45s | **113s** |
+| `Build (1/4)` | 46s | **264s** ← the wall clock |
+
+And it is not that main runs more packages. Checked directly on this branch:
+
+```
+main (ALL=1):  9 of 34 packages, 206 test files — "running all packages (filtering disabled)"
+PR   (ALL=0):  9 of 34 packages, 206 test files — "running all packages (a global input changed)"
+```
+
+Identical job count, identical packages, identical test files — 17s versus
+172s. The only remaining variable is **cache reuse**.
+
+The leading hypothesis, NOT yet confirmed: GitHub Actions cache is
+branch-scoped. Entries written by PR CI live in the feature branch's scope, and
+a run on `main` cannot read them. The turbo remote cache here is
+`rharkor/caching-for-turbo`, backed by Actions cache, so every post-merge run
+would be structurally cold — which is the only explanation offered so far that
+predicts a *uniform* slowdown across every job rather than a hot spot in one.
+
+**Confirm before acting.** The evidence needed is one line from a main-push
+job's log — `cache hit, replaying logs` versus `cache miss, executing`. The run
+above had already expired when this was written. Three explanations for this
+gap have now been wrong (queueing, cold turbo tarball, more packages); a fourth
+should not be built on top without that line.
 
 ## Affected users and systems
 
