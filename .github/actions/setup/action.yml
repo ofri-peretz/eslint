@@ -353,9 +353,29 @@ runs:
       if: inputs.tsbuildinfo-cache == 'true'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
+        # The incremental state ONLY. `packages/*/dist` used to share this
+        # entry and no longer does: it is hundreds of MB, it is already
+        # content-addressed by the turbo remote cache, and keeping it here made
+        # every entry fat. This repo has history with exactly that — the store
+        # reached 36.89 GB against a 10 GB budget and GitHub LRU-evicted
+        # entries, which is how a cache with a perfectly good `restore-keys`
+        # prefix ends up with nothing to fall back to. A small entry survives;
+        # a fat one is an evicted one.
+        #
+        # Measured 2026-08-31: cold whole-graph `tsgo --build` is 25s, warm is
+        # 0s. Whether this entry restores IS the difference between a 45s
+        # Typecheck job and a few seconds.
+        #
+        # The 31 files land at exactly this glob (each tsconfig.lib.json sets
+        # `"tsBuildInfoFile": "./.tsbuildinfo"`), and packages/ui joins them now
+        # that its typecheck is tsgo with incremental state instead of
+        # `tsc --noEmit`, which wrote none.
         path: |
           packages/*/.tsbuildinfo
-          packages/*/dist
+        # Exact key for an unchanged tree; the prefix fallback is what carries a
+        # normal PR, since any source edit changes the hash. A stale buildinfo
+        # is safe by construction — tsgo re-checks every project whose inputs no
+        # longer match, so the worst case is the 25s it would have paid anyway.
         key: tsbuildinfo-${{ runner.os }}-${{ hashFiles('packages/*/src/**/*.ts', 'packages/*/tsconfig*.json', 'tsconfig.solution.json', 'tsconfig.base.json') }}
         restore-keys: |
           tsbuildinfo-${{ runner.os }}-
