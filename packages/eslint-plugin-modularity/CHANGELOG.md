@@ -5,6 +5,29 @@ All notable changes to `eslint-plugin-modularity` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.4.0
+
+### Minor Changes
+
+- **🐛 Fix** — `ddd-anemic-domain-model` matches DTO names by suffix, not substring
+
+  `DTO`, `Dto`, `Data`, `Request`, `Response` and `Payload` describe a naming
+  convention that is positional — `OrderDto`, `CreateUserRequest`,
+  `LoginPayload`. Matching them with `.includes()` turned each into a substring.
+
+  Because this is a **suppression**, every collision costs a real finding rather
+  than adding noise. The same anemic class reports as `Person` and goes silent as
+  `Requestor`, purely because `Requestor` contains `Request`. A requestor is an
+  actor, not a data carrier, and its anemia is exactly what this rule exists to
+  find.
+
+  Genuine DTOs are unaffected: `OrderDto`, `CreateUserRequest`, `UserResponse`,
+  `LoginPayload` and `UserData` all stay exempt.
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`
+
 ## 2.3.0
 
 ### Minor Changes

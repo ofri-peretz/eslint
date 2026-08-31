@@ -44,7 +44,7 @@
     "changeset:status": "env -u GIT_DIR changeset status --since=origin/main",
     "changeset:coverage": "tsx scripts/check-changeset-coverage.ts",
     "changeset:lint": "tsx scripts/lint-changesets.ts",
-    "changeset:version": "changeset version && tsx scripts/normalize-changelogs.ts && tsx scripts/sync-source-versions.ts && npm install --package-lock-only",
+    "changeset:version": "changeset version && tsx scripts/normalize-changelogs.ts && tsx scripts/sync-source-versions.ts && npm install --package-lock-only && tsx scripts/map-links-and-names.ts",
     "changeset:pre:enter": "changeset pre enter",
     "changeset:pre:exit": "changeset pre exit",
     "changeset:snapshot": "changeset version --snapshot canary && tsx scripts/normalize-changelogs.ts",

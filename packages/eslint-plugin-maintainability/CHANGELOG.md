@@ -5,6 +5,26 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — `max-parameters` no longer counts TypeScript's `this` parameter
+
+  `function f(this: Window, a, b, c, d)` takes **four** arguments. The `this`
+  parameter is a type annotation for the calling context — erased before emit,
+  never passed by a caller — so counting it inflated the arity by one and
+  reported a function sitting exactly at the limit.
+
+  This matches `@typescript-eslint/max-params`, whose `countVoidThis` option
+  defaults to `false` for the same reason.
+
+  Nothing else changes: rest and defaulted parameters still count, one
+  destructured object still counts as one, and five real parameters still report
+  whether or not a `this` annotation is present.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`
+
 ## 3.1.1
 
 ### Patch Changes
