@@ -95,7 +95,10 @@ function withPerturbed<T>(relPath: string, fn: () => T): T {
   const original = fs.readFileSync(abs);
   perturbed.set(abs, original);
   try {
-    fs.writeFileSync(abs, `${original.toString()}\n// cache-invalidation probe\n`);
+    fs.writeFileSync(
+      abs,
+      `${original.toString()}\n// cache-invalidation probe\n`,
+    );
     return fn();
   } finally {
     fs.writeFileSync(abs, original);
@@ -131,12 +134,7 @@ const turboArgs = (rest: string[]): string[] =>
 function hashes(task: string, pkgs: string[]): Map<string, string> {
   const out = execFileSync(
     TURBO,
-    turboArgs([
-      'run',
-      task,
-      ...pkgs.map((p) => `--filter=${p}`),
-      '--dry=json',
-    ]),
+    turboArgs(['run', task, ...pkgs.map((p) => `--filter=${p}`), '--dry=json']),
     {
       cwd: REPO_ROOT,
       encoding: 'utf8',
@@ -182,8 +180,9 @@ function workspaces(): Workspace[] {
 function sample<T>(items: T[], n: number, offset: number): T[] {
   if (items.length === 0) return [];
   const start = ((offset - 1) * n) % items.length;
-  return Array.from({ length: Math.min(n, items.length) }, (_, i) =>
-    items[(start + i) % items.length],
+  return Array.from(
+    { length: Math.min(n, items.length) },
+    (_, i) => items[(start + i) % items.length],
   );
 }
 
@@ -247,7 +246,9 @@ for (const up of upstreams) {
     continue;
   }
 
-  const after = withPerturbed(`${up.dir}/src/index.ts`, () => hashes(TASK, scope));
+  const after = withPerturbed(`${up.dir}/src/index.ts`, () =>
+    hashes(TASK, scope),
+  );
   checked.push(`${up.name} -> ${probed.join(', ')}`);
 
   for (const [taskId, hash] of before)
@@ -255,10 +256,9 @@ for (const up of upstreams) {
       findings.push({
         probe: `${up.dir}/src/index.ts`,
         task: taskId,
-        reason:
-          taskId.startsWith(`${up.name}#`)
-            ? 'a package changed its own source and its hash did not move'
-            : `changing ${up.name} did not move its dependent's hash — that task would replay a stale pass`,
+        reason: taskId.startsWith(`${up.name}#`)
+          ? 'a package changed its own source and its hash did not move'
+          : `changing ${up.name} did not move its dependent's hash — that task would replay a stale pass`,
       });
 }
 
@@ -272,10 +272,18 @@ for (const g of turbo.globalDependencies ?? []) {
   let before: Map<string, string>;
   try {
     before = hashes(TASK, globalScope);
-  } catch {
+  } catch (err) {
+    // Record it. A silently dropped probe lets the audit exit 0 with a
+    // declared globalDependency never actually checked — the run reports a
+    // pass for a question it did not ask, which is the failure this audit
+    // exists to catch in turbo, reproduced in the audit itself.
+    skipped.push(`global ${g}: ${(err as Error).message.split('\n')[0]}`);
     continue;
   }
-  if (before.size === 0) continue;
+  if (before.size === 0) {
+    skipped.push(`global ${g}: turbo planned no tasks for this scope`);
+    continue;
+  }
   const after = withPerturbed(g, () => hashes(TASK, globalScope));
   checked.push(`global ${g} -> ${globalScope.join(', ')}`);
   for (const [taskId, hash] of before)
@@ -296,7 +304,9 @@ if (JSON_OUT) {
     ),
   );
 } else {
-  console.log(`Cache-invalidation audit — task=${TASK} sample=${SAMPLE} width=${WIDTH}\n`);
+  console.log(
+    `Cache-invalidation audit — task=${TASK} sample=${SAMPLE} width=${WIDTH}\n`,
+  );
   for (const c of checked) console.log(`  ✓ ${c}`);
   for (const s of skipped) console.log(`  · skipped ${s}`);
   for (const f of findings)
