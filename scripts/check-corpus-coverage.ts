@@ -230,8 +230,36 @@ function sourcedFixtures(): string[] {
 }
 
 const sourced = sourcedFixtures();
+
+/*
+ * Direction matters, and the first cut of this got it backwards.
+ *
+ * `rulesWithCorpusEvidence` counts a rule as exercised when it FIRES. On a
+ * `vulnerable/` fixture that is a true positive — evidence the rule detects
+ * the real thing. On a `safe/` fixture a firing is a FALSE POSITIVE, and
+ * counting it as "precision measured" credits a rule for being wrong.
+ *
+ * The first honest run said 4 rules were sourced. All four were
+ * `import-next` hygiene rules — `unambiguous`, `no-unused-modules`,
+ * `no-commonjs`, `no-extraneous-dependencies` — firing on all three sourced
+ * fixtures, every one of which is `safe/`. They fire on any `.js` file with no
+ * exports, so they were being credited for incidental noise on code that was
+ * labelled NOT vulnerable. No security rule had a sourced fixture at all.
+ *
+ * So the two directions are counted apart:
+ *
+ *   detects  — fires on a SOURCED `vulnerable/` fixture. Real code, known bad,
+ *              rule found it. This is the number precision rests on.
+ *   silent   — a SOURCED `safe/` fixture exists and the rule does NOT fire on
+ *              it. Real code, known good, rule kept quiet. Worth having, but it
+ *              is a false-positive lock, not evidence of detection.
+ */
+const sourcedVulnerable = sourced.filter((rel) => /(^|\/)vulnerable\//.test(rel));
+const sourcedSafe = sourced.filter((rel) => /(^|\/)safe\//.test(rel));
 const firedSourced =
-  sourced.length > 0 ? rulesWithCorpusEvidence(sourced) : new Set<string>();
+  sourcedVulnerable.length > 0
+    ? rulesWithCorpusEvidence(sourcedVulnerable)
+    : new Set<string>();
 const unmeasured = rules
   .map(canonical)
   .filter((r) => !fired.has(r) && !NOT_FIXTURABLE.has(r))
@@ -255,9 +283,10 @@ console.log(
       : '\n') +
     `  exercised by any fixture      : ${measured} (${pct}%)\n` +
     `  by a CURATED fixture          : ${curated} (${Math.round((curated / fixturable) * 100)}%)  <- written here, reviewed here\n` +
-    `  by a SOURCED fixture          : ${traced} (${Math.round((traced / fixturable) * 100)}%)  <- traced to code we did not write\n` +
+    `  detected in SOURCED real code : ${traced} (${Math.round((traced / fixturable) * 100)}%)  <- what precision rests on\n` +
     `  unmeasured                    : ${unmeasured.length}\n` +
-    `\n  ${sourced.length} of ${fs.globSync(CURATED, { cwd: ROOT }).length} curated fixtures record a @source.\n` +
+    `\n  ${sourced.length} of ${fs.globSync(CURATED, { cwd: ROOT }).length} curated fixtures record a @source` +
+    ` (${sourcedVulnerable.length} vulnerable, ${sourcedSafe.length} safe).\n` +
     '  Only the SOURCED number can contradict us; the CURATED one cannot.\n',
 );
 

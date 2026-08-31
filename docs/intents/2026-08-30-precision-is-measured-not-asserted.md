@@ -14,7 +14,7 @@ rule's author did not write.
 373 rules can carry a corpus fixture
   exercised by any fixture   : 226 (61%)
   by a CURATED fixture       :  73 (20%)   <- written here, reviewed here
-  by a SOURCED fixture       :   4 ( 1%)   <- traced to code we did not write
+  detected in SOURCED code   :   0 ( 0%)   <- what precision rests on
   unmeasured                 : 147
 ```
 
@@ -29,7 +29,16 @@ repository — of the 154 curated fixtures, 85 are `@author claude-fable-5` and
 enforce "a fixture written by whoever is fixing the rule is a unit test in a
 different directory" was measuring the directory.
 
-The real starting point is **4 rules**.
+The first corrected run said 4. That was still too kind, in the same
+direction. Those 4 were `import-next/unambiguous`,
+`import-next/no-unused-modules`, `import-next/no-commonjs` and
+`import-next/no-extraneous-dependencies` — hygiene rules that fire on any
+`.js` file with no exports — and all three sourced fixtures are `safe/`,
+where a firing is a FALSE POSITIVE. The headline was crediting rules for
+being wrong about code labelled not-vulnerable.
+
+**The real starting point is 0.** No rule in this repository has been shown
+to detect a real vulnerability in code we did not write.
 
 Target the rules that appear in a `recommended` preset first, since those are
 the ones a consumer gets without choosing them.
@@ -49,7 +58,7 @@ defensible because `detect-object-injection` is one of the 68; for most rules
 the same comparison could not be made honestly.
 
 `check:corpus-coverage` already stops the number getting worse. Nothing makes
-it better, and 1% is not a floor anyone should be comfortable standing on.
+it better, and 0% is not a floor at all.
 
 The 18% that stood here before was worse than no number: it was reassuring.
 
@@ -74,11 +83,13 @@ The 18% that stood here before was worse than no number: it was reassuring.
 
 ## Done when
 
-- Rules measured by a SOURCED fixture: **4 → 60**.
+- Rules that detect a real vulnerability in SOURCED code: **0 → 60**.
 
-  The old target read 68 → 120 against the path-selected count. Restated
-  against provenance, because moving the honest number is the point and the
-  old one could be moved by writing more of our own fixtures.
+  The intent opened at 68 → 120 against a path-selected count. Restated twice:
+  first against provenance, then against DIRECTION, because a rule firing on a
+  `safe/` fixture was being counted as measured precision when it is a false
+  positive. Both restatements moved the number down. That is the number
+  working.
 - Every rule in a `recommended` preset either has a SOURCED fixture or a
   recorded reason it cannot.
 - Every `@source` pins a commit and a path — `owner/repo@<sha> path:line` — so

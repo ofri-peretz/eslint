@@ -62,6 +62,19 @@ describe('a fixture is independent because of its provenance, not its path', () 
     expect(curatedFixtures().length).toBeGreaterThan(100);
   });
 
+  it('a firing on a SAFE fixture is not counted as detection', () => {
+    // The first honest run reported 4 sourced rules. All four were
+    // `import-next` hygiene rules — `unambiguous`, `no-unused-modules`,
+    // `no-commonjs`, `no-extraneous-dependencies` — and all three sourced
+    // fixtures are `safe/`. Those rules fire on any `.js` file with no
+    // exports, so the headline was crediting incidental noise on code
+    // explicitly labelled NOT vulnerable. A firing on a safe fixture is a
+    // FALSE POSITIVE; counting it as measured precision credits a rule for
+    // being wrong.
+    expect(GATE).toMatch(/sourcedVulnerable/);
+    expect(GATE).toMatch(/vulnerable\\\//);
+  });
+
   it('a @source names a checkable coordinate, not a vague attribution', () => {
     // `@source some-project` cannot be verified by anyone. A commit and a path
     // can: `owner/repo@<sha> path/to/file.ts:LINE`.
