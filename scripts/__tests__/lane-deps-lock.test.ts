@@ -151,6 +151,35 @@ describe('lean dependency archive', () => {
 
   // The specific finding that motivated the deny-list being short. If someone
   // adds `date-fns` back to the exclusions, four node-lane packages break.
+  // A cache MISS must still produce a working tree. Rewriting the lean cache
+  // step once deleted the `npm ci` steps that sat between it and the Turbo
+  // block, so a missed lean key restored nothing, installed nothing, and the
+  // shard died with `vitest: not found` (exit 127) — three seconds after a
+  // green cache step. Nothing in the action's own shape said it was broken.
+  it('still installs when neither node_modules cache hits', () => {
+    const setup = readFileSync(
+      join(ROOT, '.github', 'actions', 'setup', 'action.yml'),
+      'utf8',
+    );
+    expect(setup).toContain('npm ci --prefer-offline');
+    const install = /- name: Install dependencies\n\s+if: ([^\n]+)/.exec(setup);
+    expect(
+      install,
+      'no `Install dependencies` step in the setup action',
+    ).not.toBeNull();
+    const condition = (install as RegExpExecArray)[1];
+    // Every cache step that can satisfy the install must be consulted; one
+    // missing from the condition means `npm ci` is skipped on its miss.
+    for (const id of [...setup.matchAll(/id: (node-modules-cache-\w+)/g)].map(
+      (m) => m[1],
+    ))
+      expect(
+        condition,
+        `\`Install dependencies\` does not consult ${id}, so a miss on that cache ` +
+          'would skip `npm ci` and leave the job with no node_modules.',
+      ).toContain(id);
+  });
+
   it('does not trim date-fns — four node-lane packages import it', () => {
     expect(excluded).not.toContain('date-fns');
   });

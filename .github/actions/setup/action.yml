@@ -200,6 +200,32 @@ runs:
           !**/node_modules/.vite-temp/**
         key: node-modules-lean-v4-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
+    # Only on a node_modules miss — see the setup-node note above.
+    # `npm config get cache` rather than a hardcoded ~/.npm — an .npmrc or a
+    # non-Linux runner can move it.
+    #
+    # Both cache steps are named because only one of them runs: the other is
+    # skipped and reports an empty `cache-hit`, which is correctly "not a hit".
+    - name: Resolve npm cache directory
+      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
+      id: npm-cache-dir
+      shell: bash
+      run: echo "dir=$(npm config get cache)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore npm registry cache (only when npm ci will run)
+      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: ${{ steps.npm-cache-dir.outputs.dir }}
+        key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          npm-${{ runner.os }}-
+
+    - name: Install dependencies
+      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci --prefer-offline --no-audit --fund=false
+
     # Turbo cache — restore-only on branches, restore+save on main.
     #
     # The repo shares a hard 10 GB Actions cache quota. The previous key
