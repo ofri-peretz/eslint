@@ -29,19 +29,22 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SETUP = join(ROOT, '.github', 'actions', 'setup', 'action.yml');
+const LEAN_LIST = join(ROOT, '.github', 'lean-node-modules.txt');
 const SHARD_SCRIPT = join(ROOT, 'scripts', 'ci-test-shard.mts');
 
-/** The raw `!node_modules/<pkg>/**` patterns on the lean cache step. */
-function leanExclusionPatterns(): string[] {
-  const src = readFileSync(SETUP, 'utf8');
-  const start = src.indexOf('node-modules-cache-lean');
-  expect(start, 'no lean cache step in the setup action').toBeGreaterThan(-1);
-  const block = src.slice(start, src.indexOf('key:', start));
-  return [...block.matchAll(/^\s*!node_modules\/(\S+)\s*$/gm)]
-    .map((m) => m[1])
-    // `.vite`/`.vite-temp` are build scratch, not packages.
-    .filter((p) => !p.startsWith('.'));
+/**
+ * The packages the node lane's trim step deletes before the cache is saved.
+ *
+ * Single-sourced from `.github/lean-node-modules.txt`, which the workflow step
+ * also reads. Scraping the workflow YAML instead would let the two drift, and
+ * the drift is silent in the direction that matters: a package trimmed but not
+ * checked here is a MODULE_NOT_FOUND waiting for whichever shard resolves it.
+ */
+function trimmedPackages(): string[] {
+  return readFileSync(LEAN_LIST, 'utf8')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'));
 }
 
 /** Package names the shard script assigns to the web lane. */
@@ -78,49 +81,43 @@ function workspaces(): Workspace[] {
   return out;
 }
 
-/**
- * The same list as package NAMES — the `/**` suffix removed.
- *
- * Kept separate from the raw patterns on purpose. Comparing a manifest's
- * `"next"` against the pattern `next/**` never matches, so folding the two
- * together silently turns the collision assertions below into no-ops. That is
- * not hypothetical: adding the `/**` suffix did exactly that, and the
- * `@interlace/ui` sabotage that had failed four times started passing.
- */
-function leanExcludedPackages(): string[] {
-  return leanExclusionPatterns().map((p) => p.replace(/\/\*\*$/, ''));
-}
-
 describe('lean dependency archive', () => {
-  const patterns = leanExclusionPatterns();
-  const excluded = leanExcludedPackages();
+  const excluded = trimmedPackages();
   const web = new Set(webLane());
   const nodeLane = workspaces().filter((w) => !web.has(w.name));
 
-  it('omits something, or the lean lane is pointless', () => {
+  it('trims something, or the lean lane is pointless', () => {
     expect(excluded.length).toBeGreaterThan(0);
   });
 
-  // The v1 exclusions were written as `!node_modules/next`. @actions/glob
-  // matches FILES, so that excluded the directory entry and kept every file
-  // inside it: the "lean" archive came back 451,028,482 bytes against the full
-  // archive's 451,051,181 — a 22 kB saving, silently. Nothing failed; the
-  // number just never moved. The `/**` suffix is the whole fix, so it is
-  // pinned rather than remembered.
-  it('excludes directory CONTENTS, not just the directory entry', () => {
-    const unsuffixed = patterns.filter((e) => !e.endsWith('/**'));
-    expect(
-      unsuffixed,
-      'These patterns match only the directory entry, so every file inside it ' +
-        'still ends up in the archive. Append `/**`.',
-    ).toEqual([]);
+  // The list is only load-bearing if something reads it. Three archives were
+  // measured at ~451 MB while a twelve-entry exclusion list sat in the setup
+  // action doing nothing, so "the list exists" is not evidence.
+  it('is actually read by the trim step that produces the lean archive', () => {
+    const wf = readFileSync(
+      join(ROOT, '.github', 'workflows', 'quality-full.yml'),
+      'utf8',
+    );
+    expect(wf).toContain('.github/lean-node-modules.txt');
+    expect(wf).toContain('rm -rf "node_modules/${pkg:?}"');
+    // The trim must be the LAST step of the node-lane job: post steps (the
+    // cache save) run after all main steps, so anything after it would be
+    // running against an already-trimmed tree.
+    const job = wf.slice(
+      wf.indexOf('\n  test:\n'),
+      wf.indexOf('\n  test-web:\n'),
+    );
+    const steps = [...job.matchAll(/^ {6}- (?:name: (.*)|uses: (.*))$/gm)];
+    expect(steps.at(-1)?.[1] ?? '').toContain('Trim the web tree');
   });
 
   it('has a non-empty node lane to protect', () => {
     expect(nodeLane.length).toBeGreaterThan(0);
     // Guards the shape of the test: a rename that made every workspace look
     // web-lane would empty this list and pass everything below vacuously.
-    expect(nodeLane.some((w) => w.name.startsWith('eslint-plugin-'))).toBe(true);
+    expect(nodeLane.some((w) => w.name.startsWith('eslint-plugin-'))).toBe(
+      true,
+    );
   });
 
   it.each(
@@ -135,21 +132,26 @@ describe('lean dependency archive', () => {
       ? [{ ws: '(none)', dep: '(none)' }]
       : nodeLane.flatMap((w) =>
           w.deps
-            .filter((d) => excluded.some((e) => d === e || d.startsWith(`${e}/`)))
+            .filter((d) =>
+              excluded.some((e) => d === e || d.startsWith(`${e}/`)),
+            )
             .map((d) => ({ ws: w.path, dep: d })),
         ),
-  )('$ws does not declare $dep, which the lean archive omits', ({ ws, dep }) => {
-    expect(
-      dep,
-      `${ws} declares "${dep}", but the lean node_modules archive omits it. ` +
-        'Either move that workspace into WEB_LANE in scripts/ci-test-shard.mts, ' +
-        'or drop the exclusion from .github/actions/setup.',
-    ).toBe('(none)');
-  });
+  )(
+    '$ws does not declare $dep, which the lean archive omits',
+    ({ ws, dep }) => {
+      expect(
+        dep,
+        `${ws} declares "${dep}", but the lean node_modules archive trims it away. ` +
+          'Either move that workspace into WEB_LANE in scripts/ci-test-shard.mts, ' +
+          'or drop the entry from .github/lean-node-modules.txt.',
+      ).toBe('(none)');
+    },
+  );
 
   // The specific finding that motivated the deny-list being short. If someone
   // adds `date-fns` back to the exclusions, four node-lane packages break.
-  it('does not omit date-fns — four node-lane packages import it', () => {
+  it('does not trim date-fns — four node-lane packages import it', () => {
     expect(excluded).not.toContain('date-fns');
   });
 });

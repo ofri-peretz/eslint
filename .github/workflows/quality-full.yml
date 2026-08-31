@@ -457,6 +457,32 @@ jobs:
       - name: Pre-commit gate locks
         run: npm run --silent test:precommit-locks
 
+      # Runs LAST, and that placement is the whole mechanism: post steps (the
+      # cache save among them) execute after every main step, so whatever this
+      # deletes is what the lean archive contains. Path exclusions cannot do
+      # this — actions/cache tars a matched directory whole and the negations
+      # never apply, measured three times at ~451 MB before it was believed.
+      #
+      # `always()` so a failing shard still banks a correctly-trimmed archive;
+      # the tests have already run by this point, so nothing here can mask a
+      # failure. The size is printed rather than assumed, because "the lean
+      # archive is smaller" was wrong three times while nothing went red.
+      - name: Trim the web tree before the cache saves it
+        if: always()
+        run: |
+          set -euo pipefail
+          before=$(du -sm node_modules | cut -f1)
+          while read -r pkg; do
+            case "$pkg" in ''|'#'*) continue ;; esac
+            rm -rf "node_modules/${pkg:?}"
+          done < .github/lean-node-modules.txt
+          after=$(du -sm node_modules | cut -f1)
+          echo "::notice::Lean node_modules: ${before} MB -> ${after} MB before cache save."
+          if [ "$after" -ge "$before" ]; then
+            echo "::error::The trim removed nothing (${before} MB -> ${after} MB). The lean archive would be a no-op sold as a saving — see .github/lean-node-modules.txt."
+            exit 1
+          fi
+
   # Sharded across runners. A single runner running `turbo run build` for 34
   # packages queues them behind its own 4-vCPU concurrency limit — measured
   # 230s. Build work has no outlier (no package over 25s), so splitting it is
