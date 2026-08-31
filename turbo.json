@@ -60,12 +60,12 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
     },
     "test:coverage": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },
