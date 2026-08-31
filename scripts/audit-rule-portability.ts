@@ -27,26 +27,26 @@ const PACKAGES_DIR = path.join(__dirname, '..', 'packages');
 // ── Detection Patterns ──────────────────────────────────────────────
 
 const TYPE_AWARE_PATTERNS = [
-  { pattern: /getParserServices/,         label: 'getParserServices()' },
-  { pattern: /parserServices/,            label: 'parserServices' },
-  { pattern: /getTypeChecker/,            label: 'getTypeChecker()' },
-  { pattern: /checker\.getType/,          label: 'TypeChecker API' },
-  { pattern: /esTreeNodeToTSNodeMap/,     label: 'esTreeNodeToTSNodeMap' },
-  { pattern: /getConstraintType/,         label: 'getConstraintType' },
-  { pattern: /tsNodeToESTreeNodeMap/,     label: 'tsNodeToESTreeNodeMap' },
-  { pattern: /program\.getTypeChecker/,   label: 'program.getTypeChecker' },
+  { pattern: /getParserServices/, label: 'getParserServices()' },
+  { pattern: /parserServices/, label: 'parserServices' },
+  { pattern: /getTypeChecker/, label: 'getTypeChecker()' },
+  { pattern: /checker\.getType/, label: 'TypeChecker API' },
+  { pattern: /esTreeNodeToTSNodeMap/, label: 'esTreeNodeToTSNodeMap' },
+  { pattern: /getConstraintType/, label: 'getConstraintType' },
+  { pattern: /tsNodeToESTreeNodeMap/, label: 'tsNodeToESTreeNodeMap' },
+  { pattern: /program\.getTypeChecker/, label: 'program.getTypeChecker' },
 ];
 
 const ESLINT_SPECIFIC_PATTERNS = [
-  { pattern: /context\.sourceCode/,       label: 'context.sourceCode' },
-  { pattern: /context\.getSourceCode/,    label: 'context.getSourceCode()' },
-  { pattern: /context\.report/,           label: 'context.report()' },
-  { pattern: /context\.getFilename/,      label: 'context.getFilename()' },
-  { pattern: /context\.filename/,         label: 'context.filename' },
-  { pattern: /context\.options/,          label: 'context.options' },
-  { pattern: /RuleFixer/,                 label: 'RuleFixer (auto-fix)' },
-  { pattern: /hasSuggestions:\s*true/,    label: 'hasSuggestions' },
-  { pattern: /fixable:\s*['"]code['"]/,   label: 'fixable: code' },
+  { pattern: /context\.sourceCode/, label: 'context.sourceCode' },
+  { pattern: /context\.getSourceCode/, label: 'context.getSourceCode()' },
+  { pattern: /context\.report/, label: 'context.report()' },
+  { pattern: /context\.getFilename/, label: 'context.getFilename()' },
+  { pattern: /context\.filename/, label: 'context.filename' },
+  { pattern: /context\.options/, label: 'context.options' },
+  { pattern: /RuleFixer/, label: 'RuleFixer (auto-fix)' },
+  { pattern: /hasSuggestions:\s*true/, label: 'hasSuggestions' },
+  { pattern: /fixable:\s*['"]code['"]/, label: 'fixable: code' },
 ];
 
 // oxlint supports: AST visitors, basic context.report, messageIds
@@ -87,16 +87,22 @@ const PORTABILITY_BLOCKERS = {
     },
   ],
   biome: [
-    { pattern: /CallExpression|MemberExpression|Property|Identifier/, label: 'Imperative AST visitor (Biome uses GritQL)' },
+    {
+      pattern: /CallExpression|MemberExpression|Property|Identifier/,
+      label: 'Imperative AST visitor (Biome uses GritQL)',
+    },
   ],
   typescriptGo: [
-    { pattern: /esTreeNodeToTSNodeMap/, label: 'ESTree↔TS node map (API differs)' },
+    {
+      pattern: /esTreeNodeToTSNodeMap/,
+      label: 'ESTree↔TS node map (API differs)',
+    },
   ],
 };
 
 // Auto-fix detection — degrades on oxlint but doesn't block the rule from running.
 const FIX_PATTERNS = [
-  { pattern: /RuleFixer/,             label: 'RuleFixer' },
+  { pattern: /RuleFixer/, label: 'RuleFixer' },
   { pattern: /fixer\.(replace|insert|remove)/, label: 'fixer.* call' },
   { pattern: /fixable:\s*['"]code['"]/, label: 'fixable: code' },
 ];
@@ -121,7 +127,11 @@ function scanRule(sourceCode, ruleName) {
     // to AST-only or no-ops when type info is missing) | 'unguarded' (would
     // crash on oxlint — caught as a blocker above).
     typeAwareSupport: 'none',
-    portability: { oxlint: 'compatible', biome: 'incompatible', typescriptGo: 'compatible' },
+    portability: {
+      oxlint: 'compatible',
+      biome: 'incompatible',
+      typescriptGo: 'compatible',
+    },
     blockers: { oxlint: [], biome: [], typescriptGo: [] },
     lineCount: sourceCode.split('\n').length,
     complexity: 'low', // low/medium/high based on line count + visitors
@@ -155,7 +165,11 @@ function scanRule(sourceCode, ruleName) {
 
   // Portability blockers — any blocker means the rule cannot run on the runtime.
   for (const [runtime, patterns] of Object.entries(PORTABILITY_BLOCKERS)) {
-    for (const { pattern, label, ignoreIf } of patterns as Array<{ pattern: RegExp; label: string; ignoreIf?: RegExp }>) {
+    for (const { pattern, label, ignoreIf } of patterns as Array<{
+      pattern: RegExp;
+      label: string;
+      ignoreIf?: RegExp;
+    }>) {
       if (!pattern.test(sourceCode)) continue;
       if (ignoreIf && ignoreIf.test(sourceCode)) {
         // Pattern present but guarded — track as a degradation note rather
@@ -222,7 +236,9 @@ function discoverRules(rulesDir) {
 }
 
 function scanPlugin(pluginName) {
-  const fullName = pluginName.startsWith('eslint-plugin-') ? pluginName : `eslint-plugin-${pluginName}`;
+  const fullName = pluginName.startsWith('eslint-plugin-')
+    ? pluginName
+    : `eslint-plugin-${pluginName}`;
   const rulesDir = path.join(PACKAGES_DIR, fullName, 'src', 'rules');
 
   if (!fs.existsSync(rulesDir)) return null;
@@ -241,7 +257,10 @@ function scanPlugin(pluginName) {
 // ── Output ───────────────────────────────────────────────────────────
 
 function printHumanReport(allPlugins) {
-  let totalRules = 0, typeAware = 0, oxlintReady = 0, oxlintBlocked = 0;
+  let totalRules = 0,
+    typeAware = 0,
+    oxlintReady = 0,
+    oxlintBlocked = 0;
 
   console.log(`\n${'═'.repeat(70)}`);
   console.log(`  INTERLACE FLEET — PORTABILITY & COST AUDIT`);
@@ -249,16 +268,27 @@ function printHumanReport(allPlugins) {
 
   let fixDegraded = 0;
   for (const plugin of allPlugins) {
-    const ta = plugin.rules.filter(r => r.isTypeAware).length;
-    const ox = plugin.rules.filter(r => r.portability.oxlint === 'compatible').length;
-    const blocked = plugin.rules.filter(r => r.portability.oxlint === 'incompatible');
-    const fixDeg = plugin.rules.filter(r => r.portability.oxlint === 'compatible' && r.fixSupport === 'reported').length;
+    const ta = plugin.rules.filter((r) => r.isTypeAware).length;
+    const ox = plugin.rules.filter(
+      (r) => r.portability.oxlint === 'compatible',
+    ).length;
+    const blocked = plugin.rules.filter(
+      (r) => r.portability.oxlint === 'incompatible',
+    );
+    const fixDeg = plugin.rules.filter(
+      (r) =>
+        r.portability.oxlint === 'compatible' && r.fixSupport === 'reported',
+    ).length;
 
     console.log(`📦 ${plugin.plugin} (${plugin.ruleCount} rules)`);
-    console.log(`   oxlint-ready: ${ox}/${plugin.ruleCount} | blocked: ${blocked.length} | fix-degraded: ${fixDeg} | type-aware: ${ta}`);
+    console.log(
+      `   oxlint-ready: ${ox}/${plugin.ruleCount} | blocked: ${blocked.length} | fix-degraded: ${fixDeg} | type-aware: ${ta}`,
+    );
 
     for (const r of blocked) {
-      console.log(`   ✗ ${r.name} [oxlint:blocked] — ${r.blockers.oxlint.join(', ')}`);
+      console.log(
+        `   ✗ ${r.name} [oxlint:blocked] — ${r.blockers.oxlint.join(', ')}`,
+      );
     }
 
     totalRules += plugin.ruleCount;
@@ -272,46 +302,93 @@ function printHumanReport(allPlugins) {
   console.log(`${'─'.repeat(70)}`);
   console.log(`\n📊 FLEET SUMMARY\n`);
   console.log(`   Total rules:        ${totalRules}`);
-  console.log(`   oxlint-ready:       ${oxlintReady} (${(oxlintReady / totalRules * 100).toFixed(1)}%)`);
+  console.log(
+    `   oxlint-ready:       ${oxlintReady} (${((oxlintReady / totalRules) * 100).toFixed(1)}%)`,
+  );
   console.log(`     uses fixer:       ${fixDegraded}  (works in oxlint 1.62+)`);
-  console.log(`   oxlint-blocked:     ${oxlintBlocked} (${(oxlintBlocked / totalRules * 100).toFixed(1)}%)`);
-  console.log(`   Type-aware:         ${typeAware}  (all guarded with hasParserServices)`);
-  console.log(`   Biome-portable:     0 (0% — all rules use imperative ESLint visitors)`);
+  console.log(
+    `   oxlint-blocked:     ${oxlintBlocked} (${((oxlintBlocked / totalRules) * 100).toFixed(1)}%)`,
+  );
+  console.log(
+    `   Type-aware:         ${typeAware}  (all guarded with hasParserServices)`,
+  );
+  console.log(
+    `   Biome-portable:     0 (0% — all rules use imperative ESLint visitors)`,
+  );
   console.log(`   TS-Go compatible:   ${totalRules - typeAware}\n`);
 
   console.log(`📋 INTEROPERABILITY MATRIX\n`);
   console.log(`   | Runtime       | Runs   | Blocked | Notes |`);
   console.log(`   |---------------|--------|---------|-------|`);
   console.log(`   | ESLint 9      | ${totalRules}    | 0       | Native |`);
-  console.log(`   | oxlint 1.62+  | ${oxlintReady}    | ${oxlintBlocked}       | full sourceCode + scope + fixer + selectors |`);
-  console.log(`   | Biome         | 0      | ${totalRules}     | GritQL only — no imperative |`);
-  console.log(`   | typescript-go | ${totalRules - typeAware}    | ${typeAware}       | API surface differs for type-aware |`);
+  console.log(
+    `   | oxlint 1.62+  | ${oxlintReady}    | ${oxlintBlocked}       | full sourceCode + scope + fixer + selectors |`,
+  );
+  console.log(
+    `   | Biome         | 0      | ${totalRules}     | GritQL only — no imperative |`,
+  );
+  console.log(
+    `   | typescript-go | ${totalRules - typeAware}    | ${typeAware}       | API surface differs for type-aware |`,
+  );
   console.log('');
 }
 
 // ── Baseline / CI gate ───────────────────────────────────────────────
 
-const BASELINE_PATH = path.join(__dirname, '..', '.agent', 'oxlint-portability-baseline.json');
+const BASELINE_PATH = path.join(
+  __dirname,
+  '..',
+  '.agent',
+  'oxlint-portability-baseline.json',
+);
 
 function summarize(allPlugins) {
-  let totalRules = 0, typeAware = 0, ready = 0, blocked = 0, fixDegraded = 0;
+  let totalRules = 0,
+    typeAware = 0,
+    ready = 0,
+    blocked = 0,
+    fixDegraded = 0;
   const perPlugin = {};
   for (const p of allPlugins) {
-    const r = p.rules.filter(r => r.portability.oxlint === 'compatible').length;
-    const b = p.rules.filter(r => r.portability.oxlint === 'incompatible').length;
-    const fd = p.rules.filter(r => r.portability.oxlint === 'compatible' && r.fixSupport === 'reported').length;
-    const ta = p.rules.filter(r => r.isTypeAware).length;
-    perPlugin[p.plugin] = { ruleCount: p.ruleCount, ready: r, blocked: b, fixDegraded: fd, typeAware: ta };
-    totalRules += p.ruleCount; ready += r; blocked += b; fixDegraded += fd; typeAware += ta;
+    const r = p.rules.filter(
+      (r) => r.portability.oxlint === 'compatible',
+    ).length;
+    const b = p.rules.filter(
+      (r) => r.portability.oxlint === 'incompatible',
+    ).length;
+    const fd = p.rules.filter(
+      (r) =>
+        r.portability.oxlint === 'compatible' && r.fixSupport === 'reported',
+    ).length;
+    const ta = p.rules.filter((r) => r.isTypeAware).length;
+    perPlugin[p.plugin] = {
+      ruleCount: p.ruleCount,
+      ready: r,
+      blocked: b,
+      fixDegraded: fd,
+      typeAware: ta,
+    };
+    totalRules += p.ruleCount;
+    ready += r;
+    blocked += b;
+    fixDegraded += fd;
+    typeAware += ta;
   }
-  return { totalRules, typeAware, oxlintReady: ready, oxlintBlocked: blocked, fixDegraded, perPlugin };
+  return {
+    totalRules,
+    typeAware,
+    oxlintReady: ready,
+    oxlintBlocked: blocked,
+    fixDegraded,
+    perPlugin,
+  };
 }
 
 // Versions of oxlint whose JS-plugin runtime we have *verified* against the
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.79.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.80.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -323,7 +400,23 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.79.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
-  // Re-verified at 1.79.0 (2026-08-23) by `verify-oxlint-runtime.ts`, which
+  // Re-verified at 1.80.0 (2026-08-30) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. Two independent signals agree that the plugin surface did not
+  // move — `plugins.js` and `plugins-dev.js` hash IDENTICALLY to 1.79.0, and a
+  // file-level diff of 1.79.0 against 1.80.0 shows those two bundles are
+  // byte-identical.
+  //
+  // What did change, and why none of it reaches this audit:
+  //   lint.js      8 lines — a decorator deserialization tweak on rest
+  //                params, a new `bun` globals environment, and the version
+  //                string. No plugin API touched.
+  //   bindings.js  54 lines — every one of them the version literal inside a
+  //                napi version-check guard.
+  //
+  // Kept below: the 1.79.0 note, because `min` records the OLDEST version still
+  // verified.
+  //
+  // Previously re-verified at 1.79.0 (2026-08-23) by `verify-oxlint-runtime.ts`, which
   // probes the API surfaces the blocker patterns depend on rather than reading
   // the bundles by eye: all 33 probes pass — sourceCode with its token and
   // comment accessors, getScope, every fixer method, and parserServices.
@@ -338,31 +431,46 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
   //   referenced by this audit or by any rule — our only `justification` hit is
   //   a word inside an error string, and `MetaProperty` is used as a node-type
   //   string, not positionally.
-  'plugins.js': '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
-  'plugins-dev.js': '69a98c6cc2e63369980ba2b42f8c66935ba76fc177469872d4f5236626f3742a',
-  'lint.js':   'beae3473c99f7de9421be82938ef5c350d09798746c343ba9dc4663cc29901af',
-  'bindings.js': 'eca0ade39d41ec024c4398df7b688c642d44a908e42c1fcd0af9cf4fa64d2bcb',
+  'plugins.js':
+    '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
+  'plugins-dev.js':
+    '69a98c6cc2e63369980ba2b42f8c66935ba76fc177469872d4f5236626f3742a',
+  'lint.js': 'e022b35138b762ff9473ea8779d66bb890b547781c446a9d80b49019ec98b7fa',
+  'bindings.js':
+    '9568ef77de5d0d4c247087893882cfa2ac00a1c35df59839d3539977ce68a28e',
 };
 
 async function checkOxlintRuntimeHashes() {
   const { createHash } = await import('node:crypto');
   const failures = [];
-  const oxlintDist = path.join(__dirname, '..', 'node_modules', 'oxlint', 'dist');
+  const oxlintDist = path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'oxlint',
+    'dist',
+  );
   if (!fs.existsSync(oxlintDist)) {
     return ['oxlint not installed at node_modules/oxlint/dist — run npm ci'];
   }
-  for (const [file, expected] of Object.entries(VERIFIED_OXLINT_RUNTIME_HASHES)) {
+  for (const [file, expected] of Object.entries(
+    VERIFIED_OXLINT_RUNTIME_HASHES,
+  )) {
     const fullPath = path.join(oxlintDist, file);
     if (!fs.existsSync(fullPath)) {
-      failures.push(`${file}: file missing in oxlint package — runtime layout changed, re-verify`);
+      failures.push(
+        `${file}: file missing in oxlint package — runtime layout changed, re-verify`,
+      );
       continue;
     }
-    const actual = createHash('sha256').update(fs.readFileSync(fullPath)).digest('hex');
+    const actual = createHash('sha256')
+      .update(fs.readFileSync(fullPath))
+      .digest('hex');
     if (actual !== expected) {
       failures.push(
         `${file}: hash drift — runtime file changed since verification. ` +
-        `Re-read apps/oxlint/src-js/plugins/ at the installed tag, confirm the ` +
-        `support matrix still holds, then update VERIFIED_OXLINT_RUNTIME_HASHES.`,
+          `Re-read apps/oxlint/src-js/plugins/ at the installed tag, confirm the ` +
+          `support matrix still holds, then update VERIFIED_OXLINT_RUNTIME_HASHES.`,
       );
     }
   }
@@ -374,9 +482,10 @@ function readOxlintVersion() {
   if (!fs.existsSync(lockPath)) return null;
   const lock = JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
   // npm v9 layout: dependencies under packages."node_modules/oxlint".version
-  const entry = lock.packages?.['node_modules/oxlint']?.version
-    ?? lock.dependencies?.oxlint?.version
-    ?? null;
+  const entry =
+    lock.packages?.['node_modules/oxlint']?.version ??
+    lock.dependencies?.oxlint?.version ??
+    null;
   return entry;
 }
 
@@ -384,8 +493,12 @@ async function runCi(allPlugins) {
   const current = summarize(allPlugins);
 
   if (!fs.existsSync(BASELINE_PATH)) {
-    console.error(`✗ baseline missing: ${path.relative(process.cwd(), BASELINE_PATH)}`);
-    console.error(`  run: tsx scripts/audit-rule-portability.ts --write-baseline`);
+    console.error(
+      `✗ baseline missing: ${path.relative(process.cwd(), BASELINE_PATH)}`,
+    );
+    console.error(
+      `  run: tsx scripts/audit-rule-portability.ts --write-baseline`,
+    );
     process.exit(1);
   }
   const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf-8'));
@@ -401,9 +514,9 @@ async function runCi(allPlugins) {
   if (installedOxlint && !installedOxlint.startsWith(verifiedPrefix)) {
     failures.push(
       `oxlint version ${installedOxlint} has not been verified for compatibility ` +
-      `(audit blocker patterns are confirmed against ${VERIFIED_OXLINT_RANGE.maxKnown}). ` +
-      `Re-read apps/oxlint/src-js/plugins/ at the new tag, update VERIFIED_OXLINT_RANGE, ` +
-      `and re-baseline if the support matrix has changed.`,
+        `(audit blocker patterns are confirmed against ${VERIFIED_OXLINT_RANGE.maxKnown}). ` +
+        `Re-read apps/oxlint/src-js/plugins/ at the new tag, update VERIFIED_OXLINT_RANGE, ` +
+        `and re-baseline if the support matrix has changed.`,
     );
   }
 
@@ -415,8 +528,8 @@ async function runCi(allPlugins) {
   if (current.oxlintBlocked > baseline.oxlintBlocked) {
     failures.push(
       `oxlint-blocked rules increased: ${baseline.oxlintBlocked} → ${current.oxlintBlocked}. ` +
-      `Type-aware rules cannot run on oxlint — refactor to AST-only or accept regression by ` +
-      `bumping baseline (with justification in commit message).`,
+        `Type-aware rules cannot run on oxlint — refactor to AST-only or accept regression by ` +
+        `bumping baseline (with justification in commit message).`,
     );
   }
 
@@ -427,19 +540,25 @@ async function runCi(allPlugins) {
   if (currentPct < baselinePct - TOLERANCE_PCT) {
     failures.push(
       `oxlint-ready % dropped: ${baselinePct.toFixed(1)}% → ${currentPct.toFixed(1)}% ` +
-      `(tolerance ±${TOLERANCE_PCT}%). Either fix the regressing rule or update the baseline.`,
+        `(tolerance ±${TOLERANCE_PCT}%). Either fix the regressing rule or update the baseline.`,
     );
   }
 
   // Per-plugin: no plugin may regress in absolute oxlint-ready count.
-  for (const [pkg, before] of Object.entries(baseline.perPlugin || {}) as Array<[string, any]>) {
+  for (const [pkg, before] of Object.entries(baseline.perPlugin || {}) as Array<
+    [string, any]
+  >) {
     const after = current.perPlugin[pkg];
     if (!after) continue;
     if (after.ready < before.ready) {
-      failures.push(`${pkg}: oxlint-ready ${before.ready} → ${after.ready} (regression)`);
+      failures.push(
+        `${pkg}: oxlint-ready ${before.ready} → ${after.ready} (regression)`,
+      );
     }
     if (after.blocked > before.blocked) {
-      failures.push(`${pkg}: oxlint-blocked ${before.blocked} → ${after.blocked} (regression)`);
+      failures.push(
+        `${pkg}: oxlint-blocked ${before.blocked} → ${after.blocked} (regression)`,
+      );
     }
   }
 
@@ -449,11 +568,15 @@ async function runCi(allPlugins) {
   console.log('═'.repeat(70));
   console.log('');
   console.log(`  Baseline (${baseline.recordedAt || '?'}):`);
-  console.log(`    rules ${baseline.totalRules}  ready ${baseline.oxlintReady}  ` +
-              `blocked ${baseline.oxlintBlocked}  fix-degraded ${baseline.fixDegraded ?? '?'}`);
+  console.log(
+    `    rules ${baseline.totalRules}  ready ${baseline.oxlintReady}  ` +
+      `blocked ${baseline.oxlintBlocked}  fix-degraded ${baseline.fixDegraded ?? '?'}`,
+  );
   console.log(`  Current:`);
-  console.log(`    rules ${current.totalRules}  ready ${current.oxlintReady}  ` +
-              `blocked ${current.oxlintBlocked}  fix-degraded ${current.fixDegraded}`);
+  console.log(
+    `    rules ${current.totalRules}  ready ${current.oxlintReady}  ` +
+      `blocked ${current.oxlintBlocked}  fix-degraded ${current.fixDegraded}`,
+  );
   console.log('');
 
   if (failures.length === 0) {
@@ -475,9 +598,13 @@ function writeBaseline(allPlugins) {
     ...summary,
   };
   fs.writeFileSync(BASELINE_PATH, JSON.stringify(baseline, null, 2) + '\n');
-  console.log(`✓ baseline written: ${path.relative(process.cwd(), BASELINE_PATH)}`);
-  console.log(`  rules ${summary.totalRules}  ready ${summary.oxlintReady}  ` +
-              `blocked ${summary.oxlintBlocked}  fix-degraded ${summary.fixDegraded}`);
+  console.log(
+    `✓ baseline written: ${path.relative(process.cwd(), BASELINE_PATH)}`,
+  );
+  console.log(
+    `  rules ${summary.totalRules}  ready ${summary.oxlintReady}  ` +
+      `blocked ${summary.oxlintBlocked}  fix-degraded ${summary.fixDegraded}`,
+  );
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────
@@ -486,22 +613,27 @@ const args = process.argv.slice(2);
 const isJson = args.includes('--json');
 const isCi = args.includes('--ci');
 const isWriteBaseline = args.includes('--write-baseline');
-const specificPlugin = args.find(a => !a.startsWith('--'));
+const specificPlugin = args.find((a) => !a.startsWith('--'));
 
 let plugins;
 if (specificPlugin) {
   plugins = [specificPlugin];
 } else {
-  plugins = fs.readdirSync(PACKAGES_DIR)
-    .filter(d => d.startsWith('eslint-plugin-') && fs.existsSync(path.join(PACKAGES_DIR, d, 'src', 'rules')));
+  plugins = fs
+    .readdirSync(PACKAGES_DIR)
+    .filter(
+      (d) =>
+        d.startsWith('eslint-plugin-') &&
+        fs.existsSync(path.join(PACKAGES_DIR, d, 'src', 'rules')),
+    );
 }
 
-const allResults = plugins.map(p => scanPlugin(p)).filter(Boolean);
+const allResults = plugins.map((p) => scanPlugin(p)).filter(Boolean);
 
 if (isWriteBaseline) {
   writeBaseline(allResults);
 } else if (isCi) {
-  runCi(allResults).then(code => process.exit(code));
+  runCi(allResults).then((code) => process.exit(code));
 } else if (isJson) {
   console.log(JSON.stringify(allResults, null, 2));
 } else {

@@ -5,6 +5,43 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.1.0
+
+### Minor Changes
+
+- **✨ Feature** — `analytics-event-naming` accepts `copy` as an action verb.
+
+  Copy-to-clipboard is a canonical dev-content action — code blocks, install
+  commands — but the fixed verb list rejected it, forcing workaround names
+  like `article:code_copy_click` for events that are copies, not clicks.
+  `article:code_copy` is now valid.
+
+- **🐛 Fix** — `prefer-dom-node-text-content` no longer gates on the variable's name
+
+  The rule matched a vocabulary — `^(element|el|div|span|node|ref|dom|elem)$`
+  plus an `(Element|Node|Ref)$` suffix — before reporting. **Six of seven genuine
+  DOM elements were missed** for having ordinary names:
+
+  ```js
+  const heading = document.getElementById('x');
+  heading.innerText; // not reported
+  ```
+
+  `innerText` is defined on `HTMLElement` and nowhere else in the language, so
+  anything you read it from is a DOM element — the property access is itself the
+  evidence, and a second "does this look like an element" test could only
+  subtract.
+
+  The gate is gone rather than replaced. A DOM element arriving as a function
+  parameter or an import resolves to nothing, so following the binding instead of
+  the name would have traded one set of misses for another.
+
+  `textContent` and every other property remain untouched.
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`
+
 ## 5.0.0
 
 ### Major Changes
