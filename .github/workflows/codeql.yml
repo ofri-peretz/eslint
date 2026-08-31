@@ -13,13 +13,19 @@ name: CodeQL
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
-  # Every commit that lands on main is analysed. The PR triggers below are a
-  # fast-feedback convenience and cannot stand alone: they skip draft PRs
-  # without `run-full-ci`, and they never see a commit pushed straight to main
-  # (automation commits, changeset releases). Those gaps are exactly what
-  # Scorecard's SAST check measures — it reported 25 of 30 commits analysed.
-  push:
-    branches: [main]
+  # The `push: branches: [main]` trigger was REMOVED on 2026-08-31, to stop
+  # CodeQL competing for runners on every merge — it was the longest job on a
+  # main push at 208s, against 109s for the whole quality gate.
+  #
+  # KNOWN COST, accepted deliberately: analysis drops from every commit to one
+  # scan a day. Scorecard's SAST check measures precisely that ratio and had
+  # reported 25 of 30 commits analysed; expect that score, and the README
+  # badge, to fall. A vulnerability introduced by a merge is now caught within
+  # 24 hours rather than ~208 seconds.
+  #
+  # To revert, restore:
+  #   push:
+  #     branches: [main]
   workflow_dispatch:
   schedule:
     # NIGHTLY, 03:17 UTC. Was weekly; a full scan is ~212s and this repo is
