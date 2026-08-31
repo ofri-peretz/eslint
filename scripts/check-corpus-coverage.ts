@@ -256,10 +256,54 @@ const sourced = sourcedFixtures();
  */
 const sourcedVulnerable = sourced.filter((rel) => /(^|\/)vulnerable\//.test(rel));
 const sourcedSafe = sourced.filter((rel) => /(^|\/)safe\//.test(rel));
-const firedSourced =
+/*
+ * A rule is credited only for the fixture that was added FOR it.
+ *
+ * Counting every firing repeated the same mistake a third time. The first
+ * sourced vulnerable fixture credited three rules: the one it was cut for,
+ * plus `import-next/unambiguous` and `import-next/no-unused-modules`, which
+ * fire on any `.js` file with no exports. Incidental noise is not a
+ * measurement of anything.
+ *
+ * `@sealed` is the fixture's statement of which rule it is evidence about, and
+ * it is written when the code is cut — before the rule is run. So the two
+ * outcomes that matter can both be named:
+ *
+ *   detected — `@sealed R` on a vulnerable fixture, and R fires. R has been
+ *              shown to find the real thing in code we did not write.
+ *   MISSED   — `@sealed R` on a vulnerable fixture, and R is silent. The
+ *              fixture is a standing false negative on real code.
+ *   CONFIRMED FP — `@sealed R` on a safe fixture, and R fires anyway.
+ *
+ * A corpus that only ever reports the first of those is a trophy cabinet.
+ */
+function sealedRules(rel: string): string[] {
+  const header = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const match = /^\/\/ @sealed\s+(\S.*)$/m.exec(header);
+  return match === null ? [] : match[1].trim().split(/[,\s]+/).filter(Boolean);
+}
+
+const firedOnVulnerable =
   sourcedVulnerable.length > 0
     ? rulesWithCorpusEvidence(sourcedVulnerable)
     : new Set<string>();
+const firedOnSafe =
+  sourcedSafe.length > 0 ? rulesWithCorpusEvidence(sourcedSafe) : new Set<string>();
+
+const missed: string[] = [];
+const confirmedFalsePositives: string[] = [];
+const firedSourced = new Set<string>();
+for (const rel of sourcedVulnerable) {
+  for (const rule of sealedRules(rel)) {
+    if (firedOnVulnerable.has(rule)) firedSourced.add(canonical(rule));
+    else missed.push(`${rule}  ${rel}`);
+  }
+}
+for (const rel of sourcedSafe) {
+  for (const rule of sealedRules(rel)) {
+    if (firedOnSafe.has(rule)) confirmedFalsePositives.push(`${rule}  ${rel}`);
+  }
+}
 const unmeasured = rules
   .map(canonical)
   .filter((r) => !fired.has(r) && !NOT_FIXTURABLE.has(r))
@@ -287,7 +331,15 @@ console.log(
     `  unmeasured                    : ${unmeasured.length}\n` +
     `\n  ${sourced.length} of ${fs.globSync(CURATED, { cwd: ROOT }).length} curated fixtures record a @source` +
     ` (${sourcedVulnerable.length} vulnerable, ${sourcedSafe.length} safe).\n` +
-    '  Only the SOURCED number can contradict us; the CURATED one cannot.\n',
+    '  Only the SOURCED number can contradict us; the CURATED one cannot.\n' +
+    (missed.length > 0
+      ? `\n  ${missed.length} sealed rule(s) MISSED their own vulnerable fixture:\n` +
+        missed.map((m) => `    ${m}\n`).join('')
+      : '') +
+    (confirmedFalsePositives.length > 0
+      ? `\n  ${confirmedFalsePositives.length} confirmed FALSE POSITIVE(s) on real code:\n` +
+        confirmedFalsePositives.map((m) => `    ${m}\n`).join('')
+      : ''),
 );
 
 if (UPDATE) {
