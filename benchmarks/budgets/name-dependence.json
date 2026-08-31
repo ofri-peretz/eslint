@@ -1,12 +1,12 @@
 {
   "note": "Rules whose verdict changed when every local binding was renamed to foo1, foo2, … The rename litmus, mechanised: a rule listed here decided from a NAME. That is only a defect when the consumer cannot replace the vocabulary — see scripts/check-name-vocabulary.ts. Regenerate with `npx tsx scripts/name-dependence-probe.mts`.",
-  "generated": "2026-08-30",
+  "generated": "2026-08-31",
   "probeStamp": "798ffe26ee1e39e7",
-  "probed": 2393,
-  "structural": 2063,
-  "nameDependent": 330,
+  "probed": 2400,
+  "structural": 2073,
+  "nameDependent": 327,
   "rules": {
-    "browser-security/no-incomplete-url-sanitization": 2,
+    "browser-security/no-incomplete-url-sanitization": 3,
     "browser-security/no-insecure-redirects": 19,
     "browser-security/no-sensitive-indexeddb": 1,
     "browser-security/no-sensitive-localstorage": 1,
@@ -15,7 +15,6 @@
     "express-security/no-error-details-in-response": 1,
     "express-security/no-permissive-trust-proxy": 1,
     "express-security/no-static-root-exposure": 1,
-    "express-security/no-user-controlled-render-locals": 2,
     "express-security/require-csrf-protection": 1,
     "express-security/require-helmet": 1,
     "express-security/require-rate-limiting": 2,
@@ -39,7 +38,7 @@
     "node-security/no-math-random-crypto": 36,
     "node-security/no-ssrf": 1,
     "node-security/no-timing-unsafe-compare": 7,
-    "node-security/no-unsafe-buffer-alloc": 18,
+    "node-security/no-unsafe-buffer-alloc": 15,
     "node-security/no-weak-hash-algorithm": 8,
     "react-features/jsx-key": 3,
     "react-features/no-is-mounted": 5,
@@ -59,7 +58,7 @@
     "secure-coding/no-template-injection": 2,
     "secure-coding/no-unlimited-resource-allocation": 26,
     "secure-coding/no-unsafe-deserialization": 3,
-    "secure-coding/no-unsafe-regex-construction": 5,
+    "secure-coding/no-unsafe-regex-construction": 6,
     "secure-coding/no-weak-password-recovery": 16,
     "secure-coding/no-xpath-injection": 5
   }

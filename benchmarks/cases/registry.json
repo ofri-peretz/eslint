@@ -107,7 +107,7 @@
       "id": "ILB-0004",
       "added": "2026-08-26",
       "title": "Array append written as a self-indexed length",
-      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists \u2014 a case that cannot fail is not evidence.",
+      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists — a case that cannot fail is not evidence.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -197,7 +197,7 @@
       "id": "ILB-0007",
       "added": "2026-08-26",
       "title": "A merge helper guarded by Object.hasOwn",
-      "rationale": "NOT a defect \u2014 it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
+      "rationale": "NOT a defect — it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -359,7 +359,7 @@
     {
       "id": "ILB-0013",
       "added": "2026-08-26",
-      "title": "a named const through a type assertion \u2014 33% of findings, with the arithmetic case",
+      "title": "a named const through a type assertion — 33% of findings, with the arithmetic case",
       "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw packages/excalidraw/colors.ts:17) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -419,7 +419,7 @@
     {
       "id": "ILB-0015",
       "added": "2026-08-26",
-      "title": "a coordinate pair \u2014 39% of findings, the largest class",
+      "title": "a coordinate pair — 39% of findings, the largest class",
       "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw examples/.../initialData.tsx:64) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -698,7 +698,7 @@
     {
       "id": "ILB-0024",
       "added": "2026-08-26",
-      "title": "a describe block \u2014 1,415 findings in the wild",
+      "title": "a describe block — 1,415 findings in the wild",
       "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (nwutils/getter tests/specs/request.test.js:10) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -758,7 +758,7 @@
     {
       "id": "ILB-0026",
       "added": "2026-08-26",
-      "title": "addListener \u2014 `addEventListener` was on the old host list and this was not",
+      "title": "addListener — `addEventListener` was on the old host list and this was not",
       "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/background.ts:217) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -898,7 +898,7 @@
     {
       "id": "ILB-0031",
       "added": "2026-08-26",
-      "title": "a promise passed as an argument \u2014 the nested call is skipped",
+      "title": "a promise passed as an argument — the nested call is skipped",
       "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
       "cwe": null,
       "severity": {
@@ -1158,7 +1158,7 @@
     {
       "id": "ILB-0041",
       "added": "2026-08-26",
-      "title": "an AST discriminant is not a credential \u2014 11 findings in the wild",
+      "title": "an AST discriminant is not a credential — 11 findings in the wild",
       "rationale": "Looks like a node-security/no-timing-unsafe-compare finding and is not. We reported it in real code (flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1232,7 +1232,7 @@
     {
       "id": "ILB-0044",
       "added": "2026-08-26",
-      "title": "OpenTelemetry context propagation is not an archive \u2014 6 findings in the wild",
+      "title": "OpenTelemetry context propagation is not an archive — 6 findings in the wild",
       "rationale": "Looks like a node-security/no-zip-slip finding and is not. We reported it in real code (diia-open-source/be-diia-app src/grpc/grpcService.ts:280) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1287,7 +1287,7 @@
     {
       "id": "ILB-0046",
       "added": "2026-08-26",
-      "title": "an algorithm name \u2014 110 findings in the wild came from this shape",
+      "title": "an algorithm name — 110 findings in the wild came from this shape",
       "rationale": "Looks like a node-security/require-secure-credential-storage finding and is not. We reported it in real code (auth0/express-openid-connect api.js:2) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1317,7 +1317,7 @@
     {
       "id": "ILB-0047",
       "added": "2026-08-26",
-      "title": "minify \u2014 the Vite, Rollup and esbuild spelling of the same setting",
+      "title": "minify — the Vite, Rollup and esbuild spelling of the same setting",
       "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
       "cwe": null,
       "severity": {
@@ -1750,7 +1750,7 @@
     {
       "id": "ILB-0061",
       "added": "2026-08-26",
-      "title": "an error code is not a credential \u2014 69 findings in the wild",
+      "title": "an error code is not a credential — 69 findings in the wild",
       "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (moleculerjs/moleculer utils.js:289) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -1785,7 +1785,7 @@
     {
       "id": "ILB-0062",
       "added": "2026-08-26",
-      "title": "a filename is not a credential \u2014 71 findings, the largest shape",
+      "title": "a filename is not a credential — 71 findings, the largest shape",
       "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (IGNF/cartes.gouv.fr-entree-carto) and have since sealed it.",
       "cwe": null,
       "severity": {
@@ -3389,7 +3389,7 @@
       "id": "ILB-0114",
       "added": "2026-08-26",
       "title": "execFile with a caller-chosen argument",
-      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible \u2014 but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -3420,7 +3420,7 @@
       "id": "ILB-0115",
       "added": "2026-08-26",
       "title": "spawn with a caller-chosen argument",
-      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible \u2014 but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -3542,7 +3542,7 @@
       "id": "ILB-0119",
       "added": "2026-08-30",
       "title": "A concrete target origin",
-      "rationale": "The same call with an origin the browser must match before delivering. Looks identical in shape to the defect and must stay quiet \u2014 this is the form the fix takes.",
+      "rationale": "The same call with an origin the browser must match before delivering. Looks identical in shape to the defect and must stay quiet — this is the form the fix takes.",
       "cwe": "CWE-346",
       "severity": {
         "cvss": null,
@@ -3687,7 +3687,7 @@
       "id": "ILB-0124",
       "added": "2026-08-30",
       "title": "A vendor secret key committed as a literal",
-      "rationale": "`sk_live_` is Stripe's published prefix for a live secret key. The name of the binding is irrelevant \u2014 the FORMAT is somebody else's contract, so the finding does not depend on what a project calls its variables.",
+      "rationale": "`sk_live_` is Stripe's published prefix for a live secret key. The name of the binding is irrelevant — the FORMAT is somebody else's contract, so the finding does not depend on what a project calls its variables.",
       "cwe": "CWE-798",
       "severity": {
         "cvss": null,
@@ -3948,7 +3948,7 @@
       "id": "ILB-0133",
       "added": "2026-08-30",
       "title": "Model output written straight into the DOM",
-      "rationale": "A model's text is attacker-influenced whenever any part of the prompt is. Writing it to `innerHTML` makes prompt injection into stored XSS \u2014 OWASP's LLM02 in its shortest form.",
+      "rationale": "A model's text is attacker-influenced whenever any part of the prompt is. Writing it to `innerHTML` makes prompt injection into stored XSS — OWASP's LLM02 in its shortest form.",
       "cwe": "CWE-79",
       "severity": {
         "cvss": null,
@@ -4021,7 +4021,7 @@
         }
       ],
       "occurrences": [],
-      "code": "import { generateText } from 'ai';\nasync function f(el) { const label = 'Loading\u2026'; el.innerHTML = label; }",
+      "code": "import { generateText } from 'ai';\nasync function f(el) { const label = 'Loading…'; el.innerHTML = label; }",
       "coverage": [
         {
           "rule": "vercel-ai-security/no-unsafe-output-handling",
@@ -4035,7 +4035,7 @@
       "id": "ILB-0136",
       "added": "2026-08-30",
       "title": "Two modules importing each other",
-      "rationale": "`a` imports `b`, `b` imports `a`. At runtime one of them observes the other half-initialised, so a `const` is `undefined` at module-evaluation time and the failure appears far from its cause. Needs real files: a cycle is a property of the module GRAPH, so a single source string cannot express one \u2014 the fixture pair under benchmarks/cases/fixtures/cycle exists for that reason.",
+      "rationale": "`a` imports `b`, `b` imports `a`. At runtime one of them observes the other half-initialised, so a `const` is `undefined` at module-evaluation time and the failure appears far from its cause. Needs real files: a cycle is a property of the module GRAPH, so a single source string cannot express one — the fixture pair under benchmarks/cases/fixtures/cycle exists for that reason.",
       "cwe": "CWE-1047",
       "severity": {
         "cvss": null,
@@ -4065,7 +4065,7 @@
       "id": "ILB-0137",
       "added": "2026-08-30",
       "title": "The same import, to a module that imports nothing back",
-      "rationale": "Structurally identical at the import site \u2014 same syntax, same directory, same resolver work. Only the far end differs, which is what makes it the decoy: a rule that reports on 'this file imports a sibling' rather than on the graph reports this too.",
+      "rationale": "Structurally identical at the import site — same syntax, same directory, same resolver work. Only the far end differs, which is what makes it the decoy: a rule that reports on 'this file imports a sibling' rather than on the graph reports this too.",
       "cwe": "CWE-1047",
       "severity": {
         "cvss": null,
@@ -4090,6 +4090,71 @@
         }
       ],
       "kind": "decoy"
+    },
+    {
+      "id": "ILB-0138",
+      "added": "2026-08-30",
+      "title": "Allocation sized by a request, on a handler whose parameter is not spelled req",
+      "rationale": "`Buffer.allocUnsafe(capacity)` where `capacity` comes from `req.query.capacity`. The rule recognised the request by the root identifier's SPELLING, against REQUEST_ROOTS = ['req','request','ctx','event'], so the identical handler written `(inbound, outbound)` — or TypeScript's own `(request: Request, response: Response)` renamed on the way in — allocated from a peer-chosen size and reported nothing. The rename probe found 18 true positives that went silent this way, with `.query.capacity` still in plain sight one link up. Fixed 2026-08-30 by asking readsRequestShape before walking to the root.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-770",
+          "url": "https://cwe.mitre.org/data/definitions/770.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function reserve(foo2) {\n  let foo1 = 1024;\n  if (foo2.query.capacity) { foo1 = Number(foo2.query.capacity); }\n  return Buffer.allocUnsafe(foo1);\n}\n",
+      "coverage": [
+        {
+          "rule": "node-security/no-unsafe-buffer-alloc",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0139",
+      "added": "2026-08-30",
+      "title": "A log line named message reported as bytes off the wire",
+      "rationale": "WIRE_NAMES hardcoded ['chunk','chunks','buffer','buf','payload','frame','packet','raw','message','msg'] with no way for a consumer to disagree. A project whose `message` is a log line, or whose `raw` is a template string, was reported on the word alone and could do nothing about it — an additive option can grow the list but never remove the word we guessed wrong about. Fixed 2026-08-30 by making wireNames, requestRootNames and countNames REPLACE their defaults; `wireNames: []` turns the name arm off entirely.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-770",
+          "url": "https://cwe.mitre.org/data/definitions/770.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function f(message) { return Buffer.alloc(message.length); }\n",
+      "coverage": [
+        {
+          "rule": "node-security/no-unsafe-buffer-alloc",
+          "expect": "silent",
+          "options": [
+            {
+              "wireNames": [
+                "chunk"
+              ]
+            }
+          ],
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "false-positive"
     }
   ]
 }
