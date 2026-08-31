@@ -406,6 +406,23 @@ function shWithRegistryRetry(
   }
 }
 
+/**
+ * `--json` mode puts a machine-readable document on stdout, so progress lines
+ * must not join it.
+ *
+ * MODULE scope, deliberately. `log` used to be a `const` inside `main`, and
+ * two module-level functions called it anyway — `shWithRegistryRetry` and the
+ * per-repo installer. Neither could ever have run: the retry path threw
+ * `ReferenceError: log is not defined` the moment an install failed, which
+ * REPLACED the npm error it was trying to report. That is how a peer-dependency
+ * conflict reached CI as `status: 1, stdout: '', stderr: ''` and cost two wrong
+ * diagnoses — the error reporter destroyed the error.
+ */
+const AS_JSON = process.argv.includes('--json');
+function log(line: string): void {
+  if (!AS_JSON) console.log(line);
+}
+
 function sh(cmd: string, args: string[], cwd?: string): string {
   try {
     return execFileSync(cmd, args, {
@@ -587,11 +604,6 @@ function main(): number {
     );
     return 2;
   }
-  const asJson = process.argv.includes('--json');
-  const log = (line: string) => {
-    if (!asJson) console.log(line);
-  };
-
   ensurePrivateDir(WORK, CACHE_HOME);
 
   // One shared install reused for every target; an install per repo dominates
@@ -943,7 +955,7 @@ function main(): number {
     if (found < allowed) under.push({ rule, found, allowed });
   }
 
-  if (asJson) {
+  if (AS_JSON) {
     console.log(
       JSON.stringify(
         {
