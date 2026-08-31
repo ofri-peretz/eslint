@@ -100,6 +100,7 @@ describe('no-unsafe-buffer-alloc', () => {
     invalid: [
     {
       // FN: `header['length']` is the same property as `header.length`.
+      // @found spelling gate
       name: 'FN: a size reached by a computed key',
       code: "function reserve(req) { const header = JSON.parse(req.body.h); return new Uint8Array(header['length']); }",
       errors: [{ messageId: 'unboundedAllocation' }],

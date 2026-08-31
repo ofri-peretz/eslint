@@ -36,6 +36,7 @@ suite('no-ssrf — the client is the module, not the variable name', () => {
       {
         // FP: a local object that happens to be called `request`. Nothing here
         // makes an outbound call, and the old name set reported it.
+        // @found rename litmus
         name: 'FP: a local variable named after an HTTP client package',
         code: `async function f(req) { const request = { get: (u) => u }; await request.get(req.query.u); }`,
       },
@@ -61,6 +62,7 @@ suite('no-ssrf — the client is the module, not the variable name', () => {
       {
         // FN: an aliased import. `import axiosClient from 'axios'` is ordinary
         // and matched none of the name set, so the rule was silent on it.
+        // @found rename litmus
         name: 'FN: an HTTP client imported under a different name',
         code: `import axiosClient from 'axios';\nasync function f(req) { await axiosClient.get(req.query.u); }`,
         errors: 1,

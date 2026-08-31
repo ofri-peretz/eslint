@@ -329,6 +329,7 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     // false positive rather than a finding — every `const` in a filter was
     // reported as "user input". Nothing here is caller-controlled. ILB-0123.
     {
+      // @found rename litmus
       name: 'FP: a bare identifier value is not evidence of user input',
       code: `User.findOne({ username: username });`,
     },
@@ -336,6 +337,7 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     // off it. The old model compared printed source against the literal text
     // `req.body`, so quoting it was enough to trip the rule.
     {
+      // @found rename litmus
       name: 'FP: a string literal whose text reads like a request path',
       code: `User.find({ name: 'req.body'.x });`,
     },
@@ -352,6 +354,7 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     // canonical NoSQL authentication bypass: `{"$ne": null}` as a password
     // matches every user. ILB-0121.
     {
+      // @found rename litmus
       name: 'FN: the whole request object used as the filter document',
       code: `User.find(req.body);`,
       errors: [

@@ -127,6 +127,7 @@ ruleTester.run('no-mutable-exports (final)', noMutableExports, {
       // name, and a destructured declarator has no single name to build it
       // from, so a genuinely mutable export went unreported and the miss was
       // sealed as intended behaviour.
+      // @found implementation review
       name: 'FN: a destructured let that is exported',
       code: `const obj = { a: 1 }; let { a } = obj; export { a };`,
       errors: [{ messageId: 'letExport' }],
