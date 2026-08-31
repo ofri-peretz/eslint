@@ -41,6 +41,18 @@ suite('no-ssrf — the client is the module, not the variable name', () => {
       },
     ],
     invalid: [
+      // One case per entry in HTTP_CLIENT_MODULES that nothing else reaches:
+      // each must fail if its package is dropped from the table.
+      {
+        name: 'superagent is an HTTP client',
+        code: `import superagent from 'superagent';\nasync function f(req) { await superagent.get(req.query.u); }`,
+        errors: 1,
+      },
+      {
+        name: 'undici is an HTTP client',
+        code: `import undici from 'undici';\nasync function f(req) { await undici.request(req.query.u); }`,
+        errors: 1,
+      },
       {
         name: 'the ordinary spelling still reports',
         code: `import axios from 'axios';\nasync function f(req) { await axios.get(req.query.u); }`,

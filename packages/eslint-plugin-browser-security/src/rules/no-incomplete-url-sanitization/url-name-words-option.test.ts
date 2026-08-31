@@ -51,6 +51,13 @@ suite(
       ],
       invalid: [
         {
+          // Covers `referer` in DEFAULT_URL_NAME_WORDS: no other entry in the
+          // table reaches this name.
+          name: 'a URL held in a binding named after the Referer header',
+          code: `function f() { const referer = cfg(); if (referer.includes('example.com')) { g(); } }`,
+          errors: 1,
+        },
+        {
           name: 'the default vocabulary still covers the English names',
           code: `function f() { const link = cfg(); if (link.includes('example.com')) { g(); } }`,
           errors: 1,

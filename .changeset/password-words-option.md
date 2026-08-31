@@ -1,5 +1,5 @@
 ---
-'@interlace/eslint-plugin-secure-coding': minor
+'eslint-plugin-secure-coding': minor
 ---
 
 `detect-weak-password-validation` takes `passwordWords`

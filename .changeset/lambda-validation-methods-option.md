@@ -1,5 +1,5 @@
 ---
-'@interlace/eslint-plugin-lambda-security': minor
+'eslint-plugin-lambda-security': minor
 ---
 
 `no-unvalidated-event-body` takes `validationMethodNames`

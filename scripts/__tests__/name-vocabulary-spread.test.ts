@@ -31,6 +31,23 @@ import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '..', '..');
 
+/** Everything the gate printed. */
+function gateOutput(): string {
+  const result = spawnSync(
+    'tsx',
+    [join(ROOT, 'scripts', 'check-name-vocabulary.ts'), '--list'],
+    {
+      cwd: ROOT,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: `${join(ROOT, 'node_modules', '.bin')}:${process.env.PATH ?? ''}`,
+      },
+    },
+  );
+  return `${result.stdout ?? ''}${result.stderr ?? ''}`;
+}
+
 /** The rules the gate currently reports as having no replaceable vocabulary. */
 function offenders(): string[] {
   const result = spawnSync(
@@ -52,12 +69,19 @@ function offenders(): string[] {
 }
 
 describe('the gate sees options contributed by a shared schema fragment', () => {
-  it('finds offenders at all', () => {
-    // A gate that stopped listing anything would make the assertion below
-    // pass against an empty list, which is the failure this file is about.
-    const listed = offenders();
-    expect(listed.length).toBeGreaterThan(0);
-    expect(listed.length).toBeLessThan(20);
+  it('the gate still runs and still counts name-dependent rules', () => {
+    // This guarded against vacuity by asserting the offender list was
+    // non-empty — and then the list was drained to zero, which is the goal,
+    // so the guard failed for the right reason in the wrong place.
+    //
+    // The real anti-vacuity question is whether the gate still SEES the
+    // population. An offender count of zero is a result; a probe count of
+    // zero would mean it is looking at nothing.
+    const result = gateOutput();
+    expect(result).toMatch(/rules deciding by identifier name\s+\d+/);
+    const probed = /\(probe: (\d+)\)/.exec(result);
+    expect(probed, 'the gate no longer reports what the probe found').not.toBeNull();
+    expect(Number(probed![1])).toBeGreaterThan(20);
   });
 
   it('a rule whose only replaceable option comes from a spread is compliant', () => {

@@ -586,16 +586,22 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [...WIRE_NAMES],
+            description:
+              'Binding names that carry bytes off the wire. Replaces the default; pass [] to turn the name arm off.',
           },
           requestRootNames: {
             type: 'array',
             items: { type: 'string' },
             default: [...REQUEST_ROOTS],
+            description:
+              'Root identifiers treated as a request. Replaces the default.',
           },
           countNames: {
             type: 'array',
             items: { type: 'string' },
             default: [...COUNT_NAMES],
+            description:
+              'Identifiers that hold an allocation size rather than a payload. Replaces the default.',
           },
         },
         additionalProperties: false,

@@ -1,5 +1,5 @@
 ---
-'@interlace/eslint-plugin-node-security': patch
+'eslint-plugin-node-security': patch
 ---
 
 `no-unsafe-buffer-alloc` has fixtures for the `countNames` option

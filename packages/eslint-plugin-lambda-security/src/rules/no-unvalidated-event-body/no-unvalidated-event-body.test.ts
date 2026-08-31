@@ -57,6 +57,33 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-unvalidated-event-body', noUnvalidatedEventBody, {
   valid: lambda([
+    // One case per DEFAULT_VALIDATION_METHOD_NAMES entry no other case reaches.
+    {
+      name: 'middy httpJsonBodyParser validates the body',
+      code: `
+        export const handler = middy(async (event) => {
+          return { statusCode: 200, body: event.body };
+        }).use(httpJsonBodyParser());
+      `,
+    },
+    {
+      name: 'zod parseAsync validates the body',
+      code: `
+        export const handler = async (event) => {
+          const data = await schema.parseAsync(event.body);
+          return { statusCode: 200 };
+        };
+      `,
+    },
+    {
+      name: 'zod safeParseAsync validates the body',
+      code: `
+        export const handler = async (event) => {
+          const data = await schema.safeParseAsync(event.body);
+          return { statusCode: 200 };
+        };
+      `,
+    },
     // A hand-written checker: `check` is not one of the schema-library verbs
     // we guessed, so the handler read as unvalidated.
     {
