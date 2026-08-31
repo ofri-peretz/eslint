@@ -407,12 +407,35 @@ function shWithRegistryRetry(
 }
 
 function sh(cmd: string, args: string[], cwd?: string): string {
-  return execFileSync(cmd, args, {
-    cwd,
-    encoding: 'utf-8',
-    maxBuffer: 512 * 1024 * 1024,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  try {
+    return execFileSync(cmd, args, {
+      cwd,
+      encoding: 'utf-8',
+      maxBuffer: 512 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (error) {
+    /*
+     * Put the child's own output INTO the thrown error.
+     *
+     * `execFileSync` throws "Command failed: <the command line>" and leaves
+     * stdout and stderr on the error object, which no handler here read. A
+     * failing install therefore reported the command it ran and nothing about
+     * why it failed, and the CI log showed `stdout: '', stderr: ''` under
+     * `--silent` — a stack trace pointing at the line that broke and no cause.
+     */
+    const child = error as { stdout?: string; stderr?: string; message?: string };
+    const detail = [child.stdout, child.stderr]
+      .map((stream) => (stream ?? '').trim())
+      .filter(Boolean)
+      .join('\n');
+    throw new Error(
+      `${child.message ?? String(error)}` +
+        (detail === ''
+          ? '\n  (the command produced no output — check for a --silent flag)'
+          : `\n\n${detail}`),
+    );
+  }
 }
 
 /**
@@ -665,7 +688,12 @@ function main(): number {
       // rather than folded into a scan fix, since it moves a dependency every
       // rule test parses with.
       '--legacy-peer-deps',
-      '--silent',
+      // `--silent` here, not `--loglevel=error`: npm printed NOTHING on
+      // failure, so the CI log carried `status: 1, stdout: '', stderr: ''` and
+      // the only way to learn the cause was to reproduce the install by hand.
+      // It cost two wrong diagnoses — "transient registry flake" — before the
+      // real one (an ERESOLVE peer conflict) turned up locally.
+      '--loglevel=error',
       '--no-audit',
       '--no-fund',
       `eslint@${lockedVersion('eslint')}`,
