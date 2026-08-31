@@ -103,6 +103,13 @@ jobs:
           # `no-auto-fix` is the escape hatch for anything else that needs a
           # person.
           # The list is inlined into the jq expression rather than passed with
+          # `IN(...)` on the login, NOT `[allowlist] | index(.author.login)`.
+          # That pipe rebinds `.` to the array literal, so `.author.login` then
+          # indexes an array and jq aborts with `Cannot index array with string
+          # "author"`. Under `set -e` that killed triage outright, and because
+          # `sweep` needs `triage`, the sweep never ran at all — a security
+          # filter that fails closed by crashing the job that enforces it.
+          #
           # `--argjson`: `gh --jq` takes an expression and nothing else, so the
           # `--argjson` form would have been read as the expression itself and
           # the filter would never have applied.
@@ -110,8 +117,8 @@ jobs:
             --json number,title,labels,author \
             --jq '[.[]
                    | select([.labels[].name] | index("no-auto-fix") | not)
-                   | select(["github-actions[bot]","app/github-actions","ofri-peretz"]
-                            | index(.author.login) != null)]')
+                   | select(.author.login
+                            | IN("github-actions[bot]","app/github-actions","ofri-peretz"))]')
           COUNT=$(echo "$LIST" | jq 'length')
 
           # The filter is load-bearing security, so prove it ran rather than
@@ -248,10 +255,37 @@ jobs:
           gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
           echo "::notice title=Sweep PR armed::#$PR merges once every required check is green."
 
-      - name: 🚨 Report a failed sweep
-        if: failure()
+  # Reporting lives in its OWN job, not inside `sweep`.
+  #
+  # `sweep` needs `triage`, so a failing `triage` SKIPS `sweep` — and a skipped
+  # job's `if: failure()` step never runs. The workflow went red and said
+  # nothing, which is the worst version of a scheduled job: the backlog stops
+  # draining and the only signal is a red tick nobody is watching for.
+  #
+  # `if: always()` plus `needs: [triage, sweep]` reports whichever half broke,
+  # including the skipped-because-upstream-failed case.
+  report:
+    name: Report a failed run
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [triage, sweep]
+    if: always() && (needs.triage.result == 'failure' || needs.sweep.result == 'failure')
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: 🚨 Report
         uses: ./.github/actions/report-failure
         with:
           title: "Scheduled issue sweep is failing"
-          body: "The six-hourly issue sweep failed, so the issue backlog is no longer being drained automatically."
+          body: |
+            The scheduled issue sweep failed, so the issue backlog is no longer
+            being drained automatically.
+
+            - triage: ${{ needs.triage.result }}
+            - sweep:  ${{ needs.sweep.result }}
+
+            A `skipped` sweep means triage failed first — start there.
           token: ${{ github.token }}

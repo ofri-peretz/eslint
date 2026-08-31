@@ -161,7 +161,16 @@ so a persistent failure cannot turn the channel into noise and get muted.
    sit for up to seven days.
 2. `bench_configs` gating and the `build` cache inputs are **read, not
    experimentally verified** — the two rows above marked as such.
-3. **Nothing re-proves the cache invalidation.** The `test.dependsOn` hole in
-   §2 was found by asking the right question at the right moment, not by a
-   check. Its lock covers one upstream/dependent pair; the property is true
-   today and unguarded for every other pair tomorrow.
+3. **The cache-invalidation audit checks a sample, on a schedule.**
+   `scripts/audit-cache-invalidation.ts` now perturbs rotating
+   upstream/dependent pairs and declared `globalDependencies`, and exits
+   non-zero when a hash fails to move — so the `test.dependsOn` hole in §2
+   would no longer depend on someone asking the right question at the right
+   moment.
+
+   What remains: it is a *sample*, not the full cross-product, and it rotates
+   per run rather than covering everything each time. A pair outside the
+   current window is unguarded until its turn comes, and the window advances
+   only as often as the schedule fires. Probes it could not run are reported
+   under `skipped` rather than dropped, so a pass never quietly stands in for
+   a question that was not asked.
