@@ -241,7 +241,7 @@
   ],
   "scripts": {
     "build": "tsc -b tsconfig.lib.json && node scripts/preserve-use-client.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "test": "vitest run",
     "clean": "rm -rf dist tsconfig.lib.tsbuildinfo"
   },
