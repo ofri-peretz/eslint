@@ -40,6 +40,7 @@
  *
  *   npx tsx scripts/check-name-vocabulary.ts
  *   npx tsx scripts/check-name-vocabulary.ts --update
+ *   npx tsx scripts/check-name-vocabulary.ts --list
  */
 
 import fs from 'node:fs';
@@ -58,6 +59,8 @@ const BASELINE = path.join(
   'name-vocabulary-baseline.json',
 );
 const UPDATE = process.argv.includes('--update');
+/** Print the offenders. The counts alone say a number is wrong, not where. */
+const LIST = process.argv.includes('--list');
 
 /** The helpers that read an identifier's name. */
 /**
@@ -247,6 +250,9 @@ console.log(
 );
 console.log(`  replaceable option or citation      ${compliant.length}`);
 console.log(`  hardcoded, no way to replace        ${offenders.length}`);
+if (LIST) {
+  for (const rule of offenders.sort()) console.log(`    ${rule}`);
+}
 if (vanished.length > 0) {
   console.log(
     `  in the artifact but not on disk     ${vanished.length}  — re-run the probe`,

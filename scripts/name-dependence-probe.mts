@@ -201,7 +201,16 @@ function renameBindings(code: string): string | null {
       const isImported =
         parent?.type === 'ImportSpecifier' ||
         parent?.type === 'ImportDefaultSpecifier';
-      if (!isMemberProperty && !isObjectKey && !isImported) {
+      // `export { x as y }` — `y` is the name this module PUBLISHES, so it
+      // belongs to the importer exactly as an imported name belongs to the
+      // library. In the shorthand `export { x }` the two are distinct nodes
+      // over the SAME range, so without this the local edit and the exported
+      // edit are both applied to that one range and the code is corrupted
+      // into something that no longer parses — which the probe then reads as
+      // a changed verdict, i.e. a false name-dependence finding.
+      const isExportedName =
+        parent?.type === 'ExportSpecifier' && parentKey === 'exported';
+      if (!isMemberProperty && !isObjectKey && !isImported && !isExportedName) {
         if (!fresh.has(node.name)) fresh.set(node.name, `foo${fresh.size + 1}`);
         edits.push({
           range: node.range as [number, number],
@@ -226,8 +235,14 @@ function renameBindings(code: string): string | null {
 
   edits.sort((a, b) => b.range[0] - a.range[0]);
   let out = code;
-  for (const e of edits)
+  let lastStart = Number.POSITIVE_INFINITY;
+  for (const e of edits) {
+    // Two nodes over one range would each rewrite it, and the second would
+    // splice against offsets the first already moved.
+    if (e.range[0] >= lastStart) continue;
     out = out.slice(0, e.range[0]) + e.text + out.slice(e.range[1]);
+    lastStart = e.range[0];
+  }
   return out === code ? null : out;
 }
 

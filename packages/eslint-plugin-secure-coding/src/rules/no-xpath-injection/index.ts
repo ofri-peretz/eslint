@@ -113,6 +113,16 @@ function literalTextOf(node: TSESTree.Node): string {
  * is `axisname::nodetest`; two colons on their own are a separator in a dozen
  * unrelated conventions.
  */
+/**
+ * @vocabulary The axis names and the operator grammar are W3C XPath, and the
+ * DOM members are the `XPathEvaluator` interface. Both are specifications: a
+ * document that spells `ancestor-or-self` differently is not XPath. The
+ * PACKAGES a project uses are the consumer's and are already behind
+ * `xpathPackages`.
+ *
+ * @see https://www.w3.org/TR/xpath-31/#axes
+ * @see https://dom.spec.whatwg.org/#interface-xpathevaluator
+ */
 const XPATH_AXIS =
   'ancestor-or-self|ancestor|attribute|child|descendant-or-self|descendant|following-sibling|following|namespace|parent|preceding-sibling|preceding|self';
 const XPATH_SYNTAX = new RegExp(
