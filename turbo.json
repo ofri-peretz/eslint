@@ -2,6 +2,9 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalDependencies": [
+    "packages/eslint-devkit/src/**",
+    "packages/ui/src/**",
+    "tools/cwe-analytics-engine/src/**",
     ".markdownlint.json",
     ".oxlintrc.json",
     "scripts/build-package.ts",
@@ -60,12 +63,12 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
     },
     "test:coverage": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },

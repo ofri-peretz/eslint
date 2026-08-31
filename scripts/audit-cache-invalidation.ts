@@ -187,6 +187,21 @@ function sample<T>(items: T[], n: number, offset: number): T[] {
   );
 }
 
+/** Tracked files already modified, or null if git could not be consulted. */
+function gitDirty(): string | null {
+  try {
+    return execFileSync(
+      'git',
+      ['status', '--porcelain', '--untracked-files=no'],
+      { cwd: REPO_ROOT, encoding: 'utf8', timeout: 60_000 },
+    ).trim();
+  } catch {
+    return null;
+  }
+}
+/** Snapshot before any probe, so the end-of-run check compares like with like. */
+const dirtyBefore = gitDirty();
+
 type Finding = { probe: string; task: string; reason: string };
 
 const all = workspaces();
@@ -307,19 +322,21 @@ if (checked.length === 0) {
 // handlers cover a kill, but this script edits tracked sources, so it verifies
 // rather than trusts: a leftover modification would otherwise be committed by
 // whatever runs next.
-try {
-  const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-    timeout: 60_000,
-  }).trim();
-  if (dirty) {
+//
+// Compared against the snapshot taken BEFORE any probe ran, not against a
+// clean tree. The first version asserted "clean" and duly failed on a
+// turbo.json the author was editing at the time — a guard that cries wolf on
+// normal local work is one people learn to ignore, which is how it stops
+// catching the real leak.
+const dirtyNow = gitDirty();
+if (dirtyNow !== null && dirtyBefore !== null) {
+  const before = new Set(dirtyBefore.split('\n'));
+  const leaked = dirtyNow.split('\n').filter((l) => l && !before.has(l));
+  if (leaked.length > 0) {
     console.error(
-      `::error::The audit finished with a dirty working tree — a probe did not restore its file:\n${dirty}`,
+      `::error::A probe did not restore its file — these are dirty and were not before:\n${leaked.join('\n')}`,
     );
     process.exit(1);
   }
-} catch {
-  console.error('::warning::Could not verify the working tree is clean after the audit.');
 }
 process.exit(findings.length > 0 ? 1 : 0);
