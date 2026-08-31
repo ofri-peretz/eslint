@@ -82,76 +82,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // Track Worker message handlers
-
-    /**
-     * Check if we're in a Worker onmessage assignment
-     */
-    function isWorkerOnmessageAssignment(node: TSESTree.AssignmentExpression): {
-      isHandler: boolean;
-      eventParam: string | null;
-    } {
-      if (
-        node.left.type === AST_NODE_TYPES.MemberExpression &&
-        node.left.property.type === AST_NODE_TYPES.Identifier &&
-        node.left.property.name === 'onmessage'
-      ) {
-        // No receiver-NAME gate. `const button = new Worker('w.js')` is a
-        // Worker whatever it is called; the name check made ownership depend
-        // on spelling, and combined with no-innerhtml's skip that meant the
-        // finding was reported by nobody. The resolver below identifies the
-        // binding by construction.
-        {
-          const handler = node.right;
-          if (
-            handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            handler.type === AST_NODE_TYPES.FunctionExpression
-          ) {
-            const firstParam = handler.params[0];
-            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-              return { isHandler: true, eventParam: firstParam.name };
-            }
-          }
-        }
-      }
-      return { isHandler: false, eventParam: null };
-    }
-
-    /**
-     * Check if we're in a Worker addEventListener('message')
-     */
-    function isWorkerAddEventListener(node: TSESTree.CallExpression): {
-      isHandler: boolean;
-      eventParam: string | null;
-    } {
-      if (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        node.callee.property.name === 'addEventListener' &&
-        node.arguments.length >= 2
-      ) {
-        // Check if it's a message event
-        const eventType = node.arguments[0];
-        if (
-          eventType.type === AST_NODE_TYPES.Literal &&
-          eventType.value === 'message'
-        ) {
-          // Identified by construction, not by spelling — see the note above.
-          const callback = node.arguments[1];
-          if (
-            callback.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            callback.type === AST_NODE_TYPES.FunctionExpression
-          ) {
-            const firstParam = callback.params[0];
-            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-              return { isHandler: true, eventParam: firstParam.name };
-            }
-          }
-        }
-      }
-      return { isHandler: false, eventParam: null };
-    }
-
     // Ownership gate: this rule reports only what the resolver attributes
     // to the worker source. Everything it cannot identify belongs to the
     // generic sink rule, so no value is ever reported by both.
@@ -181,17 +111,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
-        const { isHandler } = isWorkerOnmessageAssignment(node);
-        // Husk from #409 ("one rule per finding"): that refactor removed the
-        // body and the `eventParam` it used, leaving the guard behind. Deleting
-        // it also orphans the predicate above, so it is a two-part removal —
-        // tracked separately rather than half-cut here.
-        // eslint-disable-next-line no-empty
-        if (isHandler) {
-        }
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
 
         // Check for dangerous method calls within handler
@@ -215,17 +134,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
               break;
             }
           }
-        }
-      },
-
-      'CallExpression:exit'(node: TSESTree.CallExpression) {
-        const { isHandler } = isWorkerAddEventListener(node);
-        // Husk from #409 ("one rule per finding"): that refactor removed the
-        // body and the `eventParam` it used, leaving the guard behind. Deleting
-        // it also orphans the predicate above, so it is a two-part removal —
-        // tracked separately rather than half-cut here.
-        // eslint-disable-next-line no-empty
-        if (isHandler) {
         }
       },
     };
