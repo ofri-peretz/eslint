@@ -33,6 +33,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  readRealSourceInventory,
+  staleNotice,
+} from './lib/real-source-inventory.ts';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE = path.join(ROOT, 'benchmarks', '.real-source-cache');
 const INVENTORY = path.join(ROOT, 'benchmarks', 'budgets', 'real-world-rule-inventory.json');
@@ -45,6 +50,16 @@ type Inventory = {
   filesLinted: number;
   generated: string;
 };
+
+// Refuse to harvest from a scan whose instrument we cannot vouch for. The
+// candidates this produces become registry cases, and a case sourced from a
+// stale scan cites a file:line that the current config may never have linted.
+const { isCurrent, reason } = readRealSourceInventory(ROOT);
+if (!isCurrent) {
+  console.error(staleNotice(reason));
+  console.error('    Harvesting from it would seed cases from a measurement nobody can reproduce.');
+  process.exit(1);
+}
 
 const inventory = JSON.parse(fs.readFileSync(INVENTORY, 'utf8')) as Inventory;
 

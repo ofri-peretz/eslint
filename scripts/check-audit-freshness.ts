@@ -24,6 +24,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readRealSourceInventory } from './lib/real-source-inventory.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
@@ -39,6 +40,15 @@ interface Artifact {
   ttlDays: number;
   /** Refresh command for the operator-facing error message. */
   refreshCmd: string;
+  /**
+   * An extra guard for artifacts whose date is not the whole story.
+   *
+   * The real-source inventory is the case this exists for: it went four days
+   * stale while reporting FRESH, because it carried the right date and the
+   * wrong instrument. A TTL cannot see that. Returns a reason when the
+   * artifact may not be quoted, or null when it may.
+   */
+  instrumentCheck?: (repoRoot: string) => string | null;
 }
 
 const ARTIFACTS: Artifact[] = [
@@ -84,6 +94,15 @@ const ARTIFACTS: Artifact[] = [
     anchorKey: 'generated',
     ttlDays: 45,
     refreshCmd: 'npx tsx scripts/real-source-scan.mts',
+    // Date staleness was only half the guard, and this gate said so in the
+    // comment above while checking only the date. `rule-case-ledger.ts`
+    // refusing to print is not enough on its own: one consumer checking is a
+    // habit that one file happens to have, and the freshness receipt is where
+    // a reader looks to decide whether a number is safe to quote.
+    instrumentCheck: (root) => {
+      const { isCurrent, reason } = readRealSourceInventory(root);
+      return isCurrent ? null : reason;
+    },
   },
   {
     /*
@@ -196,6 +215,7 @@ export function checkArtifact(
   repoRoot = REPO_ROOT,
   now = Date.now(),
 ): FreshnessRow {
+  const instrument = a.instrumentCheck?.(repoRoot) ?? null;
   const full = path.join(repoRoot, a.path);
   if (!fs.existsSync(full)) {
     return {
@@ -238,6 +258,23 @@ export function checkArtifact(
     anchorMs = fs.statSync(full).mtimeMs;
   }
   const ageDays = Math.floor((now - anchorMs) / (1000 * 60 * 60 * 24));
+  // An artifact within its TTL can still be unquotable. The real-source
+  // inventory spent four days reporting FRESH on the strength of its date
+  // while the config that produced it had been replaced — which is the whole
+  // reason this hook exists. A failing instrument check is stale regardless of
+  // age, and the reason travels in `refreshCmd` so the operator sees WHY on the
+  // same line as the fix.
+  if (instrument !== null) {
+    return {
+      label: a.label,
+      path: a.path,
+      anchor: anchorStr,
+      ageDays,
+      ttlDays: a.ttlDays,
+      status: 'stale',
+      refreshCmd: `${a.refreshCmd}  — ${instrument}`,
+    };
+  }
   return {
     label: a.label,
     path: a.path,
