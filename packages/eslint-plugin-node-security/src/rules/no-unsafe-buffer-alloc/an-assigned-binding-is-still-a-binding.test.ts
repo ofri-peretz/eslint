@@ -42,7 +42,9 @@ ruleTester.run(
   {
     valid: [
       // The corpus shape.
-      `function encode(value) {
+      {
+        name: 'the corpus shape — an assigned binding fully written by a loop',
+        code: `function encode(value) {
          let geoBuff, pos;
          geoBuff = Buffer.allocUnsafe(9 + size);
          geoBuff.writeInt8(0x01, 0);
@@ -55,32 +57,42 @@ ruleTester.run(
          }
          return geoBuff;
        }`,
+      },
       // An index-assignment loop is the same walk `writeUInt8(v, pos)`
       // performs — mariadb's native-password and sha256 auth XOR loops.
-      `function f(stage1, digest) {
+      {
+        name: 'an index-assignment loop is the same walk writeUInt8 performs',
+        code: `function f(stage1, digest) {
          let returnBytes = Buffer.allocUnsafe(digest.length);
          for (let i = 0; i < digest.length; i++) {
            returnBytes[i] = stage1[i] ^ digest[i];
          }
          return returnBytes;
        }`,
+      },
       // A whole-buffer copy through an assigned binding.
-      `function f(src) { let b; b = Buffer.allocUnsafe(src.length); src.copy(b); return b; }`,
+      {
+        name: 'a whole-buffer copy through an assigned binding',
+        code: `function f(src) { let b; b = Buffer.allocUnsafe(src.length); src.copy(b); return b; }`,
+      },
     ],
     invalid: [
       // The real defect is unchanged: a fixed-offset write leaving the rest
       // uninitialized, on an assigned binding as much as a declared one.
       {
+        name: 'a fixed-offset write on an assigned binding leaves the rest uninitialized',
         code: `function f() { let header; header = Buffer.allocUnsafe(16); header.writeUInt32BE(len, 0); socket.write(header); }`,
         errors: 1,
       },
       // A LITERAL index is one byte stamped, not a walk — still partial.
       {
+        name: 'a literal index is one byte stamped, not a walk',
         code: `function f() { const b = Buffer.allocUnsafe(16); b[0] = 1; socket.write(b); }`,
         errors: 1,
       },
       // And an index assignment outside a loop is a single byte too.
       {
+        name: 'an index assignment outside a loop is a single byte too',
         code: `function f(i) { const b = Buffer.allocUnsafe(16); b[i] = 1; socket.write(b); }`,
         errors: 1,
       },
@@ -88,12 +100,14 @@ ruleTester.run(
       // — resolves to nothing, so there are no references to walk and the
       // allocation cannot be cleared.
       {
+        name: 'an implicit global resolves to no binding, so no references can clear it',
         code: `function f() { undeclaredBuf = Buffer.allocUnsafe(16); socket.write(undeclaredBuf); }`,
         errors: 1,
       },
       // Writes BEFORE the allocation belong to the previous value and must not
       // clear this one.
       {
+        name: 'writes before the allocation belong to the previous value',
         code: `function f(src) { let b = Buffer.alloc(4); src.copy(b); b = Buffer.allocUnsafe(64); socket.write(b); }`,
         errors: 1,
       },
