@@ -174,26 +174,69 @@ function parseWorkflow(src: string): { env: string[]; jobs: Job[] } {
 }
 
 /**
- * Uppercase variable reads in a shell snippet.
+ * Blank out full-line shell comments, keeping every offset intact.
+ *
+ * A comment that mentions `$LEASE` above the line that assigns it is not a
+ * read, and the order-aware check below would otherwise flag it — it did, on
+ * docs-data.yml, for two variables that are perfectly correct. Overwriting
+ * with spaces rather than deleting keeps the positions that ordering depends
+ * on. Trailing comments are left alone: distinguishing `# ...` from a `#`
+ * inside quotes needs a real lexer, and a trailing comment naming a variable
+ * before its assignment is a genuine near-miss worth seeing.
+ */
+function maskComments(script: string): string {
+  return script
+    .split('\n')
+    .map((line) => {
+      const m = /^(\s*)#/.exec(line);
+      return m ? m[1] + ' '.repeat(line.length - m[1].length) : line;
+    })
+    .join('\n');
+}
+
+/**
+ * Uppercase variable reads in a shell snippet, each with its offset.
+ *
+ * The offset is what makes order enforceable. A variable assigned LATER in the
+ * same script does not declare an earlier read — under `set -u` the earlier
+ * read still aborts — so a position-blind check would report green for a
+ * workflow that dies on its first line.
  *
  * `${VAR:-default}` and `${VAR-default}` are excluded: those forms are defined
  * BY the expansion, so `set -u` never fires on them. Counting them would make
  * the lock demand an `env:` entry for a variable the author deliberately made
  * optional.
  */
-function reads(script: string): string[] {
-  const out = new Set<string>();
+function reads(script: string): { name: string; at: number }[] {
+  const out: { name: string; at: number }[] = [];
   for (const m of script.matchAll(
     /\$\{?([A-Z][A-Z0-9_]*)(:?[-+=?][^}]*)?\}?/g,
   )) {
     if (m[2]) continue;
-    out.add(m[1]);
+    out.push({ name: m[1], at: m.index ?? 0 });
   }
-  return [...out];
+  return out;
+}
+
+/** Assignments in the snippet, each with the offset it takes effect from. */
+function assigns(script: string): { name: string; at: number }[] {
+  const out: { name: string; at: number }[] = [];
+  const add = (re: RegExp) => {
+    for (const m of script.matchAll(re))
+      out.push({ name: m[1], at: m.index ?? 0 });
+  };
+  add(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)=/gm);
+  add(/\bfor\s+([A-Z][A-Z0-9_]*)\s+in\b/g);
+  add(/\bread\s+(?:-\w+\s+)*([A-Z][A-Z0-9_]*)/g);
+  return out;
 }
 
 /**
  * Names an earlier step in the same job exported through `$GITHUB_ENV`.
+ *
+ * `steps` is the slice BEFORE the current one, not the whole job: a value
+ * exported by a later step is not available to an earlier one, and treating
+ * the job as an unordered bag would bless exactly that mistake.
  *
  * This is the sanctioned way to pass a value between steps, and the receiving
  * step legitimately does not declare it in its own `env:`. Scanning the whole
@@ -212,18 +255,6 @@ function exportedToJobEnv(steps: Step[]): Set<string> {
   return out;
 }
 
-/** Names the snippet assigns to itself before use (`FOO=`, `read FOO`, `for FOO in`). */
-function assigns(script: string): Set<string> {
-  const out = new Set<string>();
-  for (const m of script.matchAll(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)=/gm))
-    out.add(m[1]);
-  for (const m of script.matchAll(/\bfor\s+([A-Z][A-Z0-9_]*)\s+in\b/g))
-    out.add(m[1]);
-  for (const m of script.matchAll(/\bread\s+(?:-\w+\s+)*([A-Z][A-Z0-9_]*)/g))
-    out.add(m[1]);
-  return out;
-}
-
 type Offence = { file: string; job: string; step: string; name: string };
 
 function offences(): Offence[] {
@@ -233,21 +264,25 @@ function offences(): Offence[] {
       readFileSync(join(WORKFLOWS, file), 'utf8'),
     );
     for (const job of jobs) {
-      const fromEarlierSteps = exportedToJobEnv(job.steps);
-      for (const step of job.steps) {
+      for (const [i, step] of job.steps.entries()) {
         if (!step.run.trim()) continue;
         // `${{ ... }}` is substituted by the runner before bash sees it, so it
         // can never be an unbound variable — strip it before scanning.
-        const script = step.run.replace(/\$\{\{[^}]*\}\}/g, 'X');
+        const script = maskComments(step.run.replace(/\$\{\{[^}]*\}\}/g, 'X'));
+        // Only steps that already ran can have exported anything.
+        const fromEarlierSteps = exportedToJobEnv(job.steps.slice(0, i));
         const declared = new Set([
           ...workflowEnv,
           ...job.env,
           ...step.env,
           ...fromEarlierSteps,
-          ...assigns(script),
         ]);
-        for (const name of reads(script)) {
+        const localAssigns = assigns(script);
+        for (const { name, at } of reads(script)) {
           if (AMBIENT.has(name) || declared.has(name)) continue;
+          // Position matters: an assignment further down the script has not
+          // happened yet at this read.
+          if (localAssigns.some((a) => a.name === name && a.at < at)) continue;
           found.push({ file, job: job.id, step: step.name, name });
         }
       }

@@ -1,45 +1,35 @@
 /**
  * Lock: the lean dependency archive must not omit anything the node lane uses.
  *
- * `.github/actions/setup` restores one of two `node_modules` archives. The
- * `lean` one drops the Next.js/React tree — ~600 MB unpacked that no ESLint
- * plugin, the devkit, the formatters or the tools ever resolve — and the node
- * lane's test shards use it. Measured on run 33337052316: the full archive is
- * 451 MB and costs 13.3s to restore, paid by every one of ten shards, eight of
- * which held nothing but plugins.
+ * The node lane's shards restore a `node_modules` with the Next.js/React tree
+ * deleted — ~739 MB, produced by the trim step at the end of the job. Measured
+ * on the first lean hit: 279,862,807 B against the full 451,051,181, restore
+ * 13.0s -> 5.6s.
  *
- * That is a DENY-LIST over a hoisted tree, so every entry is a claim: "nothing
- * in the node lane resolves this module." A wrong claim is a MODULE_NOT_FOUND
- * in CI. `date-fns` is why this file exists — root-declared, web-looking, and
- * imported by four node-lane packages, so it is deliberately NOT omitted.
- *
- * The check is manifest-level and therefore not exhaustive: it cannot see a
- * transitive resolve. It catches the mistake that is actually easy to make —
- * adding a web dependency to a node-lane workspace, or omitting one that a
- * node-lane workspace already declares — and it fails at review time rather
- * than in a shard.
+ * That is only safe while no node-lane workspace resolves a trimmed package.
+ * The first implementation decided lanes from a hardcoded `WEB_LANE` name set,
+ * which is wrong in the one direction that fails silently: a new or renamed
+ * workspace with the web dependency closure keeps getting lean dependencies
+ * until a human remembers to add it. Lanes are now DERIVED from manifests, and
+ * this file checks the derivation rather than a list — the repo's own rule is
+ * that a rule decides by evidence, never by a name.
  *
  * Run from the repo root:
  *   npx vitest run scripts/__tests__/lane-deps-lock.test.ts
  */
 
 import { describe, it, expect } from 'vitest';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LEAN_LIST = join(ROOT, '.github', 'lean-node-modules.txt');
-const SHARD_SCRIPT = join(ROOT, 'scripts', 'ci-test-shard.mts');
+const SCRIPT = join(ROOT, 'scripts', 'ci-test-shard.mts');
+const WORKFLOW = join(ROOT, '.github', 'workflows', 'quality-full.yml');
 
-/**
- * The packages the node lane's trim step deletes before the cache is saved.
- *
- * Single-sourced from `.github/lean-node-modules.txt`, which the workflow step
- * also reads. Scraping the workflow YAML instead would let the two drift, and
- * the drift is silent in the direction that matters: a package trimmed but not
- * checked here is a MODULE_NOT_FOUND waiting for whichever shard resolves it.
- */
+/** Packages the trim step deletes before the lean archive is saved. */
 function trimmedPackages(): string[] {
   return readFileSync(LEAN_LIST, 'utf8')
     .split('\n')
@@ -47,17 +37,13 @@ function trimmedPackages(): string[] {
     .filter((l) => l && !l.startsWith('#'));
 }
 
-/** Package names the shard script assigns to the web lane. */
-function webLane(): string[] {
-  const src = readFileSync(SHARD_SCRIPT, 'utf8');
-  const m = /const WEB_LANE = new Set<string>\(\[([^\]]*)\]\)/.exec(src);
-  expect(m, 'WEB_LANE not found in ci-test-shard.mts').not.toBeNull();
-  return [...(m as RegExpExecArray)[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
-}
+type Workspace = {
+  path: string;
+  name: string;
+  deps: string[];
+  hasTests: boolean;
+};
 
-type Workspace = { path: string; name: string; deps: string[] };
-
-/** Every workspace manifest, with its declared dependency names. */
 function workspaces(): Workspace[] {
   const out: Workspace[] = [];
   for (const wsDir of ['packages', 'apps', 'tools']) {
@@ -75,34 +61,126 @@ function workspaces(): Workspace[] {
           ...Object.keys(pkg.devDependencies ?? {}),
           ...Object.keys(pkg.peerDependencies ?? {}),
         ],
+        hasTests: Boolean(pkg.scripts?.test || pkg.scripts?.['test:coverage']),
       });
     }
   }
   return out;
 }
 
-describe('lean dependency archive', () => {
-  const excluded = trimmedPackages();
-  const web = new Set(webLane());
-  const nodeLane = workspaces().filter((w) => !web.has(w.name));
+/**
+ * Which workspaces need the web tree — computed HERE, independently of the
+ * script, so the two can disagree.
+ *
+ * Deriving the expectation by calling the code under test is the classic way a
+ * lock agrees with a bug: it would pass whatever the script decided. This
+ * mirrors the rule (declares a trimmed package, or depends on a workspace that
+ * does) from the manifests directly.
+ */
+function expectedWebLane(): Set<string> {
+  const all = workspaces();
+  const trimmed = new Set(trimmedPackages());
+  const web = new Set(
+    all
+      .filter((w) =>
+        w.deps.some((d) => trimmed.has(d) || trimmed.has(d.split('/')[0])),
+      )
+      .map((w) => w.name),
+  );
+  const names = new Set(all.map((w) => w.name));
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const w of all) {
+      if (web.has(w.name)) continue;
+      if (w.deps.some((d) => names.has(d) && web.has(d))) {
+        web.add(w.name);
+        changed = true;
+      }
+    }
+  }
+  return web;
+}
+
+/** Package names the script actually puts in a lane, via its plan output. */
+function scriptLane(lane: 'node' | 'web', total: number): Set<string> {
+  const names = new Set<string>();
+  for (let shard = 1; shard <= total; shard++) {
+    const out = execFileSync(
+      'node',
+      [SCRIPT, String(shard), String(total), '--lane', lane],
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CI_TEST_SHARD_PLAN_ONLY: '1',
+          CI_TEST_SHARD_ALL: '1',
+        },
+      },
+    );
+    for (const m of out.matchAll(
+      /^ {2}(\S+)(?: \[slice \d+\/\d+\])? {2}\((?:test|test:coverage), ~?\d+ test files\)$/gm,
+    ))
+      names.add(m[1]);
+  }
+  return names;
+}
+
+describe('lane membership is derived from dependency evidence', () => {
+  const trimmed = trimmedPackages();
+  const expectedWeb = expectedWebLane();
+  const all = workspaces().filter((w) => w.hasTests);
 
   it('trims something, or the lean lane is pointless', () => {
-    expect(excluded.length).toBeGreaterThan(0);
+    expect(trimmed.length).toBeGreaterThan(0);
   });
 
-  // The list is only load-bearing if something reads it. Three archives were
-  // measured at ~451 MB while a twelve-entry exclusion list sat in the setup
-  // action doing nothing, so "the list exists" is not evidence.
-  it('is actually read by the trim step that produces the lean archive', () => {
-    const wf = readFileSync(
-      join(ROOT, '.github', 'workflows', 'quality-full.yml'),
-      'utf8',
+  it('finds web-lane workspaces by evidence, not by an empty result', () => {
+    // Non-vacuity: if the derivation found nothing, every assertion comparing
+    // the two sets below would pass while the node lane silently swallowed the
+    // docs app.
+    expect(expectedWeb.size).toBeGreaterThan(0);
+    expect(all.length).toBeGreaterThan(20);
+  });
+
+  it('the script puts exactly the evidence-derived workspaces in the web lane', () => {
+    const actual = scriptLane('web', 3);
+    expect([...actual].sort()).toEqual(
+      [...expectedWeb].filter((n) => all.some((w) => w.name === n)).sort(),
     );
+  });
+
+  it('no node-lane workspace declares anything the lean archive trims', () => {
+    const offenders = [...scriptLane('node', 4)]
+      .map((name) => all.find((w) => w.name === name))
+      .filter((w): w is Workspace => Boolean(w))
+      .flatMap((w) =>
+        w.deps
+          .filter((d) => trimmed.some((t) => d === t || d.startsWith(`${t}/`)))
+          .map((d) => `${w.path} declares ${d}`),
+      );
+    expect(
+      offenders,
+      'These would hit MODULE_NOT_FOUND on a lean shard. The lane derivation ' +
+        'in scripts/ci-test-shard.mts should have caught them — if this fails, ' +
+        'the derivation and .github/lean-node-modules.txt have diverged.',
+    ).toEqual([]);
+  });
+
+  it('does not trim date-fns — four node-lane packages import it', () => {
+    expect(trimmed).not.toContain('date-fns');
+  });
+});
+
+describe('the lean archive is actually produced', () => {
+  const wf = readFileSync(WORKFLOW, 'utf8');
+
+  // A list nothing reads is not a mechanism. Three archives were measured at
+  // ~451 MB while a twelve-entry exclusion list sat in the setup action doing
+  // nothing, so "the list exists" is not evidence.
+  it('is read by the trim step, which must be the last step of the node lane', () => {
     expect(wf).toContain('.github/lean-node-modules.txt');
     expect(wf).toContain('rm -rf "node_modules/${pkg:?}"');
-    // The trim must be the LAST step of the node-lane job: post steps (the
-    // cache save) run after all main steps, so anything after it would be
-    // running against an already-trimmed tree.
     const job = wf.slice(
       wf.indexOf('\n  test:\n'),
       wf.indexOf('\n  test-web:\n'),
@@ -111,51 +189,9 @@ describe('lean dependency archive', () => {
     expect(steps.at(-1)?.[1] ?? '').toContain('Trim the web tree');
   });
 
-  it('has a non-empty node lane to protect', () => {
-    expect(nodeLane.length).toBeGreaterThan(0);
-    // Guards the shape of the test: a rename that made every workspace look
-    // web-lane would empty this list and pass everything below vacuously.
-    expect(nodeLane.some((w) => w.name.startsWith('eslint-plugin-'))).toBe(
-      true,
-    );
-  });
-
-  it.each(
-    // One case per (workspace, excluded dep) pair that actually collides, plus
-    // a single passing case when there are none — `it.each` over an empty list
-    // would report nothing at all.
-    nodeLane.flatMap((w) =>
-      w.deps
-        .filter((d) => excluded.some((e) => d === e || d.startsWith(`${e}/`)))
-        .map((d) => ({ ws: w.path, dep: d })),
-    ).length === 0
-      ? [{ ws: '(none)', dep: '(none)' }]
-      : nodeLane.flatMap((w) =>
-          w.deps
-            .filter((d) =>
-              excluded.some((e) => d === e || d.startsWith(`${e}/`)),
-            )
-            .map((d) => ({ ws: w.path, dep: d })),
-        ),
-  )(
-    '$ws does not declare $dep, which the lean archive omits',
-    ({ ws, dep }) => {
-      expect(
-        dep,
-        `${ws} declares "${dep}", but the lean node_modules archive trims it away. ` +
-          'Either move that workspace into WEB_LANE in scripts/ci-test-shard.mts, ' +
-          'or drop the entry from .github/lean-node-modules.txt.',
-      ).toBe('(none)');
-    },
-  );
-
-  // The specific finding that motivated the deny-list being short. If someone
-  // adds `date-fns` back to the exclusions, four node-lane packages break.
-  // A cache MISS must still produce a working tree. Rewriting the lean cache
-  // step once deleted the `npm ci` steps that sat between it and the Turbo
-  // block, so a missed lean key restored nothing, installed nothing, and the
-  // shard died with `vitest: not found` (exit 127) — three seconds after a
-  // green cache step. Nothing in the action's own shape said it was broken.
+  // Rewriting the lean cache step once spliced out the `npm ci` steps that sat
+  // between it and the Turbo block: a missed key restored nothing, installed
+  // nothing, and the shard died with `vitest: not found`.
   it('still installs when neither node_modules cache hits', () => {
     const setup = readFileSync(
       join(ROOT, '.github', 'actions', 'setup', 'action.yml'),
@@ -168,8 +204,6 @@ describe('lean dependency archive', () => {
       'no `Install dependencies` step in the setup action',
     ).not.toBeNull();
     const condition = (install as RegExpExecArray)[1];
-    // Every cache step that can satisfy the install must be consulted; one
-    // missing from the condition means `npm ci` is skipped on its miss.
     for (const id of [...setup.matchAll(/id: (node-modules-cache-\w+)/g)].map(
       (m) => m[1],
     ))
@@ -178,9 +212,5 @@ describe('lean dependency archive', () => {
         `\`Install dependencies\` does not consult ${id}, so a miss on that cache ` +
           'would skip `npm ci` and leave the job with no node_modules.',
       ).toContain(id);
-  });
-
-  it('does not trim date-fns — four node-lane packages import it', () => {
-    expect(excluded).not.toContain('date-fns');
   });
 });
