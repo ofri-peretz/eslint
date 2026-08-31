@@ -145,58 +145,68 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * The `var`/`let` declaration a name resolves to, if that is what it is.
+     *
+     * `export { x }` names a BINDING, so the question is which declaration
+     * that name resolves to — not whether the characters `export { x }`
+     * appear somewhere in the file.
+     *
+     * An export declaration is only legal at the top level, so there is no
+     * scope chain to walk: the name is either in the module scope or is not
+     * declared in this file at all.
+     */
+    function mutableDeclaration(
+      node: TSESTree.Node,
+      name: string,
+    ): { id: TSESTree.Identifier; kind: 'var' | 'let' } | null {
+      const variable = context.sourceCode.getScope(node).set.get(name);
+      if (!variable) return null;
+
+      for (const def of variable.defs) {
+        // An `import`ed binding re-exported unchanged is the exporting
+        // module's business, not this one's.
+        if (def.type !== 'Variable') continue;
+        const { kind } = def.parent;
+        if (kind === 'var' || kind === 'let') return { id: def.name, kind };
+      }
+      return null;
+    }
+
     return {
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        if (
-          !node.declaration ||
-          node.declaration.type !== 'VariableDeclaration'
-        ) {
-          return;
-        }
-
-        const { kind, declarations } = node.declaration;
-
-        // Only check var and let declarations
-        if (kind !== 'var' && kind !== 'let') {
-          return;
-        }
-
-        declarations.forEach((decl: TSESTree.VariableDeclarator) => {
-          checkPattern(decl.id, kind);
-        });
-      },
-
-      // Also check for re-exports that might be mutable
-      // This is more complex as it requires following the import chain
-      VariableDeclaration(node: TSESTree.VariableDeclaration) {
-        // Check if this variable declaration is exported
-        const parent = (node as { parent?: TSESTree.Node }).parent;
-        if (parent && parent.type === 'ExportNamedDeclaration') {
-          // This is already handled above
-          return;
-        }
-
-        // Check if this variable is exported elsewhere in the file
-        // This is a simplified check - a full implementation would need to track all exports
-        const sourceCode = context.sourceCode;
-        const fileText = sourceCode.getText();
-
-        if (node.kind === 'var' || node.kind === 'let') {
-          node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
-            if (decl.id.type === 'Identifier') {
-              const varName = decl.id.name;
-
-              // Check if this variable is exported later in the file
-              // This is a heuristic - real implementation would need AST analysis
-              const exportPattern = new RegExp(
-                `export\\s*{\\s*${varName}\\s*}`,
-                'g',
-              );
-              if (exportPattern.test(fileText)) {
-                reportMutableExport(decl.id, varName, node.kind);
-              }
-            }
+        if (node.declaration?.type === 'VariableDeclaration') {
+          const { kind, declarations } = node.declaration;
+          if (kind !== 'var' && kind !== 'let') {
+            return;
+          }
+          declarations.forEach((decl: TSESTree.VariableDeclarator) => {
+            checkPattern(decl.id, kind);
           });
+          return;
+        }
+
+        // `export { x } from './m'` re-exports another module's binding. It
+        // says nothing about anything declared here, and a local `let x`
+        // that happens to share the name is unrelated.
+        if (node.source) {
+          return;
+        }
+
+        for (const specifier of node.specifiers) {
+          // `local` can only be a string literal in a re-export
+          // (`export { "a" as b } from './m'`), and those returned above.
+          const declaration = mutableDeclaration(node, (specifier.local as TSESTree.Identifier).name);
+          if (!declaration) continue;
+
+          // The option is spelled `ignoreExports`, so it matches the name the
+          // module publishes — `bar` in `export { foo as bar }`.
+          const exported =
+            specifier.exported.type === 'Identifier'
+              ? specifier.exported.name
+              : specifier.exported.value;
+
+          reportMutableExport(declaration.id, exported, declaration.kind);
         }
       },
     };

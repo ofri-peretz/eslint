@@ -31,6 +31,10 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  APP_RECEIVER_SCHEMA,
+  isAppReceiver,
+} from '../../utils/app-receiver';
+import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -40,6 +44,13 @@ import {
 type MessageIds = 'permissiveTrustProxy' | 'useHopCount';
 
 export interface Options {
+  /**
+   * Identifiers that hold the Express app or a router. REPLACES the default
+   * — see `DEFAULT_APP_RECEIVER_NAMES` for why the name has to be the
+   * consumer's.
+   */
+  appReceiverNames?: string[];
+
   /**
    * Number of reverse proxies in front of the app, used in the suggested fix.
    * Default: 1.
@@ -52,11 +63,12 @@ type RuleOptions = [Options?];
 const TRUST_PROXY = 'trust proxy';
 
 /** Receivers that are an Express application/router in practice. */
-const APP_RECEIVER = /^(app|server|router|express)$/i;
+
 
 function isAppMethodCall(
   node: TSESTree.CallExpression,
   method: string,
+  appReceiverNames: string[] | undefined,
 ): boolean {
   const callee = node.callee;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
@@ -64,7 +76,7 @@ function isAppMethodCall(
   if (callee.computed) return false;
   if (callee.property.name !== method) return false;
   if (callee.object.type !== AST_NODE_TYPES.Identifier) return false;
-  return APP_RECEIVER.test(callee.object.name);
+  return isAppReceiver(callee.object.name, appReceiverNames);
 }
 
 function isTrustProxyLiteral(node: TSESTree.Node | undefined): boolean {
@@ -106,6 +118,7 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          ...APP_RECEIVER_SCHEMA,
           hopCount: {
             type: 'number',
             minimum: 1,
@@ -124,7 +137,7 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
     // path — a file with no Express in it does no work.
     if (!fileUsesExpress(context.sourceCode.ast)) return {};
 
-    const { hopCount } = options as Options;
+    const { hopCount, appReceiverNames } = options as Options;
     const hops = hopCount ?? 1;
 
     function report(node: TSESTree.Node, replacement: string): void {
@@ -146,7 +159,7 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // app.enable('trust proxy')
-        if (isAppMethodCall(node, 'enable')) {
+        if (isAppMethodCall(node, 'enable', appReceiverNames)) {
           if (!isTrustProxyLiteral(node.arguments[0])) return;
           const receiver = context.sourceCode.getText(
             (node.callee as TSESTree.MemberExpression).object,
@@ -156,7 +169,7 @@ export const noPermissiveTrustProxy = createRule<RuleOptions, MessageIds>({
         }
 
         // app.set('trust proxy', true)
-        if (!isAppMethodCall(node, 'set')) return;
+        if (!isAppMethodCall(node, 'set', appReceiverNames)) return;
         if (!isTrustProxyLiteral(node.arguments[0])) return;
         const value = node.arguments[1];
         if (

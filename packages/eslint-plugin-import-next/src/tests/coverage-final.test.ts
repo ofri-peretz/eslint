@@ -113,17 +113,24 @@ ruleTester.run('no-extraneous-dependencies (final)', noExtraneousDependencies, {
 ruleTester.run('no-mutable-exports (final)', noMutableExports, {
   valid: [
     {
-      name: 'destructured standalone declaration is not matched by the export regex',
-      code: `const obj = { a: 1 }; let { a } = obj; export { a };`,
-    },
-    {
       // Known false negative of the rule: assignment-pattern elements are
       // not descended into, so the binding escapes detection.
       name: 'default-valued array elements are skipped by checkPattern',
       code: `const arr = [1]; export let [x = 1] = arr;`,
     },
   ],
-  invalid: [],
+  invalid: [
+    {
+      // FN: this was a `valid` fixture named "is not matched by the export
+      // regex" — the name is the tell. The old implementation grepped the
+      // file for `export\s*{\s*<name>\s*}` built from the DECLARATOR's
+      // name, and a destructured declarator has no single name to build it
+      // from, so a genuinely mutable export went unreported and the miss was
+      // sealed as intended behaviour.
+      name: 'FN: a destructured let that is exported',
+      code: `const obj = { a: 1 }; let { a } = obj; export { a };`,
+      errors: [{ messageId: 'letExport' }],
+    },],
 });
 
 describe('no-mutable-exports — Layer 2 (final)', () => {
