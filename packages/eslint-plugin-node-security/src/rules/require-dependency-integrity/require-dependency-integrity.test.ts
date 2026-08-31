@@ -20,6 +20,9 @@ ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
     // Non-CDN resources
     { code: "const script = '<script src=\"/local/app.js\"></script>'" },
     { code: "const x = 1" },
+    // TAGGED template, every quasi an invalid escape: `cooked` is null
+    // throughout, so `renderTemplate` reads `raw` — and raw holds no CDN tag.
+    { code: "tag`\\unicode${x}\\unicode`" },
   ],
 
   invalid: [
@@ -38,6 +41,14 @@ ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
     },
     { 
       code: "`<script src=\"https://jsdelivr.net/lib.js\"></script>`",
+      errors: [{ messageId: 'violationDetected' }]
+    },
+    // The positive control for the null-`cooked` fallback: quasis[0] cooks
+    // normally and carries the tag, the TRAILING quasi is an invalid escape and
+    // cooks to null. The tag is still found — a null quasi must not swallow the
+    // rest of the template.
+    {
+      code: "tag`<script src=\"https://jsdelivr.net/lib.js\"></script>${x}\\unicode`",
       errors: [{ messageId: 'violationDetected' }]
     },
   ],

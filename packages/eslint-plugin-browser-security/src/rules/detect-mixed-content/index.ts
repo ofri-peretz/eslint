@@ -101,7 +101,19 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         const cooked = node.quasis[0]?.value.cooked;
         if (
-          cooked !== undefined &&
+          // `!= null`, not `!== undefined`: @typescript-eslint 8.68.0 nulls
+          // `cooked` for an invalid escape (8.54.0 handed back the raw text),
+          // and this visitor also sees the quasis of TAGGED templates.
+          //
+          // Skipping, NOT `?? raw` as the sibling rules do, and deliberately.
+          // `isSubresourcePosition` below reads `node.parent`; for a tagged
+          // quasi that parent is the `TaggedTemplateExpression`, never the
+          // `src=` it sits under, so the tagged shape cannot report here
+          // whichever text is read. `?? raw` would add a branch no input can
+          // reach — proven by writing the reporting test and watching it find
+          // 0 errors. It is also the safer half: for an arbitrary tag, `raw`
+          // is what the TAG receives, not what the browser loads.
+          cooked != null &&
           CLEARTEXT_SCHEME.test(cooked) &&
           !isTrustworthyLocalUrl(cooked) &&
           isSubresourcePosition(node)

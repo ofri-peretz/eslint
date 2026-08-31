@@ -65,6 +65,13 @@ describe('utm-taxonomy', () => {
         code: 'const url = "https://eslint.interlace.tools/?utm_source=Blog";',
         errors: [{ messageId: 'invalidUtmSource' }],
       },
+      // A TAGGED template whose escape has no cooked value: null as of
+      // @typescript-eslint 8.68.0, the raw text under 8.54.0. Reading only
+      // `cooked` drops the quasi and the bad source ships unreported.
+      {
+        code: 'const url = String.raw`https://eslint.interlace.tools/?utm_source=Blog \\x`;',
+        errors: [{ messageId: 'invalidUtmSource' }],
+      },
       {
         code: 'const url = "https://eslint.interlace.tools/?utm_source=blog_v2";',
         errors: [{ messageId: 'invalidUtmSource' }],

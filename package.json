@@ -357,7 +357,7 @@
     "tslib": "^2.8.1",
     "turbo": "^2.9.8",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.54.0",
+    "typescript-eslint": "^8.68.0",
     "unified": "^11.0.5",
     "verdaccio": "^6.10.1",
     "vite": "^7.3.1",

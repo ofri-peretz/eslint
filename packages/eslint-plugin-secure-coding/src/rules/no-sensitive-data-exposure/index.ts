@@ -514,7 +514,7 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         // splits into `token=` and ``, and neither half satisfies "label,
         // separator, then a value" - the value is the hole between them.
         const INTERPOLATION = '\u0001'; // cannot occur in source text
-        const joined = arg.quasis.map((q) => q.value.cooked).join(INTERPOLATION);
+        const joined = arg.quasis.map((q) => q.value.cooked!).join(INTERPOLATION);
         // The prose names a credential; the interpolations name themselves an
         // outcome. When EVERY hole is a diagnostic accessor the label is
         // describing the operation that failed, not the value being printed —

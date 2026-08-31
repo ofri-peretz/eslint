@@ -132,8 +132,12 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
       },
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         for (const quasi of node.quasis) {
-          if (quasi.value.cooked && quasi.value.cooked.includes('utm_')) {
-            checkString(quasi, quasi.value.cooked);
+          // `cooked` is null for an invalid escape as of @typescript-eslint
+          // 8.68.0; 8.54.0 handed back the raw text. This is a bare
+          // `TemplateLiteral` visitor, so a TAGGED template reaches it.
+          const text = quasi.value.cooked ?? quasi.value.raw;
+          if (text.includes('utm_')) {
+            checkString(quasi, text);
           }
         }
       },

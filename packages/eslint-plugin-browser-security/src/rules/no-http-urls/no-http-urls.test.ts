@@ -124,6 +124,13 @@ ruleTester.run('no-http-urls', noHttpUrls, {
       code: 'const u = `http://api.${env}.acmecorp.io/x`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
+    // A TemplateElement whose escape has no cooked value — null as of
+    // @typescript-eslint 8.68.0, the raw text under 8.54.0. The host is still
+    // written down, so dropping the quasi would lose a real finding.
+    {
+      code: 'const u = String.raw`http://api.acmecorp.io/x \\x`;',
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
     // A tail template with no chunk after it is not an interpolation, so a host
     // written down in one is judged normally. This used to be asserted with
     // `` `http://` ``, which no longer reports — a bare scheme names no host,

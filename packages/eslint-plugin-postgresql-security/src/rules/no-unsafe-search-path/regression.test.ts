@@ -261,6 +261,15 @@ describe('no-unsafe-search-path — regression locks', () => {
         code: 'client.query(String.raw`SET search_path TO ${s}`);',
         errors: error,
       },
+      {
+        // @typescript-eslint 8.68.0 nulls `cooked` for an invalid escape;
+        // 8.54.0 handed back the raw text. `String.raw` is exactly the tag
+        // whose raw text IS what the server sees, so the statement must still
+        // be read rather than dropped.
+        name: 'lock: String.raw with an escape the cooked value cannot hold',
+        code: 'client.query(String.raw`SET search_path TO ${s} \\x`);',
+        errors: error,
+      },
       // A call part is raw HERE even though it is the fix for CWE-89: quoting
       // an attacker-chosen schema does not stop the hijack.
       {

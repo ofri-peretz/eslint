@@ -176,9 +176,14 @@ export function staticStringValue(node: TSESTree.Node): string | undefined {
     node.expressions.length === 0
   ) {
     // `quasis.length === expressions.length + 1`, so with no interpolations
-    // there is exactly one quasi. No fallback branch, because there is no
-    // input that reaches one.
-    return node.quasis[0]!.value.cooked;
+    // there is exactly one quasi.
+    //
+    // `cooked` is null for an invalid escape, which only a TAGGED template may
+    // hold — and the `Literal, TemplateLiteral` visitor below reaches those
+    // quasis. `raw` is the credential as written, so falling back to it keeps
+    // the URL readable instead of knowable-as-nothing.
+    const [{ value }] = node.quasis;
+    return value.cooked ?? value.raw;
   }
   return undefined;
 }

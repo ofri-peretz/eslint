@@ -62,7 +62,7 @@ function statementText(node: TSESTree.Node): string | null {
   // SQL arrives that way constantly. The rule read only `Literal`, so
   // `pool.query(`BEGIN`)` was silent.
   if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length === 0) {
-    return node.quasis.map((q) => q.value.cooked).join('').trim();
+    return node.quasis.map((q) => q.value.cooked!).join('').trim();
   }
   // node-postgres also takes a config object: `pool.query({ text, values })`.
   // Found by the adversarial wave — it is the same call written the other

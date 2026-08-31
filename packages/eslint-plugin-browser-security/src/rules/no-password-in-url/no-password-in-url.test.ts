@@ -93,6 +93,14 @@ ruleTester.run('no-password-in-url — adversarial', noPasswordInUrl, {
     "fetch('https://ghp_token:@git.acme-corp.io/repo');",
   ],
   invalid: [
+    // A TAGGED template whose escape has no cooked value: null as of
+    // @typescript-eslint 8.68.0, the raw text under 8.54.0. `check` is wired to
+    // a `TemplateLiteral` visitor, so this quasi reaches `foldUrlText` — read
+    // only `cooked` and the credential ships unreported.
+    {
+      code: 'fetch(String.raw`https://reporting:s3cr3t@api.acme-corp.io/v1 \\x`);',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // A template with no expressions is exactly as static as a string.
     {
       code: 'const API = `https://reporting:s3cr3t@api.acme-corp.io/v1`; fetch(API);',

@@ -319,7 +319,11 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
         }
       },
       TemplateElement(node) {
-        const cooked = node.value.cooked;
+        // `cooked` is null for an invalid escape as of @typescript-eslint
+        // 8.68.0; 8.54.0 handed back the raw text. This selector is a bare
+        // `TemplateElement` visitor, so a TAGGED template reaches it and the
+        // host is still written down — dropping the quasi loses a real finding.
+        const cooked = node.value.cooked ?? node.value.raw;
         if (cooked && !hasInterpolatedAuthority(node, cooked)) {
           checkStringValue(node, cooked);
         }

@@ -64,6 +64,13 @@ describe('no-arbitrary-token-class', () => {
         code: `cn("rounded-[12px]")`,
         errors: [{ messageId: 'arbitraryClass' }],
       },
+      // Tagged template with an invalid escape: `cooked` is null, so the scan
+      // falls back to `raw`. Without the fallback this quasi is skipped and the
+      // arbitrary class ships unreported.
+      {
+        code: '<div className={tag`\\unicode rounded-[12px]`} />',
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
     ],
   });
 });

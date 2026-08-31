@@ -92,8 +92,8 @@
     "@eslint-community/regexpp": "^4.10.0"
   },
   "devDependencies": {
-    "@typescript-eslint/parser": "^8.46.2",
-    "@typescript-eslint/rule-tester": "^8.46.2",
+    "@typescript-eslint/parser": "^8.68.0",
+    "@typescript-eslint/rule-tester": "^8.68.0",
     "recheck": "^4.5.0"
   },
   "peerDependencies": {

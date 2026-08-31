@@ -76,7 +76,11 @@ export const noArbitraryTokenClass = createRule<RuleOptions, MessageIds>({
       },
       // className={`...`} template literal (static parts only)
       'JSXAttribute[name.name="className"] TemplateElement'(node: TSESTree.TemplateElement) {
-        scanString(node, node.value.cooked);
+        // `cooked` is null for an invalid escape as of @typescript-eslint
+        // 8.68.0; 8.54.0 handed back the raw text. This selector reaches the
+        // quasis of TAGGED templates, and the raw source is still the text an
+        // author reads as class names.
+        scanString(node, node.value.cooked ?? node.value.raw);
       },
       // cn("...", "...") / clsx(...) string args
       CallExpression(node: TSESTree.CallExpression) {
