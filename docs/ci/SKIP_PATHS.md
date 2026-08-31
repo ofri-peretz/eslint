@@ -136,14 +136,32 @@ an issue**, or it is not covered — a red cron notifies nobody by default.
 | Release tag/version drift | `release-hygiene.yml` | Wed 05:13 | ✅ |
 | Runner resource profile | `resource-profile.yml` | monthly | ✅ |
 | Corpus scan | `weekly-corpus-scan.yml` | Mon 06:00 | ✅ |
-| OSSF Scorecard | `scorecard.yml` | Tue 04:23 | ❌ **gap** |
-| Benchmark suite | `weekly-benchmark.yml` | Mon 09:00 | ❌ **gap** |
+| OSSF Scorecard | `scorecard.yml` | Tue 04:23 + push to main | ✅ |
+| Benchmark suite | `weekly-benchmark.yml` | Mon 09:00 | ✅ |
+
+The last two had no failure channel at all until this file was written, which
+is the argument for writing it down: nobody decided they should be silent, they
+just were.
+
+- **`scorecard.yml`** reports on `failure()` with no `event_name` filter,
+  unlike the crons that already report. It also runs on push to `main`, and a
+  post-merge failure is exactly as unwatched as a scheduled one.
+- **`weekly-benchmark.yml`** reports on
+  `always() && (failure() || steps.flagship.outcome == 'failure' || …)`. Its
+  flagship steps are `continue-on-error`, so the job can finish **green having
+  published half of what it measures** — a partial refresh has to reach the
+  channel too, not just a red run.
+
+`.github/actions/report-failure` dedupes by title — one issue, commented on —
+so a persistent failure cannot turn the channel into noise and get muted.
 
 ### Known gaps
 
-1. **`scorecard.yml` and `weekly-benchmark.yml` do not open an issue on
-   failure.** A red run is invisible unless someone looks at the Actions tab.
-2. **Cadence is weekly, not 6-hourly.** A regression that only a cron catches
-   can sit for up to seven days.
-3. `bench_configs` gating and the `build` cache inputs are **read, not
+1. **Cadence is weekly, not 6-hourly.** A regression only a cron catches can
+   sit for up to seven days.
+2. `bench_configs` gating and the `build` cache inputs are **read, not
    experimentally verified** — the two rows above marked as such.
+3. **Nothing re-proves the cache invalidation.** The `test.dependsOn` hole in
+   §2 was found by asking the right question at the right moment, not by a
+   check. Its lock covers one upstream/dependent pair; the property is true
+   today and unguarded for every other pair tomorrow.
