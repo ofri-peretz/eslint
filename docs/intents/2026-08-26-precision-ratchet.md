@@ -14,6 +14,7 @@ packages:
   - eslint-plugin-modernization
   - eslint-plugin-modularity
   - eslint-plugin-mongodb-security
+  - eslint-plugin-nestjs-security
   - eslint-plugin-node-security
   - eslint-plugin-operability
   - eslint-plugin-postgresql-security

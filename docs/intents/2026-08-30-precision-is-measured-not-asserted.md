@@ -13,9 +13,23 @@ rule's author did not write.
 ```
 373 rules can carry a corpus fixture
   exercised by any fixture   : 226 (61%)
-  by an INDEPENDENT fixture  :  68 (18%)   <- what precision is measured on
+  by a CURATED fixture       :  73 (20%)   <- written here, reviewed here
+  by a SOURCED fixture       :   4 ( 1%)   <- traced to code we did not write
   unmeasured                 : 147
 ```
+
+**Corrected 2026-08-30.** This intent opened against a number that said 68
+rules (18%) had an INDEPENDENT fixture. That number was false, and it was
+false in exactly the way this intent exists to prevent.
+
+`check-corpus-coverage.ts` computed it by selecting fixtures whose PATH matched
+`benchmarks/corpus/CWE-*`. Every fixture under those paths was written in this
+repository — of the 154 curated fixtures, 85 are `@author claude-fable-5` and
+48 are `@author ofri-peretz`. Three record a `@source`. The gate meant to
+enforce "a fixture written by whoever is fixing the rule is a unit test in a
+different directory" was measuring the directory.
+
+The real starting point is **4 rules**.
 
 Target the rules that appear in a `recommended` preset first, since those are
 the ones a consumer gets without choosing them.
@@ -27,7 +41,7 @@ This is the honest floor under every precision claim we make.
 A unit test answers "does this rule behave as its author intended". It cannot
 answer "how often is this rule wrong about real code", because the same person
 wrote the rule and the fixture. Only an independent fixture produces a number
-that can contradict us — and **68 rules have one.**
+that can contradict us — and **4 rules have one.**
 
 Everything downstream inherits that. The scorecard weights correctness at 30%.
 The articles quote F1. The head-to-head against `eslint-plugin-security` is
@@ -35,7 +49,9 @@ defensible because `detect-object-injection` is one of the 68; for most rules
 the same comparison could not be made honestly.
 
 `check:corpus-coverage` already stops the number getting worse. Nothing makes
-it better, and 18% is not a floor anyone should be comfortable standing on.
+it better, and 1% is not a floor anyone should be comfortable standing on.
+
+The 18% that stood here before was worse than no number: it was reassuring.
 
 ## Constraints
 
@@ -58,9 +74,18 @@ it better, and 18% is not a floor anyone should be comfortable standing on.
 
 ## Done when
 
-- Rules measured by an INDEPENDENT fixture: **68 → 120**.
-- Every rule in a `recommended` preset either has an independent fixture or a
+- Rules measured by a SOURCED fixture: **4 → 60**.
+
+  The old target read 68 → 120 against the path-selected count. Restated
+  against provenance, because moving the honest number is the point and the
+  old one could be moved by writing more of our own fixtures.
+- Every rule in a `recommended` preset either has a SOURCED fixture or a
   recorded reason it cannot.
+- Every `@source` pins a commit and a path — `owner/repo@<sha> path:line` — so
+  the claim can be checked by someone who does not trust us.
+  `scripts/real-source-scan.mts` already produces that coordinate; it clones a
+  committed list of stranger repositories and reports which rules fire.
 - `benchmarks/budgets/corpus-coverage-baseline.json` shrinks by at least 50.
 - `benchmark-results/scorecard.md` shows fewer `⚠️ none` rows than it does
-  today, and the new figure replaces 18% in `AI_SDLC.md`.
+  today, and the SOURCED figure is the one quoted anywhere precision is
+  claimed.

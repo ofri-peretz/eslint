@@ -189,19 +189,49 @@ const rules = allRules();
 const fired = rulesWithCorpusEvidence();
 
 /*
- * Two coverage numbers, because they answer different questions.
+ * Three coverage numbers, because they answer different questions.
  *
  * `fired` counts any corpus fixture, including benchmarks/corpus/by-rule/,
  * where a rule's fixture is its own test case — so it fires by construction.
  * That is fine for "is this rule exercised at all", which is what the ratchet
  * guards, but it must not be read as measured precision.
  *
- * `firedIndependent` counts only the hand-reviewed CWE-NNN fixtures, which are
- * the ones the published precision figure is computed from.
+ * `firedCurated` counts the hand-reviewed CWE-NNN and CVE fixtures.
+ *
+ * `firedSourced` counts only fixtures TRACED TO CODE WE DID NOT WRITE.
+ *
+ * ## Why the third number had to exist
+ *
+ * The second one was called INDEPENDENT and labelled "what precision is
+ * measured on", and it was neither. It selected on the DIRECTORY a fixture
+ * sits in, and every fixture in those directories was written here: of 154,
+ * 85 are `@author claude-fable-5` and 48 are `@author ofri-peretz`. Three
+ * carry a `@source`.
+ *
+ * That is the exact failure this intent was opened about — "a fixture written
+ * by whoever is fixing the rule is a unit test in a different directory" — and
+ * the gate meant to enforce it was measuring the directory. A number that
+ * counts our own fixtures cannot contradict us, which is the only thing a
+ * precision figure is for.
+ *
+ * Provenance is a claim a file makes about itself, so it has to be written
+ * down in the file: `@source <repo>@<sha> <path>:<line>`, pinned to a commit
+ * so the claim can be checked. `scripts/real-source-scan.mts` produces exactly
+ * that coordinate.
  */
-const firedIndependent = rulesWithCorpusEvidence([
-  'benchmarks/corpus/CWE-*/**/*.js',
-]);
+const CURATED = ['benchmarks/corpus/CWE-*/**/*.js', 'benchmarks/corpus/CVE/**/*.js'];
+const firedCurated = rulesWithCorpusEvidence(CURATED);
+
+/** Fixture files that record where their code came from. */
+function sourcedFixtures(): string[] {
+  return fs
+    .globSync(CURATED, { cwd: ROOT })
+    .filter((rel) => /^\/\/ @source\s+\S+/m.test(fs.readFileSync(path.join(ROOT, rel), 'utf8')));
+}
+
+const sourced = sourcedFixtures();
+const firedSourced =
+  sourced.length > 0 ? rulesWithCorpusEvidence(sourced) : new Set<string>();
 const unmeasured = rules
   .map(canonical)
   .filter((r) => !fired.has(r) && !NOT_FIXTURABLE.has(r))
@@ -216,17 +246,19 @@ const fixturable = rules.length - NOT_FIXTURABLE.size;
 const measured = fixturable - unmeasured.length;
 const pct = Math.round((measured / fixturable) * 100);
 
-const independent = rules
-  .map(canonical)
-  .filter((r) => firedIndependent.has(r)).length;
+const curated = rules.map(canonical).filter((r) => firedCurated.has(r)).length;
+const traced = rules.map(canonical).filter((r) => firedSourced.has(r)).length;
 console.log(
   `\n${fixturable} rules can carry a corpus fixture` +
     (NOT_FIXTURABLE.size > 0
       ? ` (${NOT_FIXTURABLE.size} cannot — see NOT_FIXTURABLE)\n`
       : '\n') +
     `  exercised by any fixture      : ${measured} (${pct}%)\n` +
-    `  by an INDEPENDENT fixture     : ${independent} (${Math.round((independent / rules.length) * 100)}%)  <- what precision is measured on\n` +
-    `  unmeasured                    : ${unmeasured.length}\n`,
+    `  by a CURATED fixture          : ${curated} (${Math.round((curated / fixturable) * 100)}%)  <- written here, reviewed here\n` +
+    `  by a SOURCED fixture          : ${traced} (${Math.round((traced / fixturable) * 100)}%)  <- traced to code we did not write\n` +
+    `  unmeasured                    : ${unmeasured.length}\n` +
+    `\n  ${sourced.length} of ${fs.globSync(CURATED, { cwd: ROOT }).length} curated fixtures record a @source.\n` +
+    '  Only the SOURCED number can contradict us; the CURATED one cannot.\n',
 );
 
 if (UPDATE) {

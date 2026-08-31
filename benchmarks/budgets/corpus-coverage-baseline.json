@@ -1,7 +1,7 @@
 {
   "note": "Rules with no corpus fixture, and therefore no measured precision. May only shrink — see scripts/check-corpus-coverage.ts.",
   "total": 374,
-  "measured": 227,
+  "measured": 226,
   "unmeasured": [
     "anthropic-security/no-browser-api-key-exposure",
     "anthropic-security/no-untrusted-content-in-prompt",
