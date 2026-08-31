@@ -30,7 +30,7 @@ const SCRIPT = path.join(REPO_ROOT, 'scripts', 'ci-test-shard.mts');
  * it. Every test below therefore works on the union.
  */
 const LANES = [
-  { lane: 'node', total: 10 },
+  { lane: 'node', total: 4 },
   { lane: 'web', total: 3 },
 ] as const;
 

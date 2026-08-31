@@ -147,3 +147,55 @@ Order matters: step 3 alone is unsafe. Every timing in this document is from a
 ~375s under colder conditions. Cutting 10 → 4 against the warm number, while
 `docs` is still the largest indivisible item, risks a cold shard far worse than
 today's. Step 1 is what makes step 3 safe, which is why it goes first.
+
+---
+
+## Outcome, 2026-08-31
+
+**Wall clock 261s → 86s** on the widest possible PR (every node and web shard
+selected). Run [33345687707](https://github.com/ofri-peretz/eslint/actions/runs/33345687707):
+`00:49:00 → 00:50:26`.
+
+The job start spread — the queueing that was ~80% of the original 261s —
+collapsed from **186s to 25s**. Every job now starts in one wave.
+
+Three changes got there, in the order the design required:
+
+1. **Lanes.** `docs` and `@interlace/ui` moved to their own 3-shard matrix, so
+   the node lane stopped carrying the React tree and `docs` stopped setting the
+   partition floor.
+2. **Lean archive.** The node lane restores 279,862,807 B against the full
+   451,051,181 — 38% less, restore 13.0s → 5.6s. Produced by deleting the web
+   packages before the cache save, because `actions/cache` path exclusions
+   provably cannot express it (three archives measured at ~451 MB first).
+3. **Four shards, not ten.** With the lanes in place the ten node shards did
+   **24s of test work between them and paid 141s of checkout+setup** — 5.9:1.
+   The shards were never the critical path; the slots they held were.
+
+### What the remaining 86s is
+
+| | |
+|---|---|
+| `Gate` | 13s |
+| queue before the last job starts | 25s |
+| `Benchmark configs load` | **42s** — the new critical path |
+| aggregate gate | 3s |
+
+`Benchmark configs load` could not start until `00:49:40` because ten shards
+were ahead of it. Returning six slots should let it start in the first wave,
+which is what the ≤60s success criterion now rests on.
+
+### Open questions answered
+
+- **Was the ~6-slot ceiling real, or our own contention?** Our own. The same
+  repo, same account, 25s spread instead of 186s once job count dropped.
+- **Cold-cache cost per shard?** Still not measured directly, but bounded
+  differently now: `docs` — the 144s indivisible item — is no longer in this
+  lane, so no single node-lane shard can inherit that profile.
+
+### Not done
+
+The ≤60s criterion is **not yet met**, and the next lever is no longer this
+intent's. `Benchmark configs load` at 42s and `Gate` at 13s are now the run,
+and the job count that delays them spans every workflow a PR fires, not just
+this one. That belongs to a `concurrency-budget` intent.

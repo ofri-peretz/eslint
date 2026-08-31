@@ -131,6 +131,15 @@ jobs:
         with:
           turbo-cache: 'false'
           install: 'false'
+      # Four, not ten. Measured on run 33345687707 with the lanes in place: the
+      # ten node-lane shards did 24s of test work between them and paid 141s of
+      # checkout+setup — 5.9:1. The shards were never the critical path; the
+      # slots they held were. `Benchmark configs load` (42s) could not start
+      # until 00:49:40 because ten shards were ahead of it, and the run's wall
+      # clock is gate + that queue + 42s.
+      #
+      # Four keeps a cold shard bounded (docs, the 144s indivisible item, left
+      # this lane in the same change) while returning six slots to the wave.
       - id: matrix
         if: steps.decide.outputs.run == 'true'
         env:
@@ -140,7 +149,7 @@ jobs:
           # fetches refs/pull/N/merge and nothing else — so merge-base against
           # it always failed and every PR silently ran the full matrix.
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
-        run: node scripts/ci-test-shard.mts --matrix 10 --lane node
+        run: node scripts/ci-test-shard.mts --matrix 4 --lane node
 
       # The web lane: `docs` and `@interlace/ui`, the only two workspaces whose
       # tests need the Next.js/React tree. Kept to a separate, small matrix so
@@ -264,7 +273,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$ANY" = "true" ] || [ "$WEB_ANY" = "true" ]; then
-            headline="Unit tests ran: ${COUNT} of 10 node-lane shards and ${WEB_COUNT} of 3 web-lane shards held affected packages."
+            headline="Unit tests ran: ${COUNT} of 4 node-lane shards and ${WEB_COUNT} of 3 web-lane shards held affected packages."
           else
             headline="Unit tests skipped: no package source changed vs the base commit, so no shard in either lane had anything to run."
           fi
@@ -281,7 +290,7 @@ jobs:
             echo "| \`heavy\` | ${HEAVY} | whether Typecheck / Portability were dispatched |"
             echo ""
             echo "Affected packages are computed against \`${BASE}\` by"
-            echo "\`scripts/ci-test-shard.mts --matrix 10\`. \`scripts/__tests__\` is outside every"
+            echo "\`scripts/ci-test-shard.mts --matrix 4 --lane node\`. \`scripts/__tests__\` is outside every"
             echo "workspace and runs unconditionally in **Script & Repo-Config Locks**, so a"
             echo "skip here never means *nothing* was verified."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -407,7 +416,7 @@ jobs:
   # Going past 10 cannot shorten the critical path; it only adds ~17s-overhead
   # jobs that finish early. Dropping below 83 means splitting `docs` itself.
   test:
-    name: Unit Tests — node lane (${{ matrix.shard }}/10)
+    name: Unit Tests — node lane (${{ matrix.shard }}/4)
     needs: gate
     if: needs.gate.outputs.run == 'true' && needs.gate.outputs.any == 'true'
     runs-on: ubuntu-latest
@@ -436,7 +445,7 @@ jobs:
           # anything in the web tree, so this shard skips ~600 MB of it. See
           # the input's docs and scripts/__tests__/lane-deps-lock.test.ts.
           deps: 'lean'
-      - name: Run shard ${{ matrix.shard }} of 10
+      - name: Run shard ${{ matrix.shard }} of 4
         env:
           # Affected-filter on PRs; run the full battery everywhere else.
           # A PR's blast radius is knowable from its diff, so most PRs test 1-2
@@ -448,7 +457,7 @@ jobs:
           # fetches refs/pull/N/merge and nothing else — so merge-base against
           # it always failed and every PR silently ran the full matrix.
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
-        run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10 --lane node
+        run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 4 --lane node
 
       # Workspace-level locks: keep slow, unbounded work out of the lefthook
       # pre-commit path — SDK compat suites excluded from the default run (and
@@ -759,7 +768,7 @@ jobs:
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
             echo "| Gate                | $(icon "$R_GATE") $R_GATE               | draft/label decision |"
-            echo "| Unit tests (node)   | $(icon "$R_TEST") $R_TEST               | plugins/devkit/tools — 10 shards, lean deps, affected-filtered |"
+            echo "| Unit tests (node)   | $(icon "$R_TEST") $R_TEST               | plugins/devkit/tools — 4 shards, lean deps, affected-filtered |"
           echo "| Unit tests (web)    | $(icon "$R_TEST_WEB") $R_TEST_WEB       | \`docs\` + \`@interlace/ui\` — 3 shards, full deps |"
             echo "| Script/config locks | $(icon "$R_SCRIPTS") $R_SCRIPTS         | \`scripts/__tests__\` — outside every workspace |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\`, 4 shards, affected-filtered |"
