@@ -1,8 +1,13 @@
-# Intent: eleven plugins report no coverage at all
+# Intent — eleven plugins report no coverage at all
 
-Author: O. Peretz (with Claude). Status: review.
+> Stage 1 artifact of the AI-native SDLC. Opened from the link-and-name map, which
+> surfaced eleven packages with no Codecov component behind their badge.
 
-## Problem
+**Status:** review · **Opened:** 2026-08-26 · **Owner:** @ofri-peretz
+
+---
+
+## Why now
 
 `codecov.yml` defines 19 components for 30 plugins. The eleven without one —
 `anthropic`, `drizzle`, `gemini`, `knex`, `mcp-sdk`, `mysql`, `openai`, `prisma`,
@@ -13,7 +18,7 @@ whose Codecov badge points at `component=<pkg>`, and those URLs resolve to
 So the storefront for eleven published packages advertises a coverage badge that says
 nothing, and no gate notices, because a component that does not exist cannot fail.
 
-## Proposed outcome
+## What is wanted
 
 Every published plugin has a codecov component, and every README badge resolves to a
 real percentage.
@@ -31,6 +36,13 @@ and the `chore/coverage-100` initiative, which owns the underlying coverage work
 - The eleven are the newest plugins; several are still growing rule sets.
 - README badges are baked at publish time. A badge fixed only in the repo stays broken
   on npm until the next release of that package.
+
+## Success criteria
+
+- Every published plugin's Codecov badge resolves to a real component and renders a
+  percentage — no `unknown` on any npm page.
+- `map:names:check` has a component column with no empty cells, so the next missing
+  one fails CI instead of shipping a grey badge.
 
 ## Open questions
 

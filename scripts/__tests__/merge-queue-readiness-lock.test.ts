@@ -32,8 +32,27 @@ const WORKFLOWS = join(ROOT, '.github', 'workflows');
  * required check missing here is a required check nobody verified is
  * queue-ready. Verify with:
  *   gh api repos/ofri-peretz/eslint/branches/main/protection/required_status_checks
+ *
+ * `source` matters as much as the name. A check emitted by a workflow in this
+ * repo can be made queue-ready by adding a `merge_group:` trigger — a one-line
+ * change we control. A check posted by an INSTALLED APP cannot: apps subscribe
+ * to `pull_request`, and `refs/heads/gh-readonly-queue/...` is not a pull
+ * request, so the app never posts a status and the queue waits on a context
+ * that will never arrive. That is not a bug we can fix in this repo; the only
+ * remedies are to drop the context from the required list before enabling the
+ * queue, or to leave the queue off.
  */
-const REQUIRED_CHECKS = ['oxlint (fast pass)', 'Quality (Full) Gate'];
+const REQUIRED_CHECKS = [
+  { name: 'oxlint (fast pass)', source: 'workflow' },
+  { name: 'Quality (Full) Gate', source: 'workflow' },
+  // CodeRabbit. Verified on PR #770: reported in 1m30s on a `pull_request`
+  // event from run 33337052342, which no workflow in `.github/workflows`
+  // declares.
+  { name: 'review', source: 'app' },
+] as const satisfies readonly { name: string; source: 'workflow' | 'app' }[];
+
+const WORKFLOW_CHECKS = REQUIRED_CHECKS.filter((c) => c.source === 'workflow');
+const APP_CHECKS = REQUIRED_CHECKS.filter((c) => c.source === 'app');
 
 /** The workflow file that declares a job whose `name:` is `check`. */
 function workflowProviding(check: string): string | null {
@@ -56,19 +75,30 @@ function hasMergeGroupTrigger(file: string): boolean {
 }
 
 describe('merge queue readiness', () => {
-  it.each(REQUIRED_CHECKS)(
-    'the workflow providing %s exists and triggers on merge_group',
-    (check) => {
-      const file = workflowProviding(check);
-      expect(
-        file,
-        `no workflow declares a job named "${check}"`,
-      ).not.toBeNull();
+  it.each(WORKFLOW_CHECKS)(
+    'the workflow providing $name exists and triggers on merge_group',
+    ({ name }) => {
+      const file = workflowProviding(name);
+      expect(file, `no workflow declares a job named "${name}"`).not.toBeNull();
       expect(
         hasMergeGroupTrigger(file as string),
-        `${file} provides the required check "${check}" but has no \`merge_group:\` trigger — ` +
+        `${file} provides the required check "${name}" but has no \`merge_group:\` trigger — ` +
           'every queued merge would block forever',
       ).toBe(true);
+    },
+  );
+
+  // The classification is the load-bearing part, so it cannot be taken on
+  // trust. A check marked `app` that some workflow actually declares is a
+  // mislabel that would keep a fixable blocker permanently excused.
+  it.each(APP_CHECKS)(
+    '$name is genuinely app-provided — no workflow declares it',
+    ({ name }) => {
+      expect(
+        workflowProviding(name),
+        `"${name}" is classified as app-provided, but a workflow declares a job with that name. ` +
+          'Reclassify it as `workflow` so the merge_group assertion applies.',
+      ).toBeNull();
     },
   );
 
@@ -77,7 +107,31 @@ describe('merge queue readiness', () => {
   // list would pass vacuously.
   it('is checking a non-empty set of required checks', () => {
     expect(REQUIRED_CHECKS.length).toBeGreaterThan(0);
-    for (const c of REQUIRED_CHECKS)
-      expect(workflowProviding(c)).not.toBeNull();
+    expect(WORKFLOW_CHECKS.length).toBeGreaterThan(0);
+    for (const { name } of WORKFLOW_CHECKS)
+      expect(workflowProviding(name)).not.toBeNull();
+  });
+});
+
+/**
+ * The readiness VERDICT, kept separate from the per-check assertions above.
+ *
+ * The file used to be named "merge queue readiness" while asserting only that
+ * the two workflow-provided checks carried a `merge_group:` trigger. Both did,
+ * so it was green — and it was green while a third required context, `review`,
+ * sat outside the list entirely. Enabling the queue on that evidence would
+ * have hung every merge with no error message, which is the exact failure the
+ * file's own header warns about. A lock that answers a narrower question than
+ * its name implies is worse than no lock: it converts "unverified" into
+ * "verified".
+ */
+describe('the merge queue is not safe to enable yet', () => {
+  it('names every app-provided required check as a blocker', () => {
+    // Not a TODO. This assertion is the record of WHY the queue is off, and it
+    // flips on its own the moment the blocking contexts are gone: drop `review`
+    // from branch protection and from REQUIRED_CHECKS, and this test starts
+    // reporting the queue as safe.
+    const blockers = APP_CHECKS.map((c) => c.name);
+    expect(blockers).toEqual(['review']);
   });
 });

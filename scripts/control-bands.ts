@@ -34,7 +34,7 @@
  * Usage:
  *   tsx scripts/control-bands.ts                 # report
  *   tsx scripts/control-bands.ts --check         # exit 1 on a 2σ+ breach
- *   tsx scripts/control-bands.ts --write-intent  # draft intent/<slug>/intent.md per breach
+ *   tsx scripts/control-bands.ts --write-intent  # draft docs/intents/<slug>/intent.md per breach
  *   tsx scripts/control-bands.ts --record        # append today's observations to the series
  *   tsx scripts/control-bands.ts --backfill-git  # also recover pruned runs from git history
  */
@@ -46,7 +46,7 @@ import { execFileSync } from 'node:child_process';
 const REPO_ROOT = path.resolve(__dirname, '..');
 const CONFIG = path.join(REPO_ROOT, '.agent/control-bands.json');
 const SERIES = path.join(REPO_ROOT, 'benchmark-results/control-band-series.json');
-const INTENT_DIR = path.join(REPO_ROOT, 'intent');
+const INTENT_DIR = path.join(REPO_ROOT, 'docs/intents');
 
 export type Tier = '1σ' | '2σ' | '3σ';
 
@@ -348,24 +348,36 @@ function record(fromGit = false): void {
 // Write-back — a breach becomes a Stage 1 artifact, not a ticket.
 // ---------------------------------------------------------------------------
 
-function writeIntent(breach: Breach, cfg: BandConfig, series: Observation[]): string {
-  const slug = `control-band-${breach.id}`;
-  const dir = path.join(INTENT_DIR, slug);
-  const file = path.join(dir, 'intent.md');
-  // `wx` fails if the path exists, so the "already open" case is the write itself
-  // refusing rather than a prior check that could go stale between the two calls
-  // (CodeQL `js/file-system-race`). One open intent per band, not one per run.
+/**
+ * The Stage 1 artifact for a breach, as text. Split from the write so its shape can
+ * be asserted against the same schema `intent-artifacts.lock.test.ts` enforces — a
+ * watcher that opens a PR failing our own lock helps nobody, and breaches are rare
+ * enough that nobody would find out for months.
+ */
+export function renderIntent(
+  breach: Breach,
+  cfg: BandConfig,
+  series: Observation[],
+): string {
+  // The observation date, not wall-clock: the intent is dated by the measurement
+  // that opened it, so re-running the watcher cannot change what it says.
+  const opened = series[series.length - 1]?.date ?? 'unknown';
 
   const recent = series
     .slice(-cfg.window)
     .map((o) => `| ${o.date} | ${o.value} |`)
     .join('\n');
 
-  const body = `# Intent: ${cfg.description} breached its control band
+  const body = `# Intent — ${cfg.description} breached its control band
 
-Author: control-bands watcher. Status: draft.
+> Stage 1 artifact, written automatically by \`scripts/control-bands.ts\`. Stage 6
+> detected this; a human decides what it means.
 
-## Problem
+**Status:** draft · **Opened:** ${opened} · **Owner:** control-bands watcher
+
+---
+
+## Why now
 
 \`${breach.id}\` tripped the **${breach.rule}** rule and is sitting **${breach.direction}**
 its control band.
@@ -386,7 +398,7 @@ Observations in the window:
 | :--- | ---: |
 ${recent}
 
-## Proposed outcome
+## What is wanted
 
 The metric is back inside its band, and the cause is understood well enough that a
 check would have caught it — or the band is wrong and this file says why, in which
@@ -403,14 +415,31 @@ Do not widen the band to make this go away. A band widened to fit an excursion
 measures nothing afterwards. If the band is genuinely wrong, say so here and change
 it deliberately.
 
+## Success criteria
+
+- \`npm run control-bands -- --check\` exits 0 for \`${breach.id}\` on the next run.
+- The cause is named here, and a check exists that would have gone red on it — or
+  this file records why the band itself was wrong.
+
 ## Open questions
 
 - Is this a real regression, a change in what we measure, or a change in the corpus?
 - Which commit is the first one outside the band?
 `;
+  return body;
+}
+
+function writeIntent(breach: Breach, cfg: BandConfig, series: Observation[]): string {
+  const slug = `control-band-${breach.id}`;
+  const dir = path.join(INTENT_DIR, slug);
+  const file = path.join(dir, 'intent.md');
+
   fs.mkdirSync(dir, { recursive: true });
+  // `wx` fails if the path exists, so the "already open" case is the write itself
+  // refusing rather than a prior check that could go stale between the two calls
+  // (CodeQL `js/file-system-race`). One open intent per band, not one per run.
   try {
-    fs.writeFileSync(file, body, { flag: 'wx' });
+    fs.writeFileSync(file, renderIntent(breach, cfg, series), { flag: 'wx' });
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
   }
@@ -420,9 +449,9 @@ it deliberately.
 // ---------------------------------------------------------------------------
 
 function main(): void {
-  const args = process.argv.slice(2);
-  if (args.includes('--record') || args.includes('--backfill-git')) {
-    const fromGit = args.includes('--backfill-git');
+  const args = new Set(process.argv.slice(2));
+  if (args.has('--record') || args.has('--backfill-git')) {
+    const fromGit = args.has('--backfill-git');
     console.log(fromGit ? '📈 Recording + backfilling from git history' : '📈 Recording observations');
     record(fromGit);
   }
@@ -453,7 +482,7 @@ function main(): void {
     breaches.push({ breach, cfg });
   }
 
-  if (args.includes('--write-intent')) {
+  if (args.has('--write-intent')) {
     for (const { breach, cfg } of breaches) {
       const file = writeIntent(breach, cfg, series[breach.id] ?? []);
       console.log(`  📝 ${path.relative(REPO_ROOT, file)}`);
@@ -465,7 +494,7 @@ function main(): void {
   console.log(
     `\n${breaches.length} breach(es), ${actionable.length} at 2σ or above.\n`,
   );
-  if (args.includes('--check') && actionable.length > 0) process.exit(1);
+  if (args.has('--check') && actionable.length > 0) process.exit(1);
 }
 
 if (require.main === module) main();

@@ -77,6 +77,10 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
       shards: ${{ steps.matrix.outputs.shards }}
       any: ${{ steps.matrix.outputs.any }}
+      shard_count: ${{ steps.matrix.outputs.count }}
+      web_shards: ${{ steps.web_matrix.outputs.shards }}
+      web_any: ${{ steps.web_matrix.outputs.any }}
+      web_count: ${{ steps.web_matrix.outputs.count }}
       heavy: ${{ steps.matrix.outputs.heavy }}
       build_shards: ${{ steps.build_matrix.outputs.build_shards }}
       build_any: ${{ steps.build_matrix.outputs.build_any }}
@@ -127,6 +131,15 @@ jobs:
         with:
           turbo-cache: 'false'
           install: 'false'
+      # Four, not ten. Measured on run 33345687707 with the lanes in place: the
+      # ten node-lane shards did 24s of test work between them and paid 141s of
+      # checkout+setup — 5.9:1. The shards were never the critical path; the
+      # slots they held were. `Benchmark configs load` (42s) could not start
+      # until 00:49:40 because ten shards were ahead of it, and the run's wall
+      # clock is gate + that queue + 42s.
+      #
+      # Four keeps a cold shard bounded (docs, the 144s indivisible item, left
+      # this lane in the same change) while returning six slots to the wave.
       - id: matrix
         if: steps.decide.outputs.run == 'true'
         env:
@@ -136,7 +149,19 @@ jobs:
           # fetches refs/pull/N/merge and nothing else — so merge-base against
           # it always failed and every PR silently ran the full matrix.
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
-        run: node scripts/ci-test-shard.mts --matrix 10
+        run: node scripts/ci-test-shard.mts --matrix 4 --lane node
+
+      # The web lane: `docs` and `@interlace/ui`, the only two workspaces whose
+      # tests need the Next.js/React tree. Kept to a separate, small matrix so
+      # the node lane can restore a lean `node_modules` — see the `deps` input
+      # on .github/actions/setup. Three shards because `docs` is split three
+      # ways; `@interlace/ui` rides along in the first.
+      - id: web_matrix
+        if: steps.decide.outputs.run == 'true'
+        env:
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: node scripts/ci-test-shard.mts --matrix 3 --lane web
 
       # Same treatment for the build matrix. It was static [1,2,3,4], so on a
       # PR touching one plugin all four shards acquired a runner, paid ~24s of
@@ -166,6 +191,7 @@ jobs:
           SHARDS: ${{ steps.matrix.outputs.shards }}
           HEAVY: ${{ steps.matrix.outputs.heavy }}
           BUILD_SHARDS: ${{ steps.build_matrix.outputs.build_shards }}
+          WEB_SHARDS: ${{ steps.web_matrix.outputs.shards }}
         run: |
           set -euo pipefail
           if [ -z "$SHARDS" ] || [ -z "$HEAVY" ]; then
@@ -176,7 +202,11 @@ jobs:
             echo "::error::The build shard matrix is empty. scripts/ci-build.mts --matrix did not emit build_shards, so every build shard would silently skip while this gate reported success."
             exit 1
           fi
-          echo "Shard matrix: $SHARDS (heavy=$HEAVY)"
+          if [ -z "$WEB_SHARDS" ]; then
+            echo "::error::The web-lane matrix is empty. scripts/ci-test-shard.mts --lane web emitted no shards, so docs and @interlace/ui would silently skip while this gate reported success."
+            exit 1
+          fi
+          echo "Shard matrix: node=$SHARDS web=$WEB_SHARDS (heavy=$HEAVY)"
 
       # The benchmark-config load check needs every plugin BUILT, so it cannot
       # ride along in a lock job. A build is ~4 minutes of a scarce runner, so
@@ -211,6 +241,60 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No benchmark config, package source/manifest or size-metric input touched — skipping the config-load + size-metrics job."
           fi
+
+  # A skipped job leaves NO row in the PR's checks list. That makes an
+  # affected-filtered matrix that legitimately selected nothing look identical
+  # to a matrix step that broke: in both cases the "Unit Tests + Coverage"
+  # checks are simply absent, and the aggregate gate is green either way. The
+  # absence was read as a regression by a reviewer ("how come we run no unit
+  # tests now") — correct behaviour is not the same as visible behaviour.
+  #
+  # This job always runs and puts the decision in the checks list BY NAME, so
+  # the PR page states which of the two happened without anyone opening a log.
+  # It does no work: no checkout, no install, one echo. ~5s of a runner buys
+  # the difference between "verified nothing was affected" and "verified
+  # nothing".
+  test-scope:
+    name: "${{ (needs.gate.outputs.any == 'true' || needs.gate.outputs.web_any == 'true') && format('Unit tests — {0} node + {1} web shards affected', needs.gate.outputs.shard_count, needs.gate.outputs.web_count) || 'Unit tests SKIPPED — no package sources changed' }}"
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Report what the gate selected
+        env:
+          ANY: ${{ needs.gate.outputs.any }}
+          WEB_ANY: ${{ needs.gate.outputs.web_any }}
+          WEB_COUNT: ${{ needs.gate.outputs.web_count }}
+          COUNT: ${{ needs.gate.outputs.shard_count }}
+          BUILD_ANY: ${{ needs.gate.outputs.build_any }}
+          HEAVY: ${{ needs.gate.outputs.heavy }}
+          BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: |
+          set -euo pipefail
+          if [ "$ANY" = "true" ] || [ "$WEB_ANY" = "true" ]; then
+            headline="Unit tests ran: ${COUNT} of 4 node-lane shards and ${WEB_COUNT} of 3 web-lane shards held affected packages."
+          else
+            headline="Unit tests skipped: no package source changed vs the base commit, so no shard in either lane had anything to run."
+          fi
+          {
+            echo "# ${headline}"
+            echo ""
+            echo "| Gate output | Value | Meaning |"
+            echo "|---|---|---|"
+            echo "| \`any\` | ${ANY} | whether any node-lane shard was dispatched |"
+            echo "| \`shard_count\` | ${COUNT} | node-lane shards holding at least one affected package |"
+            echo "| \`web_any\` | ${WEB_ANY} | whether any web-lane shard was dispatched |"
+            echo "| \`web_count\` | ${WEB_COUNT} | web-lane shards holding \`docs\` or \`@interlace/ui\` |"
+            echo "| \`build_any\` | ${BUILD_ANY} | whether any build shard was dispatched |"
+            echo "| \`heavy\` | ${HEAVY} | whether Typecheck / Portability were dispatched |"
+            echo ""
+            echo "Affected packages are computed against \`${BASE}\` by"
+            echo "\`scripts/ci-test-shard.mts --matrix 4 --lane node\`. \`scripts/__tests__\` is outside every"
+            echo "workspace and runs unconditionally in **Script & Repo-Config Locks**, so a"
+            echo "skip here never means *nothing* was verified."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::${headline}"
 
   # `scripts/` is not an npm workspace (`workspaces` is apps/*, packages/*,
   # tools/*, benchmarks), so turbo has no task for it and `turbo run test` never
@@ -332,7 +416,7 @@ jobs:
   # Going past 10 cannot shorten the critical path; it only adds ~17s-overhead
   # jobs that finish early. Dropping below 83 means splitting `docs` itself.
   test:
-    name: Unit Tests + Coverage (${{ matrix.shard }}/10)
+    name: Unit Tests — node lane (${{ matrix.shard }}/4)
     needs: gate
     if: needs.gate.outputs.run == 'true' && needs.gate.outputs.any == 'true'
     runs-on: ubuntu-latest
@@ -357,7 +441,11 @@ jobs:
           # rest ran cold every time (`Cached: 0 cached, 8 total`).
           turbo-cache: 'false'
           turbo-remote-cache: 'true'
-      - name: Run shard ${{ matrix.shard }} of 10
+          # No ESLint plugin, the devkit, the formatters or the tools resolve
+          # anything in the web tree, so this shard skips ~600 MB of it. See
+          # the input's docs and scripts/__tests__/lane-deps-lock.test.ts.
+          deps: 'lean'
+      - name: Run shard ${{ matrix.shard }} of 4
         env:
           # Affected-filter on PRs; run the full battery everywhere else.
           # A PR's blast radius is knowable from its diff, so most PRs test 1-2
@@ -369,7 +457,7 @@ jobs:
           # fetches refs/pull/N/merge and nothing else — so merge-base against
           # it always failed and every PR silently ran the full matrix.
           CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
-        run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 10
+        run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 4 --lane node
 
       # Workspace-level locks: keep slow, unbounded work out of the lefthook
       # pre-commit path — SDK compat suites excluded from the default run (and
@@ -378,10 +466,77 @@ jobs:
       - name: Pre-commit gate locks
         run: npm run --silent test:precommit-locks
 
-  # Sharded across runners. A single runner running `turbo run build` for 34
-  # packages queues them behind its own 4-vCPU concurrency limit — measured
-  # 230s. Build work has no outlier (no package over 25s), so splitting it is
-  # effective in a way test sharding is not.
+      # Runs LAST, and that placement is the whole mechanism: post steps (the
+      # cache save among them) execute after every main step, so whatever this
+      # deletes is what the lean archive contains. Path exclusions cannot do
+      # this — actions/cache tars a matched directory whole and the negations
+      # never apply, measured three times at ~451 MB before it was believed.
+      #
+      # `always()` so a failing shard still banks a correctly-trimmed archive;
+      # the tests have already run by this point, so nothing here can mask a
+      # failure. The size is printed rather than assumed, because "the lean
+      # archive is smaller" was wrong three times while nothing went red.
+      - name: Trim the web tree before the cache saves it
+        if: always()
+        run: |
+          set -euo pipefail
+          present=0
+          before=$(du -sk node_modules | cut -f1)
+          while read -r pkg; do
+            case "$pkg" in ''|'#'*) continue ;; esac
+            [ -e "node_modules/${pkg:?}" ] && present=$((present + 1))
+            rm -rf "node_modules/${pkg:?}"
+          done < .github/lean-node-modules.txt
+          after=$(du -sk node_modules | cut -f1)
+
+          # Presence, not size, decides whether this run had anything to do.
+          # On a cache HIT the restored tree is already trimmed, so before ==
+          # after is the correct outcome and must not fail — the first version
+          # of this guard asserted a size drop unconditionally and red-flagged
+          # exactly the runs where the mechanism was working.
+          if [ "$present" -eq 0 ]; then
+            echo "::notice::node_modules was already lean ($((after / 1024)) MB) — restored from the lean cache, nothing to trim."
+            exit 0
+          fi
+          echo "::notice::Lean node_modules: $((before / 1024)) MB -> $((after / 1024)) MB (${present} package(s) removed) before cache save."
+          if [ "$after" -ge "$before" ]; then
+            echo "::error::${present} package(s) were present and removed, yet the tree did not shrink (${before} kB -> ${after} kB). The lean archive would be a no-op sold as a saving — see .github/lean-node-modules.txt."
+            exit 1
+          fi
+
+  # The web lane. Separate from `test` so the node lane can restore a lean
+  # `node_modules`: as long as any shard might be handed `docs`, every shard
+  # has to carry the Next.js tree, which is what made all ten pay a 451 MB
+  # restore for 43s of tests (run 33337052316).
+  #
+  # This job keeps the FULL archive and the Next.js build cache, because these
+  # two workspaces are the reason both exist.
+  test-web:
+    name: Unit Tests — web lane (${{ matrix.shard }}/3)
+    needs: gate
+    if: needs.gate.outputs.run == 'true' && needs.gate.outputs.web_any == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.gate.outputs.web_shards) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 50
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
+          next-cache: 'true'
+      - name: Run web shard ${{ matrix.shard }} of 3
+        env:
+          CI_TEST_SHARD_ALL: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          CI_TEST_SHARD_BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
+        run: node scripts/ci-test-shard.mts ${{ matrix.shard }} 3 --lane web
+
   build:
     name: Build (${{ matrix.shard }}/4)
     needs: gate
@@ -518,7 +673,7 @@ jobs:
       contents: read
       issues: write # open the failure issue (.github/actions/report-failure)
     timeout-minutes: 2
-    needs: [gate, test, scripts-tests, build, typecheck, portability]
+    needs: [gate, test, test-web, scripts-tests, build, typecheck, portability]
     # `needs.gate.outputs.run` alone is not enough. If `gate` itself fails that
     # output is empty, this job is skipped — and GitHub reports a skipped
     # *required* check as passing, so a broken gate would wave a PR through with
@@ -533,6 +688,7 @@ jobs:
           R_GATE: ${{ needs.gate.result }}
           R_SCRIPTS: ${{ needs['scripts-tests'].result }}
           R_TEST: ${{ needs.test.result }}
+          R_TEST_WEB: ${{ needs['test-web'].result }}
           R_BUILD: ${{ needs.build.result }}
           R_TYPECHECK: ${{ needs.typecheck.result }}
           R_PORTABILITY: ${{ needs.portability.result }}
@@ -542,6 +698,7 @@ jobs:
           HEAVY: ${{ needs.gate.outputs.heavy }}
           ANY: ${{ needs.gate.outputs.any }}
           BUILD_ANY: ${{ needs.gate.outputs.build_any }}
+          WEB_ANY: ${{ needs.gate.outputs.web_any }}
         run: |
           set -euo pipefail
           icon() {
@@ -588,8 +745,10 @@ jobs:
             esac
           }
           [ "$ANY"   = "true" ] && test_skip_ok=false || test_skip_ok=true
+          [ "$WEB_ANY" = "true" ] && web_skip_ok=false || web_skip_ok=true
           [ "$HEAVY" = "true" ] && heavy_skip_ok=false || heavy_skip_ok=true
-          check "$R_TEST"        "$test_skip_ok"  "Unit tests"       || all_pass=false
+          check "$R_TEST"        "$test_skip_ok"  "Unit tests (node)" || all_pass=false
+          check "$R_TEST_WEB"    "$web_skip_ok"   "Unit tests (web)"  || all_pass=false
           [ "$BUILD_ANY" = "true" ] && build_skip_ok=false || build_skip_ok=true
           check "$R_BUILD"       "$build_skip_ok" "Build"            || all_pass=false
           check "$R_TYPECHECK"   "$heavy_skip_ok" "Typecheck"        || all_pass=false
@@ -609,7 +768,8 @@ jobs:
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
             echo "| Gate                | $(icon "$R_GATE") $R_GATE               | draft/label decision |"
-            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`test\` + coverage thresholds, 10 shards, affected-filtered |"
+            echo "| Unit tests (node)   | $(icon "$R_TEST") $R_TEST               | plugins/devkit/tools — 4 shards, lean deps, affected-filtered |"
+          echo "| Unit tests (web)    | $(icon "$R_TEST_WEB") $R_TEST_WEB       | \`docs\` + \`@interlace/ui\` — 3 shards, full deps |"
             echo "| Script/config locks | $(icon "$R_SCRIPTS") $R_SCRIPTS         | \`scripts/__tests__\` — outside every workspace |"
             echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\`, 4 shards, affected-filtered |"
             echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`tsgo --build\` whole-graph (TS7 native) |"

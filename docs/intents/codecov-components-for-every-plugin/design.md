@@ -1,4 +1,4 @@
-# Spec: eleven plugins report no coverage at all
+# Design — eleven plugins report no coverage at all
 
 Intent: [`intent.md`](./intent.md). Status: draft.
 
@@ -51,7 +51,7 @@ exists and one coverage upload lands.
 - Curl each of the eleven badge URLs and confirm none returns `unknown` after the
   first coverage upload post-merge.
 
-## Risks and rejected alternatives
+## Rejected alternatives
 
 - **Rejected: one blanket 100% target for all eleven.** Turns Codecov red for every
   package below it, which is a worse signal than silence — a permanently red check is

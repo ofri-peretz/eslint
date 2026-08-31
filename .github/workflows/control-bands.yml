@@ -8,7 +8,7 @@ name: Control Bands
 # A deterministic script watches the metrics and invokes the pipeline when a control
 # band is breached. No model runs in the detection path — see scripts/control-bands.ts.
 #
-# On a 2σ+ breach this opens a PR containing an `intent/<slug>/intent.md`, NOT an
+# On a 2σ+ breach this opens a PR containing a `docs/intents/<slug>/intent.md`, NOT an
 # issue. That is the whole point of the stage: an incident re-enters the pipeline as
 # a Stage 1 artifact instead of rotting in a separate ticket queue. A GitHub issue is
 # the ticket queue.
@@ -91,15 +91,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if [ -z "$(git status --porcelain intent/ benchmark-results/control-band-series.json)" ]; then
+          if [ -z "$(git status --porcelain docs/intents/ benchmark-results/control-band-series.json)" ]; then
             echo "Band breached but nothing new to commit — an intent is already open for it."
             exit 0
           fi
-          BRANCH="intent/control-band-$(date -u +%Y%m%d)"
+          BRANCH="docs/control-band-$(date -u +%Y%m%d)"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add intent/ benchmark-results/control-band-series.json
+          git add docs/intents/ benchmark-results/control-band-series.json
           git commit -m "docs(workspace): control-band breach — draft intent
 
           A metric left its control band. scripts/control-bands.ts wrote the
@@ -111,7 +111,7 @@ jobs:
             --body "$(printf '%s\n\n```\n%s\n```\n\n%s\n' \
               'A control band was breached. The watcher wrote its diagnosis as a Stage 1 intent rather than an issue, so the finding re-enters the pipeline — see [AI_NATIVE_SDLC.md](../blob/main/../AI_NATIVE_SDLC.md).' \
               "$(cat bands.log)" \
-              '**Next:** review the intent, then either turn it into a `spec.md` or record here why the band was wrong. Do not widen a band to make a breach go away.')"
+              '**Next:** review the intent, then either turn it into a `design.md` or record here why the band was wrong. Do not widen a band to make a breach go away.')"
 
       # Bands that are still inside their limits produce new observations too, and the
       # series is only useful if it accumulates.

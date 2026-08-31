@@ -88,67 +88,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // Track WebSocket onmessage handlers
-
-    /**
-     * Check if we're in a WebSocket onmessage assignment
-     */
-    function isWsOnmessageAssignment(node: TSESTree.AssignmentExpression): {
-      isHandler: boolean;
-      eventParam: string | null;
-    } {
-      if (
-        node.left.type === AST_NODE_TYPES.MemberExpression &&
-        node.left.property.type === AST_NODE_TYPES.Identifier &&
-        node.left.property.name === 'onmessage'
-      ) {
-        const handler = node.right;
-        if (
-          handler.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-          handler.type === AST_NODE_TYPES.FunctionExpression
-        ) {
-          const firstParam = handler.params[0];
-          if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-            return { isHandler: true, eventParam: firstParam.name };
-          }
-        }
-      }
-      return { isHandler: false, eventParam: null };
-    }
-
-    /**
-     * Check if we're in a WebSocket addEventListener('message')
-     */
-    function isWsAddEventListener(node: TSESTree.CallExpression): {
-      isHandler: boolean;
-      eventParam: string | null;
-    } {
-      if (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        node.callee.property.name === 'addEventListener' &&
-        node.arguments.length >= 2
-      ) {
-        const eventType = node.arguments[0];
-        if (
-          eventType.type === AST_NODE_TYPES.Literal &&
-          eventType.value === 'message'
-        ) {
-          const callback = node.arguments[1];
-          if (
-            callback.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-            callback.type === AST_NODE_TYPES.FunctionExpression
-          ) {
-            const firstParam = callback.params[0];
-            if (firstParam && firstParam.type === AST_NODE_TYPES.Identifier) {
-              return { isHandler: true, eventParam: firstParam.name };
-            }
-          }
-        }
-      }
-      return { isHandler: false, eventParam: null };
-    }
-
     // Ownership gate: this rule reports only what the resolver attributes
     // to the websocket source. Everything it cannot identify belongs to the
     // generic sink rule, so no value is ever reported by both.
@@ -156,7 +95,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        // Check if this is ws.onmessage = handler
 
         // Check for innerHTML/outerHTML assignment within handler
         // The resolver is the sole sink condition. A mutable in-handler
@@ -181,14 +119,7 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      'AssignmentExpression:exit'(node: TSESTree.AssignmentExpression) {
-        const { isHandler } = isWsOnmessageAssignment(node);
-        if (isHandler) {
-        }
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
-        // Check if this is ws.addEventListener('message', handler)
 
         // Check for dangerous method calls within handler
         // The resolver is the sole sink condition. A mutable in-handler
@@ -213,12 +144,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
               break;
             }
           }
-        }
-      },
-
-      'CallExpression:exit'(node: TSESTree.CallExpression) {
-        const { isHandler } = isWsAddEventListener(node);
-        if (isHandler) {
         }
       },
     };
