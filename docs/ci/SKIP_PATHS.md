@@ -174,3 +174,40 @@ so a persistent failure cannot turn the channel into noise and get muted.
    only as often as the schedule fires. Probes it could not run are reported
    under `skipped` rather than dropped, so a pass never quietly stands in for
    a question that was not asked.
+
+---
+
+## 5. The release pipeline — how a publish declines to happen
+
+Sections 1–4 cover checks that decline to *run*. This one covers a publish
+that declines to *happen*, which is invisible in a different way: there is no
+red run to notice, because nothing failed.
+
+**Verified by experiment on 2026-08-31.** `scripts/check-release-liveness.ts`
+was run against main and exited 1 on six packages. Tracing each one back
+through `gh run view` produced the chain below — every link confirmed against
+the live API, none inferred.
+
+| Path | Mechanism | Detected by |
+|---|---|---|
+| Publish job parked on the `production` environment gate | `release.yml`'s publish jobs target the `production` environment, which requires a manual approval. Until someone approves, the job sits in `waiting` — **indefinitely**, and the run's status is `waiting`, never `failure`. | `check-release-liveness.ts` (version on main ≠ npm latest) |
+| Surplus queued runs cancelled | `concurrency: {group: release-workflow, cancel-in-progress: false}` permits exactly **one** pending run per group. A third arrival cancels the one already waiting. A run cancelled this way did nothing wrong and publishes nothing. | same |
+| Version PR never opened | The changesets action fails (e.g. a `GITHUB_TOKEN` env/input mismatch), so nothing is ever versioned and `release.yml` correctly publishes nothing. | `check-release-liveness.ts` (changesets queued, no Version PR) |
+
+The observed instance: run `33346361671` (2026-08-31 01:02) built and passed
+dist-integrity on all three ESLint majors, then parked six publish jobs on the
+approval gate at 01:09. It held the concurrency group for **~4.5 hours**. The
+runs at 01:11, 02:14 and 02:26 were cancelled as surplus pending runs; the
+05:26 run was still `pending`. Six packages were versioned on main and absent
+from npm the whole time, and **no workflow was red**.
+
+Note the compounding shape: the gate is a deliberate control, and the
+concurrency setting is a deliberate serialisation. Neither is a bug. The
+failure is that together they can hold the pipeline indefinitely with no
+signal, and every existing check answers "did a step fail" rather than "did a
+release come out".
+
+`release-liveness.yml` runs the check every six hours at :05 and on main
+pushes touching `.changeset/**` or `packages/*/package.json`. It gates
+nothing; it files an issue, which is the only thing that would have surfaced
+this.
