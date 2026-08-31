@@ -238,6 +238,27 @@ function scoreCWE(cweDir) {
     const prefix = String(ruleId ?? '').split('/')[0];
     return prefix ? `eslint-plugin-${prefix}` : null;
   };
+  /*
+   * The second arm is ASYMMETRIC, and deliberately so — but it is a loosening
+   * and should be read as one.
+   *
+   * It promotes ANY finding from a nominated plugin to a match, including one
+   * unrelated to the CWE under test. If a manifest names a broad plugin and a
+   * CWE-089 fixture also trips that plugin's rate-limiting rule, the file
+   * counts as detected without SQL injection having been detected. Recall can
+   * therefore read higher than the rules earn, in proportion to how broadly a
+   * manifest nominates.
+   *
+   * It is kept because the alternative is worse: three real detections score
+   * as misses purely because our CWE stamp differs from the corpus author's
+   * (CWE-1333 vs its parent CWE-400, CWE-116 vs its consequence CWE-79,
+   * CWE-327 vs its sibling CWE-347), which measures the taxonomy rather than
+   * the rules.
+   *
+   * The FP direction is not loosened this way — `fpAnyRule` counts any rule
+   * firing on a safe file — so the asymmetry cannot flatter precision, only
+   * recall. Narrow `expectedPlugins` in a manifest to narrow the effect.
+   */
   const matchesCwe = (f) =>
     (cweNumber(f.cwe) !== null && cweNumber(f.cwe) === thisCwe) ||
     (expected.size > 0 && expected.has(pluginOf(f.ruleId)));

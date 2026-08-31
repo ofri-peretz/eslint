@@ -38,13 +38,28 @@ import { captureMethodology } from './methodology.ts';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..');
 
+/*
+ * Everything whose change must invalidate a preregistration.
+ *
+ * Three of these named `.mjs` files that no longer exist: the mjs -> ts codemod
+ * renamed the scorer, the wild runner and the fixture validator, and this list
+ * was not moved with them. `captureMethodology` hashes what it can find, so a
+ * missing path contributes nothing and fails silently — the hash stayed stable
+ * across every edit to the actual scorer, which is the one file a
+ * preregistration exists to pin.
+ *
+ * `eslint.benchmark.config.mjs` is added because it SELECTS the plugins the
+ * benchmark runs. Changing which rules participate changes the result as
+ * surely as changing the scorer, and it was covered by nothing.
+ */
 const DEFAULT_METHODOLOGY_PATHS = [
   'benchmarks/corpus',
   'benchmarks/suites',
   'benchmarks/lib',
-  'benchmarks/score.mjs',
-  'scripts/ilb-wild.mjs',
-  'scripts/ilb-validate-fixtures.mjs',
+  'benchmarks/score.ts',
+  'eslint.benchmark.config.mjs',
+  'scripts/ilb-wild.ts',
+  'scripts/ilb-validate-fixtures.ts',
 ];
 
 function git(args, opts = {}) {
