@@ -649,6 +649,22 @@ function main(): number {
       // Scoped to the rig, so wiping it above cannot touch anything else.
       '--cache',
       NPM_CACHE,
+      // The rig pins FROM this repo's package-lock.json, so it must resolve
+      // the way this repo resolves — and the root `.npmrc` sets
+      // `legacy-peer-deps=true`. The rig installs into `_rig`, outside the
+      // repo, where that .npmrc does not apply, so npm enforced peer ranges
+      // the workspace itself does not and the install died on ERESOLVE:
+      //
+      //   eslint@10.9.1 (locked) vs @typescript-eslint/parser@8.54.0, whose
+      //   peer range is ^8.57.0 || ^9.0.0 — ESLint 10 is not in it.
+      //
+      // Nothing about the rig changed; ESLint went to 10 in the workspace and
+      // the rig was the only place the pre-existing peer violation was
+      // visible. Parser 8.68.0 widens the range to include ^10.0.0, so the
+      // durable fix is bumping the workspace's parser — filed separately
+      // rather than folded into a scan fix, since it moves a dependency every
+      // rule test parses with.
+      '--legacy-peer-deps',
       '--silent',
       '--no-audit',
       '--no-fund',
