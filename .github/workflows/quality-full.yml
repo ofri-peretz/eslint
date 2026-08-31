@@ -471,22 +471,30 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          before=$(du -sm node_modules | cut -f1)
+          present=0
+          before=$(du -sk node_modules | cut -f1)
           while read -r pkg; do
             case "$pkg" in ''|'#'*) continue ;; esac
+            [ -e "node_modules/${pkg:?}" ] && present=$((present + 1))
             rm -rf "node_modules/${pkg:?}"
           done < .github/lean-node-modules.txt
-          after=$(du -sm node_modules | cut -f1)
-          echo "::notice::Lean node_modules: ${before} MB -> ${after} MB before cache save."
+          after=$(du -sk node_modules | cut -f1)
+
+          # Presence, not size, decides whether this run had anything to do.
+          # On a cache HIT the restored tree is already trimmed, so before ==
+          # after is the correct outcome and must not fail — the first version
+          # of this guard asserted a size drop unconditionally and red-flagged
+          # exactly the runs where the mechanism was working.
+          if [ "$present" -eq 0 ]; then
+            echo "::notice::node_modules was already lean ($((after / 1024)) MB) — restored from the lean cache, nothing to trim."
+            exit 0
+          fi
+          echo "::notice::Lean node_modules: $((before / 1024)) MB -> $((after / 1024)) MB (${present} package(s) removed) before cache save."
           if [ "$after" -ge "$before" ]; then
-            echo "::error::The trim removed nothing (${before} MB -> ${after} MB). The lean archive would be a no-op sold as a saving — see .github/lean-node-modules.txt."
+            echo "::error::${present} package(s) were present and removed, yet the tree did not shrink (${before} kB -> ${after} kB). The lean archive would be a no-op sold as a saving — see .github/lean-node-modules.txt."
             exit 1
           fi
 
-  # Sharded across runners. A single runner running `turbo run build` for 34
-  # packages queues them behind its own 4-vCPU concurrency limit — measured
-  # 230s. Build work has no outlier (no package over 25s), so splitting it is
-  # effective in a way test sharding is not.
   # The web lane. Separate from `test` so the node lane can restore a lean
   # `node_modules`: as long as any shard might be handed `docs`, every shard
   # has to carry the Next.js tree, which is what made all ten pay a 451 MB
