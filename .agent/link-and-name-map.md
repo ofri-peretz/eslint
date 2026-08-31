@@ -28,8 +28,8 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | npm package | v | prefix | alias | docs slug | pillar | logo | docs | OG | codecov |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 0.3.2 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ❌ |
-| `eslint-plugin-browser-security` | 2.0.6 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
-| `eslint-plugin-conventions` | 5.0.0 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-browser-security` | 2.0.7 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
+| `eslint-plugin-conventions` | 5.1.0 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 0.3.4 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ❌ |
 | `eslint-plugin-express-security` | 3.1.3 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 0.3.3 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ❌ |
@@ -37,10 +37,10 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-jwt-security` | 3.0.3 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 0.4.4 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ❌ |
 | `eslint-plugin-lambda-security` | 2.0.1 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
-| `eslint-plugin-maintainability` | 3.1.1 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-maintainability` | 3.1.2 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mcp-sdk-security` | 0.3.1 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ❌ |
 | `eslint-plugin-modernization` | 3.0.0 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-modularity` | 2.3.0 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-modularity` | 2.4.0 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mongodb-security` | 9.0.2 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 0.3.4 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ❌ |
 | `eslint-plugin-nestjs-security` | 3.0.1 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
@@ -50,7 +50,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-postgresql-security` | 2.2.1 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-prisma-security` | 0.3.4 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ❌ |
 | `eslint-plugin-react-a11y` | 2.4.0 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
-| `eslint-plugin-react-features` | 1.4.0 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
+| `eslint-plugin-react-features` | 1.5.0 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 4.0.2 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-secure-coding` | 5.1.4 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 0.3.4 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ❌ |
