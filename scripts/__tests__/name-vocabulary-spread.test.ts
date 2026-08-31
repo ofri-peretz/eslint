@@ -31,8 +31,21 @@ import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '..', '..');
 
+/** How many rules the gate INSPECTED. Zero means it saw nothing at all. */
+function inspected(): number {
+  const match = /rules deciding by identifier name\s+(\d+)/.exec(gateOutput());
+  return match === null ? 0 : Number(match[1]);
+}
+
 /** The rules the gate currently reports as having no replaceable vocabulary. */
-function offenders(): string[] {
+/**
+ * Memoised: the gate walks every rule in the suite and takes ~5s. Calling it
+ * once per assertion pushed this file past the 5s default under full-suite
+ * parallel load — a timeout that reads exactly like a logic failure and is not.
+ */
+let cachedOutput: string | null = null;
+function gateOutput(): string {
+  if (cachedOutput !== null) return cachedOutput;
   const result = spawnSync(
     'tsx',
     [join(ROOT, 'scripts', 'check-name-vocabulary.ts'), '--list'],
@@ -45,20 +58,37 @@ function offenders(): string[] {
       },
     },
   );
-  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
-  return [...output.matchAll(/^ {4}([a-z0-9-]+\/[a-z0-9-]+)$/gm)].map(
+  cachedOutput = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  return cachedOutput;
+}
+
+function offenders(): string[] {
+  return [...gateOutput().matchAll(/^ {4}([a-z0-9-]+\/[a-z0-9-]+)$/gm)].map(
     (match) => match[1],
   );
 }
 
 describe('the gate sees options contributed by a shared schema fragment', () => {
-  it('finds offenders at all', () => {
-    // A gate that stopped listing anything would make the assertion below
-    // pass against an empty list, which is the failure this file is about.
-    const listed = offenders();
-    expect(listed.length).toBeGreaterThan(0);
-    expect(listed.length).toBeLessThan(20);
-  });
+  it('inspects rules at all', () => {
+    // The assertion below is "this rule is NOT an offender", which a gate that
+    // saw nothing would satisfy trivially. So something has to prove the gate
+    // ran.
+    //
+    // That guard used to be `offenders().length > 0`, and it was correct until
+    // the work succeeded: `the-rename-litmus-passes` drove the offender list to
+    // ZERO on 2026-08-30, and the guard started failing on the state it was
+    // hoping for. A non-vacuity check keyed to the number being fixed expires
+    // the moment the fix lands.
+    //
+    // The durable property is the one this actually needs: the gate INSPECTED a
+    // population. 53 rules decide by identifier name; if that reads 0 the gate
+    // is blind and every compliance claim below is empty.
+    const out = gateOutput();
+    expect(inspected(), `gate output was:\n${out}`).toBeGreaterThan(0);
+    // And the offender list stays a list — a gate that started reporting every
+    // rule would also pass the check above.
+    expect(offenders().length).toBeLessThan(20);
+  }, 30_000);
 
   it('a rule whose only replaceable option comes from a spread is compliant', () => {
     // This rule's schema has no vocabulary option written out in its own

@@ -107,7 +107,7 @@ describe('no-unsafe-buffer-alloc', () => {
     {
       name: 'a size name the consumer supplied',
       code: 'function reserve(req) { const nbytes = Number(req.body.n); return new Uint8Array(nbytes); }',
-      options: [{ countNames: ['nbytes'] }],
+      options: [{ sizeNames: ['nbytes'] }],
       errors: [{ messageId: 'unboundedAllocation' }],
     },
       {

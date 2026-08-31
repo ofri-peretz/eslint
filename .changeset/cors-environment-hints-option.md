@@ -1,5 +1,5 @@
 ---
-'@interlace/eslint-plugin-nestjs-security': minor
+'eslint-plugin-nestjs-security': minor
 ---
 
 `no-permissive-cors` takes `environmentHintNames`

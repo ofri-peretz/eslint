@@ -166,11 +166,17 @@ send(copy);
 
 ## Options
 
+Three name lists decide part of this rule's verdict. Each **replaces** its
+default rather than extending it — an additive option can grow a list but can
+never remove a word we guessed wrong about, and `message` and `raw` are words
+we guessed.
+
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `sizeNames` | `string[]` | `["length","len","size","count","n","num","total","capacity","bytelength"]` | Identifiers that hold an allocation size rather than a payload. Replaces the default. |
+| `wireNames` | `string[]` | `["chunk","chunks","buffer","buf","payload","frame","packet","raw","message","msg"]` | Identifiers that carry bytes off the wire. Pass `[]` to disable the name arm entirely — useful where `message` is a log line rather than a socket frame. Replaces the default. |
+| `requestRootNames` | `string[]` | `["req","request","ctx","event"]` | Bare root identifiers treated as a request. Most projects need not set this: a request-shaped read off a parameter is recognised structurally whatever it is spelled, and this list only covers a bare root used directly as wire data. Replaces the default. |
 
-None. The rule takes no configuration.
 
 ## Error Message Format
 

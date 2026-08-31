@@ -1,5 +1,5 @@
 ---
-'@interlace/eslint-plugin-express-security': minor
+'eslint-plugin-express-security': minor
 ---
 
 Express rules agree on what an app receiver is called, and let you say

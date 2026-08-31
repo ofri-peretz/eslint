@@ -1,7 +1,7 @@
 ---
-'@interlace/eslint-plugin-import-next': patch
-'@interlace/eslint-plugin-node-security': patch
-'@interlace/eslint-plugin-secure-coding': patch
+'eslint-plugin-import-next': patch
+'eslint-plugin-node-security': patch
+'eslint-plugin-secure-coding': patch
 ---
 
 `no-mutable-exports` resolves bindings instead of grepping the file text

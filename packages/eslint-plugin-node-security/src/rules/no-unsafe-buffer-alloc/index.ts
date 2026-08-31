@@ -141,7 +141,7 @@ const SIZED_ALLOCATORS: ReadonlySet<string> = new Set([
  */
 function looksNumeric(
   node: TSESTree.Node,
-  countNames: ReadonlySet<string>,
+  sizeNames: ReadonlySet<string>,
 ): boolean {
   switch (node.type) {
     case AST_NODE_TYPES.Literal:
@@ -151,14 +151,14 @@ function looksNumeric(
         node.operator,
       );
     case AST_NODE_TYPES.Identifier:
-      return countNames.has(node.name.toLowerCase());
+      return sizeNames.has(node.name.toLowerCase());
     case AST_NODE_TYPES.MemberExpression: {
       // `propertyName` rather than `.property.name`: `o.length`,
       // `o['length']` and `` o[`length`] `` are the same property, and a
       // minifier or a non-identifier key writes the second. Reading only the
       // dotted spelling is a blind spot nobody chose.
       const prop = propertyName(node);
-      return prop !== null && countNames.has(prop.toLowerCase());
+      return prop !== null && sizeNames.has(prop.toLowerCase());
     }
     case AST_NODE_TYPES.CallExpression: {
       // `Math.min(length, MAX)` is the clamped spelling of a size; it has to
@@ -205,7 +205,7 @@ export interface Options {
    * (`length`, `len`, `size`, `count`, `n`, `num`, `total`, `capacity`,
    * `bytelength`).
    */
-  countNames?: readonly string[];
+  sizeNames?: readonly string[];
 }
 
 type RuleOptions = [Options?];
@@ -592,7 +592,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: [...REQUEST_ROOTS],
           },
-          countNames: {
+          sizeNames: {
             type: 'array',
             items: { type: 'string' },
             default: [...COUNT_NAMES],
@@ -619,7 +619,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     const vocab = {
       wireNames: toLowerSet(options.wireNames ?? [...WIRE_NAMES]),
       requestRoots: toLowerSet(options.requestRootNames ?? [...REQUEST_ROOTS]),
-      countNames: toLowerSet(options.countNames ?? [...COUNT_NAMES]),
+      sizeNames: toLowerSet(options.sizeNames ?? [...COUNT_NAMES]),
     };
 
     // ── CWE-789: allocation sized by a length field off the wire ──────────
@@ -912,7 +912,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         SIZED_ALLOCATORS.has(callee.name)
       ) {
         // `new Uint8Array(bytes)` copies; `new Uint8Array(n)` allocates.
-        return looksNumeric(size, vocab.countNames) ? size : null;
+        return looksNumeric(size, vocab.sizeNames) ? size : null;
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&

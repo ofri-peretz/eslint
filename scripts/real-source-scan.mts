@@ -320,6 +320,12 @@ const CONFIG_HASH = createHash('sha256')
   .digest('hex')
   .slice(0, 16);
 
+/** The content hash of the repository list this run scanned. */
+const REPOS_HASH = createHash('sha256')
+  .update(fs.readFileSync(path.join(ROOT, 'benchmarks', 'real-source-repos.json')))
+  .digest('hex')
+  .slice(0, 16);
+
 const eslint = new ESLint({
   // NOT the benchmark config: that one matches `**/*.js` with no TypeScript
   // parser, so a run over 345,841 files produced findings from `.js` only —
@@ -427,6 +433,12 @@ function writeInventory(
       '200KB are skipped as generated.',
     generated: STAMP,
     configHash: CONFIG_HASH,
+    // The config decides which rules were ASKED; the repository list decides
+    // what they were asked ABOUT. A scan over a different list is a different
+    // measurement and will look comparable to this one unless the list is part
+    // of the stamp — which matters now, because `the-corpus-has-the-material`
+    // is about to change that file.
+    reposHash: REPOS_HASH,
   };
 
   fs.writeFileSync(OUT, `${JSON.stringify(inventory, null, 2)}\n`);
