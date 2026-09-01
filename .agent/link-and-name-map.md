@@ -52,8 +52,8 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-react-a11y` | 2.5.0 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 1.6.0 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 4.1.0 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-secure-coding` | 5.2.0 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-sequelize-security` | 0.3.5 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ❌ |
+| `eslint-plugin-secure-coding` | 5.2.1 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-sequelize-security` | 0.3.6 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ❌ |
 | `eslint-plugin-sqlite-security` | 0.1.8 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ❌ |
 | `eslint-plugin-typeorm-security` | 0.3.5 | `typeorm-security/` | — | `plugin-typeorm-security` | security | `typeorm` | ✅ | ✅ | ❌ |
 | `eslint-plugin-vercel-ai-security` | 2.1.0 | `vercel-ai-security/` | — | `plugin-vercel-ai-security` | security | `vercel` | ✅ | ✅ | ✅ |
