@@ -299,8 +299,20 @@ ruleTester.run('no-hardcoded-credentials-sdk (coverage)', noHardcodedCredentials
 
 ruleTester.run('no-missing-authorization-check (coverage)', noMissingAuthorizationCheck, {
   valid: lambda([
-    // Computed callee property (not an Identifier) is not a tracked sensitive op;
+    // A method chosen at RUNTIME is not a tracked sensitive op; the
     // non-object return exercises the ReturnStatement fallthrough
+    {
+      code: `
+        export const handler = async (event) => {
+          await registry[op](payload);
+          return 1;
+        };
+      `,
+    },
+  ]),
+invalid: lambda([
+    // Was pinned as valid because the callee property was computed.
+    // `registry['create'](payload)` is the same create, unauthorised.
     {
       code: `
         export const handler = async (event) => {
@@ -308,9 +320,9 @@ ruleTester.run('no-missing-authorization-check (coverage)', noMissingAuthorizati
           return 1;
         };
       `,
+      errors: [{ messageId: 'missingAuthCheck' }],
     },
   ]),
-  invalid: [],
 });
 
 // ---------------------------------------------------------------------------

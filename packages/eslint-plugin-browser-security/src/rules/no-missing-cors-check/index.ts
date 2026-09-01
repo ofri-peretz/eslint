@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/attacks/CORS_Misconfiguration
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCorsCheck';
@@ -399,10 +399,10 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
       }
 
       // Check for Access-Control-Allow-Origin header without validation
-      if (node.property.type === 'Identifier') {
-        const propertyName = node.property.name;
-        
-        if (propertyName === 'setHeader' || propertyName === 'header') {
+      // `res['setHeader'](…)` sets the same CORS header.
+      const headerMethod = propertyName(node);
+      if (headerMethod !== null) {
+        if (headerMethod === 'setHeader' || headerMethod === 'header') {
           // Check if it matches any ignore pattern
           const text = sourceCode.getText(node);
           if (matchesIgnorePattern(text, ignorePatterns)) {

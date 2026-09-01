@@ -275,9 +275,10 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier'
+          // `this.state.items['push'](x)` mutates state just as `.push` does.
+          propertyName(node.callee) !== null
         ) {
-          const methodName = node.callee.property.name;
+          const methodName = propertyName(node.callee) as string;
 
           if (isStatePropertyAccess(node.callee.object)) {
             // Methods that mutate arrays/objects
