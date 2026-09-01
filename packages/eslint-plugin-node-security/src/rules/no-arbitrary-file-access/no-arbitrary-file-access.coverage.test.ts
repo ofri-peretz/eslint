@@ -30,6 +30,9 @@ describe('no-arbitrary-file-access coverage gaps', () => {
     // would pass for the wrong reason — provenance unresolved — and the guard
     // they exist to exercise would never run.
     valid: [
+    // A dynamic fs method names nothing, so it is neither a read nor a write
+    // this rule knows — the sentinel must fail closed.
+    "const fs = require('fs'); function f(m, req) { return fs[m](req.query.p); }",
       // Declarator without initializer → tracking guard returns early
       { code: "let pending;\nfs.readFileSync('/etc/hosts');" },
       // Guard validates once; the second fs call hits the validated cache

@@ -79,8 +79,8 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     "function read(p) { fs.readFileSync(p); } read(...args);",
     // A name that matches no function in the file is not a call site for it.
     "function read(p) { fs.readFileSync(p); } other(req.query.f);",
-    // A computed callee names no function statically, so it attributes nothing.
-    "function read(p) { fs.readFileSync(p); } registry['read'](req.query.f);",
+    // A DYNAMIC callee names no function statically, so it attributes nothing.
+    "function read(p) { fs.readFileSync(p); } registry[name](req.query.f);",
     // Neither does a callee that is not a name at all.
     "function read(p) { fs.readFileSync(p); } (function () { return req; })(req.query.f);",
     // Static file paths
@@ -163,6 +163,17 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
 
 
   invalid: [
+    {
+      // FN: was `valid` as "a computed callee names no function statically".
+      // It names `read` perfectly well, and the DOTTED spelling of the very
+      // same shape — `registry.read(req.query.f)` — already reports. The test
+      // excluded one notation of a shape the rule attributes in the other,
+      // which is an inconsistency rather than a policy.
+      // @found computed-key blind-spot probe
+      name: 'FN: a call site reached by a string subscript',
+      code: "function read(p) { fs.readFileSync(p); } registry['read'](req.query.f);",
+      errors: 1,
+    },
     // --- Attributable to a request: this rule's actual subject --------------
     // A function parameter reports when a call site in this file is shown to
     // feed it from a request. That is the genuine attack shape the parameter
