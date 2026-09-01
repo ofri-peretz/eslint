@@ -5,6 +5,178 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.2.0
+
+### Minor Changes
+
+- **✨ Feature** — **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
+
+  A rule that matched `require('child_process')` did not match
+  ``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+  did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
+  differs at runtime, and no consumer chose one on purpose — which is exactly
+  why the miss was invisible: the rule looked correct in its own tests, because
+  its tests were written in the same spelling as its implementation.
+
+  Rules across these plugins now read a static string wherever the value is
+  statically known: a plain literal, a template literal with no substitutions,
+  and a concatenation of either. The same pass fixed computed member access, so
+  `o['foo']` is read wherever `o.foo` was.
+
+  **These rules now report on code they previously stayed quiet on.** That is
+  the point — the missed spelling was a false negative, not an exemption — but
+  a codebase written with backticks may see new findings on upgrade.
+
+- **✨ Feature** — **✨ Feature** — `no-insecure-comparison` gains `reportLooseEquality`
+
+  The rule reports two different claims under one name. `token === expected` is an
+  authentication bypass; `if (e.code == 'MODULE_NOT_FOUND')` is type coercion,
+  which `eqeqeq` already covers and most projects already run.
+
+  Setting `reportLooseEquality: false` keeps the first and declines the second:
+
+  ```json
+  "secure-coding/no-insecure-comparison": ["error", { "reportLooseEquality": false }]
+  ```
+
+  Default is `true`, so nothing changes unless you opt in.
+
+  A secret is never silenced by the option. `apiKey == provided` still reports —
+  loose equality on a credential is worse than strict, not better, because it adds
+  coercion to a comparison that already leaks by short-circuiting.
+
+- **✨ Feature** — **✨ Feature** — `no-hardcoded-session-tokens` gains `sessionWords`
+
+  The rule reports two independent things and only one was ever ours to guess.
+
+  A JWT (`eyJ…`, RFC 7519) and a `Bearer`-prefixed value (RFC 6750) are published
+  **formats**: they report on the literal's value whatever the binding is called,
+  and no option silences them.
+
+  The other half was a **name** test — `session` and `token`, hardcoded in
+  English. A project whose session id is `sesion`, `sitzung` or `koneksi` got
+  nothing from it and had no way to ask. `sessionWords` REPLACES that list:
+
+  ```json
+  "secure-coding/no-hardcoded-session-tokens": [
+    "error",
+    { "sessionWords": ["session", "sesion", "sitzung"] }
+  ]
+  ```
+
+  Default unchanged, so nothing moves unless you set it.
+
+- **✨ Feature** — `detect-weak-password-validation` takes `passwordWords`
+
+  The rule decided what counts as a credential from `password|passphrase|passwd|
+pwd|pass` — our guess at how a codebase spells it, not a specification. A
+  project whose field is `secret` or `kennwort` matched none of it, so the rule
+  silently judged nothing. `passwordWords` replaces the list.
+
+  The eight-character floor stays fixed and now cites NIST SP 800-63B 5.1.1.2,
+  because that one is a published requirement rather than a preference.
+
+  It also compared `node.property.name` directly, so `body['password'].length < 6`
+  reached the same property by a spelling the rule could not see. It now resolves
+  the property through `propertyName`.
+
+- **✨ Feature** — **✨ Feature** — `no-unsafe-regex-construction` gains `requestRootNames`
+
+  The rule already did half of this correctly: the name **selects** a candidate
+  inbound request, and `isInboundRequestBinding` then **decides**, requiring a
+  handler parameter — so a module-local `const request = Object.freeze({…})` was
+  never treated as a request whatever it was called.
+
+  But the selecting list was `req | request | ctx | event | message`, and Express,
+  Koa and Lambda all take the request **positionally**. A handler written
+  `(inbound, outbound)` or `(payload)` never got as far as the binding check.
+  Nothing publishes those words; they were our guess.
+
+  ```json
+  "secure-coding/no-unsafe-regex-construction": [
+    "error",
+    { "requestRootNames": ["req", "inbound", "payload"] }
+  ]
+  ```
+
+  Default unchanged, so nothing moves unless you set it.
+
+  What stays hardcoded, and now says why: `RegExp`, `RegExp.escape` and `source`
+  are ECMAScript, and `process.argv` is Node's — a project cannot rename them,
+  and an option for them would never be set.
+
+- **✨ Feature** — **🐛 Fix** — `no-sql-injection` reads a request by SHAPE, not by the name `req`
+
+  The rule decided whether a value came from an HTTP request by looking at the
+  spelling of the binding it came from. A handler written `(request, reply)` —
+  Fastify's own convention — was invisible to it, and a local array called `req`
+  was treated as untrusted input.
+
+  It now asks a structural question: is this a read of `.query` / `.params` /
+  `.headers` / `.cookies` (or API Gateway's `queryStringParameters` /
+  `pathParameters` / `multiValueHeaders`) off something that ARRIVED as a
+  parameter? A request is handed to you; it is not constructed locally, whatever
+  it is called.
+
+  `body` needs one more level of depth before it counts, because `body` is also
+  the commonest property name in this ecosystem.
+
+  If you have narrowed `requestRoots` yourself, your list still wins — the
+  shape-based path applies only while that option is at its default.
+
+- **✨ Feature** — **✨ Feature** — the names these rules look for are yours to state
+
+  `no-hardcoded-credentials` and `no-unlimited-resource-allocation` carried
+  hardcoded English identifiers and treated them as fact: a variable had to be
+  called `secret` to be a credential, `limit` to be a bound. A project that names
+  its bindings in another language, or behind a domain vocabulary, was
+  unreachable — and the list was written down nowhere a consumer could read it.
+
+  New options, each REPLACING the default rather than extending it, so a consumer
+  who states their vocabulary is not still measured against ours:
+
+  | Rule                               | Option                               |
+  | ---------------------------------- | ------------------------------------ |
+  | `no-hardcoded-credentials`         | `credentialWords`                    |
+  | `no-unlimited-resource-allocation` | `sizeProperties`, `limitOptionNames` |
+
+  ```json
+  "secure-coding/no-hardcoded-credentials": ["error", { "credentialWords": ["sigilo", "chave"] }]
+  ```
+
+  Defaults are unchanged, so nothing moves unless you set the option.
+
+  What is NOT configurable, deliberately: a vendor's key FORMAT. `sk_live_…`,
+  `ghp_…`, `AKIA…` are somebody else's published contract, not our guess at
+  yours, so the rule still reports those on value alone — even when you have
+  replaced the name vocabulary entirely.
+
+### Patch Changes
+
+- **🐛 Fix** — **🐛 Fix** — `no-unsafe-regex-construction` reported on dynamic flags alone
+
+  Found by running the rule against code written specifically to break it, and
+  pinned by a case that fails on the unfixed rule.
+
+  The rule reported when only the FLAGS were dynamic and the pattern was a
+  literal. Flags cannot introduce catastrophic backtracking on their own, so
+  that finding was never actionable.
+
+- **🐛 Fix** — `no-mutable-exports` resolves bindings instead of grepping the file text
+
+  The `export { x }` path built a regex from the declarator's name and tested it
+  against the whole source. That reported on the characters appearing in a
+  comment or a string, reported a local `let x` when the file re-exported some
+  other module's `x`, reported a function-scoped `let` colliding with an
+  exported name, and missed every export it could not spell: a multi-specifier
+  list, a rename, and a destructured declarator. It now resolves the specifier
+  through the scope chain to the declaration it actually names.
+
+  `no-env-injection` gains `requestRootNames`, which REPLACES the request-root
+  list that `extraRequestRoots` could only grow.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 5.1.4
 
 ### Patch Changes
