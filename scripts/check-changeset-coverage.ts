@@ -148,10 +148,6 @@ const changed = changedRaw.split('\n').filter(Boolean);
 // it as coverage would let it silently vouch for a `packages/*/src` change it
 // says nothing about — producing no version bump and no changelog entry, which
 // is the exact outcome the gate exists to catch.
-const releaseRelevant = changed
-  .filter((f) => RELEASE_RELEVANT.test(f) && !TEST_FILE.test(f))
-  .filter((f) => !isPrivate(f.split('/').slice(0, 2).join('/')));
-
 /** An added changeset, with the packages it actually vouches for. */
 interface AddedChangeset {
   readonly file: string;
@@ -174,6 +170,88 @@ const addedChangesets: AddedChangeset[] = addedRaw
     }
   })
   .filter((entry) => entry.names.length > 0);
+
+/**
+ * Fields in a package.json a consumer can actually observe after `npm i`.
+ *
+ * `RELEASE_RELEVANT` matches the whole file, which treats every byte of
+ * package.json as shippable. It is not: `scripts` and `devDependencies` are
+ * build-time only, and a repo-wide script edit (tsc -> tsgo across 33
+ * manifests, say) would demand a changeset per package while changing nothing
+ * a consumer can see. A gate that fires on work like that trains people to
+ * bypass it, which is how the rule ends up enforced nowhere.
+ */
+const CONSUMER_FIELDS = [
+  'name',
+  'version',
+  'type',
+  'main',
+  'module',
+  'types',
+  'typings',
+  'exports',
+  'bin',
+  'files',
+  'browser',
+  'engines',
+  'sideEffects',
+  'license',
+  'dependencies',
+  'peerDependencies',
+  'peerDependenciesMeta',
+  'optionalDependencies',
+  'publishConfig',
+  // Install-time gates: npm refuses to install on a non-matching platform, so
+  // narrowing any of these can break a consumer without touching a line of src.
+  'os',
+  'cpu',
+  'libc',
+  // Changes what the published tarball actually contains.
+  'bundleDependencies',
+  'bundledDependencies',
+  // Flipping `private` decides whether the package publishes at all -- the most
+  // consumer-visible field there is, since it governs whether they get anything.
+  'private',
+  // Internal `#subpath` mappings resolve at runtime inside the shipped package.
+  'imports',
+];
+
+/**
+ * Did this package.json change anything shippable?
+ *
+ * Both sides are read from git at the same two commits the diff used, so this
+ * answers the same question the diff asked. Anything unreadable or unparseable
+ * returns true: an unanswerable question must not be reported as "no release
+ * needed" -- that is the vacuous pass this whole script exists to avoid.
+ */
+function packageJsonAffectsConsumers(file: string): boolean {
+  let before: Record<string, unknown>;
+  let after: Record<string, unknown>;
+  try {
+    before = JSON.parse(git(['show', `${mergeBase}:${file}`]));
+  } catch {
+    return true; // new package, or absent at the base — shippable by definition
+  }
+  try {
+    after = JSON.parse(git(['show', `HEAD:${file}`]));
+  } catch {
+    return true; // deleted or malformed — do not quietly excuse it
+  }
+  return CONSUMER_FIELDS.some(
+    (k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]),
+  );
+}
+
+// Three independent narrowings, landed on two branches and merged here. A file
+// is release-relevant only if it ships (RELEASE_RELEVANT), is not a test, is
+// not in a private workspace, and — for a package.json — actually changed a
+// field a consumer can observe after `npm i`.
+const releaseRelevant = changed
+  .filter((f) => RELEASE_RELEVANT.test(f) && !TEST_FILE.test(f))
+  .filter((f) => !isPrivate(f.split('/').slice(0, 2).join('/')))
+  .filter(
+    (f) => !f.endsWith('/package.json') || packageJsonAffectsConsumers(f),
+  );
 
 /** Every package name a changeset on this branch speaks for. */
 const vouchedFor = new Set(addedChangesets.flatMap((entry) => entry.names));
@@ -310,7 +388,8 @@ switch (status) {
     );
     if (changed.length > 0) {
       console.log(
-        `   (${changed.length} file(s) changed, none under packages|apps/*/src or package.json)`,
+        `   (${changed.length} file(s) changed; any package.json among them ` +
+          'touched only build-time fields such as scripts or devDependencies)',
       );
     }
     break;

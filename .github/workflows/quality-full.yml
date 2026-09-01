@@ -348,6 +348,12 @@ jobs:
         with:
           turbo-cache: 'false'
           turbo-remote-cache: 'true'
+          # Node lane. Every step below builds or reads `eslint-plugin-*` and
+          # the devkit; none resolves the React tree, so this job was restoring
+          # ~170 MB of compressed archive it never opened. It is the gate's
+          # critical path (42s, 14s of it setup), so this comes off the wall
+          # clock rather than only off machine time.
+          deps: 'lean'
       # Same filter the weekly benchmark uses, for the same reason: the configs
       # import plugins by package name and resolve through `exports` to dist/.
       - name: Build plugins (dist/ is what the configs load)
@@ -642,7 +648,6 @@ jobs:
         with:
           turbo-cache: 'false'
           turbo-remote-cache: 'true'
-          tsbuildinfo-cache: 'true'
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
         # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster
