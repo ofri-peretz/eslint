@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.2.1",
+      "date": "2026-09-01T07:18:05Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Stop pointing readers at retired package names. `secure-coding`'s \"extend your coverage\" block linked `eslint-plugin-jwt` and `sequelize-security`'s prose named `eslint-plugin-pg` — both deprecated on npm since #414, and following either installs the frozen pre-rename build rather than the maintained one.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "0.3.6",
+      "date": "2026-09-01T07:18:01Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Stop pointing readers at retired package names. `secure-coding`'s \"extend your coverage\" block linked `eslint-plugin-jwt` and `sequelize-security`'s prose named `eslint-plugin-pg` — both deprecated on npm since #414, and following either installs the frozen pre-rename build rather than the maintained one.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-prisma-security",
       "short": "eslint-plugin-prisma-security",
       "version": "0.3.5",
@@ -14080,36 +14110,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Stop pointing readers at retired package names. `secure-coding`'s \"extend your coverage\" block linked `eslint-plugin-jwt` and `sequelize-security`'s prose named `eslint-plugin-pg` — both deprecated on npm since #414, and following either installs the frozen pre-rename build rather than the maintained one.",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-sequelize-security",
-      "short": "eslint-plugin-sequelize-security",
-      "version": "0.3.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Stop pointing readers at retired package names. `secure-coding`'s \"extend your coverage\" block linked `eslint-plugin-jwt` and `sequelize-security`'s prose named `eslint-plugin-pg` — both deprecated on npm since #414, and following either installs the frozen pre-rename build rather than the maintained one.",
           "pr": null
         }
       ]
