@@ -203,9 +203,10 @@ function laneMap(): Map<string, Lane> {
 
 const LANE_OF = laneMap();
 
-function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
+function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[]; laneDirs: Set<string> } {
   const testable: Pkg[] = [];
   const untested: string[] = [];
+  const laneDirs = new Set<string>();
   {
     for (const { dir, entry, abs, pkg } of readWorkspaces()) {
       // Before the task lookup, not after. A package in the other lane is not
@@ -213,6 +214,7 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
       // would otherwise fail the node lane for every web package. The web
       // lane's own discovery still holds that package to the same rule.
       if (LANE_OF.get(pkg.name) !== lane) continue;
+      laneDirs.add(dir);
       // Prefer test:coverage so the 100% thresholds declared in each
       // vitest.config.mts are actually enforced. Fall back to plain `test` for
       // workspaces that have tests but no coverage task (docs,
@@ -261,7 +263,7 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
       a.name.localeCompare(b.name) ||
       (a.split?.i ?? 0) - (b.split?.i ?? 0),
   );
-  return { testable, untested };
+  return { testable, untested, laneDirs };
 }
 
 // `--matrix <total>` prints the GitHub matrix of shards that actually have
@@ -329,7 +331,7 @@ if (!Number.isInteger(shardTotal) || shardTotal < 1) {
 }
 
 
-const { testable, untested } = discoverPackages(LANE);
+const { testable, untested, laneDirs } = discoverPackages(LANE);
 const REVERSE_DEPS = reverseDeps(testable);
 
 // Zero-selection guard. `turbo run test --filter=...[origin/main]` used to
@@ -389,7 +391,7 @@ let affected: Set<string> | null = null;
 
 if (!runAll) {
   const changed = changedFiles();
-  const decision = decideAffected(changed, testable, REVERSE_DEPS);
+  const decision = decideAffected(changed, testable, REVERSE_DEPS, laneDirs);
   if (decision.mode === 'bug') {
     console.error(`::error::Files changed under ${decision.dirs.join(', ')} but the affected set is empty.`);
     console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');

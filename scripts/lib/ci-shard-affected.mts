@@ -102,6 +102,16 @@ export function decideAffected(
   changed: string[] | null,
   testable: AffectedPkg[],
   rev?: Map<string, string[]>,
+  /**
+   * Dirs owned by the lane being computed, tested or not. A package in the OTHER
+   * lane is another job's work, not evidence of a bug here — the same reasoning
+   * `discoverPackages` already applies to its `untested` guard. Without this, a PR
+   * touching only node-lane packages made the web lane declare a bug and exit 1,
+   * because it compared lane-agnostic touched dirs against a lane-filtered
+   * `testable`. Omit to consider every touched dir, which is what non-lane callers
+   * want.
+   */
+  laneDirs?: Set<string>,
 ): Decision {
   if (changed === null) return { mode: 'all', why: 'no merge-base with the base ref' };
   if (changed.some((f) => GLOBAL_INPUTS.has(f))) return { mode: 'all', why: 'a global input changed' };
@@ -110,9 +120,15 @@ export function decideAffected(
     changed.map((f) => f.split('/').slice(0, 2).join('/')).filter((d) => /^(packages|apps|tools)\//.test(d)),
   );
   const directly = testable.filter((p) => touchedDirs.has(p.dir));
+  const inLane = laneDirs ? [...touchedDirs].filter((d) => laneDirs.has(d)) : [...touchedDirs];
 
-  if (touchedDirs.size > 0 && directly.length === 0) return { mode: 'bug', dirs: [...touchedDirs] };
-  if (touchedDirs.size === 0) return { mode: 'none', why: 'no package sources changed' };
+  if (inLane.length > 0 && directly.length === 0) return { mode: 'bug', dirs: inLane };
+  if (inLane.length === 0) {
+    return {
+      mode: 'none',
+      why: touchedDirs.size === 0 ? 'no package sources changed' : 'no package sources changed in this lane',
+    };
+  }
 
   const seed = directly.map((p) => p.name);
   if (!rev) return { mode: 'some', names: new Set(seed) };
