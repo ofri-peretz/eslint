@@ -278,6 +278,51 @@ say(
 );
 const mine = SHARD === null ? scannable : scannable.filter((_, i) => i % SHARD.of === SHARD.index);
 
+/*
+ * These two hashes are declared HERE, above the coordinator block, and not
+ * beside the code that reads them.
+ *
+ * `writeInventory` is called from inside `if (SHARD === null)`, which runs at
+ * module top level. Declared below that block, `const CONFIG_HASH` is in its
+ * temporal dead zone when the coordinator finishes, and the run dies with
+ *
+ *   ReferenceError: Cannot access 'CONFIG_HASH' before initialization
+ *
+ * at the very last step — after every repository has been cloned and every
+ * file linted. The parallel coordinator has therefore never once written an
+ * inventory since it was introduced, which is why the committed artifact was
+ * stale and carried a `configHash` from an older, serial version of this
+ * script. Hours of work, discarded on the final line, silently enough that the
+ * artifact's own staleness warning was read as a scheduling problem.
+ */
+/**
+ * The content hash of the config this run used.
+ *
+ * A scan result is a statement about the RULES only if you know which rules
+ * were asked. `eslint.real-source.config.mjs` was introduced on 2026-08-26
+ * because the previous config matched `**\/*.js` with no TypeScript parser and
+ * never linted a single `.tsx` file — and the inventory committed fourteen
+ * hours AFTER that fix still carried the pre-fix numbers. So `react-a11y` read
+ * as "37 rules that never fire on real code" when the truth was "37 rules
+ * nobody ran": the current config produces eight react-a11y findings from a
+ * ten-line JSX file.
+ *
+ * Nothing about the stale file looked stale. Recording the hash is what makes
+ * that state detectable — a reader compares it against the config on disk and
+ * knows whether the numbers describe the instrument they are holding.
+ */
+const CONFIG_HASH = createHash('sha256')
+  .update(fs.readFileSync(path.join(ROOT, 'eslint.real-source.config.mjs')))
+  .digest('hex')
+  .slice(0, 16);
+
+/** The content hash of the repository list this run scanned. */
+const REPOS_HASH = createHash('sha256')
+  .update(fs.readFileSync(path.join(ROOT, 'benchmarks', 'real-source-repos.json')))
+  .digest('hex')
+  .slice(0, 16);
+
+
 if (SHARD === null) {
   const workers = Math.max(1, Math.min(12, os.availableParallelism() - 2));
   say(`  ${workers} workers\n`);
@@ -352,33 +397,6 @@ if (SHARD === null) {
   writeInventory(merged, linted, failed, present.length);
   process.exit(0);
 }
-
-/**
- * The content hash of the config this run used.
- *
- * A scan result is a statement about the RULES only if you know which rules
- * were asked. `eslint.real-source.config.mjs` was introduced on 2026-08-26
- * because the previous config matched `**\/*.js` with no TypeScript parser and
- * never linted a single `.tsx` file — and the inventory committed fourteen
- * hours AFTER that fix still carried the pre-fix numbers. So `react-a11y` read
- * as "37 rules that never fire on real code" when the truth was "37 rules
- * nobody ran": the current config produces eight react-a11y findings from a
- * ten-line JSX file.
- *
- * Nothing about the stale file looked stale. Recording the hash is what makes
- * that state detectable — a reader compares it against the config on disk and
- * knows whether the numbers describe the instrument they are holding.
- */
-const CONFIG_HASH = createHash('sha256')
-  .update(fs.readFileSync(path.join(ROOT, 'eslint.real-source.config.mjs')))
-  .digest('hex')
-  .slice(0, 16);
-
-/** The content hash of the repository list this run scanned. */
-const REPOS_HASH = createHash('sha256')
-  .update(fs.readFileSync(path.join(ROOT, 'benchmarks', 'real-source-repos.json')))
-  .digest('hex')
-  .slice(0, 16);
 
 const eslint = new ESLint({
   // NOT the benchmark config: that one matches `**/*.js` with no TypeScript
