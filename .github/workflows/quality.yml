@@ -132,10 +132,38 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          # check-changeset-coverage.ts takes a merge-base diff against main,
+          # so it needs real history. It aborts rather than guessing when the
+          # base is unreachable -- a shallow checkout would fail this job
+          # loudly rather than pass it vacuously -- but full history is what
+          # lets it actually answer.
+          fetch-depth: 0
       - uses: ./.github/actions/setup
         with:
           turbo-cache: 'false'
       - run: npm run lint:publish
+
+      # Why this is a merge gate and not only a pre-commit hook:
+      #
+      # A package source change that lands without a changeset never gets a
+      # version bump. release.yml's `detect` then compares local package.json
+      # against npm, sees them equal, and publishes nothing -- no failure, no
+      # signal. That is exactly how six packages sat versioned-but-unpublished
+      # on 2026-08-31.
+      #
+      # lefthook runs this same script on pre-commit, but a local hook is
+      # advisory by construction: --no-verify and LEFTHOOK_EXCLUDE both skip
+      # it, and agents committing in sandboxes skip it routinely. Enforcing it
+      # here is what makes "merging a package change releases that package"
+      # true rather than aspirational.
+      #
+      # `skip-changeset` on the PR opts out for genuinely internal-only work.
+      - name: Changeset covers released code
+        if: >-
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-changeset')
+        run: npx tsx scripts/check-changeset-coverage.ts --since=origin/main --strict
 
   taxonomy:
     name: Plugin Taxonomy
@@ -157,6 +185,31 @@ jobs:
       # each one. #659 added twelve credential spellings and three reached the
       # PR with no test — removing them from the rule left the suite green.
       - run: npm run lint:detection-list-coverage
+      # Three gates that ran ONLY in the pre-commit hook until 2026-08-30.
+      #
+      # AI_SDLC.md names all three as the enforcement for a stage — spellings
+      # and key-vocabulary for Build, case-registry for Design — and none of
+      # them ran in CI. A hook is a convenience, not a gate: it is absent in a
+      # fresh worktree, absent for a commit made through the GitHub UI, and
+      # absent for anyone who has not run `lefthook install`. The stage was
+      # enforced on the machines that happened to be configured for it.
+      #
+      # 0.9s + 0.7s + 7.0s locally, and no network, so they belong in the
+      # cheap job rather than behind the heavy gate.
+      - run: npm run check:spellings
+      - run: npm run check:key-vocabulary
+      # `check:case-registry` DOES need a build, unlike the two above, and the
+      # comment here used to claim otherwise. It loads each plugin from
+      # `src/index.ts` under tsx, but those sources import
+      # `@interlace/eslint-devkit`, which resolves through that package's
+      # `main` to `dist/src/index.js`. It passed locally only because a working
+      # tree already has `dist/`; a fresh checkout does not, and the gate died
+      # with "Cannot find module .../eslint-devkit/dist/src/index.js".
+      #
+      # Only the devkit is built. Building every plugin would put a full
+      # workspace build in the job whose whole point is being cheap.
+      - run: npm run build --workspace=@interlace/eslint-devkit
+      - run: npm run check:case-registry
       # And the same question one layer out, on the LEDGER rather than the
       # rule: a triage verdict above a handful of findings has to say how
       # much of it was actually looked at. no-cycle carried "the DETECTION
@@ -170,6 +223,26 @@ jobs:
       # ~340ms of analysis over 121 rules, so it belongs in this job rather
       # than paying for its own checkout.
       - run: npm run rule-audit:gate
+
+      # Every rule must say, in its own tests, what it means to catch and what
+      # it means to leave alone — one described `invalid` case and one described
+      # `valid` case. A rule that has neither still passes its suite while
+      # nobody can tell what position it takes.
+      #
+      # A static read of the test sources, so no build: it belongs here rather
+      # than in the corpus job. Shrink-only baseline, 342 rules when added.
+      - run: npm run check:rule-cases
+
+      # A rule that decides from an identifier NAME must let the consumer
+      # replace the vocabulary. The space of names a project might use is
+      # endless — `isAuthorized`, `hasAccess`, `canEdit`, `gate` — so a fixed
+      # list is wrong in both directions and the project cannot fix it.
+      # An `additional*` option does not count: it grows the list but cannot
+      # remove the word we guessed wrong about.
+      #
+      # A standard SDK API name is exempt and stays hardcoded:
+      # `dangerouslyAllowBrowser` is Anthropic's, not the consumer's.
+      - run: npm run check:name-vocabulary
 
   recall:
     name: Detection Recall (CWE corpus)
@@ -234,6 +307,18 @@ jobs:
       - name: Every CWE must still detect what it used to
         run: npx tsx scripts/recall-gate.ts
 
+      # The precision counterpart. recall-gate asks whether the rules still
+      # catch what they used to; this asks whether a rule is measured at all.
+      # A rule with no corpus fixture has no precision number, so it can be
+      # wrong about real code indefinitely and nothing moves. 62 of 374 had
+      # evidence when this was added; the baseline may only shrink.
+      #
+      # It belongs in THIS job rather than Plugin Taxonomy: the other coverage
+      # gates are static reads of rule sources, while this one actually loads
+      # the plugins, so it needs the build above.
+      - name: No rule may ship without corpus evidence
+        run: npm run check:corpus-coverage
+
   lockfile:
     name: Lockfile Sync
     runs-on: ubuntu-latest
@@ -295,9 +380,16 @@ jobs:
 
       # Pinned by digest, not tag: this job enforces Pinned-Dependencies, so it
       # has no business pulling a mutable image itself.
+      #
+      # ghcr.io, not gcr.io. The Google-hosted copy started refusing anonymous
+      # pulls outright —
+      #   denied: Consumer 'projects/367732848534' is invalid
+      # — which fails this job on infrastructure that has nothing to do with
+      # the repository being scanned. OpenSSF publishes the same image to
+      # ghcr.io/ossf/scorecard, so the digest below is v5.4.0 from there.
       - name: Scorecard — offline checks
         env:
-          SCORECARD_IMAGE: gcr.io/openssf/scorecard@sha256:b9a535801cb5fc8e7b2bea4cf45dd2db9a342cab8cc32bb5be2ac1355a95356f
+          SCORECARD_IMAGE: ghcr.io/ossf/scorecard@sha256:546c3f019eb24974abda92004a9003e4059a10e9ee13b1c3ab40d29f4f32f764
         run: |
           set -euo pipefail
           docker run --rm -v "$GITHUB_WORKSPACE":/repo "$SCORECARD_IMAGE" \

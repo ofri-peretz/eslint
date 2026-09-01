@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/95.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   constInitializerOf,
@@ -200,7 +200,7 @@ function calleeTrailingName(callee: TSESTree.Node): string | null {
 
 /** A string written out in full — no runtime assembly, nothing to steer. */
 function isStaticStringNode(node: TSESTree.Node): boolean {
-  if (node.type === 'Literal') return typeof node.value === 'string';
+  if (node.type === 'Literal') return staticString(node) !== null;
   if (node.type === 'TemplateLiteral') return node.expressions.length === 0;
   return false;
 }
@@ -432,7 +432,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     const isLiteralString = (node: TSESTree.Node): boolean => {
-      return node.type === 'Literal' && typeof node.value === 'string';
+      return staticString(node) !== null;
     };
 
     /**

@@ -69,6 +69,7 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
   valid: lambda([
     // ========== VALID: Specific origin ==========
     {
+      name: 'a named origin',
       code: `
         return {
           statusCode: 200,
@@ -135,6 +136,7 @@ ruleTester.run('no-permissive-cors-response', noPermissiveCorsResponse, {
   invalid: lambda([
     // ========== INVALID: Wildcard origin in return ==========
     {
+      name: "Access-Control-Allow-Origin '*' on a handler response",
       code: `
         return {
           statusCode: 200,

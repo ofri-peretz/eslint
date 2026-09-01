@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 describe('no-dynamic-algorithm-selection', () => {
   ruleTester.run('no-dynamic-algorithm-selection', noDynamicAlgorithmSelection, {
     valid: [
-      { code: 'crypto.createHash("sha256")' },
+      { name: 'a named algorithm', code: 'crypto.createHash("sha256")' },
       { code: 'crypto.createHmac("sha512", secret)' },
       { code: 'crypto.createCipheriv("aes-256-gcm", key, iv)' },
       { code: 'crypto.createSign("RSA-SHA256")' },
@@ -27,6 +27,7 @@ describe('no-dynamic-algorithm-selection', () => {
     ],
     invalid: [
       {
+        name: 'the hash algorithm chosen at runtime',
         code: 'crypto.createHash(userAlgorithm)',
         errors: [{ messageId: 'dynamicAlgorithm', data: { method: 'createHash' } }],
       },

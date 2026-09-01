@@ -90,9 +90,9 @@ flowchart TD
 
 ## Options
 
-| Option              | Type       | Default                        | Description                                                                                                                                                           |
-| ------------------- | ---------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `responseReceivers` | `string[]` | `['res', 'response', 'reply']` | Identifiers that name a response object, so `<name>.render(view)` emits a response rather than returning a string. Anything unlisted is treated as a template engine. |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `responseReceivers` | `string[]` | `["res","response","reply"]` | Identifiers that name a response object, so `<name>.render(view)` emits a response rather than returning a string. Anything unlisted is treated as a template engine. |
 
 `<name>.render(view)` is only a response emission when `<name>` is a response
 object. `nunjucksEnv.render(template, data)` returns a string, and so do

@@ -63,6 +63,7 @@ ruleTester.run('require-request-timeout', requireRequestTimeout, {
         'const flag = true;',
     // With abortSignal
     {
+      name: 'an abort signal bounds the call',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -108,6 +109,7 @@ ruleTester.run('require-request-timeout', requireRequestTimeout, {
   invalid: xai([
     // No timeout
     {
+      name: 'a provider call that can hang for as long as the provider wants',
       code: `
         await generateText({
           model: openai('gpt-4'),

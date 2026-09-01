@@ -75,6 +75,7 @@ ruleTester.run('lock-file', lockFile, {
     // shallow-test boilerplate cases (`const x = 42;` etc.) don't fit
     // here and were intentionally omitted.
     {
+      name: 'the expected lock file',
       code: "const validDefault = 1",
       filename: __filename,
     },
@@ -108,6 +109,7 @@ ruleTester.run('lock-file', lockFile, {
 
   invalid: [
     {
+      name: 'a lock file for a package manager the project does not use',
       code: "const invalidPnpm = 1",
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'pnpm' }],

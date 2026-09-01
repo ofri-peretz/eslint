@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('group-exports', groupExports, {
   valid: [
     // Single export statement
-    { code: `export { a, b, c };` },
+    { name: 'a single grouped export', code: `export { a, b, c };` },
 
     // Single export with declaration
     { code: `export const a = 1;` },
@@ -51,6 +51,7 @@ ruleTester.run('group-exports', groupExports, {
   invalid: [
     // Multiple local exports
     {
+      name: 'two export statements where one would do',
       code: `
         export { a };
         export { b };

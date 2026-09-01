@@ -25,6 +25,7 @@ describe('no-default-test-id', () => {
     valid: [
       // No default — consumer must provide
       {
+        name: 'the prop is passed through with no default',
         code: `function Card({ "data-testid": dataTestId, ...props }) { return <div data-testid={dataTestId} />; }`,
       },
       // No data-testid in destructure at all
@@ -39,6 +40,7 @@ describe('no-default-test-id', () => {
     invalid: [
       // Literal default value
       {
+        name: 'a default test id makes two instances indistinguishable in a test',
         code: `function Card({ "data-testid": dataTestId = "card" }) { return <div data-testid={dataTestId} />; }`,
         output: `function Card({ "data-testid": dataTestId }) { return <div data-testid={dataTestId} />; }`,
         errors: [{ messageId: 'defaultTestId' }],

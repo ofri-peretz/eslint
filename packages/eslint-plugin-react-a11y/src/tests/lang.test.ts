@@ -25,7 +25,7 @@ describe('lang', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - valid lang codes', lang, {
       valid: [
-        { code: '<html lang="en"></html>' },
+        { name: 'a valid tag', code: '<html lang="en"></html>' },
         { code: '<html lang="en-US"></html>' },
         { code: '<html lang="fr"></html>' },
         { code: '<html lang="zh-Hans"></html>' },
@@ -46,7 +46,7 @@ describe('lang', () => {
     ruleTester.run('invalid - invalid lang codes', lang, {
       valid: [],
       invalid: [
-        { code: '<html lang="invalid"></html>', errors: [{ messageId: 'invalidLang' }] },
+        { name: 'a lang value that is not a valid language tag', code: '<html lang="invalid"></html>', errors: [{ messageId: 'invalidLang' }] },
         // Single char is invalid
         { code: '<html lang="e"></html>', errors: [{ messageId: 'invalidLang' }] },
         // 4+ chars without hyphen is invalid

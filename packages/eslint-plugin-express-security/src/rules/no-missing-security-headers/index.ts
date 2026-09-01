@@ -13,12 +13,15 @@
  * @see https://owasp.org/www-project-secure-headers/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 
-type MessageIds =
-  | 'missingSecurityHeader';
+type MessageIds = 'missingSecurityHeader';
 
 export interface Options {
   /** Required security headers. Default: ['Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options'] */
@@ -172,7 +175,6 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
         fix: 'Set security headers: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options',
         documentationLink: 'https://owasp.org/www-project-secure-headers/',
       }),
-
     },
     schema: [
       {
@@ -211,8 +213,7 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
     }: Options = options as Options;
 
     const filename = context.filename;
-    const isTestFile =
-      ignoreInTests && isTestFilePath(filename);
+    const isTestFile = ignoreInTests && isTestFilePath(filename);
 
     if (isTestFile) {
       return {};

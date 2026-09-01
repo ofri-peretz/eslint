@@ -333,6 +333,26 @@ jobs:
             (cd "$PKG_DIR" && npm publish --tag "$DIST_TAG" --access public --provenance)
           fi
 
+          # RECORD THE PUBLISH BEFORE ANYTHING THAT CAN FAIL.
+          #
+          # Everything below this line — tagging, pushing the tag, creating the
+          # GitHub release — can fail, and when it does the job goes red with
+          # the package already public and unrecallable. On 2026-08-31 that
+          # happened to six packages at once: run 33346361671 reported six
+          # `failure` publish jobs and all six versions were on npm, published
+          # by the Actions OIDC identity with SLSA provenance.
+          #
+          # A reader then has only the job status, and the job status says the
+          # opposite of what happened. It cost this session hours: the red run
+          # was read as "the release never went out", which sent the whole
+          # investigation the wrong way.
+          #
+          # $GITHUB_STEP_SUMMARY is written immediately and survives a later
+          # failure in the same job, so the run page states the truth even when
+          # the conclusion is `failure`. See
+          # docs/intents/2026-08-31-a-red-release-must-mean-nothing-shipped.md
+          echo "PUBLISHED — \`$PKG_NAME@$PKG_VER\` is on npm. Steps after this point (git tag, GitHub release) may still fail; that does NOT un-publish it." >> "$GITHUB_STEP_SUMMARY"
+
           # Tag in git (idempotent — fail-soft if tag already exists).
           if git rev-parse -q --verify "refs/tags/$tag_name" >/dev/null; then
             echo "(local tag $tag_name already exists)"

@@ -31,6 +31,7 @@ describe('no-unnecessary-rerenders', () => {
       valid: [
         // Primitive values
         {
+          name: 'a string prop',
           code: '<Component prop="value" />',
         },
         {
@@ -56,6 +57,7 @@ describe('no-unnecessary-rerenders', () => {
       valid: [],
       invalid: [
         {
+          name: 'an object literal prop — a new identity every render',
           code: '<Component data={{ x: 1 }} />',
           filename: 'component.tsx', // Explicit filename to avoid test file detection
           options: [{ minSize: 1, ignoreInTests: false }], // Set minSize to 1 and explicitly disable test ignoring

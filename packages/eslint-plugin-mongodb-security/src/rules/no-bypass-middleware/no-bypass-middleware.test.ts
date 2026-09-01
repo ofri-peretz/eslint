@@ -75,6 +75,7 @@ describe('no-bypass-middleware', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-bypass-middleware', () => {
       invalid: xmo([
         // Triggers bypassMiddleware: bypasses mongoose middleware
         {
+          name: 'updateMany goes straight to the collection, past every mongoose hook',
           code: `User.updateMany({ role: 'admin' }, { $set: { active: true } });`,
           errors: [{ messageId: 'bypassMiddleware' }],
         },

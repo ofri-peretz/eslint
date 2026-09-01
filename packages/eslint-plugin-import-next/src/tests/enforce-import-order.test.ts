@@ -21,6 +21,7 @@ describe('enforce-import-order', () => {
     valid: [
       // Correct order: builtin -> external -> internal -> parent -> sibling
       {
+        name: 'builtins, packages, aliases, parent, sibling',
         code: `
 import fs from 'fs';
 import React from 'react';
@@ -81,6 +82,7 @@ const x = 1;
     invalid: [
       // Incorrect group order
       {
+        name: 'a relative import before a builtin',
         code: `
 import { helper } from './helper';
 import fs from 'fs';

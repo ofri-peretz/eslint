@@ -9,7 +9,7 @@
  * Forbid the use of extraneous packages (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { readJsonFileSync, findFileUpward } from '@interlace/eslint-devkit';
 import { getDirname } from '@interlace/eslint-devkit';
@@ -554,8 +554,9 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
           node.arguments.length === 1
         ) {
           const arg = node.arguments[0];
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            checkImport(arg.value, arg);
+          const staticText = staticString(arg);
+          if (staticText !== null) {
+            checkImport(staticText, arg);
           }
         }
       },

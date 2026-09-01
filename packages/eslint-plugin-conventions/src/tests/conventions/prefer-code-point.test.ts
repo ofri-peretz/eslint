@@ -28,6 +28,7 @@ describe('prefer-code-point', () => {
       valid: [
         // codePointAt usage (preferred)
         {
+          name: 'codePointAt',
           code: 'const code = str.codePointAt(0);',
         },
         // Other string methods
@@ -42,6 +43,7 @@ describe('prefer-code-point', () => {
       invalid: [
         // Direct charCodeAt usage
         {
+          name: 'charCodeAt splits characters above the BMP',
           code: 'const code = str.charCodeAt(0);',
           errors: [
             {

@@ -63,6 +63,7 @@ describe('no-buffer-overread', () => {
       valid: [
         // Safe buffer access with bounds checking (if statement provides bounds check)
         {
+          name: 'the index is range-checked first',
           code: 'function f(req) { const index = Number(req.query.i); if (index >= 0 && index < buffer.length) { const byte = buffer[index]; } }',
         },
         // Safe buffer methods with literal offset
@@ -120,6 +121,7 @@ describe('no-buffer-overread', () => {
       invalid: [
         // The index traces to the request body.
         {
+          name: 'a buffer index taken from the request body with no bounds check',
           code: 'function h(req) { return buffer[req.body.slot]; }',
           errors: [{ messageId: 'userControlledBufferIndex' }],
         },

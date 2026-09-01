@@ -21,6 +21,7 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
   valid: [
     // Correct usage: secure wss://
     {
+      name: 'wss://',
       code: `const ws = new WebSocket('wss://acmecorp.io/socket');`,
     },
     {
@@ -95,6 +96,7 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
     // exempted this — a cleartext socket to an attacker-controlled host,
     // silently allowed by a substring test. Authority parsing fixes it.
     {
+      name: 'a ws:// endpoint — the frames travel in clear',
       code: `const ws = new WebSocket('ws://relay.acmecorp.io/?next=://localhost');`,
       errors: [
         {

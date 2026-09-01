@@ -48,6 +48,25 @@ const CSPRNG_CALLS = new Set([
 export interface Options {
   /** Allow Math.random() in test files. Default: false */
   allowInTests?: boolean;
+
+  /**
+   * Words that name a security value in THIS codebase. Replaces the default
+   * list; matched as whole words against the identifier.
+   *
+   * The rule decides by name — it says so below — and the space of names a
+   * project might use is endless. Shipping a fixed vocabulary means guessing at
+   * somebody else's conventions and being wrong in both directions: a house
+   * that writes `nonce` for its CSRF value is missed, and one that writes
+   * `keyboardHandler` is flagged. The default is what the corpus measured; the
+   * list belongs to whoever runs the rule.
+   */
+  secretWords?: readonly string[];
+
+  /**
+   * Words that mark a trailing `id` as a correlation id rather than a
+   * credential — `requestId`, `traceId`. Replaces the default list.
+   */
+  correlationIdWords?: readonly string[];
 }
 
 type RuleOptions = [Options?];
@@ -106,7 +125,21 @@ const CRYPTO_WORDS: readonly string[] = [
   'mnemonic',
 ];
 
-const CRYPTO_WORD_SET: ReadonlySet<string> = new Set(CRYPTO_WORDS);
+// No module-level `CRYPTO_WORD_SET` or `baseNameSuggestsCrypto`. They were the
+// hardcoded reads: a name test bound to a fixed vocabulary at module load, with
+// no way for a consumer to replace it. The vocabulary is now built per file
+// from the options and passed down as `Vocabulary`.
+
+/**
+ * The name vocabulary this run is using — the defaults, or whatever the
+ * consumer supplied. Built once in `create` and passed down, so the module
+ * never reads a hardcoded list at match time.
+ */
+type Vocabulary = {
+  words: ReadonlySet<string>;
+  correlationWords: ReadonlySet<string>;
+  suggestsCrypto: (name: string) => boolean;
+};
 
 /**
  * Words that make the value a DURATION.
@@ -248,7 +281,6 @@ const NON_SECURITY_QUALIFIERS: ReadonlyMap<
 ]);
 
 /** Does this name suggest the value is a security value? */
-const baseNameSuggestsCrypto = makeNameTest(CRYPTO_WORDS);
 
 /**
  * Does this name suggest the value is a security value, after the two
@@ -259,15 +291,15 @@ const baseNameSuggestsCrypto = makeNameTest(CRYPTO_WORDS);
  * added here is subtraction only: a name that the list matched can be ruled
  * OUT by exact word membership, never ruled in.
  */
-function nameSuggestsCrypto(name: string): boolean {
-  if (!baseNameSuggestsCrypto(name)) return false;
+function nameSuggestsCrypto(name: string, vocab: Vocabulary): boolean {
+  if (!vocab.suggestsCrypto(name)) return false;
 
   // Non-empty by construction: the base test cannot match a name with no words.
   const words = identifierWords(name);
   const tail = words[words.length - 1] as string;
   if (DURATION_TAILS.has(tail) || QUANTITY_TAILS.has(tail)) return false;
 
-  const matched = words.filter((word) => CRYPTO_WORD_SET.has(word));
+  const matched = words.filter((word) => vocab.words.has(word));
   // No whole-word hit means the base test matched through its long-substring
   // path (`apikey`, `password`, `session`) — those spellings are unambiguous.
   if (matched.length === 0) return true;
@@ -360,7 +392,7 @@ const NON_SECURITY_ID_QUALIFIERS: ReadonlySet<string> = new Set([
  * Did the function name match only through the `id` pattern, on an id the
  * qualifier list says is for correlation?
  */
-function isCorrelationIdFactory(name: string): boolean {
+function isCorrelationIdFactory(name: string, vocab: Vocabulary): boolean {
   const words = identifierWords(name);
   if (words[words.length - 1] !== 'id') return false;
   // A crypto word anywhere in the name outranks the correlation word.
@@ -368,15 +400,15 @@ function isCorrelationIdFactory(name: string): boolean {
   // and matches `/generate.*token/i` on its own — subtracting it would have
   // suppressed a match this list was never asked to judge. The subtraction is
   // only for names whose ONLY claim to being crypto is the trailing `id`.
-  if (words.some((word) => CRYPTO_WORD_SET.has(word))) return false;
-  return words.some((word) => NON_SECURITY_ID_QUALIFIERS.has(word));
+  if (words.some((word) => vocab.words.has(word))) return false;
+  return words.some((word) => vocab.correlationWords.has(word));
 }
 
 /** The name says this function builds a security value. */
-function functionNameSuggestsCrypto(name: string): boolean {
+function functionNameSuggestsCrypto(name: string, vocab: Vocabulary): boolean {
   if (!CRYPTO_FUNCTION_PATTERNS.some((pattern) => pattern.test(name)))
     return false;
-  return !isCorrelationIdFactory(name);
+  return !isCorrelationIdFactory(name, vocab);
 }
 
 const CRYPTO_FUNCTION_PATTERNS = [
@@ -456,6 +488,22 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Allow Math.random() in test files. Default: true',
           },
+          secretWords: {
+            type: 'array',
+            items: { type: 'string' },
+            // Spread: the schema type wants a mutable array, and CRYPTO_WORDS
+            // is `readonly` so that nothing can edit the default in place.
+            default: [...CRYPTO_WORDS],
+            description:
+              'Words that name a security value in this codebase. Replaces the default list.',
+          },
+          correlationIdWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...NON_SECURITY_ID_QUALIFIERS],
+            description:
+              'Words that mark a trailing `id` as a correlation id rather than a credential. Replaces the default list.',
+          },
         },
         additionalProperties: false,
       },
@@ -477,13 +525,38 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
        * no runtime. Set `false` to report everywhere.
        */
       allowInTests: true,
+
+      /**
+       * The measured defaults. Stated here rather than only in the destructure,
+       * so `context.options[0]` shows a reader the vocabulary in force without
+       * them having to find the fallback.
+       */
+      secretWords: [...CRYPTO_WORDS],
+      correlationIdWords: [...NON_SECURITY_ID_QUALIFIERS],
     },
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true } = options as Options;
+    const {
+      allowInTests = true,
+      secretWords = CRYPTO_WORDS,
+      correlationIdWords = [...NON_SECURITY_ID_QUALIFIERS],
+    } = options as Options;
+
+    /**
+     * Built once per file, from the consumer's list or the measured default.
+     * Nothing below reads a module-level word list directly — the vocabulary
+     * arrives as data so that a project whose secrets are called `nonce` or
+     * whose `keyHandler` is a keyboard handler can say so.
+     */
+    const vocab: Vocabulary = {
+      words: new Set(secretWords),
+      correlationWords: new Set(correlationIdWords),
+      suggestsCrypto: makeNameTest(secretWords),
+    };
+
     const sourceCode = context.sourceCode;
 
     const filename = context.filename;
@@ -763,7 +836,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         ) {
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
-            if (nameSuggestsCrypto(varName)) {
+            if (nameSuggestsCrypto(varName, vocab)) {
               return true;
             }
             if (
@@ -778,7 +851,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         // Check function names
         if (current.type === AST_NODE_TYPES.FunctionDeclaration && current.id) {
           const funcName = current.id.name;
-          if (functionNameSuggestsCrypto(funcName)) {
+          if (functionNameSuggestsCrypto(funcName, vocab)) {
             return true;
           }
         }
@@ -810,12 +883,12 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             current.left.property.type === AST_NODE_TYPES.Identifier
           ) {
             const propName = current.left.property.name;
-            if (nameSuggestsCrypto(propName)) {
+            if (nameSuggestsCrypto(propName, vocab)) {
               return true;
             }
           }
           if (current.left.type === AST_NODE_TYPES.Identifier) {
-            if (nameSuggestsCrypto(current.left.name)) {
+            if (nameSuggestsCrypto(current.left.name, vocab)) {
               return true;
             }
           }
@@ -825,7 +898,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         if (namesThisValue && current.type === AST_NODE_TYPES.Property) {
           if (current.key.type === AST_NODE_TYPES.Identifier) {
             const propName = current.key.name;
-            if (nameSuggestsCrypto(propName)) {
+            if (nameSuggestsCrypto(propName, vocab)) {
               return true;
             }
           }
@@ -842,8 +915,8 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
             ) {
               const funcName = func.id.name;
               if (
-                functionNameSuggestsCrypto(funcName) ||
-                nameSuggestsCrypto(funcName)
+                functionNameSuggestsCrypto(funcName, vocab) ||
+                nameSuggestsCrypto(funcName, vocab)
               ) {
                 return true;
               }

@@ -29,6 +29,7 @@ describe('no-unsafe-deserialization', () => {
       valid: [
         // Safe JSON parsing
         {
+          name: 'JSON.parse',
           code: 'const data = JSON.parse(input);',
         },
         // Safe YAML parsing
@@ -57,6 +58,7 @@ describe('no-unsafe-deserialization', () => {
       valid: [],
       invalid: [
         {
+          name: 'eval on a request body',
           code: 'eval(req.body.script);',
           errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
         },

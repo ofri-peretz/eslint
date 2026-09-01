@@ -288,7 +288,7 @@ obj[method](userInput);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `allowLiterals` | `boolean` | `false` | Allow literal string regex patterns |
+| `allowLiterals` | `boolean` | `true` | Allow literal string regex patterns — `new RegExp('^[a-z]+$')`. A rule named "non-literal" reporting a literal by default contradicted its own contract. Set false to prefer `/…/` literal syntax; measured effect on the 30-fixture corpus: +6 findings, all on safe/ files. |
 | `maxPatternLength` | `number` | `100` | Maximum allowed pattern length for dynamic regex |
 
 ## Not a finding

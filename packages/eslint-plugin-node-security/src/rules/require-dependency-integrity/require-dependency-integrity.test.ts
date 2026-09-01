@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
   valid: [
     // Resources with integrity
-    { code: "const html = '<script src=\"https://cdn.example.com/lib.js\" integrity=\"sha384-abc\"></script>'" },
+    { name: 'integrity is present', code: "const html = '<script src=\"https://cdn.example.com/lib.js\" integrity=\"sha384-abc\"></script>'" },
     { code: "const link = '<link href=\"https://cdnjs.cloudflare.com/style.css\" integrity=\"sha256-xyz\">'" },
     // Non-CDN resources
     { code: "const script = '<script src=\"/local/app.js\"></script>'" },
@@ -27,7 +27,8 @@ ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
 
   invalid: [
     // CDN resources without integrity
-    { 
+    {
+      name: 'a CDN script tag with no integrity attribute', 
       code: "const html = '<script src=\"https://cdn.example.com/lib.js\"></script>'",
       errors: [{ messageId: 'violationDetected' }]
     },

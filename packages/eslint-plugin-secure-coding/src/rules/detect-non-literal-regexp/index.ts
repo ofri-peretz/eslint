@@ -104,7 +104,7 @@
  * @see https://cwe.mitre.org/data/definitions/400.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, isStaticExpression, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   isEnvironmentGlobal,
@@ -681,16 +681,8 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
      * Includes template literals without expressions
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const isLiteralString = (node: TSESTree.Node): boolean => {
-      if (node.type === 'Literal' && typeof node.value === 'string') {
-        return true;
-      }
-      // Template literals without expressions are also static/safe
-      if (node.type === 'TemplateLiteral' && node.expressions.length === 0) {
-        return true;
-      }
-      return false;
-    };
+    // Both spellings are static, and `staticString` already says so.
+    const isLiteralString = (node: TSESTree.Node): boolean => staticString(node) !== null;
 
     /**
      * Extract regex pattern from RegExp construction

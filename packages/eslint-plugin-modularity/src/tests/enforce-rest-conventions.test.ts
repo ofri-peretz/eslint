@@ -25,7 +25,7 @@ describe('enforce-rest-conventions', () => {
     ruleTester.run('allow proper REST patterns', enforceRestConventions, {
       valid: [
         // Proper plural resource naming
-        { code: 'app.get("/users", handler);' },
+        { name: 'a plural collection path', code: 'app.get("/users", handler);' },
         { code: 'app.post("/orders", handler);' },
         { code: 'app.put("/products/:id", handler);' },
         { code: 'router.delete("/items/:id", handler);' },
@@ -40,6 +40,7 @@ describe('enforce-rest-conventions', () => {
       invalid: [
         // Singular resource naming
         {
+          name: 'a singular collection path',
           code: 'app.get("/user", handler);',
           errors: [{ messageId: 'restConventionViolation' }],
         },

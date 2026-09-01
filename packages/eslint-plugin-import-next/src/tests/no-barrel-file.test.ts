@@ -16,6 +16,7 @@ ruleTester.run('no-barrel-file', noBarrelFile, {
   valid: [
     // ✅ Single re-export (public API pattern) - common and acceptable
     {
+      name: 'a single named re-export',
       code: `export { MyComponent } from './MyComponent';`,
       filename: '/project/src/components/Button/index.ts',
     },
@@ -153,6 +154,7 @@ ruleTester.run('no-barrel-file', noBarrelFile, {
   invalid: [
     // ❌ Classic barrel file: 3+ re-exports from different modules
     {
+      name: 'a file that is only re-exports — every consumer pulls the whole directory',
       code: `
         export * from './Button';
         export * from './Modal';

@@ -35,7 +35,7 @@ describe('no-weak-hash-algorithm', () => {
   ruleTester.run('no-weak-hash-algorithm', noWeakHashAlgorithm, {
     valid: [
       // Valid: SHA-256 (strong)
-      { code: 'crypto.createHash("sha256").update(data);' },
+      { name: 'SHA-256', code: 'crypto.createHash("sha256").update(data);' },
       { code: 'crypto.createHash("sha512").update(data);' },
       { code: 'crypto.createHash("sha3-256").update(data);' },
       // Valid: Non-crypto context
@@ -127,6 +127,7 @@ describe('no-weak-hash-algorithm', () => {
       // An import IS evidence: `crypto-hash` really does export a bare digest
       // under the algorithm's own name, which is what the branch is for.
       {
+        name: 'SHA-1 over secret material',
         code: `
           import { sha1 } from 'crypto-hash';
           const digest = await sha1(secretMaterial);

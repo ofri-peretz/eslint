@@ -13,7 +13,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('prefer-default-export', preferDefaultExport, {
   valid: [
     // Default options (target: single)
-    { code: `export default function bar() {};` },
+    { name: 'a default export', code: `export default function bar() {};` },
     { code: `export const foo = 1; export const bar = 2;` },
     { code: `export default 1;` },
     // Type-only exports should be ignored
@@ -26,6 +26,7 @@ ruleTester.run('prefer-default-export', preferDefaultExport, {
   invalid: [
     // Single named export should be default
     {
+      name: 'a single named export where a default is the configured style',
       code: `export const foo = 1;`,
       errors: [{ 
           messageId: 'preferDefaultExport',

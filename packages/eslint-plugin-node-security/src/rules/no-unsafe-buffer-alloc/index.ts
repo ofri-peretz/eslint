@@ -75,6 +75,8 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
+  readsRequestShape,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import {
@@ -137,7 +139,10 @@ const SIZED_ALLOCATORS: ReadonlySet<string> = new Set([
  *
  * `Buffer.alloc(x)` needs no such test: its argument is a size by definition.
  */
-function looksNumeric(node: TSESTree.Node): boolean {
+function looksNumeric(
+  node: TSESTree.Node,
+  countNames: ReadonlySet<string>,
+): boolean {
   switch (node.type) {
     case AST_NODE_TYPES.Literal:
       return typeof node.value === 'number';
@@ -146,13 +151,15 @@ function looksNumeric(node: TSESTree.Node): boolean {
         node.operator,
       );
     case AST_NODE_TYPES.Identifier:
-      return COUNT_NAMES.has(node.name.toLowerCase());
-    case AST_NODE_TYPES.MemberExpression:
-      return (
-        !node.computed &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        COUNT_NAMES.has(node.property.name.toLowerCase())
-      );
+      return countNames.has(node.name.toLowerCase());
+    case AST_NODE_TYPES.MemberExpression: {
+      // `propertyName` rather than `.property.name`: `o.length`,
+      // `o['length']` and `` o[`length`] `` are the same property, and a
+      // minifier or a non-identifier key writes the second. Reading only the
+      // dotted spelling is a blind spot nobody chose.
+      const prop = propertyName(node);
+      return prop !== null && countNames.has(prop.toLowerCase());
+    }
     case AST_NODE_TYPES.CallExpression: {
       // `Math.min(length, MAX)` is the clamped spelling of a size; it has to
       // read as numeric here or `isClamped` below is unreachable.
@@ -170,6 +177,38 @@ function looksNumeric(node: TSESTree.Node): boolean {
       return false;
   }
 }
+
+/**
+ * A vocabulary option, normalised. Lower-cased once so the hot path compares
+ * against a set rather than re-casing on every identifier.
+ */
+function toLowerSet(names: readonly string[]): ReadonlySet<string> {
+  return new Set(names.map((n) => n.toLowerCase()));
+}
+
+export interface Options {
+  /**
+   * Binding names that carry bytes off the wire. **Replaces** the default
+   * (`chunk`, `chunks`, `buffer`, `buf`, `payload`, `frame`, `packet`, `raw`,
+   * `message`, `msg`). Pass `[]` to disable the name arm entirely.
+   */
+  wireNames?: readonly string[];
+  /**
+   * Root identifiers treated as a request. **Replaces** the default (`req`,
+   * `request`, `ctx`, `event`). Most projects need not set this: a
+   * request-shaped read off a parameter is recognised structurally regardless
+   * of spelling, and this list only covers a bare root used as wire data.
+   */
+  requestRootNames?: readonly string[];
+  /**
+   * Names that hold a count rather than a payload. **Replaces** the default
+   * (`length`, `len`, `size`, `count`, `n`, `num`, `total`, `capacity`,
+   * `bytelength`).
+   */
+  countNames?: readonly string[];
+}
+
+type RuleOptions = [Options?];
 
 /** Names that hold a count, not a payload. */
 const COUNT_NAMES: ReadonlySet<string> = new Set([
@@ -486,7 +525,7 @@ function declaredName(node: TSESTree.Node): string | null {
   return null;
 }
 
-export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
+export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-buffer-alloc',
   meta: {
     type: 'problem',
@@ -539,11 +578,55 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/789.html',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          wireNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...WIRE_NAMES],
+            description:
+              'Binding names that carry bytes off the wire. Replaces the default; pass [] to turn the name arm off.',
+          },
+          requestRootNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...REQUEST_ROOTS],
+            description:
+              'Root identifiers treated as a request. Replaces the default.',
+          },
+          countNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...COUNT_NAMES],
+            description:
+              'Identifiers that hold an allocation size rather than a payload. Replaces the default.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [{}],
+  create(context, [options = {}]) {
     const sourceCode = context.sourceCode;
+
+    // Three name lists decide part of this rule's verdict, and all three are
+    // guesses at what somebody else calls their own bindings — `message` and
+    // `raw` are in WIRE_NAMES, and `n` is in COUNT_NAMES. A project whose
+    // `message` is a log line, or whose `raw` is a template string, cannot
+    // make the rule stop, and an additive option would not help: it can grow
+    // the list, never remove the word we guessed wrong about.
+    //
+    // So each REPLACES its default. Passing `wireNames: []` turns that arm off
+    // entirely, which is the only honest way to let a consumer disagree with a
+    // vocabulary we invented.
+    const vocab = {
+      wireNames: toLowerSet(options.wireNames ?? [...WIRE_NAMES]),
+      requestRoots: toLowerSet(options.requestRootNames ?? [...REQUEST_ROOTS]),
+      countNames: toLowerSet(options.countNames ?? [...COUNT_NAMES]),
+    };
 
     // ── CWE-789: allocation sized by a length field off the wire ──────────
     //
@@ -616,7 +699,7 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
             if (bound.defs[0].type === 'ImportBinding') return false;
           }
           const lower = node.name.toLowerCase();
-          if (WIRE_NAMES.has(lower) || REQUEST_ROOTS.has(lower)) {
+          if (vocab.wireNames.has(lower) || vocab.requestRoots.has(lower)) {
             // A name is evidence only where the ORIGIN is invisible — a
             // parameter, or a binding this file never declares. When the
             // identifier resolves to a local variable the initializer is right
@@ -670,6 +753,21 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
           return lastWrite !== undefined && readsWire(lastWrite, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression:
+          // Ask the SHAPE before walking to the root. `REQUEST_ROOTS` below is
+          // the list `readsRequestShape` was written to retire — `req`,
+          // `request`, `ctx`, `event` — and it fires only when the root is
+          // spelled one of those four. A handler written `(inbound, outbound)`,
+          // or the very common TypeScript `(request: Request, res: Response)`
+          // renamed on the way in, walked all the way down to an identifier in
+          // no list and came back false, while `.query.capacity` sat in plain
+          // sight one link up.
+          //
+          // Same question the rule already asks, answered from structure: is
+          // this a read of `.query` / `.params` / `.headers` / `.cookies` /
+          // `.body` — or the Lambda spellings — off a binding that ARRIVED as a
+          // parameter. The name arm stays for the wire-decoder vocabulary it
+          // was actually built for.
+          if (readsRequestShape(node, sourceCode)) return true;
           return readsWire(node.object, depth + 1);
         // `new URL(req.url, base)` is a request that has been through a
         // constructor; the searchParams read off it are still the peer's.
@@ -820,7 +918,7 @@ export const noUnsafeBufferAlloc = createRule<[], MessageIds>({
         SIZED_ALLOCATORS.has(callee.name)
       ) {
         // `new Uint8Array(bytes)` copies; `new Uint8Array(n)` allocates.
-        return looksNumeric(size) ? size : null;
+        return looksNumeric(size, vocab.countNames) ? size : null;
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&

@@ -63,6 +63,7 @@ describe('no-sensitive-data-in-query', () => {
     valid: xp([
       // Benchmark corpus: CWE-598/safe/login-via-body-post.js (FP-lock)
       {
+        name: 'the same secrets in a POST body',
         code: `
 // CWE-598: safe — the same secrets travel in a POST body
 // This must NOT be flagged
@@ -135,6 +136,7 @@ module.exports = app;
     invalid: xp([
       // Benchmark corpus: CWE-598/vulnerable/login-via-query.js
       {
+        name: 'credentials in the query string, which lands in access logs and Referer',
         code: `
 // CWE-598: credentials in the query string of a GET request
 // This MUST be detected

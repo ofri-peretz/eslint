@@ -50,6 +50,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -197,9 +198,7 @@ export const requireCaseInsensitivePathGuard = createRule<
     function isStringLiteral(
       node: TSESTree.Node,
     ): node is TSESTree.StringLiteral {
-      return (
-        node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string'
-      );
+      return staticString(node) !== null;
     }
 
     function reportWithLowerCaseSuggestion(

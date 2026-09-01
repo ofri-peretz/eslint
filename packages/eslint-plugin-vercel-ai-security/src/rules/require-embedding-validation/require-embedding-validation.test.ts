@@ -63,6 +63,7 @@ ruleTester.run('require-embedding-validation', requireEmbeddingValidation, {
         'const flag = true;',
     // Validated embedding
     {
+      name: 'the embedding is validated before upsert',
       code: `
         await vectorStore.upsert({
           id: docId,
@@ -98,6 +99,7 @@ ruleTester.run('require-embedding-validation', requireEmbeddingValidation, {
   invalid: xai([
     // Direct embedding without validation
     {
+      name: 'an embedding written to the store without being checked first',
       code: `
         await vectorStore.upsert({
           id: docId,

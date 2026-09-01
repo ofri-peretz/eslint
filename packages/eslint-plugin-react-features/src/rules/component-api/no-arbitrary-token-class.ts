@@ -13,7 +13,7 @@
  * to the spacing scale (`min-h-[60vh]`).
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 
 type MessageIds = 'arbitraryClass';
 type RuleOptions = [];
@@ -88,8 +88,9 @@ export const noArbitraryTokenClass = createRule<RuleOptions, MessageIds>({
         const name = node.callee.name;
         if (name !== 'cn' && name !== 'clsx' && name !== 'twMerge' && name !== 'classNames') return;
         for (const arg of node.arguments) {
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            scanString(arg, arg.value);
+          const staticText = staticString(arg);
+          if (staticText !== null) {
+            scanString(arg, staticText);
           }
         }
       },

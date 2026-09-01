@@ -44,6 +44,7 @@ describe('no-missing-authentication', () => {
           'app.get();',
 
           {
+            name: 'the route carries authenticate()',
             code: 'app.get("/api/users", authenticate(), (req, res) => {});',
           },
           {
@@ -83,6 +84,7 @@ describe('no-missing-authentication', () => {
         valid: [],
         invalid: [
           {
+            name: 'a route with no authentication middleware',
             code: 'app.get("/api/users", (req, res) => {});',
             errors: [
               {

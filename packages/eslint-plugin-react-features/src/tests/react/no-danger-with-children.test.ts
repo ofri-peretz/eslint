@@ -26,7 +26,10 @@ describe('no-danger-with-children', () => {
   ruleTester.run('no-danger-with-children', noDangerWithChildren, {
     valid: [
       // Only dangerouslySetInnerHTML, no children
-      '<div dangerouslySetInnerHTML={{ __html: "<p>hello</p>" }} />',
+      {
+        name: 'dangerouslySetInnerHTML with no children beside it',
+        code: '<div dangerouslySetInnerHTML={{ __html: "<p>hello</p>" }} />',
+      },
       // Only children, no dangerouslySetInnerHTML
       '<div>Hello</div>',
       '<div><span>Hello</span></div>',
@@ -37,6 +40,7 @@ describe('no-danger-with-children', () => {
     ],
     invalid: [
       {
+        name: 'dangerouslySetInnerHTML together with children — React drops one',
         code: '<div dangerouslySetInnerHTML={{ __html: "<p>hello</p>" }}>Children</div>',
         errors: [{ messageId: 'dangerWithChildren' }],
       },

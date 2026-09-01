@@ -23,7 +23,7 @@
  * - Parameterized LDAP query construction
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule, isStaticExpression, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -688,7 +688,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         // which is what makes the result a string at all.
         const hasStringPart = leaves.some(
           (leaf) =>
-            (leaf.type === 'Literal' && typeof leaf.value === 'string') ||
+            (staticString(leaf) !== null) ||
             leaf.type === 'TemplateLiteral',
         );
         if (!hasStringPart) return null;

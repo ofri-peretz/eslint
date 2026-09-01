@@ -22,11 +22,12 @@ describe('prefer-native-crypto', () => {
         'const flag = true;',
         'function noop() {}',
         'const items = [];',
-      { code: 'import crypto from "node:crypto";' },
+      { name: 'node:crypto', code: 'import crypto from "node:crypto";' },
       { code: 'const crypto = require("crypto");' },
     ],
     invalid: [
       {
+        name: 'crypto-js where the platform ships crypto',
         code: 'import CryptoJS from "crypto-js";',
         errors: [{ messageId: 'preferNative' }],
       },

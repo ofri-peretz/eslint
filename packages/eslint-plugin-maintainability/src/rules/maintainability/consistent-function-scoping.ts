@@ -19,6 +19,7 @@ export interface Options {
   checkArrowFunctions?: boolean;
 }
 
+
 type RuleOptions = [Options?];
 
 export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
@@ -65,7 +66,9 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
-    const { checkArrowFunctions = true } = options || {};
+    const {
+      checkArrowFunctions = true,
+    } = options || {};
 
     // Track variables declared in each scope
     const scopeStack: Set<string>[] = [new Set()];
@@ -98,8 +101,29 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
     }
 
     function analyzeFunction(node: TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression) {
-      // Skip module-level functions (direct children of Program or ExportNamedDeclaration)
-      if (node.parent?.type === 'Program' || node.parent?.type === 'ExportNamedDeclaration' || node.parent?.type === 'ExportDefaultDeclaration') {
+      /**
+       * Already at the top scope, so there is nowhere to move it.
+       *
+       * The check used to look at the DIRECT parent only, which catches
+       * `function f() {}` but not `const f = function () {}` — there the parent
+       * is a `VariableDeclarator`. Module-level function expressions were saved
+       * instead by the `parent`-chain bug in `collectReferences`, which made
+       * them look as though they captured their own binding. Fixing that walk
+       * exposed this: four fixtures whose comment described the bug as the
+       * reason they were valid.
+       */
+      let ancestor: TSESTree.Node | undefined = node.parent;
+      while (
+        ancestor?.type === 'VariableDeclarator' ||
+        ancestor?.type === 'VariableDeclaration'
+      ) {
+        ancestor = ancestor.parent;
+      }
+      if (
+        ancestor?.type === 'Program' ||
+        ancestor?.type === 'ExportNamedDeclaration' ||
+        ancestor?.type === 'ExportDefaultDeclaration'
+      ) {
         return;
       }
 
@@ -113,53 +137,58 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Inline callbacks passed to higher-order methods. These functions are
-      // inline BY DESIGN — moving `arr.reduce((a, b) => a + b)` to a
-      // top-level named function loses inline locality without improving
-      // anything. Common high-arity hosts:
-      //   - Array methods: map, filter, reduce, forEach, find, some, every, sort, flatMap
-      //   - Promise: .then, .catch, .finally
-      //   - Event hosts: .on('event', ...), addEventListener('event', ...)
-      //   - Scheduler: setTimeout, setInterval, requestAnimationFrame
-      //   - Promise constructor: `new Promise((resolve, reject) => ...)`
-      if (p?.type === 'CallExpression') {
-        const callee = p.callee;
-        if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
-          const HOST_METHODS = new Set([
-            'map', 'filter', 'reduce', 'reduceRight', 'forEach', 'find', 'findIndex',
-            'some', 'every', 'sort', 'flatMap', 'flat',
-            'then', 'catch', 'finally',
-            'on', 'once', 'addEventListener', 'removeEventListener', 'subscribe',
-          ]);
-          if (HOST_METHODS.has(callee.property.name)) return;
-        }
-        if (callee.type === 'Identifier') {
-          const HOST_FNS = new Set([
-            'setTimeout', 'setInterval', 'setImmediate',
-            'requestAnimationFrame', 'requestIdleCallback', 'queueMicrotask',
-          ]);
-          if (HOST_FNS.has(callee.name)) return;
-        }
+      /**
+       * A function passed as an ARGUMENT is inline by design. Always.
+       *
+       * This used to enumerate hosts — array methods, `.then`, `setTimeout`,
+       * and then the test frameworks when `describe`/`it` turned out to be
+       * 1,415 findings. That is a denylist wearing an allowlist's clothes: it
+       * has to name every callback-taking function in the world, and the ones
+       * it had not heard of reported. On the real-source scan the survivors
+       * were `chrome.storage.onChanged.addListener(cb)` — `addEventListener`
+       * was listed, `addListener` was not — and `defineBackground(cb)`, a
+       * framework entry point no list would ever contain.
+       *
+       * The structural fact is the same for all of them and needs no
+       * vocabulary: an argument cannot be moved to module scope without
+       * changing what it is an argument to. What this rule is actually for is a
+       * function BOUND to a name inside another function, which is the case
+       * below.
+       *
+       * It also satisfies the suite's own litmus test — rename every
+       * identifier to `foo` and the rule still behaves the same, which was not
+       * true of any version that read `describe` or `map`.
+       */
+      if (p?.type === 'CallExpression' || p?.type === 'NewExpression') {
+        return;
       }
-      // `new Promise((resolve, reject) => ...)` — executor must stay inline.
-      if (
-        p?.type === 'NewExpression' &&
-        p.callee.type === 'Identifier' &&
-        p.callee.name === 'Promise'
-      ) {
+
+      /**
+       * A function that IS a property value cannot be moved out either —
+       * `{ async execute(ctx) { … } }` is the object's method, and hoisting it
+       * changes what the object is. The class equivalents are already exempt
+       * above; this is the object-literal spelling of the same fact.
+       */
+      if (p?.type === 'Property') {
         return;
       }
 
       // Get all variables referenced in the function body
       const referencedVars = new Set<string>();
 
-      function collectReferences(astNode: TSESTree.Node, depth = 0, visited = new Set<TSESTree.Node>()) {
-        // Prevent infinite recursion
-        if (depth > 10 || visited.has(astNode)) {
-          return;
-        }
-        visited.add(astNode);
-
+      /**
+       * No `visited` set and no `depth > 10` early return.
+       *
+       * Both existed to survive the `parent` link, which made the "tree" a
+       * cyclic graph. Skipping `parent` below leaves an actual tree, so a node
+       * cannot be reached twice, and the `depth < 10` gate on the recursion
+       * means `depth > 10` was never true either — coverage said so with a
+       * line that could not be taken.
+       *
+       * The depth cap stays: it is why `a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p` is
+       * only partly collected, and there is a fixture pinning that.
+       */
+      function collectReferences(astNode: TSESTree.Node, depth = 0) {
         if (astNode.type === 'Identifier') {
           referencedVars.add(astNode.name);
         }
@@ -167,18 +196,30 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         // Recursively check all child nodes with depth limit
         if (depth < 10) {
           for (const key in astNode) {
+            /**
+             * `parent` is a link BACK UP the tree, not a child.
+             *
+             * Walking it turned this from "which names does the body use" into
+             * "which names appear anywhere in the file". Every arrow function
+             * therefore looked as though it captured its own binding and its
+             * enclosing function, so it never reported — measured on the probe
+             * below, an arrow whose entire body is `42` collected
+             * `helper, outer`. Only the `function` declaration form ever fired,
+             * which is why the rule looked like it worked.
+             */
+            if (key === 'parent') continue;
             const child = (astNode as unknown as Record<string, unknown>)[key];
             if (child && typeof child === 'object') {
               if (Array.isArray(child)) {
                 child.forEach(item => {
                   if (item && typeof item === 'object' && 'type' in item) {
-                    collectReferences(item, depth + 1, visited);
+                    collectReferences(item, depth + 1);
                   }
                 });
               } else if ('type' in child) {
                 // Outer `child && typeof child === 'object'` already guarantees
                 // a non-null object here (CodeQL: `js/comparison-between-incompatible-types`).
-                collectReferences(child as TSESTree.Node, depth + 1, visited);
+                collectReferences(child as TSESTree.Node, depth + 1);
               }
             }
           }

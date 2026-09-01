@@ -32,6 +32,7 @@ describe('img-redundant-alt', () => {
       valid: [
         // Images with descriptive alt text (no redundant words)
         {
+          name: 'alt text that describes the picture',
           code: '<img src="photo.jpg" alt="A beautiful sunset over the mountains" />',
         },
         {
@@ -64,6 +65,7 @@ describe('img-redundant-alt', () => {
       invalid: [
         // "Photo" matches the redundant word "photo"
         {
+          name: 'alt text that starts with "Photo of" — the screen reader already says image',
           code: '<img src="foo" alt="Photo of foo being weird." />',
           errors: [
             {

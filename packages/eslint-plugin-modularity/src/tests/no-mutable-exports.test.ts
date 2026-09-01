@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 describe('no-mutable-exports', () => {
   ruleTester.run('no-mutable-exports', noMutableExports, {
     valid: [
-      { code: 'export const FOO = 1;' },
+      { name: 'a const export cannot be reassigned by an importer', code: 'export const FOO = 1;' },
       { code: 'export const config = { key: "value" };' },
       { code: 'export function foo() {}' },
       { code: 'export class Bar {}' },
@@ -24,6 +24,7 @@ describe('no-mutable-exports', () => {
     ],
     invalid: [
       {
+        name: 'a mutable binding leaves the module',
         code: 'export let count = 0;',
         errors: [{ messageId: 'noMutableExport' }],
         output: 'export const count = 0;',

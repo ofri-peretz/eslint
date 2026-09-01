@@ -12,6 +12,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { NoHardcodedCredentialsOptions } from '../../types';
 import { PG_PROTOCOLS } from '../../constants';
@@ -76,8 +77,9 @@ function effectiveValue(
 /** The name a property key denotes, including a computed string literal. */
 function propertyKeyName(prop: TSESTree.Property): string | null {
   if (prop.key.type === AST_NODE_TYPES.Identifier && !prop.computed) return prop.key.name;
-  if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
-    return prop.key.value;
+  const staticText1 = staticString(prop.key);
+  if (staticText1 !== null) {
+    return staticText1;
   }
   return null;
 }
@@ -96,8 +98,8 @@ function property(
 /** The string a node holds, when it folds to a plain string literal. */
 function stringValue(node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | null {
   const value = effectiveValue(node, scope);
-  return value.type === AST_NODE_TYPES.Literal && typeof value.value === 'string'
-    ? value.value
+  return staticString(value) !== null
+    ? staticString(value)
     : null;
 }
 
@@ -173,8 +175,9 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
         const config = effectiveValue(firstArgument, scope);
 
         // `new Client('postgres://app:pw@host/db')` — the DSN passed bare.
-        if (config.type === AST_NODE_TYPES.Literal && typeof config.value === 'string') {
-          if (dsnPassword(config.value) !== null) {
+        const staticText2 = staticString(config);
+        if (staticText2 !== null) {
+          if (dsnPassword(staticText2) !== null) {
             context.report({ node: firstArgument, messageId: 'noHardcodedCredentials' });
           }
           return;

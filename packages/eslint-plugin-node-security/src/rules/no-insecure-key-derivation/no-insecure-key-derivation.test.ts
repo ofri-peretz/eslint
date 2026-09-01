@@ -23,7 +23,7 @@ const ruleTester = new RuleTester({
 describe('no-insecure-key-derivation', () => {
   ruleTester.run('no-insecure-key-derivation', noInsecureKeyDerivation, {
     valid: [
-      { code: 'crypto.pbkdf2(password, salt, 100000, 32, "sha256", callback);' },
+      { name: '100,000', code: 'crypto.pbkdf2(password, salt, 100000, 32, "sha256", callback);' },
       { code: 'crypto.pbkdf2Sync(password, salt, 600000, 32, "sha256");' },
       { code: 'crypto.pbkdf2(password, salt, iterations, 32, "sha256", callback);' },
       { code: 'pbkdf2(password, salt, 100000, 32, "sha256", callback);' },
@@ -31,6 +31,7 @@ describe('no-insecure-key-derivation', () => {
     ],
     invalid: [
       {
+        name: '1,000 PBKDF2 iterations',
         code: 'crypto.pbkdf2(password, salt, 1000, 32, "sha256", callback);',
         errors: [{ messageId: 'insufficientIterations', suggestions: [
           { messageId: 'useMinIterations', output: 'crypto.pbkdf2(password, salt, 100000, 32, "sha256", callback);' },

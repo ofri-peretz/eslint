@@ -13,7 +13,7 @@
  * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'permissiveCors' | 'useSpecificOrigin';
@@ -108,8 +108,8 @@ export const noPermissiveCorsResponse = createRule<RuleOptions, MessageIds>({
         let headerName = '';
         if (prop.key.type === AST_NODE_TYPES.Identifier) {
           headerName = prop.key.name;
-        } else if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
-          headerName = prop.key.value;
+        } else {
+          headerName = staticString(prop.key) ?? '';
         }
 
         // Check for Access-Control-Allow-Origin

@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('consistent-type-specifier-style', consistentTypeSpecifierStyle, {
   valid: [
     // Default option (prefer-inline): inline types are valid
-    { code: `import { type Foo } from 'foo';` },
+    { name: 'the inline `{ type Foo }` form', code: `import { type Foo } from 'foo';` },
     { code: `import { type Foo, type Bar } from 'foo';` },
     { code: `import { type Foo, bar } from 'foo';` },
 
@@ -43,6 +43,7 @@ ruleTester.run('consistent-type-specifier-style', consistentTypeSpecifierStyle, 
   invalid: [
     // prefer-inline (default): top-level type should be inline
     {
+      name: 'a top-level `import type` where the configured style is inline',
       code: `import type { Foo } from 'foo';`,
       errors: [{ messageId: 'preferInline' }],
       output: `import { type Foo } from 'foo';`,

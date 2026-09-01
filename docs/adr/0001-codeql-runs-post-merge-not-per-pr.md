@@ -65,3 +65,32 @@ forgotten.
   the filter would rarely fire.
 - **Make it a required check.** Rejected: it would put a 212s advisory scan on
   the critical path of every merge, the opposite of the goal.
+
+---
+
+## Amendment, 2026-08-31 — the post-merge trigger is gone too
+
+This ADR moved CodeQL off the PR path and named the **post-merge run as the
+compensating control**. That control has now been removed as well: `codeql.yml`
+triggers on `workflow_dispatch` and the daily 03:17 cron only.
+
+Reason: on a main push CodeQL was the longest job at **208s**, against 109s for
+the entire `Quality (Full)` gate. It is not a required check and gates nothing,
+so it never delayed a merge — it competed for runners, on a repo where
+concurrent slots are the binding constraint.
+
+**The cost is real and is not a rounding error.** Scorecard's SAST check
+measures the proportion of commits analysed and had reported 25 of 30. With one
+scan a day that ratio falls, and the OpenSSF Scorecard score falls with it. A
+vulnerability introduced by a merge is now found within 24 hours instead of
+~208 seconds.
+
+The README's CodeQL badge is a *different* signal and is not what drops: it
+reports the latest run's pass/fail, so it stays green on a passing daily scan
+and simply reflects an older commit. Conflating the two would send the next
+reader looking for a red badge that never appears.
+
+That trade was the maintainer's call, made explicitly. It is one line to
+revert — restore `push: branches: [main]` in `codeql.yml` — and this amendment
+exists so the next person reading a dropped SAST score knows why it dropped
+rather than treating it as drift.

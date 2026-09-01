@@ -63,6 +63,7 @@ describe('no-weak-password-recovery', () => {
         // Password-recovery-specific variable names with BOTH keywords still trigger
         // passwordReset token
         {
+          name: 'a reset token from Math.random()',
           code: 'const passwordResetToken = String(Math.random()).slice(2);',
           errors: [{ messageId: 'predictableRecoveryToken' }],
         },
@@ -95,6 +96,7 @@ describe('no-weak-password-recovery', () => {
     ruleTester.run('valid - weak verification contexts', noWeakPasswordRecovery, {
       valid: [
         {
+          name: 'an email-existence check, which the rule declines to judge',
           code: `
             if (isRecovery) {
               if (user.email) {

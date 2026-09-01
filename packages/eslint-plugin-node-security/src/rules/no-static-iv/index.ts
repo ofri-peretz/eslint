@@ -20,6 +20,7 @@ import {
   isModuleBinding,
   unwrapTypeSyntax,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { constInitializerOf, resolveConstant, resolveConstantString } from '../../utils/const-value';
 import { findVariable } from '../../utils/provenance';
@@ -100,8 +101,8 @@ function calleeMemberName(callee: TSESTree.Node): string | null {
   if (callee.property.type === AST_NODE_TYPES.Identifier && !callee.computed) {
     return callee.property.name;
   }
-  return callee.property.type === AST_NODE_TYPES.Literal && typeof callee.property.value === 'string'
-    ? callee.property.value
+  return staticString(callee.property) !== null
+    ? staticString(callee.property)
     : null;
 }
 

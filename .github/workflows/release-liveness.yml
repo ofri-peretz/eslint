@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Release Liveness
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Does the release pipeline still produce releases?
+#
+# On 2026-08-30 it did not, and every workflow involved was green.
+# `changesets/action` errors when a `GITHUB_TOKEN` env var is set and differs
+# from its `github-token` input; the step failed, so no Version Packages PR was
+# opened, so nothing was versioned, so release.yml correctly published nothing.
+# TEN changesets sat queued until someone happened to ask why a package had not
+# shipped.
+#
+# Every other check in this repo answers "did a step fail". This one answers
+# "did the pipeline produce what it exists to produce" — the question that
+# nobody was asking, which is why the answer went unnoticed for ten changesets.
+#
+# It gates nothing and blocks no merge. It files an issue, which is the only
+# thing that would have helped.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    # Every six hours at :05. Earlier than issue-sweep (:40) so a stall it finds
+    # is already in the backlog by the time the sweep reads it.
+    - cron: "5 */6 * * *"
+  # Also after a merge: a changeset that lands and produces no Version PR is
+  # worth knowing about in minutes, not hours.
+  push:
+    branches: [main]
+    paths:
+      - ".changeset/**"
+      - "packages/*/package.json"
+  workflow_dispatch:
+
+concurrency:
+  group: release-liveness
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Release pipeline is alive
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # list the Version Packages PR
+      issues: write # the failure channel
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # `install: false` — the script uses git, gh and `npm view` only. Nothing
+      # is imported from the workspace, so a full install would be pure cost.
+      - uses: ./.github/actions/setup
+        with:
+          install: "false"
+          turbo-cache: "false"
+
+      - name: Check release liveness
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node --experimental-strip-types scripts/check-release-liveness.ts
+
+      - name: 🚨 Report a stalled release pipeline
+        if: failure()
+        uses: ./.github/actions/report-failure
+        with:
+          title: "Release pipeline is stalled"
+          body: >-
+            Either changesets are queued with no Version Packages PR to consume
+            them, or a package's version on main is ahead of its latest on npm.
+            Both mean work that looks merged is not published. This is the check
+            that did not exist when ten changesets sat queued behind a silently
+            failing changesets action.
+          token: ${{ github.token }}

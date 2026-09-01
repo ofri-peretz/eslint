@@ -64,6 +64,7 @@ ruleTester.run('no-cors-credentials-wildcard', noCorsCredentialsWildcard, {
   valid: xp([
     // Safe: explicit origin with credentials
     {
+      name: 'a named origin with credentials',
       code: `
         const corsOptions = {
           origin: 'https://trusted-domain.com',
@@ -116,6 +117,7 @@ ruleTester.run('no-cors-credentials-wildcard', noCorsCredentialsWildcard, {
   invalid: xp([
     // Critical: wildcard origin with credentials: true
     {
+      name: "origin '*' with credentials — the browser refuses it, so the intent is wrong either way",
       code: `
         app.use(cors({
           origin: '*',

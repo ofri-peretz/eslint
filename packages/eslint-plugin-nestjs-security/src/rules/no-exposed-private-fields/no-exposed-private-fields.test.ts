@@ -167,6 +167,7 @@ describe('no-exposed-private-fields', () => {
 
         // @Exclude on password
         {
+          name: 'the sensitive field carries @Exclude',
           code: `
             @Entity()
             class User {
@@ -224,6 +225,7 @@ describe('no-exposed-private-fields', () => {
         // Persistence still outranks the name: a stored credential is serialized
         // outward whatever the class is called.
         {
+          name: 'a secret column on an entity with nothing keeping it out of the response',
           code: `
         @Entity()
         class ApiKeyToken {

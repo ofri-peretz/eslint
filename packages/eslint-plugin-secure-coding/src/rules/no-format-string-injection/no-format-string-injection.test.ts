@@ -29,6 +29,7 @@ describe('no-format-string-injection', () => {
       valid: [
         // Safe hardcoded format strings
         {
+          name: 'a literal format string with the values as arguments',
           code: 'util.format("User: %s, Age: %d", name, age);',
         },
         {
@@ -60,6 +61,7 @@ describe('no-format-string-injection', () => {
       valid: [],
       invalid: [
         {
+          name: 'a user value used AS the format string',
           code: 'util.format(userInput, arg1, arg2);',
           errors: [
             {

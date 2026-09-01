@@ -32,6 +32,7 @@ describe('no-privilege-escalation', () => {
     ruleTester.run('valid - role checks and safe assignments', noPrivilegeEscalation, {
       valid: [
         {
+          name: 'the same assignment behind a role check',
           code: 'if (hasRole(user, "admin")) { user.role = req.body.role; }',
         },
         {
@@ -67,6 +68,7 @@ describe('no-privilege-escalation', () => {
       valid: [],
       invalid: [
         {
+          name: 'a role assigned straight from the request body',
           code: 'user.role = req.body.role;',
           errors: [
             {

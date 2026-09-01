@@ -32,6 +32,7 @@ describe('no-interactive-element-to-noninteractive-role', () => {
       valid: [
         // Interactive elements without roles (implicit roles are fine)
         {
+          name: 'a plain button',
           code: '<button type="button">Click me</button>',
         },
         {
@@ -71,6 +72,7 @@ describe('no-interactive-element-to-noninteractive-role', () => {
       valid: [],
       invalid: [
         {
+          name: 'a button given a document role',
           code: '<button role="article">Click me</button>',
           errors: [
             {

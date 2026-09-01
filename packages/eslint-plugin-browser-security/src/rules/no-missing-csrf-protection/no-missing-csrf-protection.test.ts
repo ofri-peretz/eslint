@@ -34,7 +34,7 @@ describe('no-missing-csrf-protection', () => {
     ruleTester.run('valid - CSRF protection present', noMissingCsrfProtection, {
       valid: [
         // CSRF middleware in route chain
-        { code: `${APP}app.post("/api/users", csrf(), handler);` },
+        { name: 'the route carries csrf()', code: `${APP}app.post("/api/users", csrf(), handler);` },
         { code: `${ROUTER}router.put("/api/users/:id", csrf(), handler);` },
         { code: `${APP}app.delete("/api/users/:id", csrf(), handler);` },
         // CSRF middleware globally
@@ -108,6 +108,7 @@ describe('no-missing-csrf-protection', () => {
       valid: [],
       invalid: [
         {
+          name: 'a state-changing POST with no CSRF middleware',
           code: `${APP}app.post("/api/users", handler);`,
           errors: [
             {

@@ -75,6 +75,7 @@ describe('require-tls-connection', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -122,6 +123,7 @@ describe('require-tls-connection', () => {
       invalid: xmo([
         // Triggers requireTls: no TLS configured
         {
+          name: 'connect with no TLS option',
           code: `mongoose.connect('mongodb://localhost/db', { useNewUrlParser: true });`,
           errors: [{
         messageId: 'requireTls',

@@ -45,7 +45,7 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
     'const items = [];',
     'const obj = {};',
     'class Foo {}',
-    { code: 'const config = { secure: true, httpOnly: true }' },
+    { name: 'secure and httpOnly both on', code: 'const config = { secure: true, httpOnly: true }' },
 
     // The switch is on, in the shape the rule most exists to police.
     {
@@ -191,6 +191,7 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
   invalid: [
     // ---- tier 1: `false` is insecure, key alone identifies the switch ------
     {
+      name: 'strictSSL off on the agent',
       code: 'const agent = new https.Agent({ strictSSL: false });',
       errors: [{ messageId: 'violationDetected' }],
     },

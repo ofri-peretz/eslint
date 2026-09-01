@@ -46,6 +46,7 @@ describe('check-query-params', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('check-query-params', () => {
       invalid: pg([
         // Triggers parameterCountMismatch
         {
+          name: 'two placeholders, one parameter — the second is undefined at runtime',
           code: `client.query('SELECT * FROM users WHERE id = $1 AND name = $2', [userId])`,
           errors: [{ messageId: 'parameterCountMismatch' }],
         },

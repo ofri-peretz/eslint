@@ -127,3 +127,9 @@ const token = atob(encoded);
 - [CWE-798: Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
 - [OWASP M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `sessionWords` | `string[]` | `["session","token"]` | Variable-name substrings that mark a literal as a session credential. Replaces the default. |

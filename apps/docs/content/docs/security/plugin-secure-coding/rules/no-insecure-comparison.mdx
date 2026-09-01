@@ -156,6 +156,7 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Allow insecure comparison in test files |
 | `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
+| `reportLooseEquality` | `boolean` | `true` | Report `==` between non-secret operands. Turn off to keep only the secret-comparison findings and leave generic type coercion to eqeqeq. |
 
 ### Example Configuration
 

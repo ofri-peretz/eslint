@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
   valid: [
-    { code: `sessionStorage.setItem('theme', 'dark');` },
+    { name: 'a theme preference', code: `sessionStorage.setItem('theme', 'dark');` },
     { code: `sessionStorage.setItem('step', '3');` },
     { code: `const v = sessionStorage.getItem('password');` },
     // Test files allowed by default
@@ -52,6 +52,7 @@ ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
   ],
   invalid: [
     {
+      name: 'a password in sessionStorage',
       code: `sessionStorage.setItem('password', pw);`,
       errors: [
         { messageId: 'sensitiveInSessionStorage', data: { key: 'password' } },

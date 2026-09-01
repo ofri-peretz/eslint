@@ -24,7 +24,7 @@ ruleTester.run('no-allow-arbitrary-loads', noAllowArbitraryLoads, {
     // is `NSAllowsArbitraryLoads`; the lowercase unprefixed form appears in no
     // Expo, React Native, Capacitor or Cordova schema, so anything a project
     // does spell that way is its own invention and not an ATS opt-out.
-    { code: 'const config = { allowArbitraryLoads: true }' },
+    { name: 'a look-alike key outside the iOS plist structure', code: 'const config = { allowArbitraryLoads: true }' },
     {
       code: 'module.exports = { NSAppTransportSecurity: { allowArbitraryLoads: true } }',
     },
@@ -57,6 +57,7 @@ ruleTester.run('no-allow-arbitrary-loads', noAllowArbitraryLoads, {
   invalid: [
     // The shape an Expo app.config.js actually has.
     {
+      name: 'NSAllowsArbitraryLoads turns off ATS for the whole app',
       code: 'export default { ios: { infoPlist: { NSAppTransportSecurity: { NSAllowsArbitraryLoads: true } } } };',
       errors: [
         {

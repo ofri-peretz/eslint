@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-noninteractive-element-interactions
  * Enforce that non-interactive elements don't have interactive handlers
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-element-interactions.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -23,47 +23,101 @@ type Options = {
 type RuleOptions = [Options?];
 
 const NON_INTERACTIVE_ELEMENTS = new Set([
-    'main', 'area', 'article', 'aside', 'body', 'br', 'caption', 'dd', 'details', 'dialog', 'dl', 
-    'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
-    'header', 'hr', 'iframe', 'img', 'li', 'meter', 'nav', 'ol', 'output', 'p', 'pre', 'section', 
-    'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'time', 'tr', 'ul'
+  'main',
+  'area',
+  'article',
+  'aside',
+  'body',
+  'br',
+  'caption',
+  'dd',
+  'details',
+  'dialog',
+  'dl',
+  'dt',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'hr',
+  'iframe',
+  'img',
+  'li',
+  'meter',
+  'nav',
+  'ol',
+  'output',
+  'p',
+  'pre',
+  'section',
+  'table',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'time',
+  'tr',
+  'ul',
 ]);
 
 const INTERACTIVE_HANDLERS = [
-    'onClick', 'onMouseDown', 'onMouseUp', 'onKeyPress', 'onKeyDown', 'onKeyUp'
+  'onClick',
+  'onMouseDown',
+  'onMouseUp',
+  'onKeyPress',
+  'onKeyDown',
+  'onKeyUp',
 ];
 
-export const noNoninteractiveElementInteractions = createRule<RuleOptions, MessageIds>({
+export const noNoninteractiveElementInteractions = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'no-noninteractive-element-interactions',
   meta: {
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-noninteractive-element-interactions.md',
-      description: 'Enforce that non-interactive elements don\'t have interactive handlers',
+      description:
+        "Enforce that non-interactive elements don't have interactive handlers",
       wcag: 'WCAG 2.1.1',
     },
     messages: {
       noInteraction: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Non-interactive Interaction',
-        description: 'Non-interactive element <{{element}}> should not have interactive handlers',
+        description:
+          'Non-interactive element <{{element}}> should not have interactive handlers',
         severity: 'MEDIUM',
         fix: 'Use a more appropriate element or add a role',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-element-interactions.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-element-interactions.md',
       }),
     },
     schema: [
-        {
-            type: 'object',
-            properties: {
-                handlers: { type: 'array', items: { type: 'string' } }
-            },
-            additionalProperties: false
-        }
+      {
+        type: 'object',
+        properties: {
+          handlers: { type: 'array', items: { type: 'string' } },
+        },
+        additionalProperties: false,
+      },
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
     const { handlers = INTERACTIVE_HANDLERS } = options ?? {};
 
     return {
@@ -73,7 +127,10 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
 
         if (!NON_INTERACTIVE_ELEMENTS.has(element)) return;
 
-        const hasInteractiveHandler = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
+        const hasInteractiveHandler = node.attributes.some(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             handlers.includes(attr.name.name),
@@ -84,9 +141,24 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
         // Only interactive ARIA roles exempt the element from this rule.
         // Non-interactive roles (presentation, none, img, group) do NOT exempt it.
         const INTERACTIVE_ARIA_ROLES = new Set([
-          'button', 'link', 'checkbox', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
-          'option', 'radio', 'searchbox', 'switch', 'tab', 'textbox', 'treeitem',
-          'combobox', 'gridcell', 'listbox', 'slider', 'spinbutton',
+          'button',
+          'link',
+          'checkbox',
+          'menuitem',
+          'menuitemcheckbox',
+          'menuitemradio',
+          'option',
+          'radio',
+          'searchbox',
+          'switch',
+          'tab',
+          'textbox',
+          'treeitem',
+          'combobox',
+          'gridcell',
+          'listbox',
+          'slider',
+          'spinbutton',
         ]);
 
         const roleAttr = node.attributes.find(
@@ -97,7 +169,9 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
         );
         if (roleAttr) {
           const roleValue =
-            roleAttr.value?.type === 'Literal' ? String(roleAttr.value.value) : null;
+            roleAttr.value?.type === 'Literal'
+              ? String(roleAttr.value.value)
+              : null;
           if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
         }
 
@@ -110,4 +184,3 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
     };
   },
 });
-

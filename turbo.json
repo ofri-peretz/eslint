@@ -2,6 +2,9 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalDependencies": [
+    "packages/eslint-devkit/src/**",
+    "packages/ui/src/**",
+    "tools/cwe-analytics-engine/src/**",
     ".markdownlint.json",
     ".oxlintrc.json",
     "scripts/build-package.ts",

@@ -13,7 +13,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-deprecated', noDeprecated, {
   valid: [
-    { code: `import { foo } from './foo';` },
+    { name: 'an ordinary import', code: `import { foo } from './foo';` },
     { code: `function foo() {} foo();` },
     // Deprecated but not used
     { code: `
@@ -43,6 +43,7 @@ ruleTester.run('no-deprecated', noDeprecated, {
   invalid: [
     // Deprecated Function
     {
+      name: 'a call to something marked @deprecated',
       code: `
         /** @deprecated Use newFn instead */
         function old() {}

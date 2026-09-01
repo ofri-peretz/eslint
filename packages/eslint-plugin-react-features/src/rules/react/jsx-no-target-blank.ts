@@ -12,7 +12,7 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-target-blank.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noTargetBlank' | 'noRelWithoutNoopener';
@@ -122,8 +122,9 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
 
       if (!hrefAttr || !hrefAttr.value) return false;
 
-      if (hrefAttr.value.type === 'Literal' && typeof hrefAttr.value.value === 'string') {
-        const href = hrefAttr.value.value;
+      const staticText1 = staticString(hrefAttr.value);
+      if (staticText1 !== null) {
+        const href = staticText1;
         // External if starts with http:// or https:// or //
         return /^(https?:)?\/\//.test(href) || href.startsWith('//');
       }
@@ -145,8 +146,9 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
     function hasNoopener(relAttr: TSESTree.JSXAttribute): boolean {
       if (!relAttr.value) return false;
       
-      if (relAttr.value.type === 'Literal' && typeof relAttr.value.value === 'string') {
-        const relValues = relAttr.value.value.toLowerCase().split(/\s+/);
+      const staticText2 = staticString(relAttr.value);
+      if (staticText2 !== null) {
+        const relValues = staticText2.toLowerCase().split(/\s+/);
         return relValues.includes('noopener');
       }
 
@@ -157,8 +159,9 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
     function hasNoreferrer(relAttr: TSESTree.JSXAttribute): boolean {
       if (!relAttr.value) return false;
       
-      if (relAttr.value.type === 'Literal' && typeof relAttr.value.value === 'string') {
-        const relValues = relAttr.value.value.toLowerCase().split(/\s+/);
+      const staticText3 = staticString(relAttr.value);
+      if (staticText3 !== null) {
+        const relValues = staticText3.toLowerCase().split(/\s+/);
         return relValues.includes('noreferrer');
       }
 
@@ -211,7 +214,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
           fix: (fixer: TSESLint.RuleFixer) => {
             if (relAttr && relAttr.value && relAttr.value.type === 'Literal') {
               // Add noopener noreferrer to existing rel
-              const currentRel = String(relAttr.value.value);
+              const currentRel = String(staticString(relAttr.value));
               const newRel = allowReferrer 
                 ? `${currentRel} noopener`.trim()
                 : `${currentRel} noopener noreferrer`.trim();

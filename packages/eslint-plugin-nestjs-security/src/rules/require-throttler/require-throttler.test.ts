@@ -76,6 +76,7 @@ ruleTester.run('require-throttler', requireThrottler, {
     `,
     // ========== VALID: Controller with class-level @Throttle ==========
     {
+      name: 'the controller carries @Throttle',
       code: `
         @Controller('users')
         @Throttle({ default: { limit: 10, ttl: 60 }})
@@ -185,6 +186,7 @@ ruleTester.run('require-throttler', requireThrottler, {
     // these handlers verb-first as often as noun-first, so suffix-only
     // matching would drop most of them.
     {
+      name: 'an unauthenticated verification endpoint with no rate limit',
       code: `
         @Controller('account')
         class AccountController {

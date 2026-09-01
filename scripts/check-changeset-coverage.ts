@@ -58,6 +58,20 @@ import process from 'node:process';
 /** Paths whose change is observable by someone installing or visiting. */
 const RELEASE_RELEVANT = /^(packages|apps)\/[^/]+\/(src\/|package\.json$)/;
 
+/**
+ * Tests live under `src/`, and they ship to nobody.
+ *
+ * The prose above always said tests need no release entry, but the pattern
+ * did not implement it — `src/` matched `src/rules/x/x.test.ts` too. That was
+ * invisible while the gate only asked "does ANY changeset exist"; the moment
+ * it began naming packages, ten plugins whose only change was a new test case
+ * were reported as shipping undeclared behaviour.
+ *
+ * `files` in every plugin's package.json publishes `dist/` only, so this is
+ * not a judgement call — a test genuinely cannot reach a consumer.
+ */
+const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)__tests__\//;
+
 /** A real changeset file — not the config or the directory's own README. */
 const CHANGESET_FILE = /^\.changeset\/(?!README\.md$|config\.json$)[^/]+\.md$/;
 
@@ -134,45 +148,239 @@ const changed = changedRaw.split('\n').filter(Boolean);
 // it as coverage would let it silently vouch for a `packages/*/src` change it
 // says nothing about — producing no version bump and no changelog entry, which
 // is the exact outcome the gate exists to catch.
-const addedChangesets = addedRaw
+/** An added changeset, with the packages it actually vouches for. */
+interface AddedChangeset {
+  readonly file: string;
+  readonly names: readonly string[];
+}
+
+const addedChangesets: AddedChangeset[] = addedRaw
   .split('\n')
   .filter((f) => CHANGESET_FILE.test(f))
-  .filter((f) => {
+  .map((f) => {
     try {
       // changesets' own parser: a regex over the frontmatter rejected valid
       // YAML that changesets accepts (a quoted bump), which would report a
       // real changeset as missing coverage.
-      return parseChangeset(readFileSync(f, 'utf8')).releases.length > 0;
+      const releases = parseChangeset(readFileSync(f, 'utf8')).releases;
+      return { file: f, names: releases.map((r) => r.name) };
     } catch {
       // Unparseable, or deleted before we looked — it vouches for nothing.
-      return false;
+      return { file: f, names: [] };
     }
-  });
+  })
+  .filter((entry) => entry.names.length > 0);
 
-const releaseRelevant = changed.filter((f) => RELEASE_RELEVANT.test(f));
+/**
+ * Fields in a package.json a consumer can actually observe after `npm i`.
+ *
+ * `RELEASE_RELEVANT` matches the whole file, which treats every byte of
+ * package.json as shippable. It is not: `scripts` and `devDependencies` are
+ * build-time only, and a repo-wide script edit (tsc -> tsgo across 33
+ * manifests, say) would demand a changeset per package while changing nothing
+ * a consumer can see. A gate that fires on work like that trains people to
+ * bypass it, which is how the rule ends up enforced nowhere.
+ */
+const CONSUMER_FIELDS = [
+  'name',
+  'version',
+  'type',
+  'main',
+  'module',
+  'types',
+  'typings',
+  'exports',
+  'bin',
+  'files',
+  'browser',
+  'engines',
+  'sideEffects',
+  'license',
+  'dependencies',
+  'peerDependencies',
+  'peerDependenciesMeta',
+  'optionalDependencies',
+  'publishConfig',
+  // Install-time gates: npm refuses to install on a non-matching platform, so
+  // narrowing any of these can break a consumer without touching a line of src.
+  'os',
+  'cpu',
+  'libc',
+  // Changes what the published tarball actually contains.
+  'bundleDependencies',
+  'bundledDependencies',
+  // Flipping `private` decides whether the package publishes at all -- the most
+  // consumer-visible field there is, since it governs whether they get anything.
+  'private',
+  // Internal `#subpath` mappings resolve at runtime inside the shipped package.
+  'imports',
+];
 
+/**
+ * Did this package.json change anything shippable?
+ *
+ * Both sides are read from git at the same two commits the diff used, so this
+ * answers the same question the diff asked. Anything unreadable or unparseable
+ * returns true: an unanswerable question must not be reported as "no release
+ * needed" -- that is the vacuous pass this whole script exists to avoid.
+ */
+function packageJsonAffectsConsumers(file: string): boolean {
+  let before: Record<string, unknown>;
+  let after: Record<string, unknown>;
+  try {
+    before = JSON.parse(git(['show', `${mergeBase}:${file}`]));
+  } catch {
+    return true; // new package, or absent at the base — shippable by definition
+  }
+  try {
+    after = JSON.parse(git(['show', `HEAD:${file}`]));
+  } catch {
+    return true; // deleted or malformed — do not quietly excuse it
+  }
+  return CONSUMER_FIELDS.some(
+    (k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]),
+  );
+}
+
+// Three independent narrowings, landed on two branches and merged here. A file
+// is release-relevant only if it ships (RELEASE_RELEVANT), is not a test, is
+// not in a private workspace, and — for a package.json — actually changed a
+// field a consumer can observe after `npm i`.
+const releaseRelevant = changed
+  .filter((f) => RELEASE_RELEVANT.test(f) && !TEST_FILE.test(f))
+  .filter((f) => !isPrivate(f.split('/').slice(0, 2).join('/')))
+  .filter(
+    (f) => !f.endsWith('/package.json') || packageJsonAffectsConsumers(f),
+  );
+
+/** Every package name a changeset on this branch speaks for. */
+const vouchedFor = new Set(addedChangesets.flatMap((entry) => entry.names));
+
+/**
+ * The published name of the workspace at `dir`, or null if it has no
+ * package.json we can read.
+ *
+ * The DIRECTORY is not the name: `packages/eslint-devkit` publishes as
+ * `@interlace/eslint-devkit`, and matching on the directory would have marked
+ * it uncovered forever.
+ */
+function workspaceName(dir: string): string | null {
+  try {
+    return (
+      (
+        JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
+          name?: string;
+        }
+      ).name ?? null
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A workspace nobody can install.
+ *
+ * `apps/docs` is `private: true` — it is DEPLOYED, not published, so there is
+ * no version to bump and no npm changelog for a changeset to write into. Its
+ * release record is the deploy log. `lint-changesets` already exempts private
+ * workspaces from the breaking-change rules for exactly this reason; the
+ * coverage question has the same answer.
+ *
+ * Found the day this gate started naming packages: a refresh of the cached
+ * tweet JSON under `apps/docs/src/data/` demanded a changeset for a workspace
+ * that has never been published.
+ */
+function isPrivate(dir: string): boolean {
+  try {
+    return (
+      (
+        JSON.parse(readFileSync(`${dir}/package.json`, 'utf8')) as {
+          private?: boolean;
+        }
+      ).private === true
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Workspaces with consumer-visible changes that NO added changeset names. */
+const uncovered = [
+  ...new Set(releaseRelevant.map((f) => f.split('/').slice(0, 2).join('/'))),
+]
+  .map((dir) => ({ dir, name: workspaceName(dir) }))
+  .filter(({ name }) => name !== null && !vouchedFor.has(name))
+  .map(({ dir, name }) => `${dir} (${name})`)
+  .sort();
+
+/**
+ * `partial` is the case this gate was blind to until 2026-08-30.
+ *
+ * The old rule was "any added changeset covers the whole diff", so ONE
+ * changeset naming ONE plugin vouched for a branch that changed consumer-
+ * visible source in twenty. The other nineteen get no version bump and no
+ * changelog entry — the change reaches npm folded into whatever unrelated
+ * release comes next, which is silent and unrecoverable.
+ *
+ * Found the hard way: `feat/fp-precision-ratchet` reached CI with 20 changed
+ * packages and 2 declared, and this gate reported ✅.
+ */
 const status =
-  addedChangesets.length > 0
-    ? 'present'
-    : releaseRelevant.length === 0
-      ? 'not-needed'
-      : 'missing';
+  releaseRelevant.length === 0
+    ? 'not-needed'
+    : addedChangesets.length === 0
+      ? 'missing'
+      : uncovered.length > 0
+        ? 'partial'
+        : 'present';
 
 if (JSON_OUT) {
   console.log(
     JSON.stringify(
-      { status, base: mergeBase, releaseRelevant, addedChangesets },
+      { status, base: mergeBase, releaseRelevant, addedChangesets, uncovered },
       null,
       2,
     ),
   );
-  process.exit(status === 'missing' && STRICT ? 1 : 0);
+  process.exit(
+    (status === 'missing' || status === 'partial') && STRICT ? 1 : 0,
+  );
 }
 
 switch (status) {
   case 'present':
-    console.log(`✅ Changeset present: ${addedChangesets.join(', ')}`);
+    console.log(
+      `✅ Every changed workspace is named by a changeset: ${addedChangesets
+        .map((entry) => entry.file)
+        .join(', ')}`,
+    );
     break;
+
+  case 'partial': {
+    console.warn(
+      `⚠️  ${uncovered.length} workspace(s) changed with no changeset naming them:`,
+    );
+    console.warn('');
+    for (const entry of uncovered) console.warn(`   - ${entry}`);
+    console.warn('');
+    console.warn(
+      `   ${addedChangesets.length} changeset(s) on this branch cover only: ${[...vouchedFor].sort().join(', ')}`,
+    );
+    console.warn('');
+    console.warn(
+      '   A package with no changeset gets no version bump and no changelog',
+    );
+    console.warn(
+      '   entry — the change ships silently inside an unrelated release.',
+    );
+    console.warn(
+      '   Add the package to an existing changeset, or add the `skip-changeset`',
+    );
+    console.warn('   label if the change is genuinely internal-only.');
+    if (STRICT) process.exit(1);
+    break;
+  }
 
   case 'not-needed':
     console.log(
@@ -180,7 +388,8 @@ switch (status) {
     );
     if (changed.length > 0) {
       console.log(
-        `   (${changed.length} file(s) changed, none under packages|apps/*/src or package.json)`,
+        `   (${changed.length} file(s) changed; any package.json among them ` +
+          'touched only build-time fields such as scripts or devDependencies)',
       );
     }
     break;

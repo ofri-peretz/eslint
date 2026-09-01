@@ -125,7 +125,7 @@ if (hasRole(user, "admin")) { user.role = req.body.role; }
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `false` | Allow privilege escalation patterns in test files |
-| `testFilePattern` | `string` | `"\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$"` | Test file pattern regex string |
+| `testFilePattern` | `string` | — | Override which filenames `allowInTests` applies to. Null — the default — leaves it to the shared structural predicate. |
 | `roleCheckPatterns` | `string[]` | `["hasRole","checkRole","isAdmin","isAuthorized","hasPermission","checkPermission","verifyRole","requireRole"]` | Role check patterns to recognize |
 | `userInputPatterns` | `string[]` | `[]` | Additional user input patterns to check (regex strings) |
 | `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |

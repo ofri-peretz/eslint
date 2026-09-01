@@ -54,7 +54,11 @@
  * @see https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   isLocationNavigationCall,
@@ -66,13 +70,12 @@ import {
 } from '../../utils/navigation-targets';
 import { isAnchoredHostGuard } from '../../utils/regexp-anchoring';
 
-type MessageIds =
-  | 'insecureRedirect';
+type MessageIds = 'insecureRedirect';
 
 export interface Options {
   /** Ignore in test files. Default: true */
   ignoreInTests?: boolean;
-  
+
   /** Allowed redirect domains. Default: [] */
   allowedDomains?: string[];
 }
@@ -90,6 +93,16 @@ type RuleOptions = [Options?];
  *
  * `redirect` carries no such ambiguity (`res.redirect`, `Response.redirect`),
  * so it is accepted on any receiver.
+ */
+/**
+ * @vocabulary `redirect` is Express (`res.redirect`) and WHATWG Fetch
+ * (`Response.redirect`); `href` is the DOM `Location` interface. Both are
+ * names those specifications define, not names a consumer chose, so they are
+ * hardcoded deliberately and are not behind an option. They change only when
+ * the specification does.
+ *
+ * @see https://expressjs.com/en/api.html#res.redirect
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Location/href
  */
 function isNavigationSink(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
@@ -167,7 +180,8 @@ function isSelfReload(
   // Both receivers come from the same file, so comparing their printed form is
   // exactly the "same Location object" question — and it will not match
   // `otherWindow.location` against `window.location`.
-  const normalise = (n: TSESTree.Node) => sourceCode.getText(n).replace(/\s+/g, '');
+  const normalise = (n: TSESTree.Node) =>
+    sourceCode.getText(n).replace(/\s+/g, '');
   return normalise(target.object) === normalise(sinkLocation);
 }
 
@@ -192,7 +206,7 @@ function isSelfReload(
 function isRedirectValidated(
   node: TSESTree.Node,
   target: TSESTree.Node | undefined,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   // Taint is decided from the TARGET alone — see utils/url-taint.ts for why
   // reading the whole call text made every `window.location.assign(…)` a
@@ -246,9 +260,9 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
         description: 'Unvalidated redirect detected - user-controlled URL',
         severity: 'HIGH',
         fix: 'Whitelist allowed domains or validate redirect target',
-        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards',
+        documentationLink:
+          'https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards',
       }),
-
     },
     schema: [
       {
@@ -261,7 +275,8 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
           allowedDomains: {
             type: 'array',
             items: { type: 'string' },
-            default: [], description: 'Redirect target domains treated as safe'
+            default: [],
+            description: 'Redirect target domains treated as safe',
           },
         },
         additionalProperties: false,
@@ -274,10 +289,11 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
       allowedDomains: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-ignoreInTests = true 
-}: Options = options || {};
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
+    const { ignoreInTests = true }: Options = options || {};
 
     const filename = context.filename;
     const isTestFile = ignoreInTests && isTestFilePath(filename);
@@ -352,4 +368,3 @@ ignoreInTests = true
     };
   },
 });
-

@@ -9,7 +9,7 @@
  * Enforce using the node: protocol for Node.js built-in modules (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferNodeProtocol';
@@ -148,8 +148,9 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
         ) {
           const arg = node.arguments[0];
 
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            const moduleName = arg.value;
+          const staticText = staticString(arg);
+          if (staticText !== null) {
+            const moduleName = staticText;
 
             if (isBuiltInModule(moduleName, allModulesToCheck)) {
               const fixedModuleName = `node:${moduleName}`;

@@ -11,9 +11,11 @@ import {
   formatLLMMessage,
   MessageIcons,
   isStaticExpression,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeCopyFromOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
+import { stripComments } from '../../utils/sql-scan';
 
 /**
  * Methods that hand a raw SQL string to the server.
@@ -26,7 +28,6 @@ import { fileUsesPostgres } from '../../utils';
 const SQL_SINK_METHODS: ReadonlySet<string> = new Set(['query', 'execute']);
 
 /** SQL comments, stripped before a statement's verb is read. */
-const SQL_COMMENTS = /--[^\n]*|\/\*[\s\S]*?\*\//g;
 
 /** The quoted source of a `COPY … FROM 'path'`, when it is spelled out. */
 const QUOTED_SOURCE = /from\s+['"]([^'"]+)['"]/i;
@@ -54,10 +55,7 @@ function staticText(node: TSESTree.Node): string {
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return `${staticText(node.left as TSESTree.Node)}${staticText(node.right)}`;
   }
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    return node.value;
-  }
-  return '';
+  return staticString(node) ?? '';
 }
 
 /**
@@ -80,7 +78,7 @@ function staticText(node: TSESTree.Node): string {
  * is a read (`FROM`) or a write (`TO`).
  */
 function copySourceClause(text: string): string | null {
-  const stripped = text.replace(SQL_COMMENTS, '');
+  const stripped = stripComments(text);
   for (const statement of stripped.split(';')) {
     const head = /^\s*copy\b/i.exec(statement);
     if (head === null) continue;
@@ -173,7 +171,7 @@ function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   }
   return body.type === AST_NODE_TYPES.TemplateLiteral ||
     body.type === AST_NODE_TYPES.BinaryExpression ||
-    (body.type === AST_NODE_TYPES.Literal && typeof body.value === 'string')
+    (staticString(body) !== null)
     ? body
     : null;
 }

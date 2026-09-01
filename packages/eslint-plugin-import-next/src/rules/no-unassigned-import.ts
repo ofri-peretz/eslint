@@ -9,7 +9,7 @@
  * Prevents unassigned imports (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unassignedImport' | 'sideEffectOnly' | 'missingAssignment';
@@ -122,8 +122,9 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
           node.arguments.length === 1
         ) {
           const arg = node.arguments[0];
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            if (!shouldAllow(arg.value)) {
+          const staticText = staticString(arg);
+          if (staticText !== null) {
+            if (!shouldAllow(staticText)) {
               const parent = node.parent;
               // Only report if the parent is an ExpressionStatement
               // This strictly catches `require('foo');` which is a side-effect import.

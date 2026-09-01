@@ -197,7 +197,6 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         fix: 'Add CSRF middleware: app.use(csrf()) or use csurf package. Include csrfToken in forms.',
         documentationLink: 'https://owasp.org/www-community/attacks/csrf',
       }),
-
     },
     schema: [
       {

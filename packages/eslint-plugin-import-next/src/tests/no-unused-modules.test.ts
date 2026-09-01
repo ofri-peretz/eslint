@@ -23,7 +23,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-unused-modules', noUnusedModules, {
   valid: [
     // Has named exports
-    { code: `export const foo = 1;` },
+    { name: 'an export', code: `export const foo = 1;` },
     
     // Has default export
     { code: `export default function() {}` },
@@ -43,8 +43,14 @@ ruleTester.run('no-unused-modules', noUnusedModules, {
   ],
   
   invalid: [
+    {
+      name: 'a second name the target never exports',
+      code: `import { alsoMissing } from './bar';`,
+      errors: 1,
+    },
     // No exports, only imports
     {
+      name: 'an import of something the target never exports',
       code: `import { foo } from './bar';`,
       errors: [{ messageId: 'missingExports' }],
     },

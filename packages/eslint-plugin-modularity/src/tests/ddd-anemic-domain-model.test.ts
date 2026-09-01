@@ -30,6 +30,7 @@ describe('ddd-anemic-domain-model', () => {
       valid: [
         // Class with business logic
         {
+          name: 'a class that computes something is not anemic',
           code: `
             class Order {
               constructor(items) {
@@ -95,6 +96,7 @@ describe('ddd-anemic-domain-model', () => {
       invalid: [
         // Anemic class with only getters/setters
         {
+          name: 'getters and setters over fields, and no behaviour of its own',
           code: `
             class Person {
               constructor(name) {

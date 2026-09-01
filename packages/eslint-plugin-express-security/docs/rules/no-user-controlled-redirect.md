@@ -80,7 +80,7 @@ app.get('/go', (req, res) => {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `responseObjects` | `string[]` | — | Additional response object names (e.g. `["reply"]` for Fastify) |
+| `responseObjects` | `string[]` | — | Additional response object names (e.g. ["reply"] for Fastify) |
 | `requestObjects` | `string[]` | — | Additional request object names |
 
 ## When Not To Use It

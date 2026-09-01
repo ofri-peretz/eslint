@@ -1,0 +1,109 @@
+{
+  "rule": "node-security/detect-child-process",
+  "title": "A shell command assembled from a value the caller chooses",
+  "control": "const cp = require('child_process');\nfunction f(req) { cp.exec('ls ' + req.query.dir); }",
+  "peers": [
+    {
+      "plugin": "eslint-plugin-security",
+      "rule": "detect-child-process",
+      "control": "const cp = require('child_process'); cp.exec(cmd);",
+      "contract": "detects instances of child_process & non-literal exec()",
+      "contractUrl": "https://github.com/eslint-community/eslint-plugin-security/blob/main/docs/rules/detect-child-process.md",
+      "contractForms": [
+        {
+          "label": "non-literal exec",
+          "code": "const cp = require('child_process'); cp.exec(cmd);"
+        },
+        {
+          "label": "exec with concatenation",
+          "code": "const cp = require('child_process'); cp.exec('ls ' + dir);"
+        },
+        {
+          "label": "exec with a template",
+          "code": "const cp = require('child_process'); cp.exec(`ls ${dir}`);"
+        },
+        {
+          "label": "ESM import spelling",
+          "code": "import cp from 'child_process';\ncp.exec(cmd);"
+        },
+        {
+          "label": "node: protocol spelling",
+          "code": "import cp from 'node:child_process';\ncp.exec(cmd);"
+        },
+        {
+          "label": "destructured exec",
+          "code": "const { exec } = require('child_process'); exec(cmd);"
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "D01",
+      "kind": "defect",
+      "label": "request value concatenated into exec",
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.exec('ls ' + req.query.dir); }",
+      "why": "A shell metacharacter in the query string runs a second command."
+    },
+    {
+      "id": "D02",
+      "kind": "defect",
+      "label": "the same via a template literal",
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.exec(`ls ${req.query.dir}`); }",
+      "why": "Interpolation does not escape anything."
+    },
+    {
+      "id": "D03",
+      "kind": "defect",
+      "label": "ESM import spelling",
+      "code": "import cp from 'node:child_process';\nfunction f(req) { cp.exec('ls ' + req.body.dir); }",
+      "why": "The module spelling does not change the defect."
+    },
+    {
+      "id": "D04",
+      "kind": "defect",
+      "label": "destructured exec",
+      "code": "const { exec } = require('child_process');\nfunction f(req) { exec('ls ' + req.query.dir); }",
+      "why": "Destructuring hides the receiver, not the sink."
+    },
+    {
+      "id": "N01",
+      "kind": "decoy",
+      "label": "a fully literal command",
+      "code": "const cp = require('child_process');\ncp.exec('ls -la');",
+      "why": "The command is written in the file."
+    },
+    {
+      "id": "N02",
+      "kind": "defect",
+      "label": "execFile with a caller-chosen argument",
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.execFile('ls', [req.query.dir]); }",
+      "why": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible \u2014 but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong."
+    },
+    {
+      "id": "N03",
+      "kind": "defect",
+      "label": "spawn with a caller-chosen argument",
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.spawn('ls', [req.query.dir]); }",
+      "why": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible \u2014 but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong."
+    },
+    {
+      "id": "N04",
+      "kind": "decoy",
+      "label": "a call to something else named exec",
+      "code": "function f(re, s) { return re.exec(s); }",
+      "why": "RegExp.prototype.exec is not a shell."
+    },
+    {
+      "id": "R01",
+      "kind": "remedy",
+      "label": "the documented fix",
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.execFile('ls', ['--', req.query.dir]); }",
+      "why": "Reporting the fix leaves the user nothing to do."
+    }
+  ],
+  "knownLimits": [
+    "`execFile`/`spawn` with a caller-chosen argument report CWE-88 (argument injection), not CWE-78. eslint-plugin-security does not model argument injection at all, so it is silent on both \u2014 which reads as better precision and is less coverage.",
+    "`execFile('ls', ['--', x])` is silent: `--` terminates option parsing, so the value can no longer be read as a flag."
+  ]
+}

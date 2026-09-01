@@ -43,6 +43,7 @@ describe('detect-eval-with-expression', () => {
         valid: [],
         invalid: [
           {
+            name: 'eval on a value',
             code: 'eval(userInput);',
             errors: [{ messageId: 'strategyRefactor' }],
           },
@@ -263,6 +264,7 @@ describe('detect-eval-with-expression', () => {
     ruleTester.run('allowLiteralStrings option', detectEvalWithExpression, {
       valid: [
         {
+          name: 'eval on a literal',
           code: 'eval("literal string");',
           options: [{ allowLiteralStrings: true }],
         },

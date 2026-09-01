@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const lambda = <T,>(cases: T[]): T[] =>
+const lambda = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asLambda(c) as T;
     const test = c as Case;
@@ -27,7 +27,9 @@ const lambda = <T,>(cases: T[]): T[] =>
       // Autofix and suggestion fixtures assert the WHOLE file back, so every
       // `output` needs the same prefix or each fixable rule fails on the header
       // alone — including the ones nested under errors[].suggestions[].
-      ...(typeof test.output === 'string' ? { output: asLambda(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asLambda(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const lambda = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -59,6 +60,7 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
   valid: lambda([
     // Test file (allowed)
     {
+      name: 'a test file is exempt',
       code: `
         export const handler = async (event) => {
           for (const record of event.Records) {
@@ -158,6 +160,7 @@ ruleTester.run('no-unbounded-batch-processing', noUnboundedBatchProcessing, {
   invalid: lambda([
     // Lambda handler processing Records without size check (classic FN)
     {
+      name: 'every record processed with no bound on how many arrive',
       code: `
         export const handler = async (event) => {
           for (const record of event.Records) {

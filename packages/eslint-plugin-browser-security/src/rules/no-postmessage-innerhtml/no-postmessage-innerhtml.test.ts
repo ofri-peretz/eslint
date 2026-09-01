@@ -21,6 +21,7 @@ ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
   valid: [
     // Safe: using textContent
     {
+      name: 'the same data as textContent',
       code: `
         window.addEventListener('message', (event) => {
           element.textContent = event.data;
@@ -72,6 +73,7 @@ ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
   invalid: [
     // Direct innerHTML with event.data
     {
+      name: 'postMessage data written to innerHTML',
       code: `
         window.addEventListener('message', (event) => {
           element.innerHTML = event.data;

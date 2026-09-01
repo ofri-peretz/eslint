@@ -25,13 +25,14 @@ describe('consistent-existence-index-check', () => {
     ruleTester.run('prefer in operator', consistentExistenceIndexCheck, {
       valid: [
         // Using 'in' operator (preferred)
-        { code: '"key" in obj' },
+        { name: 'the `in` operator', code: '"key" in obj' },
         { code: 'if ("prop" in object) {}' },
         { code: 'const exists = "name" in user;' },
       ],
       invalid: [
         // hasOwnProperty should be flagged
         {
+          name: 'hasOwnProperty walks the prototype question the long way',
           code: 'obj.hasOwnProperty("key")',
           output: '"key" in obj',
           errors: [{ messageId: 'consistentExistenceCheck' }],

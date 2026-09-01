@@ -24,7 +24,7 @@ describe('no-kind-prop-discriminator', () => {
   ruleTester.run('no-kind-prop-discriminator', noKindPropDiscriminator, {
     valid: [
       // `variant` is allow-listed (CVA pattern dominates)
-      { code: `interface Props { variant: "primary" | "secondary"; }` },
+      { name: '`variant`', code: `interface Props { variant: "primary" | "secondary"; }` },
       // Single-member union — not a real discriminator
       { code: `interface Props { type: "submit"; }` },
       // Non-string union — leave to type-system enforcement
@@ -36,6 +36,7 @@ describe('no-kind-prop-discriminator', () => {
     ],
     invalid: [
       {
+        name: '`type` as the discriminator name — it collides with the DOM attribute',
         code: `interface Props { type: "checkbox" | "radio" | "switch"; }`,
         errors: [{ messageId: 'kindProp' }],
       },

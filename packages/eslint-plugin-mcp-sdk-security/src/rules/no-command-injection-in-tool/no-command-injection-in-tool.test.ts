@@ -10,7 +10,11 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, expect } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
-import { noCommandInjectionInTool, isBuiltString, handlerArgNames } from './index';
+import {
+  noCommandInjectionInTool,
+  isBuiltString,
+  handlerArgNames,
+} from './index';
 import type { TSESTree } from '@typescript-eslint/utils';
 
 RuleTester.afterAll = afterAll;
@@ -25,7 +29,8 @@ const ruleTester = new RuleTester({
   },
 });
 
-const SDK = "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n";
+const SDK =
+  "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n";
 
 describe('no-command-injection-in-tool', () => {
   describe('Valid', () => {
@@ -43,11 +48,14 @@ describe('no-command-injection-in-tool', () => {
         {
           name: 'a concatenated command likewise',
           code:
-            SDK + 'server.registerTool("run", cfg, async ({ cmd }) => { execSync("ls " + cmd); });',
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync("ls " + cmd); });',
         },
         {
           name: 'a literal command',
-          code: SDK + 'server.registerTool("run", cfg, async ({ cmd }) => { execSync("ls -la"); });',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync("ls -la"); });',
         },
         {
           // The remediation the message recommends.
@@ -64,7 +72,9 @@ describe('no-command-injection-in-tool', () => {
         },
         {
           name: 'the whole args object is not a command',
-          code: SDK + 'server.registerTool("run", cfg, async (args) => { execSync(args); });',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { execSync(args); });',
         },
         {
           name: 'a sink outside any tool handler',
@@ -84,15 +94,21 @@ describe('no-command-injection-in-tool', () => {
         },
         {
           name: 'a handler with no parameters',
-          code: SDK + 'server.registerTool("run", cfg, async () => { execSync(cmd); });',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async () => { execSync(cmd); });',
         },
         {
           name: 'a non-sink call taking the argument',
-          code: SDK + 'server.registerTool("run", cfg, async ({ cmd }) => { logger.info(cmd); });',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { logger.info(cmd); });',
         },
         {
           name: 'a sink with no arguments',
-          code: SDK + 'server.registerTool("run", cfg, async ({ cmd }) => { spawn(); });',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { spawn(); });',
         },
         {
           name: 'a handler passed by reference binds no names here',
@@ -113,7 +129,8 @@ describe('no-command-injection-in-tool', () => {
           // statically known sink name.
           name: 'a callee that is neither an identifier nor a member',
           code:
-            SDK + 'server.registerTool("run", cfg, async ({ cmd }) => { getRunner()(cmd); });',
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { getRunner()(cmd); });',
         },
         {
           name: 'an array-pattern property binds nothing this rule tracks',
@@ -124,7 +141,8 @@ describe('no-command-injection-in-tool', () => {
         {
           name: 'a computed member on the args object',
           code:
-            SDK + 'server.registerTool("run", cfg, async (args) => { execSync(args[key]); });',
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { execSync(args[key]); });',
         },
       ],
       invalid: [],
@@ -137,27 +155,52 @@ describe('no-command-injection-in-tool', () => {
       invalid: [
         {
           name: 'a destructured argument as the command',
-          code: SDK + 'server.registerTool("run", cfg, async ({ cmd }) => { execSync(cmd); });',
-          errors: [{ messageId: 'toolArgToShell', data: { arg: 'cmd', sink: 'execSync' } }],
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(cmd); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'execSync' },
+            },
+          ],
         },
         {
           name: 'the whole-args member form',
-          code: SDK + 'server.registerTool("run", cfg, async (args) => { execSync(args.cmd); });',
-          errors: [{ messageId: 'toolArgToShell', data: { arg: 'args.cmd', sink: 'execSync' } }],
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { execSync(args.cmd); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.cmd', sink: 'execSync' },
+            },
+          ],
         },
         {
           name: 'spawn chooses the binary too',
-          code: SDK + 'server.registerTool("run", cfg, async ({ bin }) => { spawn(bin, argv); });',
-          errors: [{ messageId: 'toolArgToShell', data: { arg: 'bin', sink: 'spawn' } }],
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ bin }) => { spawn(bin, argv); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'bin', sink: 'spawn' },
+            },
+          ],
         },
         {
           name: 'execFile',
-          code: SDK + 'server.registerTool("run", cfg, async ({ bin }) => { execFile(bin, []); });',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ bin }) => { execFile(bin, []); });',
           errors: [{ messageId: 'toolArgToShell' }],
         },
         {
           name: 'fork',
-          code: SDK + 'server.registerTool("run", cfg, async ({ mod }) => { fork(mod); });',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ mod }) => { fork(mod); });',
           errors: [{ messageId: 'toolArgToShell' }],
         },
         {
@@ -177,18 +220,22 @@ describe('no-command-injection-in-tool', () => {
         {
           name: 'a defaulted destructure',
           code:
-            SDK + 'server.registerTool("run", cfg, async ({ cmd = "ls" }) => { execSync(cmd); });',
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd = "ls" }) => { execSync(cmd); });',
           errors: [{ messageId: 'toolArgToShell' }],
         },
         {
           name: 'a rest element is an object, and its member is tainted',
           code:
-            SDK + 'server.registerTool("run", cfg, async ({ ...rest }) => { execSync(rest.cmd); });',
+            SDK +
+            'server.registerTool("run", cfg, async ({ ...rest }) => { execSync(rest.cmd); });',
           errors: [{ messageId: 'toolArgToShell' }],
         },
         {
           name: 'the legacy tool() arity',
-          code: SDK + 'server.tool("run", cfg, async ({ cmd }) => { execSync(cmd); });',
+          code:
+            SDK +
+            'server.tool("run", cfg, async ({ cmd }) => { execSync(cmd); });',
           errors: [{ messageId: 'toolArgToShell' }],
         },
         {
@@ -209,14 +256,22 @@ describe('no-command-injection-in-tool', () => {
             'server.registerTool("outer", cfg, async ({ outerArg }) => {\n' +
             '  server.registerTool("inner", cfg, async ({ inner }) => { execSync(inner); });\n' +
             '});',
-          errors: [{ messageId: 'toolArgToShell', data: { arg: 'inner', sink: 'execSync' } }],
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'inner', sink: 'execSync' },
+            },
+          ],
         },
         {
           name: 'two sinks in one handler report separately',
           code:
             SDK +
             'server.registerTool("run", cfg, async ({ a, b }) => { execSync(a); spawn(b); });',
-          errors: [{ messageId: 'toolArgToShell' }, { messageId: 'toolArgToShell' }],
+          errors: [
+            { messageId: 'toolArgToShell' },
+            { messageId: 'toolArgToShell' },
+          ],
         },
         {
           name: 'require() opens the same gate',
@@ -232,7 +287,10 @@ describe('no-command-injection-in-tool', () => {
 
 describe('isBuiltString', () => {
   const exprOf = (code: string): TSESTree.Node =>
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement).expression;
+    (
+      parser.parse(code, { range: true })
+        .body[0] as TSESTree.ExpressionStatement
+    ).expression;
 
   it('is true for the shapes node-security owns', () => {
     expect(isBuiltString(exprOf('`ls ${x}`'))).toBe(true);
@@ -249,7 +307,10 @@ describe('isBuiltString', () => {
 
 describe('handlerArgNames', () => {
   const fnOf = (code: string): TSESTree.Node =>
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement).expression;
+    (
+      parser.parse(code, { range: true })
+        .body[0] as TSESTree.ExpressionStatement
+    ).expression;
 
   it('collects destructured names as direct', () => {
     const { direct, objects } = handlerArgNames(fnOf('({ cmd, path }) => {}'));

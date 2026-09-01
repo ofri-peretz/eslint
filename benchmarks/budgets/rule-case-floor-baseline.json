@@ -1,0 +1,8 @@
+{
+  "note": "Rules holding fewer than 3 classified cases on a side. Shrink-only.",
+  "rules": [
+    "import-next/no-cycle",
+    "react-features/static-property-placement",
+    "reliability/no-jsdoc-terminator-in-example"
+  ]
+}

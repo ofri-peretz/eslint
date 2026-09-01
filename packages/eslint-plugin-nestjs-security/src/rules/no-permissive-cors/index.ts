@@ -55,8 +55,36 @@ import {
  * noise. But a condition that is *not* about the environment proves nothing —
  * `if (req.path.startsWith('/public'))` still ships to real users.
  */
-const ENV_HINT =
-  /\b(NODE_ENV|APP_ENV|ENVIRONMENT|isDev|isDevelopment|isLocal|isTest|isProd|isProduction|devMode|development|production)\b/;
+const DEFAULT_ENVIRONMENT_HINT_NAMES: readonly string[] = [
+  'NODE_ENV',
+  'APP_ENV',
+  'ENVIRONMENT',
+  'isDev',
+  'isDevelopment',
+  'isLocal',
+  'isTest',
+  'isProd',
+  'isProduction',
+  'devMode',
+  'development',
+  'production',
+];
+
+/** Identifier-shaped words in a snippet of source. */
+const IDENTIFIERS = /[A-Za-z_$][A-Za-z0-9_$]*/g;
+
+/**
+ * Whether a condition mentions the environment.
+ *
+ * Matched whole-word against the identifiers in the text rather than by
+ * building a regex from the configured list: a consumer-supplied string
+ * compiled into a pattern is a different rule for every configuration, and
+ * `isDev` must not match inside `isDevelopmentModeEnabled`.
+ */
+function mentionsEnvironment(text: string, hints: readonly string[]): boolean {
+  const wanted = new Set(hints);
+  return (text.match(IDENTIFIERS) ?? []).some((word) => wanted.has(word));
+}
 
 /**
  * …but a branch about the environment is only an excuse when it restricts the
@@ -95,6 +123,17 @@ type MessageIds = 'wildcardOrigin' | 'reflectedOrigin' | 'defaultOrigin';
 export interface Options {
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
+
+  /**
+   * Words whose presence in a condition marks it as an environment check.
+   * REPLACES the default.
+   *
+   * `NODE_ENV` is a Node convention, but `isDev`, `devMode` and `isLocal` are
+   * OUR guess at how a codebase spells the same idea. A project whose flag is
+   * `stage` or `RUNTIME_TIER` matched none of them, so a development-only
+   * `enableCors({ origin: '*' })` was reported as if it shipped to production.
+   */
+  environmentHintNames?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -289,7 +328,16 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     schema: [
       {
         type: 'object',
-        properties: { allowInTests: { type: 'boolean', default: true } },
+        properties: {
+          allowInTests: { type: 'boolean', default: true },
+          environmentHintNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_ENVIRONMENT_HINT_NAMES],
+            description:
+              'Words that mark a condition as an environment check. Replaces the default.',
+          },
+        },
         additionalProperties: false,
       },
     ],
@@ -303,7 +351,10 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     // that does not use this SDK does no work at all.
     if (!fileUsesNestjs(context.sourceCode.ast)) return {};
 
-    const { allowInTests = true } = options;
+    const {
+      allowInTests = true,
+      environmentHintNames = DEFAULT_ENVIRONMENT_HINT_NAMES,
+    } = options;
     if (allowInTests && isTestFilePath(context.filename)) return {};
 
     let origins: ReadonlyMap<string, string> = new Map();
@@ -332,7 +383,11 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           test = current.left;
         if (test) {
           const text = context.sourceCode.getText(test);
-          if (ENV_HINT.test(text) && isDevelopmentScoped(text)) return true;
+          if (
+            mentionsEnvironment(text, environmentHintNames) &&
+            isDevelopmentScoped(text)
+          )
+            return true;
         }
         current = current.parent;
       }

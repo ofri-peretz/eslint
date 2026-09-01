@@ -24,8 +24,13 @@ import {
 import { resolveConstantString } from '../../utils/const-value';
 import { findVariable } from '../../utils/provenance';
 
-type MessageIds =
-  | 'deprecatedCryptojs';
+/**
+ * @vocabulary `crypto-js` is the package name on npm and `require` is
+ * CommonJS. Matching them is matching a published module identifier.
+ *
+ * @see https://www.npmjs.com/package/crypto-js
+ */
+type MessageIds = 'deprecatedCryptojs';
 
 type SourceCode = TSESLint.SourceCode;
 
@@ -42,7 +47,9 @@ function isCreateRequireCall(
   node: TSESTree.Node | null | undefined,
 ): boolean {
   if (!node || node.type !== AST_NODE_TYPES.CallExpression) return false;
-  return isModuleBinding(node.callee, sourceCode.getScope(node), 'module', ['createRequire']);
+  return isModuleBinding(node.callee, sourceCode.getScope(node), 'module', [
+    'createRequire',
+  ]);
 }
 
 /**
@@ -66,11 +73,18 @@ function isCreateRequireCall(
  * function initializer) is kept, because that is a type declaration for the
  * same injected global.
  */
-function isRequireCallee(sourceCode: SourceCode, callee: TSESTree.Node): boolean {
+function isRequireCallee(
+  sourceCode: SourceCode,
+  callee: TSESTree.Node,
+): boolean {
   if (callee.type !== AST_NODE_TYPES.Identifier) return false;
   const def = findVariable(sourceCode, callee)?.defs[0];
 
-  if (def?.type === 'Variable' && isCreateRequireCall(sourceCode, def.node.init)) return true;
+  if (
+    def?.type === 'Variable' &&
+    isCreateRequireCall(sourceCode, def.node.init)
+  )
+    return true;
 
   if (callee.name !== 'require') return false;
   if (def === undefined) return true;
@@ -107,14 +121,18 @@ function moduleSpecifierListener(
   };
 
   return {
-    ImportDeclaration: (node: TSESTree.ImportDeclaration) => fromExpression(node, node.source),
-    ImportExpression: (node: TSESTree.ImportExpression) => fromExpression(node, node.source),
+    ImportDeclaration: (node: TSESTree.ImportDeclaration) =>
+      fromExpression(node, node.source),
+    ImportExpression: (node: TSESTree.ImportExpression) =>
+      fromExpression(node, node.source),
     ExportNamedDeclaration: (node: TSESTree.ExportNamedDeclaration) =>
       fromExpression(node, node.source),
     ExportAllDeclaration: (node: TSESTree.ExportAllDeclaration) =>
       fromExpression(node, node.source),
     TSImportEqualsDeclaration: (node: TSESTree.TSImportEqualsDeclaration) => {
-      if (node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference) {
+      if (
+        node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference
+      ) {
         fromExpression(node, node.moduleReference.expression);
       }
     },
@@ -147,7 +165,8 @@ export const noCryptojs = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-cryptojs.md',
-      description: 'Disallow deprecated crypto-js library (use native crypto instead)',
+      description:
+        'Disallow deprecated crypto-js library (use native crypto instead)',
       cwe: 'CWE-1104',
       cvss: 5.3,
     },
@@ -156,12 +175,12 @@ export const noCryptojs = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Deprecated crypto-js library',
         cwe: 'CWE-1104',
-        description: 'crypto-js is no longer maintained (last update: 2022). Future vulnerabilities will not be patched.',
+        description:
+          'crypto-js is no longer maintained (last update: 2022). Future vulnerabilities will not be patched.',
         severity: 'MEDIUM',
         fix: 'Migrate to native Node.js crypto module or Web Crypto API',
         documentationLink: 'https://nodejs.org/api/crypto.html',
       }),
-
     },
     schema: [],
   },

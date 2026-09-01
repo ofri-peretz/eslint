@@ -14,6 +14,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES,
   compileUserPatterns, unwrapTypeSyntax,
+  staticString,
 } from '@interlace/eslint-devkit';
 import {
   bindingInit,
@@ -450,8 +451,8 @@ function memberPropertyName(node: TSESTree.MemberExpression): string | null {
   if (!node.computed) {
     return property.type === AST_NODE_TYPES.Identifier ? property.name : null;
   }
-  return property.type === AST_NODE_TYPES.Literal && typeof property.value === 'string'
-    ? property.value
+  return staticString(property) !== null
+    ? staticString(property)
     : null;
 }
 

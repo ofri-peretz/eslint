@@ -38,6 +38,7 @@ describe('no-unsafe-dynamic-require', () => {
       valid: [
         // Static require with string literal
         {
+          name: 'require of a literal',
           code: 'const fs = require("fs");',
         },
         {
@@ -70,6 +71,7 @@ describe('no-unsafe-dynamic-require', () => {
       valid: [],
       invalid: [
         {
+          name: 'require of a runtime-chosen module',
           code: 'const module = require(moduleName);',
           options: UNRESOLVED,
           errors: [{ messageId: 'unsafeDynamicRequire' }],

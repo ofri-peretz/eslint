@@ -87,6 +87,7 @@ describe('require-lean-queries', () => {
         },
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -118,6 +119,7 @@ describe('require-lean-queries', () => {
       invalid: xmo([
         // Triggers useLean: read query without .lean()
         {
+          name: 'a read-only find that still hydrates full documents',
           code: `const docs = await Model.find({ active: true });`,
           errors: [{
         messageId: 'useLean',

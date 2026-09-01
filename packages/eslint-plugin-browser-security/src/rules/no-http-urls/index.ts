@@ -39,7 +39,7 @@
  * reports and `fetch("http://api.acme-corp.io")` drew four. Each now draws one.
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import {
   isXmlNamespaceUri,
   isTrustworthyLocalUrl,
@@ -195,8 +195,9 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       }
       if (parent.type === 'Property' && parent.value === node && !parent.computed) {
         if (parent.key.type === 'Identifier') return parent.key.name;
-        if (parent.key.type === 'Literal' && typeof parent.key.value === 'string') {
-          return parent.key.value;
+        const staticText = staticString(parent.key);
+        if (staticText !== null) {
+          return staticText;
         }
       }
       return undefined;

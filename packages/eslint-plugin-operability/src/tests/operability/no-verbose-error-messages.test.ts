@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-verbose-error-messages', noVerboseErrorMessages, {
   valid: [
     // Safe error responses
-    { code: "res.send('Error occurred')" },
+    { name: 'a generic message leaks nothing', code: "res.send('Error occurred')" },
     { code: "res.json({ error: 'Internal error' })" },
     { code: "res.json({ message: 'Something went wrong' })" },
     // Non-response calls
@@ -26,6 +26,7 @@ ruleTester.run('no-verbose-error-messages', noVerboseErrorMessages, {
   invalid: [
     // Exposing stack directly
     {
+      name: 'a stack trace in the response body leaks internals',
       code: 'res.send(error.stack)',
       errors: [{ messageId: 'violationDetected' }],
     },

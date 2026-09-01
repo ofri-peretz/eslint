@@ -20,10 +20,10 @@ referenced from PRs, commits and later intents.
 `scripts/__tests__/intent-artifacts.lock.test.ts` checks these, because an artifact
 nobody can rely on the shape of is a chat message in a file:
 
-| File | Must carry |
-| :--- | :--- |
+| File        | Must carry                                                                                                                                                      |
+| :---------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `intent.md` | `# Intent — <title>`, a `**Status:**` line, `## What is wanted`, `## Why now`, `## Constraints`, and `## Success criteria` (or `## How we will know it worked`) |
-| `design.md` | a record of what was rejected — `## Rejected alternatives`, `## Explicit non-goals`, `## Non-goals` or `## Out of scope` |
+| `design.md` | a record of what was rejected — `## Rejected alternatives`, `## Explicit non-goals`, `## Non-goals` or `## Out of scope`                                        |
 
 It also fails if an `intent.md` appears **anywhere outside this directory**. That is
 not pedantry: this repo ran two conventions at once, `intent/` and `docs/intents/`,
@@ -48,13 +48,13 @@ and every check stayed green because each only looked at its own folder.
 
 ## Status values
 
-| Status | Means | Requires `design.md` |
-| :--- | :--- | :---: |
-| `draft` | being written | no |
-| `review` | awaiting a human read | no |
-| `approved` | designed and cleared for build | **yes** |
-| `shipped` | merged | **yes** |
-| `dropped` | deliberately not doing it — keep the file, it is a record | no |
+| Status     | Means                                                     | Requires `design.md` |
+| :--------- | :-------------------------------------------------------- | :------------------: |
+| `draft`    | being written                                             |          no          |
+| `review`   | awaiting a human read                                     |          no          |
+| `approved` | designed and cleared for build                            |       **yes**        |
+| `shipped`  | merged                                                    |       **yes**        |
+| `dropped`  | deliberately not doing it — keep the file, it is a record |          no          |
 
 ## Where intents come from
 

@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: scope
  * Enforce that scope prop is only used on th elements
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/scope.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -34,7 +34,8 @@ export const scope = createRule<RuleOptions, MessageIds>({
         description: 'The scope attribute should only be used on <th> elements',
         severity: 'MEDIUM',
         fix: 'Remove the scope attribute',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/scope.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/scope.md',
       }),
     },
     schema: [],
@@ -49,7 +50,10 @@ export const scope = createRule<RuleOptions, MessageIds>({
 
         const parent = node.parent;
         if (parent && parent.type === 'JSXOpeningElement') {
-          if (parent.name.type === 'JSXIdentifier' && parent.name.name !== 'th') {
+          if (
+            parent.name.type === 'JSXIdentifier' &&
+            parent.name.name !== 'th'
+          ) {
             context.report({
               node,
               messageId: 'invalidScope',
@@ -60,4 +64,3 @@ export const scope = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

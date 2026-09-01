@@ -7,13 +7,17 @@
 /**
  * ESLint Rule: hooks-exhaustive-deps
  * LLM-optimized wrapper for React hooks dependency array checking
- * 
+ *
  * This rule detects missing or extra dependencies in React hooks like
  * useEffect, useCallback, useMemo, and useLayoutEffect.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'missingDep'
@@ -44,7 +48,14 @@ type RuleOptions = [Options?];
  *
  * Module-level so the cache amortizes across files in one ESLint run.
  */
-const SKIP_KEYS = new Set(['parent', 'loc', 'range', 'tokens', 'comments', 'type']);
+const SKIP_KEYS = new Set([
+  'parent',
+  'loc',
+  'range',
+  'tokens',
+  'comments',
+  'type',
+]);
 const CHILD_KEYS_CACHE = new Map<string, string[]>();
 
 function getChildKeys(node: TSESTree.Node): string[] {
@@ -79,7 +90,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/hooks-exhaustive-deps.md',
-      description: 'Enforce exhaustive dependencies in React hooks to prevent stale closures',
+      description:
+        'Enforce exhaustive dependencies in React hooks to prevent stale closures',
       confidence: 'high',
     },
     hasSuggestions: true,
@@ -87,18 +99,22 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       missingDep: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Missing Hook Dependency',
-        description: 'React Hook {{hookName}} has missing dependencies: {{deps}}',
+        description:
+          'React Hook {{hookName}} has missing dependencies: {{deps}}',
         severity: 'HIGH',
         fix: 'Add missing dependencies to the dependency array or memoize values with useMemo/useCallback',
-        documentationLink: 'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
+        documentationLink:
+          'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
       }),
       extraDep: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Unnecessary Hook Dependency',
-        description: 'React Hook {{hookName}} has unnecessary dependency: {{dep}}',
+        description:
+          'React Hook {{hookName}} has unnecessary dependency: {{dep}}',
         severity: 'MEDIUM',
         fix: 'Remove the unnecessary dependency from the array - it never changes or is not used in the effect',
-        documentationLink: 'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
+        documentationLink:
+          'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
       }),
       unnecessaryDep: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -106,7 +122,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         description: 'The dependency {{dep}} is stable and never changes',
         severity: 'LOW',
         fix: 'Consider removing stable dependencies like setState functions or refs',
-        documentationLink: 'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
+        documentationLink:
+          'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
       }),
       suggestAddDep: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -114,7 +131,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         description: 'Add {{dep}} to dependency array',
         severity: 'LOW',
         fix: 'Add the missing dependency to prevent stale closures',
-        documentationLink: 'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
+        documentationLink:
+          'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
       }),
       suggestRemoveDep: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -122,15 +140,18 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         description: 'Remove {{dep}} from dependency array',
         severity: 'LOW',
         fix: 'Remove the unnecessary dependency',
-        documentationLink: 'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
+        documentationLink:
+          'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
       }),
       depsNotArrayLiteral: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Non-literal Dependency Array',
-        description: 'React Hook {{hookName}} was passed a dependency list that is not an array literal. This means we cannot statically verify whether you have passed the correct dependencies.',
+        description:
+          'React Hook {{hookName}} was passed a dependency list that is not an array literal. This means we cannot statically verify whether you have passed the correct dependencies.',
         severity: 'HIGH',
         fix: 'Replace the variable with an inline array literal: [dep1, dep2]. If you need dynamic deps, refactor to compute them inside the hook callback instead.',
-        documentationLink: 'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
+        documentationLink:
+          'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
       }),
     },
     schema: [
@@ -139,7 +160,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         properties: {
           additionalHooks: {
             type: 'string',
-            description: 'Regex pattern for additional hooks to check (e.g., "useMyCustomHook")',
+            description:
+              'Regex pattern for additional hooks to check (e.g., "useMyCustomHook")',
           },
           enableDangerousAutofixThisMayCauseInfiniteLoops: {
             type: 'boolean',
@@ -164,7 +186,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
      */
     function isHookWithDeps(node: TSESTree.CallExpression): boolean {
       const callee = node.callee;
-      
+
       // Direct hook call: useEffect(...)
       if (callee.type === 'Identifier') {
         if (HOOKS_WITH_DEPS.has(callee.name)) {
@@ -174,7 +196,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           return true;
         }
       }
-      
+
       // Namespaced hook call: React.useEffect(...)
       if (
         callee.type === 'MemberExpression' &&
@@ -185,7 +207,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       ) {
         return true;
       }
-      
+
       return false;
     }
 
@@ -210,14 +232,16 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     /**
      * Extract variables declared inside a function (to exclude from deps)
      */
-    function extractLocallyDeclaredIdentifiers(node: TSESTree.Node): Set<string> {
+    function extractLocallyDeclaredIdentifiers(
+      node: TSESTree.Node,
+    ): Set<string> {
       const declared = new Set<string>();
       const visited = new WeakSet<TSESTree.Node>();
-      
+
       function visit(n: TSESTree.Node) {
         if (visited.has(n)) return;
         visited.add(n);
-        
+
         // Variable declarations: const x = 1, let y, var z
         if (n.type === 'VariableDeclaration') {
           for (const declarator of n.declarations) {
@@ -226,7 +250,10 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             } else if (declarator.id.type === 'ObjectPattern') {
               // Destructuring: const { a, b } = obj
               for (const prop of declarator.id.properties) {
-                if (prop.type === 'Property' && prop.value.type === 'Identifier') {
+                if (
+                  prop.type === 'Property' &&
+                  prop.value.type === 'Identifier'
+                ) {
                   declared.add(prop.value.name);
                 }
               }
@@ -240,7 +267,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-        
+
         // Function parameters and declarations
         if (n.type === 'FunctionDeclaration' && n.id) {
           declared.add(n.id.name);
@@ -261,9 +288,15 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
               declared.add(param.name);
             } else if (param.type === 'ObjectPattern') {
               for (const prop of param.properties) {
-                if (prop.type === 'Property' && prop.value.type === 'Identifier') {
+                if (
+                  prop.type === 'Property' &&
+                  prop.value.type === 'Identifier'
+                ) {
                   declared.add(prop.value.name);
-                } else if (prop.type === 'RestElement' && prop.argument.type === 'Identifier') {
+                } else if (
+                  prop.type === 'RestElement' &&
+                  prop.argument.type === 'Identifier'
+                ) {
                   declared.add(prop.argument.name);
                 }
               }
@@ -271,15 +304,21 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
               for (const el of param.elements) {
                 if (el && el.type === 'Identifier') declared.add(el.name);
               }
-            } else if (param.type === 'RestElement' && param.argument.type === 'Identifier') {
+            } else if (
+              param.type === 'RestElement' &&
+              param.argument.type === 'Identifier'
+            ) {
               declared.add(param.argument.name);
-            } else if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') {
+            } else if (
+              param.type === 'AssignmentPattern' &&
+              param.left.type === 'Identifier'
+            ) {
               declared.add(param.left.name);
             }
           };
           for (const param of n.params) collectFromPattern(param);
         }
-        
+
         // Traverse children using the cached child-keys table.
         const keys = getChildKeys(n);
         for (let i = 0; i < keys.length; i++) {
@@ -300,23 +339,23 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       visit(node);
       return declared;
     }
-    
+
     /**
      * Extract identifiers used inside a function node (only standalone identifiers, not property names)
      */
     function extractUsedIdentifiers(node: TSESTree.Node): Set<string> {
       const used = new Set<string>();
       const visited = new WeakSet<TSESTree.Node>();
-      
+
       // Keys to skip during traversal (to avoid infinite loops)
-      
+
       function visit(n: TSESTree.Node, isPropertyKey = false) {
         // Prevent infinite loops
         if (visited.has(n)) {
           return;
         }
         visited.add(n);
-        
+
         // For MemberExpression, only capture the object (root), not the property
         if (n.type === 'MemberExpression') {
           visit(n.object as TSESTree.Node, false);
@@ -327,7 +366,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           // Non-computed properties are just property names, skip them
           return;
         }
-        
+
         // For CallExpression, capture callee and arguments
         if (n.type === 'CallExpression') {
           if (n.callee) {
@@ -338,12 +377,12 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           }
           return;
         }
-        
+
         // Only add identifiers that aren't property keys
         if (n.type === 'Identifier' && !isPropertyKey) {
           used.add(n.name);
         }
-        
+
         // Traverse child nodes (cached child-keys table — see getChildKeys).
         const keys = getChildKeys(n);
         for (let i = 0; i < keys.length; i++) {
@@ -368,9 +407,11 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     /**
      * Extract dependencies from the dependency array
      */
-    function extractDependencies(depsArray: TSESTree.ArrayExpression): Set<string> {
+    function extractDependencies(
+      depsArray: TSESTree.ArrayExpression,
+    ): Set<string> {
       const deps = new Set<string>();
-      
+
       for (const element of depsArray.elements) {
         if (element?.type === 'Identifier') {
           deps.add(element.name);
@@ -383,11 +424,11 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           deps.add(sourceCode.getText(element));
         }
       }
-      
+
       return deps;
     }
 
-        /**
+    /**
      * Is this identifier a stable React value — one whose identity never
      * changes, so it need not be a dependency?
      *
@@ -415,7 +456,10 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
      * destructuring. That is the same evidence React's rule uses, and it does
      * not care what anything is called.
      */
-    function isStableReference(name: string, scope: TSESLint.Scope.Scope | null): boolean {
+    function isStableReference(
+      name: string,
+      scope: TSESLint.Scope.Scope | null,
+    ): boolean {
       for (let current = scope; current; current = current.upper) {
         const variable = current.variables.find((v) => v.name === name);
         if (!variable) continue;
@@ -446,18 +490,26 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
      * it as string-versus-void; nothing at runtime would have.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    function isStableDefinition(def: TSESLint.Scope.Definition, name: string): boolean {
+    function isStableDefinition(
+      def: TSESLint.Scope.Definition,
+      name: string,
+    ): boolean {
       if (def.type !== 'Variable') return false;
       const declarator = def.node;
       const init = declarator.init;
       if (!init || init.type !== 'CallExpression') return false;
 
       const callee = init.callee;
+      // `propertyName` and not `callee.property.name`: `React['useRef']` and
+      // `` React[`useRef`] `` reach the same hook as `React.useRef`, and a
+      // dependency rule that sees only the dotted spelling treats the other
+      // two as unknown calls — so every ref and setter reached that way is
+      // reported as a missing dependency.
       const hookName =
         callee.type === 'Identifier'
           ? callee.name
-          : callee.type === 'MemberExpression' && callee.property.type === 'Identifier'
-            ? callee.property.name
+          : callee.type === 'MemberExpression'
+            ? (propertyName(callee) ?? '')
             : '';
 
       // `const ref = useRef(...)` — the ref OBJECT is stable. (Its `.current`
@@ -484,7 +536,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       scope: TSESLint.Scope.Scope | null,
     ): Set<string> {
       const reactive = new Set<string>();
-      
+
       // Common non-reactive values
       const nonReactive = new Set([
         'undefined',
@@ -523,13 +575,13 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         'requestAnimationFrame',
         'cancelAnimationFrame',
       ]);
-      
+
       for (const name of used) {
         if (!nonReactive.has(name) && !isStableReference(name, scope)) {
           reactive.add(name);
         }
       }
-      
+
       return reactive;
     }
 
@@ -541,12 +593,12 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
 
         const hookName = getHookName(node);
         const args = node.arguments;
-        
+
         // Check if hook has a callback argument
         if (args.length === 0) {
           return;
         }
-        
+
         const callback = args[0];
         if (
           callback.type !== 'ArrowFunctionExpression' &&
@@ -554,22 +606,23 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         ) {
           return;
         }
-        
+
         // Get the dependency array (second argument)
         const depsArg = args[1];
-        
+
         // If no deps array provided, don't warn (different rule)
         if (!depsArg) {
           return;
         }
-        
+
         // Mirrors eslint-plugin-react-hooks: handle `as const` casts on the
         // deps array, then report when the deps argument is anything other
         // than an inline array literal (we can't statically verify a variable
         // reference, so the user gets no protection — silent skip would be
         // a missed FN, see CWE-XXX in next.js compiled bundles for examples).
         const isTSAsArrayExpression =
-          depsArg.type === 'TSAsExpression' && depsArg.expression?.type === 'ArrayExpression';
+          depsArg.type === 'TSAsExpression' &&
+          depsArg.expression?.type === 'ArrayExpression';
         const isArrayExpression = depsArg.type === 'ArrayExpression';
 
         if (!isArrayExpression && !isTSAsArrayExpression) {
@@ -582,15 +635,18 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         }
 
         const depsArrayNode = isTSAsArrayExpression
-          ? ((depsArg as TSESTree.TSAsExpression).expression as TSESTree.ArrayExpression)
+          ? ((depsArg as TSESTree.TSAsExpression)
+              .expression as TSESTree.ArrayExpression)
           : (depsArg as TSESTree.ArrayExpression);
 
         // Extract used identifiers from callback
         const usedInCallback = extractUsedIdentifiers(callback.body);
-        
+
         // Extract locally declared identifiers (should not be dependencies)
-        const locallyDeclared = extractLocallyDeclaredIdentifiers(callback.body);
-        
+        const locallyDeclared = extractLocallyDeclaredIdentifiers(
+          callback.body,
+        );
+
         // Filter out locally declared vars before checking reactive deps
         const externalUsed = new Set<string>();
         for (const id of usedInCallback) {
@@ -598,15 +654,15 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             externalUsed.add(id);
           }
         }
-        
+
         const reactiveDeps = filterReactiveDeps(
           externalUsed,
           context.sourceCode.getScope(callback),
         );
-        
+
         // Extract declared dependencies
         const declaredDeps = extractDependencies(depsArrayNode);
-        
+
         // Find missing dependencies
         const missingDeps: string[] = [];
         for (const dep of reactiveDeps) {
@@ -616,7 +672,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             missingDeps.push(dep);
           }
         }
-        
+
         // Find extra/unnecessary dependencies
         const extraDeps: string[] = [];
         for (const dep of declaredDeps) {
@@ -624,7 +680,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             extraDeps.push(dep);
           }
         }
-        
+
         // Report missing dependencies
         if (missingDeps.length > 0) {
           context.report({
@@ -638,21 +694,22 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
               messageId: 'suggestAddDep' as const,
               data: { dep },
               fix(fixer: TSESLint.RuleFixer) {
-                const lastElement = depsArrayNode.elements[depsArrayNode.elements.length - 1];
+                const lastElement =
+                  depsArrayNode.elements[depsArrayNode.elements.length - 1];
                 if (lastElement) {
                   return fixer.insertTextAfter(lastElement, `, ${dep}`);
                 } else {
                   // Empty array
                   return fixer.insertTextAfterRange(
                     [depsArrayNode.range[0] + 1, depsArrayNode.range[0] + 1],
-                    dep
+                    dep,
                   );
                 }
               },
             })),
           });
         }
-        
+
         // Report extra dependencies
         for (const dep of extraDeps) {
           context.report({
@@ -668,13 +725,14 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
                 data: { dep },
                 fix(fixer: TSESLint.RuleFixer) {
                   const element = depsArrayNode.elements.find(
-                    (el: TSESTree.Expression | TSESTree.SpreadElement | null) => el?.type === 'Identifier' && el.name === dep
+                    (el: TSESTree.Expression | TSESTree.SpreadElement | null) =>
+                      el?.type === 'Identifier' && el.name === dep,
                   );
                   if (element) {
                     const index = depsArrayNode.elements.indexOf(element);
                     const isLast = index === depsArrayNode.elements.length - 1;
                     const isFirst = index === 0;
-                    
+
                     if (isFirst && depsArrayNode.elements.length > 1) {
                       // Remove first element and following comma
                       const nextElement = depsArrayNode.elements[1];
@@ -694,7 +752,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
                         ]);
                       }
                     }
-                    
+
                     return fixer.remove(element);
                   }
                   return null;
@@ -707,4 +765,3 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

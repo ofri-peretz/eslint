@@ -77,6 +77,7 @@ describe('no-missing-csrf-protection', () => {
       valid: xp([
         // CSRF middleware in route chain
         {
+          name: 'the route carries csrf()',
           code: 'app.post("/api/users", csrf(), handler);',
         },
         {
@@ -108,6 +109,7 @@ describe('no-missing-csrf-protection', () => {
       valid: [],
       invalid: xp([
         {
+          name: 'a state-changing POST with no CSRF middleware',
           code: 'app.post("/api/users", handler);',
           errors: [
             {

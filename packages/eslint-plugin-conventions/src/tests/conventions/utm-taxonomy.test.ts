@@ -27,7 +27,7 @@ describe('utm-taxonomy', () => {
   ruleTester.run('utm-taxonomy', utmTaxonomy, {
     valid: [
       // Strings without UTM are untouched.
-      { code: 'const url = "https://example.com/path";' },
+      { name: 'a URL with no UTM parameters at all', code: 'const url = "https://example.com/path";' },
       { code: 'const url = "/relative/path";' },
       // Valid utm_source values.
       {
@@ -62,6 +62,7 @@ describe('utm-taxonomy', () => {
     ],
     invalid: [
       {
+        name: 'utm_source capitalised, outside the fixed taxonomy',
         code: 'const url = "https://eslint.interlace.tools/?utm_source=Blog";',
         errors: [{ messageId: 'invalidUtmSource' }],
       },

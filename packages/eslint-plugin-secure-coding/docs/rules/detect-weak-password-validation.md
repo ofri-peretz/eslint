@@ -160,3 +160,9 @@ if (secretInput.length >= 4) {
 **Category:** Security  
 **Type:** Problem  
 **Recommended:** Yes
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `passwordWords` | `string[]` | `["password","passphrase","passwd","pwd","pass"]` | Words that mark a value as a credential. Replaces the default. |

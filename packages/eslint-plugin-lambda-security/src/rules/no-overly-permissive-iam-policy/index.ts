@@ -20,8 +20,16 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `Effect`, `Action`, `Resource` and `*` are the IAM policy
+ * grammar AWS publishes. A policy that spells them differently is not a
+ * policy.
+ *
+ * @see https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
+ */
 type MessageIds = 'permissivePolicy';
 
 export interface Options {
@@ -61,7 +69,6 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege',
       }),
-
     },
     schema: [
       {
@@ -114,14 +121,15 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
       const value = node.value;
 
       // Check literal string
-      if (value.type === AST_NODE_TYPES.Literal && typeof value.value === 'string') {
-        if (isDangerousWildcard(value.value)) {
+      const staticText = staticString(value);
+      if (staticText !== null) {
+        if (isDangerousWildcard(staticText)) {
           context.report({
             node,
             messageId: 'permissivePolicy',
             data: {
               property: propertyName,
-              value: value.value,
+              value: staticText,
             },
           });
         }

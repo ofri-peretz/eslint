@@ -12,6 +12,12 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `isMounted` is React's own legacy component method — the exact
+ * API this rule exists to report. There is nothing for a consumer to rename.
+ *
+ * @see https://react.dev/reference/react/Component
+ */
 type MessageIds = 'noIsMounted';
 
 type RuleOptions = [];
@@ -31,7 +37,8 @@ export const noIsMounted = createRule<RuleOptions, MessageIds>({
         description: 'isMounted anti-pattern detected',
         severity: 'HIGH',
         fix: 'Use proper lifecycle management or cancellation tokens',
-        documentationLink: 'https://react.dev/blog/2015/12/16/ismounted-antipattern.html',
+        documentationLink:
+          'https://react.dev/blog/2015/12/16/ismounted-antipattern.html',
       }),
     },
   },
@@ -52,7 +59,9 @@ export const noIsMounted = createRule<RuleOptions, MessageIds>({
       },
 
       // Check for isMounted variable declarations
-      'VariableDeclarator[id.name="isMounted"]'(node: TSESTree.VariableDeclarator) {
+      'VariableDeclarator[id.name="isMounted"]'(
+        node: TSESTree.VariableDeclarator,
+      ) {
         context.report({
           node: node.id,
           messageId: 'noIsMounted',

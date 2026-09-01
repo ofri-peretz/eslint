@@ -33,6 +33,7 @@ describe('jsx-max-depth', () => {
       valid: [
         // Depth 0
         {
+          name: 'a single element',
           code: `const el = <div>Hello</div>;`,
         },
         // Depth 1 (default max is 5)
@@ -135,6 +136,7 @@ describe('jsx-max-depth', () => {
       invalid: [
         // Depth 6 (exceeds default max of 5)
         {
+          name: 'nesting past the configured maximum',
           code: `
             const el = (
               <div>

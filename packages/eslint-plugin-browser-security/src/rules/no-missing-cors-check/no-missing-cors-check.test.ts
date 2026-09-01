@@ -33,6 +33,7 @@ describe('no-missing-cors-check', () => {
       valid: [
         // CORS with origin validation
         {
+          name: 'the origin is checked against an allowlist',
           code: `
             app.use(cors({
               origin: (origin, callback) => {
@@ -74,6 +75,7 @@ describe('no-missing-cors-check', () => {
       valid: [],
       invalid: [
         {
+          name: "origin '*' accepts every site",
           code: 'app.use(cors({ origin: "*" }));',
           errors: [
             {

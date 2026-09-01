@@ -26,7 +26,7 @@
  *    are offered to the rule.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, staticString } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 /** One interpolation, and where its result lands in the assembled URL text. */
@@ -83,8 +83,9 @@ function collect(
     return;
   }
 
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    out.text += node.value;
+  const staticText = staticString(node);
+  if (staticText !== null) {
+    out.text += staticText;
     return;
   }
 

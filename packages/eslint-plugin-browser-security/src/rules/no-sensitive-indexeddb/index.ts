@@ -56,14 +56,56 @@ export interface Options {
   allowInTests?: boolean;
   /** Extra whole-word terms to treat as sensitive */
   additionalPatterns?: string[];
+  /**
+   * The whole-word terms that mark a stored field as sensitive. REPLACES the
+   * default vocabulary.
+   *
+   * `additionalPatterns` can only GROW the list, which is the wrong shape for
+   * a guess: a project can add forever and still never stop the report on a
+   * word we picked wrongly. If your `token` is a lexer token, or your `secret`
+   * is a game mechanic, only replacement helps.
+   *
+   * The two compose: `additionalPatterns` is appended to whatever
+   * `sensitiveTerms` is, so `{ sensitiveTerms: [], additionalPatterns: ['x'] }`
+   * means exactly `x` and nothing else.
+   *
+   * @example
+   * ```json
+   * "browser-security/no-sensitive-indexeddb": [
+   *   "error",
+   *   { "sensitiveTerms": ["contrasena", "clave", "sesion"] }
+   * ]
+   * ```
+   */
+  sensitiveTerms?: string[];
 }
 
 type RuleOptions = [Options?];
 
-/** Any secret at all — IndexedDB has no sibling rule to split the vocabulary with. */
-function isSensitive(name: string, extra: readonly string[]): boolean {
+/**
+ * Any secret at all — IndexedDB has no sibling rule to split the vocabulary
+ * with.
+ *
+ * The two options COMPOSE rather than override: `sensitiveTerms` is the base
+ * vocabulary and `additionalPatterns` is appended to whatever that is. They
+ * answer different questions — "we do not call it Y" and "we also call it X" —
+ * and only the first can undo a word we guessed wrongly.
+ *
+ * `sensitiveTerms` carries a real schema default rather than meaning "the
+ * default" by being absent. An option whose behaviour depends on `undefined`
+ * cannot be read off the schema, which is why `rule-audit` refuses one.
+ */
+function isSensitive(
+  name: string,
+  extra: readonly string[],
+  base: readonly string[],
+): boolean {
+  const terms = [...base, ...extra];
   return (
-    namesNonBearerSecret(name, [...NON_BEARER_SECRET_TERMS, ...extra]) ||
+    namesNonBearerSecret(name, terms) ||
+    // Not configurable: `namesBearerCredential` matches the Authorization
+    // scheme and the JWT shape, which are RFC 6750 and RFC 7519 — published
+    // formats rather than a guess at what this project calls things.
     namesBearerCredential(name)
   );
 }
@@ -98,6 +140,13 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowInTests: { type: 'boolean', default: true },
+          sensitiveTerms: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...NON_BEARER_SECRET_TERMS],
+            description:
+              'Whole-word terms that mark a stored field as sensitive. Replaces the default vocabulary.',
+          },
           additionalPatterns: {
             type: 'array',
             items: { type: 'string' },
@@ -118,7 +167,11 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const { allowInTests = true, additionalPatterns = [] } = options as Options;
+    const {
+      allowInTests = true,
+      additionalPatterns = [],
+      sensitiveTerms = NON_BEARER_SECRET_TERMS,
+    } = options as Options;
     const isTestFile = isTestFilePath(context.filename);
 
     if (allowInTests && isTestFile) {
@@ -135,7 +188,10 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
           const nameArg = node.arguments[0];
           if (nameArg === undefined) return;
           const storeName = resolveKeyText(nameArg, context.sourceCode);
-          if (storeName !== null && isSensitive(storeName, additionalPatterns)) {
+          if (
+            storeName !== null &&
+            isSensitive(storeName, additionalPatterns, sensitiveTerms)
+          ) {
             context.report({
               node,
               messageId: 'sensitiveInIndexedDB',
@@ -167,7 +223,7 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
             const storeName = resolveKeyText(storeArg, context.sourceCode);
             if (
               storeName !== null &&
-              isSensitive(storeName, additionalPatterns)
+              isSensitive(storeName, additionalPatterns, sensitiveTerms)
             ) {
               context.report({
                 node,
@@ -188,7 +244,10 @@ export const noSensitiveIndexeddb = createRule<RuleOptions, MessageIds>({
             prop.key.type === AST_NODE_TYPES.Identifier
               ? prop.key.name
               : resolveKeyText(prop.key, context.sourceCode);
-          if (key !== null && isSensitive(key, additionalPatterns)) {
+          if (
+            key !== null &&
+            isSensitive(key, additionalPatterns, sensitiveTerms)
+          ) {
             context.report({
               node,
               messageId: 'sensitiveInIndexedDB',

@@ -23,7 +23,7 @@ const ruleTester = new RuleTester({
 describe('no-ecb-mode', () => {
   ruleTester.run('no-ecb-mode', noEcbMode, {
     valid: [
-      { code: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
+      { name: 'GCM', code: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
       { code: 'crypto.createCipheriv("aes-256-cbc", key, iv);' },
       { code: 'crypto.createCipheriv("aes-256-ctr", key, iv);' },
       { code: 'crypto.createCipheriv(algorithm, key, iv);' },
@@ -31,6 +31,7 @@ describe('no-ecb-mode', () => {
     ],
     invalid: [
       {
+        name: 'ECB leaks structure — identical blocks encrypt identically',
         code: 'crypto.createCipheriv("aes-256-ecb", key, iv);',
         errors: [{ messageId: 'ecbMode', suggestions: [
           { messageId: 'useGcm', output: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },

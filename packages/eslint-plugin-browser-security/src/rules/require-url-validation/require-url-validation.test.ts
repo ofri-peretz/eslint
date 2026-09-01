@@ -17,7 +17,7 @@ const NEXT_ROUTER = 'import { useRouter } from "next/navigation";\n';
 ruleTester.run('require-url-validation', requireUrlValidation, {
   valid: [
     // Safe static URLs written inline.
-    { code: "window.open('https://example.com')" },
+    { name: 'a literal URL', code: "window.open('https://example.com')" },
     { code: `${NEXT_ROUTER}const router = useRouter(); router.push('/dashboard');` },
 
     // A hardcoded URL held in a binding. The OLD rule reported this because
@@ -80,6 +80,7 @@ ruleTester.run('require-url-validation', requireUrlValidation, {
   invalid: [
     // The address bar is the source; `window.open` puts it in a new context.
     {
+      name: 'window.open on the URL fragment',
       code: 'window.open(location.hash)',
       errors: [{ messageId: 'violationDetected' }],
     },

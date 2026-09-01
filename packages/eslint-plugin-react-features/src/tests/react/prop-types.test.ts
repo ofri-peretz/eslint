@@ -33,6 +33,7 @@ describe('prop-types', () => {
       valid: [
         // Class component with propTypes
         {
+          name: 'propTypes declared',
           code: `
             class MyComponent extends Component {
               static propTypes = {
@@ -126,6 +127,7 @@ describe('prop-types', () => {
       invalid: [
         // Class component without propTypes
         {
+          name: 'a component reading props with no propTypes',
           code: `
             class MyComponent extends Component {
               render() {

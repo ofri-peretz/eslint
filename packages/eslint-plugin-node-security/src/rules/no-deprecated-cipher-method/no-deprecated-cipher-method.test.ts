@@ -23,11 +23,12 @@ describe('no-deprecated-cipher-method', () => {
         'const flag = true;',
         'function noop() {}',
         'const items = [];',
-      { code: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
+      { name: 'createCipheriv with an explicit IV', code: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
       { code: 'crypto.createDecipheriv("aes-256-gcm", key, iv);' },
     ],
     invalid: [
       {
+        name: 'createCipher derives the key from a password with MD5 and no salt',
         code: 'crypto.createCipher("aes-256-cbc", password);',
         errors: [{ messageId: 'deprecatedCipherMethod', suggestions: [
           { messageId: 'useCipheriv', output: 'crypto.createCipheriv("aes-256-cbc", password);' },

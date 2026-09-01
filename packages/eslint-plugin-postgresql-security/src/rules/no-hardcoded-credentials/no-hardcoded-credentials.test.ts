@@ -46,6 +46,7 @@ describe('no-hardcoded-credentials', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -78,6 +79,7 @@ describe('no-hardcoded-credentials', () => {
         // `Client` used to be unimported here and this still passed, because
         // the rule matched the SPELLING of the callee.
         {
+          name: 'a database password literal in the client options',
           code: `import { Client } from 'pg';\nnew Client({ host: 'localhost', password: 'secret123' })`,
           errors: [{ messageId: 'noHardcodedCredentials' }],
         },

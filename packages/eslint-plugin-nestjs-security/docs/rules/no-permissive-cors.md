@@ -82,6 +82,7 @@ statically decidable is left alone:
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `environmentHintNames` | `string[]` | `["NODE_ENV","APP_ENV","ENVIRONMENT","isDev","isDevelopment","isLocal","isTest","isProd","isProduction","devMode","development","production"]` | Words that mark a condition as an environment check. Replaces the default. |
 
 
 ```ts

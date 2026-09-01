@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeInline';
@@ -130,8 +131,9 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
       // Object property whose key names the header.
       if (parent.type === AST_NODE_TYPES.Property && parent.value === node && !parent.computed) {
         if (parent.key.type === AST_NODE_TYPES.Identifier) return isCspName(parent.key.name);
-        if (parent.key.type === AST_NODE_TYPES.Literal && typeof parent.key.value === 'string') {
-          return isCspName(parent.key.value);
+        const staticText = staticString(parent.key);
+        if (staticText !== null) {
+          return isCspName(staticText);
         }
         return false;
       }

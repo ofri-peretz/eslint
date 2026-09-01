@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: media-has-caption
  * Enforce that media elements have captions
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/media-has-caption.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -40,8 +40,9 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
         description: '<{{element}}> must have a <track> for captions',
         severity: 'HIGH',
         fix: 'Add <track kind="captions" />',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/media-has-caption.md',
-        wcag: 'WCAG 1.2.2'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/media-has-caption.md',
+        wcag: 'WCAG 1.2.2',
       }),
     },
     schema: [
@@ -57,8 +58,11 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { audio = [], video = [], track = [] } = options ?? {} as Options;
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { audio = [], video = [], track = [] } = options ?? ({} as Options);
     const audioElements = new Set(['audio', ...audio]);
     const videoElements = new Set(['video', ...video]);
     const trackElements = new Set(['track', ...track]);
@@ -70,38 +74,47 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
 
         const name = openingElement.name.name;
         if (!audioElements.has(name) && !videoElements.has(name)) return;
-        
+
         // Check if muted is true for video (no captions needed if muted?) - arguably still needed for accessibility standards but often skipped in simplified rules.
         // W3C says captions needed for audio content.
 
         // Check children for track
-        const hasCaption = node.children.some((child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
+        const hasCaption = node.children.some(
+          (child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
             if (child.type !== 'JSXElement') return false;
             const childName = child.openingElement.name;
-            if (childName.type !== 'JSXIdentifier' || !trackElements.has(childName.name)) return false;
-            
+            if (
+              childName.type !== 'JSXIdentifier' ||
+              !trackElements.has(childName.name)
+            )
+              return false;
+
             // Check kind attribute
-            return child.openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-                attr.type === 'JSXAttribute' && 
-                attr.name.type === 'JSXIdentifier' && 
-                attr.name.name === 'kind' && 
-                attr.value?.type === 'Literal' && 
-                attr.value.type === 'Literal' && 
-                (attr.value.value === 'captions' || attr.value.value === 'descriptions')
+            return child.openingElement.attributes.some(
+              (
+                attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+              ): attr is TSESTree.JSXAttribute =>
+                attr.type === 'JSXAttribute' &&
+                attr.name.type === 'JSXIdentifier' &&
+                attr.name.name === 'kind' &&
+                attr.value?.type === 'Literal' &&
+                attr.value.type === 'Literal' &&
+                (attr.value.value === 'captions' ||
+                  attr.value.value === 'descriptions'),
             );
-        });
+          },
+        );
 
         if (!hasCaption) {
           context.report({
             node: openingElement,
             messageId: 'missingCaption',
             data: {
-                element: name
-            }
+              element: name,
+            },
           });
         }
       },
     };
   },
 });
-

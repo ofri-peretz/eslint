@@ -7,11 +7,15 @@
 /**
  * ESLint Rule: role-has-required-aria-props
  * Enforce that elements with ARIA roles have all required ARIA attributes
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-has-required-aria-props.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, ARIA_REQUIRED_PROPS } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  ARIA_REQUIRED_PROPS,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingRequiredProp';
@@ -24,7 +28,8 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/role-has-required-aria-props.md',
-      description: 'Enforce that elements with ARIA roles have all required ARIA attributes',
+      description:
+        'Enforce that elements with ARIA roles have all required ARIA attributes',
       wcag: 'WCAG 4.1.2',
     },
     messages: {
@@ -34,8 +39,9 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
         description: 'Role "{{role}}" requires attribute "{{prop}}"',
         severity: 'HIGH',
         fix: 'Add the missing attribute: {{prop}}',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-has-required-aria-props.md',
-        wcag: 'WCAG 4.1.2'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-has-required-aria-props.md',
+        wcag: 'WCAG 4.1.2',
       }),
     },
     schema: [],
@@ -45,44 +51,52 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const roleAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'role',
         );
 
-        if (!roleAttr || !roleAttr.value || roleAttr.value.type !== 'Literal' || typeof roleAttr.value.value !== 'string') {
-            return;
+        if (
+          !roleAttr ||
+          !roleAttr.value ||
+          roleAttr.value.type !== 'Literal' ||
+          typeof roleAttr.value.value !== 'string'
+        ) {
+          return;
         }
 
         const roles = roleAttr.value.value.split(/\s+/);
-        
-        for (const role of roles) {
-            const requiredProps = ARIA_REQUIRED_PROPS[role];
-            if (requiredProps) {
-                for (const prop of requiredProps) {
-                    const hasProp = node.attributes.some(
-                        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-                        attr.type === 'JSXAttribute' && 
-                        attr.name.type === 'JSXIdentifier' && 
-                        attr.name.name === prop
-                    );
 
-                    if (!hasProp) {
-                        context.report({
-                            node,
-                            messageId: 'missingRequiredProp',
-                            data: {
-                                role,
-                                prop
-                            }
-                        });
-                    }
-                }
+        for (const role of roles) {
+          const requiredProps = ARIA_REQUIRED_PROPS[role];
+          if (requiredProps) {
+            for (const prop of requiredProps) {
+              const hasProp = node.attributes.some(
+                (
+                  attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+                ): attr is TSESTree.JSXAttribute =>
+                  attr.type === 'JSXAttribute' &&
+                  attr.name.type === 'JSXIdentifier' &&
+                  attr.name.name === prop,
+              );
+
+              if (!hasProp) {
+                context.report({
+                  node,
+                  messageId: 'missingRequiredProp',
+                  data: {
+                    role,
+                    prop,
+                  },
+                });
+              }
             }
+          }
         }
       },
     };
   },
 });
-

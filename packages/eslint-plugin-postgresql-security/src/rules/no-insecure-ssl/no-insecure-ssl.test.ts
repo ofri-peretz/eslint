@@ -46,6 +46,7 @@ describe('no-insecure-ssl', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -80,6 +81,7 @@ describe('no-insecure-ssl', () => {
         // decided from the SPELLING of the callee. It was a test asserting the
         // defect as correct behaviour. The import is what makes it a Client.
         {
+          name: 'rejectUnauthorized false accepts any certificate',
           code: `import { Client } from 'pg';\nnew Client({ host: 'db.example.com', ssl: { rejectUnauthorized: false } })`,
           errors: [{ messageId: 'noInsecureSsl' }],
         },

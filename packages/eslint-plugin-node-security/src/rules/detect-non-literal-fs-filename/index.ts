@@ -92,11 +92,15 @@
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, resolveModuleBinding } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  formatLLMMessage,
+  resolveModuleBinding,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'fsPathTraversal';
+type MessageIds = 'fsPathTraversal';
 
 export interface Options {
   /**
@@ -131,7 +135,7 @@ export interface Options {
    * Set `true` to silence hardcoded paths altogether, including sensitive ones.
    */
   allowLiterals?: boolean;
-  
+
   /** Additional fs methods to check */
   additionalMethods?: string[];
 }
@@ -158,9 +162,9 @@ const FS_OPERATIONS: FSOperation[] = [
     safePattern: 'path.resolve(SAFE_DIR, path.basename(userInput))',
     example: {
       bad: 'fs.readFile(userPath, callback)',
-      good: 'const safePath = path.join(SAFE_UPLOADS_DIR, path.basename(userPath)); fs.readFile(safePath, callback)'
+      good: 'const safePath = path.join(SAFE_UPLOADS_DIR, path.basename(userPath)); fs.readFile(safePath, callback)',
     },
-    effort: '10-15 minutes'
+    effort: '10-15 minutes',
   },
   {
     method: 'writeFile',
@@ -169,9 +173,9 @@ const FS_OPERATIONS: FSOperation[] = [
     safePattern: 'path.resolve(SAFE_DIR, path.basename(userInput))',
     example: {
       bad: 'fs.writeFile(userPath, data, callback)',
-      good: 'const safePath = path.join(SAFE_WRITES_DIR, path.basename(userPath)); fs.writeFile(safePath, data, callback)'
+      good: 'const safePath = path.join(SAFE_WRITES_DIR, path.basename(userPath)); fs.writeFile(safePath, data, callback)',
     },
-    effort: '10-15 minutes'
+    effort: '10-15 minutes',
   },
   {
     method: 'stat',
@@ -180,9 +184,9 @@ const FS_OPERATIONS: FSOperation[] = [
     safePattern: 'path.resolve(baseDir, userInput) with validation',
     example: {
       bad: 'fs.stat(userPath, callback)',
-      good: 'const resolvedPath = path.resolve(SAFE_DIR, userPath);\nif (!resolvedPath.startsWith(SAFE_DIR + path.sep)) return;\nfs.stat(resolvedPath, callback)'
+      good: 'const resolvedPath = path.resolve(SAFE_DIR, userPath);\nif (!resolvedPath.startsWith(SAFE_DIR + path.sep)) return;\nfs.stat(resolvedPath, callback)',
     },
-    effort: '15-20 minutes'
+    effort: '15-20 minutes',
   },
   {
     method: 'readdir',
@@ -191,10 +195,10 @@ const FS_OPERATIONS: FSOperation[] = [
     safePattern: 'Validate directory is within allowed paths',
     example: {
       bad: 'fs.readdir(userDir, callback)',
-      good: 'const resolvedDir = path.resolve(ALLOWED_DIRS, userDir);\nif (!resolvedDir.startsWith(ALLOWED_DIRS + path.sep)) return;\nfs.readdir(resolvedDir, callback)'
+      good: 'const resolvedDir = path.resolve(ALLOWED_DIRS, userDir);\nif (!resolvedDir.startsWith(ALLOWED_DIRS + path.sep)) return;\nfs.readdir(resolvedDir, callback)',
     },
-    effort: '15-20 minutes'
-  }
+    effort: '15-20 minutes',
+  },
 ];
 
 /**
@@ -221,7 +225,13 @@ const hasTraversalPatterns = (pathStr: string): boolean => {
  *
  * Exact membership against Node's documented surface, never a substring test.
  */
-const PROCESS_INPUT_MEMBERS = new Set(['env', 'argv', 'argv0', 'execArgv', 'stdin']);
+const PROCESS_INPUT_MEMBERS = new Set([
+  'env',
+  'argv',
+  'argv0',
+  'execArgv',
+  'stdin',
+]);
 
 const SENSITIVE_SEGMENTS = [
   'etc/passwd',
@@ -292,7 +302,10 @@ const targetsSensitiveLocation = (pathStr: string): boolean => {
   // the question here is where it ENDS.
   const withoutPrefix = normalised.replace(/^(?:\.{1,2}\/)+/, '');
   return SENSITIVE_SEGMENTS.some(
-    (seg) => withoutPrefix === seg || withoutPrefix.endsWith(`/${seg}`) || withoutPrefix.startsWith(`${seg}/`),
+    (seg) =>
+      withoutPrefix === seg ||
+      withoutPrefix.endsWith(`/${seg}`) ||
+      withoutPrefix.startsWith(`${seg}/`),
   );
 };
 
@@ -310,7 +323,7 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
         '   2. Use path.basename() to strip directory components',
         '   3. Combine with SAFE_DIR: path.join(SAFE_DIR, path.basename(userPath))',
         '   4. Optionally validate file extensions',
-        '   5. Add error handling for invalid paths'
+        '   5. Add error handling for invalid paths',
       ].join('\n');
 
     case 'stat':
@@ -320,7 +333,7 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
         '      prefix lets /safebad through a /safe check',
         '   3. Reject requests that escape the allowed directory',
         '   4. Use path.relative() for additional validation',
-        '   5. Log security events for monitoring'
+        '   5. Log security events for monitoring',
       ].join('\n');
 
     case 'readdir':
@@ -329,7 +342,7 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
         '   2. Validate resolved path starts with ALLOWED_DIRS',
         '   3. Check directory exists and is readable',
         '   4. Consider whitelisting allowed directories',
-        '   5. Add rate limiting to prevent enumeration attacks'
+        '   5. Add rate limiting to prevent enumeration attacks',
       ].join('\n');
 
     default:
@@ -338,7 +351,7 @@ export const generateRefactoringSteps = (operation: FSOperation): string => {
         '   2. Define safe base directories for operations',
         '   3. Use path.resolve() and validate containment',
         '   4. Sanitize user input (basename, extension validation)',
-        '   5. Add comprehensive error handling'
+        '   5. Add comprehensive error handling',
       ].join('\n');
   }
 };
@@ -367,8 +380,12 @@ const FS_MODULE_EQUIVALENTS = {
 // fs through `fs-extra` stays invisible while using identical code.
 // okta-signin-widget does exactly that in at least five non-test files.
 const FS_MODULES = new Set([
-  'fs', 'node:fs', 'fs/promises', 'node:fs/promises',
-  'fs-extra', 'graceful-fs',
+  'fs',
+  'node:fs',
+  'fs/promises',
+  'node:fs/promises',
+  'fs-extra',
+  'graceful-fs',
 ]);
 
 export const isFsModule = (source: unknown): boolean =>
@@ -405,7 +422,10 @@ export function fsMethodName(
   const object = callee.object;
 
   // `fs.readFile(userPath)` — under whatever name the module was bound to.
-  if (object.type === AST_NODE_TYPES.Identifier && namespaces.has(object.name)) {
+  if (
+    object.type === AST_NODE_TYPES.Identifier &&
+    namespaces.has(object.name)
+  ) {
     return callee.property.name;
   }
 
@@ -444,7 +464,10 @@ export function isFsRequire(node: TSESTree.Node): boolean {
  * Module-scope so the non-dangerous fallback (no FS_OPERATIONS entry sets
  * dangerous: false today) is directly unit-testable (Layer-2).
  */
-export const determineRiskLevel = (operation: FSOperation, pathStr: string): string => {
+export const determineRiskLevel = (
+  operation: FSOperation,
+  pathStr: string,
+): string => {
   if (hasTraversalPatterns(pathStr)) {
     return 'CRITICAL';
   }
@@ -462,7 +485,8 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-non-literal-fs-filename.md',
-      description: 'Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system',
+      description:
+        'Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system',
       cwe: 'CWE-22',
       confidence: 'medium',
     },
@@ -484,9 +508,10 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // defeated by `/safe-dir-evil`, and this rule's own remediation text
         // recommended it until 2026-08-17.
         fix: '{{safePattern}} — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved and then prefix-checked WITH a trailing separator',
-        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Path_Traversal',
       }),
-},
+    },
     /**
      * `allowedExtensions` used to sit in `properties`. It was declared in the
      * schema ONLY — absent from the `Options` interface, absent from
@@ -527,7 +552,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
               // `fs.readFileSync(`/srv/${req.params.name}.html`)` yields exactly
               // one report, from that rule, at `error`. The docs were wrong, not
               // the detection.
-              'Identifier roots treated as attacker-reachable. Default: [\'process\'] ' +
+              "Identifier roots treated as attacker-reachable. Default: ['process'] " +
               '(process.argv and process.env). Request roots (req/request/ctx/event) ' +
               'are deliberately NOT included — no-arbitrary-file-access owns those, ' +
               'and listing them here would double-report one line at two severities. ' +
@@ -543,14 +568,14 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: false,
             description:
-              'Allow literal string paths. Default true: a rule named "non-literal" reporting a literal contradicts its contract. Set false to also flag hardcoded paths containing "../" — measured as this rule\'s largest FP class on real code.'
+              'Allow literal string paths. Default true: a rule named "non-literal" reporting a literal contradicts its contract. Set false to also flag hardcoded paths containing "../" — measured as this rule\'s largest FP class on real code.',
           },
           additionalMethods: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional fs methods to check'
-          }
+            description: 'Additional fs methods to check',
+          },
         },
         additionalProperties: false,
       },
@@ -560,16 +585,12 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowLiterals: false,
-      additionalMethods: []
+      additionalMethods: [],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const {
-allowLiterals = false,
-      additionalMethods = []
-    
-}: Options = options;
+    const { allowLiterals = false, additionalMethods = [] }: Options = options;
 
     /**
      * Roots an attacker can actually reach.
@@ -597,7 +618,14 @@ allowLiterals = false,
      * requests. Roots are further disqualified by `isLocallyConstructed`, so a
      * `const req = {...}` fixture built in the file does not count.
      */
-    const DEFAULT_TAINT_ROOTS = ['process', 'req', 'request', 'ctx', 'context', 'event'];
+    const DEFAULT_TAINT_ROOTS = [
+      'process',
+      'req',
+      'request',
+      'ctx',
+      'context',
+      'event',
+    ];
 
     /**
      * Roots whose whole-value read is NOT traversal.
@@ -653,7 +681,9 @@ allowLiterals = false,
      */
     /** Does this name bind to something the file actually declares? */
     const resolvesInFile = (id: TSESTree.Identifier): boolean =>
-      context.sourceCode.getScope(id).references.find((ref) => ref.identifier === id)?.resolved != null;
+      context.sourceCode
+        .getScope(id)
+        .references.find((ref) => ref.identifier === id)?.resolved != null;
 
     const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
       node?.type === AST_NODE_TYPES.MemberExpression &&
@@ -664,7 +694,12 @@ allowLiterals = false,
     const hasRequestEvidence = (id: TSESTree.Identifier): boolean => {
       // The access in hand: `ctx.query.file` reaches here as the `ctx` of
       // `ctx.query`, so the parent alone settles the common case.
-      if (readsRequestSurface((id as TSESTree.Node & { parent?: TSESTree.Node }).parent)) return true;
+      if (
+        readsRequestSurface(
+          (id as TSESTree.Node & { parent?: TSESTree.Node }).parent,
+        )
+      )
+        return true;
       // Otherwise any OTHER use of the same binding will do — a handler that
       // reads `ctx.request.body` on one line and builds a path from `ctx.x` on
       // the next is still holding a request.
@@ -681,7 +716,9 @@ allowLiterals = false,
         .getScope(id)
         .references.find((ref) => ref.identifier === id)!.resolved!;
       return variable.references.some((ref) =>
-        readsRequestSurface((ref.identifier as TSESTree.Node & { parent?: TSESTree.Node }).parent),
+        readsRequestSurface(
+          (ref.identifier as TSESTree.Node & { parent?: TSESTree.Node }).parent,
+        ),
       );
     };
     const taintRoots = new Set(options.taintSources ?? DEFAULT_TAINT_ROOTS);
@@ -699,26 +736,43 @@ allowLiterals = false,
      * localPath)` and `e2e/setup/auth.ts:51` copies into an env-derived
      * directory — both were silent.
      */
-    const PATH_ARGUMENT_INDICES: ReadonlyMap<string, readonly number[]> = new Map([
-      ['copyFile', [0, 1]], ['copyFileSync', [0, 1]],
-      ['cp', [0, 1]], ['cpSync', [0, 1]],
-      ['rename', [0, 1]], ['renameSync', [0, 1]],
-      ['link', [0, 1]], ['linkSync', [0, 1]],
-      ['symlink', [0, 1]], ['symlinkSync', [0, 1]],
-    ]);
+    const PATH_ARGUMENT_INDICES: ReadonlyMap<string, readonly number[]> =
+      new Map([
+        ['copyFile', [0, 1]],
+        ['copyFileSync', [0, 1]],
+        ['cp', [0, 1]],
+        ['cpSync', [0, 1]],
+        ['rename', [0, 1]],
+        ['renameSync', [0, 1]],
+        ['link', [0, 1]],
+        ['linkSync', [0, 1]],
+        ['symlink', [0, 1]],
+        ['symlinkSync', [0, 1]],
+      ]);
 
     const dangerousMethods = new Set([
-      'readFile', 'readFileSync',
-      'writeFile', 'writeFileSync',
-      'appendFile', 'appendFileSync',
-      'stat', 'statSync',
-      'lstat', 'lstatSync',
-      'readdir', 'readdirSync',
-      'unlink', 'unlinkSync',
-      'mkdir', 'mkdirSync',
-      'rmdir', 'rmdirSync',
-      'access', 'accessSync',
-      'createReadStream', 'createWriteStream',
+      'readFile',
+      'readFileSync',
+      'writeFile',
+      'writeFileSync',
+      'appendFile',
+      'appendFileSync',
+      'stat',
+      'statSync',
+      'lstat',
+      'lstatSync',
+      'readdir',
+      'readdirSync',
+      'unlink',
+      'unlinkSync',
+      'mkdir',
+      'mkdirSync',
+      'rmdir',
+      'rmdirSync',
+      'access',
+      'accessSync',
+      'createReadStream',
+      'createWriteStream',
       // Every remaining fs entry point that takes a path as its first argument. The list
       // previously covered 11 of the ~30, so traversal through rename/copyFile/symlink/chmod
       // was silently unguarded. Deliberately NOT included: realpath (canonicalisation is the
@@ -730,21 +784,35 @@ allowLiterals = false,
       // `process.argv[2]` — a recursive copy driven by argv, unreported, while
       // the harmless `mkdir` of a temp dir two lines above WAS reported. The
       // rule flagged the safe thing and missed the dangerous one.
-      'open', 'openSync',
-      'rm', 'rmSync',
-      'rename', 'renameSync',
-      'copyFile', 'copyFileSync',
-      'cp', 'cpSync',
-      'truncate', 'truncateSync',
-      'chmod', 'chmodSync',
-      'chown', 'chownSync',
-      'lchown', 'lchownSync',
-      'utimes', 'utimesSync',
-      'readlink', 'readlinkSync',
-      'symlink', 'symlinkSync',
-      'link', 'linkSync',
-      'opendir', 'opendirSync',
-      ...additionalMethods
+      'open',
+      'openSync',
+      'rm',
+      'rmSync',
+      'rename',
+      'renameSync',
+      'copyFile',
+      'copyFileSync',
+      'cp',
+      'cpSync',
+      'truncate',
+      'truncateSync',
+      'chmod',
+      'chmodSync',
+      'chown',
+      'chownSync',
+      'lchown',
+      'lchownSync',
+      'utimes',
+      'utimesSync',
+      'readlink',
+      'readlinkSync',
+      'symlink',
+      'symlinkSync',
+      'link',
+      'linkSync',
+      'opendir',
+      'opendirSync',
+      ...additionalMethods,
     ]);
 
     /**
@@ -752,7 +820,7 @@ allowLiterals = false,
      */
     // oxlint-disable-next-line consistent-function-scoping
     const isLiteralString = (node: TSESTree.Node): boolean => {
-      return node.type === 'Literal' && typeof node.value === 'string';
+      return staticString(node) !== null;
     };
 
     /**
@@ -776,12 +844,16 @@ allowLiterals = false,
     const isLocallyConstructed = (id: TSESTree.Identifier): boolean => {
       const variable = context.sourceCode
         .getScope(id)
-        .references.find((ref: TSESLint.Scope.Reference) => ref.identifier === id)?.resolved;
+        .references.find(
+          (ref: TSESLint.Scope.Reference) => ref.identifier === id,
+        )?.resolved;
       if (!variable || variable.defs.length !== 1) return false;
       const def = variable.defs[0];
       if (def.type !== 'Variable') return false;
       if (
-        variable.references.filter((ref: TSESLint.Scope.Reference) => ref.isWrite()).length > 1
+        variable.references.filter((ref: TSESLint.Scope.Reference) =>
+          ref.isWrite(),
+        ).length > 1
       ) {
         return false;
       }
@@ -940,14 +1012,17 @@ allowLiterals = false,
       if (depth > 6) return false;
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
-          if (taintRoots.has(node.name)) return !WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
+          if (taintRoots.has(node.name))
+            return !WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
           const bound = constBindings.get(node.name);
           return bound !== undefined && containsUntrustedRoot(bound, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression:
           return containsUntrustedRoot(node.object, depth + 1);
         case AST_NODE_TYPES.TemplateLiteral:
-          return node.expressions.some((e) => containsUntrustedRoot(e, depth + 1));
+          return node.expressions.some((e) =>
+            containsUntrustedRoot(e, depth + 1),
+          );
         case AST_NODE_TYPES.BinaryExpression:
           return (
             containsUntrustedRoot(node.left as TSESTree.Node, depth + 1) ||
@@ -955,7 +1030,9 @@ allowLiterals = false,
           );
         case AST_NODE_TYPES.CallExpression:
           return node.arguments.some(
-            (a) => a.type !== AST_NODE_TYPES.SpreadElement && containsUntrustedRoot(a, depth + 1),
+            (a) =>
+              a.type !== AST_NODE_TYPES.SpreadElement &&
+              containsUntrustedRoot(a, depth + 1),
           );
         default:
           return false;
@@ -968,7 +1045,8 @@ allowLiterals = false,
           // Only a root whose whole-value read is genuinely not traversal — see
           // WHOLE_VALUE_TRUSTED_ROOTS. A request supplying the ENTIRE path is
           // arbitrary file read, so it must NOT be suppressed here.
-          if (taintRoots.has(node.name)) return WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
+          if (taintRoots.has(node.name))
+            return WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
           const bound = constBindings.get(node.name);
           return bound !== undefined && isWholeTaintValue(bound);
         }
@@ -990,9 +1068,14 @@ allowLiterals = false,
             (callee.type === AST_NODE_TYPES.MemberExpression &&
               callee.object.type === AST_NODE_TYPES.Identifier &&
               callee.object.name === 'path') ||
-            resolveModuleBinding(callee, context.sourceCode.getScope(callee), {})?.module === 'path';
+            resolveModuleBinding(
+              callee,
+              context.sourceCode.getScope(callee),
+              {},
+            )?.module === 'path';
           if (!isPathCall) return false;
-          if (node.arguments.length === 1) return isWholeTaintValue(node.arguments[0]);
+          if (node.arguments.length === 1)
+            return isWholeTaintValue(node.arguments[0]);
           // Taint as the BASE, with every following segment a fixed literal:
           // `path.join(process.env.HOME, '.terraform.d', 'credentials.tfrc.json')`.
           // Nothing here is steerable — the caller chose the base and the program
@@ -1013,7 +1096,9 @@ allowLiterals = false,
           // The guard is `containsUntrustedRoot`: one request-derived part
           // anywhere in the expression and the exemption is off, so
           // `join(baseDir, req.query.f)` still reports.
-          return isWholeTaintValue(node.arguments[0]) && !containsUntrustedRoot(node);
+          return (
+            isWholeTaintValue(node.arguments[0]) && !containsUntrustedRoot(node)
+          );
         }
         default:
           return false;
@@ -1045,7 +1130,10 @@ allowLiterals = false,
      * no longer reported here; set `reportUnresolvedPaths` to restore the old
      * behaviour wholesale.
      */
-    const isDangerousPath = (pathNode: TSESTree.Node | null, pathStr: string): boolean => {
+    const isDangerousPath = (
+      pathNode: TSESTree.Node | null,
+      pathStr: string,
+    ): boolean => {
       if (!pathNode) return reportUnresolvedPaths;
 
       // A hardcoded `../etc/passwd` is a finding regardless of taint: nobody
@@ -1112,7 +1200,9 @@ allowLiterals = false,
     function isFreeVariable(node: TSESTree.Node): boolean {
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       const through = context.sourceCode.getScope(node).through;
-      return through.some((ref) => ref.identifier === node && ref.resolved === null);
+      return through.some(
+        (ref) => ref.identifier === node && ref.resolved === null,
+      );
     }
 
     /**
@@ -1139,12 +1229,16 @@ allowLiterals = false,
 
       switch (node.type) {
         case AST_NODE_TYPES.TemplateLiteral:
-          return node.expressions.some((e) => containsFreeVariable(e, depth + 1));
+          return node.expressions.some((e) =>
+            containsFreeVariable(e, depth + 1),
+          );
         case AST_NODE_TYPES.CallExpression:
           // `path.resolve(__dirname, foo)` — the callee is irrelevant, the
           // arguments are what end up in the path.
           return node.arguments.some(
-            (a) => a.type !== AST_NODE_TYPES.SpreadElement && containsFreeVariable(a, depth + 1),
+            (a) =>
+              a.type !== AST_NODE_TYPES.SpreadElement &&
+              containsFreeVariable(a, depth + 1),
           );
         case AST_NODE_TYPES.BinaryExpression:
           return (
@@ -1169,7 +1263,9 @@ allowLiterals = false,
         // Last open case on eslint-plugin-security's own corpus:
         // `fs.readFileSync(path.resolve(import.meta[prop], './index.html'))`.
         case AST_NODE_TYPES.MemberExpression:
-          return node.computed && containsFreeVariable(node.property, depth + 1);
+          return (
+            node.computed && containsFreeVariable(node.property, depth + 1)
+          );
         default:
           return false;
       }
@@ -1192,10 +1288,13 @@ allowLiterals = false,
         // `path.join(__dirname, '../etc/passwd')` is constant AND traversal.
         // Constant means "not attacker-steerable", not "harmless".
         // isLiteralString already proved `value` is a string, so no fallback.
-        return !hasTraversalPatterns((node as TSESTree.Literal).value as string);
+        return !hasTraversalPatterns(
+          (node as TSESTree.Literal).value as string,
+        );
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
-        if (node.name === '__dirname' || node.name === '__filename') return true;
+        if (node.name === '__dirname' || node.name === '__filename')
+          return true;
         const bound = constBindings.get(node.name);
         return bound !== undefined && isBuildTimeConstant(bound, depth + 1);
       }
@@ -1225,6 +1324,7 @@ allowLiterals = false,
           callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'path' &&
           callee.property.type === AST_NODE_TYPES.Identifier &&
+          // @vocabulary Node path API
           ['join', 'resolve'].includes(callee.property.name)
         ) {
           return (
@@ -1234,16 +1334,21 @@ allowLiterals = false,
         }
         return false;
       }
-      if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
-        return isBuildTimeConstant(node.left, depth + 1) && isBuildTimeConstant(node.right, depth + 1);
+      if (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        node.operator === '+'
+      ) {
+        return (
+          isBuildTimeConstant(node.left, depth + 1) &&
+          isBuildTimeConstant(node.right, depth + 1)
+        );
       }
       return false;
     };
 
-
     /**
      * Check if the path variable has been validated with startsWith()
-     * 
+     *
      * Safe patterns:
      * 1. Inside if-block: if (safePath.startsWith(SAFE_DIR)) { fs.readFileSync(safePath); }
      * 2. After guard clause: if (!safePath.startsWith(SAFE_DIR)) { throw }; fs.readFileSync(safePath);
@@ -1275,14 +1380,18 @@ allowLiterals = false,
         ) {
           return true;
         }
-        if (n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string') {
-          return n.value.endsWith('/') || n.value.endsWith('\\');
+        const staticText = staticString(n);
+        if (staticText !== null) {
+          return staticText.endsWith('/') || staticText.endsWith('\\');
         }
         return false;
       };
       if (endsWithSep(arg)) return true;
       // `base + path.sep` / `base + '/'` — the separator must be the LAST part.
-      if (arg.type === AST_NODE_TYPES.BinaryExpression && arg.operator === '+') {
+      if (
+        arg.type === AST_NODE_TYPES.BinaryExpression &&
+        arg.operator === '+'
+      ) {
         return endsWithSep(arg.right);
       }
       // `` `${base}/` `` — the trailing quasi carries the separator.
@@ -1324,7 +1433,10 @@ allowLiterals = false,
       if (pathNode.type !== AST_NODE_TYPES.Identifier) {
         const parts: TSESTree.Node[] = [];
         const collect = (n: TSESTree.Node): void => {
-          if (n.type === AST_NODE_TYPES.BinaryExpression && n.operator === '+') {
+          if (
+            n.type === AST_NODE_TYPES.BinaryExpression &&
+            n.operator === '+'
+          ) {
             collect(n.left as TSESTree.Node);
             collect(n.right);
             return;
@@ -1344,36 +1456,41 @@ allowLiterals = false,
         collect(pathNode);
         return (
           parts.length > 0 &&
-          parts.every((p) => p.type === AST_NODE_TYPES.Identifier && hasPathValidation(p))
+          parts.every(
+            (p) => p.type === AST_NODE_TYPES.Identifier && hasPathValidation(p),
+          )
         );
       }
 
-
       const varName = pathNode.name;
-      
+
       // AST-based validation detection (faster than getText + regex)
       const isValidationCall = (testNode: TSESTree.Node): boolean => {
         // Handle negation: !path.startsWith(...). The negation flag was
         // tracked here but never read afterwards (CodeQL:
         // `js/useless-assignment-to-local`); current callers only need to
         // know whether the call matches a validation idiom.
-        if (testNode.type === AST_NODE_TYPES.UnaryExpression &&
-            testNode.operator === '!' &&
-            testNode.argument.type === AST_NODE_TYPES.CallExpression) {
+        if (
+          testNode.type === AST_NODE_TYPES.UnaryExpression &&
+          testNode.operator === '!' &&
+          testNode.argument.type === AST_NODE_TYPES.CallExpression
+        ) {
           testNode = testNode.argument;
         }
-        
+
         if (testNode.type !== AST_NODE_TYPES.CallExpression) {
           return false;
         }
-        
+
         // Pattern 1: varName.startsWith(...) or varName.includes(...)
-        if (testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-            testNode.callee.object.type === AST_NODE_TYPES.Identifier &&
-            testNode.callee.object.name === varName &&
-            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-            (testNode.callee.property.name === 'startsWith' ||
-             testNode.callee.property.name === 'includes')) {
+        if (
+          testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+          testNode.callee.object.type === AST_NODE_TYPES.Identifier &&
+          testNode.callee.object.name === varName &&
+          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+          (testNode.callee.property.name === 'startsWith' ||
+            testNode.callee.property.name === 'includes')
+        ) {
           // A prefix test only contains the path if it is anchored to a
           // SEPARATOR. Measured: `'/safebad'.startsWith('/safe')` is TRUE, so
           // `resolve(base, p).startsWith(base)` lets a sibling directory whose
@@ -1388,49 +1505,62 @@ allowLiterals = false,
             ? true
             : isSeparatorAnchored(testNode.arguments[0]);
         }
-        
+
         // Pattern 2: ALLOWED_FILES.includes(varName) - allowlist validation
-        if (testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-            testNode.callee.property.name === 'includes') {
+        if (
+          testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+          testNode.callee.property.name === 'includes'
+        ) {
           // Check if varName is in the arguments
           for (const arg of testNode.arguments) {
-            if (arg.type === AST_NODE_TYPES.Identifier && arg.name === varName) {
+            if (
+              arg.type === AST_NODE_TYPES.Identifier &&
+              arg.name === varName
+            ) {
               return true;
             }
           }
         }
-        
+
         // Pattern 3: /regex/.test(varName) - regex validation
-        if (testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-            testNode.callee.property.name === 'test') {
+        if (
+          testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+          testNode.callee.property.name === 'test'
+        ) {
           // Check if varName is in the arguments
           for (const arg of testNode.arguments) {
-            if (arg.type === AST_NODE_TYPES.Identifier && arg.name === varName) {
+            if (
+              arg.type === AST_NODE_TYPES.Identifier &&
+              arg.name === varName
+            ) {
               return true;
             }
           }
         }
-        
+
         return false;
       };
 
       const hasEarlyExit = (consequent: TSESTree.Statement): boolean => {
         if (consequent.type === AST_NODE_TYPES.BlockStatement) {
-          return consequent.body.some(stmt => 
-            stmt.type === AST_NODE_TYPES.ThrowStatement ||
-            stmt.type === AST_NODE_TYPES.ReturnStatement
+          return consequent.body.some(
+            (stmt) =>
+              stmt.type === AST_NODE_TYPES.ThrowStatement ||
+              stmt.type === AST_NODE_TYPES.ReturnStatement,
           );
         }
-        return consequent.type === AST_NODE_TYPES.ThrowStatement ||
-               consequent.type === AST_NODE_TYPES.ReturnStatement;
+        return (
+          consequent.type === AST_NODE_TYPES.ThrowStatement ||
+          consequent.type === AST_NODE_TYPES.ReturnStatement
+        );
       };
-      
+
       // Walk up to find enclosing IfStatement or BlockStatement
       let current: TSESTree.Node | undefined = pathNode.parent;
       let foundFunctionBody = false;
-      
+
       while (current && !foundFunctionBody) {
         // Check 1: Inside an if-block with validation
         if (current.type === AST_NODE_TYPES.IfStatement) {
@@ -1438,13 +1568,15 @@ allowLiterals = false,
             return true;
           }
         }
-        
+
         // Check 2: In a function body, look for preceding sibling if-statements with guard clause
-        if (current.type === AST_NODE_TYPES.BlockStatement && current.parent && (
-            current.parent.type === AST_NODE_TYPES.FunctionDeclaration ||
+        if (
+          current.type === AST_NODE_TYPES.BlockStatement &&
+          current.parent &&
+          (current.parent.type === AST_NODE_TYPES.FunctionDeclaration ||
             current.parent.type === AST_NODE_TYPES.FunctionExpression ||
-            current.parent.type === AST_NODE_TYPES.ArrowFunctionExpression)) {
-          
+            current.parent.type === AST_NODE_TYPES.ArrowFunctionExpression)
+        ) {
           foundFunctionBody = true;
           const blockBody = current.body;
           const nodeIndex = blockBody.findIndex((stmt: TSESTree.Statement) => {
@@ -1455,21 +1587,23 @@ allowLiterals = false,
             }
             return false;
           });
-          
+
           // Look at preceding statements for validation patterns with early exit
           for (let i = 0; i < nodeIndex; i++) {
             const stmt = blockBody[i];
-            if (stmt.type === AST_NODE_TYPES.IfStatement &&
-                isValidationCall(stmt.test) &&
-                hasEarlyExit(stmt.consequent)) {
+            if (
+              stmt.type === AST_NODE_TYPES.IfStatement &&
+              isValidationCall(stmt.test) &&
+              hasEarlyExit(stmt.consequent)
+            ) {
               return true;
             }
           }
         }
-        
+
         current = current.parent;
       }
-      
+
       return false;
     };
 
@@ -1527,9 +1661,13 @@ allowLiterals = false,
         // method plucked onto a variable (`var one = require('fs').readFile; one(p)`), a
         // `promises` namespace bound through a variable, or a drop-in module such as
         // `fs-extra` — 8 of the competitor-corpus cases were exactly those shapes.
-        const binding = resolveModuleBinding(node.callee, context.sourceCode.getScope(node), {
-          equivalents: FS_MODULE_EQUIVALENTS,
-        });
+        const binding = resolveModuleBinding(
+          node.callee,
+          context.sourceCode.getScope(node),
+          {
+            equivalents: FS_MODULE_EQUIVALENTS,
+          },
+        );
         if (binding?.module !== 'fs') return;
         const [first, second] = binding.path;
         methodName =
@@ -1556,7 +1694,11 @@ allowLiterals = false,
       let path = '';
       for (const index of indices) {
         const candidate = node.arguments[index];
-        if (candidate === undefined || candidate.type === AST_NODE_TYPES.SpreadElement) continue;
+        if (
+          candidate === undefined ||
+          candidate.type === AST_NODE_TYPES.SpreadElement
+        )
+          continue;
         if (isDangerousPath(candidate, sourceCode.getText(candidate))) {
           pathNode = candidate;
           path = sourceCode.getText(candidate);
@@ -1567,7 +1709,9 @@ allowLiterals = false,
         // No path argument at all (`fs.readFile()`). There is nothing to judge,
         // so this follows the same unresolved-provenance switch as a path whose
         // origin cannot be traced.
-        const present = indices.some((index) => node.arguments[index] !== undefined);
+        const present = indices.some(
+          (index) => node.arguments[index] !== undefined,
+        );
         if (!present && isDangerousPath(null, '')) {
           context.report({
             node,
@@ -1584,11 +1728,15 @@ allowLiterals = false,
         }
         return;
       }
-      const operation = FS_OPERATIONS.find((op) => op.method === method) ?? null;
+      const operation =
+        FS_OPERATIONS.find((op) => op.method === method) ?? null;
 
       const riskLevel = determineRiskLevel(operation || FS_OPERATIONS[0], path);
-      const steps = operation ? generateRefactoringSteps(operation) : 'Review file system access patterns';
-      const safePattern = operation?.safePattern || 'Use path.resolve() with validation';
+      const steps = operation
+        ? generateRefactoringSteps(operation)
+        : 'Review file system access patterns';
+      const safePattern =
+        operation?.safePattern || 'Use path.resolve() with validation';
 
       context.report({
         node,
@@ -1600,8 +1748,9 @@ allowLiterals = false,
           vulnerability: operation?.vulnerability || 'path traversal',
           safePattern,
           steps,
-          effort: operation?.effort || '15-20 minutes'
-        },});
+          effort: operation?.effort || '15-20 minutes',
+        },
+      });
     };
 
     return {
@@ -1650,9 +1799,7 @@ allowLiterals = false,
           const key =
             prop.key.type === AST_NODE_TYPES.Identifier
               ? prop.key.name
-              : prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string'
-                ? prop.key.value
-                : undefined;
+              : (staticString(prop.key) ?? undefined);
           if (key === undefined) continue;
           bindFsName(prop.value.name, key);
         }

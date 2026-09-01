@@ -46,6 +46,7 @@ describe('no-select-all', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('no-select-all', () => {
       invalid: pg([
         // Triggers noSelectAll
         {
+          name: 'SELECT * ships every column, including ones added later',
           code: `client.query('SELECT * FROM users')`,
           errors: [{ messageId: 'noSelectAll' }],
         },

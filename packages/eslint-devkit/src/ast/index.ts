@@ -11,3 +11,4 @@ export * from './module-binding';
 export * from './identifier-words';
 export * from './type-syntax';
 export * from './user-regex';
+export * from './spellings';

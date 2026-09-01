@@ -8,7 +8,12 @@
  * @fileoverview Detect debug endpoints without auth in AWS Lambda handlers
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
@@ -21,7 +26,14 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-const DEFAULT_DEBUG_PATHS = ['/debug', '/__debug__', '/admin', '/_admin', '/test', '/health'];
+const DEFAULT_DEBUG_PATHS = [
+  '/debug',
+  '/__debug__',
+  '/admin',
+  '/_admin',
+  '/test',
+  '/health',
+];
 
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
@@ -42,7 +54,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Remove debug endpoints from production or add authentication',
         documentationLink: 'https://cwe.mitre.org/data/definitions/489.html',
-      })
+      }),
     },
     schema: [
       {
@@ -51,16 +63,16 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
           endpoints: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Custom list of debug/admin endpoints to flag'
+            description: 'Custom list of debug/admin endpoints to flag',
           },
           ignoreFiles: {
             type: 'array',
             items: { type: 'string' },
-            description: 'List of files or patterns to ignore'
-          }
+            description: 'List of files or patterns to ignore',
+          },
         },
-        additionalProperties: false
-      }
+        additionalProperties: false,
+      },
     ],
   },
   defaultOptions: [{}],
@@ -75,7 +87,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
     const ignoreFiles = options.ignoreFiles || [];
     const filename = context.filename;
 
-    if (ignoreFiles.some(pattern => filename.includes(pattern))) {
+    if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
       return {};
     }
 
@@ -85,15 +97,23 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
 
     return {
       Property(node: TSESTree.Property) {
-        if (node.key.type === 'Identifier' && node.key.name === 'path' && 
-            node.value.type === 'Literal' && typeof node.value.value === 'string') {
-          const path = node.value.value.toLowerCase();
-          if (debugPaths.some(dp => path.includes(dp.toLowerCase()))) {
+        const pathText = staticString(node.value);
+        if (
+          node.key.type === 'Identifier' &&
+          node.key.name === 'path' &&
+          pathText !== null
+        ) {
+          const path = pathText.toLowerCase();
+          if (debugPaths.some((dp) => path.includes(dp.toLowerCase()))) {
             // Check if it's inside an 'http' or 'httpApi' block
             let parent: TSESTree.Node | undefined = node.parent;
             while (parent) {
-              if (parent.type === 'Property' && parent.key.type === 'Identifier' && 
-                  ['http', 'httpApi'].includes(parent.key.name)) {
+              if (
+                parent.type === 'Property' &&
+                parent.key.type === 'Identifier' &&
+                // @vocabulary Serverless Framework event keys
+                ['http', 'httpApi'].includes(parent.key.name)
+              ) {
                 report(node.value);
                 return;
               }
@@ -105,18 +125,30 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
 
       BinaryExpression(node: TSESTree.BinaryExpression) {
         // Detect event.path === '/debug' or event.rawPath.includes('/admin')
-        if (node.operator === '===' || node.operator === '==' || node.operator === '!==' || node.operator === '!=') {
+        if (
+          node.operator === '===' ||
+          node.operator === '==' ||
+          node.operator === '!==' ||
+          node.operator === '!='
+        ) {
           const checkNode = (side: TSESTree.Expression) => {
-            if (side.type === 'Literal' && typeof side.value === 'string') {
-              const val = side.value.toLowerCase();
-              if (debugPaths.some(dp => val.includes(dp.toLowerCase()))) {
+            const staticText = staticString(side);
+            if (staticText !== null) {
+              const val = staticText.toLowerCase();
+              if (debugPaths.some((dp) => val.includes(dp.toLowerCase()))) {
                 // Check if the other side is an event property
                 const other = side === node.left ? node.right : node.left;
-                if (other.type === 'MemberExpression' &&
-                    other.object.type === 'Identifier' &&
-                    (other.object.name === 'event' || other.object.name === 'evt') &&
-                    other.property.type === 'Identifier' &&
-                    ['path', 'rawPath', 'resource', 'routeKey'].includes(other.property.name)) {
+                if (
+                  other.type === 'MemberExpression' &&
+                  other.object.type === 'Identifier' &&
+                  (other.object.name === 'event' ||
+                    other.object.name === 'evt') &&
+                  other.property.type === 'Identifier' &&
+                  // @vocabulary AWS API Gateway v1/v2 event shape
+                  ['path', 'rawPath', 'resource', 'routeKey'].includes(
+                    other.property.name,
+                  )
+                ) {
                   report(side);
                 }
               }
@@ -126,24 +158,34 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
           checkNode(node.right);
         }
       },
-      
+
       Literal(node: TSESTree.Literal) {
         if (typeof node.value === 'string') {
           const path = node.value.toLowerCase();
-          if (debugPaths.some(dp => path === dp.toLowerCase())) {
+          if (debugPaths.some((dp) => path === dp.toLowerCase())) {
             // Avoid double reporting if it's already in a BinaryExpression path check
             const parent = node.parent;
-            if (parent && parent.type === 'BinaryExpression' &&
-                (parent.left === node || parent.right === node)) {
+            if (
+              parent &&
+              parent.type === 'BinaryExpression' &&
+              (parent.left === node || parent.right === node)
+            ) {
               const other = parent.left === node ? parent.right : parent.left;
-              if (other.type === 'MemberExpression' &&
-                  other.object.type === 'Identifier' &&
-                  (other.object.name === 'event' || other.object.name === 'evt')) {
+              if (
+                other.type === 'MemberExpression' &&
+                other.object.type === 'Identifier' &&
+                (other.object.name === 'event' || other.object.name === 'evt')
+              ) {
                 return;
               }
             }
             // Avoid double reporting for Serverless config check handled by Property listener
-            if (parent && parent.type === 'Property' && parent.key.type === 'Identifier' && parent.key.name === 'path') {
+            if (
+              parent &&
+              parent.type === 'Property' &&
+              parent.key.type === 'Identifier' &&
+              parent.key.name === 'path'
+            ) {
               return;
             }
             report(node);

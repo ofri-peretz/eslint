@@ -27,6 +27,7 @@ describe('no-unbounded-decompression', () => {
     valid: [
       // benchmarks/corpus/CWE-409/safe/gunzip-limited.js — the cap is present.
       {
+        name: 'maxOutputLength is set',
         code: `${REQUIRE}zlib.gunzip(reqBody, { maxOutputLength: MAX }, cb);`,
       },
       { code: `${REQUIRE}zlib.gunzipSync(body, { maxOutputLength: 1024 });` },
@@ -86,6 +87,7 @@ describe('no-unbounded-decompression', () => {
       // `zlib.gunzip(reqBody, cb)` buffers the whole expansion — a few KB of
       // crafted gzip becomes gigabytes of heap.
       {
+        name: 'gunzip on request bytes with no output limit',
         code: `${REQUIRE}zlib.gunzip(reqBody, (err, buf) => cb(err, buf));`,
         errors: [{ messageId: 'unboundedDecompression' }],
       },

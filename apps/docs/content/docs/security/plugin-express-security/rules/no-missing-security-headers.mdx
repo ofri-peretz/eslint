@@ -49,8 +49,8 @@ No source changes are needed — only the rule id in your config.
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `requiredHeaders` | `string[]` | the built-in header set | Security headers every response must set |
-| `ignoreInTests` | `boolean` | `true` | Skip the check in test files |
+| `requiredHeaders` | `string[]` | `["Content-Security-Policy","X-Frame-Options","X-Content-Type-Options"]` | Security headers every response must set |
+| `ignoreInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 ## Related Rules
 

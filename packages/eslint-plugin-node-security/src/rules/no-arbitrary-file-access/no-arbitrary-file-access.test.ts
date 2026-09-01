@@ -84,7 +84,7 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     // Neither does a callee that is not a name at all.
     "function read(p) { fs.readFileSync(p); } (function () { return req; })(req.query.f);",
     // Static file paths
-    { code: "fs.readFileSync('./config.json')" },
+    { name: 'a literal relative path', code: "fs.readFileSync('./config.json')" },
     { code: "fs.writeFile('/app/data/log.txt', data, cb)" },
     { code: "fs.readdir('/safe/path')" },
     { code: "fs.stat('/known/file.txt')" },
@@ -168,6 +168,7 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     // feed it from a request. That is the genuine attack shape the parameter
     // arm exists for, and it must survive the narrowing above.
     {
+      name: 'a request value reaching readFileSync through a helper',
       code: "function read(filePath) { fs.readFileSync(filePath); } read(req.query.f);",
       errors: [{ messageId: 'violationDetected' }],
     },

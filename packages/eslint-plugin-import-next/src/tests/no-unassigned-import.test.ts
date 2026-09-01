@@ -23,7 +23,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-unassigned-import', noUnassignedImport, {
   valid: [
     // Default import
-    { code: `import foo from './foo';` },
+    { name: 'an import whose value is used', code: `import foo from './foo';` },
     
     // Named imports
     { code: `import { bar } from './bar';` },
@@ -62,6 +62,7 @@ ruleTester.run('no-unassigned-import', noUnassignedImport, {
   invalid: [
     // Bare import
     {
+      name: 'a side-effect-only import',
       code: `import './side-effects';`,
       errors: [{ messageId: 'unassignedImport' }],
     },

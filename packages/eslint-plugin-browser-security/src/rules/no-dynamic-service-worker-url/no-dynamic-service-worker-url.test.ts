@@ -21,6 +21,7 @@ ruleTester.run('no-dynamic-service-worker-url', noDynamicServiceWorkerUrl, {
   valid: [
     // Static URL is fine
     {
+      name: 'a literal script path',
       code: `navigator.serviceWorker.register('/sw.js');`,
     },
     {
@@ -42,6 +43,7 @@ ruleTester.run('no-dynamic-service-worker-url', noDynamicServiceWorkerUrl, {
   invalid: [
     // Variable URL
     {
+      name: 'a worker registered from a computed URL — it owns every request after',
       code: `navigator.serviceWorker.register(swUrl);`,
       errors: [{ messageId: 'dynamicSwUrl' }],
     },

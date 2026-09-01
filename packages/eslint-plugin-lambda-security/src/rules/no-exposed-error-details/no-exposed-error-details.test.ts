@@ -61,6 +61,7 @@ ruleTester.run('no-exposed-error-details', noExposedErrorDetails, {
         'const flag = true;',
     // Generic error message
     {
+      name: 'the stack is logged and a generic message is returned',
       code: `
         export const handler = async (event) => {
           try {
@@ -105,6 +106,7 @@ ruleTester.run('no-exposed-error-details', noExposedErrorDetails, {
   invalid: lambda([
     // Exposed stack trace
     {
+      name: 'the stack trace goes back to the caller in the response body',
       code: `
         export const handler = async (event) => {
           try {

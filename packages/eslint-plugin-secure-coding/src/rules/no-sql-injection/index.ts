@@ -19,6 +19,7 @@ import {
   MessageIcons,
   unwrapTypeSyntax,
   isStaticExpression,
+  readsRequestShape,
 } from '@interlace/eslint-devkit';
 
 /**
@@ -425,7 +426,9 @@ function singleAssignedInit(
  * so neither is mistaken for an inlet.
  */
 function isParameterBinding(variable: TSESLint.Scope.Variable): boolean {
-  return variable.defs.some((def) => def.type === 'Parameter' && !bindsADeclaredContract(def));
+  return variable.defs.some(
+    (def) => def.type === 'Parameter' && !bindsADeclaredContract(def),
+  );
 }
 
 /**
@@ -652,6 +655,8 @@ interface Attribution {
   queryTextProperties: ReadonlySet<string>;
   /** Needed to scope a local builder's body when one is inlined. */
   sourceCode: TSESLint.SourceCode;
+  /** Whether the consumer left `requestRoots` at its default. */
+  trustRequestShape: boolean;
 }
 
 function attributedSource(
@@ -699,13 +704,32 @@ function attributedSource(
       }
       root = root.object;
     }
+    if (root.type !== AST_NODE_TYPES.Identifier) return null;
+    if (isLocallyConstructed(resolveVariable(root.name, scope), scope))
+      return null;
     if (
-      root.type === AST_NODE_TYPES.Identifier &&
-      attribution.requestRoots.has(root.name) &&
-      properties.some((property) =>
+      !properties.some((property) =>
         attribution.requestProperties.has(property),
-      ) &&
-      !isLocallyConstructed(resolveVariable(root.name, scope), scope)
+      )
+    ) {
+      return null;
+    }
+    // The root name OR the SHAPE.
+    //
+    // Requiring the name meant `(inbound, res) => db.query('… ' + inbound.query.id)`
+    // reported nothing at all — Express never required the parameter be called
+    // `req`, and `(request: Request, response: Response)` is at least as common
+    // in TypeScript. Found by `scripts/name-dependence-probe.mts`.
+    //
+    // `readsRequestShape` requires the receiver to be a PARAMETER, which is the
+    // structural fact the name test was standing in for: a request arrives as
+    // an argument, and a module-local object with a `.params` is somebody's own
+    // data. `requestRoots` stays as the escape hatch for a request this file
+    // cannot see is a parameter — a `ctx` closed over by Koa middleware.
+    if (
+      attribution.requestRoots.has(root.name) ||
+      (attribution.trustRequestShape &&
+        readsRequestShape(node, attribution.sourceCode))
     ) {
       return `${root.name}.${properties.join('.')}`;
     }
@@ -794,7 +818,6 @@ function attributedSource(
   return null;
 }
 
-
 /**
  * Is this parameter narrowed to a fixed set of literals before it is used?
  *
@@ -835,7 +858,8 @@ function isNarrowedByGuardClause(
     fn = fn.parent as TSESTree.Node;
   }
   const body = (fn as { body?: TSESTree.Node }).body;
-  if (body === undefined || body.type !== AST_NODE_TYPES.BlockStatement) return false;
+  if (body === undefined || body.type !== AST_NODE_TYPES.BlockStatement)
+    return false;
 
   for (const statement of body.body) {
     // Only statements BEFORE the interpolation can constrain it.
@@ -859,7 +883,8 @@ function isNarrowedByGuardClause(
 
     // `!ALLOWED.has(name)` / `!ALLOWED.includes(name)`.
     const test = statement.test;
-    if (test.type !== AST_NODE_TYPES.UnaryExpression || test.operator !== '!') continue;
+    if (test.type !== AST_NODE_TYPES.UnaryExpression || test.operator !== '!')
+      continue;
     const call = test.argument;
     if (call.type !== AST_NODE_TYPES.CallExpression) continue;
     if (call.callee.type !== AST_NODE_TYPES.MemberExpression) continue;
@@ -871,7 +896,8 @@ function isNarrowedByGuardClause(
       continue;
     }
     const [checked] = call.arguments;
-    if (checked?.type !== AST_NODE_TYPES.Identifier || checked.name !== name) continue;
+    if (checked?.type !== AST_NODE_TYPES.Identifier || checked.name !== name)
+      continue;
 
     // The set has to be a fixed list of literals, or the "allowlist" is itself
     // caller-supplied and constrains nothing.
@@ -894,14 +920,17 @@ function isNarrowedByGuardClause(
         : undefined;
     if (source === undefined || source === null) continue;
     const listOf = (init: TSESTree.Node): TSESTree.Node[] | undefined => {
-      if (init.type === AST_NODE_TYPES.ArrayExpression) return [...init.elements].filter(Boolean) as TSESTree.Node[];
+      if (init.type === AST_NODE_TYPES.ArrayExpression)
+        return [...init.elements].filter(Boolean) as TSESTree.Node[];
       if (
         init.type === AST_NODE_TYPES.NewExpression &&
         init.callee.type === AST_NODE_TYPES.Identifier &&
         init.callee.name === 'Set' &&
         init.arguments[0]?.type === AST_NODE_TYPES.ArrayExpression
       ) {
-        return [...init.arguments[0].elements].filter(Boolean) as TSESTree.Node[];
+        return [...init.arguments[0].elements].filter(
+          Boolean,
+        ) as TSESTree.Node[];
       }
       return undefined;
     };
@@ -1315,6 +1344,17 @@ export const noSqlInjection = createRule<[Options?], MessageIds>({
       substitutions: NO_SUBSTITUTIONS,
       untrustedParameters: treatParametersAsUntrusted,
       requestRoots: new Set(requestRoots),
+      // The shape path is only consulted when the consumer has NOT narrowed
+      // `requestRoots`. Saying "only `ctx` is a request here" is a decision,
+      // and a structural fallback that reinstated `req` behind their back
+      // would make the option a lie — caught by this rule's own
+      // option-overrides suite.
+      // Compared by CONTENT, not by `=== undefined`: typescript-eslint merges
+      // `defaultOptions` in, so the key is always present and the absence test
+      // silently disabled the shape path everywhere.
+      trustRequestShape:
+        requestRoots.length === REQUEST_ROOTS.length &&
+        REQUEST_ROOTS.every((name, index) => requestRoots[index] === name),
       requestProperties: new Set(requestProperties),
       transparentCalls: new Set(transparentCalls),
       queryTextProperties: new Set(queryTextProperties),

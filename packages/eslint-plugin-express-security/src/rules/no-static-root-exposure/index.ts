@@ -40,6 +40,14 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `__dirname` and `process.cwd()` are Node's, and
+ * `express.static` is Express's. A project cannot rename them, so they are
+ * hardcoded rather than configurable.
+ *
+ * @see https://nodejs.org/api/modules.html#__dirname
+ * @see https://expressjs.com/en/starter/static-files.html
+ */
 type MessageIds =
   | 'staticRoot'
   | 'traversalSegments'

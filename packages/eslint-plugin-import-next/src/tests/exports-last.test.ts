@@ -15,6 +15,7 @@ ruleTester.run('exports-last', exportsLast, {
   valid: [
     // All code, then exports at end
     {
+      name: 'exports at the bottom',
       code: `
         const a = 1;
         const b = 2;
@@ -73,6 +74,7 @@ ruleTester.run('exports-last', exportsLast, {
   invalid: [
     // Export before non-export statement
     {
+      name: 'an export before the declarations it names',
       code: `
         export { a };
         const a = 1;

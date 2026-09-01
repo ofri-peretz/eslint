@@ -33,6 +33,7 @@ describe('no-danger', () => {
       valid: [
         // Regular JSX content
         {
+          name: 'ordinary text',
           code: '<div>Hello World</div>',
         },
         {
@@ -53,6 +54,7 @@ describe('no-danger', () => {
       invalid: [
         // dangerouslySetInnerHTML usage
         {
+          name: 'dangerouslySetInnerHTML',
           code: '<div dangerouslySetInnerHTML={{ __html: "<script>alert(1)</script>" }} />',
           errors: [
             {
