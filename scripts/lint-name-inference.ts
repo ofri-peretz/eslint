@@ -523,17 +523,6 @@ const REGISTERED: RegistryEntry[] = [
     reason:
       'functionNameSuggestsCrypto tests CRYPTO_FUNCTION_PATTERNS against a function name — its own doc comment says "the name says this function builds a security value". Reports on a spelling; needs the call target.',
   },
-  {
-    // OVER-INCLUSION from the pre-existing name-binding heuristic, not the
-    // regex detector: `const text = node.properties.find(p => p.key.name === 'text')`
-    // mentions `.name` in its initializer, so `text` is treated as holding a
-    // spelling when it holds a Property node. The patterns then test SQL
-    // statement content, which is not this defect class.
-    file: 'eslint-plugin-postgresql-security/src/rules/no-transaction-on-pool/index.ts',
-    direction: 'report',
-    reason:
-      'NOT name inference — the patterns test SQL text, and `text` is a Property node. Registered as a known over-inclusion.',
-  },
   // ═══════════════════════════════════════════════════════════════════════
   // Surfaced 2026-08-16 when the vocabulary detector closed the helper blind
   // spot. These were ALWAYS here — the gate could not see them because the

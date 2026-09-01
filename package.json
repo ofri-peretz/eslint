@@ -387,7 +387,8 @@
   },
   "overrides": {
     "html-encoding-sniffer": "^6.0.0",
-    "dompurify": "^3.4.13"
+    "dompurify": "^3.4.13",
+    "browserslist": "^4.28.7"
   },
   "dependencies": {
     "@fumadocs/mdx-remote": "^1.5.1",
