@@ -340,6 +340,7 @@ describe('no-sensitive-data-exposure', () => {
           // The receiver is a CALL, so it is neither an identifier this rule
           // knows nor a member it can name — there is nothing to match against
           // LOGGER_RECEIVERS. Covers the last arm of `isLoggerReceiver`.
+          name: 'a call-expression receiver is not a known logger',
           code: `getLogger()['log']('password: 123456');`,
         },
       ],

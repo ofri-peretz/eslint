@@ -156,6 +156,20 @@ describe('isSteerableUrlValue — the query-string surface', () => {
     ["new URL(location.href).searchParams.get('n')", true],
     ['new URL(location.href).hash', true],
     ["window['location'].hash", true],
+    // A steerable value reached through a default or a branch is still
+    // steerable — an attacker picks which side wins. Both arms of
+    // `isSteerableUrlValue` were unreachable from the existing table.
+    ['location.search || fallback', true],
+    ['fallback || location.search', true],
+    ['flag ? location.hash : safe', true],
+    ['flag ? safe : location.hash', true],
+    ["'/a' || '/b'", false],
+    ["flag ? '/a' : '/b'", false],
+    // A param reader on a member that is NOT `X.searchParams` over a URL:
+    // `urlContainerKind` reaches its MemberExpression arm and falls through,
+    // which is the only path to that return.
+    ["location.hash.get('n')", false],
+    ["new URL(location.href).hash.get('n')", false],
     // Refusals.
     ["new URLSearchParams('a=1').get('n')", false],
     ["new URL('https://acme.io').hash", false],

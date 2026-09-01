@@ -30,15 +30,33 @@ describe('no-format-string-injection', () => {
     // Each reaches a `propertyName(...)` sentinel with an unresolvable key.
     // An unnameable property is not a request surface, not a console method,
     // not `util.format`, and contributes no name to a member path.
-    'function f(req, k) { console.log(req[k]); }',
-    'function f(k, x) { console[k]("%s", x); }',
-    'function f(util, k, x) { util[k]("%s", x); }',
-    'function f(a, k, x) { console.log(a.b[k], x); }',
+    {
+      name: 'a dynamic key is not a request surface',
+      code: 'function f(req, k) { console.log(req[k]); }',
+    },
+    {
+      name: 'a dynamic console method is not a format sink',
+      code: 'function f(k, x) { console[k]("%s", x); }',
+    },
+    {
+      name: 'a dynamic util method is not util.format',
+      code: 'function f(util, k, x) { util[k]("%s", x); }',
+    },
+    {
+      name: 'a dynamic key contributes no name to a member path',
+      code: 'function f(a, k, x) { console.log(a.b[k], x); }',
+    },
     // `req[k].name` reaches the request-surface sentinel: the OUTER member's
     // object is `req[k]`, whose key resolves to nothing.
-    'function f(req, k) { util.format(req[k].name); }',
+    {
+      name: 'a dynamic key under a request root is not a surface',
+      code: 'function f(req, k) { util.format(req[k].name); }',
+    },
     // A dynamic console method reaches the console-sink sentinel.
-    'function f(k, userInput) { console[k](userInput); }',
+    {
+      name: 'a dynamic console method takes no format string',
+      code: 'function f(k, userInput) { console[k](userInput); }',
+    },
         // Safe hardcoded format strings
         {
           name: 'a literal format string with the values as arguments',

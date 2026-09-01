@@ -1159,6 +1159,7 @@ ruleTester.run('no-xpath-injection-sink-walk-terminates', noXpathInjection, {
       options: [{ reportDangerousConstructs: true }],
     },
     {
+      name: 'a dynamic callee names no xpath sink',
       code: 'const q = req.query.q; api[m](q);',
     },
     {

@@ -41,6 +41,7 @@ describe('jsx-key', () => {
       // the sentinel matches nothing in ITERATOR_METHODS. The negative half of
       // resolving string subscripts: `items['map']` is a map, `items[m]` is
       // not something this rule can claim to know.
+      name: 'a dynamic method names no iterator',
       code: `const a = items[m](i => <li />);`,
     },
         // Has key prop
