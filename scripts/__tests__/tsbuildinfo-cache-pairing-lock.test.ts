@@ -7,8 +7,8 @@
 /**
  * `.tsbuildinfo` and `dist` are one unit, or they are not cached at all.
  *
- * On 2026-09-01 the setup action cached `packages/*​/.tsbuildinfo` without
- * `packages/*​/dist` — dist having been dropped for size, which was a real
+ * On 2026-09-01 the setup action cached `packages/<pkg>/.tsbuildinfo` without
+ * `packages/<pkg>/dist` — dist having been dropped for size, which was a real
  * concern: it once took this repo's cache store to 36.89 GB against a 10 GB
  * budget, where GitHub LRU-evicts and `restore-keys` has nothing to fall back
  * to.

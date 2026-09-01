@@ -130,7 +130,20 @@ function pendingChangesets(): { files: string[]; source: string } {
   return {
     files: fs
       .readdirSync(dir)
-      .filter((f) => f.endsWith('.md') && f.toLowerCase() !== 'readme.md'),
+      .filter((f) => f.endsWith('.md') && f.toLowerCase() !== 'readme.md')
+      // Same rule as the git path. Applying it there but not here meant the
+      // documented shallow-checkout fallback counted empty `---\n---\n`
+      // markers as queued releases and reported a false `no-version-pr` --
+      // the cry-wolf failure, surviving in the one path that runs when
+      // everything else has already gone wrong.
+      .filter((f) => {
+        try {
+          const raw = fs.readFileSync(path.join(dir, f), 'utf8');
+          return parseChangeset(raw).releases.length > 0;
+        } catch {
+          return true; // unreadable or unparseable must surface, not vanish
+        }
+      }),
     source: 'working tree (main unresolvable)',
   };
 }

@@ -233,3 +233,45 @@ describe('only a version ahead of the registry is a stall', () => {
     expect(out).toContain('unpublished-bump');
   });
 });
+
+/**
+ * The working-tree fallback is the path that runs when everything else has
+ * already gone wrong — a shallow CI checkout with no `main` ref to read. It
+ * must obey the same empty-changeset rule as the git path, or the cry-wolf
+ * failure survives in exactly the situation where a false alarm is least
+ * affordable.
+ */
+describe('the working-tree fallback applies the same rules', () => {
+  beforeEach(() => {
+    // Detach and delete every ref named main, so neither `origin/main` nor
+    // `main` resolves and `pendingChangesets()` must fall back.
+    git('checkout', '-q', '--detach');
+    git('branch', '-q', '-D', 'main');
+  });
+
+  it('ignores an empty changeset even with no main ref to read', () => {
+    write('.changeset/internal-only.md', '---\n---\n\nscripts-only change\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'chore: internal only');
+
+    const { out, status } = run();
+    expect(out).toContain('working tree');
+    expect(out).toContain('0 pending changeset(s)');
+    expect(out).not.toContain('no-version-pr');
+    expect(status).toBe(0);
+  });
+
+  it('still counts a real changeset in the fallback', () => {
+    write(
+      '.changeset/real.md',
+      '---\n"eslint-plugin-x": patch\n---\n\na real fix\n',
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'fix: something');
+
+    const { out, status } = run();
+    expect(out).toContain('working tree');
+    expect(out).toContain('no-version-pr');
+    expect(status).toBe(1);
+  });
+});
