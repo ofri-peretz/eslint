@@ -5,6 +5,81 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — Add an install-size badge to the README prelude, linking to each package's packagephobia page. npm renders the README from the last publish, so a badge only appears on npmjs.com after a release.
+
+  Install size rather than bundle size: bundlephobia measures a browser bundle,
+  and nobody bundles an ESLint plugin into one, so the number would describe no
+  real cost. It was also returning `429` for every package, `react` included.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.2`
+
+## 3.2.0
+
+### Minor Changes
+
+- **✨ Feature** — **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
+
+  A rule that matched `require('child_process')` did not match
+  ``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+  did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
+  differs at runtime, and no consumer chose one on purpose — which is exactly
+  why the miss was invisible: the rule looked correct in its own tests, because
+  its tests were written in the same spelling as its implementation.
+
+  Rules across these plugins now read a static string wherever the value is
+  statically known: a plain literal, a template literal with no substitutions,
+  and a concatenation of either. The same pass fixed computed member access, so
+  `o['foo']` is read wherever `o.foo` was.
+
+  **These rules now report on code they previously stayed quiet on.** That is
+  the point — the missed spelling was a false negative, not an exemption — but
+  a codebase written with backticks may see new findings on upgrade.
+
+- **✨ Feature** — Express rules agree on what an app receiver is called, and let you say
+
+  `no-permissive-trust-proxy`, `require-rate-limiting` and
+  `require-route-authentication` each carried a private guess at the identifier
+  holding the Express app, and the three had drifted apart:
+
+      no-permissive-trust-proxy      app server router express
+      require-rate-limiting          app router express api apiRouter routes
+      require-route-authentication   app router express api
+
+  So `server.set('trust proxy', true)` was reported while `server.post('/login')`
+  next to it was not, for no reason a consumer could discover. The three now
+  share one list — the union of what they knew — and a new `appReceiverNames`
+  option replaces it, because Express creates the object by call and the name it
+  is assigned to was always the consumer's.
+
+- **✨ Feature** — **🐛 Fix** — `no-user-controlled-render-locals` reads a request by shape, not by name
+
+  The rule decided what a request and a response were by matching the receiver's
+  NAME against `['req', 'request', 'ctx']` and `['res', 'response', 'reply']`.
+  Both lists were guesses about your code:
+
+  - A handler written `(inbound, outbound)` matched neither, so the rule was
+    **completely silent** on it — `outbound.render('v', inbound.body)` went
+    unreported.
+  - Any local variable you happened to call `req` matched the first, whether or
+    not it had anything to do with a request.
+
+  Both questions are structural now. A request and a response **arrive as
+  arguments**, so the receiver has to be a function parameter — whatever it is
+  called. What stays hardcoded is Express's own vocabulary: `body`, `query`,
+  `params` and `render` are names the framework defines, and they carry a
+  `@vocabulary` citation saying so.
+
+  **You may see new findings** in handlers whose parameters are not named
+  `req`/`res`, and **fewer** where a local variable shares one of those names.
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 3.1.3
 
 ### Patch Changes
