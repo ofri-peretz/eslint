@@ -302,8 +302,9 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
           node.callee.object.type !== AST_NODE_TYPES.Identifier ||
           node.callee.object.name !== 'console' ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          !logMethods.has(node.callee.property.name)
+          // `console['log'](user.email)` writes the same line to the same
+          // stream. A method chosen at runtime names no sink and is skipped.
+          !logMethods.has(propertyName(node.callee) as string)
         ) {
           return;
         }

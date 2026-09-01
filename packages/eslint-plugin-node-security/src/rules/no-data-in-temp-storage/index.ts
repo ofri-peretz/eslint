@@ -127,9 +127,10 @@ function isTmpdirCall(node: TSESTree.Node): boolean {
  */
 function isStaticTmpdirJoin(node: TSESTree.CallExpression): boolean {
   const { callee } = node;
-  if (callee.type !== 'MemberExpression' || callee.computed) return false;
-  if (callee.property.type !== 'Identifier') return false;
-  if (callee.property.name !== 'join' && callee.property.name !== 'resolve') {
+  if (callee.type !== 'MemberExpression') return false;
+  // `path['join'](os.tmpdir(), 'x')` builds the same static path.
+  const method = propertyName(callee);
+  if (method !== 'join' && method !== 'resolve') {
     return false;
   }
   if (callee.object.type !== 'Identifier' || callee.object.name !== 'path') {
@@ -308,16 +309,13 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
       // computed members because a computed key is usually unknowable — but a
       // string literal key names the export as precisely as dot notation does,
       // so resolve the RECEIVER and append the key by hand.
-      const binding =
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Literal &&
-        typeof callee.property.value === 'string'
-          ? ((base) =>
-              base && { module: base.module, path: [...base.path, callee.property.value as string] })(
-              resolveModuleBinding(callee.object, scope, { equivalents: FS_EQUIVALENTS }),
-            )
-          : resolveModuleBinding(callee, scope, { equivalents: FS_EQUIVALENTS });
+      // The hand-rolled append that stood here worked around
+      // `resolveModuleBinding` refusing every computed member. It resolves the
+      // quoted spelling itself now, so the workaround is gone rather than left
+      // to drift from the resolver it was compensating for.
+      const binding = resolveModuleBinding(callee, scope, {
+        equivalents: FS_EQUIVALENTS,
+      });
       if (binding) {
         const fn = binding.path.at(-1);
         const prefix = binding.path.slice(0, -1);

@@ -606,11 +606,12 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           let destArg: TSESTree.Node | undefined;
 
           // Determine which argument is the destination based on the function
-          if (
-            node.callee.type === 'MemberExpression' &&
-            node.callee.property.type === 'Identifier'
-          ) {
-            const methodName = node.callee.property.name;
+          const extractor =
+            node.callee.type === 'MemberExpression'
+              ? propertyName(node.callee)
+              : null;
+          if (extractor !== null) {
+            const methodName = extractor;
             if (['extractAllTo', 'unzip'].includes(methodName)) {
               // Destination is the first argument
               destArg = args[0];
@@ -690,10 +691,9 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
           // @vocabulary Node path API
           ['join', 'resolve', 'relative', 'normalize'].includes(
-            callee.property.name,
+            propertyName(callee) as string,
           )
         ) {
           // Check arguments for potential archive entry usage
