@@ -118,12 +118,17 @@ describe('createSqlInjectionRule', () => {
           name: 'bare identifier callee',
           code: `query(\`SELECT * FROM t WHERE id = \${id}\`);`,
         },
-        // Known limitation, inherited from the original pg rule: only
-        // identifier property access is matched, so `client['query']` is a
-        // false negative. Documented in both rule docs.
+        // A method chosen at RUNTIME names nothing to match against the sink
+        // list. `client['query']` — a name, just bracketed — reports; see the
+        // invalid table.
         {
-          name: 'non-identifier member property',
-          code: `client['query'](\`SELECT \${x}\`);`,
+          name: 'a runtime-keyed member property',
+          code: `client[verb](\`SELECT \${x}\`);`,
+        },
+        // Nor does a callee that is not a member or an identifier at all.
+        {
+          name: 'an immediately invoked callee',
+          code: `(makeClient())(\`SELECT \${x}\`);`,
         },
         {
           name: 'parameterized',

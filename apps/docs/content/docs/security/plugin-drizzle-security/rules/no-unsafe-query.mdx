@@ -62,7 +62,9 @@ db.select().from(users).where(sql`id = ${userId}`);
 
 ## Known limitations
 
-- Only identifier member access is matched, so `sql['raw'](...)` is a false negative.
+- A method chosen at runtime — `sql[verb](...)` — names nothing to
+  match against the sink list, so it is not reported. The quoted spelling
+  `sql['raw'](...)` names `raw` and IS reported.
 - Taint tracking is single-scope and name-based — it does not follow a query
   string across function boundaries.
 
