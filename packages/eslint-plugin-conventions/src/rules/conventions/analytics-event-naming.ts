@@ -35,7 +35,7 @@
  * - `<obj>.page(...)` / `pageview(...)` — event name is implicit
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, staticString } from '@interlace/eslint-devkit';
+import { createRule, staticString, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'invalidEventName' | 'interpolatedEventName';
@@ -109,9 +109,8 @@ export const analyticsEventNaming = createRule<RuleOptions, MessageIds>({
       // <obj>.track(...)   — Segment / Mixpanel / Amplitude
       if (
         node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier' &&
-        (node.callee.property.name === 'capture' ||
-          node.callee.property.name === 'track')
+        (propertyName(node.callee) === 'capture' ||
+          propertyName(node.callee) === 'track')
       ) {
         return true;
       }

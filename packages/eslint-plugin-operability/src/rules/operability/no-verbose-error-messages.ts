@@ -15,6 +15,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -73,8 +74,7 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
           // Check for error.stack or err.stack
           if (
             arg?.type === AST_NODE_TYPES.MemberExpression &&
-            arg.property.type === AST_NODE_TYPES.Identifier &&
-            arg.property.name === 'stack'
+            propertyName(arg) === 'stack'
           ) {
             report(node);
           }
@@ -87,8 +87,7 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
                 p.key.type === AST_NODE_TYPES.Identifier &&
                 (p.key.name === 'stack' ||
                   (p.value.type === AST_NODE_TYPES.MemberExpression &&
-                    p.value.property.type === AST_NODE_TYPES.Identifier &&
-                    p.value.property.name === 'stack')),
+                    propertyName(p.value) === 'stack')),
             );
             if (stackProp) {
               report(node);

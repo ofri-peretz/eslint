@@ -9,7 +9,7 @@
  * Prevent multiple components per file
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noMultiComp';
@@ -165,8 +165,7 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          node.superClass.property.type === 'Identifier' &&
-          (node.superClass.property.name === 'Component' || node.superClass.property.name === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
         );
       }
 

@@ -9,7 +9,7 @@
  * Prefer codePointAt over charCodeAt for proper Unicode handling
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferCodePoint';
@@ -64,14 +64,9 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
           return true;
         }
 
-        // Allow computed property access where the property is a variable (not literal)
-        // This means obj[method] is ignored, but obj['charCodeAt'] is still flagged
-        if (
-          node.callee.computed &&
-          node.callee.property.type === 'Identifier'
-        ) {
-          return true;
-        }
+        // The `obj[method]` arm that stood here is gone, not covered: the
+        // caller runs `isCharCodeAtCall` FIRST, and `propertyName` returns
+        // null for a runtime key, so no input could ever reach it.
       }
 
       return false;
@@ -81,20 +76,11 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
     function isCharCodeAtCall(node: TSESTree.CallExpression): boolean {
       // Check if this is a call to charCodeAt method
       if (node.callee.type === 'MemberExpression') {
-        // Direct property access: obj.charCodeAt
-        if (
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'charCodeAt'
-        ) {
-          return true;
-        }
-
-        // Computed property access: obj['charCodeAt']
-        if (
-          node.callee.computed &&
-          node.callee.property.type === 'Literal' &&
-          node.callee.property.value === 'charCodeAt'
-        ) {
+        // `obj.charCodeAt` and `obj['charCodeAt']` alike — `propertyName`
+        // resolves both, so the separate computed-literal arm this replaces
+        // was the same question asked twice. `obj[method]` is still ignored,
+        // by `shouldIgnoreCall` above.
+        if (propertyName(node.callee) === 'charCodeAt') {
           return true;
         }
       }

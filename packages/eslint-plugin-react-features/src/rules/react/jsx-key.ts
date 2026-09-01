@@ -9,8 +9,8 @@
  * Detect missing or incorrect React keys (requires deep reconciliation understanding)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
  * `items['map'](...)` iterates exactly as `items.map(...)` does, and a key is
@@ -239,8 +239,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
                 obj.type === 'MemberExpression' &&
                 obj.object.type === 'Identifier' &&
                 obj.object.name === 'React' &&
-                obj.property.type === 'Identifier' &&
-                obj.property.name === 'Children'
+                propertyName(obj) === 'Children'
               ) {
                 return true;
               }

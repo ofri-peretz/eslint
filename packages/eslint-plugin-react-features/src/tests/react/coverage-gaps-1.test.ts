@@ -43,7 +43,6 @@ describe('no-deprecated coverage gaps', () => {
       { name: 'class extends non-React member', code: 'class A extends Foo.Component { render() { return null; } }' },
       { name: 'class extends deep member', code: 'class A extends a.b.Component { render() { return null; } }' },
       { name: 'class extends React.Other', code: 'class A extends React.Other { render() { return null; } }' },
-      { name: 'class extends computed React member', code: "class A extends React['Component'] { componentWillMount() {} }" },
       { name: 'class extends other identifier', code: 'class A extends Base { componentWillMount() {} }' },
       { name: 'class extends call expression', code: 'class A extends mixin() { componentWillMount() {} }' },
       { name: 'non-deprecated method in component', code: 'class A extends Component { render() { return null; } }' },
@@ -53,9 +52,21 @@ describe('no-deprecated coverage gaps', () => {
       { name: 'class expression extends deep member', code: 'const A = class extends a.b.Component { render() { return null; } };' },
       { name: 'class expression extends React.Other', code: 'const A = class extends React.Other { render() { return null; } };' },
       { name: 'class expression extends Foo.Component', code: 'const A = class extends Foo.Component { render() { return null; } };' },
-      { name: 'class expression extends computed member', code: "const A = class extends React['Component'] { componentWillMount() {} };" },
     ],
     invalid: [
+      // Both were pinned as valid because the superclass member was computed.
+      // `React['Component']` IS `React.Component`, so these ARE React class
+      // components defining a deprecated lifecycle method.
+      {
+        name: 'class extends a subscripted React.Component',
+        code: "class A extends React['Component'] { componentWillMount() {} }",
+        errors: [{ messageId: 'deprecated' }],
+      },
+      {
+        name: 'class expression extends a subscripted React.Component',
+        code: "const A = class extends React['Component'] { componentWillMount() {} };",
+        errors: [{ messageId: 'deprecated' }],
+      },
       {
         name: 'ReactDOM.render is deprecated',
         code: 'ReactDOM.render(app, root);',
@@ -297,7 +308,6 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
       { name: 'hook with non-function callback', code: 'useEffect(callbackRef, [dep]);' },
       { name: 'hook without deps array', code: 'useEffect(() => { run(); });' },
       { name: 'non-hook member call', code: 'foo.useEffect(() => { run(); }, [missing]);' },
-      { name: 'computed React member call is not a hook', code: "React['useEffect'](() => { run(); }, [missing]);" },
       {
         name: 'top-level destructuring and callback params are local',
         code: `useEffect(() => {
@@ -338,6 +348,24 @@ describe('hooks-exhaustive-deps coverage gaps', () => {
       },
     ],
     invalid: [
+      // Was pinned as valid — "computed React member call is not a hook".
+      // `React['useEffect']` is the same hook, and this passes a dependency
+      // the effect never reads.
+      {
+        name: 'a subscripted React.useEffect still has its deps checked',
+        code: "React['useEffect'](() => { run(); }, [missing]);",
+        errors: [
+          {
+            messageId: 'extraDep',
+            suggestions: [
+              {
+                messageId: 'suggestRemoveDep',
+                output: "React['useEffect'](() => { run(); }, []);",
+              },
+            ],
+          },
+        ],
+      },
       {
         name: 'React.useEffect namespaced hook detects missing dep',
         code: 'function C({value}){ React.useEffect(() => { Render(value); }, []); return null; }',

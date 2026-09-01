@@ -12,11 +12,10 @@
  * useEffect, useCallback, useMemo, and useLayoutEffect.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
-  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -202,8 +201,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         callee.object.name === 'React' &&
-        callee.property.type === 'Identifier' &&
-        HOOKS_WITH_DEPS.has(callee.property.name)
+        HOOKS_WITH_DEPS.has(propertyName(callee) ?? '')
       ) {
         return true;
       }
@@ -220,13 +218,11 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       if (callee.type === 'Identifier') {
         return callee.name;
       }
-      if (
-        callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier'
-      ) {
-        return callee.property.name;
-      }
-      return 'unknown';
+      // `React['useEffect']` names the same hook `React.useEffect` does.
+      // The `'unknown'` fallback that stood here is gone rather than covered:
+      // `isHookWithDeps` gates every call to this function, and it already
+      // required a `React.<hook>` whose name `propertyName` could resolve.
+      return propertyName(callee as TSESTree.MemberExpression) as string;
     }
 
     /**

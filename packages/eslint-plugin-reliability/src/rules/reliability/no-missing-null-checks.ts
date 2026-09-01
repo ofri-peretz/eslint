@@ -13,7 +13,7 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-2259/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -263,9 +263,7 @@ function nullabilityEvidence(
         if (
           arm.type === 'CallExpression' &&
           arm.callee.type === 'MemberExpression' &&
-          !arm.callee.computed &&
-          arm.callee.property.type === 'Identifier' &&
-          NULLABLE_RETURNS.has(arm.callee.property.name)
+          NULLABLE_RETURNS.has(propertyName(arm.callee) as string)
         ) {
           return 'nullable-return';
         }
@@ -278,9 +276,7 @@ function nullabilityEvidence(
     if (
       init.type === 'CallExpression' &&
       init.callee.type === 'MemberExpression' &&
-      !init.callee.computed &&
-      init.callee.property.type === 'Identifier' &&
-      NULLABLE_RETURNS.has(init.callee.property.name)
+      NULLABLE_RETURNS.has(propertyName(init.callee) as string)
     ) {
       return 'nullable-return';
     }

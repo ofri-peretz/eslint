@@ -22,7 +22,7 @@
  *   - `memo(() => <div />)` / `forwardRef(...)` not bound to a variable
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'displayName';
@@ -139,8 +139,7 @@ function isReactWrapperCall(node: TSESTree.Node): node is TSESTree.CallExpressio
   }
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    REACT_WRAPPERS.has(callee.property.name)
+    REACT_WRAPPERS.has(propertyName(callee) ?? '')
   );
 }
 
@@ -168,9 +167,8 @@ function isReactComponent(
     return (
       node.superClass.object.type === AST_NODE_TYPES.Identifier &&
       node.superClass.object.name === 'React' &&
-      node.superClass.property.type === AST_NODE_TYPES.Identifier &&
-      (node.superClass.property.name === 'Component' ||
-        node.superClass.property.name === 'PureComponent')
+      (propertyName(node.superClass) === 'Component' ||
+        propertyName(node.superClass) === 'PureComponent')
     );
   }
 

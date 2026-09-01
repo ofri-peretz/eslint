@@ -9,7 +9,7 @@
  * Prevent direct mutation of this.state (requires deep React state understanding)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -183,8 +183,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
         target.type === 'MemberExpression' &&
         target.object.type === 'MemberExpression' &&
         target.object.object.type === 'ThisExpression' &&
-        target.object.property.type === 'Identifier' &&
-        target.object.property.name === 'state'
+        propertyName(target.object) === 'state'
       ) {
         return true; // this.state.xxx
       }
