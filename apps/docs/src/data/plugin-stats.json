@@ -21,7 +21,7 @@
       "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.2.0",
+      "version": "5.2.1",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 4,
       "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.3.5",
+      "version": "0.3.6",
       "published": true
     },
     {
