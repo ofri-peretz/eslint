@@ -43,6 +43,7 @@ jobs:
       id-token: write          # to publish to securityscorecards.dev
       contents: read
       actions: read
+      issues: write            # to open the failure issue (see the last step)
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -70,3 +71,20 @@ jobs:
         uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
         with:
           sarif_file: results.sarif
+
+      # This workflow had no failure channel at all: it runs on `schedule` and
+      # on push to main, and neither is anybody's screen. A red run showed up
+      # only in the Actions tab, which is the definition of a check that has
+      # stopped checking. Documented as a gap in docs/ci/SKIP_PATHS.md.
+      #
+      # No `github.event_name == 'schedule'` filter, unlike the crons that
+      # already report: a push-to-main failure here is just as unwatched as a
+      # scheduled one. The action dedupes by title — one issue, commented on —
+      # so a persistent failure cannot turn into weekly noise.
+      - name: 🚨 Report a failure
+        if: failure()
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'OSSF Scorecard is failing'
+          body: 'The OpenSSF Scorecard run failed, so the supply-chain posture score and the README badge are no longer being refreshed.'
+          token: ${{ github.token }}

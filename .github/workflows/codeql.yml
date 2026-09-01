@@ -13,13 +13,19 @@ name: CodeQL
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
-  # Every commit that lands on main is analysed. The PR triggers below are a
-  # fast-feedback convenience and cannot stand alone: they skip draft PRs
-  # without `run-full-ci`, and they never see a commit pushed straight to main
-  # (automation commits, changeset releases). Those gaps are exactly what
-  # Scorecard's SAST check measures — it reported 25 of 30 commits analysed.
-  push:
-    branches: [main]
+  # The `push: branches: [main]` trigger was REMOVED on 2026-08-31, to stop
+  # CodeQL competing for runners on every merge — it was the longest job on a
+  # main push at 208s, against 109s for the whole quality gate.
+  #
+  # KNOWN COST, accepted deliberately: analysis drops from every commit to one
+  # scan a day. Scorecard's SAST check measures precisely that ratio and had
+  # reported 25 of 30 commits analysed; expect that score, and the README
+  # badge, to fall. A vulnerability introduced by a merge is now caught within
+  # 24 hours rather than ~208 seconds.
+  #
+  # To revert, restore:
+  #   push:
+  #     branches: [main]
   workflow_dispatch:
   schedule:
     # NIGHTLY, 03:17 UTC. Was weekly; a full scan is ~212s and this repo is
@@ -89,6 +95,7 @@ jobs:
     permissions:
       security-events: write
       packages: read
+      issues: write # the failure channel — see the report step below
     strategy:
       fail-fast: false
       matrix:
@@ -109,3 +116,21 @@ jobs:
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
         with:
           category: "/language:${{ matrix.language }}"
+
+      # Moving CodeQL off per-merge and onto a schedule traded coverage for
+      # cost, and that trade is only sound if a failed scan is noticed. A cron
+      # job that breaks silently scans nothing and reports nothing — the same
+      # green-while-doing-nothing shape this PR exists to remove. Nobody is
+      # watching a scheduled run's tab, so it files an issue instead.
+      - name: 🚨 Report a failed CodeQL scan
+        if: failure()
+        uses: ./.github/actions/report-failure
+        with:
+          title: "CodeQL scan is failing"
+          body: >-
+            The scheduled CodeQL analysis did not complete, so no new alerts
+            were produced for this commit. Since CodeQL no longer runs per
+            merge (see docs/adr/0001-codeql-runs-post-merge-not-per-pr.md),
+            a failing scan means the SAST coverage gap widens silently until
+            this is fixed.
+          token: ${{ github.token }}
