@@ -132,7 +132,37 @@ try {
   );
 }
 
-const dir = path.join(ROOT, 'benchmarks', 'corpus', cwe, expected);
+/*
+ * `--under <segments>` keeps part of the ORIGINAL path.
+ *
+ * The corpus flattens every fixture to `CWE-NNN/<expected>/<slug>.js`, which
+ * silently discards the directory a file lived in — and a whole class of rules
+ * decides from exactly that. `modularity/ddd-anemic-domain-model` only reports
+ * inside a domain layer (`domain`, `entities`, `model`, ...), because an
+ * anemic class in a DTO folder is not a defect. Cut out of
+ * `src/model/namespace.js` and dropped flat, the rule went silent on code it
+ * genuinely reports in situ; restored under `model/`, it fires.
+ *
+ * So a fixture for a path-sensitive rule must carry enough of its path to
+ * still be the thing it was. Without this, those rules are unmeasurable by
+ * construction — not for want of real-world material, but because the corpus
+ * threw away the part the rule reads.
+ *
+ *   --under model            -> CWE-1047/vulnerable/model/<slug>.js
+ *   --under src/domain       -> CWE-1047/vulnerable/src/domain/<slug>.js
+ */
+const under = arg('under');
+if (under !== null && (path.isAbsolute(under) || under.split(/[\\/]/).includes('..'))) {
+  die(`--under must be a relative path with no '..', got ${under}`);
+}
+const dir = path.join(
+  ROOT,
+  'benchmarks',
+  'corpus',
+  cwe,
+  expected,
+  ...(under === null ? [] : under.split(/[\\/]/).filter(Boolean)),
+);
 fs.mkdirSync(dir, { recursive: true });
 const out = path.join(dir, `${slug}.js`);
 if (fs.existsSync(out)) die(`${path.relative(ROOT, out)} already exists`);
