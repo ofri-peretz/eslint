@@ -22,6 +22,10 @@ export default defineConfig({
     // the reading it has to do, so the honest fix is a ceiling that reflects
     // contention rather than an idle machine.
     testTimeout: 20_000,
+    // Paired, per `prepush-and-vitest-timeouts.lock`: `testTimeout` does not
+    // cover beforeAll/beforeEach, so an I/O-bound hook still dies at Vitest's
+    // 10s default under the same fan-out that made the test itself slow.
+    hookTimeout: 20_000,
     // Intentionally no `test:coverage` script for this package. The only suite
     // here is a structural export-map lock that executes no component code, so
     // a coverage number would be a misleading ~0% rather than a signal. Add
