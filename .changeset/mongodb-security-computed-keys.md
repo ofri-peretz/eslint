@@ -2,9 +2,9 @@
 'eslint-plugin-mongodb-security': minor
 ---
 
-Sees `o['k']` as the same access as `o.k`
+fix: `db['collection'](…)` is the same query builder as `db.collection(…)`
 
-`no-unbounded-find` and friends — `db['collection']('users')`, `q['lean']()` reaches the same property the dotted spelling does, and the rule went
+`no-unbounded-find` and friends — `db['collection']('users')` and `q['lean']()` reach the same properties the dotted spelling does, and the rule went
 silent on it. That is the notation bundlers emit, so the rule was off on built
 output.
 

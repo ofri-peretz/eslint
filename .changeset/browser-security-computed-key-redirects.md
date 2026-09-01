@@ -2,7 +2,7 @@
 'eslint-plugin-browser-security': patch
 ---
 
-`no-insecure-redirects` now reports the string-subscript spelling
+fix: `no-insecure-redirects` now reports the string-subscript spelling
 
 `res['redirect'](req.query.url)` is the same open redirect as
 `res.redirect(req.query.url)`, and `location.hash['slice'](1)` strips the same

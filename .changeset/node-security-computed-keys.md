@@ -2,7 +2,7 @@
 'eslint-plugin-node-security': minor
 ---
 
-Five rules now see `o['k']` as the same access as `o.k`
+fix: five rules now see `o['k']` as the same access as `o.k`
 
 - `detect-child-process` — `cp['spawn']('bash', ['-c', cmd])`
 - `detect-non-literal-fs-filename` — `fs['readFileSync'](req.query.p)`

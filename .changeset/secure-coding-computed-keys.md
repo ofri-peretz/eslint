@@ -2,7 +2,7 @@
 'eslint-plugin-secure-coding': minor
 ---
 
-Six rules now see `o['k']` as the same access as `o.k`
+fix: six rules now see `o['k']` as the same access as `o.k`
 
 Each of these decided from `property.type === 'Identifier'`, so a string
 subscript slipped past and the rule went silent on code it reports in the

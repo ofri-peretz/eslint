@@ -2,7 +2,7 @@
 'eslint-plugin-browser-security': patch
 ---
 
-Analytics and Express route detection now read a string-subscript method
+fix: analytics and Express route detection now read a string-subscript method
 
 `analytics['track'](…)` reaches the same vendor `analytics.track(…)` does, and
 `app['post']('/x', h)` registers the same unprotected route as `app.post`. Both

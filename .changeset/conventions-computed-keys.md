@@ -2,7 +2,7 @@
 'eslint-plugin-conventions': minor
 ---
 
-Sees `o['k']` as the same access as `o.k`
+fix: `console['log']` is the same call as `console.log`
 
 `no-console-spaces` — `console['log'](' x ')` reaches the same property the dotted spelling does, and the rule went
 silent on it. That is the notation bundlers emit, so the rule was off on built

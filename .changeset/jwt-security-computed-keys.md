@@ -2,7 +2,7 @@
 'eslint-plugin-jwt-security': minor
 ---
 
-Every JWT rule now sees `jwt['sign']` as the same call as `jwt.sign`
+fix: every JWT rule now sees `jwt['sign']` as the same call as `jwt.sign`
 
 `isJwtLibraryCall` is the single place every rule in this plugin decides whether
 a call is a JWT operation, and it required the callee's property to be an
