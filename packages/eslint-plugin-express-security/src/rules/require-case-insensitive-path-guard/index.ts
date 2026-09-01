@@ -51,6 +51,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -181,11 +182,9 @@ export const requireCaseInsensitivePathGuard = createRule<
     ): node is TSESTree.MemberExpression {
       return (
         node.type === AST_NODE_TYPES.MemberExpression &&
-        !node.computed &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         isRequestIdent(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        PATH_PROPS.has(node.property.name)
+        PATH_PROPS.has(propertyName(node) as string)
       );
     }
 

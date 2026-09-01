@@ -43,6 +43,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCsrf';
@@ -82,8 +83,7 @@ function isCsrfMiddleware(node: TSESTree.CallExpression): boolean {
     callee.type === 'MemberExpression' &&
     callee.object.type === 'Identifier' &&
     callee.object.name === 'lusca' &&
-    callee.property.type === 'Identifier' &&
-    callee.property.name === 'csrf'
+    propertyName(callee) === 'csrf'
   ) {
     return true;
   }
@@ -160,8 +160,7 @@ function isLikelyExpressObject(callee: TSESTree.MemberExpression): boolean {
       objCallee.type === 'MemberExpression' &&
       objCallee.object.type === 'Identifier' &&
       objCallee.object.name === 'express' &&
-      objCallee.property.type === 'Identifier' &&
-      objCallee.property.name === 'Router'
+      propertyName(objCallee) === 'Router'
     ) {
       return true;
     }
@@ -299,8 +298,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         // Check for global app.use(csrf()) or app.use(csrfMiddleware)
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'use'
+          propertyName(callee) === 'use'
         ) {
           for (const arg of node.arguments) {
             // app.use(csrf())

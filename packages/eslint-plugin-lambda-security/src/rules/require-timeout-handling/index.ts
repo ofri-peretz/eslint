@@ -25,6 +25,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingTimeoutHandling';
@@ -223,8 +224,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         if (!currentHandlerNode) return;
 
         if (
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'getRemainingTimeInMillis'
+          propertyName(node) === 'getRemainingTimeInMillis'
         ) {
           hasTimeoutCheck = true;
         }
@@ -268,8 +268,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.object.name === 'Promise' &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'race'
+          propertyName(node.callee) === 'race'
         ) {
           hasTimeoutCheck = true;
         }

@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unvalidatedInput';
@@ -211,12 +212,11 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       if (
         node.object.type === AST_NODE_TYPES.Identifier &&
         eventParameters.has(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        dangerousProperties.has(node.property.name)
+        dangerousProperties.has(propertyName(node) as string)
       ) {
         return {
           eventName: node.object.name,
-          property: node.property.name,
+          property: propertyName(node) as string,
         };
       }
       return null;
@@ -304,8 +304,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         const left = parent.left;
         if (
           left.type === AST_NODE_TYPES.MemberExpression &&
-          left.property.type === AST_NODE_TYPES.Identifier &&
-          left.property.name === 'handler'
+          propertyName(left) === 'handler'
         ) {
           return true;
         }
@@ -372,8 +371,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         // Check for middy().use(validator(...))
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'use'
+          propertyName(node.callee) === 'use'
         ) {
           // Check if argument is validator call
           for (const arg of node.arguments) {

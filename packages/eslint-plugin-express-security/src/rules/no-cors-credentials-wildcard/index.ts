@@ -21,6 +21,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'credentialsWildcard';
@@ -82,8 +83,7 @@ function getCorsConfigNode(
       parent &&
       parent.type === 'CallExpression' &&
       parent.callee.type === 'MemberExpression' &&
-      parent.callee.property.type === 'Identifier' &&
-      parent.callee.property.name === 'use'
+      propertyName(parent.callee) === 'use'
     ) {
       // Skip - let the app.use() case handle this
       return null;
@@ -98,8 +98,7 @@ function getCorsConfigNode(
   // app.use(cors({...}))
   if (
     callee.type === 'MemberExpression' &&
-    callee.property.type === 'Identifier' &&
-    callee.property.name === 'use'
+    propertyName(callee) === 'use'
   ) {
     const firstArg = node.arguments[0];
     if (

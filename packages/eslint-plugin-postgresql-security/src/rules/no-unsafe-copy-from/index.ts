@@ -12,6 +12,7 @@ import {
   MessageIcons,
   isStaticExpression,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeCopyFromOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -187,11 +188,9 @@ function isStringRawTag(node: TSESTree.TaggedTemplateExpression): boolean {
   const { tag } = node;
   return (
     tag.type === AST_NODE_TYPES.MemberExpression &&
-    !tag.computed &&
     tag.object.type === AST_NODE_TYPES.Identifier &&
     tag.object.name === 'String' &&
-    tag.property.type === AST_NODE_TYPES.Identifier &&
-    tag.property.name === 'raw'
+    propertyName(tag) === 'raw'
   );
 }
 

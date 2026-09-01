@@ -82,7 +82,6 @@ describe('require-case-insensitive-path-guard (branch coverage)', () => {
         // Unknown request object name
         { code: `foo.path.startsWith('/admin');` },
         // Computed path property — not an Identifier
-        { code: `req['path'].startsWith('/admin');` },
         // Request property that is not a path property
         { code: `req.hostname.startsWith('admin');` },
         // Guard method with no argument
@@ -99,6 +98,24 @@ describe('require-case-insensitive-path-guard (branch coverage)', () => {
         { code: `if (req.path === req.url) deny();` },
       ]),
       invalid: xp([
+        // Was pinned as valid — a bracket on the request bag read as
+        // unresolvable, in places labelled a "documented false negative".
+        // `req['path']` is the same bag as `req.path`; the runtime-keyed
+        // form left above is the genuine refusal.
+        {
+          code: `req['path'].startsWith('/admin');`,
+          errors: [
+            {
+              messageId: 'caseSensitivePathGuard',
+              suggestions: [
+                {
+                  messageId: 'addToLowerCase',
+                  output: `req['path'].toLowerCase().startsWith('/admin');`,
+                },
+              ],
+            },
+          ],
+        },
         // request alias through the equality path (isRequestIdent 'request')
         {
           code: `if (request.url === '/api/private') deny();`,

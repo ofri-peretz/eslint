@@ -425,8 +425,8 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
   valid: lambda([
     // Assignment to a plain identifier is not the exports.handler convention
     { code: `h = function (e) { const x = e.body; };` },
-    // Computed exports key → left.property is a Literal
-    { code: `exports['handler'] = function (e) { const x = e.body; };` },
+    // An exports key chosen at RUNTIME names no handler.
+    { code: `exports[name] = function (e) { const x = e.body; };` },
     // Exported under a non-handler name
     { code: `exports.notHandler = function (e) { const x = e.body; };` },
     // Destructured first parameter → not an Identifier
@@ -438,6 +438,12 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
     { code: `pipeline.use(mod.validator(opts));` },
   ]),
   invalid: lambda([
+    // Was pinned as valid because the key was computed. `exports['handler']`
+    // IS the exports.handler convention, and this reads `e.body` unvalidated.
+    {
+      code: `exports['handler'] = function (e) { const x = e.body; };`,
+      errors: [{ messageId: 'unvalidatedInput' }],
+    },
     // FunctionDeclaration named handler with short event param
     {
       code: `function handler(e) { const x = e.body; }`,

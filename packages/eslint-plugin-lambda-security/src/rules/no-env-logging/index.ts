@@ -12,7 +12,7 @@
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'envLogging';
@@ -85,8 +85,7 @@ export const noEnvLogging = createRule<RuleOptions, MessageIds>({
         node.type === AST_NODE_TYPES.MemberExpression &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         node.object.name === 'process' &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        node.property.name === 'env'
+        propertyName(node) === 'env'
       ) {
         return true;
       }

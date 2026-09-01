@@ -12,6 +12,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
@@ -116,8 +117,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'MemberExpression' &&
         node.callee.object.type === 'Identifier' &&
         ['app', 'router', 'express'].includes(node.callee.object.name) &&
-        node.callee.property.type === 'Identifier' &&
-        HTTP_METHODS.has(node.callee.property.name)
+        HTTP_METHODS.has(propertyName(node.callee) ?? '')
       );
     };
 
@@ -135,8 +135,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         // at least one handler.
         const isSettingLookup =
           node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'get' &&
+          propertyName(node.callee) === 'get' &&
           node.arguments.length === 1;
         if (isSettingLookup) {
           return;

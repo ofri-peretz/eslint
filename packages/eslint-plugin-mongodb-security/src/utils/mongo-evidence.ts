@@ -348,8 +348,7 @@ function isNativeCollectionCall(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.CallExpression &&
     node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    node.callee.property.type === AST_NODE_TYPES.Identifier &&
-    NATIVE_COLLECTION_METHODS.has(node.callee.property.name) &&
+    NATIVE_COLLECTION_METHODS.has(propertyName(node.callee) ?? '') &&
     isNativeCollectionHandle(node.callee.object)
   );
 }

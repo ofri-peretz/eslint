@@ -42,6 +42,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'hostHeaderInLink';
@@ -171,8 +172,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          HOST_GETTER_METHODS.has(callee.property.name) &&
+          HOST_GETTER_METHODS.has(propertyName(callee) as string) &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           isRequestIdent(callee.object.name)
         ) {
@@ -183,7 +183,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
             typeof arg.value === 'string' &&
             HOST_HEADER_NAMES.has(arg.value.toLowerCase())
           ) {
-            return `req.${callee.property.name}('${arg.value}')`;
+            return `req.${propertyName(callee) as string}('${arg.value}')`;
           }
         }
         return null;
@@ -193,8 +193,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
         const obj = node.object;
         if (
           obj.type === AST_NODE_TYPES.MemberExpression &&
-          obj.property.type === AST_NODE_TYPES.Identifier &&
-          obj.property.name === 'headers' &&
+          propertyName(obj) === 'headers' &&
           obj.object.type === AST_NODE_TYPES.Identifier &&
           isRequestIdent(obj.object.name)
         ) {
@@ -241,8 +240,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
           }
           if (
             callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
-            mailCallees.has(callee.property.name)
+            mailCallees.has(propertyName(callee) as string)
           ) {
             return true;
           }

@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'exposedErrorDetails';
@@ -176,8 +177,7 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.object.name === 'JSON' &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'stringify'
+          propertyName(node.callee) === 'stringify'
         ) {
           const arg = node.arguments[0];
           if (arg?.type === AST_NODE_TYPES.Identifier) {

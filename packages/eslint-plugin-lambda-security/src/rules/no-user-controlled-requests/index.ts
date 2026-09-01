@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'ssrfVulnerability';
@@ -158,10 +159,9 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       if (
         node.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        USER_INPUT_PROPERTIES.has(node.property.name)
+        USER_INPUT_PROPERTIES.has(propertyName(node) as string)
       ) {
-        return `event.${node.property.name}`;
+        return `event.${propertyName(node) as string}`;
       }
 
       // event.queryStringParameters.url, event.body.targetUrl, etc.
@@ -169,13 +169,10 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
         node.object.type === AST_NODE_TYPES.MemberExpression &&
         node.object.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.object.name) &&
-        node.object.property.type === AST_NODE_TYPES.Identifier &&
-        USER_INPUT_PROPERTIES.has(node.object.property.name)
+        USER_INPUT_PROPERTIES.has(propertyName(node.object) as string)
       ) {
-        return `event.${node.object.property.name}.${
-          node.property.type === AST_NODE_TYPES.Identifier
-            ? node.property.name
-            : '[...]'
+        return `event.${propertyName(node.object) as string}.${
+          propertyName(node) ?? '[...]'
         }`;
       }
 

@@ -48,6 +48,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -167,11 +168,9 @@ export const requireQueryTypeGuard = createRule<RuleOptions, MessageIds>({
     function isReqQuery(node: TSESTree.Node): boolean {
       return (
         node.type === AST_NODE_TYPES.MemberExpression &&
-        !node.computed &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         isRequestIdent(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        node.property.name === 'query'
+        propertyName(node) === 'query'
       );
     }
 
@@ -248,8 +247,7 @@ export const requireQueryTypeGuard = createRule<RuleOptions, MessageIds>({
         callee.type === AST_NODE_TYPES.MemberExpression &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'Array' &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        callee.property.name === 'isArray'
+        propertyName(callee) === 'isArray'
       );
     }
 

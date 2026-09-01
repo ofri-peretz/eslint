@@ -106,6 +106,12 @@ describe('fileUsesMongo — native driver collection handle', () => {
       'a collection reached by a string subscript',
       `db['collection']('users').findOne({});`,
     ],
+    // Was listed as a REJECTION under "a computed method name". `['findOne']`
+    // names `findOne`; the receiver is already a proven collection handle.
+    [
+      'a subscripted query method on a collection handle',
+      `db.collection('users')['findOne']({});`,
+    ],
   ])('accepts %s', (_label, code) => {
     expect(usesMongo(code)).toBe(true);
   });
@@ -133,7 +139,7 @@ describe('fileUsesMongo — native driver collection handle', () => {
     // The handle itself has to be there.
     ['a query on a plain identifier', `users.findOne({ _id: id });`],
     ['a bare call with no receiver', `findOne({ _id: id });`],
-    ['a computed method name', `db.collection('users')['findOne']({});`],
+    ['a method chosen at runtime', `db.collection('users')[op]({});`],
     ['a free `collection()` function', `collection('users').findOne({});`],
     ['a different method on the object', `db.table('users').findOne({});`],
     ['a collection named by a variable', `db.collection(name).findOne({});`],

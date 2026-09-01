@@ -24,6 +24,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedBatch';
@@ -210,25 +211,22 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         if (
           node.object.type === AST_NODE_TYPES.Identifier &&
           eventParamName.includes(node.object.name) &&
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          BATCH_SOURCE_PROPERTIES.has(node.property.name)
+          BATCH_SOURCE_PROPERTIES.has(propertyName(node) as string)
         ) {
           batchAccessNodes.push({
             node,
-            source: `${node.object.name}.${node.property.name}`,
+            source: `${node.object.name}.${propertyName(node) as string}`,
           });
         }
 
         // Check for .length access (indicates size check)
         if (
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'length'
+          propertyName(node) === 'length'
         ) {
           // Check if this is Records.length
           if (
             node.object.type === AST_NODE_TYPES.MemberExpression &&
-            node.object.property.type === AST_NODE_TYPES.Identifier &&
-            BATCH_SOURCE_PROPERTIES.has(node.object.property.name)
+            BATCH_SOURCE_PROPERTIES.has(propertyName(node.object) as string)
           ) {
             hasBatchSizeCheck = true;
           }
