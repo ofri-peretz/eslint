@@ -36,6 +36,13 @@ describe('jsx-key', () => {
   describe('Array.map() iterations', () => {
     ruleTester.run('detect missing keys in map', jsxKey, {
       valid: [
+    {
+      // A dynamic method names no iterator — `propertyName` returns null and
+      // the sentinel matches nothing in ITERATOR_METHODS. The negative half of
+      // resolving string subscripts: `items['map']` is a map, `items[m]` is
+      // not something this rule can claim to know.
+      code: `const a = items[m](i => <li />);`,
+    },
         // Has key prop
         {
           name: 'a keyed element',
