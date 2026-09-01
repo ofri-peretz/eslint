@@ -18,6 +18,7 @@ import {
   compileUserPatterns,
   type PatternTest,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   createModuleEvidence,
@@ -1514,8 +1515,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           left.object.type === 'MemberExpression' &&
           left.object.object.type === 'Identifier' &&
           left.object.object.name === 'process' &&
-          left.object.property.type === 'Identifier' &&
-          left.object.property.name === 'env'
+          propertyName(left.object) === 'env'
         ) {
           return; // safe — fallback to process.env value
         }

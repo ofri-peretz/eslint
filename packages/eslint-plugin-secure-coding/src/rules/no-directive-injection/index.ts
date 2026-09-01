@@ -20,7 +20,7 @@
  * - Framework-specific safe patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, unwrapTypeSyntax, staticString } from '@interlace/eslint-devkit';
+import { createRule, unwrapTypeSyntax, staticString, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -550,8 +550,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
         // Check for element.innerHTML = userInput
         if (left.type === 'MemberExpression' &&
-            left.property.type === 'Identifier' &&
-            left.property.name === 'innerHTML') {
+            propertyName(left) === 'innerHTML') {
           // A sanitizer call IS the documented fix for this defect, so reporting
           // `node.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [...] })` tells the
           // reader to do what they already did. Only skip when the config is not one of the
@@ -560,8 +559,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           const isSanitizedValue =
             right.type === 'CallExpression' &&
             right.callee.type === 'MemberExpression' &&
-            right.callee.property.type === 'Identifier' &&
-            right.callee.property.name === 'sanitize' &&
+            propertyName(right.callee) === 'sanitize' &&
             findUnsafeSanitizerConfig(right) === null;
 
           if (isSanitizedValue) {
@@ -730,8 +728,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             // Check for innerHTML assignment
             const left = current.left;
             if (left.type === 'MemberExpression' &&
-                left.property.type === 'Identifier' &&
-                left.property.name === 'innerHTML') {
+                propertyName(left) === 'innerHTML') {
               if (current.right && isUserInputExpression(current.right)) return;
               isInDangerousContext = true;
               break;

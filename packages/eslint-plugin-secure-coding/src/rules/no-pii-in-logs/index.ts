@@ -16,6 +16,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   nameHasAnyWord,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
@@ -143,8 +144,7 @@ function collectLoggedValues(root: TSESTree.Node): TSESTree.Node[] {
 function isPiiFieldAccess(node: TSESTree.Node, piiTerms: readonly string[]): boolean {
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    nameHasAnyWord(node.property.name, piiTerms)
+    nameHasAnyWord(propertyName(node) as string, piiTerms)
   );
 }
 

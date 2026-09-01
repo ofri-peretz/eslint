@@ -104,7 +104,7 @@
  * @see https://cwe.mitre.org/data/definitions/400.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, isStaticExpression, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import { formatLLMMessage, isStaticExpression, MessageIcons, staticString, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   isEnvironmentGlobal,
@@ -201,9 +201,7 @@ const CONSTANT_PRESERVING_METHODS: ReadonlySet<string> = new Set([
 function isStringRawTag(node: TSESTree.Node, sourceCode: TSESLint.SourceCode): boolean {
   return (
     node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property.type === 'Identifier' &&
-    node.property.name === 'raw' &&
+    propertyName(node) === 'raw' &&
     node.object.type === 'Identifier' &&
     node.object.name === 'String' &&
     isEnvironmentGlobal(node.object.name, sourceCode.getScope(node.object))
@@ -258,8 +256,7 @@ function isBuildTimeConstant(
     case 'CallExpression':
       return (
         node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier' &&
-        CONSTANT_PRESERVING_METHODS.has(node.callee.property.name) &&
+        CONSTANT_PRESERVING_METHODS.has(propertyName(node.callee) ?? '') &&
         isBuildTimeConstant(node.callee.object, sourceCode, depth + 1) &&
         node.arguments.every(
           (argument) =>

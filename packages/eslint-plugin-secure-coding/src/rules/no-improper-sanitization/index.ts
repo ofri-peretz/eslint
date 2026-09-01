@@ -20,8 +20,8 @@
  * - Context-aware validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
  * `input['replace'](...)` sanitizes exactly as `input.replace(...)` does, and
@@ -641,8 +641,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
               } else if (
                 parent?.type === 'MemberExpression' &&
                 parent.object === current &&
-                parent.property.type === 'Identifier' &&
-                parent.property.name === 'join'
+                propertyName(parent) === 'join'
               ) {
                 current = parent;
               } else if (
@@ -757,9 +756,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             // to smuggle an attacker-controlled key past the check.
             if (
               expr.type === 'MemberExpression' &&
-              !expr.computed &&
-              expr.property.type === 'Identifier' &&
-              expr.property.name === 'length'
+              propertyName(expr) === 'length'
             ) {
               return true;
             }
@@ -770,8 +767,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
               // of them was reported.
               if (
                 callee.type === 'MemberExpression' &&
-                callee.property.type === 'Identifier' &&
-                callee.property.name === 'join' &&
+                propertyName(callee) === 'join' &&
                 callee.object.type === 'ArrayExpression'
               ) {
                 return callee.object.elements.every(

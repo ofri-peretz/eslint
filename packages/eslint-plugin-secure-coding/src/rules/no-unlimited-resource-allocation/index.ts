@@ -1150,10 +1150,8 @@ export const noUnlimitedResourceAllocation = createRule<
               candidate.operator === '+=' &&
               candidate.left.type === AST_NODE_TYPES.Identifier &&
               candidate.right.type === AST_NODE_TYPES.MemberExpression &&
-              !candidate.right.computed &&
-              candidate.right.property.type === AST_NODE_TYPES.Identifier &&
-              (candidate.right.property.name === 'length' ||
-                candidate.right.property.name === 'byteLength')
+              (propertyName(candidate.right) === 'length' ||
+                propertyName(candidate.right) === 'byteLength')
             ) {
               accumulators.add(candidate.left.name);
             }

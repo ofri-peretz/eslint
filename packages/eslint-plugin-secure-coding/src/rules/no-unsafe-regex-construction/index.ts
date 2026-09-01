@@ -21,6 +21,7 @@ import {
   resolveModuleBinding,
   unwrapTypeSyntax,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -499,9 +500,7 @@ function isEscaped(
 function isRegexClone(node: TSESTree.Node): boolean {
   if (
     node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property.type === 'Identifier' &&
-    node.property.name === 'source'
+    propertyName(node) === 'source'
   ) {
     return true;
   }

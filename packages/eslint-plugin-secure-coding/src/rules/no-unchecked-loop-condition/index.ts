@@ -20,7 +20,7 @@
  * - Timeout protections
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -371,11 +371,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           if (
             node.type === 'CallExpression' &&
             node.callee.type === 'MemberExpression' &&
-            !node.callee.computed &&
             node.callee.object.type === 'Identifier' &&
             node.callee.object.name === 'Array' &&
-            node.callee.property.type === 'Identifier' &&
-            node.callee.property.name === 'isArray' &&
+            propertyName(node.callee) === 'isArray' &&
             node.arguments.some(
               (a) => a.type !== 'SpreadElement' && samePath(a, guarded),
             )
@@ -391,9 +389,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             for (const side of [node.left, node.right]) {
               if (
                 side.type === 'MemberExpression' &&
-                !side.computed &&
-                side.property.type === 'Identifier' &&
-                side.property.name === 'length' &&
+                propertyName(side) === 'length' &&
                 samePath(side.object, guarded)
               ) {
                 sawLengthComparison = true;
@@ -513,10 +509,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       if (a.type === 'MemberExpression' && b.type === 'MemberExpression') {
         return (
           !a.computed &&
-          !b.computed &&
           a.property.type === 'Identifier' &&
-          b.property.type === 'Identifier' &&
-          a.property.name === b.property.name &&
+          a.property.name === propertyName(b) &&
           samePath(a.object, b.object)
         );
       }
@@ -592,9 +586,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           // those two identical, and reported every
           // `for (let i = 0; i < fields.length; i++)` downstream of a request.
           if (
-            !node.computed &&
-            node.property.type === 'Identifier' &&
-            node.property.name === 'length'
+            propertyName(node) === 'length'
           ) {
             return false;
           }

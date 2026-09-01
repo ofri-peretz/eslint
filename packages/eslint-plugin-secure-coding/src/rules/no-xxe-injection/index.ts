@@ -50,7 +50,7 @@
  *     evidence of anything.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression, resolveModuleBinding, staticString } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression, resolveModuleBinding, staticString, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
@@ -507,11 +507,11 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
+      // `has(null)` is already false for a runtime-keyed member, so no `?? ''`
+      // sentinel — its empty-string arm would be a branch no input can reach.
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        parseMethods.has(callee.property.name)
+        parseMethods.has(propertyName(callee) as string)
       ) {
         return true;
       }

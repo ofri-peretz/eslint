@@ -28,6 +28,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   unwrapTypeSyntax,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'templateInjection';
@@ -297,12 +298,14 @@ function untrustedSource(
   if (node.type === AST_NODE_TYPES.CallExpression) {
     const callee = node.callee;
     // Reading a file or a response body yields bytes from outside the program.
+    // `has(null)` is false, which is the answer a runtime-keyed member should
+    // get — so the cast, not a `?? ''` sentinel whose empty-string arm no
+    // input can distinguish from the null one.
     if (
       callee.type === AST_NODE_TYPES.MemberExpression &&
-      callee.property.type === AST_NODE_TYPES.Identifier &&
-      READER_METHODS.has(callee.property.name)
+      READER_METHODS.has(propertyName(callee) as string)
     ) {
-      return callee.property.name;
+      return propertyName(callee) as string;
     }
     if (
       callee.type === AST_NODE_TYPES.Identifier &&
