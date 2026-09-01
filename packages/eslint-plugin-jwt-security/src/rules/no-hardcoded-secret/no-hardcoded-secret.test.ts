@@ -26,6 +26,7 @@ describe('no-hardcoded-secret', () => {
       valid: [
         // Environment variable
         {
+          name: 'the secret comes from the environment',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, process.env.JWT_SECRET);`,
         },
@@ -100,6 +101,7 @@ signJWT(payload, process.env.SECRET);`,
       invalid: [
         // String literal
         {
+          name: 'the signing secret is a literal in the source',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, 'my-secret-key');`,
           errors: [{ messageId: 'hardcodedSecret' }],

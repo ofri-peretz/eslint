@@ -23,7 +23,10 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     // The method name alone is one of the most overloaded in JavaScript. 23 of
     // this rule's 73 corpus findings were Node streams — mostly Shopify/cli
     // printing progress to stdout, reported as XSS.
-    { code: 'process.stdout.write(`Preview URL: ${previewUrl}`)' },
+    {
+      name: 'writing to stdout is not the DOM',
+      code: 'process.stdout.write(`Preview URL: ${previewUrl}`)',
+    },
     { code: 'process.stderr.write(`${message}\n`)' },
     { code: 'stdout.write(`Bundling ${extension.localIdentifier}...`)' },
     { code: 'options.stdout.write(`done ${name}`)' },
@@ -104,6 +107,7 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
   invalid: [
     // A document receiver is the real sink, in each spelling.
     {
+      name: 'document.write of user input',
       code: 'document.write(userInput)',
       errors: [{ messageId: 'dangerousInnerHTML' }],
     },
@@ -279,7 +283,7 @@ ruleTester.run('no-innerhtml-corpus-locks', noInnerhtml, {
     // An alias to an imported sanitiser is still sanitised.
     'import DOMPurify from "dompurify"; const purify = DOMPurify.sanitize; el.innerHTML = purify(user.bio);',
     // ADVERSARIAL: a `let` whose every write is a literal.
-    'let markup = \'<p>one</p>\'; markup = \'<p>two</p>\'; el.innerHTML = markup;',
+    "let markup = '<p>one</p>'; markup = '<p>two</p>'; el.innerHTML = markup;",
     // ADVERSARIAL: clearing a node, the most common innerHTML idiom of all.
     'document.getElementById("list").innerHTML = "";',
   ],

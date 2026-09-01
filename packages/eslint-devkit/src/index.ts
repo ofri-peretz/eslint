@@ -30,6 +30,7 @@ export * from './rule-creation';
 
 // AST utilities
 export * from './ast/ast-utils';
+export * from './ast/spellings';
 export * from './ast/module-binding';
 export * from './ast/static-expression';
 export * from './ast/identifier-words';

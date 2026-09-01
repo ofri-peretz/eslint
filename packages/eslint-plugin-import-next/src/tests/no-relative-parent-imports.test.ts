@@ -28,6 +28,7 @@ describe('no-relative-parent-imports', () => {
       valid: [
         // Same level or child imports are allowed
         {
+          name: 'a sibling import',
           code: 'import helper from "./helper";',
         },
         {
@@ -44,6 +45,7 @@ describe('no-relative-parent-imports', () => {
       invalid: [
         // Parent directory imports should be flagged
         {
+          name: 'an import that climbs out of its own directory',
           code: 'import config from "../config";',
           errors: [
             {

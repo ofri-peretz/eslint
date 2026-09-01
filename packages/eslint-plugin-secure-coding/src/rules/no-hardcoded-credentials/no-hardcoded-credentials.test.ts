@@ -35,6 +35,7 @@ describe('no-hardcoded-credentials', () => {
       valid: [
         // Environment variables
         {
+          name: 'the value comes from the environment',
           code: 'const apiKey = process.env.API_KEY;',
         },
         {
@@ -100,6 +101,7 @@ describe('no-hardcoded-credentials', () => {
       invalid: [
         // A production path is untouched by the default change.
         {
+          name: 'a password literal in source',
           code: 'const password = "supersecret123";',
           filename: 'src/app.js',
           errors: [

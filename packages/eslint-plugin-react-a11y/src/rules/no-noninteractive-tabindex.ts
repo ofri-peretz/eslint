@@ -11,7 +11,11 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-tabindex.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noNoninteractiveTabindex';
@@ -25,14 +29,42 @@ type Options = {
 type RuleOptions = [Options?];
 
 const INTERACTIVE_ROLES = new Set([
-  'button', 'link', 'checkbox', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
-  'option', 'radio', 'searchbox', 'switch', 'textbox', 'combobox', 'listbox',
-  'menu', 'menubar', 'radiogroup', 'tab', 'tablist', 'tree', 'treegrid', 'grid',
-  'gridcell', 'row', 'treeitem', 'progressbar', 'scrollbar', 'slider', 'spinbutton'
+  'button',
+  'link',
+  'checkbox',
+  'menuitem',
+  'menuitemcheckbox',
+  'menuitemradio',
+  'option',
+  'radio',
+  'searchbox',
+  'switch',
+  'textbox',
+  'combobox',
+  'listbox',
+  'menu',
+  'menubar',
+  'radiogroup',
+  'tab',
+  'tablist',
+  'tree',
+  'treegrid',
+  'grid',
+  'gridcell',
+  'row',
+  'treeitem',
+  'progressbar',
+  'scrollbar',
+  'slider',
+  'spinbutton',
 ]);
 
 const INTERACTIVE_ELEMENTS = new Set([
-  'a', 'button', 'input', 'select', 'textarea'
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
 ]);
 
 const DEFAULT_OPTIONS = {
@@ -60,34 +92,43 @@ function isInteractiveRole(role: string, allowedRoles: string[]): boolean {
  * Only tabindex="-1" is allowed on non-interactive elements
  */
 export function isAllowedTabindex(tabindex: string | number): boolean {
-  const numValue = typeof tabindex === 'string' ? parseInt(tabindex, 10) : tabindex;
+  const numValue =
+    typeof tabindex === 'string' ? parseInt(tabindex, 10) : tabindex;
   return numValue === -1;
 }
 
 /**
  * Check if role attribute is a literal string
  */
-export function isLiteralRole(roleAttr: TSESTree.JSXAttribute | undefined, allowExpressionValues: boolean): boolean {
+export function isLiteralRole(
+  roleAttr: TSESTree.JSXAttribute | undefined,
+  allowExpressionValues: boolean,
+): boolean {
   if (!roleAttr || !roleAttr.value) return false;
 
   // If expressions are not allowed, only literal strings are valid
   if (!allowExpressionValues) {
-    return roleAttr.value.type === 'Literal' && typeof roleAttr.value.value === 'string';
+    return staticString(roleAttr.value) !== null;
   }
 
   // If expressions are allowed, check if it's a literal or expression
-  return roleAttr.value.type === 'Literal' ||
-         roleAttr.value.type === 'JSXExpressionContainer';
+  return (
+    roleAttr.value.type === 'Literal' ||
+    roleAttr.value.type === 'JSXExpressionContainer'
+  );
 }
 
 /**
  * Get role value from attribute
  */
-export function getRoleValue(roleAttr: TSESTree.JSXAttribute | undefined): string | null {
+export function getRoleValue(
+  roleAttr: TSESTree.JSXAttribute | undefined,
+): string | null {
   if (!roleAttr || !roleAttr.value) return null;
 
-  if (roleAttr.value.type === 'Literal' && typeof roleAttr.value.value === 'string') {
-    return roleAttr.value.value;
+  const staticText = staticString(roleAttr.value);
+  if (staticText !== null) {
+    return staticText;
   }
 
   // For expressions, we can't statically determine the value
@@ -110,8 +151,9 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
         description: 'Non-interactive elements should not have tabindex',
         severity: 'MEDIUM',
         fix: 'Remove tabindex or make element interactive',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-tabindex.md',
-        wcag: 'WCAG 2.4.3'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-tabindex.md',
+        wcag: 'WCAG 2.4.3',
       }),
     },
     schema: [
@@ -135,8 +177,15 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [DEFAULT_OPTIONS],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { tags = DEFAULT_OPTIONS.tags, roles = DEFAULT_OPTIONS.roles, allowExpressionValues = DEFAULT_OPTIONS.allowExpressionValues } = {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const {
+      tags = DEFAULT_OPTIONS.tags,
+      roles = DEFAULT_OPTIONS.roles,
+      allowExpressionValues = DEFAULT_OPTIONS.allowExpressionValues,
+    } = {
       ...DEFAULT_OPTIONS,
       ...options,
     };
@@ -149,13 +198,20 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
 
         // Find tabindex attribute
         const tabindexAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'tabIndex',
         );
 
-        if (!tabindexAttr || tabindexAttr.type !== 'JSXAttribute' || !tabindexAttr.value) return;
+        if (
+          !tabindexAttr ||
+          tabindexAttr.type !== 'JSXAttribute' ||
+          !tabindexAttr.value
+        )
+          return;
 
         // Get tabindex value
         let tabindexValue: string | number | null = null;
@@ -174,14 +230,17 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
 
         // Find role attribute
         const roleAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'role'
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role',
         );
 
         // Check if role attribute is valid for this rule
-        const jsxRoleAttr = roleAttr && roleAttr.type === 'JSXAttribute' ? roleAttr : undefined;
+        const jsxRoleAttr =
+          roleAttr && roleAttr.type === 'JSXAttribute' ? roleAttr : undefined;
         if (isLiteralRole(jsxRoleAttr, allowExpressionValues)) {
           const roleValue = getRoleValue(jsxRoleAttr);
 

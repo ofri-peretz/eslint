@@ -61,6 +61,7 @@ ruleTester.run('require-tool-confirmation', requireToolConfirmation, {
   valid: xai([
     // Non-destructive tool - no confirmation needed
     {
+      name: 'a read-only tool needs no confirmation',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -153,6 +154,7 @@ ruleTester.run('require-tool-confirmation', requireToolConfirmation, {
   invalid: xai([
     // Delete without confirmation
     {
+      name: 'a destructive tool the model can call unattended',
       code: `
         await generateText({
           model: openai('gpt-4'),

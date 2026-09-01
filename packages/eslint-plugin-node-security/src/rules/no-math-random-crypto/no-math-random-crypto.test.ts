@@ -28,6 +28,7 @@ describe('no-math-random-crypto', () => {
       // user in `testUtils/`, whose `session_state` is filled with Math.random().
       // A fixture has no runtime, so it has nothing to make unpredictable.
       {
+        name: 'two Math.random values concatenated into a non-secret state string',
         code: 'const sessionState = String(`${Math.random()}${Math.random()}`);',
         filename: 'src/domain/auth/testUtils/userTestUtil.ts',
       },
@@ -67,6 +68,7 @@ describe('no-math-random-crypto', () => {
       // FN GUARD — the exemption is the test directory, not the word "test".
       // `testimonials` is production code and always was.
       {
+        name: 'a token from Math.random()',
         code: 'const token = Math.random().toString(36);',
         filename: 'src/testimonials/share-link.ts',
         errors: 1,

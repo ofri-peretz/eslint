@@ -25,6 +25,7 @@ describe('no-duplicates', () => {
     ],
     invalid: [
       {
+        name: 'two value imports from the same module',
         code: "import { merge } from 'lodash'; import { find } from 'lodash';",
         output: "import { merge, find } from 'lodash'; ", // Fixer remove might leave trailing space or newline depending on whitespace
         errors: [{ messageId: 'noDuplicates' }],
@@ -48,6 +49,7 @@ describe('no-duplicates — importKind is part of the identity', () => {
   ruleTester.run('type vs value', noDuplicates, {
     valid: [
       {
+        name: 'a type import and a value import, which merge cleanly',
         code: "import type { T } from './m';\nimport { v } from './m';\nexport const x: T = v;",
       },
       {

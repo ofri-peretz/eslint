@@ -29,7 +29,7 @@
  *      import of a server-only module.
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -139,9 +139,7 @@ const DEFAULT_SERVER_MODULES = [
  */
 const memberPropertyName = (node: TSESTree.MemberExpression): string | undefined => {
   if (node.computed) {
-    return node.property.type === AST_NODE_TYPES.Literal && typeof node.property.value === 'string'
-      ? node.property.value
-      : undefined;
+    return staticString(node.property) ?? undefined;
   }
   return node.property.type === AST_NODE_TYPES.Identifier ? node.property.name : undefined;
 };

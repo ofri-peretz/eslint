@@ -53,6 +53,7 @@ ruleTester.run('no-express-unsafe-regex-route', noExpressUnsafeRegexRoute, {
   valid: xp([
     // Simple string routes
     {
+      name: 'a literal path',
       code: `app.get('/api/users', handler)`,
     },
     {
@@ -85,6 +86,7 @@ ruleTester.run('no-express-unsafe-regex-route', noExpressUnsafeRegexRoute, {
   invalid: xp([
     // Vulnerable regex: nested quantifiers - simpler pattern
     {
+      name: 'a route pattern with a nested quantifier',
       code: `app.get(/(a+)+/, handler)`,
       errors: [{ messageId: 'unsafeRegexRoute' }],
     },

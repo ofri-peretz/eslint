@@ -13,7 +13,7 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
 /**
@@ -55,6 +55,26 @@ export interface Options {
   
   /** Additional patterns to ignore. Default: [] */
   ignorePatterns?: string[];
+
+  /**
+   * Report plain loose equality — `==` between operands that are not secrets.
+   * Default: true, which is the behaviour this rule has always had.
+   *
+   * Turning it off keeps the part of this rule only a security plugin does —
+   * `==` or `===` on a token, password or signature, where coercion or an early
+   * return is an authentication bypass — and leaves generic type-coercion to
+   * `eqeqeq`, which is what most projects already run it under.
+   *
+   * The option exists because the two findings are not the same claim.
+   * IGNF/cartes.gouv.fr-entree-carto suppressed this rule fifteen times, every
+   * one annotated "comparaison de clefs metier, pas de secret" — a team reading
+   * a CWE-697 HIGH on `if (key == filename)` and correctly judging that their
+   * business keys are not credentials. Across 158 scanned repositories the two
+   * largest shapes were `if (key == filename)` and
+   * `if (e.code == 'MODULE_NOT_FOUND')`: 140 findings about a filename and an
+   * error code.
+   */
+  reportLooseEquality?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -155,6 +175,12 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Additional patterns to ignore',
           },
+          reportLooseEquality: {
+            type: 'boolean',
+            default: true,
+            description:
+              'Report `==` between non-secret operands. Turn off to keep only the secret-comparison findings and leave generic type coercion to eqeqeq.',
+          },
         },
         additionalProperties: false,
       },
@@ -177,6 +203,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     {
       allowInTests: false,
       ignorePatterns: [],
+      reportLooseEquality: true,
     },
   ],
   create(
@@ -186,6 +213,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     const {
       allowInTests = false,
       ignorePatterns = [],
+      reportLooseEquality = true,
     } = options as Options;
 
     const filename = context.filename;
@@ -372,13 +400,13 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             resolveIdentifier(n);
           } else if (n.type === 'MemberExpression') {
             walk(n.object);
-            if (!n.computed && n.property.type === 'Identifier') out.push(n.property.name);
-            // `req.headers['x-api-key']` — a computed key that is a string literal is
-            // the same property name as `req.headers.xApiKey`, just spelled with
-            // brackets. Read it; anything non-literal is walked as an expression.
-            else if (n.computed && n.property.type === 'Literal' && typeof n.property.value === 'string') {
-              out.push(n.property.value);
-            } else walk(n.property);
+            // `req.headers['x-api-key']` names the same property as
+            // `req.headers.xApiKey`, just spelled with brackets — so both
+            // spellings contribute a name, and anything the AST cannot name is
+            // walked as an expression instead.
+            const key = propertyName(n);
+            if (key !== null) out.push(key);
+            else walk(n.property);
           } else if (n.type === 'CallExpression') {
             walk(n.callee);
           } else if (n.type === 'ConditionalExpression') {
@@ -528,6 +556,22 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // marks valid; we reported it, on the operator alone. The rule's subject is
         // type coercion, and coercion needs two types.
         if (isStringTyped(node.left) && isStringTyped(node.right)) {
+          return;
+        }
+
+        /*
+         * Only decline PLAIN type coercion.
+         *
+         * The timing-unsafe path above handles `===`/`!==` on a secret, so a
+         * secret compared with `==` arrives here instead — and an early version
+         * of this option silenced it, turning `if (apiKey == provided)` into a
+         * clean file. That is the opposite of the point: loose equality on a
+         * credential is worse than strict, not better, because it adds coercion
+         * to a comparison that already leaks by short-circuiting.
+         */
+        const comparesSecret =
+          isPotentialSecret(node.left) || isPotentialSecret(node.right);
+        if (!reportLooseEquality && !comparesSecret) {
           return;
         }
 

@@ -28,6 +28,7 @@ describe('max-parameters', () => {
       valid: [
         // Functions with 4 or fewer parameters
         {
+          name: 'exactly at the maximum',
           code: 'function func(a, b, c, d) {}',
         },
         {
@@ -43,6 +44,7 @@ describe('max-parameters', () => {
       invalid: [
         // Functions with more than 4 parameters
         {
+          name: 'one parameter over the configured maximum',
           code: 'function func(a, b, c, d, e) {}',
           errors: [
             {

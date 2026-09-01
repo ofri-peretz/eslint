@@ -30,6 +30,7 @@ describe('react-render-optimization', () => {
     ruleTester.run('valid - optimized props', reactRenderOptimization, {
       valid: [
         {
+          name: 'the object hoisted out',
           code: `
             const data = { x: 1 };
             <Component data={data} />
@@ -69,6 +70,7 @@ describe('react-render-optimization', () => {
       valid: [],
       invalid: [
         {
+          name: 'an object literal built inside JSX',
           code: `
             <Component data={{ x: 1 }} />
           `,

@@ -25,7 +25,7 @@ describe('interactive-supports-focus', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - focusable interactives', interactiveSupportsFocus, {
       valid: [
-        { code: '<button onClick={handler}>Click</button>' },
+        { name: 'a real button', code: '<button onClick={handler}>Click</button>' },
         { code: '<a href="#" onClick={handler}>Link</a>' },
         { code: '<input onClick={handler} />' },
         { code: '<div role="button" tabIndex={0} onClick={handler}></div>' },
@@ -44,7 +44,7 @@ describe('interactive-supports-focus', () => {
       valid: [],
       invalid: [
         // No role: div with onClick but no tabIndex — must be focusable
-        { code: '<div onClick={handler}></div>', errors: [{ messageId: 'missingTabIndex' }] },
+        { name: 'a div with a click handler and no way to focus it', code: '<div onClick={handler}></div>', errors: [{ messageId: 'missingTabIndex' }] },
         { code: '<span onKeyDown={handler}></span>', errors: [{ messageId: 'missingTabIndex' }] },
       ],
     });

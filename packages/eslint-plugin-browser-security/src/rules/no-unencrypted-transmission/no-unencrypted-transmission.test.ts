@@ -43,6 +43,7 @@ describe('no-unencrypted-transmission', () => {
         `const clean = raw.replace('http://', 'https://');`,
         // HTTPS
         {
+          name: 'an https URL',
           code: 'const url = "https://api.example.com";',
         },
         {
@@ -74,6 +75,7 @@ describe('no-unencrypted-transmission', () => {
         // `isProtocolInspection` and has to stay covered wherever the scheme
         // is enabled.
         {
+          name: 'an http endpoint used in a comparison that gates a request',
           // The literal is the RECEIVER, not an argument — an http:// URL written
           // into source, which is the thing this rule is for.
           code: `const ok = 'http://legacy.example.com'.startsWith(prefix);`,

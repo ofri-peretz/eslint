@@ -28,7 +28,7 @@ describe('aria-props', () => {
     ruleTester.run('valid - standard ARIA attributes', ariaProps, {
       valid: [
         // Common ARIA attributes
-        { code: '<div aria-label="Label"></div>' },
+        { name: 'a real aria attribute', code: '<div aria-label="Label"></div>' },
         { code: '<div aria-labelledby="id"></div>' },
         { code: '<div aria-describedby="id"></div>' },
         { code: '<div aria-hidden="true"></div>' },
@@ -69,6 +69,7 @@ describe('aria-props', () => {
       invalid: [
         // Common typos
         {
+          name: 'a misspelled aria attribute is silently inert',
           code: '<div aria-lable="Label"></div>',
           errors: [{ messageId: 'invalidAriaProp' }],
         },

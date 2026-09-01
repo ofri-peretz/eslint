@@ -24,6 +24,7 @@ describe('require-audience-validation', () => {
     ruleTester.run('valid - with audience', requireAudienceValidation, {
       valid: [
         {
+          name: 'an explicit audience',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret, { audience: 'https://api.example.com' });`,
         },
@@ -59,6 +60,7 @@ jwtVerify(token, key, { audience: 'https://api.example.com' });`,
       valid: [],
       invalid: [
         {
+          name: 'verify with no audience accepts a token minted for another service',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingAudienceValidation' }],

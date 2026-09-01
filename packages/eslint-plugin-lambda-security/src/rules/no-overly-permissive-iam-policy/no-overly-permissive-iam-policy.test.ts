@@ -59,6 +59,7 @@ ruleTester.run('no-overly-permissive-iam-policy', noOverlyPermissiveIamPolicy, {
   valid: lambda([
     // Specific resource (multi-line)
     {
+      name: 'a scoped bucket ARN',
       code: `
         const policy = {
           Effect: 'Allow',
@@ -134,6 +135,7 @@ ruleTester.run('no-overly-permissive-iam-policy', noOverlyPermissiveIamPolicy, {
   invalid: lambda([
     // Wildcard Resource (multi-line format)
     {
+      name: "Resource '*' grants the action over every object in the account",
       code: `
         const policy = {
           Effect: 'Allow',

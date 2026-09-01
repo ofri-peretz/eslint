@@ -62,6 +62,35 @@ const rule: TSESLint.RuleModule<MessageIds, Options> = {
 export default rule;
 ```
 
+### Read the grammar, not one spelling of it
+
+**This is the single largest defect class this repository has measured.** 3,825
+meaning-preserving rewrites of known true positives produced **1,113 cases
+where a rule reported the original and went silent on the rewrite**, across 159
+of 470 rules. Not one was a decision anybody made.
+
+JavaScript spells a constant string two ways and a property name three. Match
+one and the rule sees a strict subset of its own subject — invisible in review,
+because the tests get written in the same spelling as the rule.
+
+| ✗ never write | ✓ write | because |
+| :--- | :--- | :--- |
+| `n.type === 'Literal'` | `staticString(n)` | `` `sha1` `` is the same string as `'sha1'` |
+| `member.property.name` | `propertyName(member)` | `o['k']` and `` o[`k`] `` reach `o.k` |
+| `prop.key.name` | `objectKeyName(prop)` | `{ ['k']: v }` declares `{ k: v }` |
+| hand-walking a chain | `memberPath(n)` | `crypto['createHash']` is `crypto.createHash` |
+
+All four are exported from `@interlace/eslint-devkit`. They return `null` when
+the value is not statically knowable, which is the honest answer for `o[k]`.
+
+`npm run check:spellings` fails the build on a NEW site. Existing ones are
+baselined — the ratchet exists because remediating 1,113 by hand does not scale
+to 700 rules, and refusing the 701st does.
+
+If a rule genuinely means "a quoted literal and nothing else", match the node
+type and **say why in a comment**. That is a position, and positions are fine.
+Silence by omission is not.
+
 ### Test Template
 
 ```typescript

@@ -11,15 +11,16 @@
  * for genuinely dynamic values. Everything else belongs in Tailwind classes.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 
 type MessageIds = 'inlineStyle';
 type RuleOptions = [];
 
 const isCssVariableKey = (prop: TSESTree.Property | TSESTree.SpreadElement): boolean => {
   if (prop.type !== 'Property') return false;
-  if (prop.key.type === 'Literal' && typeof prop.key.value === 'string') {
-    return prop.key.value.startsWith('--');
+  const staticText = staticString(prop.key);
+  if (staticText !== null) {
+    return staticText.startsWith('--');
   }
   return false;
 };

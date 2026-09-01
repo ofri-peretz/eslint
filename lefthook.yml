@@ -41,6 +41,45 @@ pre-commit:
       # gate, which is what actually holds the line.
       glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,packages/eslint-plugin-*/src/utils/**/*.ts}'
       run: npm run --silent rule-audit:gate -- --changed
+    key-vocabulary:
+      # An inline list of PROPERTY names compared against a key, with no option
+      # and no stated authority.
+      #
+      # `check-name-vocabulary` covers rules reading an IDENTIFIER's name via
+      # the devkit helpers. This covers the hole beside it: a rule that writes
+      # the list inline never imports those helpers, so that gate never sees
+      # it — which is how `['email','name','phone','address']` shipped with
+      # `schema: []`.
+      #
+      # The test is who defines the name. Somebody else (WHATWG, an RFC, Node,
+      # React, an SDK) -> say so in a `@vocabulary` comment. Our consumer ->
+      # give them an option that REPLACES the default.
+      glob: 'packages/eslint-plugin-*/src/**/*.ts'
+      run: npm run --silent check:key-vocabulary
+    spellings:
+      # A rule may not acquire a blind spot it did not already have.
+      #
+      # `node.type === 'Literal'` sees 'sha1' and not `sha1`; `.property.name`
+      # sees o.k and not o['k']. Neither is a decision — it is what those
+      # expressions MEAN when the grammar allows a second spelling, and it is
+      # invisible in review because the tests are written in the same spelling
+      # as the rule. Measured: 1,113 misses across 159 of 470 rules.
+      #
+      # Ratcheted, not enforced retroactively: the existing 1,022 sites are
+      # baselined. With 700 rules coming, refusing the next one is what scales.
+      glob: 'packages/eslint-plugin-*/src/**/*.ts'
+      run: npm run --silent check:spellings
+    case-registry:
+      # Executed evidence, not a stored verdict. Every coverage claim in
+      # benchmarks/cases/registry.json is run through the rule that makes it,
+      # and the VERIFIED SET is ratcheted — a run that verifies a new case while
+      # dropping an old one keeps the same total, which is exactly the
+      # regression this register exists to make impossible.
+      #
+      # Same glob as rule-audit: only a change to rule source or the register
+      # itself can change a verdict.
+      glob: '{packages/eslint-plugin-*/src/**/*.ts,benchmarks/cases/registry.json}'
+      run: npm run --silent check:case-registry
     tests-affected:
       run: |
         if git rev-parse --verify --quiet origin/main >/dev/null; then

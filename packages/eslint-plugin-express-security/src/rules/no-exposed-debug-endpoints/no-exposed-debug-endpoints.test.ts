@@ -64,7 +64,7 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
     'const flag = true;',
     'function noop() {}',
     // Safe endpoints
-    { code: "app.get('/api/users', handler)" },
+    { name: 'an ordinary API route', code: "app.get('/api/users', handler)" },
     { code: "router.post('/login', authenticate)" },
     // Non-route code
     { code: 'const x = 1' },
@@ -73,6 +73,7 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
   invalid: xp([
     // Debug endpoints (now caught once)
     {
+      name: 'a /debug route in the deployed app',
       code: "app.get('/debug', debugHandler)",
       errors: [{ messageId: 'violationDetected' }],
     },

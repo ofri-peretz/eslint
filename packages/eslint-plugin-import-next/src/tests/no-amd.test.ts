@@ -28,6 +28,7 @@ describe('no-amd', () => {
       valid: [
         // Valid ES6 imports
         {
+          name: 'an ES import',
           code: 'import helper from "./helper";',
           filename: '/src/utils/helpers.js',
         },
@@ -50,6 +51,7 @@ describe('no-amd', () => {
       invalid: [
         // Invalid AMD define calls
         {
+          name: 'an AMD define() call',
           code: 'define(["helper"], function(helper) {});',
           filename: '/src/utils/helpers.js',
           errors: [

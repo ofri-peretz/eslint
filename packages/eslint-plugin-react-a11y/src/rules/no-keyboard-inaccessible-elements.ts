@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-keyboard-inaccessible-elements
  * Detects clickable divs without keyboard support
- * 
+ *
  * @see https://www.w3.org/WAI/WCAG21/Understanding/keyboard.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -15,15 +15,12 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'keyboardInaccessible'
-  | 'addTabIndex'
-  | 'addAriaRole'
-  | 'useButton';
+  'keyboardInaccessible' | 'addTabIndex' | 'addAriaRole' | 'useButton';
 
 export interface Options {
   /** Ignore in test files. Default: true */
   ignoreInTests?: boolean;
-  
+
   /** Elements to check. Default: ['div', 'span'] */
   checkElements?: string[];
 }
@@ -35,35 +32,41 @@ type RuleOptions = [Options?];
  */
 function hasKeyboardSupport(node: TSESTree.JSXOpeningElement): boolean {
   // Check for tabIndex
-  const hasTabIndex = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
-    attr.type === 'JSXAttribute' &&
-    attr.name.type === 'JSXIdentifier' &&
-    attr.name.name === 'tabIndex'
+  const hasTabIndex = node.attributes.some(
+    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
+      attr.type === 'JSXAttribute' &&
+      attr.name.type === 'JSXIdentifier' &&
+      attr.name.name === 'tabIndex',
   );
 
   // Check for ARIA role
-  const hasRole = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
-    attr.type === 'JSXAttribute' &&
-    attr.name.type === 'JSXIdentifier' &&
-    attr.name.name === 'role'
+  const hasRole = node.attributes.some(
+    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
+      attr.type === 'JSXAttribute' &&
+      attr.name.type === 'JSXIdentifier' &&
+      attr.name.name === 'role',
   );
 
   // Check for onClick handler (indicates it should be keyboard accessible)
-  const hasOnClick = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
-    attr.type === 'JSXAttribute' &&
-    attr.name.type === 'JSXIdentifier' &&
-    (attr.name.name === 'onClick' || attr.name.name === 'onclick')
+  const hasOnClick = node.attributes.some(
+    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
+      attr.type === 'JSXAttribute' &&
+      attr.name.type === 'JSXIdentifier' &&
+      (attr.name.name === 'onClick' || attr.name.name === 'onclick'),
   );
-  
+
   // If it has onClick but no keyboard support, it's a problem
   if (hasOnClick && !hasTabIndex && !hasRole) {
     return false;
   }
-  
+
   return true;
 }
 
-export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds>({
+export const noKeyboardInaccessibleElements = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'no-keyboard-inaccessible-elements',
   meta: {
     type: 'problem',
@@ -80,7 +83,8 @@ export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds
         description: 'Clickable {{element}} missing keyboard support',
         severity: 'MEDIUM',
         fix: 'Add tabIndex and ARIA role or use button element',
-        documentationLink: 'https://www.w3.org/WAI/WCAG21/Understanding/keyboard.html',
+        documentationLink:
+          'https://www.w3.org/WAI/WCAG21/Understanding/keyboard.html',
       }),
       addTabIndex: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -88,7 +92,8 @@ export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds
         description: 'Add tabIndex for keyboard navigation',
         severity: 'LOW',
         fix: 'tabIndex={0}',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex',
       }),
       addAriaRole: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -96,7 +101,8 @@ export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds
         description: 'Add role for screen readers',
         severity: 'LOW',
         fix: 'role="button"',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/button_role',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/button_role',
       }),
       useButton: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -104,7 +110,8 @@ export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds
         description: 'Use button element instead of div',
         severity: 'LOW',
         fix: '<button onClick={...}>Content</button>',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button',
       }),
     },
     schema: [
@@ -131,15 +138,16 @@ export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds
       checkElements: ['div', 'span'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const {
-ignoreInTests = true,
-      checkElements = ['div', 'span'],
-    
-}: Options = options || {};
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
+    const { ignoreInTests = true, checkElements = ['div', 'span'] }: Options =
+      options || {};
 
     const filename = context.filename;
-    const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile =
+      ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (isTestFile) {
       return {};
@@ -180,4 +188,3 @@ ignoreInTests = true,
     };
   },
 });
-

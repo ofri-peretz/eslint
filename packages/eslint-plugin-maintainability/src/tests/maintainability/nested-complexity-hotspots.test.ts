@@ -25,6 +25,7 @@ describe('nested-complexity-hotspots', () => {
     ruleTester.run('valid - shallow nesting', nestedComplexityHotspots, {
       valid: [
         {
+          name: 'a single if',
           code: `
             if (condition) {
               doSomething();
@@ -60,6 +61,7 @@ describe('nested-complexity-hotspots', () => {
       valid: [],
       invalid: [
         {
+          name: 'five ifs nested inside one another',
           code: `
             if (a) {
               if (b) {

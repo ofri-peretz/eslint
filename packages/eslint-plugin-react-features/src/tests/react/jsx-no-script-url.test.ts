@@ -26,7 +26,7 @@ describe('jsx-no-script-url', () => {
   ruleTester.run('jsx-no-script-url', jsxNoScriptUrl, {
     valid: [
       // Normal URLs
-      '<a href="https://example.com">Link</a>',
+      { name: 'an ordinary href', code: '<a href="https://example.com">Link</a>' },
       '<a href="http://example.com">Link</a>',
       '<a href="/page">Link</a>',
       '<a href="#section">Link</a>',
@@ -42,6 +42,7 @@ describe('jsx-no-script-url', () => {
     ],
     invalid: [
       {
+        name: 'a javascript: href',
         code: '<a href="javascript:void(0)">Link</a>',
         errors: [{ messageId: 'noScriptUrl' }],
       },

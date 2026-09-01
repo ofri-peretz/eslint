@@ -29,6 +29,7 @@ describe('no-algorithm-confusion', () => {
         valid: [
           // RS256 with public key - SAFE
           {
+            name: 'the asymmetric algorithm the key actually belongs to',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { algorithms: ['RS256'] });`,
           },
@@ -97,6 +98,7 @@ jwt.verify(token, publicKey, { complete: true });`,
         invalid: [
           // HS256 with publicKey variable
           {
+            name: 'verifying with HS256 against a key that is public',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { algorithms: ['HS256'] });`,
             errors: [{ messageId: 'algorithmConfusion' }],

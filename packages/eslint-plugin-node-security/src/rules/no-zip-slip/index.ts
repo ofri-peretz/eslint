@@ -20,7 +20,7 @@
  * - Trusted extraction libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 /**
  * Six more used to sit here: `zipSlipVulnerability`, `validateArchivePaths`,
@@ -57,6 +57,20 @@ export interface Options {
    */
   reportWithoutArchiveContext?: boolean;
 
+  /**
+   * The property an archive entry exposes its path on.
+   *
+   * Every archive library spells this differently — `entryName` is adm-zip,
+   * `fileName` is yauzl, `path` is unzipper and tar. The set of libraries a
+   * project uses is already configurable here via `archiveModules`, so the set
+   * of field names has to be too: hard-coding seven guesses and calling it
+   * complete was an assertion about somebody else's dependency list.
+   *
+   * REPLACES the default rather than adding to it. Default:
+   * `DEFAULT_ARCHIVE_ENTRY_FIELDS`.
+   */
+  archiveEntryFields?: string[];
+
   /** Functions that safely validate archive paths */
   pathValidationFunctions?: string[];
 
@@ -65,7 +79,6 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
-
 
 /**
  * Modules whose presence means this file actually handles archives.
@@ -109,10 +122,56 @@ const AMBIGUOUS_EXTRACTORS: ReadonlySet<string> = new Set([
   'untar',
 ]);
 
+/**
+ * The property an archive entry carries its path on, per library.
+ *
+ *   entryName   adm-zip
+ *   fileName    yauzl
+ *   path        unzipper, tar
+ *   name        tar-stream, archiver
+ *
+ * Named rather than inlined so a reader can see what is being assumed, and
+ * `archiveEntryFields` can replace it wholesale for a library nobody here has
+ * heard of.
+ */
+/**
+ * @vocabulary Each name is the property a published archive library exposes an
+ * entry's path on. Every entry cites its library, because a name we cannot
+ * attribute is a guess, and a guess in a DEFAULT is an assertion about
+ * somebody else's dependency list.
+ *
+ * `relativePath` and `pathname` were in this list until 2026-08-30 with no
+ * library behind either, and no test exercised them —
+ * `lint:detection-list-coverage` is what surfaced that. `pathname` is a URL
+ * property, not an archive one. A consumer whose library really does spell it
+ * that way sets `archiveEntryFields`.
+ */
+const DEFAULT_ARCHIVE_ENTRY_FIELDS = [
+  'name', // node-stream-zip
+  'path', // unzipper, tar, decompress
+  'fileName', // yauzl
+  'entryName', // adm-zip
+  'filename', // unzip-stream
+] as const;
+
 const DEFAULT_ARCHIVE_MODULES = [
-  'adm-zip', 'unzipper', 'yauzl', 'yazl', 'tar', 'tar-fs', 'tar-stream',
-  'extract-zip', 'node-stream-zip', 'jszip', 'archiver', 'decompress',
-  'unzip-stream', 'zip-stream', 'gunzip-maybe', '7zip-min', 'node-7z',
+  'adm-zip',
+  'unzipper',
+  'yauzl',
+  'yazl',
+  'tar',
+  'tar-fs',
+  'tar-stream',
+  'extract-zip',
+  'node-stream-zip',
+  'jszip',
+  'archiver',
+  'decompress',
+  'unzip-stream',
+  'zip-stream',
+  'gunzip-maybe',
+  '7zip-min',
+  'node-7z',
 ];
 
 /**
@@ -120,10 +179,12 @@ const DEFAULT_ARCHIVE_MODULES = [
  */
 const containsPathTraversal = (pathText: string): boolean => {
   // Check for ../ sequences
-  return /\.\.\//.test(pathText) ||
-         /\.\.\\/.test(pathText) || // Windows paths
-         pathText.startsWith('..') ||
-         /\/\.\./.test(pathText);  // Embedded /..
+  return (
+    /\.\.\//.test(pathText) ||
+    /\.\.\\/.test(pathText) || // Windows paths
+    pathText.startsWith('..') ||
+    /\/\.\./.test(pathText)
+  ); // Embedded /..
 };
 
 /**
@@ -132,20 +193,25 @@ const containsPathTraversal = (pathText: string): boolean => {
  */
 const isDangerousDestination = (destText: string): boolean => {
   // /tmp is SAFE - it's the standard temp location
-  if (destText.startsWith('/tmp') || destText.includes('os.tmpdir') || destText.includes('TMPDIR')) {
+  if (
+    destText.startsWith('/tmp') ||
+    destText.includes('os.tmpdir') ||
+    destText.includes('TMPDIR')
+  ) {
     return false;
   }
-  
-  return destText.includes('/var') ||
-         destText.includes('/usr') ||
-         destText.includes('/etc') ||
-         destText.includes('/root') ||
-         destText.includes('/home') ||
-         destText.includes('C:\\Windows') ||
-         destText.includes('C:\\Program Files') ||
-         destText.includes('C:\\Users');
-};
 
+  return (
+    destText.includes('/var') ||
+    destText.includes('/usr') ||
+    destText.includes('/etc') ||
+    destText.includes('/root') ||
+    destText.includes('/home') ||
+    destText.includes('C:\\Windows') ||
+    destText.includes('C:\\Program Files') ||
+    destText.includes('C:\\Users')
+  );
+};
 
 export const noZipSlip = createRule<RuleOptions, MessageIds>({
   name: 'no-zip-slip',
@@ -193,7 +259,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         fix: 'Extract to safe temporary directory',
         documentationLink: 'https://cwe.mitre.org/data/definitions/22.html',
       }),
-
     },
     schema: [
       {
@@ -202,7 +267,14 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           archiveFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['extract', 'extractAll', 'extractAllTo', 'unzip', 'untar', 'extractArchive'],
+            default: [
+              'extract',
+              'extractAll',
+              'extractAllTo',
+              'unzip',
+              'untar',
+              'extractArchive',
+            ],
           },
           pathValidationFunctions: {
             type: 'array',
@@ -212,13 +284,26 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           safeLibraries: {
             type: 'array',
             items: { type: 'string' },
-            default: ['yauzl', 'safe-archive-extract', 'tar-stream', 'unzipper'],
+            default: [
+              'yauzl',
+              'safe-archive-extract',
+              'tar-stream',
+              'unzipper',
+            ],
+          },
+          archiveEntryFields: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_ARCHIVE_ENTRY_FIELDS],
+            description:
+              'Property names an archive entry exposes its path on. Replaces the default.',
           },
           archiveModules: {
             type: 'array',
             items: { type: 'string' },
             default: DEFAULT_ARCHIVE_MODULES,
-            description: 'Module specifiers that mean this file works with archives',
+            description:
+              'Module specifiers that mean this file works with archives',
           },
           reportWithoutArchiveContext: {
             type: 'boolean',
@@ -233,23 +318,62 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      archiveFunctions: ['extract', 'extractAll', 'extractAllTo', 'unzip', 'untar', 'extractArchive'],
-      pathValidationFunctions: ['validatePath', 'sanitizePath', 'checkPath', 'safePath'],
-      safeLibraries: ['yauzl', 'safe-archive-extract', 'tar-stream', 'unzipper'],
+      archiveFunctions: [
+        'extract',
+        'extractAll',
+        'extractAllTo',
+        'unzip',
+        'untar',
+        'extractArchive',
+      ],
+      pathValidationFunctions: [
+        'validatePath',
+        'sanitizePath',
+        'checkPath',
+        'safePath',
+      ],
+      safeLibraries: [
+        'yauzl',
+        'safe-archive-extract',
+        'tar-stream',
+        'unzipper',
+      ],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
+    const archiveEntryFields = new Set<string>(
+      options.archiveEntryFields ?? DEFAULT_ARCHIVE_ENTRY_FIELDS,
+    );
     const {
-      archiveFunctions = ['extract', 'extractAll', 'extractAllTo', 'unzip', 'untar', 'extractArchive'],
-      pathValidationFunctions = ['validatePath', 'sanitizePath', 'checkPath', 'safePath'],
-      safeLibraries = ['yauzl', 'safe-archive-extract', 'tar-stream', 'unzipper'],
+      archiveFunctions = [
+        'extract',
+        'extractAll',
+        'extractAllTo',
+        'unzip',
+        'untar',
+        'extractArchive',
+      ],
+      pathValidationFunctions = [
+        'validatePath',
+        'sanitizePath',
+        'checkPath',
+        'safePath',
+      ],
+      safeLibraries = [
+        'yauzl',
+        'safe-archive-extract',
+        'tar-stream',
+        'unzipper',
+      ],
       archiveModules = DEFAULT_ARCHIVE_MODULES,
       reportWithoutArchiveContext = false,
     }: Options = options;
 
     const filename = context.filename;
-    const archiveModuleSet = new Set(archiveModules.map((name) => name.toLowerCase()));
+    const archiveModuleSet = new Set(
+      archiveModules.map((name) => name.toLowerCase()),
+    );
 
     /**
      * Does this file work with archives at all?
@@ -262,7 +386,8 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      */
     let hasArchiveContext = reportWithoutArchiveContext;
     const isArchiveModule = (specifier: unknown): boolean =>
-      typeof specifier === 'string' && archiveModuleSet.has(specifier.toLowerCase());
+      typeof specifier === 'string' &&
+      archiveModuleSet.has(specifier.toLowerCase());
 
     /**
      * Names that only appear when archives are in play: `new AdmZip(file)`,
@@ -276,13 +401,15 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      * `bin/bundling/esbuild-plugin-dedup-cli-kit.js`): neither contains the
      * substring `zip`, `tar` or `archive` anywhere.
      */
-    const ARCHIVE_NAME = /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
+    const ARCHIVE_NAME =
+      /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
     const namesArchive = (node: TSESTree.Node): boolean => {
       if (node.type === 'Identifier') return ARCHIVE_NAME.test(node.name);
       if (node.type === 'MemberExpression') {
         return (
           namesArchive(node.object) ||
-          (node.property.type === 'Identifier' && ARCHIVE_NAME.test(node.property.name))
+          (node.property.type === 'Identifier' &&
+            ARCHIVE_NAME.test(node.property.name))
         );
       }
       return false;
@@ -300,9 +427,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
 
       // Check for archive method calls (e.g., zip.extractAllTo)
-      if (callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          archiveFunctions.includes(callee.property.name)) {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        archiveFunctions.includes(callee.property.name)
+      ) {
         // `extractAllTo` and `extractArchive` belong to adm-zip and collide
         // with nothing. `extract`, `extractAll`, `unzip` and `untar` are
         // ordinary English: a collection extracts a field, a propagator
@@ -313,14 +442,15 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       }
 
       // Check for standalone archive functions (e.g., extractArchive)
-      if (callee.type === 'Identifier' &&
-          archiveFunctions.includes(callee.name)) {
+      if (
+        callee.type === 'Identifier' &&
+        archiveFunctions.includes(callee.name)
+      ) {
         return true;
       }
 
       return false;
     };
-
 
     /**
      * Check if path has been validated or sanitized
@@ -334,48 +464,59 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
       while (current) {
         // Check for custom validation function wrappers
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'Identifier' &&
-            pathValidationFunctions.includes(current.callee.name)) {
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'Identifier' &&
+          pathValidationFunctions.includes(current.callee.name)
+        ) {
           return true;
         }
-        
+
         // Check for path.basename() sanitization
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'MemberExpression' &&
-            current.callee.object.type === 'Identifier' &&
-            current.callee.object.name === 'path' &&
-            current.callee.property.type === 'Identifier' &&
-            current.callee.property.name === 'basename') {
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'MemberExpression' &&
+          current.callee.object.type === 'Identifier' &&
+          current.callee.object.name === 'path' &&
+          current.callee.property.type === 'Identifier' &&
+          current.callee.property.name === 'basename'
+        ) {
           return true;
         }
-        
+
         // Check for preceding if-block with startsWith validation
         if (current.type === 'IfStatement') {
           const test = current.test;
           // if (path.startsWith(...)) or if (!path.startsWith(...)) { throw/return }
-          if (test.type === 'CallExpression' &&
-              test.callee.type === 'MemberExpression' &&
-              test.callee.property.type === 'Identifier' &&
-              test.callee.property.name === 'startsWith') {
+          if (
+            test.type === 'CallExpression' &&
+            test.callee.type === 'MemberExpression' &&
+            test.callee.property.type === 'Identifier' &&
+            test.callee.property.name === 'startsWith'
+          ) {
             return true;
           }
-          if (test.type === 'UnaryExpression' && test.operator === '!' &&
-              test.argument.type === 'CallExpression' &&
-              test.argument.callee.type === 'MemberExpression' &&
-              test.argument.callee.property.type === 'Identifier' &&
-              test.argument.callee.property.name === 'startsWith') {
+          if (
+            test.type === 'UnaryExpression' &&
+            test.operator === '!' &&
+            test.argument.type === 'CallExpression' &&
+            test.argument.callee.type === 'MemberExpression' &&
+            test.argument.callee.property.type === 'Identifier' &&
+            test.argument.callee.property.name === 'startsWith'
+          ) {
             return true;
           }
           // if (path.includes('..')) { throw/return }
-          if (test.type === 'CallExpression' &&
-              test.callee.type === 'MemberExpression' &&
-              test.callee.property.type === 'Identifier' &&
-              test.callee.property.name === 'includes') {
+          if (
+            test.type === 'CallExpression' &&
+            test.callee.type === 'MemberExpression' &&
+            test.callee.property.type === 'Identifier' &&
+            test.callee.property.name === 'includes'
+          ) {
             return true;
           }
         }
-        
+
         current = current.parent as TSESTree.Node;
       }
 
@@ -390,9 +531,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
 
       // Check for method calls on safe library instances (e.g., yauzl.open())
-      if (callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          safeLibraries.includes(callee.object.name)) {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        safeLibraries.includes(callee.object.name)
+      ) {
         return true;
       }
 
@@ -400,8 +543,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       // This handles patterns like: const extract = require('extract-zip'); extract(...)
       if (callee.type === 'Identifier') {
         const name = callee.name.toLowerCase();
-        if (name === 'extract' || name === 'unzipper' || 
-            safeLibraries.some(lib => name.includes(lib.toLowerCase()))) {
+        if (
+          name === 'extract' ||
+          name === 'unzipper' ||
+          safeLibraries.some((lib) => name.includes(lib.toLowerCase()))
+        ) {
           return true;
         }
       }
@@ -468,7 +614,10 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           let destArg: TSESTree.Node | undefined;
 
           // Determine which argument is the destination based on the function
-          if (node.callee.type === 'MemberExpression' && node.callee.property.type === 'Identifier') {
+          if (
+            node.callee.type === 'MemberExpression' &&
+            node.callee.property.type === 'Identifier'
+          ) {
             const methodName = node.callee.property.name;
             if (['extractAllTo', 'unzip'].includes(methodName)) {
               // Destination is the first argument
@@ -486,13 +635,15 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
             destArg = args.length >= 2 ? args[1] : undefined;
           }
 
-          const destText = destArg && destArg.type === 'Literal' && typeof destArg.value === 'string' ? destArg.value : '';
+          const destText =
+            (destArg === undefined ? null : staticString(destArg)) ?? '';
           const isDestDangerous = isDangerousDestination(destText);
           const isMethodCall = node.callee.type === 'MemberExpression';
 
           if (isMethodCall) {
             // Method calls report unsafeArchiveExtraction unless destination is a safe relative path
-            const isSafeRelativePath = destText.startsWith('./') || destText.startsWith('../');
+            const isSafeRelativePath =
+              destText.startsWith('./') || destText.startsWith('../');
 
             if (!isSafeRelativePath) {
               context.report({
@@ -545,17 +696,22 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
         // Check for path.join or similar operations with archive entry names
         const callee = node.callee;
-        if (callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier' &&
-            ['join', 'resolve', 'relative', 'normalize'].includes(callee.property.name)) {
-
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.property.type === 'Identifier' &&
+          // @vocabulary Node path API
+          ['join', 'resolve', 'relative', 'normalize'].includes(
+            callee.property.name,
+          )
+        ) {
           // Check arguments for potential archive entry usage
           const args = node.arguments;
           for (const arg of args) {
-            if (arg.type === 'MemberExpression' &&
-                arg.property.type === 'Identifier' &&
-                ['name', 'path', 'fileName', 'entryName', 'relativePath', 'filename', 'pathname'].includes(arg.property.name)) {
-
+            if (
+              arg.type === 'MemberExpression' &&
+              arg.property.type === 'Identifier' &&
+              archiveEntryFields.has(arg.property.name)
+            ) {
               // This looks like path.join(dest, entry.name) — but only if an
               // archive is involved. `entry` is just as often an
               // `fs.readdirSync` Dirent, whose name the local filesystem
@@ -596,13 +752,19 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         }
 
         const text = node.value;
-        if (!(text.includes('/') || text.includes('\\')) || !containsPathTraversal(text)) {
+        if (
+          !(text.includes('/') || text.includes('\\')) ||
+          !containsPathTraversal(text)
+        ) {
           return;
         }
 
         let current: TSESTree.Node | undefined = node;
         while (current) {
-          if (current.type === 'CallExpression' && isArchiveExtraction(current)) {
+          if (
+            current.type === 'CallExpression' &&
+            isArchiveExtraction(current)
+          ) {
             context.report({
               node,
               messageId: 'pathTraversalInArchive',
@@ -621,26 +783,13 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         // positives on unrelated calls (fs.readFileSync, exec, …).
       },
 
-      // Check variable assignments
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!node.init || node.id.type !== 'Identifier') {
-          return;
-        }
-
-        const varName = node.id.name.toLowerCase();
-
-        // Check if this variable holds archive-related data
-        if (varName.includes('entry') || varName.includes('file') || varName.includes('path')) {
-          if (node.init.type === 'MemberExpression' &&
-              node.init.property.type === 'Identifier' &&
-              ['name', 'path'].includes(node.init.property.name)) {
-
-            // This looks like: const entryName = entry.name;
-            // Check if this variable is used unsafely later
-            // This is a simplified check - in practice we'd need more sophisticated analysis
-          }
-        }
-      }
+      // A `VariableDeclarator` handler used to sit here. Its body was EMPTY —
+      // an `if` guarding three comment lines that said "simplified check - in
+      // practice we'd need more sophisticated analysis". It matched on
+      // `varName.includes('entry') || varName.includes('file')`, so it read as
+      // a name heuristic AND did nothing, which is the worst of both: it looked
+      // like coverage in review and produced no finding ever. Removed rather
+      // than repaired; the CallExpression path above is what actually decides.
     };
   },
 });

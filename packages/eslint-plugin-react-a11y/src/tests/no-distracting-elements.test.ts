@@ -25,7 +25,7 @@ describe('no-distracting-elements', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no distracting elements', noDistractingElements, {
       valid: [
-        { code: '<div></div>' },
+        { name: 'an ordinary div', code: '<div></div>' },
         { code: '<span></span>' },
         { code: '<p>Text</p>' },
         { code: '<img src="image.png" alt="Image" />' },
@@ -38,7 +38,12 @@ describe('no-distracting-elements', () => {
     ruleTester.run('invalid - distracting elements', noDistractingElements, {
       valid: [],
       invalid: [
-        { code: '<blink>Blinking text</blink>', errors: [{ messageId: 'noDistractingElements' }] },
+      {
+        name: 'attributes do not make it less distracting',
+        code: '<marquee behavior="alternate">Text</marquee>',
+        errors: [{ messageId: 'noDistractingElements' }],
+      },
+        { name: 'a blink element', code: '<blink>Blinking text</blink>', errors: [{ messageId: 'noDistractingElements' }] },
         { code: '<marquee>Scrolling text</marquee>', errors: [{ messageId: 'noDistractingElements' }] },
       ],
     });

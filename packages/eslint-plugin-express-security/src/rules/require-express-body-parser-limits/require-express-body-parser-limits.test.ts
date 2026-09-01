@@ -63,7 +63,7 @@ ruleTester.run(
       // of seven corpus findings were this shape. If the missing-limit
       // report ever comes back, this block goes red.
       // ---------------------------------------------------------------
-      { code: `express.json()` },
+      { name: 'the default limit', code: `express.json()` },
       { code: `express.urlencoded()` },
       { code: `express.raw()` },
       { code: `express.text()` },
@@ -121,6 +121,7 @@ ruleTester.run(
     invalid: xp([
       // Excessive limits
       {
+        name: 'a 100mb body limit',
         code: `express.json({ limit: '100mb' })`,
         errors: [{ messageId: 'excessiveLimit' }],
       },

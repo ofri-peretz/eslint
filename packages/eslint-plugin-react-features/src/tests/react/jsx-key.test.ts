@@ -38,6 +38,7 @@ describe('jsx-key', () => {
       valid: [
         // Has key prop
         {
+          name: 'a keyed element',
           code: 'items.map(item => <div key={item.id}>{item.name}</div>)',
         },
         // Has key with expression
@@ -56,6 +57,7 @@ describe('jsx-key', () => {
       invalid: [
         // Missing key in map
         {
+          name: 'a mapped element with no key',
           code: 'items.map(item => <div>{item.name}</div>)',
           errors: [
             {

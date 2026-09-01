@@ -28,6 +28,7 @@ describe('enforce-dependency-direction', () => {
       {
         valid: [
           {
+            name: 'a domain module importing another domain entity',
             code: `
             import { domainEntity } from '../domain/entity';
           `,
@@ -65,6 +66,7 @@ describe('enforce-dependency-direction', () => {
         valid: [],
         invalid: [
           {
+            name: 'a domain module importing from infrastructure — the arrow points the wrong way',
             code: `
             import { infrastructureRepo } from '../infrastructure/repository';
           `,

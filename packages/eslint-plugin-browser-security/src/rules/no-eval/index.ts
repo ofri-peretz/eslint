@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createPayloadResolver, isTestFilePath } from '@interlace/eslint-devkit';
+import { createPayloadResolver, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -131,7 +131,7 @@ function isDeferrableToNodeSecurity(sink: DynamicCodeSink): boolean {
 
 function hasStaticPayload(sink: DynamicCodeSink): boolean {
   return sink.codeArguments.every(
-    (arg) => arg.type === 'Literal' && typeof arg.value === 'string',
+    (arg) => staticString(arg) !== null,
   );
 }
 

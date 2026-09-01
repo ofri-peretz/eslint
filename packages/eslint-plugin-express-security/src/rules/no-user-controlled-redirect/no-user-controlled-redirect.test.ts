@@ -62,7 +62,7 @@ describe('no-user-controlled-redirect', () => {
   ruleTester.run('no-user-controlled-redirect', noUserControlledRedirect, {
     valid: xp([
       // Literal redirect — always safe
-      { code: `res.redirect('/dashboard');` },
+      { name: 'a literal path', code: `res.redirect('/dashboard');` },
       { code: `res.redirect(301, '/login');` },
       // Validated with allowlist
       {
@@ -142,6 +142,7 @@ describe('no-user-controlled-redirect', () => {
     invalid: xp([
       // Computed access with DIFFERENT literal keys is a different source.
       {
+        name: 'one query parameter validated, a different one redirected to',
         code: `
           app.get('/go', (req, res) => {
             if (new URL(req.query['a']).host !== 'example.com') return res.sendStatus(400);

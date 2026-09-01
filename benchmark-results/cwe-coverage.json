@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-09T23:38:10.501Z",
+  "generatedAt": "2026-08-31T04:33:08.956Z",
   "summary": {
-    "distinctCwes": 93,
-    "totalRules": 207,
-    "unmappedRules": 0,
-    "top25Covered": 16,
-    "top25Gaps": 9
+    "distinctCwes": 115,
+    "totalRules": 272,
+    "unmappedRules": 8,
+    "top25Covered": 20,
+    "top25Gaps": 5
   },
   "byCwe": {
     "CWE-16": {
@@ -15,13 +15,22 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-020": {
+      "rules": [
+        "browser-security/no-incomplete-url-sanitization"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-20": {
       "rules": [
         "lambda-security/no-unvalidated-event-body",
+        "mcp-sdk-security/no-unvalidated-tool-args",
+        "mcp-sdk-security/require-tool-input-schema",
         "mongodb-security/require-schema-validation",
+        "nestjs-security/no-hybrid-app-config-loss",
         "nestjs-security/no-missing-validation-pipe",
-        "nestjs-security/require-class-validator",
-        "pg/check-query-params",
+        "postgresql-security/check-query-params",
         "secure-coding/no-graphql-injection",
         "vercel-ai-security/require-embedding-validation",
         "vercel-ai-security/require-tool-schema"
@@ -31,6 +40,7 @@
     },
     "CWE-22": {
       "rules": [
+        "nestjs-security/no-unsafe-multer-filename",
         "node-security/detect-non-literal-fs-filename",
         "node-security/no-arbitrary-file-access",
         "node-security/no-zip-slip"
@@ -40,7 +50,8 @@
     },
     "CWE-73": {
       "rules": [
-        "pg/no-unsafe-copy-from"
+        "express-security/no-user-controlled-render-locals",
+        "postgresql-security/no-unsafe-copy-from"
       ],
       "top25": false,
       "owaspTop10": false
@@ -54,10 +65,18 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-77": {
+      "rules": [
+        "node-security/no-dynamic-command-string"
+      ],
+      "top25": true,
+      "owaspTop10": true
+    },
     "CWE-78": {
       "rules": [
+        "mcp-sdk-security/no-command-injection-in-tool",
         "node-security/detect-child-process",
-        "secure-coding/no-improper-sanitization"
+        "node-security/no-shell-injection"
       ],
       "top25": true,
       "owaspTop10": true
@@ -71,17 +90,34 @@
         "browser-security/no-unsafe-inline-csp",
         "browser-security/no-websocket-innerhtml",
         "browser-security/no-worker-message-innerhtml",
+        "express-security/no-unsafe-csp-directives",
         "secure-coding/no-improper-sanitization",
         "vercel-ai-security/no-unsafe-output-handling"
       ],
       "top25": true,
       "owaspTop10": true
     },
+    "CWE-88": {
+      "rules": [
+        "node-security/detect-child-process"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-89": {
       "rules": [
-        "pg/no-unsafe-query",
+        "drizzle-security/no-raw-identifier-interpolation",
+        "drizzle-security/no-unsafe-query",
+        "knex-security/no-unsafe-query",
+        "mysql-security/no-unsafe-query",
+        "postgresql-security/no-unsafe-query",
+        "prisma-security/no-raw-identifier-interpolation",
+        "prisma-security/no-unsafe-query",
         "secure-coding/no-graphql-injection",
-        "secure-coding/no-improper-sanitization",
+        "secure-coding/no-sql-injection",
+        "sequelize-security/no-unsafe-query",
+        "sqlite-security/no-unsafe-query",
+        "typeorm-security/no-unsafe-query",
         "vercel-ai-security/no-unsafe-output-handling"
       ],
       "top25": true,
@@ -96,8 +132,9 @@
     },
     "CWE-94": {
       "rules": [
+        "node-security/detect-eval-with-expression",
         "node-security/no-dynamic-require",
-        "secure-coding/no-improper-sanitization",
+        "secure-coding/no-template-injection",
         "vercel-ai-security/no-unsafe-output-handling"
       ],
       "top25": true,
@@ -121,11 +158,39 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-99": {
+      "rules": [
+        "node-security/no-env-injection"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-114": {
+      "rules": [
+        "node-security/detect-child-process"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-116": {
       "rules": [
         "secure-coding/no-improper-sanitization"
       ],
       "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-117": {
+      "rules": [
+        "secure-coding/no-log-injection"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-125": {
+      "rules": [
+        "node-security/no-buffer-overread"
+      ],
+      "top25": true,
       "owaspTop10": false
     },
     "CWE-126": {
@@ -142,13 +207,21 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-178": {
+      "rules": [
+        "express-security/require-case-insensitive-path-guard"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-200": {
       "rules": [
-        "browser-security/no-sensitive-data-in-cache",
         "express-security/no-graphql-introspection-production",
         "mongodb-security/no-select-sensitive-fields",
         "mongodb-security/require-projection",
         "nestjs-security/no-exposed-private-fields",
+        "nestjs-security/no-res-bypass-serialization",
+        "nestjs-security/no-unguarded-swagger",
         "secure-coding/no-graphql-injection",
         "vercel-ai-security/no-sensitive-in-prompt",
         "vercel-ai-security/no-system-prompt-leak",
@@ -167,7 +240,15 @@
     },
     "CWE-209": {
       "rules": [
+        "express-security/no-error-details-in-response",
         "lambda-security/no-exposed-error-details"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-248": {
+      "rules": [
+        "node-security/require-stream-error-handler"
       ],
       "top25": false,
       "owaspTop10": false
@@ -181,16 +262,18 @@
     },
     "CWE-284": {
       "rules": [
+        "drizzle-security/no-unscoped-mutation",
+        "knex-security/no-unscoped-mutation",
         "mongodb-security/no-bypass-middleware",
-        "nestjs-security/require-guards"
+        "prisma-security/no-unscoped-mutation"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-287": {
       "rules": [
-        "jwt/require-audience-validation",
-        "jwt/require-issuer-validation",
+        "jwt-security/require-audience-validation",
+        "jwt-security/require-issuer-validation",
         "mongodb-security/require-auth-mechanism",
         "secure-coding/no-missing-authentication"
       ],
@@ -199,9 +282,9 @@
     },
     "CWE-294": {
       "rules": [
-        "jwt/no-timestamp-manipulation",
-        "jwt/require-issued-at",
-        "jwt/require-max-age"
+        "jwt-security/no-timestamp-manipulation",
+        "jwt-security/require-issued-at",
+        "jwt-security/require-max-age"
       ],
       "top25": false,
       "owaspTop10": false
@@ -216,9 +299,18 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-306": {
+      "rules": [
+        "express-security/require-route-authentication",
+        "nestjs-security/require-guards"
+      ],
+      "top25": true,
+      "owaspTop10": false
+    },
     "CWE-311": {
       "rules": [
-        "browser-security/detect-mixed-content"
+        "browser-security/detect-mixed-content",
+        "express-security/no-unsafe-csp-directives"
       ],
       "top25": false,
       "owaspTop10": false
@@ -239,88 +331,55 @@
         "browser-security/no-unencrypted-transmission",
         "browser-security/require-https-only",
         "browser-security/require-websocket-wss",
-        "pg/no-insecure-ssl"
-      ],
-      "top25": false,
-      "owaspTop10": false
-    },
-    "CWE-321": {
-      "rules": [
-        "crypto/no-hardcoded-crypto-key",
-        "crypto/no-web-crypto-export"
-      ],
-      "top25": false,
-      "owaspTop10": false
-    },
-    "CWE-323": {
-      "rules": [
-        "crypto/no-key-reuse"
+        "express-security/require-strict-transport-security",
+        "knex-security/require-tls",
+        "mysql-security/require-tls",
+        "postgresql-security/no-insecure-ssl",
+        "sequelize-security/require-tls",
+        "typeorm-security/require-tls"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-326": {
       "rules": [
-        "crypto/require-key-length",
-        "jwt/no-weak-secret"
+        "jwt-security/no-weak-secret"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-327": {
       "rules": [
-        "crypto/require-authenticated-encryption",
         "node-security/no-deprecated-cipher-method",
+        "node-security/no-dynamic-algorithm-selection",
         "node-security/no-ecb-mode",
         "node-security/no-insecure-rsa-padding",
         "node-security/no-sha1-hash",
         "node-security/no-weak-cipher-algorithm",
-        "node-security/no-weak-hash-algorithm"
-      ],
-      "top25": false,
-      "owaspTop10": false
-    },
-    "CWE-328": {
-      "rules": [
-        "crypto/require-secure-pbkdf2-digest"
+        "node-security/no-weak-hash-algorithm",
+        "node-security/require-aead-tag-verification"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-329": {
       "rules": [
-        "crypto/require-random-iv",
         "node-security/no-static-iv"
-      ],
-      "top25": false,
-      "owaspTop10": false
-    },
-    "CWE-330": {
-      "rules": [
-        "crypto/no-numeric-only-tokens",
-        "crypto/require-sufficient-length"
-      ],
-      "top25": false,
-      "owaspTop10": false
-    },
-    "CWE-331": {
-      "rules": [
-        "crypto/no-predictable-salt"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-338": {
       "rules": [
-        "crypto/no-math-random-crypto",
-        "node-security/no-cryptojs-weak-random"
+        "node-security/no-cryptojs-weak-random",
+        "node-security/no-math-random-crypto"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-345": {
       "rules": [
-        "jwt/no-decode-without-verify"
+        "jwt-security/no-decode-without-verify"
       ],
       "top25": false,
       "owaspTop10": false
@@ -329,15 +388,23 @@
       "rules": [
         "browser-security/no-missing-cors-check",
         "browser-security/no-postmessage-wildcard-origin",
-        "browser-security/require-postmessage-origin-check"
+        "browser-security/require-postmessage-origin-check",
+        "express-security/no-missing-cors-check"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-347": {
       "rules": [
-        "jwt/no-algorithm-confusion",
-        "jwt/no-algorithm-none"
+        "jwt-security/no-algorithm-confusion",
+        "jwt-security/no-algorithm-none"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-348": {
+      "rules": [
+        "express-security/no-permissive-trust-proxy"
       ],
       "top25": false,
       "owaspTop10": false
@@ -346,6 +413,7 @@
       "rules": [
         "browser-security/no-missing-csrf-protection",
         "browser-security/require-cookie-secure-attrs",
+        "express-security/no-missing-csrf-protection",
         "express-security/require-csrf-protection"
       ],
       "top25": true,
@@ -355,8 +423,7 @@
       "rules": [
         "browser-security/no-sensitive-data-in-analytics",
         "browser-security/no-tracking-without-consent",
-        "jwt/no-sensitive-payload",
-        "node-security/no-pii-in-logs",
+        "jwt-security/no-sensitive-payload",
         "secure-coding/no-pii-in-logs",
         "vercel-ai-security/no-training-data-exposure"
       ],
@@ -370,6 +437,13 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-377": {
+      "rules": [
+        "node-security/no-data-in-temp-storage"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-390": {
       "rules": [
         "lambda-security/no-error-swallowing"
@@ -379,7 +453,7 @@
     },
     "CWE-391": {
       "rules": [
-        "pg/no-floating-query"
+        "postgresql-security/no-floating-query"
       ],
       "top25": false,
       "owaspTop10": false
@@ -391,7 +465,7 @@
         "mongodb-security/no-unbounded-find",
         "mongodb-security/no-unsafe-regex-query",
         "mongodb-security/require-lean-queries",
-        "pg/prefer-pool-query",
+        "postgresql-security/prefer-pool-query",
         "secure-coding/detect-non-literal-regexp",
         "secure-coding/no-graphql-injection",
         "secure-coding/no-redos-vulnerable-regex",
@@ -411,22 +485,29 @@
     },
     "CWE-404": {
       "rules": [
-        "pg/no-missing-client-release",
+        "postgresql-security/no-missing-client-release",
         "vercel-ai-security/require-abort-signal"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-409": {
+      "rules": [
+        "node-security/no-unbounded-decompression"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-415": {
       "rules": [
-        "pg/prevent-double-release"
+        "postgresql-security/prevent-double-release"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-426": {
       "rules": [
-        "pg/no-unsafe-search-path"
+        "postgresql-security/no-unsafe-search-path"
       ],
       "top25": false,
       "owaspTop10": false
@@ -436,6 +517,13 @@
         "browser-security/require-mime-type-validation"
       ],
       "top25": true,
+      "owaspTop10": false
+    },
+    "CWE-444": {
+      "rules": [
+        "node-security/no-insecure-http-parser"
+      ],
+      "top25": false,
       "owaspTop10": false
     },
     "CWE-459": {
@@ -449,8 +537,7 @@
       "rules": [
         "express-security/no-exposed-debug-endpoints",
         "lambda-security/no-exposed-debug-endpoints",
-        "mongodb-security/no-debug-mode-production",
-        "nestjs-security/no-exposed-debug-endpoints"
+        "mongodb-security/no-debug-mode-production"
       ],
       "top25": false,
       "owaspTop10": false
@@ -484,6 +571,20 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-524": {
+      "rules": [
+        "browser-security/no-sensitive-data-in-cache"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-526": {
+      "rules": [
+        "node-security/require-secure-credential-storage"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-532": {
       "rules": [
         "lambda-security/no-env-logging",
@@ -492,10 +593,25 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-548": {
+      "rules": [
+        "express-security/no-static-root-exposure"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-598": {
+      "rules": [
+        "express-security/no-sensitive-data-in-query"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-601": {
       "rules": [
         "browser-security/no-insecure-redirects",
-        "browser-security/require-url-validation"
+        "browser-security/require-url-validation",
+        "express-security/no-user-controlled-redirect"
       ],
       "top25": false,
       "owaspTop10": false
@@ -524,7 +640,7 @@
     },
     "CWE-613": {
       "rules": [
-        "jwt/require-expiration"
+        "jwt-security/require-expiration"
       ],
       "top25": false,
       "owaspTop10": false
@@ -537,8 +653,23 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-636": {
+      "rules": [
+        "secure-coding/no-fail-open-auth"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-639": {
+      "rules": [
+        "express-security/no-idor-resource-access"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-640": {
       "rules": [
+        "express-security/no-host-header-in-links",
         "secure-coding/no-weak-password-recovery"
       ],
       "top25": false,
@@ -553,7 +684,7 @@
     },
     "CWE-662": {
       "rules": [
-        "pg/no-transaction-on-pool"
+        "postgresql-security/no-transaction-on-pool"
       ],
       "top25": false,
       "owaspTop10": false
@@ -575,7 +706,10 @@
     "CWE-693": {
       "rules": [
         "browser-security/no-missing-security-headers",
-        "express-security/require-helmet"
+        "express-security/no-disabled-helmet-protections",
+        "express-security/no-missing-security-headers",
+        "express-security/require-helmet",
+        "gemini-security/no-disabled-safety-settings"
       ],
       "top25": false,
       "owaspTop10": false
@@ -610,7 +744,7 @@
     },
     "CWE-757": {
       "rules": [
-        "jwt/require-algorithm-whitelist"
+        "jwt-security/require-algorithm-whitelist"
       ],
       "top25": false,
       "owaspTop10": false
@@ -633,17 +767,28 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-789": {
+      "rules": [
+        "node-security/no-unsafe-buffer-alloc"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-798": {
       "rules": [
         "browser-security/no-credentials-in-query-params",
-        "jwt/no-hardcoded-secret",
+        "jwt-security/no-hardcoded-secret",
+        "knex-security/no-hardcoded-credentials",
         "lambda-security/no-hardcoded-credentials-sdk",
         "lambda-security/no-secrets-in-env",
         "mongodb-security/no-hardcoded-connection-string",
         "mongodb-security/no-hardcoded-credentials",
-        "pg/no-hardcoded-credentials",
+        "mysql-security/no-hardcoded-credentials",
+        "postgresql-security/no-hardcoded-credentials",
         "secure-coding/no-hardcoded-credentials",
         "secure-coding/no-hardcoded-session-tokens",
+        "sequelize-security/no-hardcoded-credentials",
+        "typeorm-security/no-hardcoded-credentials",
         "vercel-ai-security/no-hardcoded-api-keys"
       ],
       "top25": true,
@@ -664,17 +809,45 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-843": {
+      "rules": [
+        "express-security/require-query-type-guard"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-862": {
       "rules": [
         "lambda-security/no-missing-authorization-check",
+        "nestjs-security/require-guards",
         "vercel-ai-security/require-tool-confirmation"
       ],
       "top25": true,
       "owaspTop10": true
     },
+    "CWE-863": {
+      "rules": [
+        "express-security/no-client-controlled-authorization"
+      ],
+      "top25": true,
+      "owaspTop10": true
+    },
+    "CWE-908": {
+      "rules": [
+        "node-security/no-unsafe-buffer-alloc"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-915": {
       "rules": [
-        "secure-coding/detect-object-injection"
+        "drizzle-security/no-mass-assignment",
+        "knex-security/no-mass-assignment",
+        "nestjs-security/require-validation-pipe-whitelist",
+        "prisma-security/no-mass-assignment",
+        "secure-coding/detect-object-injection",
+        "sequelize-security/no-mass-assignment",
+        "typeorm-security/no-mass-assignment"
       ],
       "top25": false,
       "owaspTop10": false
@@ -717,7 +890,8 @@
         "express-security/no-cors-credentials-wildcard",
         "express-security/no-permissive-cors",
         "lambda-security/no-permissive-cors-middy",
-        "lambda-security/no-permissive-cors-response"
+        "lambda-security/no-permissive-cors-response",
+        "nestjs-security/no-permissive-cors"
       ],
       "top25": false,
       "owaspTop10": false
@@ -740,18 +914,27 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-1007": {
+      "rules": [
+        "secure-coding/no-bidi-characters",
+        "secure-coding/no-homoglyph-identifiers"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-1021": {
       "rules": [
         "browser-security/no-clickjacking",
-        "browser-security/require-csp-headers"
+        "browser-security/require-csp-headers",
+        "express-security/no-unsafe-csp-directives"
       ],
       "top25": false,
       "owaspTop10": false
     },
     "CWE-1049": {
       "rules": [
-        "pg/no-batch-insert-loop",
-        "pg/no-select-all"
+        "postgresql-security/no-batch-insert-loop",
+        "postgresql-security/no-select-all"
       ],
       "top25": false,
       "owaspTop10": false
@@ -779,24 +962,91 @@
       "top25": false,
       "owaspTop10": false
     },
+    "CWE-1321": {
+      "rules": [
+        "secure-coding/detect-object-injection"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
     "CWE-1333": {
       "rules": [
         "express-security/no-express-unsafe-regex-route"
       ],
       "top25": false,
       "owaspTop10": false
+    },
+    "CWE-1427": {
+      "rules": [
+        "mcp-sdk-security/no-tool-description-injection"
+      ],
+      "top25": false,
+      "owaspTop10": false
     }
   },
-  "unmappedRules": [],
+  "unmappedRules": [
+    {
+      "plugin": "anthropic-security",
+      "rule": "anthropic-security/no-browser-api-key-exposure",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-anthropic-security/src/rules/no-browser-api-key-exposure/index.ts"
+    },
+    {
+      "plugin": "anthropic-security",
+      "rule": "anthropic-security/no-hardcoded-api-key",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-anthropic-security/src/rules/no-hardcoded-api-key/index.ts"
+    },
+    {
+      "plugin": "anthropic-security",
+      "rule": "anthropic-security/no-untrusted-content-in-prompt",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-anthropic-security/src/rules/no-untrusted-content-in-prompt/index.ts"
+    },
+    {
+      "plugin": "gemini-security",
+      "rule": "gemini-security/no-hardcoded-api-key",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-gemini-security/src/rules/no-hardcoded-api-key/index.ts"
+    },
+    {
+      "plugin": "gemini-security",
+      "rule": "gemini-security/no-untrusted-content-in-prompt",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-gemini-security/src/rules/no-untrusted-content-in-prompt/index.ts"
+    },
+    {
+      "plugin": "openai-security",
+      "rule": "openai-security/no-browser-api-key-exposure",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-openai-security/src/rules/no-browser-api-key-exposure/index.ts"
+    },
+    {
+      "plugin": "openai-security",
+      "rule": "openai-security/no-hardcoded-api-key",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-openai-security/src/rules/no-hardcoded-api-key/index.ts"
+    },
+    {
+      "plugin": "openai-security",
+      "rule": "openai-security/no-untrusted-content-in-prompt",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-openai-security/src/rules/no-untrusted-content-in-prompt/index.ts"
+    }
+  ],
   "top25Gaps": [
     "CWE-787",
-    "CWE-125",
     "CWE-416",
-    "CWE-77",
-    "CWE-863",
     "CWE-119",
     "CWE-476",
-    "CWE-190",
-    "CWE-306"
+    "CWE-190"
   ]
 }

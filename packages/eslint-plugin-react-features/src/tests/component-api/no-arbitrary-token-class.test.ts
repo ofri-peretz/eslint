@@ -24,7 +24,7 @@ describe('no-arbitrary-token-class', () => {
   ruleTester.run('no-arbitrary-token-class', noArbitraryTokenClass, {
     valid: [
       // Token classes — allowed
-      { code: `<div className="px-4 py-6 rounded-md" />` },
+      { name: 'scale tokens', code: `<div className="px-4 py-6 rounded-md" />` },
       // CSS variable reference — allowed
       { code: `<div className="rounded-[var(--snp-radius-300)]" />` },
       // calc() — allowed
@@ -41,6 +41,7 @@ describe('no-arbitrary-token-class', () => {
     invalid: [
       // rounded with px literal
       {
+        name: 'an arbitrary value where the scale has a token',
         code: `<div className="rounded-[12px]" />`,
         errors: [{ messageId: 'arbitraryClass' }],
       },

@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-namespace', noNamespace, {
   valid: [
     // Named imports
-    { code: `import { foo } from 'foo';` },
+    { name: 'named imports', code: `import { foo } from 'foo';` },
     { code: `import { foo, bar } from 'foo';` },
 
     // Default import
@@ -41,6 +41,7 @@ ruleTester.run('no-namespace', noNamespace, {
   invalid: [
     // Namespace import
     {
+      name: 'a namespace import defeats tree shaking',
       code: `import * as foo from 'foo';`,
       errors: [{ messageId: 'noNamespace' }],
     },

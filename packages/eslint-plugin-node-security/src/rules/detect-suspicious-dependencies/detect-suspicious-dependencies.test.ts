@@ -20,6 +20,7 @@ ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
       // imports it deliberately; `recast` is the AST library jscodeshift is
       // built on. Neither is an attack.
       {
+        name: 'the real package',
         code: "import { h, render } from 'preact';",
       },
       {
@@ -39,7 +40,7 @@ ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
 
   invalid: [
     // Typosquatting-like names (within 2 Levenshtein distance of popular packages)
-    { code: "import r from 'reakt'", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'a typosquat of a popular package name', code: "import r from 'reakt'", errors: [{ messageId: 'violationDetected' }] },
     // Transposition — the most common squat shape. One slip, not two edits.
     { code: "import r from 'raect'", errors: [{ messageId: 'violationDetected' }] },
     { code: "import e from 'exprses'", errors: [{ messageId: 'violationDetected' }] },

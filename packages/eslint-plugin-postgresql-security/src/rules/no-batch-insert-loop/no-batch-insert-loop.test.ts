@@ -46,6 +46,7 @@ describe('no-batch-insert-loop', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('no-batch-insert-loop', () => {
       invalid: pg([
         // Triggers noBatchInsertLoop
         {
+          name: 'one INSERT round-trip per item in the loop',
           code: `for (const item of items) { client.query('INSERT INTO t(a) VALUES($1)', [item]); }`,
           errors: [{ messageId: 'noBatchInsertLoop' }],
         },

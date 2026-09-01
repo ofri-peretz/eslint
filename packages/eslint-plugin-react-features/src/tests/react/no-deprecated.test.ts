@@ -26,7 +26,7 @@ describe('no-deprecated', () => {
   ruleTester.run('no-deprecated', noDeprecated, {
     valid: [
       // Modern React APIs
-      'import { createRoot } from "react-dom/client";',
+      { name: 'a current API', code: 'import { createRoot } from "react-dom/client";' },
       'import { StrictMode } from "react";',
       'import React from "react"; React.createElement("div");',
       // Regular code
@@ -35,6 +35,7 @@ describe('no-deprecated', () => {
     ],
     invalid: [
       {
+        name: 'ReactDOM.render, removed in React 18',
         code: 'import ReactDOM from "react-dom"; ReactDOM.render(<App />, container);',
         errors: [{ messageId: 'deprecated' }],
       },

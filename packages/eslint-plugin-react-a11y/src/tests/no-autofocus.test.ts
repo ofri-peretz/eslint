@@ -25,7 +25,7 @@ describe('no-autofocus', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no autofocus', noAutofocus, {
       valid: [
-        { code: '<input />' },
+        { name: 'no autofocus', code: '<input />' },
         { code: '<button>Click</button>' },
         { code: '<textarea></textarea>' },
       ],
@@ -37,7 +37,7 @@ describe('no-autofocus', () => {
     ruleTester.run('invalid - has autofocus', noAutofocus, {
       valid: [],
       invalid: [
-        { code: '<input autoFocus />', errors: [{ messageId: 'noAutoFocus' }] },
+        { name: 'autoFocus moves focus before the user has read the page', code: '<input autoFocus />', errors: [{ messageId: 'noAutoFocus' }] },
         { code: '<input autoFocus={true} />', errors: [{ messageId: 'noAutoFocus' }] },
         { code: '<button autoFocus>Click</button>', errors: [{ messageId: 'noAutoFocus' }] },
         { code: '<textarea autoFocus></textarea>', errors: [{ messageId: 'noAutoFocus' }] },

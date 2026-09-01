@@ -12,6 +12,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { NoInsecureSslOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
@@ -90,8 +91,9 @@ function propertyKeyName(prop: TSESTree.Property): string | null {
   if (prop.key.type === AST_NODE_TYPES.Identifier && !prop.computed) {
     return prop.key.name;
   }
-  if (prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string') {
-    return prop.key.value;
+  const staticText1 = staticString(prop.key);
+  if (staticText1 !== null) {
+    return staticText1;
   }
   return null;
 }
@@ -192,8 +194,9 @@ export const noInsecureSsl: TSESLint.RuleModule<
         const config = effectiveValue(firstArgument, scope);
 
         // `new Client('postgres://…?sslmode=no-verify')` — the DSN passed bare.
-        if (config.type === AST_NODE_TYPES.Literal && typeof config.value === 'string') {
-          if (dsnSkipsVerification(config.value)) {
+        const staticText2 = staticString(config);
+        if (staticText2 !== null) {
+          if (dsnSkipsVerification(staticText2)) {
             context.report({ node: firstArgument, messageId: 'noInsecureSsl' });
           }
           return;

@@ -28,6 +28,7 @@ describe('no-process-exit', () => {
       valid: [
         // Other process methods
         {
+          name: 'another process method is not an exit',
           code: 'process.cwd();',
         },
         {
@@ -48,6 +49,7 @@ describe('no-process-exit', () => {
       invalid: [
         // Direct process.exit call
         {
+          name: 'process.exit() kills pending I/O and skips cleanup',
           code: 'process.exit();',
           errors: [
             {

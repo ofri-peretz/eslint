@@ -26,6 +26,7 @@ describe('consistent-function-scoping', () => {
       valid: [
         // Module-level function (already at top scope)
         {
+          name: 'the same helper at module scope',
           code: `
             function helper() {
               return 'value';
@@ -204,6 +205,7 @@ describe('consistent-function-scoping', () => {
       invalid: [
         // Function that doesn't capture outer variables
         {
+          name: 'an inner function that closes over nothing from its parent',
           code: `
             function outer() {
               function helper() {

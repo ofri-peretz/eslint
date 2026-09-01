@@ -138,7 +138,6 @@ export const noCorsCredentialsWildcard = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-25124',
       }),
-
     },
     schema: [
       {

@@ -61,8 +61,15 @@ const ruleTester = new RuleTester({
 describe('no-permissive-trust-proxy', () => {
   ruleTester.run('no-permissive-trust-proxy', noPermissiveTrustProxy, {
     valid: xp([
+      // The receiver name is the consumer's — `appReceiverNames` replaces the
+      // default, so `app` is not the app here.
+      {
+        name: 'the default receiver list replaced away',
+        code: `app.set('trust proxy', true);`,
+        options: [{ appReceiverNames: ['gateway'] }],
+      },
       // THE safe patterns — name the proxies you actually run behind
-      { code: `app.set('trust proxy', 1);` },
+      { name: 'a hop count', code: `app.set('trust proxy', 1);` },
       { code: `app.set('trust proxy', 'loopback');` },
       { code: `app.set('trust proxy', '10.0.0.0/8');` },
       { code: `app.set('trust proxy', (ip) => ip === '10.0.0.1');` },
@@ -83,8 +90,25 @@ describe('no-permissive-trust-proxy', () => {
       { code: `app().set('trust proxy', true);` },
     ]),
     invalid: xp([
+      {
+        name: 'a receiver the consumer named',
+        code: `gateway.set('trust proxy', true);`,
+        options: [{ appReceiverNames: ['gateway'] }],
+        errors: [
+          {
+            messageId: 'permissiveTrustProxy' as const,
+            suggestions: [
+              {
+                messageId: 'useHopCount' as const,
+                output: `gateway.set('trust proxy', 1);`,
+              },
+            ],
+          },
+        ],
+      },
       // Unconditional trust — the classic rate-limit bypass
       {
+        name: 'trust proxy true — req.ip becomes whatever X-Forwarded-For says',
         code: `app.set('trust proxy', true);`,
         errors: [
           {

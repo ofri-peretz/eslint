@@ -30,7 +30,7 @@ describe('no-raw-cross-property-href', () => {
     {
       valid: [
         // Relative href is internal navigation.
-        { code: '<a href="/docs">docs</a>;' },
+        { name: 'a relative in-property link', code: '<a href="/docs">docs</a>;' },
         { code: '<a href="#section">jump</a>;' },
         // Third-party hosts (not in the cross-property list) pass.
         { code: '<a href="https://github.com/ofri-peretz/eslint">gh</a>;' },
@@ -53,6 +53,7 @@ describe('no-raw-cross-property-href', () => {
       ],
       invalid: [
         {
+          name: 'a hard-coded absolute URL to another property',
           code: '<a href="https://eslint.interlace.tools/docs">x</a>;',
           errors: [{ messageId: 'rawCrossPropertyHref' }],
         },

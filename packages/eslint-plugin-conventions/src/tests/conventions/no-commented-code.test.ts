@@ -25,7 +25,7 @@ describe('no-commented-code', () => {
     ruleTester.run('valid - no commented code', noCommentedCode, {
       valid: [
         // Regular comments (not code)
-        { code: '// This is a regular comment' },
+        { name: 'prose in a comment', code: '// This is a regular comment' },
         { code: '/* This is a block comment */' },
         // TODO comments (allowed)
         { code: '// TODO: Fix this later' },
@@ -69,6 +69,7 @@ describe('no-commented-code', () => {
         invalid: [
           // Variable declaration
           {
+            name: 'a commented-out statement',
             code: '// const x = 1;',
             errors: [{
               messageId: 'commentedCode',

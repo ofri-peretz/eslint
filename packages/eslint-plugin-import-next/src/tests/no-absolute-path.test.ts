@@ -29,7 +29,7 @@ function rel(absoluteImport: string): string {
 ruleTester.run('no-absolute-path', noAbsolutePath, {
   valid: [
     // Relative imports are allowed
-    { code: `import foo from './foo';` },
+    { name: 'a relative path', code: `import foo from './foo';` },
     { code: `import foo from '../foo';` },
     { code: `import foo from '../../utils/foo';` },
 
@@ -58,6 +58,7 @@ ruleTester.run('no-absolute-path', noAbsolutePath, {
   invalid: [
     // ES Module absolute import - with expected output
     {
+      name: 'an absolute filesystem path in an import',
       code: `import foo from '/absolute/path/to/foo';`,
       errors: [{ messageId: 'absolutePath' }],
       output: `import foo from '${rel('/absolute/path/to/foo')}';`,

@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: iframe-has-title
  * Enforce that iframes have a title attribute
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/iframe-has-title.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -34,8 +34,9 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
         description: '<iframe> must have a unique title property',
         severity: 'HIGH',
         fix: 'Add title="Description of content"',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/iframe-has-title.md',
-        wcag: 'WCAG 4.1.2'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/iframe-has-title.md',
+        wcag: 'WCAG 4.1.2',
       }),
     },
     schema: [],
@@ -49,11 +50,17 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
         }
 
         const hasTitle = node.attributes.some(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'title' &&
-            attr.value?.type === 'Literal'
+            attr.value?.type === 'Literal' &&
+            // Presence is not the requirement — a VALUE is.
+            // an empty `title` announces nothing: the frame is still unlabelled in the
+            typeof attr.value.value === 'string' &&
+            attr.value.value.trim() !== '',
         );
 
         if (!hasTitle) {
@@ -66,4 +73,3 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

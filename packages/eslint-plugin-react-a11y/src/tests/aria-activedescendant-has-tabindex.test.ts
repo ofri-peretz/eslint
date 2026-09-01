@@ -32,6 +32,7 @@ describe('aria-activedescendant-has-tabindex', () => {
       valid: [
         // Elements without aria-activedescendant
         {
+          name: 'an element with neither',
           code: '<div>Content</div>',
         },
         {
@@ -76,6 +77,7 @@ describe('aria-activedescendant-has-tabindex', () => {
       valid: [],
       invalid: [
         {
+          name: 'aria-activedescendant on an element that cannot take focus',
           code: '<div aria-activedescendant="option1"></div>',
           errors: [
             {

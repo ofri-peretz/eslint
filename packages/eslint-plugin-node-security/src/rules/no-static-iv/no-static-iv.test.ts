@@ -21,7 +21,7 @@ describe('no-static-iv', () => {
     ruleTester.run('valid - randomBytes patterns', noStaticIv, {
       valid: [
         // Dynamic IV from randomBytes (member expression)
-        { code: 'const iv = crypto.randomBytes(16); crypto.createCipheriv("aes-256-gcm", key, iv);' },
+        { name: 'a random IV per message', code: 'const iv = crypto.randomBytes(16); crypto.createCipheriv("aes-256-gcm", key, iv);' },
         // Direct randomBytes call
         { code: 'crypto.createCipheriv("aes-256-gcm", key, crypto.randomBytes(16));' },
         // Standalone randomBytes call
@@ -51,7 +51,7 @@ describe('no-static-iv', () => {
       valid: [],
       invalid: [
         // 16 char string (AES block size)
-        { code: 'crypto.createCipheriv("aes-256-gcm", key, "1234567890123456");', errors: [{ messageId: 'staticIv' }] },
+        { name: 'a literal IV reused on every message', code: 'crypto.createCipheriv("aes-256-gcm", key, "1234567890123456");', errors: [{ messageId: 'staticIv' }] },
         // Hex string pattern
         { code: 'crypto.createCipheriv("aes-256-cbc", key, "0123456789abcdef");', errors: [{ messageId: 'staticIv' }] },
         // Longer hex string

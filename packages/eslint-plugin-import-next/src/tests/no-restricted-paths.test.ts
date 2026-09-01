@@ -28,6 +28,7 @@ describe('no-restricted-paths', () => {
       valid: [
         // No restricted patterns configured
         {
+          name: 'an allowed path',
           code: 'import utils from "../utils/helpers";',
         },
         // Import not matching restricted patterns
@@ -43,6 +44,7 @@ describe('no-restricted-paths', () => {
       invalid: [
         // Import matching restricted pattern
         {
+          name: 'an import into a path the configuration puts off limits',
           code: 'import internal from "../internal/api";',
           options: [
             {

@@ -61,6 +61,7 @@ ruleTester.run('no-system-prompt-leak', noSystemPromptLeak, {
   valid: xai([
     // Safe: Only response returned
     {
+      name: 'only the answer is returned',
       code: `
         return { response: result.text };
       `,
@@ -96,6 +97,7 @@ ruleTester.run('no-system-prompt-leak', noSystemPromptLeak, {
   invalid: xai([
     // System prompt in return object
     {
+      name: 'the system prompt returned to the caller alongside the answer',
       code: `
         return { systemPrompt: SYSTEM_PROMPT, response: result.text };
       `,

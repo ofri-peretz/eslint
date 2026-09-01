@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-autofocus
  * Enforce that autoFocus prop is not used on elements
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-autofocus.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -35,11 +35,13 @@ export const noAutofocus = createRule<RuleOptions, MessageIds>({
       noAutoFocus: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'No AutoFocus',
-        description: 'autoFocus attribute can be confusing for screen reader users',
+        description:
+          'autoFocus attribute can be confusing for screen reader users',
         severity: 'MEDIUM',
         fix: 'Remove autoFocus attribute',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-autofocus.md',
-        wcag: 'WCAG 2.4.3'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-autofocus.md',
+        wcag: 'WCAG 2.4.3',
       }),
     },
     schema: [
@@ -63,7 +65,10 @@ export const noAutofocus = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        if (node.name.type === 'JSXIdentifier' && node.name.name === 'autoFocus') {
+        if (
+          node.name.type === 'JSXIdentifier' &&
+          node.name.name === 'autoFocus'
+        ) {
           context.report({
             node,
             messageId: 'noAutoFocus',
@@ -73,4 +78,3 @@ export const noAutofocus = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

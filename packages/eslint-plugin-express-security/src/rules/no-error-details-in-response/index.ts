@@ -48,6 +48,14 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `stack` and `message` are properties the ECMAScript `Error`
+ * interface defines, and `send`/`json` are Express response methods. None is a
+ * name a consumer chose, so none is behind an option.
+ *
+ * @see https://tc39.es/ecma262/#sec-error-instances
+ * @see https://expressjs.com/en/api.html#res.send
+ */
 type MessageIds = 'errorDetailsExposed';
 
 export interface Options {

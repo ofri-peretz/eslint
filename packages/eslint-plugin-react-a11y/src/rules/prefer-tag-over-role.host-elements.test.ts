@@ -36,7 +36,11 @@ const count = (code: string): number =>
             sourceType: 'module',
             parserOptions: { ecmaFeatures: { jsx: true } },
           },
-          plugins: { a: { rules: { 'prefer-tag-over-role': preferTagOverRole as never } } },
+          plugins: {
+            a: {
+              rules: { 'prefer-tag-over-role': preferTagOverRole as never },
+            },
+          },
           rules: { 'a/prefer-tag-over-role': 'error' },
         },
       ],
@@ -64,7 +68,9 @@ describe('svg with role=img is the recommended pattern, not a violation', () => 
     // An inline SVG needs role="img" plus an accessible name to be announced
     // as one graphic. It cannot become <img> without moving to an external
     // file and losing currentColor, styling and animation.
-    expect(count('const a = <svg role="img" aria-label="x"><path /></svg>;')).toBe(0);
+    expect(
+      count('const a = <svg role="img" aria-label="x"><path /></svg>;'),
+    ).toBe(0);
   });
 });
 
@@ -76,7 +82,9 @@ describe('a custom component is not a DOM element', () => {
   it('does not report on a component whose name merely looks like a tag', () => {
     // Deciding from the name is the failure this avoids: `MuiLink` renders an
     // <a> already, and nothing here can see that.
-    expect(count('const a = <MuiLink role="link" href="/x">t</MuiLink>;')).toBe(0);
+    expect(count('const a = <MuiLink role="link" href="/x">t</MuiLink>;')).toBe(
+      0,
+    );
   });
 
   it('does not report on a member-expression component', () => {

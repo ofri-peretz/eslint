@@ -20,7 +20,7 @@ const createSuggestion = (codeLine: string) => ({
 
 ruleTester.run('no-unresolved', noUnresolved, {
   valid: [
-    { code: `import fs from 'fs';` }, // builtin
+    { name: 'a resolvable builtin', code: `import fs from 'fs';` }, // builtin
     { code: `import path from 'path';` }, // builtin
     
     // Ignored patterns
@@ -50,6 +50,7 @@ ruleTester.run('no-unresolved', noUnresolved, {
   invalid: [
      // Standard Import
      {
+         name: 'an import that resolves to nothing',
          code: `import 'this-module-does-not-exist-at-all';`,
          errors: [{ 
              messageId: 'moduleNotFound',

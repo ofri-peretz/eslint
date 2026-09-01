@@ -165,7 +165,11 @@ send(copy);
 
 ## Options
 
-None. The rule takes no configuration.
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `wireNames` | `string[]` | `["chunk","chunks","buffer","buf","payload","frame","packet","raw","message","msg"]` | Binding names that carry bytes off the wire. Replaces the default; pass [] to turn the name arm off. |
+| `requestRootNames` | `string[]` | `["req","request","ctx","event"]` | Root identifiers treated as a request. Replaces the default. |
+| `countNames` | `string[]` | `["length","len","size","count","n","num","total","capacity","bytelength"]` | Identifiers that hold an allocation size rather than a payload. Replaces the default. |
 
 ## Error Message Format
 

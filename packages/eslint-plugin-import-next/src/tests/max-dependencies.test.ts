@@ -28,6 +28,7 @@ describe('max-dependencies', () => {
       valid: [
         // Under limit (default max: 10)
         {
+          name: 'at the maximum',
           code: `
             import react from 'react';
             import lodash from 'lodash';
@@ -56,6 +57,7 @@ describe('max-dependencies', () => {
       invalid: [
         // Over limit - just check messageId, skip suggestion verification
         {
+          name: 'one import past the configured maximum',
           code: `
             import react from 'react';
             import lodash from 'lodash';

@@ -61,6 +61,7 @@ ruleTester.run('require-error-handling', requireErrorHandling, {
   valid: xai([
     // Inside try-catch with await
     {
+      name: 'the call is wrapped in try/catch',
       code: `
         try {
           await generateText({
@@ -144,6 +145,7 @@ ruleTester.run('require-error-handling', requireErrorHandling, {
   invalid: xai([
     // generateText without error handling
     {
+      name: 'a provider call with no catch — a rate limit takes down the route',
       code: `
         const result = await generateText({
           model: openai('gpt-4'),

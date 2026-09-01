@@ -23,7 +23,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-anonymous-default-export', noAnonymousDefaultExport, {
   valid: [
     // Named default exports
-    { code: `export default function foo() {}` },
+    { name: 'a named function', code: `export default function foo() {}` },
     { code: `export default class MyClass {}` },
     
     // Non-default exports
@@ -56,6 +56,7 @@ ruleTester.run('no-anonymous-default-export', noAnonymousDefaultExport, {
   invalid: [
     // Anonymous function
     {
+      name: 'a default export with no name to show in a stack trace',
       code: `export default function() {}`,
       errors: [{ messageId: 'anonymousDefaultExport' }],
     },

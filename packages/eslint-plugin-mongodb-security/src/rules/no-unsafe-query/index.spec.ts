@@ -11,21 +11,33 @@ import { noUnsafeQuery } from './index';
  */
 // A SIDE-EFFECT import: satisfies the gate without reserving any binding, so
 // fixtures that already declare `mongoose`/`db` do not redeclare.
-const asMongo = (code: string): string => `import 'mongoose';\n${code}`;
+//
+// The handler wrapper is load-bearing, not decoration. `readsRequestShape`
+// asks whether the chain's root ARRIVED as a parameter — that is the whole
+// reason a local `const req = {...}` no longer counts as user input. A fixture
+// written as bare top-level `req.body.email` has `req` as an unresolved
+// global, which is neither a parameter nor a local, so it correctly reports
+// nothing. Every fixture below therefore has to sit inside a handler, exactly
+// as the code it models does. Wrapping here rather than per-fixture means one
+// cannot be left behind and pass vacuously.
+const asMongo = (code: string): string =>
+  `import 'mongoose';\napp.post('/r', (req, res, request, ctx) => {\n${code}\n});`;
 type MongoSuggestion = { output?: string | null };
 type MongoCase = {
   code: string;
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -45,7 +57,6 @@ const xmo = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester();
 
 /**
@@ -54,7 +65,7 @@ const ruleTester = new RuleTester();
 function createInvalidCase(
   code: string,
   output: string,
-  options?: { filename?: string; options?: [object] }
+  options?: { filename?: string; options?: [object] },
 ) {
   return {
     code,
@@ -82,6 +93,10 @@ ruleTester.run('no-unsafe-query', noUnsafeQuery, {
 
     // TN-1: Using $eq operator explicitly - prevents operator injection
     `User.find({ email: { $eq: req.body.email } })`,
+
+    // TN-1b: no filter at all. `find()` returns the whole collection and is
+    // ordinary Mongo — there is no argument to judge, safe or otherwise.
+    `User.find()`,
 
     // TN-2: Literal values are always safe
     `db.collection('users').find({ active: true })`,
@@ -165,19 +180,19 @@ ruleTester.run('no-unsafe-query', noUnsafeQuery, {
     // TP-1: Direct req.body in query (classic attack vector)
     createInvalidCase(
       `User.find({ email: req.body.email })`,
-      `User.find({ email: { $eq: req.body.email } })`
+      `User.find({ email: { $eq: req.body.email } })`,
     ),
 
     // TP-2: Direct req.query in findOne
     createInvalidCase(
       `db.collection('users').findOne({ username: req.query.user })`,
-      `db.collection('users').findOne({ username: { $eq: req.query.user } })`
+      `db.collection('users').findOne({ username: { $eq: req.query.user } })`,
     ),
 
     // TP-3: req.params in updateOne filter
     createInvalidCase(
       `User.updateOne({ _id: req.params.id }, { $set: { active: true } })`,
-      `User.updateOne({ _id: { $eq: req.params.id } }, { $set: { active: true } })`
+      `User.updateOne({ _id: { $eq: req.params.id } }, { $set: { active: true } })`,
     ),
 
     // TP-4: Multiple user inputs in same query (first error)
@@ -208,61 +223,61 @@ ruleTester.run('no-unsafe-query', noUnsafeQuery, {
     // TP-5: ctx.request.body (Koa style)
     createInvalidCase(
       `User.find({ email: ctx.request.body.email })`,
-      `User.find({ email: { $eq: ctx.request.body.email } })`
+      `User.find({ email: { $eq: ctx.request.body.email } })`,
     ),
 
     // TP-6: ctx.query (Koa style)
     createInvalidCase(
       `User.find({ search: ctx.query.term })`,
-      `User.find({ search: { $eq: ctx.query.term } })`
+      `User.find({ search: { $eq: ctx.query.term } })`,
     ),
 
     // TP-7: request.body (alternative naming)
     createInvalidCase(
       `User.find({ email: request.body.email })`,
-      `User.find({ email: { $eq: request.body.email } })`
+      `User.find({ email: { $eq: request.body.email } })`,
     ),
 
     // TP-8: request.query
     createInvalidCase(
       `User.find({ search: request.query.q })`,
-      `User.find({ search: { $eq: request.query.q } })`
+      `User.find({ search: { $eq: request.query.q } })`,
     ),
 
     // TP-9: request.params
     createInvalidCase(
       `User.deleteOne({ _id: request.params.id })`,
-      `User.deleteOne({ _id: { $eq: request.params.id } })`
+      `User.deleteOne({ _id: { $eq: request.params.id } })`,
     ),
 
     // TP-10: deleteMany with user input
     createInvalidCase(
       `User.deleteMany({ userId: req.body.userId })`,
-      `User.deleteMany({ userId: { $eq: req.body.userId } })`
+      `User.deleteMany({ userId: { $eq: req.body.userId } })`,
     ),
 
     // TP-11: findOneAndUpdate with user input in filter
     createInvalidCase(
       `User.findOneAndUpdate({ email: req.body.email }, { $set: { active: true } })`,
-      `User.findOneAndUpdate({ email: { $eq: req.body.email } }, { $set: { active: true } })`
+      `User.findOneAndUpdate({ email: { $eq: req.body.email } }, { $set: { active: true } })`,
     ),
 
     // TP-12: findOneAndDelete with user input
     createInvalidCase(
       `User.findOneAndDelete({ _id: req.params.id })`,
-      `User.findOneAndDelete({ _id: { $eq: req.params.id } })`
+      `User.findOneAndDelete({ _id: { $eq: req.params.id } })`,
     ),
 
     // TP-13: replaceOne with user input in filter
     createInvalidCase(
       `User.replaceOne({ _id: req.params.id }, newDoc)`,
-      `User.replaceOne({ _id: { $eq: req.params.id } }, newDoc)`
+      `User.replaceOne({ _id: { $eq: req.params.id } }, newDoc)`,
     ),
 
     // TP-14: countDocuments with user input
     createInvalidCase(
       `User.countDocuments({ status: req.query.status })`,
-      `User.countDocuments({ status: { $eq: req.query.status } })`
+      `User.countDocuments({ status: { $eq: req.query.status } })`,
     ),
 
     // =================================================================
@@ -273,14 +288,14 @@ ruleTester.run('no-unsafe-query', noUnsafeQuery, {
     createInvalidCase(
       `User.find({ email: req.body.email })`,
       `User.find({ email: { $eq: req.body.email } })`,
-      { filename: 'user.test.ts', options: [{ allowInTests: false }] }
+      { filename: 'user.test.ts', options: [{ allowInTests: false }] },
     ),
 
     // OPT-2: Spec file with allowInTests: false should flag
     createInvalidCase(
       `User.find({ email: req.body.email })`,
       `User.find({ email: { $eq: req.body.email } })`,
-      { filename: 'user.spec.ts', options: [{ allowInTests: false }] }
+      { filename: 'user.spec.ts', options: [{ allowInTests: false }] },
     ),
 
     // =================================================================
@@ -291,7 +306,7 @@ ruleTester.run('no-unsafe-query', noUnsafeQuery, {
     createInvalidCase(
       `User.customFind({ email: req.body.email })`,
       `User.customFind({ email: { $eq: req.body.email } })`,
-      { options: [{ additionalMethods: ['customFind'] }] }
+      { options: [{ additionalMethods: ['customFind'] }] },
     ),
   ]),
 });

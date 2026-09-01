@@ -16,7 +16,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('require-csp-headers', requireCspHeaders, {
   valid: [
     // JSON responses don't need CSP
-    { code: "res.send({ data: 'json' })" },
+    { name: 'a JSON response needs no CSP', code: "res.send({ data: 'json' })" },
     { code: "res.json({ status: 'ok' })" },
     // Non-HTML strings
     { code: "res.send('Hello World')" },
@@ -25,7 +25,7 @@ ruleTester.run('require-csp-headers', requireCspHeaders, {
 
   invalid: [
     // Sending HTML without CSP
-    { code: "res.send('<html><body>Hello</body></html>')", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'HTML sent with no Content-Security-Policy', code: "res.send('<html><body>Hello</body></html>')", errors: [{ messageId: 'violationDetected' }] },
     { code: "res.send('<!DOCTYPE html><html></html>')", errors: [{ messageId: 'violationDetected' }] },
     { code: "res.send(`<html>${content}</html>`)", errors: [{ messageId: 'violationDetected' }] },
     // Render calls need CSP

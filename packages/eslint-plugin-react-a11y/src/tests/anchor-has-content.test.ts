@@ -28,7 +28,7 @@ describe('anchor-has-content', () => {
     ruleTester.run('valid - anchors with content', anchorHasContent, {
       valid: [
         // Text content
-        { code: '<a href="#">Click here</a>' },
+        { name: 'an anchor with text', code: '<a href="#">Click here</a>' },
         { code: '<a href="/home">Home</a>' },
         // aria-label for icon-only links
         { code: '<a href="#" aria-label="Go to home"><Icon /></a>' },
@@ -60,6 +60,7 @@ describe('anchor-has-content', () => {
       invalid: [
         // Empty anchor
         {
+          name: 'an anchor with nothing inside it',
           code: '<a href="#"></a>',
           errors: [{ messageId: 'missingContent' }],
         },

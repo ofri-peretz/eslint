@@ -189,7 +189,6 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny',
       }),
-
     },
     schema: [
       {

@@ -26,6 +26,7 @@ describe('require-aead-tag-verification', () => {
       // benchmarks/corpus/CWE-327/safe/gcm-decrypt-verified.js — setAuthTag
       // AND final(): final() is what compares the tag and throws on mismatch.
       {
+        name: 'the tag is set before final()',
         code: `
           const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
           decipher.setAuthTag(authTag);
@@ -123,6 +124,7 @@ describe('require-aead-tag-verification', () => {
       // LOCK: benchmarks/corpus/CWE-327/vulnerable/gcm-decrypt-no-authtag.js
       // setAuthTag() is never called, so the tag is never checked at all.
       {
+        name: 'GCM decryption with no setAuthTag — the ciphertext is unauthenticated',
         code: `
           const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
           let out = decipher.update(ciphertext, 'hex', 'utf8');

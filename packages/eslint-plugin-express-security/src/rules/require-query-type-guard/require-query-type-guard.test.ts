@@ -62,7 +62,7 @@ describe('require-query-type-guard', () => {
   ruleTester.run('require-query-type-guard', requireQueryTypeGuard, {
     valid: xp([
       // Coerced at the source — String() init is never tracked
-      { code: `const name = String(req.query.name); name.replace(/x/g, '');` },
+      { name: 'the value is coerced with String() first', code: `const name = String(req.query.name); name.replace(/x/g, '');` },
       // Inline typeof guard on the member itself
       {
         code: `typeof req.query.name === 'string' && req.query.name.replace(/x/g, '');`,
@@ -141,6 +141,7 @@ module.exports = app;
     invalid: xp([
       // Direct member call — the classic shape, with String() suggestion
       {
+        name: 'a string method on req.query, which can arrive as an array',
         code: `req.query.name.replace(/x/g, '');`,
         errors: [
           {

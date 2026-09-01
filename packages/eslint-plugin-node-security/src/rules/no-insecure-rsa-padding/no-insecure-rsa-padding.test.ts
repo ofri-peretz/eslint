@@ -24,7 +24,7 @@ describe('no-insecure-rsa-padding', () => {
   ruleTester.run('no-insecure-rsa-padding', noInsecureRsaPadding, {
     valid: [
       // Valid: OAEP padding
-      { code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
+      { name: 'OAEP', code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
       // Valid: OAEP with hash
       { code: 'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" }, data);' },
       // Valid: No padding specified (different method)
@@ -33,6 +33,7 @@ describe('no-insecure-rsa-padding', () => {
     invalid: [
       // Invalid: PKCS#1 v1.5 padding on privateDecrypt
       {
+        name: 'PKCS#1 v1.5 decryption padding — the Bleichenbacher oracle',
         code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',
         errors: [{ messageId: 'insecureRsaPadding', suggestions: [
           { messageId: 'useOaep', output: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },

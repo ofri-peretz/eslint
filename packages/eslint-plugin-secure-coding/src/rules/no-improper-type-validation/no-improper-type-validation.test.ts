@@ -28,6 +28,7 @@ describe('no-improper-type-validation', () => {
       valid: [
         // Proper type checking with strict equality
         {
+          name: 'the null check comes first',
           code: 'if (value !== null && typeof value === "object") { /* process */ }',
         },
         {
@@ -59,6 +60,7 @@ describe('no-improper-type-validation', () => {
       invalid: [
         // typeof === "object" on user input variable
         {
+          name: "typeof x === 'object' is also true for null",
           code: 'if (typeof userInput === "object") { processData(userInput); }',
           errors: [
             {

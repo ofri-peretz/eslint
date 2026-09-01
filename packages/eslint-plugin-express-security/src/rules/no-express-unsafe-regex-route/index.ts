@@ -22,6 +22,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeRegexRoute' | 'unsafeParamPattern';
@@ -117,7 +118,6 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
         fix: 'Use explicit path segments instead of :param+ or :param*. For example: /api/:id/details instead of /api/:path+',
         documentationLink: 'https://expressjs.com/en/guide/routing.html',
       }),
-
     },
     schema: [
       {
@@ -214,8 +214,9 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
         }
 
         // Check string routes with vulnerable param patterns
-        if (routeArg.type === 'Literal' && typeof routeArg.value === 'string') {
-          if (hasVulnerableParamPattern(routeArg.value)) {
+        const staticText = staticString(routeArg);
+        if (staticText !== null) {
+          if (hasVulnerableParamPattern(staticText)) {
             context.report({
               node: routeArg,
               messageId: 'unsafeParamPattern',

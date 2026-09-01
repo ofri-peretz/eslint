@@ -32,6 +32,10 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  APP_RECEIVER_SCHEMA,
+  isAppReceiver,
+} from '../../utils/app-receiver';
+import {
   nodeReleasesBinding,
   RELEASE_SELECTOR,
 } from '../../utils/app-composition';
@@ -42,9 +46,23 @@ import {
   isTestFilePath,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `express` is the package name on npm and the HTTP method names
+ * are the router methods Express defines. Both are published; neither is a
+ * consumer's choice.
+ *
+ * @see https://expressjs.com/en/api.html#app.METHOD
+ */
 type MessageIds = 'missingRateLimiting';
 
 export interface Options {
+  /**
+   * Identifiers that hold the Express app or a router. REPLACES the default
+   * — see `DEFAULT_APP_RECEIVER_NAMES` for why the name has to be the
+   * consumer's.
+   */
+  appReceiverNames?: string[];
+
   /** Allow missing rate limiting in test files. Default: false */
   allowInTests?: boolean;
 
@@ -73,7 +91,7 @@ const STATE_CHANGING_METHODS: ReadonlySet<string> = new Set([
 ]);
 
 /** Receivers that are an Express application/router in practice. */
-const APP_RECEIVER = /^(app|router|express|api|apiRouter|routes)$/i;
+
 
 /**
  * Route paths where the request carries a *secret to be checked* — the surface
@@ -148,12 +166,12 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         fix: 'Add rate limiting: npm install express-rate-limit; app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }))',
         documentationLink: 'https://www.npmjs.com/package/express-rate-limit',
       }),
-
     },
     schema: [
       {
         type: 'object',
         properties: {
+          ...APP_RECEIVER_SCHEMA,
           allowInTests: {
             type: 'boolean',
             default: false,
@@ -183,6 +201,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
+    const { appReceiverNames } = options as Options;
     // Every rule here is Express-specific, and none of them knew it: over
     // 107,382 files, 75% of this plugin's findings were in files with no
     // Express import. Registering no visitors is both the gate and the cheap
@@ -285,7 +304,7 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
         if (!STATE_CHANGING_METHODS.has(method)) return;
         if (
           callee.object.type !== 'Identifier' ||
-          !APP_RECEIVER.test(callee.object.name)
+          !isAppReceiver(callee.object.name, appReceiverNames)
         ) {
           return;
         }

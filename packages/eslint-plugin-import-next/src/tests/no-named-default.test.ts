@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-named-default', noNamedDefault, {
   valid: [
     // Normal default import
-    { code: `import foo from 'foo';` },
+    { name: 'a default import', code: `import foo from 'foo';` },
 
     // Named imports
     { code: `import { bar } from 'bar';` },
@@ -33,6 +33,7 @@ ruleTester.run('no-named-default', noNamedDefault, {
   invalid: [
     // Named import of default
     {
+      name: '`{ default as foo }` where a default import says the same thing',
       code: `import { default as foo } from 'foo';`,
       errors: [{ messageId: 'namedDefault' }],
     },

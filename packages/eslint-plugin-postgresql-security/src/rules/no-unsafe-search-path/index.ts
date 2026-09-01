@@ -11,9 +11,11 @@ import {
   formatLLMMessage,
   MessageIcons,
   isStaticExpression,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeSearchPathOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
+import { stripComments } from '../../utils/sql-scan';
 
 /**
  * Methods that hand a raw SQL string to the server.
@@ -46,7 +48,6 @@ const SQL_SINK_METHODS: ReadonlySet<string> = new Set(['query', 'execute']);
 const SEARCH_PATH_STATEMENT = /^\s*set\s+(?:local\s+|session\s+)?search_path\b/i;
 
 /** SQL comments, stripped before a statement's verb is read. */
-const SQL_COMMENTS = /--[^\n]*|\/\*[\s\S]*?\*\//g;
 
 /** How many bindings deep to follow a value before giving up. */
 const MAX_RESOLUTION_DEPTH = 4;
@@ -64,16 +65,12 @@ function staticText(node: TSESTree.Node): string {
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return `${staticText(node.left as TSESTree.Node)}${staticText(node.right)}`;
   }
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    return node.value;
-  }
-  return '';
+  return staticString(node) ?? '';
 }
 
 /** Whether any statement in this text sets the search path. */
 function setsSearchPath(text: string): boolean {
-  return text
-    .replace(SQL_COMMENTS, '')
+  return stripComments(text)
     .split(';')
     .some((statement) => SEARCH_PATH_STATEMENT.test(statement));
 }
@@ -146,7 +143,7 @@ function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   }
   return body.type === AST_NODE_TYPES.TemplateLiteral ||
     body.type === AST_NODE_TYPES.BinaryExpression ||
-    (body.type === AST_NODE_TYPES.Literal && typeof body.value === 'string')
+    (staticString(body) !== null)
     ? body
     : null;
 }

@@ -48,7 +48,9 @@ const ROLE_TO_TAG_MAPPING: Record<string, string> = {
  * component. Anything with a dot is a member expression and never a tag.
  */
 function isHostElement(name: string): boolean {
-  return name.length > 0 && name[0] === name[0].toLowerCase() && !name.includes('.');
+  return (
+    name.length > 0 && name[0] === name[0].toLowerCase() && !name.includes('.')
+  );
 }
 
 export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
@@ -64,10 +66,12 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
       preferTagOverRole: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Prefer Semantic Tag Over Role',
-        description: 'Use semantic HTML element <{{tag}}> instead of role="{{role}}"',
+        description:
+          'Use semantic HTML element <{{tag}}> instead of role="{{role}}"',
         severity: 'LOW',
         fix: 'Replace <{{element}}> with <{{tag}}> and remove role attribute',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/prefer-tag-over-role.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/prefer-tag-over-role.md',
       }),
     },
     schema: [],
@@ -82,13 +86,21 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
 
         // Find role attribute
         const roleAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'role'
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role',
         );
 
-        if (!roleAttr || roleAttr.type !== 'JSXAttribute' || !roleAttr.value || roleAttr.value.type !== 'Literal') return;
+        if (
+          !roleAttr ||
+          roleAttr.type !== 'JSXAttribute' ||
+          !roleAttr.value ||
+          roleAttr.value.type !== 'Literal'
+        )
+          return;
 
         const roleValue = roleAttr.value.value;
         if (typeof roleValue !== 'string') return;

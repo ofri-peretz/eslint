@@ -26,7 +26,7 @@ describe('void-dom-elements-no-children', () => {
   ruleTester.run('void-dom-elements-no-children', voidDomElementsNoChildren, {
     valid: [
       // Void elements without children
-      '<img src="image.png" alt="Image" />',
+      { name: 'a void element with no children', code: '<img src="image.png" alt="Image" />' },
       '<br />',
       '<hr />',
       '<input type="text" />',
@@ -49,6 +49,7 @@ describe('void-dom-elements-no-children', () => {
     ],
     invalid: [
       {
+        name: 'children on a void element — the DOM discards them',
         code: '<img src="image.png">Content</img>',
         errors: [{ messageId: 'voidNoChildren' }],
       },

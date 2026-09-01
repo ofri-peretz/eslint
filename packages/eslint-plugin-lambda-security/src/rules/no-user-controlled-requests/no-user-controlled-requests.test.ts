@@ -59,6 +59,7 @@ ruleTester.run('no-user-controlled-requests', noUserControlledRequests, {
   valid: lambda([
     // Safe: Static URL
     {
+      name: 'a fetch to a fixed host',
       code: `
         export const handler = async (event) => {
           const response = await fetch('https://api.trusted.com/data');
@@ -109,6 +110,7 @@ ruleTester.run('no-user-controlled-requests', noUserControlledRequests, {
   invalid: lambda([
     // URL from query parameters
     {
+      name: 'a fetch to a URL taken from the query string',
       code: `
         export const handler = async (event) => {
           const targetUrl = event.queryStringParameters.targetUrl;

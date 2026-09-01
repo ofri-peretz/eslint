@@ -9,7 +9,7 @@
  * Enforce the maximum number of dependencies a module can have (eslint-plugin-import inspired)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'maxDependencies' | 'suggestRefactor' | 'dependencyAnalysis';
@@ -257,7 +257,7 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const importPath = node.source.value;
+        const importPath = staticString(node.source);
 
         if (
           typeof importPath === 'string' &&
@@ -275,9 +275,10 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
           node.arguments.length === 1
         ) {
           const arg = node.arguments[0];
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            if (shouldCountRequire(arg.value)) {
-              addDependency(arg.value);
+          const staticText1 = staticString(arg);
+          if (staticText1 !== null) {
+            if (shouldCountRequire(staticText1)) {
+              addDependency(staticText1);
             }
           }
         }
@@ -286,9 +287,10 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
       // Handle dynamic imports (import() expressions)
       ImportExpression(node: TSESTree.ImportExpression) {
         const source = node.source;
-        if (source.type === 'Literal' && typeof source.value === 'string') {
-          if (shouldCountRequire(source.value)) {
-            addDependency(source.value);
+        const staticText2 = staticString(source);
+        if (staticText2 !== null) {
+          if (shouldCountRequire(staticText2)) {
+            addDependency(staticText2);
           }
         }
       },

@@ -26,73 +26,117 @@ type Options = {
 
 type RuleOptions = [Options?];
 
-const DEFAULT_IGNORE_ELEMENTS = [
-  'audio', 'canvas', 'embed', 'tr', 'video'
-];
+const DEFAULT_IGNORE_ELEMENTS = ['audio', 'canvas', 'embed', 'tr', 'video'];
 
 const DEFAULT_IGNORE_ROLES = [
-  'grid', 'listbox', 'menu', 'menubar', 'radiogroup', 'row', 'tablist', 'toolbar', 'tree', 'treegrid'
+  'grid',
+  'listbox',
+  'menu',
+  'menubar',
+  'radiogroup',
+  'row',
+  'tablist',
+  'toolbar',
+  'tree',
+  'treegrid',
 ];
 
 /**
  * Check if element has accessible text content
  */
-function hasAccessibleText(node: TSESTree.JSXElement, depth: number, labelAttributes: string[]): boolean {
+function hasAccessibleText(
+  node: TSESTree.JSXElement,
+  depth: number,
+  labelAttributes: string[],
+): boolean {
   // Check aria-label
-  const ariaLabel = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-    attr.type === 'JSXAttribute' &&
-    attr.name.type === 'JSXIdentifier' &&
-    attr.name.name === 'aria-label'
+  const ariaLabel = node.openingElement.attributes.find(
+    (
+      attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+    ): attr is TSESTree.JSXAttribute =>
+      attr.type === 'JSXAttribute' &&
+      attr.name.type === 'JSXIdentifier' &&
+      attr.name.name === 'aria-label',
   );
 
-  if (ariaLabel && ariaLabel.type === 'JSXAttribute' && ariaLabel.value) return true;
+  if (ariaLabel && ariaLabel.type === 'JSXAttribute' && ariaLabel.value)
+    return true;
 
   // Check aria-labelledby
-  const ariaLabelledby = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-    attr.type === 'JSXAttribute' &&
-    attr.name.type === 'JSXIdentifier' &&
-    attr.name.name === 'aria-labelledby'
+  const ariaLabelledby = node.openingElement.attributes.find(
+    (
+      attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+    ): attr is TSESTree.JSXAttribute =>
+      attr.type === 'JSXAttribute' &&
+      attr.name.type === 'JSXIdentifier' &&
+      attr.name.name === 'aria-labelledby',
   );
 
-  if (ariaLabelledby && ariaLabelledby.type === 'JSXAttribute' && ariaLabelledby.value) return true;
+  if (
+    ariaLabelledby &&
+    ariaLabelledby.type === 'JSXAttribute' &&
+    ariaLabelledby.value
+  )
+    return true;
 
   // Check custom label attributes
   for (const attr of labelAttributes) {
-    const labelAttr = node.openingElement.attributes.find((a: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): a is TSESTree.JSXAttribute =>
-      a.type === 'JSXAttribute' &&
-      a.name.type === 'JSXIdentifier' &&
-      a.name.name === attr
+    const labelAttr = node.openingElement.attributes.find(
+      (
+        a: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+      ): a is TSESTree.JSXAttribute =>
+        a.type === 'JSXAttribute' &&
+        a.name.type === 'JSXIdentifier' &&
+        a.name.name === attr,
     );
 
-    if (labelAttr && labelAttr.type === 'JSXAttribute' && labelAttr.value) return true;
+    if (labelAttr && labelAttr.type === 'JSXAttribute' && labelAttr.value)
+      return true;
   }
 
   // For img elements and input type="image", check alt
   if (node.openingElement.name.type === 'JSXIdentifier') {
     if (node.openingElement.name.name === 'img') {
-      const altAttr = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-        attr.type === 'JSXAttribute' &&
-        attr.name.type === 'JSXIdentifier' &&
-        attr.name.name === 'alt'
-      );
-
-      if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value) return true;
-    } else if (node.openingElement.name.name === 'input') {
-      // Check if it's an image input with alt
-      const typeAttr = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-        attr.type === 'JSXAttribute' &&
-        attr.name.type === 'JSXIdentifier' &&
-        attr.name.name === 'type'
-      );
-
-      if (typeAttr && typeAttr.type === 'JSXAttribute' && typeAttr.value && typeAttr.value.type === 'Literal' && typeAttr.value.value === 'image') {
-        const altAttr = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+      const altAttr = node.openingElement.attributes.find(
+        (
+          attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+        ): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'alt'
+          attr.name.name === 'alt',
+      );
+
+      if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value)
+        return true;
+    } else if (node.openingElement.name.name === 'input') {
+      // Check if it's an image input with alt
+      const typeAttr = node.openingElement.attributes.find(
+        (
+          attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+        ): attr is TSESTree.JSXAttribute =>
+          attr.type === 'JSXAttribute' &&
+          attr.name.type === 'JSXIdentifier' &&
+          attr.name.name === 'type',
+      );
+
+      if (
+        typeAttr &&
+        typeAttr.type === 'JSXAttribute' &&
+        typeAttr.value &&
+        typeAttr.value.type === 'Literal' &&
+        typeAttr.value.value === 'image'
+      ) {
+        const altAttr = node.openingElement.attributes.find(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'alt',
         );
 
-        if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value) return true;
+        if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value)
+          return true;
       }
     }
   }
@@ -104,7 +148,10 @@ function hasAccessibleText(node: TSESTree.JSXElement, depth: number, labelAttrib
 /**
  * Check if children contain text content
  */
-function hasTextInChildren(children: TSESTree.JSXChild[], depth: number): boolean {
+function hasTextInChildren(
+  children: TSESTree.JSXChild[],
+  depth: number,
+): boolean {
   if (depth <= 0) return false;
 
   for (const child of children) {
@@ -124,31 +171,67 @@ function hasTextInChildren(children: TSESTree.JSXChild[], depth: number): boolea
 /**
  * Check if element is a control component
  */
-function isControlComponent(elementName: string, controlComponents: string[]): boolean {
-  const controls = ['button', 'input', 'select', 'textarea', 'a', ...controlComponents];
+function isControlComponent(
+  elementName: string,
+  controlComponents: string[],
+): boolean {
+  const controls = [
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'a',
+    ...controlComponents,
+  ];
   return controls.includes(elementName);
 }
 
 /**
  * Check if element has an interactive role
  */
-function hasInteractiveRole(node: TSESTree.JSXOpeningElement, ignoreRoles: string[]): boolean {
-  const roleAttr = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-    attr.type === 'JSXAttribute' &&
-    attr.name.type === 'JSXIdentifier' &&
-    attr.name.name === 'role'
+function hasInteractiveRole(
+  node: TSESTree.JSXOpeningElement,
+  ignoreRoles: string[],
+): boolean {
+  const roleAttr = node.attributes.find(
+    (
+      attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+    ): attr is TSESTree.JSXAttribute =>
+      attr.type === 'JSXAttribute' &&
+      attr.name.type === 'JSXIdentifier' &&
+      attr.name.name === 'role',
   );
 
-  if (!roleAttr || roleAttr.type !== 'JSXAttribute' || !roleAttr.value || roleAttr.value.type !== 'Literal') return false;
+  if (
+    !roleAttr ||
+    roleAttr.type !== 'JSXAttribute' ||
+    !roleAttr.value ||
+    roleAttr.value.type !== 'Literal'
+  )
+    return false;
 
   const role = roleAttr.value.value;
   if (typeof role !== 'string') return false;
 
   // Interactive roles that require labels
   const interactiveRoles = [
-    'button', 'checkbox', 'link', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
-    'option', 'radio', 'switch', 'tab', 'textbox', 'combobox', 'listbox', 'searchbox',
-    'slider', 'spinbutton', 'progressbar'
+    'button',
+    'checkbox',
+    'link',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'switch',
+    'tab',
+    'textbox',
+    'combobox',
+    'listbox',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'progressbar',
   ];
 
   return interactiveRoles.includes(role) && !ignoreRoles.includes(role);
@@ -160,7 +243,8 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/control-has-associated-label.md',
-      description: 'Enforce that controls (interactive elements) have associated labels',
+      description:
+        'Enforce that controls (interactive elements) have associated labels',
       wcag: 'WCAG 1.3.1',
     },
     messages: {
@@ -170,8 +254,9 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
         description: '<{{element}}> must have an accessible label',
         severity: 'HIGH',
         fix: 'Add text content, aria-label, or aria-labelledby',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/control-has-associated-label.md',
-        wcag: 'WCAG 1.3.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/control-has-associated-label.md',
+        wcag: 'WCAG 1.3.1',
       }),
     },
     schema: [
@@ -189,14 +274,17 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
     const {
       labelAttributes = [],
       controlComponents = [],
       ignoreElements = DEFAULT_IGNORE_ELEMENTS,
       ignoreRoles = DEFAULT_IGNORE_ROLES,
       depth = 2,
-    } = options ?? {} as Options;
+    } = options ?? ({} as Options);
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
@@ -211,7 +299,10 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
 
         // Check if it's a control component or has interactive role
         const isControl = isControlComponent(elementName, controlComponents);
-        const hasInteractiveRoleAttr = hasInteractiveRole(openingElement, ignoreRoles);
+        const hasInteractiveRoleAttr = hasInteractiveRole(
+          openingElement,
+          ignoreRoles,
+        );
 
         if (!isControl && !hasInteractiveRoleAttr) return;
 
@@ -229,4 +320,3 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

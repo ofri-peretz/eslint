@@ -164,6 +164,7 @@ ruleTester.run('no-error-swallowing', noErrorSwallowing, {
     // ── end corpus regressions ──────────────────────────────────────────
     // Rethrows the error — not swallowed
     {
+      name: 'the catch rethrows',
       code: `
         try {
           riskyOperation();
@@ -453,6 +454,7 @@ ruleTester.run('no-error-swallowing', noErrorSwallowing, {
     // ── end FN boundary ─────────────────────────────────────────────────
     // Empty catch block — classic error swallowing (has suggestion with fix)
     {
+      name: 'an empty catch — the invocation reports success',
       code: `
         try {
           riskyOperation();

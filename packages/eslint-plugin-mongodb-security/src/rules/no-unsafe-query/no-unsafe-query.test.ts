@@ -20,21 +20,29 @@ import { noUnsafeQuery } from './index';
  */
 // A SIDE-EFFECT import: satisfies the gate without reserving any binding, so
 // fixtures that already declare `mongoose`/`db` do not redeclare.
-const asMongo = (code: string): string => `import 'mongoose';\n${code}`;
+// The handler wrapper makes `req` a PARAMETER, which is what the rule now
+// requires: a request arrives as an argument, and a module-local object with a
+// `.body` is somebody's own data structure. A free-floating `req` is not
+// something real Express code contains — it only worked when the rule matched
+// the printed string `req.body`.
+const asMongo = (code: string): string =>
+  `import 'mongoose';\nexport function handler(req, request, ctx) {\n${code}\n}`;
 type MongoSuggestion = { output?: string | null };
 type MongoCase = {
   code: string;
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -53,7 +61,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -75,6 +82,7 @@ describe('no-unsafe-query', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -93,7 +101,7 @@ describe('no-unsafe-query', () => {
         {
           code: `if (x == y) {}`,
           filename: 'test.spec.ts',
-          options: [{"allowInTests":true}],
+          options: [{ allowInTests: true }],
         },
       ]),
       invalid: [],
@@ -106,11 +114,19 @@ describe('no-unsafe-query', () => {
       invalid: xmo([
         // Triggers unsafeQuery: user input in query
         {
+          name: 'a request value used directly as a query value',
           code: `db.users.find({ username: req.body.username });`,
-          errors: [{
-            messageId: 'unsafeQuery',
-            suggestions: [{ messageId: 'suggestionUseEq', output: `db.users.find({ username: { $eq: req.body.username } });` }],
-          }],
+          errors: [
+            {
+              messageId: 'unsafeQuery',
+              suggestions: [
+                {
+                  messageId: 'suggestionUseEq',
+                  output: `db.users.find({ username: { $eq: req.body.username } });`,
+                },
+              ],
+            },
+          ],
         },
       ]),
     });

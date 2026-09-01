@@ -61,6 +61,7 @@ ruleTester.run('require-output-validation', requireOutputValidation, {
   valid: xai([
     // Validated output
     {
+      name: 'the text is validated first',
       code: `
         display(validateOutput(result.text));
       `,
@@ -94,6 +95,7 @@ ruleTester.run('require-output-validation', requireOutputValidation, {
   invalid: xai([
     // Direct AI output display
     {
+      name: 'model text displayed without being checked',
       code: `
         display(result.text);
       `,

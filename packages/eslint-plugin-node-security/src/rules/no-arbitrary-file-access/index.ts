@@ -6,7 +6,7 @@
 
 /**
  * @fileoverview Prevent file access from user input
- * 
+ *
  * False Positive Reduction:
  * This rule detects safe patterns including:
  * - path.basename() sanitization
@@ -15,9 +15,21 @@
  * - Early-return throw patterns
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `path`, `join`, `basename` and `fs` are Node's — the module
+ * names and the methods those modules export. A project cannot rename them.
+ *
+ * @see https://nodejs.org/api/path.html
+ * @see https://nodejs.org/api/fs.html
+ */
 type MessageIds = 'violationDetected';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
@@ -44,21 +56,39 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Validate and sanitize file paths, use allowlists',
         documentationLink: 'https://cwe.mitre.org/data/definitions/22.html',
-      })
+      }),
     },
     schema: [],
   },
   defaultOptions: [],
   create(context) {
     const sourceCode = context.sourceCode;
-    
+
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-    
-    const fsReadMethods = ['readFile', 'readFileSync', 'readdir', 'readdirSync', 'stat', 'statSync'];
-    const fsWriteMethods = ['writeFile', 'writeFileSync', 'appendFile', 'appendFileSync'];
-    const userInputSources = new Set(['req', 'request', 'params', 'query', 'body']);
+
+    const fsReadMethods = [
+      'readFile',
+      'readFileSync',
+      'readdir',
+      'readdirSync',
+      'stat',
+      'statSync',
+    ];
+    const fsWriteMethods = [
+      'writeFile',
+      'writeFileSync',
+      'appendFile',
+      'appendFileSync',
+    ];
+    const userInputSources = new Set([
+      'req',
+      'request',
+      'params',
+      'query',
+      'body',
+    ]);
 
     /**
      * `name = <expr>` bindings, so a request can be followed one hop back
@@ -104,7 +134,8 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         // `path.join(base, req.query.f)` carries the request through.
         case 'CallExpression':
           return node.arguments.some(
-            (arg) => arg.type !== 'SpreadElement' && readsUserInput(arg, depth + 1),
+            (arg) =>
+              arg.type !== 'SpreadElement' && readsUserInput(arg, depth + 1),
           );
         default:
           return false;
@@ -126,15 +157,26 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         | TSESTree.FunctionExpression
         | TSESTree.ArrowFunctionExpression,
     ): string | undefined {
-      if (fn.type !== 'ArrowFunctionExpression' && fn.id !== null) return fn.id.name;
+      if (fn.type !== 'ArrowFunctionExpression' && fn.id !== null)
+        return fn.id.name;
       const parent = fn.parent;
-      if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+      if (
+        parent.type === 'VariableDeclarator' &&
+        parent.id.type === 'Identifier'
+      ) {
         return parent.id.name;
       }
-      if (parent.type === 'Property' && !parent.computed && parent.key.type === 'Identifier') {
+      if (
+        parent.type === 'Property' &&
+        !parent.computed &&
+        parent.key.type === 'Identifier'
+      ) {
         return parent.key.name;
       }
-      if (parent.type === 'AssignmentExpression' && parent.left.type === 'Identifier') {
+      if (
+        parent.type === 'AssignmentExpression' &&
+        parent.left.type === 'Identifier'
+      ) {
         return parent.left.name;
       }
       return undefined;
@@ -157,7 +199,11 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
               : undefined;
         if (calleeName !== name) return false;
         const arg = call.arguments[index];
-        return arg !== undefined && arg.type !== 'SpreadElement' && readsUserInput(arg);
+        return (
+          arg !== undefined &&
+          arg.type !== 'SpreadElement' &&
+          readsUserInput(arg)
+        );
       });
     }
 
@@ -191,7 +237,10 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      * another module is a caller-side fact this rule cannot see and no longer
      * asserts.
      */
-    function variableTracesToUserInput(varName: string, from: TSESTree.Node): boolean {
+    function variableTracesToUserInput(
+      varName: string,
+      from: TSESTree.Node,
+    ): boolean {
       // The path argument IS the request object: `fs.readFileSync(req)`.
       // `readsUserInput` recognises this for `req.query.f` but never saw the
       // bare form, because a bare Identifier is routed here instead.
@@ -215,12 +264,15 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           }
         }
         const body =
-          scope.type === 'Program' || scope.type === 'BlockStatement' ? scope.body : undefined;
+          scope.type === 'Program' || scope.type === 'BlockStatement'
+            ? scope.body
+            : undefined;
         if (body !== undefined) {
           for (const stmt of body) {
             if (stmt.type !== 'VariableDeclaration') continue;
             for (const decl of stmt.declarations) {
-              if (decl.id.type !== 'Identifier' || decl.id.name !== varName) continue;
+              if (decl.id.type !== 'Identifier' || decl.id.name !== varName)
+                continue;
               // A local bound to something we CAN see, and it is not a
               // request: that is the generic rule's territory, not ours.
               return decl.init != null && readsUserInput(decl.init);
@@ -233,12 +285,12 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       // request, so the generic rule owns it.
       return false;
     }
-    
+
     // Track variables that have been sanitized with path.basename()
     const sanitizedVariables = new Set<string>();
     // Track variables that have been validated with startsWith() guards
     const validatedVariables = new Set<string>();
-    
+
     /**
      * Check if a variable is assigned from path.basename() or path.join() with basename
      */
@@ -246,48 +298,53 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       if (node.id.type !== 'Identifier' || !node.init) {
         return;
       }
-      
+
       const varName = node.id.name;
       const init = node.init;
 
       bindings.set(varName, init);
 
       // Check for path.basename() assignment
-      if (init.type === 'CallExpression' &&
-          init.callee.type === 'MemberExpression' &&
-          init.callee.object.type === 'Identifier' &&
-          init.callee.object.name === 'path' &&
-          init.callee.property.type === 'Identifier' &&
-          init.callee.property.name === 'basename') {
+      if (
+        init.type === 'CallExpression' &&
+        init.callee.type === 'MemberExpression' &&
+        init.callee.object.type === 'Identifier' &&
+        init.callee.object.name === 'path' &&
+        init.callee.property.type === 'Identifier' &&
+        init.callee.property.name === 'basename'
+      ) {
         sanitizedVariables.add(varName);
       }
-      
+
       // Check for path.join() with a sanitized variable or literal base
-      if (init.type === 'CallExpression' &&
-          init.callee.type === 'MemberExpression' &&
-          init.callee.object.type === 'Identifier' &&
-          init.callee.object.name === 'path' &&
-          init.callee.property.type === 'Identifier' &&
-          init.callee.property.name === 'join') {
-        
+      if (
+        init.type === 'CallExpression' &&
+        init.callee.type === 'MemberExpression' &&
+        init.callee.object.type === 'Identifier' &&
+        init.callee.object.name === 'path' &&
+        init.callee.property.type === 'Identifier' &&
+        init.callee.property.name === 'join'
+      ) {
         // Check if any argument is a sanitized variable
-        const hasSanitizedArg = init.arguments.some((arg: TSESTree.CallExpressionArgument) => 
-          arg.type === 'Identifier' && sanitizedVariables.has(arg.name)
+        const hasSanitizedArg = init.arguments.some(
+          (arg: TSESTree.CallExpressionArgument) =>
+            arg.type === 'Identifier' && sanitizedVariables.has(arg.name),
         );
-        
+
         // Check if first arg is a safe base (literal or known safe variable)
         const firstArg = init.arguments[0];
-        const hasSafeBase = firstArg && (
-          firstArg.type === 'Literal' ||
-          (firstArg.type === 'Identifier' && /^(SAFE|BASE|ROOT|UPLOAD|PUBLIC)/i.test(firstArg.name))
-        );
-        
+        const hasSafeBase =
+          firstArg &&
+          (firstArg.type === 'Literal' ||
+            (firstArg.type === 'Identifier' &&
+              /^(SAFE|BASE|ROOT|UPLOAD|PUBLIC)/i.test(firstArg.name)));
+
         if (hasSanitizedArg && hasSafeBase) {
           sanitizedVariables.add(varName);
         }
       }
     }
-    
+
     /**
      * Check if there's a startsWith() guard validation for this variable
      * Looks for patterns like:
@@ -299,36 +356,48 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       if (validatedVariables.has(varName)) {
         return true;
       }
-      
+
       // Walk up to find the containing block or function
       let current: TSESTree.Node | undefined = node.parent;
-      
+
       while (current) {
         // If we've reached a function body or block, search its statements
         if (current.type === AST_NODE_TYPES.BlockStatement) {
           const statements = current.body;
-          
+
           // Look for IF statements in this block that validate our variable
           for (const stmt of statements) {
             if (stmt.type === AST_NODE_TYPES.IfStatement) {
               const testText = sourceCode.getText(stmt.test).toLowerCase();
-              
+
               // Check for startsWith() validation pattern with our variable
-              if (testText.includes('startswith') && testText.includes(varName.toLowerCase())) {
+              if (
+                testText.includes('startswith') &&
+                testText.includes(varName.toLowerCase())
+              ) {
                 // Check if this is a guard clause (negated condition with throw/return)
                 const consequent = stmt.consequent;
-                
+
                 // Handle block statement: if (...) { throw/return; }
-                if (consequent.type === AST_NODE_TYPES.BlockStatement && consequent.body.length > 0) {
+                if (
+                  consequent.type === AST_NODE_TYPES.BlockStatement &&
+                  consequent.body.length > 0
+                ) {
                   const firstStmt = consequent.body[0];
-                  if (firstStmt.type === AST_NODE_TYPES.ThrowStatement || firstStmt.type === AST_NODE_TYPES.ReturnStatement) {
+                  if (
+                    firstStmt.type === AST_NODE_TYPES.ThrowStatement ||
+                    firstStmt.type === AST_NODE_TYPES.ReturnStatement
+                  ) {
                     validatedVariables.add(varName);
                     return true;
                   }
                 }
-                
+
                 // Handle direct statement: if (...) throw/return;
-                if (consequent.type === AST_NODE_TYPES.ThrowStatement || consequent.type === AST_NODE_TYPES.ReturnStatement) {
+                if (
+                  consequent.type === AST_NODE_TYPES.ThrowStatement ||
+                  consequent.type === AST_NODE_TYPES.ReturnStatement
+                ) {
                   validatedVariables.add(varName);
                   return true;
                 }
@@ -336,22 +405,25 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-        
+
         // Also check if current IS an if statement (when node is inside the consequent)
         if (current.type === AST_NODE_TYPES.IfStatement) {
           const testText = sourceCode.getText(current.test).toLowerCase();
-          if (testText.includes('startswith') && testText.includes(varName.toLowerCase())) {
+          if (
+            testText.includes('startswith') &&
+            testText.includes(varName.toLowerCase())
+          ) {
             validatedVariables.add(varName);
             return true;
           }
         }
-        
+
         current = current.parent;
       }
-      
+
       return false;
     }
-    
+
     /**
      * Check if a variable comes from a sanitized/validated source
      */
@@ -360,26 +432,26 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       if (sanitizedVariables.has(varName)) {
         return true;
       }
-      
+
       // Has startsWith guard validation
       if (hasStartsWithGuard(node, varName)) {
         return true;
       }
-      
+
       // Check naming conventions that suggest safety
       if (/^(safe|sanitized|validated|clean)/i.test(varName)) {
         return true;
       }
-      
+
       return false;
     }
-    
+
     return {
       // Track variable declarations for sanitization patterns
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         checkVariableDeclaration(node);
       },
-      
+
       // Collected, not judged: a parameter is attributed by what callers pass,
       // and a caller further down the file is still a caller.
       CallExpression(node: TSESTree.CallExpression) {
@@ -392,48 +464,51 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     };
 
     function checkFsCall(node: TSESTree.CallExpression) {
-        // Detect fs.* with user input
-        if (node.callee.type === 'MemberExpression' &&
-            node.callee.object.type === 'Identifier' &&
-            node.callee.object.name === 'fs' &&
-            node.callee.property.type === 'Identifier' &&
-            [...fsReadMethods, ...fsWriteMethods].includes(node.callee.property.name)) {
-          
-          const pathArg = node.arguments[0];
-          
-          // Skip if path is a literal (safe)
-          if (pathArg && pathArg.type === 'Literal') {
-            return;
-          }
-          
-          // Check if path is a variable
-          if (pathArg && pathArg.type === 'Identifier') {
-            const varName = pathArg.name;
-            
-            // Skip if variable is sanitized or validated
-            if (isVariableSafe(varName, node)) {
-              return;
-            }
+      // Detect fs.* with user input
+      if (
+        node.callee.type === 'MemberExpression' &&
+        node.callee.object.type === 'Identifier' &&
+        node.callee.object.name === 'fs' &&
+        node.callee.property.type === 'Identifier' &&
+        [...fsReadMethods, ...fsWriteMethods].includes(
+          node.callee.property.name,
+        )
+      ) {
+        const pathArg = node.arguments[0];
 
-            // This rule's message names user input as the cause. Without
-            // evidence of a request it is both wrong and a duplicate of
-            // detect-non-literal-fs-filename, which owns unattributable paths.
-            if (!variableTracesToUserInput(varName, node)) {
-              return;
-            }
-
-            report(node);
-            return;
-          }
-          
-          // Flag if path is from a member expression (user input sources)
-          // `fs.readFile(req.query.file)` — the direct shape. Now walks the
-          // whole chain, so `req.body.upload.path` is caught too; the old
-          // check read only the immediate object and missed anything deeper.
-          if (pathArg !== undefined && readsUserInput(pathArg)) {
-            report(node);
-          }
+        // Skip if path is a literal (safe)
+        if (pathArg && pathArg.type === 'Literal') {
+          return;
         }
+
+        // Check if path is a variable
+        if (pathArg && pathArg.type === 'Identifier') {
+          const varName = pathArg.name;
+
+          // Skip if variable is sanitized or validated
+          if (isVariableSafe(varName, node)) {
+            return;
+          }
+
+          // This rule's message names user input as the cause. Without
+          // evidence of a request it is both wrong and a duplicate of
+          // detect-non-literal-fs-filename, which owns unattributable paths.
+          if (!variableTracesToUserInput(varName, node)) {
+            return;
+          }
+
+          report(node);
+          return;
+        }
+
+        // Flag if path is from a member expression (user input sources)
+        // `fs.readFile(req.query.file)` — the direct shape. Now walks the
+        // whole chain, so `req.body.upload.path` is caught too; the old
+        // check read only the immediate object and missed anything deeper.
+        if (pathArg !== undefined && readsUserInput(pathArg)) {
+          report(node);
+        }
+      }
     }
   },
 });

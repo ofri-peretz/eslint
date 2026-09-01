@@ -27,6 +27,7 @@ ruleTester.run('no-eval', noEval, {
     // no-websocket-eval and here. The complement only holds if every reporting
     // path asks the question.
     {
+      name: 'new Function on a WebSocket message is left to no-websocket-eval',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => { const f = new Function(event.data); f(); };
@@ -120,6 +121,7 @@ ruleTester.run('no-eval', noEval, {
   ],
   invalid: [
     {
+      name: 'eval on a Worker message',
       // Worker payload into eval. `no-websocket-eval` does NOT own this, so if
       // the generic rule skips every resolved source the finding is reported by
       // nobody — the complement is per-sink, not per-resolver.

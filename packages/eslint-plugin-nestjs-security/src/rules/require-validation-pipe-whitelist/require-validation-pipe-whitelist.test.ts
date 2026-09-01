@@ -58,7 +58,7 @@ ruleTester.run(
   requireValidationPipeWhitelist,
   {
     valid: nest([
-      { code: `app.useGlobalPipes(new ValidationPipe({ whitelist: true }));` },
+      { name: 'whitelist is on', code: `app.useGlobalPipes(new ValidationPipe({ whitelist: true }));` },
       {
         code: `app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));`,
       },
@@ -86,6 +86,7 @@ ruleTester.run(
     invalid: nest([
       // The shape in notiz-dev/nestjs-prisma-starter and squareboat/nestjs-boilerplate.
       {
+        name: 'ValidationPipe without whitelist lets unknown properties through',
         code: `app.useGlobalPipes(new ValidationPipe());`,
         errors: [{ messageId: 'missingWhitelist' }],
       },

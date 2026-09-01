@@ -39,10 +39,12 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
       redundantAlt: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Redundant Alt Text',
-        description: 'Alt text should not contain redundant words like "{{word}}"',
+        description:
+          'Alt text should not contain redundant words like "{{word}}"',
         severity: 'LOW',
         fix: 'Remove redundant word "{{word}}" from alt text',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/img-redundant-alt.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/img-redundant-alt.md',
       }),
     },
     schema: [
@@ -57,14 +59,17 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const {
-      components = DEFAULT_COMPONENTS,
-      words = DEFAULT_REDUNDANT_WORDS,
-    } = options ?? ({} as Options);
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { components = DEFAULT_COMPONENTS, words = DEFAULT_REDUNDANT_WORDS } =
+      options ?? ({} as Options);
     // `words` always has a value here: the destructuring default above already
     // falls back to DEFAULT_REDUNDANT_WORDS when options omit it.
-    const redundantWords: string[] = words.map((word: string) => word.toLowerCase());
+    const redundantWords: string[] = words.map((word: string) =>
+      word.toLowerCase(),
+    );
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -74,24 +79,42 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
         if (!components.includes(elementName)) return;
 
         // Check if element is aria-hidden
-        const ariaHidden = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'aria-hidden'
+        const ariaHidden = node.attributes.find(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'aria-hidden',
         );
 
-        if (ariaHidden && ariaHidden.type === 'JSXAttribute' && ariaHidden.value && ariaHidden.value.type === 'Literal' && ariaHidden.value.value === true) {
+        if (
+          ariaHidden &&
+          ariaHidden.type === 'JSXAttribute' &&
+          ariaHidden.value &&
+          ariaHidden.value.type === 'Literal' &&
+          ariaHidden.value.value === true
+        ) {
           return; // Skip hidden images
         }
 
         // Find alt attribute
-        const altAttr = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'alt'
+        const altAttr = node.attributes.find(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'alt',
         );
 
-        if (!altAttr || altAttr.type !== 'JSXAttribute' || !altAttr.value || altAttr.value.type !== 'Literal') return;
+        if (
+          !altAttr ||
+          altAttr.type !== 'JSXAttribute' ||
+          !altAttr.value ||
+          altAttr.value.type !== 'Literal'
+        )
+          return;
 
         const altValue = String(altAttr.value.value);
         const altLower = altValue.toLowerCase();
@@ -115,4 +138,3 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

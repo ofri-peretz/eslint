@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
   valid: [
     // Tracking inside consent check
-    { code: "if (hasConsent) { analytics.track('event') }" },
+    { name: 'the call is behind a consent check', code: "if (hasConsent) { analytics.track('event') }" },
     { code: "if (userConsent) { gtag('event', 'click') }" },
     { code: "if (consentGiven) { analytics.identify(userId) }" },
     // Consent read off an object, and through a call.
@@ -43,7 +43,7 @@ ruleTester.run('no-tracking-without-consent', noTrackingWithoutConsent, {
 
   invalid: [
     // Unconditional analytics.track
-    { code: "analytics.track('page_view')", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'a tracking call on no consent path', code: "analytics.track('page_view')", errors: [{ messageId: 'violationDetected' }] },
     { code: 'analytics.identify(user)', errors: [{ messageId: 'violationDetected' }] },
     { code: "analytics.page('/home')", errors: [{ messageId: 'violationDetected' }] },
     // Unconditional gtag

@@ -46,6 +46,7 @@ describe('no-unsafe-query', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('no-unsafe-query', () => {
       invalid: pg([
         // Triggers noUnsafeQuery
         {
+          name: 'request input concatenated into SQL',
           code: `client.query('SELECT * FROM users WHERE id = ' + userId)`,
           errors: [{ messageId: 'noUnsafeQuery' }],
         },

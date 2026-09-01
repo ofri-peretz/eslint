@@ -24,7 +24,7 @@ describe('no-raw-color-literal', () => {
   ruleTester.run('no-raw-color-literal', noRawColorLiteral, {
     valid: [
       // CSS variable — allowed
-      { code: `<div style={{ color: "var(--snp-navy-900)" }} />` },
+      { name: 'the token', code: `<div style={{ color: "var(--snp-navy-900)" }} />` },
       // Tailwind theme class — allowed
       { code: `<div className="bg-primary" />` },
       // cn() with non-color strings
@@ -35,6 +35,7 @@ describe('no-raw-color-literal', () => {
     invalid: [
       // Inline style with hex
       {
+        name: 'a hex colour where a token exists',
         code: `<div style={{ color: "#ff0000" }} />`,
         errors: [{ messageId: 'rawColor' }],
       },

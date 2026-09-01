@@ -13,7 +13,12 @@
  * @see https://owasp.org/www-community/attacks/xss/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createPayloadResolver, isStaticExpression, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createPayloadResolver,
+  isStaticExpression,
+  isTestFilePath,
+  staticString,
+} from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
@@ -97,9 +102,13 @@ function isSanitized(
 ): boolean {
   const names = (callee: TSESTree.Node): string[] => {
     if (callee.type === 'Identifier') return [callee.name];
-    if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+    if (
+      callee.type === 'MemberExpression' &&
+      callee.property.type === 'Identifier'
+    ) {
       const prop = callee.property.name;
-      const obj = callee.object.type === 'Identifier' ? callee.object.name : null;
+      const obj =
+        callee.object.type === 'Identifier' ? callee.object.name : null;
       return obj ? [`${obj}.${prop}`, prop] : [prop];
     }
     return [];
@@ -132,6 +141,31 @@ function isSanitized(
     return node.expressions.every((e) => partIsSafe(e));
   }
 
+  // `DOMPurify?.sanitize(x)` is a ChainExpression wrapping the call. Without
+  // this the optional spelling of a sanitiser read as no sanitiser at all.
+  if (node.type === 'ChainExpression') {
+    return isSanitized(node.expression, sourceCode, sanitizers);
+  }
+
+  // A value with a FALLBACK is safe only when every branch is.
+  //
+  // This is the fix for the finding that spent weeks parked as noise:
+  // `DOMPurify?.sanitize(h) ?? h` reads as belt-and-braces and behaves as a
+  // bypass, because `?.` yields undefined when the module is missing and `??`
+  // then picks the raw value. Running it proves the point — the payload
+  // arrives unsanitised. So it must still report.
+  //
+  // But `DOMPurify?.sanitize(h)` with NO fallback is genuinely safe (it throws
+  // rather than injecting), and `DOMPurify.sanitize(h) ?? ''` falls back to a
+  // constant. Judging every branch keeps the dangerous shape reporting and
+  // clears the two safe ones, instead of trading one for the other.
+  if (node.type === 'LogicalExpression') {
+    return partIsSafe(node.left) && partIsSafe(node.right);
+  }
+  if (node.type === 'ConditionalExpression') {
+    return partIsSafe(node.consequent) && partIsSafe(node.alternate);
+  }
+
   if (node.type !== 'CallExpression') return false;
 
   // A sanitiser defined IN THIS FILE is not evidence of anything.
@@ -151,7 +185,8 @@ function isSanitized(
     const local = resolveInitializer(node.callee, sourceCode);
     if (
       local !== undefined &&
-      (local.type === 'ArrowFunctionExpression' || local.type === 'FunctionExpression')
+      (local.type === 'ArrowFunctionExpression' ||
+        local.type === 'FunctionExpression')
     ) {
       return false;
     }
@@ -199,7 +234,9 @@ function everyWriteIsStatic(
   while (scope) {
     const variable = scope.variables.find((v) => v.name === node.name);
     if (variable) {
-      const writes = variable.references.filter((r) => r.isWrite() && r.writeExpr);
+      const writes = variable.references.filter(
+        (r) => r.isWrite() && r.writeExpr,
+      );
       // No writes at all means an unresolved binding, not a proven constant.
       if (writes.length === 0) return false;
       return writes.every((r) =>
@@ -240,15 +277,10 @@ function isLocallyDeclaredFunction(
 /**
  * Check if the value is a literal string
  */
-function isLiteralString(node: TSESTree.Node): boolean {
-  if (node.type === 'Literal' && typeof node.value === 'string') {
-    return true;
-  }
-  if (node.type === 'TemplateLiteral' && node.expressions.length === 0) {
-    return true;
-  }
-  return false;
-}
+// `staticString` answers for BOTH spellings, so the hand-rolled template arm
+// that used to sit here is now unreachable rather than merely redundant.
+const isLiteralString = (node: TSESTree.Node): boolean =>
+  staticString(node) !== null;
 
 /**
  * Are these arguments all string constants, and is there at least one?
@@ -411,16 +443,17 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         return member.property.name;
       }
       if (!member.computed) return null;
-      if (member.property.type === 'Literal' && typeof member.property.value === 'string') {
-        return member.property.value;
+      const staticText2 = staticString(member.property);
+      if (staticText2 !== null) {
+        return staticText2;
       }
       // `const PROP = 'innerHTML'; el[PROP] = payload` — resolve the key.
       // Without this the computed form is a one-line evasion of the whole rule,
       // and it is one no competitor on this corpus catches either.
       if (member.property.type === 'Identifier') {
         const init = resolveInitializer(member.property, sourceCode);
-        if (init !== undefined && init.type === 'Literal' && typeof init.value === 'string') {
-          return init.value;
+        if (init !== undefined && staticString(init) !== null) {
+          return staticString(init);
         }
       }
       return null;
@@ -441,11 +474,17 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
     function isDocumentReceiver(object: TSESTree.Node): boolean {
       // `document.write(...)`
       if (object.type === 'Identifier') {
-        return object.name === 'document' || /^(?:.*[a-z])?[Dd]oc(?:ument)?$/.test(object.name);
+        return (
+          object.name === 'document' ||
+          /^(?:.*[a-z])?[Dd]oc(?:ument)?$/.test(object.name)
+        );
       }
       // `window.document.write(...)`, `iframe.contentDocument.write(...)`,
       // `el.ownerDocument.write(...)`
-      if (object.type === 'MemberExpression' && object.property.type === 'Identifier') {
+      if (
+        object.type === 'MemberExpression' &&
+        object.property.type === 'Identifier'
+      ) {
         return /^(?:content|owner)?[Dd]ocument$/.test(object.property.name);
       }
       return false;

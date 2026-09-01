@@ -32,6 +32,7 @@ describe('role-supports-aria-props', () => {
       valid: [
         // Elements without roles or ARIA properties
         {
+          name: 'a div with no aria at all',
           code: '<div>Content</div>',
         },
         {
@@ -90,6 +91,7 @@ describe('role-supports-aria-props', () => {
       valid: [],
       invalid: [
         {
+          name: 'aria-required on a role that does not support it',
           code: '<li aria-required role="radio"></li>',
           errors: [
             {

@@ -36,7 +36,7 @@ ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
   valid: [
     'const x = 42;',
     'const flag = true;',
-    { code: 'const response = await api.checkPermission(userId, resource)' },
+    { name: 'the permission is checked on the server', code: 'const response = await api.checkPermission(userId, resource)' },
     { code: 'const x = 1' },
 
     // ---- REGRESSION LOCKS: server-side enforcement is the CURE -------------
@@ -195,6 +195,7 @@ ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
   invalid: [
     // ---- 'use client' as the browser evidence -----------------------------
     {
+      name: 'an admin check inside a client component — the browser decides',
       code: "'use client'; export function render(session) { if (session.user.isAdmin) { impersonate(); } }",
       errors: [{ messageId: 'violationDetected' }],
     },

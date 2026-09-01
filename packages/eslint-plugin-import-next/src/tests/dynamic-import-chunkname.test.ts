@@ -15,6 +15,7 @@ ruleTester.run('dynamic-import-chunkname', dynamicImportChunkname, {
   valid: [
     // With webpackChunkName comment
     {
+      name: 'a webpackChunkName comment',
       code: `import(/* webpackChunkName: "my-chunk" */ './module');`,
     },
     {
@@ -37,6 +38,7 @@ ruleTester.run('dynamic-import-chunkname', dynamicImportChunkname, {
   invalid: [
     // Missing chunk name - has suggestion with expected output
     {
+      name: 'a dynamic import with no chunk name — the bundle gets a number',
       code: `import('./module');`,
       errors: [
         {

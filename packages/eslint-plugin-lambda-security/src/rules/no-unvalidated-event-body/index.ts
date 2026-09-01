@@ -29,11 +29,32 @@ export interface Options {
   allowInTests?: boolean;
   /** Additional event properties to check. Default: [] */
   additionalProperties?: string[];
+
+  /**
+   * Method names that count as validating a value. REPLACES the default.
+   *
+   * `parse`, `validate`, `assert` and `is` are generic English, not a schema
+   * library's API — `parse` alone is `JSON.parse`, `Date.parse`, a CSV parser
+   * and `zod.parse`. Which of them means "this value has been checked" is a
+   * fact about the consumer's stack, and a project on `ajv.compile(schema)(x)`
+   * or a hand-written `check()` matched none of the defaults, so every handler
+   * it validated was still reported.
+   */
+  validationMethodNames?: string[];
 }
 
 type RuleOptions = [Options?];
 
-// Properties on 'event' that contain untrusted user input
+/**
+ * @vocabulary These are the API Gateway proxy integration's payload fields, as
+ * AWS defines them. A handler reading `event.queryStringParameters` is reading
+ * the field AWS put there under that name — the spelling is not ours to guess
+ * and not the consumer's to choose, which is why this list is cited rather
+ * than made replaceable. `additionalProperties` extends it for payloads from
+ * other event sources.
+ *
+ * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+ */
 const DANGEROUS_EVENT_PROPERTIES = [
   'body',
   'queryStringParameters',
@@ -45,8 +66,8 @@ const DANGEROUS_EVENT_PROPERTIES = [
   'rawQueryString',
 ];
 
-// Property accesses that indicate validation
-const VALIDATION_INDICATORS = new Set([
+/** Our guess at the method names that mean "checked"; see `validationMethodNames`. */
+const DEFAULT_VALIDATION_METHOD_NAMES: readonly string[] = [
   // Middy validators
   'validator',
   'httpJsonBodyParser',
@@ -59,7 +80,7 @@ const VALIDATION_INDICATORS = new Set([
   'safeParseAsync',
   'assert', // superstruct.assert()
   'is', // superstruct.is()
-]);
+];
 
 export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
   name: 'no-unvalidated-event-body',
@@ -102,6 +123,13 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
             default: [],
             description: 'Additional event properties to check',
           },
+          validationMethodNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_VALIDATION_METHOD_NAMES],
+            description:
+              'Method names that count as validating a value. Replaces the default.',
+          },
         },
         additionalProperties: false,
       },
@@ -122,7 +150,14 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     // Registering no visitors is both the gate and the cheap path.
     if (!fileIsLambda(context.sourceCode.ast)) return {};
 
-    const { allowInTests = true, additionalProperties = [] } = options as Options;
+    const {
+      allowInTests = true,
+      additionalProperties = [],
+      validationMethodNames: configuredValidationMethods,
+    } = options as Options;
+    const validationMethodNames = new Set(
+      configuredValidationMethods ?? DEFAULT_VALIDATION_METHOD_NAMES,
+    );
     const filename = context.filename;
     const isTestFile = isTestFilePath(filename);
 
@@ -152,14 +187,14 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
           const property = node.callee.property;
           if (
             property.type === AST_NODE_TYPES.Identifier &&
-            VALIDATION_INDICATORS.has(property.name)
+            validationMethodNames.has(property.name)
           ) {
             return true;
           }
         }
         // Check for direct function calls like validate(x)
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
-          if (VALIDATION_INDICATORS.has(node.callee.name)) {
+          if (validationMethodNames.has(node.callee.name)) {
             return true;
           }
         }
@@ -214,7 +249,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
 
     // NOTE: a dedicated `isJsonParseOfEventBody(parent)` check used to live
     // here, but it was dead code: `JSON.parse(...)` always satisfies
-    // `isValidationCall` first ('parse' is in VALIDATION_INDICATORS), so the
+    // `isValidationCall` first ('parse' is in the validation names), so the
     // early return above it made it unreachable for every possible AST.
 
     // Determine whether THIS file looks like Lambda code at all. We're

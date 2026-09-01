@@ -18,7 +18,7 @@ const ruleTester = new RuleTester({
 describe('no-self-signed-certs', () => {
   ruleTester.run('no-self-signed-certs', noSelfSignedCerts, {
     valid: [
-      { code: 'https.request({ hostname: "example.com" }, callback);' },
+      { name: 'the default verification', code: 'https.request({ hostname: "example.com" }, callback);' },
       { code: 'tls.connect({ rejectUnauthorized: true });' },
       { code: 'const options = { ca: customCA };' },
       { code: 'process.env.NODE_TLS_REJECT_UNAUTHORIZED = "1";' },
@@ -27,6 +27,7 @@ describe('no-self-signed-certs', () => {
     ],
     invalid: [
       {
+        name: 'rejectUnauthorized false accepts any certificate',
         code: 'https.request({ rejectUnauthorized: false }, callback);',
         errors: [{ messageId: 'insecureTls', suggestions: [
           { messageId: 'enableValidation', output: 'https.request({ rejectUnauthorized: true }, callback);' },

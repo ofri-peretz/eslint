@@ -75,6 +75,7 @@ describe('no-hardcoded-credentials', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-hardcoded-credentials', () => {
       invalid: xmo([
         // Triggers hardcodedCredentials: hardcoded credentials
         {
+          name: 'a username and password literal in the connection options',
           code: `const opts = { username: "admin", password: "secret123" };`,
           errors: [{ messageId: 'hardcodedCredentials' }, { messageId: 'hardcodedCredentials' }],
         },

@@ -115,6 +115,7 @@ describe('no-improper-sanitization', () => {
           // is non-computed only and must never become a way to smuggle an
           // attacker-controlled key past the check.
           {
+            name: 'a value concatenated into HTML with no escaping',
             code: `res.send('<p>' + data[length] + '</p>');`,
             errors: [
               { messageId: 'unsafeReplaceSanitization' },
@@ -252,6 +253,7 @@ describe('no-improper-sanitization', () => {
           // `.replace(/>/…)`, because the text read at those links did not yet
           // contain `&quot;`. Judged at the end of the chain it is complete.
           {
+            name: 'the four HTML entities replaced',
             code: `const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')`,
           },
           // Shopify CLI theme-environment/hot-reload/error-page.ts:9 — all five

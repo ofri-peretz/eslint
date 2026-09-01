@@ -62,8 +62,14 @@ const ruleTester = new RuleTester({
 describe('require-route-authentication', () => {
   ruleTester.run('require-route-authentication', requireRouteAuthentication, {
     valid: xp([
+      // Replacing the list drops the default `app`, so nothing is a route.
+      {
+        name: 'the default receiver list replaced away',
+        code: `app.post('/account/password', changePassword);`,
+        options: [{ appReceiverNames: ['v1'] }],
+      },
       // THE safe pattern — auth middleware in the chain
-      { code: `app.post('/account/password', requireAuth, changePassword);` },
+      { name: 'the route carries requireAuth', code: `app.post('/account/password', requireAuth, changePassword);` },
       { code: `router.delete('/users/:id', authenticate, removeUser);` },
       {
         code: `app.put('/billing/card', passport.authenticate('jwt'), saveCard);`,
@@ -185,7 +191,26 @@ describe('require-route-authentication', () => {
       // LOCK COMPLEMENT: the new public vocabulary is whole-word anchored, so
       // a route that merely *contains* one of its words is still judged.
       // `unlocked` is not `unlock`; this route stays reported.
+      // FN: the three express rules each carried a private guess at the
+      // receiver name and had drifted apart — `server` was known to
+      // no-permissive-trust-proxy and not to this rule, so
+      // `server.post('/account/password')` was invisible here while
+      // `server.set('trust proxy')` next to it was judged.
       {
+        // @found vocabulary drift between sibling rules
+        name: 'FN: a credential route on a receiver named `server`',
+        code: `server.post('/account/password', changePassword);`,
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      // The name is the consumer's: `appReceiverNames` replaces the default.
+      {
+        name: 'a route on a receiver the consumer named',
+        code: `v1.post('/account/password', changePassword);`,
+        options: [{ appReceiverNames: ['v1'] }],
+        errors: [{ messageId: 'missingAuthentication' as const }],
+      },
+      {
+        name: 'a config-writing POST with no auth middleware',
         code: `app.post('/unlocked-items/config', saveConfig);`,
         errors: [{ messageId: 'missingAuthentication' as const }],
       },

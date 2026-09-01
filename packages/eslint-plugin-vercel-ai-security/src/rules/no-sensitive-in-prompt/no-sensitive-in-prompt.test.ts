@@ -61,6 +61,7 @@ ruleTester.run('no-sensitive-in-prompt', noSensitiveInPrompt, {
   valid: xai([
     // Safe: no sensitive data
     {
+      name: 'ordinary user input',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -141,6 +142,7 @@ ruleTester.run('no-sensitive-in-prompt', noSensitiveInPrompt, {
   invalid: xai([
     // Password in prompt
     {
+      name: 'a password sent to the provider as prompt text',
       code: `
         await generateText({
           model: openai('gpt-4'),

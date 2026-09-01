@@ -31,6 +31,7 @@ describe('prefer-dependency-version-strategy', () => {
         valid: [
           // Caret strategy (default)
           {
+            name: 'a caret range',
             code: 'const deps = { "react": "^18.0.0" };',
             options: [{ strategy: 'caret' }],
           },
@@ -63,6 +64,7 @@ describe('prefer-dependency-version-strategy', () => {
         valid: [],
         invalid: [
           {
+            name: 'a tilde range pins tighter than the strategy allows',
             code: 'const deps = { "react": "~18.0.0" };',
             options: [{ strategy: 'caret' }],
             errors: [{ messageId: 'preferStrategy' }],

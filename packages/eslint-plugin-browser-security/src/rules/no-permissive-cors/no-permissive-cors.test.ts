@@ -20,7 +20,7 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
     'const flag = true;',
     'function noop() {}',
     'const items = [];',
-    { code: "cors({ origin: 'https://example.com' })" },
+    { name: 'a named origin', code: "cors({ origin: 'https://example.com' })" },
     { code: "res.setHeader('Access-Control-Allow-Origin', 'https://mysite.com')" },
     { code: "const origin = 'https://safe.com'" },
 
@@ -48,7 +48,7 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
   ],
 
   invalid: [
-    { code: "cors({ origin: '*' })", errors: [{ messageId: 'violationDetected' }] },
+    { name: "origin '*'", code: "cors({ origin: '*' })", errors: [{ messageId: 'violationDetected' }] },
     {
       code: "res.setHeader('Access-Control-Allow-Origin', '*')",
       errors: [{ messageId: 'violationDetected' }],

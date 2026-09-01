@@ -29,6 +29,7 @@ describe('no-graphql-injection', () => {
       valid: [
         // Safe GraphQL queries with variables
         {
+          name: 'a parameterised query',
           code: 'const query = `query($id: ID!) { user(id: $id) { name } }`;',
         },
         // Using GraphQL libraries safely
@@ -58,6 +59,7 @@ describe('no-graphql-injection', () => {
       valid: [],
       invalid: [
         {
+          name: 'an introspection query shipped in application code',
           code: 'const query = `{ __schema { types { name } } }`;',
           errors: [
             {

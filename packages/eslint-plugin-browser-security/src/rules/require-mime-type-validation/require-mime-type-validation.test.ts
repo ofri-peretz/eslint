@@ -26,7 +26,7 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
     'const flag = true;',
     'const x = 1',
     // Multer with a real type check.
-    { code: `${MULTER}multer({ fileFilter: validateMime }).single('file')` },
+    { name: 'a fileFilter is supplied', code: `${MULTER}multer({ fileFilter: validateMime }).single('file')` },
     {
       code: `${MULTER}const upload = multer({ fileFilter: validateMime });\nupload.array('photos');`,
     },
@@ -88,6 +88,7 @@ ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
     // `callee.object` to be a CallExpression, so only the fully-inlined form
     // matched. Almost all real multer code is written this way.
     {
+      name: 'an upload handler that accepts any content type',
       code: `${MULTER}const upload = multer({ dest: 'uploads/' });\napp.post('/f', upload.single('file'), handler);`,
       errors: [{ messageId: 'violationDetected' }],
     },

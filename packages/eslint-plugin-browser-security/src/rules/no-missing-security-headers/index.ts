@@ -30,7 +30,7 @@
  * @see https://owasp.org/www-project-secure-headers/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
@@ -500,8 +500,8 @@ function declaredResponseHeaders(
   const keyName =
     key.type === 'Identifier'
       ? key.name
-      : key.type === 'Literal' && typeof key.value === 'string'
-        ? key.value
+      : staticString(key) !== null
+        ? staticString(key)
         : null;
   if (keyName !== 'headers') return null;
 
@@ -519,9 +519,10 @@ function declaredResponseHeaders(
         const entryKey =
           entry.key.type === 'Identifier' ? entry.key.name : null;
         if (entryKey !== 'key') continue;
-        if (entry.value.type === 'Literal' && typeof entry.value.value === 'string') {
-          names.push(entry.value.value);
-          if (entry.value.value.toLowerCase() === 'content-type') {
+        const staticText = staticString(entry.value);
+        if (staticText !== null) {
+          names.push(staticText);
+          if (staticText.toLowerCase() === 'content-type') {
             contentType =
               element.properties.find(
                 (p): p is TSESTree.Property =>
@@ -568,8 +569,8 @@ function objectHeaderNames(
     if (entry.type === 'SpreadElement') return null;
     if (entry.computed) return null;
     const name =
-      entry.key.type === 'Literal' && typeof entry.key.value === 'string'
-        ? entry.key.value
+      staticString(entry.key) !== null
+        ? staticString(entry.key)
         : entry.key.type === 'Identifier'
           ? entry.key.name
           : null;

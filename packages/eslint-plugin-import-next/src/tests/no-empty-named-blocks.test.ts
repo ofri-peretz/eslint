@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
   valid: [
     // Non-empty imports
-    { code: `import { foo } from 'bar';` },
+    { name: 'a named import', code: `import { foo } from 'bar';` },
     { code: `import { foo, bar } from 'baz';` },
     { code: `import foo from 'bar';` },
     { code: `import * as foo from 'bar';` },
@@ -39,6 +39,7 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
   invalid: [
     // Empty named import only - fixable (removes entire import)
     {
+      name: 'an import with an empty named block',
       code: `import {} from 'foo';`,
       errors: [
         {

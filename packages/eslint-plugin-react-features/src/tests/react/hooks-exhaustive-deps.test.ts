@@ -33,6 +33,7 @@ describe('hooks-exhaustive-deps', () => {
       valid: [
         // Empty deps array - run once
         {
+          name: 'an effect that reads nothing',
           code: `
             function Component() {
               useEffect(() => {
@@ -104,6 +105,7 @@ describe('hooks-exhaustive-deps', () => {
       invalid: [
         // Missing single dependency
         {
+          name: 'an effect reading a prop with an empty dependency array',
           code: `
             function Component({ value }) {
               useEffect(() => {
