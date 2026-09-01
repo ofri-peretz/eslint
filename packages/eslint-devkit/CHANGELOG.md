@@ -5,6 +5,16 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.18.2
+
+### Patch Changes
+
+- **🐛 Fix** — Add an install-size badge to the README prelude, linking to each package's packagephobia page. npm renders the README from the last publish, so a badge only appears on npmjs.com after a release.
+
+  Install size rather than bundle size: bundlephobia measures a browser bundle,
+  and nobody bundles an ESLint plugin into one, so the number would describe no
+  real cost. It was also returning `429` for every package, `react` included.
+
 ## 1.18.1
 
 ### Patch Changes
