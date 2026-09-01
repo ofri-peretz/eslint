@@ -1,7 +1,7 @@
 {
   "note": "Rules with no corpus fixture, and therefore no measured precision. May only shrink — see scripts/check-corpus-coverage.ts.",
   "total": 374,
-  "measured": 227,
+  "measured": 228,
   "unmeasured": [
     "anthropic-security/no-browser-api-key-exposure",
     "anthropic-security/no-untrusted-content-in-prompt",
@@ -52,7 +52,6 @@
     "mcp-sdk-security/no-tool-description-injection",
     "mcp-sdk-security/no-unvalidated-tool-args",
     "modularity/ddd-value-object-immutability",
-    "modularity/no-external-api-calls-in-utils",
     "mongodb-security/no-bypass-middleware",
     "mongodb-security/no-debug-mode-production",
     "mongodb-security/no-hardcoded-credentials",
