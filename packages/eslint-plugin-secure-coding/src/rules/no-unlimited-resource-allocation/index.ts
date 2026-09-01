@@ -24,6 +24,7 @@ import {
   AST_NODE_TYPES,
   createRule,
   isStaticExpression,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
@@ -383,10 +384,12 @@ export const noUnlimitedResourceAllocation = createRule<
     );
 
     const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
+      // `req['query'].size` reads the same surface `req.query.size` does, so
+      // the `!node.computed` guard that used to sit here was the blind spot,
+      // not a safeguard. A dynamic `req[k]` still resolves to nothing and is
+      // still not a request surface.
       node?.type === AST_NODE_TYPES.MemberExpression &&
-      !node.computed &&
-      node.property.type === AST_NODE_TYPES.Identifier &&
-      REQUEST_SURFACE.has(node.property.name);
+      REQUEST_SURFACE.has(propertyName(node) ?? '');
 
     /**
      * The initializer of a local binding, or `undefined`.
@@ -547,11 +550,8 @@ export const noUnlimitedResourceAllocation = createRule<
           );
         }
         case AST_NODE_TYPES.MemberExpression:
-          return (
-            !node.computed &&
-            node.property.type === AST_NODE_TYPES.Identifier &&
-            sizeProperties.has(node.property.name)
-          );
+          // Same: `body['size']` is the same size property as `body.size`.
+          return sizeProperties.has(propertyName(node) ?? '');
         case AST_NODE_TYPES.Identifier: {
           const init = initializerOf(node);
           // A binding this file cannot see the value of is left ALONE rather
@@ -796,9 +796,10 @@ export const noUnlimitedResourceAllocation = createRule<
       } else if (
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
-        callee.property.type === 'Identifier'
+        propertyName(callee) !== null
       ) {
-        name = `${callee.object.name}.${callee.property.name}`;
+        // `Buffer['alloc'](n)` allocates exactly what `Buffer.alloc(n)` does.
+        name = `${callee.object.name}.${propertyName(callee) as string}`;
       }
       if (name === undefined || !ALLOCATORS.has(name)) return false;
 
@@ -855,9 +856,8 @@ export const noUnlimitedResourceAllocation = createRule<
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           callee.object.name === 'Buffer' &&
-          callee.property.type === 'Identifier' &&
-          (callee.property.name === 'alloc' ||
-            callee.property.name === 'allocUnsafe');
+          (propertyName(callee) === 'alloc' ||
+            propertyName(callee) === 'allocUnsafe');
 
         const isNewBuffer =
           callee.type === 'NewExpression' &&
@@ -986,10 +986,9 @@ export const noUnlimitedResourceAllocation = createRule<
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           callee.object.name === 'fs' &&
-          callee.property.type === 'Identifier' &&
           // @vocabulary Node fs API
           ['readFile', 'writeFile', 'readFileSync', 'writeFileSync'].includes(
-            callee.property.name,
+            propertyName(callee) ?? '',
           )
         ) {
           const args = node.arguments;
@@ -1076,8 +1075,10 @@ export const noUnlimitedResourceAllocation = createRule<
           // spelling, and matching the variable name would miss it — the same
           // names-are-not-evidence mistake this fix exists to correct.
           if (!archiveBindings.has(receiver)) return false;
-          const method =
-            member.property.type === 'Identifier' ? member.property.name : '';
+          // `unzipper['Extract']({ path })` is the same factory as
+          // `unzipper.Extract({ path })`. Reading `property.name` directly
+          // meant the subscript spelling decompressed unbounded, unreported.
+          const method = propertyName(member) ?? '';
           return /^(Extract|Parse|extract|createGunzip|createUnzip|createInflate|open)$/.test(
             method,
           );
