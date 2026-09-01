@@ -20,7 +20,7 @@
  * - JSDoc annotations (@secure-recovery, @rate-limited)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -373,12 +373,13 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               definition.node.init?.type === 'CallExpression'
             ) {
               const { callee } = definition.node.init;
+              // `Math['random']()` is the same weak generator `Math.random()`
+              // is, and a reset token built from it is just as guessable.
               const calleeName =
                 callee.type === 'Identifier'
                   ? callee.name
-                  : callee.type === 'MemberExpression' &&
-                      callee.property.type === 'Identifier'
-                    ? callee.property.name
+                  : callee.type === 'MemberExpression'
+                    ? propertyName(callee)
                     : null;
               if (
                 calleeName !== null &&

@@ -454,12 +454,13 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
         const { callee, arguments: args } = node;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
 
-        const { object, property } = callee;
+        const { object } = callee;
         if (object.type !== AST_NODE_TYPES.Identifier) return;
-        if (property.type !== AST_NODE_TYPES.Identifier) return;
+        // `Handlebars['compile'](tpl)` compiles the same template.
+        const methodName = propertyName(callee);
+        if (methodName === null) return;
 
         const engineName = object.name;
-        const methodName = property.name;
 
         if (!engines.has(engineName)) return;
         if (!ALL_TEMPLATE_METHODS.has(methodName)) return;
